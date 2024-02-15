@@ -139,6 +139,7 @@ export const fetchBlob = memoizeObservable(
                             serviceKind
                         }
                     }
+                    languages
                 }
             `,
             {
@@ -161,13 +162,13 @@ export const fetchBlob = memoizeObservable(
                     throw new Error('Commit not found')
                 }
 
-                if (!commit.file) {
-                    throw new Error('File not found')
+                if (commit.file === null) {
+                    return null
                 }
 
                 return {
                     ...commit.file,
-                    snapshot: commit.blob?.lsif?.snapshot,
+                    snapshot: commit?.blob?.lsif?.snapshot,
                 }
             })
         )

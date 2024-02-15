@@ -38,16 +38,6 @@ export const SiteAdminProductSubscriptionNode: React.FunctionComponent<
         </td>
         <td className="w-100">
             <AccountName account={node.account} />
-            {node.account && (
-                <div>
-                    <small>
-                        {node.account.emails
-                            .filter(email => email.isPrimary)
-                            .map(({ email }) => email)
-                            .join(', ')}
-                    </small>
-                </div>
-            )}
         </td>
         <td className="text-nowrap">
             <ProductSubscriptionLabel productSubscription={node} className="mr-3" />

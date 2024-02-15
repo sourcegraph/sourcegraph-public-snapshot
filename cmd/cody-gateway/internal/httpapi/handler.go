@@ -2,18 +2,22 @@ package httpapi
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"net/http"
 
+	"github.com/Khan/genqlient/graphql"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
+
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/attribution"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter"
@@ -26,20 +30,13 @@ import (
 )
 
 type Config struct {
-	RateLimitNotifier                           notify.RateLimitNotifier
-	AnthropicAccessToken                        string
-	AnthropicAllowedModels                      []string
-	AnthropicAllowedPromptPatterns              []string
-	AnthropicRequestBlockingEnabled             bool
-	AnthropicMaxTokensToSample                  int
-	OpenAIAccessToken                           string
-	OpenAIOrgID                                 string
-	OpenAIAllowedModels                         []string
-	FireworksAccessToken                        string
-	FireworksDisableSingleTenant                bool
-	FireworksAllowedModels                      []string
-	FireworksLogSelfServeCodeCompletionRequests bool
-	EmbeddingsAllowedModels                     []string
+	RateLimitNotifier           notify.RateLimitNotifier
+	Anthropic                   config.AnthropicConfig
+	OpenAI                      config.OpenAIConfig
+	Fireworks                   config.FireworksConfig
+	EmbeddingsAllowedModels     []string
+	AutoFlushStreamingResponses bool
+	EnableAttributionSearch     bool
 }
 
 var meter = otel.GetMeterProvider().Meter("cody-gateway/internal/httpapi")
@@ -59,7 +56,7 @@ func NewHandler(
 	authr *auth.Authenticator,
 	promptRecorder completions.PromptRecorder,
 	config *Config,
-	sources *actor.Sources,
+	dotcomClient graphql.Client,
 ) (http.Handler, error) {
 	// Initialize metrics
 	counter, err := meter.Int64UpDownCounter("cody-gateway.concurrent_upstream_requests",
@@ -67,73 +64,74 @@ func NewHandler(
 	if err != nil {
 		return nil, errors.Wrap(err, "init metric 'concurrent_upstream_requests'")
 	}
-
-	// Add a prefix to the store for globally unique keys and simpler pruning.
-	rs = limiter.NewPrefixRedisStore("rate_limit:", rs)
+	latencyHistogram, err := meter.Int64Histogram("cody-gateway.latency_overhead",
+		metric.WithDescription("Cody Gateway response latency overhead in milliseconds"))
+	if err != nil {
+		return nil, errors.Wrap(err, "init metric 'latency_overhead'")
+	}
 	r := mux.NewRouter()
 
 	// V1 service routes
 	v1router := r.PathPrefix("/v1").Subrouter()
 
-	if config.AnthropicAccessToken != "" {
+	if config.Anthropic.AccessToken != "" {
 		anthropicHandler, err := completions.NewAnthropicHandler(
 			logger,
 			eventLogger,
 			rs,
 			config.RateLimitNotifier,
 			httpClient,
-			config.AnthropicAccessToken,
-			config.AnthropicAllowedModels,
-			config.AnthropicMaxTokensToSample,
+			config.Anthropic,
 			promptRecorder,
-			config.AnthropicAllowedPromptPatterns,
-			config.AnthropicRequestBlockingEnabled,
+
+			config.AutoFlushStreamingResponses,
 		)
 		if err != nil {
 			return nil, errors.Wrap(err, "init Anthropic handler")
 		}
 
 		v1router.Path("/completions/anthropic").Methods(http.MethodPost).Handler(
-			instrumentation.HTTPMiddleware("v1.completions.anthropic",
-				gaugeHandler(
-					counter,
-					attributesAnthropicCompletions,
-					authr.Middleware(
-						requestlogger.Middleware(
-							logger,
-							anthropicHandler,
-						),
-					),
-				),
-				otelhttp.WithPublicEndpoint(),
-			),
-		)
-	}
-	if config.OpenAIAccessToken != "" {
-		v1router.Path("/completions/openai").Methods(http.MethodPost).Handler(
-			instrumentation.HTTPMiddleware("v1.completions.openai",
-				gaugeHandler(
-					counter,
-					attributesOpenAICompletions,
-					authr.Middleware(
-						requestlogger.Middleware(
-							logger,
-							completions.NewOpenAIHandler(
+			overhead.HTTPMiddleware(latencyHistogram,
+				instrumentation.HTTPMiddleware("v1.completions.anthropic",
+					gaugeHandler(
+						counter,
+						attributesAnthropicCompletions,
+						authr.Middleware(
+							requestlogger.Middleware(
 								logger,
-								eventLogger,
-								rs,
-								config.RateLimitNotifier,
-								httpClient,
-								config.OpenAIAccessToken,
-								config.OpenAIOrgID,
-								config.OpenAIAllowedModels,
+								anthropicHandler,
 							),
 						),
 					),
+					otelhttp.WithPublicEndpoint(),
 				),
-				otelhttp.WithPublicEndpoint(),
-			),
-		)
+			))
+	}
+	if config.OpenAI.AccessToken != "" {
+		v1router.Path("/completions/openai").Methods(http.MethodPost).Handler(
+			overhead.HTTPMiddleware(latencyHistogram,
+				instrumentation.HTTPMiddleware("v1.completions.openai",
+					gaugeHandler(
+						counter,
+						attributesOpenAICompletions,
+						authr.Middleware(
+							requestlogger.Middleware(
+								logger,
+								completions.NewOpenAIHandler(
+									logger,
+									eventLogger,
+									rs,
+									config.RateLimitNotifier,
+									httpClient,
+									config.OpenAI,
+									config.AutoFlushStreamingResponses,
+								),
+							),
+						),
+					),
+					otelhttp.WithPublicEndpoint(),
+				),
+			))
 
 		v1router.Path("/embeddings/models").Methods(http.MethodGet).Handler(
 			instrumentation.HTTPMiddleware("v1.embeddings.models",
@@ -148,60 +146,60 @@ func NewHandler(
 		)
 
 		v1router.Path("/embeddings").Methods(http.MethodPost).Handler(
-			instrumentation.HTTPMiddleware("v1.embeddings",
-				gaugeHandler(
-					counter,
-					// TODO - if embeddings.ModelFactoryMap includes more than
-					// just OpenAI we might need to move how we count concurrent
-					// requests into the handler, instead of assuming we are
-					// counting OpenAI requests
-					attributesOpenAIEmbeddings,
-					authr.Middleware(
-						requestlogger.Middleware(
-							logger,
-							embeddings.NewHandler(
+			overhead.HTTPMiddleware(latencyHistogram,
+				instrumentation.HTTPMiddleware("v1.embeddings",
+					gaugeHandler(
+						counter,
+						// TODO - if embeddings.ModelFactoryMap includes more than
+						// just OpenAI we might need to move how we count concurrent
+						// requests into the handler, instead of assuming we are
+						// counting OpenAI requests
+						attributesOpenAIEmbeddings,
+						authr.Middleware(
+							requestlogger.Middleware(
 								logger,
-								eventLogger,
-								rs,
-								config.RateLimitNotifier,
-								embeddings.ModelFactoryMap{
-									embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(httpClient, config.OpenAIAccessToken),
-								},
-								config.EmbeddingsAllowedModels,
+								embeddings.NewHandler(
+									logger,
+									eventLogger,
+									rs,
+									config.RateLimitNotifier,
+									embeddings.ModelFactoryMap{
+										embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
+									},
+									config.EmbeddingsAllowedModels,
+								),
 							),
 						),
 					),
+					otelhttp.WithPublicEndpoint(),
 				),
-				otelhttp.WithPublicEndpoint(),
-			),
-		)
+			))
 	}
-	if config.FireworksAccessToken != "" {
+	if config.Fireworks.AccessToken != "" {
 		v1router.Path("/completions/fireworks").Methods(http.MethodPost).Handler(
-			instrumentation.HTTPMiddleware("v1.completions.fireworks",
-				gaugeHandler(
-					counter,
-					attributesFireworksCompletions,
-					authr.Middleware(
-						requestlogger.Middleware(
-							logger,
-							completions.NewFireworksHandler(
+			overhead.HTTPMiddleware(latencyHistogram,
+				instrumentation.HTTPMiddleware("v1.completions.fireworks",
+					gaugeHandler(
+						counter,
+						attributesFireworksCompletions,
+						authr.Middleware(
+							requestlogger.Middleware(
 								logger,
-								eventLogger,
-								rs,
-								config.RateLimitNotifier,
-								httpClient,
-								config.FireworksAccessToken,
-								config.FireworksAllowedModels,
-								config.FireworksLogSelfServeCodeCompletionRequests,
-								config.FireworksDisableSingleTenant,
+								completions.NewFireworksHandler(
+									logger,
+									eventLogger,
+									rs,
+									config.RateLimitNotifier,
+									httpClient,
+									config.Fireworks,
+									config.AutoFlushStreamingResponses,
+								),
 							),
 						),
 					),
+					otelhttp.WithPublicEndpoint(),
 				),
-				otelhttp.WithPublicEndpoint(),
-			),
-		)
+			))
 	}
 
 	// Register a route where actors can retrieve their current rate limit state.
@@ -222,8 +220,21 @@ func NewHandler(
 			authr.Middleware(
 				requestlogger.Middleware(
 					logger,
-					featurelimiter.RefreshLimitsHandler(logger, sources),
+					featurelimiter.RefreshLimitsHandler(logger),
 				),
+			),
+			otelhttp.WithPublicEndpoint(),
+		),
+	)
+
+	var attributionClient graphql.Client
+	if config.EnableAttributionSearch {
+		attributionClient = dotcomClient
+	}
+	v1router.Path("/attribution").Methods(http.MethodPost).Handler(
+		instrumentation.HTTPMiddleware("v1.attribution",
+			authr.Middleware(
+				attribution.NewHandler(attributionClient, logger),
 			),
 			otelhttp.WithPublicEndpoint(),
 		),
@@ -246,4 +257,10 @@ func gaugeHandler(counter metric.Int64UpDownCounter, attrs attribute.Set, handle
 		// Background context when done, since request may be cancelled.
 		counter.Add(context.Background(), -1, metric.WithAttributeSet(attrs))
 	})
+}
+
+type CompletionsConfig struct {
+	logger      log.Logger
+	eventLogger events.Logger
+	rs          limiter.RedisStore
 }

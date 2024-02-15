@@ -33,10 +33,10 @@ type ReposService interface {
 	GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error)
 	List(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error)
 	ListIndexable(ctx context.Context) ([]types.MinimalRepo, error)
-	GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (*inventory.Inventory, error)
+	GetInventory(ctx context.Context, repoName api.RepoName, commitID api.CommitID, forceEnhancedLanguageDetection bool) (*inventory.Inventory, error)
 	DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) error
 	RequestRepositoryClone(ctx context.Context, repoID api.RepoID) error
-	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error)
+	ResolveRev(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error)
 }
 
 // NewRepos uses the provided `database.DB` to initialize a new RepoService.
@@ -250,24 +250,24 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 	})
 }
 
-func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
+func (s *repos) GetInventory(ctx context.Context, repo api.RepoName, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventory != nil {
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)
 	}
 
-	ctx, done := startTrace(ctx, "GetInventory", map[string]any{"repo": repo.Name, "commitID": commitID}, &err)
+	ctx, done := startTrace(ctx, "GetInventory", map[string]any{"repo": repo, "commitID": commitID}, &err)
 	defer done()
 
 	// Cap GetInventory operation to some reasonable time.
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 
-	invCtx, err := InventoryContext(s.logger, repo.Name, s.gitserverClient, commitID, forceEnhancedLanguageDetection)
+	invCtx, err := InventoryContext(s.logger, repo, s.gitserverClient, commitID, forceEnhancedLanguageDetection)
 	if err != nil {
 		return nil, err
 	}
 
-	root, err := s.gitserverClient.Stat(ctx, repo.Name, commitID, "")
+	root, err := s.gitserverClient.Stat(ctx, repo, commitID, "")
 	if err != nil {
 		return nil, err
 	}
@@ -328,15 +328,15 @@ func (s *repos) RequestRepositoryClone(ctx context.Context, repoID api.RepoID) (
 // * Empty repository: gitdomain.RevisionNotFoundError
 // * The user does not have permission: errcode.IsNotFound
 // * Other unexpected errors.
-func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (commitID api.CommitID, err error) {
+func (s *repos) ResolveRev(ctx context.Context, repo api.RepoName, rev string) (commitID api.CommitID, err error) {
 	if Mocks.Repos.ResolveRev != nil {
 		return Mocks.Repos.ResolveRev(ctx, repo, rev)
 	}
 
-	ctx, done := startTrace(ctx, "ResolveRev", map[string]any{"repo": repo.Name, "rev": rev}, &err)
+	ctx, done := startTrace(ctx, "ResolveRev", map[string]any{"repo": repo, "rev": rev}, &err)
 	defer done()
 
-	return s.gitserverClient.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{})
+	return s.gitserverClient.ResolveRevision(ctx, repo, rev, gitserver.ResolveRevisionOptions{})
 }
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph

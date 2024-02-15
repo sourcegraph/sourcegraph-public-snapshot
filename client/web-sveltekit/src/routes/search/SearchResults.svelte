@@ -1,65 +1,60 @@
+<svelte:options immutable />
+
 <script context="module" lang="ts">
-    interface Cache {
+    export type SearchResultsCapture = number
+    interface ResultStateCache {
         count: number
         expanded: Set<SearchMatch>
     }
-    const cache = new Map<string, Cache>()
-
-    export interface SearchResultsContext {
-        isExpanded(match: SearchMatch): boolean
-        setExpanded(match: SearchMatch, expanded: boolean): void
-        queryState: QueryStateStore
-    }
-
-    const CONTEXT_KEY = 'search-result'
-
-    export function getSearchResultsContext(): SearchResultsContext {
-        return getContext(CONTEXT_KEY)
-    }
-
-    export function setSearchResultsContext(context: SearchResultsContext): SearchResultsContext {
-        return setContext(CONTEXT_KEY, context)
-    }
+    const cache = new Map<string, ResultStateCache>()
 
     const DEFAULT_INITIAL_ITEMS_TO_SHOW = 15
     const INCREMENTAL_ITEMS_TO_SHOW = 10
 </script>
 
 <script lang="ts">
+    import { mdiCloseOctagonOutline } from '@mdi/js'
     import type { Observable } from 'rxjs'
-    import { getContext, setContext, tick } from 'svelte'
+    import { tick } from 'svelte'
 
     import { beforeNavigate } from '$app/navigation'
-    import { preserveScrollPosition } from '$lib/app'
+    import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
-    import { searchTypes } from '$lib/search/sidebar'
     import { submitSearch, type QueryStateStore } from '$lib/search/state'
-    import type { SidebarFilter } from '$lib/search/utils'
-    import { SearchSidebarSectionID, type AggregateStreamingSearchResults, type SearchMatch } from '$lib/shared'
+    import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
+    import { type AggregateStreamingSearchResults, type SearchMatch, type Progress } from '$lib/shared'
 
-    import Section from './SidebarSection.svelte'
-    import StreamingProgress from './StreamingProgress.svelte'
     import { getSearchResultComponent } from './searchResultFactory'
+    import { setSearchResultsContext } from './searchResultsContext'
+    import StreamingProgress from './StreamingProgress.svelte'
 
     export let stream: Observable<AggregateStreamingSearchResults | undefined>
     export let queryFromURL: string
+    export let queryFilters: string
     export let queryState: QueryStateStore
 
+    export function capture(): SearchResultsCapture {
+        return resultContainer?.scrollTop ?? 0
+    }
+
+    export function restore(capture?: SearchResultsCapture): void {
+        if (resultContainer) {
+            resultContainer.scrollTop = capture ?? 0
+        }
+    }
+
     let resultContainer: HTMLElement | null = null
-    let searchInput: SearchInput
+
+    const sidebarSize = getSeparatorPosition('search-results-sidebar', 0.2)
 
     $: progress = $stream?.progress
     // NOTE: done is present but apparently not officially exposed. However
     // $stream.state is always "loading". Need to look into this.
-    $: loading = !progress?.done
+    $: loading = !(progress as Progress & { done?: boolean })?.done
     $: results = $stream?.results
-    $: filters = $stream?.filters
-    $: langFilters =
-        filters
-            ?.filter(filter => filter.kind === 'lang')
-            .map((filter): SidebarFilter => ({ ...filter, runImmediately: true })) ?? []
 
     // Logic for maintaining list state (scroll position, rendered items, open
     // items) for backwards navigation.
@@ -68,14 +63,6 @@
     $: resultsToShow = results ? results.slice(0, count) : null
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
 
-    let scrollTop: number = 0
-    preserveScrollPosition(
-        position => (scrollTop = position ?? 0),
-        () => resultContainer?.scrollTop
-    )
-    $: if (resultContainer) {
-        resultContainer.scrollTop = scrollTop ?? 0
-    }
     setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
             return expandedSet.has(match)
@@ -99,18 +86,6 @@
         }
     }
 
-    async function updateQuery(event: MouseEvent) {
-        const element = event.currentTarget as HTMLElement
-        // TODO: Replace / update query; editor hints; etc
-        queryState.setQuery(query => query + ' ' + element.dataset.value)
-        if (element.dataset.run) {
-            await tick()
-            submitSearch($queryState)
-        } else {
-            searchInput.focus()
-        }
-    }
-
     // FIXME: Not a great solution since it relies on implementation details of
     // the progress component
     async function onResubmitQuery(event: SubmitEvent) {
@@ -129,53 +104,52 @@
     <title>{queryFromURL} - Sourcegraph</title>
 </svelte:head>
 
-<section>
-    <div class="search">
-        <SearchInput bind:this={searchInput} {queryState} showSmartSearchButton />
-    </div>
+<div class="search">
+    <SearchInput {queryState} />
+</div>
 
+<div class="search-results">
+    <DynamicFiltersSidebar
+        size={$sidebarSize}
+        {queryFromURL}
+        {queryFilters}
+        {queryState}
+        streamFilters={$stream?.filters ?? []}
+    />
+    <Separator currentPosition={sidebarSize} />
     <div class="results" bind:this={resultContainer}>
-        <div class="scroll-container">
-            {#if !$stream || loading}
-                <div class="spinner">
-                    <LoadingSpinner />
+        <aside class="actions">
+            {#if loading}
+                <div>
+                    <LoadingSpinner inline />
                 </div>
-            {:else if !loading && resultsToShow}
-                <div class="main">
-                    <aside class="stats mb-2">
-                        {#if progress}
-                            <StreamingProgress {progress} on:submit={onResubmitQuery} />
-                        {/if}
-                    </aside>
-                    <ol>
-                        {#each resultsToShow as result}
-                            {@const component = getSearchResultComponent(result)}
-                            <li><svelte:component this={component} {result} /></li>
-                        {/each}
-                        <div use:observeIntersection on:intersecting={loadMore} />
-                    </ol>
-                </div>
-                <aside class="sidebar">
-                    <h4>Filters</h4>
-                    <Section
-                        id={SearchSidebarSectionID.SEARCH_TYPES}
-                        items={searchTypes}
-                        title="Search types"
-                        on:click={updateQuery}
-                    />
-                    {#if langFilters.length > 1}
-                        <Section
-                            id={SearchSidebarSectionID.LANGUAGES}
-                            items={langFilters}
-                            title="Languages"
-                            on:click={updateQuery}
-                        />
-                    {/if}
-                </aside>
             {/if}
-        </div>
+            {#if progress}
+                <StreamingProgress {progress} on:submit={onResubmitQuery} />
+            {/if}
+        </aside>
+        {#if resultsToShow}
+            <ol>
+                {#each resultsToShow as result, i}
+                    {@const component = getSearchResultComponent(result)}
+                    {#if i === resultsToShow.length - 1}
+                        <li use:observeIntersection on:intersecting={loadMore}>
+                            <svelte:component this={component} {result} />
+                        </li>
+                    {:else}
+                        <li><svelte:component this={component} {result} /></li>
+                    {/if}
+                {/each}
+            </ol>
+            {#if resultsToShow.length === 0 && !loading}
+                <div class="no-result">
+                    <Icon svgPath={mdiCloseOctagonOutline} />
+                    <p>No results found</p>
+                </div>
+            {/if}
+        {/if}
     </div>
-</section>
+</div>
 
 <style lang="scss">
     .search {
@@ -184,62 +158,42 @@
         padding: 0.25rem;
     }
 
-    section {
-        flex: 1;
+    .search-results {
         display: flex;
-        align-items: center;
-        flex-direction: column;
+        flex: 1;
         overflow: hidden;
     }
 
     .results {
         flex: 1;
-        align-self: stretch;
         overflow: auto;
+        display: flex;
+        flex-direction: column;
 
-        .scroll-container {
-            padding: 1rem;
+        .actions {
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.5rem 0;
+            padding-left: 0.25rem;
             display: flex;
-
-            .spinner {
-                flex: 1;
-                display: flex;
-                justify-content: center;
-            }
+            align-items: center;
+            // Explictly set height to avoid jumping when loading spinner is
+            // shown/hidden.
+            height: 3rem;
+            flex-shrink: 0;
         }
-    }
 
-    ol {
-        padding: 0;
-        margin: 0;
-        list-style: none;
-
-        li {
-            margin-bottom: 1rem;
+        ol {
+            padding: 0;
+            margin: 0;
+            list-style: none;
         }
-    }
 
-    .main {
-        flex: 1 1 auto;
-        min-width: 0;
-    }
-
-    .sidebar {
-        margin-left: 1rem;
-        position: sticky;
-        top: 1rem;
-        align-self: flex-start;
-        width: 15.5rem;
-        flex-shrink: 0;
-        background-color: var(--sidebar-bg);
-        border: 1px solid var(--sidebar-border-color);
-        padding: 0.75rem;
-        border-radius: var(--border-radius);
-
-        h4 {
-            margin: -0.25rem -0.75rem 0.75rem;
-            padding: 0 0.75rem 0.5rem;
-            border-bottom: 1px solid var(--sidebar-border-color);
+        .no-result {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: auto;
+            color: var(--text-muted);
         }
     }
 </style>

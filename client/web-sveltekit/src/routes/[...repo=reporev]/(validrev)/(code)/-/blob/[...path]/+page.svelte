@@ -10,7 +10,7 @@
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
 
-    import FileDiff from '../../../../-/commit/[...revspec]/FileDiff.svelte'
+    import FileDiff from '$lib/repo/FileDiff.svelte'
 
     import type { PageData } from './$types'
     import FormatAction from './FormatAction.svelte'
@@ -24,21 +24,22 @@
 
     export let data: PageData
 
-    const {
-        revision,
-        resolvedRevision: { commitID, repo },
-        filePath,
-        settings,
-        graphqlClient,
-    } = data
     // We use the latest value here because we want to keep showing the old document while loading
     // the new one.
     const { loading, combinedBlobData, set: setBlobData } = createBlobDataHandler()
     let selectedPosition: LineOrPositionOrRange | null = null
 
-    $: setBlobData(data.deferred.blob, data.deferred.highlights)
-    $: blobData = $combinedBlobData.blob
-    $: formatted = !!blobData?.richHTML
+    $: ({
+        revision,
+        resolvedRevision: { commitID },
+        repoName,
+        filePath,
+        settings,
+        graphqlClient,
+    } = data)
+    $: setBlobData(data.blob, data.highlights)
+    $: ({ blob, highlights = '' } = $combinedBlobData)
+    $: formatted = !!blob?.richHTML
     $: showRaw = $page.url.searchParams.get('view') === 'raw'
     $: codeIntelAPI = createCodeIntelAPI({
         settings: setting => (isErrorLike(settings.final) ? undefined : settings.final?.[setting]),
@@ -52,14 +53,14 @@
 </script>
 
 <svelte:head>
-    <title>{data.filePath} - {data.displayRepoName} - Sourcegraph</title>
+    <title>{filePath} - {data.displayRepoName} - Sourcegraph</title>
 </svelte:head>
 
 <FileHeader>
-    <Icon slot="icon" svgPath={data.deferred.compare ? mdiCodeBracesBox : mdiFileCodeOutline} />
+    <Icon slot="icon" svgPath={data.compare ? mdiCodeBracesBox : mdiFileCodeOutline} />
     <svelte:fragment slot="actions">
-        {#if data.deferred.compare}
-            <span>{data.deferred.compare.revisionToCompare}</span>
+        {#if data.compare}
+            <span>{data.compare.revisionToCompare}</span>
         {:else}
             {#if !formatted || showRaw}
                 <WrapLinesAction />
@@ -67,14 +68,14 @@
             {#if formatted}
                 <FormatAction />
             {/if}
-            <Permalink resolvedRevision={data.resolvedRevision} />
+            <Permalink {commitID} />
         {/if}
     </svelte:fragment>
 </FileHeader>
 
-<div class="content" class:loading={$loading} class:compare={!!data.deferred.compare}>
-    {#if data.deferred.compare}
-        {#await data.deferred.compare.diff}
+<div class="content" class:loading={$loading} class:compare={!!data.compare}>
+    {#if data.compare}
+        {#await data.compare.diff}
             <LoadingSpinner />
         {:then fileDiff}
             {#if fileDiff}
@@ -83,21 +84,21 @@
                 Unable to load iff
             {/if}
         {/await}
-    {:else if blobData}
-        {#if blobData.richHTML && !showRaw}
+    {:else if blob}
+        {#if blob.richHTML && !showRaw}
             <div class="rich">
-                {@html blobData.richHTML}
+                {@html blob.richHTML}
             </div>
         {:else}
             <CodeMirrorBlob
                 blobInfo={{
-                    ...blobData,
+                    ...blob,
                     revision: revision ?? '',
                     commitID,
-                    repoName: repo.name,
+                    repoName: repoName,
                     filePath,
                 }}
-                highlights={$combinedBlobData.highlights || ''}
+                {highlights}
                 wrapLines={$lineWrap}
                 selectedLines={selectedPosition?.line ? selectedPosition : null}
                 on:selectline={event => {

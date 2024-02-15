@@ -13,11 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type tfVariable struct {
-	key   string
-	value string // only string values for now
-}
-
 type CDKTF struct {
 	app    cdktf.App
 	stacks []stack.Stack
@@ -45,7 +40,7 @@ func (c CDKTF) Synthesize() error {
 	var catcher panics.Catcher
 	catcher.Try(c.app.Synth)
 	if recovered := catcher.Recovered(); recovered != nil {
-		return errors.Wrap(recovered, "failed to synthesize Terraform CDK app")
+		return errors.Wrap(recovered.AsError(), "failed to synthesize Terraform CDK app")
 	}
 
 	// Generate tfvar files, if any are required

@@ -2,17 +2,39 @@ package protocol
 
 import (
 	"testing"
+	"testing/quick"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/stretchr/testify/require"
 )
+
+func TestRepoCloneProgress_ProtoRoundTrip(t *testing.T) {
+	var diff string
+
+	fn := func(original RepoCloneProgress) bool {
+		var converted RepoCloneProgress
+		converted.FromProto(original.ToProto())
+
+		if diff = cmp.Diff(original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}
+
+	if err := quick.Check(fn, nil); err != nil {
+		t.Errorf("RepoCloneProgress proto roundtrip failed (-want +got):\n%s", diff)
+	}
+}
 
 func TestSearchRequestProtoRoundtrip(t *testing.T) {
 	req := &SearchRequest{
 		Repo:      "test1",
-		Revisions: []RevisionSpecifier{{RevSpec: "ABC"}, {RefGlob: "refs/heads/*"}},
+		Revisions: []string{"ABC"},
 		Query: &Operator{
 			Kind: And,
 			Operands: []Node{

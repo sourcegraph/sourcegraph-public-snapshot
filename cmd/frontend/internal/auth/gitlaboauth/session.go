@@ -43,7 +43,7 @@ func (s *sessionIssuerHelper) GetServiceID() string {
 	return s.ServiceID
 }
 
-func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
+func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, hubSpotProps *hubspot.ContactProperties) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
 	gUser, err := UserFromContext(ctx)
 	if err != nil {
 		return false, nil, "Could not read GitLab user from callback request.", errors.Wrap(err, "could not read user from context")
@@ -66,7 +66,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	login, err := auth.NormalizeUsername(gUser.Username)
 	if err != nil {
-		return false, nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
+		return false, nil, fmt.Sprintf("Error normalizing the username %q. See https://sourcegraph.com/docs/admin/auth/#username-normalization.", login), err
 	}
 
 	provider, err := gitlab.NewClientProvider(extsvc.URNGitLabOAuth, s.BaseURL, nil)
@@ -121,11 +121,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	// There is no need to send record if we know email is empty as it's a primary property
 	if gUser.Email != "" {
-		go hubspotutil.SyncUser(gUser.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
-			AnonymousUserID: anonymousUserID,
-			FirstSourceURL:  firstSourceURL,
-			LastSourceURL:   lastSourceURL,
-		})
+		go hubspotutil.SyncUser(gUser.Email, hubspotutil.SignupEventID, hubSpotProps)
 	}
 
 	return newUserCreated, actor.FromUser(userID), "", nil

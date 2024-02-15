@@ -26,5 +26,6 @@ go_library(
         "@com_github_sourcegraph_log//:log",
         "@com_google_cloud_go_bigquery//:bigquery",
         "@com_google_cloud_go_cloudsqlconn//:cloudsqlconn",
+        "@com_google_cloud_go_profiler//:profiler",
     ],
 )

@@ -3,10 +3,11 @@ package embeddings
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"sort"
+
+	"github.com/go-json-experiment/json"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
@@ -122,7 +123,7 @@ func (c *openaiClient) requestEmbeddings(ctx context.Context, model openAIModel,
 	}
 
 	var response openaiEmbeddingsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+	if err := json.UnmarshalRead(resp.Body, &response); err != nil {
 		// Although we might've incurred cost at this point, we don't want to count
 		// that towards the rate limit of the requester, so return 0 for the consumed
 		// token count.

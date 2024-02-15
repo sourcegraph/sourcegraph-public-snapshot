@@ -169,7 +169,7 @@ func TestNewCommon_repo_error(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			backend.Mocks.Repos.MockGetByName(t, api.RepoName(tt.name), 1)
 			backend.Mocks.Repos.MockGet(t, 1)
-			backend.Mocks.Repos.ResolveRev = func(context.Context, *types.Repo, string) (api.CommitID, error) {
+			backend.Mocks.Repos.ResolveRev = func(context.Context, api.RepoName, string) (api.CommitID, error) {
 				if tt.err != nil {
 					return "", tt.err
 				}
@@ -198,7 +198,6 @@ func TestNewCommon_repo_error(t *testing.T) {
 			config := &schema.OtherExternalServiceConnection{
 				Url:   "https://url.com",
 				Repos: []string{"serve-git-local"},
-				Root:  "path/to/repo",
 			}
 
 			bs, err := json.Marshal(config)

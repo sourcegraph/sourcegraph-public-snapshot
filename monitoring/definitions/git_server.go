@@ -14,6 +14,8 @@ func GitServer() *monitoring.Dashboard {
 		grpcServiceName = "gitserver.v1.GitserverService"
 	)
 
+	scrapeJobRegex := fmt.Sprintf(".*%s", containerName)
+
 	gitserverHighMemoryNoAlertTransformer := func(observable shared.Observable) shared.Observable {
 		return observable.WithNoAlerts(`Git Server is expected to use up all the memory it is provided.`)
 	}
@@ -233,21 +235,6 @@ func GitServer() *monitoring.Dashboard {
 							`,
 						},
 						{
-							Name:        "repository_existence_check_queue_size",
-							Description: "repository existence check queue size",
-							Query:       "sum(src_gitserver_lsremote_queue)",
-							Warning:     monitoring.Alert().GreaterOrEqual(25),
-							Panel:       monitoring.Panel().LegendFormat("queue size"),
-							Owner:       monitoring.ObservableOwnerSource,
-							NextSteps: `
-								- **Check the code host status indicator for errors:** on the Sourcegraph app homepage, when signed in as an admin click the cloud icon in the top right corner of the page.
-								- **Check if the issue continues to happen after 30 minutes**, it may be temporary.
-								- **Check the gitserver logs for more information.**
-							`,
-						},
-					},
-					{
-						{
 							Name:        "echo_command_duration_test",
 							Description: "echo test command duration",
 							Query:       "max(src_gitserver_echo_duration_seconds)",
@@ -264,9 +251,6 @@ func GitServer() *monitoring.Dashboard {
 								- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../deploy/resource_estimator.md).
 							`,
 						},
-						shared.FrontendInternalAPIErrorResponses("gitserver", monitoring.ObservableOwnerSource).Observable(),
-					},
-					{
 						{
 							Name:          "src_gitserver_repo_count",
 							Description:   "number of repositories on gitserver",
@@ -284,8 +268,6 @@ func GitServer() *monitoring.Dashboard {
 					},
 				},
 			},
-			shared.GitServer.NewAPIGroup(containerName),
-			shared.GitServer.NewBatchLogSemaphoreWait(containerName),
 			{
 				Title:  "Gitservice for internal cloning",
 				Hidden: true,
@@ -523,6 +505,7 @@ func GitServer() *monitoring.Dashboard {
 				},
 			},
 
+			shared.GitServer.NewBackendGroup(containerName),
 			shared.GitServer.NewClientGroup("*"),
 
 			shared.NewDiskMetricsGroup(
@@ -557,10 +540,20 @@ func GitServer() *monitoring.Dashboard {
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSearchCore),
 
+			shared.NewGRPCRetryMetricsGroup(
+				shared.GRPCRetryMetricsOptions{
+					HumanServiceName:   "gitserver",
+					RawGRPCServiceName: grpcServiceName,
+					Namespace:          "src",
+
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+				}, monitoring.ObservableOwnerSearchCore),
+
 			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
 				HumanServiceName:    "gitserver",
 				InstanceFilterRegex: `${shard:regex}`,
-			}, monitoring.ObservableOwnerDevOps),
+				JobFilterRegex:      scrapeJobRegex,
+			}, monitoring.ObservableOwnerInfraOrg),
 
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
 			shared.CodeIntelligence.NewNpmGroup(containerName),

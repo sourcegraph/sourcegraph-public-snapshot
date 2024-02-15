@@ -21,9 +21,10 @@ import {
     Label,
     ErrorAlert,
     Form,
+    Select,
 } from '@sourcegraph/wildcard'
 
-import { AccessTokenScopes } from '../../../auth/accessToken'
+import { AccessTokenScopes, getExpirationOptions } from '../../../auth/accessToken'
 import { PageTitle } from '../../../components/PageTitle'
 import type { CreateAccessTokenResult } from '../../../graphql-operations'
 import type { UserSettingsAreaRouteContext } from '../UserSettingsArea'
@@ -46,6 +47,10 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
     user,
 }) => {
     const navigate = useNavigate()
+    const [expiryOptions, defaultExpiry] = useMemo(() => {
+        const options = getExpirationOptions(window.context.accessTokensExpirationDaysOptions)
+        return [options, window.context.accessTokensExpirationDaysDefault * 86400]
+    }, [])
 
     useMemo(() => {
         telemetryService.logViewEvent('NewAccessToken')
@@ -56,6 +61,8 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
     const [note, setNote] = useState<string>(defaultNoteValue ?? '')
     /** The selected scopes checkboxes. */
     const [scopes, setScopes] = useState<string[]>([AccessTokenScopes.UserAll])
+    const [expiry, setExpiry] = useState<number | undefined>(defaultExpiry)
+    const allowNoExpiration = window.context.accessTokensAllowNoExpiration
 
     const onNoteChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setNote(event.currentTarget.value)
@@ -65,6 +72,14 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
         const checked = event.currentTarget.checked
         const value = event.currentTarget.value
         setScopes(previous => (checked ? [...previous, value] : previous.filter(scope => scope !== value)))
+    }, [])
+
+    const onExpiryChange = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(event => {
+        if (event.currentTarget.value === '') {
+            setExpiry(undefined)
+            return
+        }
+        setExpiry(parseInt(event.currentTarget.value, 10))
     }, [])
 
     const submits = useMemo(() => new Subject<React.FormEvent<HTMLFormElement>>(), [])
@@ -78,7 +93,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                     concatMap(() =>
                         concat(
                             ['loading'],
-                            createAccessToken(user.id, scopes, note).pipe(
+                            createAccessToken(user.id, scopes, note, expiry !== undefined ? expiry : null).pipe(
                                 tap(result => {
                                     // Go back to access tokens list page and display the token secret value.
                                     navigate('..', { relative: 'path' })
@@ -89,7 +104,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         )
                     )
                 ),
-            [navigate, note, onDidCreateAccessToken, scopes, submits, user.id]
+            [navigate, note, onDidCreateAccessToken, scopes, submits, user.id, expiry]
         )
     )
 
@@ -112,7 +127,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         label="Token description"
                     />
 
-                    <div className="form-group mb-0">
+                    <div className="form-group">
                         <Label htmlFor="user-settings-create-access-token-page__scope-user:all" className="mb-0">
                             Token scope
                         </Label>
@@ -151,6 +166,32 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                             />
                         )}
                     </div>
+
+                    <Select
+                        id="user-settings-create-access-token-page__expiry"
+                        label="Token expiration"
+                        disabled={creationOrError === 'loading'}
+                        value={expiry}
+                        onChange={onExpiryChange}
+                        description="Keep the validity of the token as short as feasible to ensure a secure environment."
+                        className="mb-2"
+                        message={
+                            <>
+                                {expiry === undefined && (
+                                    <span className="text-danger">
+                                        Access tokens without expiration are not recommended.
+                                    </span>
+                                )}
+                            </>
+                        }
+                    >
+                        {Object.entries(expiryOptions).map(([label, expiryInSeconds]) => (
+                            <option key={expiryInSeconds} value={expiryInSeconds}>
+                                {label}
+                            </option>
+                        ))}
+                        {allowNoExpiration && <option value="">No expiration</option>}
+                    </Select>
                 </Container>
                 <div className="mb-3">
                     <Button

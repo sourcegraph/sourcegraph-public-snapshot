@@ -16,7 +16,7 @@ DIFF=$(
   find . \( \
     -path ./vendor \
     -o -path ./vendored \
-    -o -path ./docker-images/syntax-highlighter/crates/sg-syntax/languages/tree-sitter-go \
+    -o -path ./docker-images/syntax-highlighter/crates \
     \) -prune -o -name '*.go' -exec gofmt -s -w -d {} +
 )
 if [ -z "$DIFF" ]; then

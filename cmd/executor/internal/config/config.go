@@ -15,7 +15,6 @@ import (
 	"k8s.io/client-go/util/homedir"
 	"k8s.io/utils/strings/slices"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -27,6 +26,7 @@ type Config struct {
 
 	FrontendURL                                    string
 	FrontendAuthorizationToken                     string
+	EnableJobAuditLogging                          bool
 	QueueName                                      string
 	QueueNamesStr                                  string
 	QueueNames                                     []string
@@ -111,15 +111,10 @@ type Config struct {
 	defaultFrontendPassword string
 }
 
-func NewAppConfig() *Config {
-	return &Config{
-		defaultFrontendPassword: confdefaults.AppInMemoryExecutorPassword,
-	}
-}
-
 func (c *Config) Load() {
 	c.FrontendURL = c.Get("EXECUTOR_FRONTEND_URL", "", "The external URL of the sourcegraph instance.")
 	c.FrontendAuthorizationToken = c.Get("EXECUTOR_FRONTEND_PASSWORD", c.defaultFrontendPassword, "The authorization token supplied to the frontend.")
+	c.EnableJobAuditLogging = c.GetBool("EXECUTOR_ENABLE_JOB_AUDIT_LOGGING", "false", "Enables logging of the job payload to the executor logs. Note that this mode might contain secret information and logs very verbosely.")
 	c.QueueName = c.GetOptional("EXECUTOR_QUEUE_NAME", "The name of the queue to listen to.")
 	c.QueueNamesStr = c.GetOptional("EXECUTOR_QUEUE_NAMES", "The names of multiple queues to listen to, comma-separated.")
 	c.QueuePollInterval = c.GetInterval("EXECUTOR_QUEUE_POLL_INTERVAL", "1s", "Interval between dequeue requests.")

@@ -1,10 +1,14 @@
 package cloud
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"strings"
 	"sync"
 	"testing"
+	"text/template"
 
 	"golang.org/x/crypto/ssh"
 
@@ -12,10 +16,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// rawSiteConfig is the base64-encoded string that is signed by the "Sourcegraph
-// Cloud site config singer" private key, which is available at
-// https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/m4rqoaoujjwesf6twwqyr3lpde.
-var rawSiteConfig = env.Get("SRC_CLOUD_SITE_CONFIG", "", "The site configuration specifically for Sourcegraph Cloud")
+var (
+	// rawSiteConfig is the base64-encoded string that is signed by the "Sourcegraph
+	// Cloud site config singer" private key, which is available at
+	// https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/m4rqoaoujjwesf6twwqyr3lpde.
+	rawSiteConfig = env.Get("SRC_CLOUD_SITE_CONFIG", "", "The site configuration specifically for Sourcegraph Cloud")
+
+	defaultNotAllowedErrorMessageTmpl = template.Must(template.New("").Parse("Editing {{.Paths}} in site configuration is not allowed on Sourcegraph Cloud. Please contact support."))
+)
 
 // sourcegraphCloudSiteConfigSignerPublicKey is the counterpart of the
 // "Sourcegraph Cloud site config singer" private key.
@@ -53,6 +61,17 @@ func parseSiteConfig(raw string) (*SchemaSiteConfig, error) {
 	err = json.Unmarshal(signedSiteConfig.SiteConfig, &siteConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "unmarshal verified site config")
+	}
+
+	if siteConfig.SiteConfigAllowlistEnabled() {
+		if siteConfig.SiteConfigAllowlist.NotAllowedErrorMessage == "" {
+			siteConfig.SiteConfigAllowlist.errorMessageTmpl = defaultNotAllowedErrorMessageTmpl
+		} else {
+			siteConfig.SiteConfigAllowlist.errorMessageTmpl, err = template.New("").Parse(siteConfig.SiteConfigAllowlist.NotAllowedErrorMessage)
+			if err != nil {
+				return nil, errors.Wrap(err, "parse error message template")
+			}
+		}
 	}
 	return &siteConfig, nil
 }
@@ -95,6 +114,21 @@ func SiteConfig() *SchemaSiteConfig {
 // SchemaSiteConfig contains the Sourcegraph Cloud site config.
 type SchemaSiteConfig struct {
 	AuthProviders *SchemaAuthProviders `json:"authProviders"`
+	// SiteConfigAllowlist controls what site config attributes
+	// Cloud customers are allowed to change
+	SiteConfigAllowlist SiteConfigAllowlistSpec `json:"siteConfigAllowlist,omitempty"`
+}
+
+type SiteConfigAllowlistSpec struct {
+	// NotAllowedErrorMessage is a go template string to show error message.
+	// Available variables: {{.Paths}}
+	NotAllowedErrorMessage string `json:"notAllowedErrorMessage,omitempty"`
+	// Paths is a list of keys in the site config that are allowed to be changed
+	// Notes:
+	// 	- only top-level keys are supported
+	Paths []string `json:"paths"`
+
+	errorMessageTmpl *template.Template `json:"-"`
 }
 
 // SchemaAuthProviders contains the authentication providers for Sourcegraph
@@ -119,4 +153,23 @@ type SchemaAuthProviderSourcegraphOperator struct {
 // Operator authentication provider has been enabled.
 func (s *SchemaSiteConfig) SourcegraphOperatorAuthProviderEnabled() bool {
 	return s.AuthProviders != nil && s.AuthProviders.SourcegraphOperator != nil
+}
+
+func (s *SchemaSiteConfig) SiteConfigAllowlistEnabled() bool {
+	return s.SourcegraphOperatorAuthProviderEnabled() && len(s.SiteConfigAllowlist.Paths) > 0
+}
+
+func (s *SchemaSiteConfig) SiteConfigAllowlistOnError(paths []string) error {
+	if !s.SiteConfigAllowlistEnabled() {
+		return nil
+	}
+	var b bytes.Buffer
+	if err := s.SiteConfigAllowlist.errorMessageTmpl.Execute(&b, struct {
+		Paths string
+	}{
+		Paths: fmt.Sprintf("[%s]", strings.Join(paths, ", ")),
+	}); err != nil {
+		return errors.Wrapf(err, "Execute error message template: Editing %q in site configuration is not allowed. Please contact support", paths)
+	}
+	return errors.New(b.String())
 }

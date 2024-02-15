@@ -1,0 +1,22 @@
+fragment Commit on GitCommit {
+    id
+    abbreviatedOID
+    canonicalURL
+    subject
+    body
+    author {
+        date
+        person {
+            name
+            ...Avatar_Person
+        }
+    }
+    committer {
+        date
+        person {
+            name
+            email
+            ...Avatar_Person
+        }
+    }
+}

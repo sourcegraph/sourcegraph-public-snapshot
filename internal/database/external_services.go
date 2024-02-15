@@ -36,10 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// BeforeCreateExternalService (if set) is invoked as a hook prior to creating a
-// new external service in the database.
-var BeforeCreateExternalService func(context.Context, ExternalServiceStore, *types.ExternalService) error
-
 type ExternalServiceStore interface {
 	// Count counts all external services that satisfy the options (ignoring limit and offset).
 	//
@@ -209,25 +205,24 @@ func (e *externalServiceStore) Done(err error) error {
 // ExternalServiceKinds contains a map of all supported kinds of
 // external services.
 var ExternalServiceKinds = map[string]ExternalServiceKind{
-	extsvc.KindAWSCodeCommit:        {CodeHost: true, JSONSchema: schema.AWSCodeCommitSchemaJSON},
-	extsvc.KindAzureDevOps:          {CodeHost: true, JSONSchema: schema.AzureDevOpsSchemaJSON},
-	extsvc.KindBitbucketCloud:       {CodeHost: true, JSONSchema: schema.BitbucketCloudSchemaJSON},
-	extsvc.KindBitbucketServer:      {CodeHost: true, JSONSchema: schema.BitbucketServerSchemaJSON},
-	extsvc.KindGerrit:               {CodeHost: true, JSONSchema: schema.GerritSchemaJSON},
-	extsvc.KindGitHub:               {CodeHost: true, JSONSchema: schema.GitHubSchemaJSON},
-	extsvc.KindGitLab:               {CodeHost: true, JSONSchema: schema.GitLabSchemaJSON},
-	extsvc.KindGitolite:             {CodeHost: true, JSONSchema: schema.GitoliteSchemaJSON},
-	extsvc.KindGoPackages:           {CodeHost: true, JSONSchema: schema.GoModulesSchemaJSON},
-	extsvc.KindJVMPackages:          {CodeHost: true, JSONSchema: schema.JVMPackagesSchemaJSON},
-	extsvc.KindNpmPackages:          {CodeHost: true, JSONSchema: schema.NpmPackagesSchemaJSON},
-	extsvc.KindOther:                {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
-	extsvc.VariantLocalGit.AsKind(): {CodeHost: true, JSONSchema: schema.LocalGitExternalServiceSchemaJSON},
-	extsvc.KindPagure:               {CodeHost: true, JSONSchema: schema.PagureSchemaJSON},
-	extsvc.KindPerforce:             {CodeHost: true, JSONSchema: schema.PerforceSchemaJSON},
-	extsvc.KindPhabricator:          {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
-	extsvc.KindPythonPackages:       {CodeHost: true, JSONSchema: schema.PythonPackagesSchemaJSON},
-	extsvc.KindRustPackages:         {CodeHost: true, JSONSchema: schema.RustPackagesSchemaJSON},
-	extsvc.KindRubyPackages:         {CodeHost: true, JSONSchema: schema.RubyPackagesSchemaJSON},
+	extsvc.KindAWSCodeCommit:   {CodeHost: true, JSONSchema: schema.AWSCodeCommitSchemaJSON},
+	extsvc.KindAzureDevOps:     {CodeHost: true, JSONSchema: schema.AzureDevOpsSchemaJSON},
+	extsvc.KindBitbucketCloud:  {CodeHost: true, JSONSchema: schema.BitbucketCloudSchemaJSON},
+	extsvc.KindBitbucketServer: {CodeHost: true, JSONSchema: schema.BitbucketServerSchemaJSON},
+	extsvc.KindGerrit:          {CodeHost: true, JSONSchema: schema.GerritSchemaJSON},
+	extsvc.KindGitHub:          {CodeHost: true, JSONSchema: schema.GitHubSchemaJSON},
+	extsvc.KindGitLab:          {CodeHost: true, JSONSchema: schema.GitLabSchemaJSON},
+	extsvc.KindGitolite:        {CodeHost: true, JSONSchema: schema.GitoliteSchemaJSON},
+	extsvc.KindGoPackages:      {CodeHost: true, JSONSchema: schema.GoModulesSchemaJSON},
+	extsvc.KindJVMPackages:     {CodeHost: true, JSONSchema: schema.JVMPackagesSchemaJSON},
+	extsvc.KindNpmPackages:     {CodeHost: true, JSONSchema: schema.NpmPackagesSchemaJSON},
+	extsvc.KindOther:           {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
+	extsvc.KindPagure:          {CodeHost: true, JSONSchema: schema.PagureSchemaJSON},
+	extsvc.KindPerforce:        {CodeHost: true, JSONSchema: schema.PerforceSchemaJSON},
+	extsvc.KindPhabricator:     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
+	extsvc.KindPythonPackages:  {CodeHost: true, JSONSchema: schema.PythonPackagesSchemaJSON},
+	extsvc.KindRustPackages:    {CodeHost: true, JSONSchema: schema.RustPackagesSchemaJSON},
+	extsvc.KindRubyPackages:    {CodeHost: true, JSONSchema: schema.RubyPackagesSchemaJSON},
 }
 
 // ExternalServiceKind describes a kind of external service.
@@ -584,17 +579,8 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	es.CreatedAt = timeutil.Now()
 	es.UpdatedAt = es.CreatedAt
 
-	// Prior to saving the record, run a validation hook.
-	if BeforeCreateExternalService != nil {
-		if err = BeforeCreateExternalService(ctx, NewDBWith(e.logger, e.Store).ExternalServices(), es); err != nil {
-			return err
-		}
-	}
-
 	// Ensure the calculated fields in the external service are up to date.
-	if err := e.recalculateFields(es, string(normalized)); err != nil {
-		return err
-	}
+	e.recalculateFields(es, string(normalized))
 
 	encryptedConfig, keyID, err := es.Config.Encrypt(ctx, e.getEncryptionKey())
 	if err != nil {
@@ -691,9 +677,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			s.Config.Set(rawConfig)
 		}
 
-		if err := e.recalculateFields(s, string(normalized)); err != nil {
-			return err
-		}
+		e.recalculateFields(s, string(normalized))
 
 		chID, err := ensureCodeHost(ctx, tx, s.Kind, string(normalized))
 		if err != nil {
@@ -967,7 +951,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	}
 
 	if update.Config != nil {
-		unrestricted := calcUnrestricted(string(normalized))
+		unrestricted := calcUnrestricted(string(normalized), envvar.SourcegraphDotComMode(), globals.PermissionsUserMapping().Enabled)
 
 		updates = append(updates,
 			sqlf.Sprintf(
@@ -1517,7 +1501,9 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			cloud_default,
 			has_webhooks,
 			token_expires_at,
-			code_host_id
+			code_host_id,
+			creator_id,
+			last_updater_id
 		FROM external_services
 		WHERE (%s)
 		ORDER BY id `+opt.OrderByDirection+`
@@ -1560,6 +1546,8 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			&hasWebhooks,
 			&tokenExpiresAt,
 			&h.CodeHostID,
+			&h.CreatorID,
+			&h.LastUpdaterID,
 		); err != nil {
 			return nil, err
 		}
@@ -1708,8 +1696,22 @@ WHERE EXISTS(
 	return v && exists, nil
 }
 
-func calcUnrestricted(config string) bool {
-	unrestricted := !envvar.SourcegraphDotComMode() && !gjson.Get(config, "authorization").Exists()
+// calcUnrestricted determines whether or not permissions should be enforced
+// on an external service.
+//
+// isDotComMode and permissionsUserMappingEnabled can be passed via
+// envvar.SourcegraphDotComMode() and globals.PermissionsUserMapping().Enabled
+// respectively.
+func calcUnrestricted(config string, isDotComMode bool, permissionsUserMappingEnabled bool) bool {
+	if isDotComMode {
+		return false
+	}
+
+	// If PermissionsUserMapping is enabled, we return false since permissions
+	// will be managed by the explicit permissions API.
+	if permissionsUserMappingEnabled {
+		return false
+	}
 
 	// Only override the value of es.Unrestricted if `enforcePermissions` is set.
 	//
@@ -1723,22 +1725,18 @@ func calcUnrestricted(config string) bool {
 	// For existing auth providers, this is forwards compatible. While at the same time if they also
 	// wanted to get on the `enforcePermissions` pattern, this change is backwards compatible.
 	enforcePermissions := gjson.Get(config, "enforcePermissions")
-	if !envvar.SourcegraphDotComMode() {
-		if globals.PermissionsUserMapping().Enabled {
-			unrestricted = false
-		} else if enforcePermissions.Exists() {
-			unrestricted = !enforcePermissions.Bool()
-		}
+	if enforcePermissions.Exists() {
+		return !enforcePermissions.Bool()
 	}
 
-	return unrestricted
+	return !gjson.Get(config, "authorization").Exists()
 }
 
 // recalculateFields updates the value of the external service fields that are
 // calculated depending on the external service configuration, namely
 // `Unrestricted` and `HasWebhooks`.
-func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) error {
-	es.Unrestricted = calcUnrestricted(rawConfig)
+func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) {
+	es.Unrestricted = calcUnrestricted(rawConfig, envvar.SourcegraphDotComMode(), globals.PermissionsUserMapping().Enabled)
 
 	hasWebhooks := false
 	cfg, err := extsvc.ParseConfig(es.Kind, rawConfig)
@@ -1750,8 +1748,6 @@ func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawC
 		e.logger.Warn("cannot parse external service configuration as JSON", log.Error(err), log.Int64("id", es.ID))
 	}
 	es.HasWebhooks = &hasWebhooks
-
-	return nil
 }
 
 func ensureCodeHost(ctx context.Context, tx *externalServiceStore, kind string, config string) (codeHostID int32, _ error) {

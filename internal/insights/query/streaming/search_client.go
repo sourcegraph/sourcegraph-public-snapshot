@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type SearchClient interface {
@@ -37,6 +38,7 @@ func (r *insightsSearchClient) Search(ctx context.Context, query string, pattern
 		query,
 		search.Precise,
 		search.Streaming,
+		pointers.Ptr(int32(0)),
 	)
 	if err != nil {
 		return nil, err

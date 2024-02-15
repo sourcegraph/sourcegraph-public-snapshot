@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/gregjones/httpcache"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -42,7 +42,7 @@ func mockClientFunc(mockClient client) func() (client, error) {
 }
 
 func stableSortRepoID(v []extsvc.RepoID) {
-	slices.SortStableFunc(v, func(a, b extsvc.RepoID) bool { return strings.Compare(string(a), string(b)) < 1 })
+	slices.Sort(v)
 }
 
 // newMockClientWithTokenMock is used to keep the behaviour of WithToken function mocking

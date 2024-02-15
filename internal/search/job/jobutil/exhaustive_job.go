@@ -39,12 +39,8 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 	}
 
 	b := inputs.Plan[0]
-	term, ok := b.Pattern.(query.Pattern)
-	if !ok {
-		if b.Pattern == nil {
-			return Exhaustive{}, errors.Errorf("missing pattern")
-		}
-		return Exhaustive{}, errors.Errorf("expected a simple expression (no and/or/etc). Got %v", b.Pattern)
+	if b.Pattern == nil {
+		return Exhaustive{}, errors.Errorf("missing pattern")
 	}
 
 	// We don't support file predicates, such as file:has.content(), because the
@@ -56,14 +52,15 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 	}
 
 	// This is a very weak protection but should be enough to catch simple misuse.
-	if inputs.PatternType == query.SearchTypeRegex && term.Value == ".*" {
-		return Exhaustive{}, errors.Errorf("regex search with .* is not supported")
+	if inputs.PatternType == query.SearchTypeRegex {
+		if term, ok := b.Pattern.(query.Pattern); ok && term.Value == ".*" {
+			return Exhaustive{}, errors.Errorf("regex search with .* is not supported")
+		}
 	}
 
-	planJob, err := NewFlatJob(inputs, query.Flat{Parameters: b.Parameters, Pattern: &term})
-	if err != nil {
-		return Exhaustive{}, err
-	}
+	repoOptions := toRepoOptions(b, inputs.UserSettings)
+	resultTypes := computeResultTypes(b, inputs.PatternType)
+	planJob := NewTextSearchJob(b, inputs, resultTypes, repoOptions)
 
 	repoPagerJob, ok := planJob.(*repoPagerJob)
 	if !ok {
@@ -105,5 +102,5 @@ func (e Exhaustive) ResolveRepositoryRevSpec(ctx context.Context, clients job.Ru
 }
 
 func reposNewResolver(clients job.RuntimeClients) *repos.Resolver {
-	return repos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
+	return repos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.SearcherGRPCConnectionCache, clients.Zoekt)
 }

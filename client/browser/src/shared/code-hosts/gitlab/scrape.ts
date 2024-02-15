@@ -54,6 +54,7 @@ export const getPageKindFromPathName = (owner: string, projectName: string, path
  */
 export const getGitlabRepoURL = (): string => {
     const projectLink = document.querySelector<HTMLAnchorElement>('.context-header a, .shortcuts-project')
+
     if (!projectLink) {
         throw new Error('Unable to determine project name')
     }
@@ -77,7 +78,7 @@ const parseGitLabRepoURL = (): { hostname: string; projectFullName: string; owne
 /**
  * Subject to store repo name on the Sourcegraph instance (e.g. 'gitlab.com/SourcegraphCody/jsonrpc2').
  * It may be different from the repo name on the code host because of the name transformations applied
- * (see {@link https://docs.sourcegraph.com/admin/external_service/gitlab#nameTransformations}).
+ * (see {@link https://sourcegraph.com/docs/admin/external_service/gitlab#nameTransformations}).
  * Set in `gitlabCodeHost.prepareCodeHost` method.
  */
 export const repoNameOnSourcegraph = new BehaviorSubject<string>('')

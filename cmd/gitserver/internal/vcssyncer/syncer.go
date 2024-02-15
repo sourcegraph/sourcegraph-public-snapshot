@@ -120,7 +120,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 			return nil, err
 		}
 
-		return NewPerforceDepotSyncer(opts.Logger, opts.RecordingCommandFactory, &c, p4Home), nil
+		return NewPerforceDepotSyncer(opts.Logger, opts.RecordingCommandFactory, &c, opts.ReposDir, p4Home), nil
 	case extsvc.TypeJVMPackages:
 		var c schema.JVMPackagesConnection
 		if _, err := extractOptions(&c); err != nil {

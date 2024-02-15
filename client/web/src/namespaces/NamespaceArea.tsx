@@ -11,13 +11,16 @@ export interface NamespaceAreaContext {
 
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
+    license: {
+        isCodeSearchEnabled: boolean
+        isCodyEnabled: boolean
+    }
 }
 
 export interface NamespaceAreaRoute extends RouteV6Descriptor<NamespaceAreaContext> {}
 
 interface NavItemDescriptorContext extends BatchChangesProps {
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
 }
 
 export interface NamespaceAreaNavItem extends NavItemWithIconDescriptor<NavItemDescriptorContext> {}

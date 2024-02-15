@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/dghubble/gologin/v2/github"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
@@ -52,7 +52,7 @@ func (s *sessionIssuerHelper) GetServiceID() string {
 	return s.ServiceID
 }
 
-func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
+func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, hubSpotProps *hubspot.ContactProperties) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
 	ghUser, err := github.UserFromContext(ctx)
 	if ghUser == nil {
 		if err != nil {
@@ -65,7 +65,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	login, err := auth.NormalizeUsername(deref(ghUser.Login))
 	if err != nil {
-		return false, nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
+		return false, nil, fmt.Sprintf("Error normalizing the username %q. See https://sourcegraph.com/docs/admin/auth/#username-normalization.", login), err
 	}
 
 	ghClient, err := s.newClient(token.AccessToken)
@@ -159,11 +159,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			CreateIfNotExist:    attempt.createIfNotExist,
 		})
 		if err == nil {
-			go hubspotutil.SyncUser(attempt.email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
-				AnonymousUserID: anonymousUserID,
-				FirstSourceURL:  firstSourceURL,
-				LastSourceURL:   lastSourceURL,
-			})
+			go hubspotutil.SyncUser(attempt.email, hubspotutil.SignupEventID, hubSpotProps)
 			return newUserCreated, actor.FromUser(userID), "", nil // success
 		}
 		lastSafeErrMsg, lastErr = safeErrMsg, err

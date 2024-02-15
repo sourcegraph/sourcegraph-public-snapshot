@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -40,7 +41,7 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 	}
 
 	gsClient := gitserver.NewMockClient()
-	gsClient.MergeBaseFunc.SetDefaultReturn("", errors.Errorf("merge base doesn't exist!"))
+	gsClient.MergeBaseFunc.SetDefaultReturn("", nil)
 	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec != wantBaseRevision && spec != wantHeadRevision {
 			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
@@ -52,6 +53,39 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 	repoResolver := NewRepositoryResolver(db, gsClient, repo)
 
 	// There shouldn't be any error even when there is no merge base.
+	comp, err := NewRepositoryComparison(ctx, db, gsClient, repoResolver, input)
+	require.Nil(t, err)
+	require.Equal(t, wantBaseRevision, comp.baseRevspec)
+	require.Equal(t, wantHeadRevision, comp.headRevspec)
+	require.Equal(t, "..", comp.rangeType)
+}
+
+func TestRepositoryComparisonRootCommit(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, nil)
+
+	wantBaseRevision := gitserver.DevNullSHA
+	wantHeadRevision := "1ead"
+
+	repo := &types.Repo{
+		ID:        api.RepoID(1),
+		Name:      api.RepoName("test"),
+		CreatedAt: time.Now(),
+	}
+
+	gsClient := gitserver.NewMockClient()
+	gsClient.MergeBaseFunc.SetDefaultReturn("", &gitdomain.RevisionNotFoundError{})
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		if spec != wantBaseRevision && spec != wantHeadRevision {
+			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
+		}
+		return api.CommitID(spec), nil
+	})
+
+	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
+	repoResolver := NewRepositoryResolver(db, gsClient, repo)
+
 	comp, err := NewRepositoryComparison(ctx, db, gsClient, repoResolver, input)
 	require.Nil(t, err)
 	require.Equal(t, wantBaseRevision, comp.baseRevspec)
@@ -91,8 +125,8 @@ func TestRepositoryComparison(t *testing.T) {
 		return api.CommitID(spec), nil
 	})
 
-	gsClient.MergeBaseFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, a, b api.CommitID) (api.CommitID, error) {
-		if string(a) != wantBaseRevision || string(b) != wantHeadRevision {
+	gsClient.MergeBaseFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, a, b string) (api.CommitID, error) {
+		if a != wantBaseRevision || b != wantHeadRevision {
 			t.Fatalf("gitserver.MergeBase received wrong args: %s %s", a, b)
 		}
 		return api.CommitID(wantMergeBaseRevision), nil
@@ -1053,6 +1087,16 @@ func (d *dummyFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 
 func (d *dummyFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
 	return nil, errors.New("not implemented")
+}
+
+func (d *dummyFileResolver) Languages(ctx context.Context) ([]string, error) {
+	return languages.GetLanguages(d.Name(), func() ([]byte, error) {
+		content, err := d.Content(ctx, &GitTreeContentPageArgs{})
+		if err != nil {
+			return nil, err
+		}
+		return []byte(content), nil
+	})
 }
 
 func (d *dummyFileResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {

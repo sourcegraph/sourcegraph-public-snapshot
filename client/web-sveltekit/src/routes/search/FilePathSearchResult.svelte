@@ -1,11 +1,11 @@
 <svelte:options immutable />
 
 <script lang="ts">
+    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import type { PathMatch } from '$lib/shared'
-    import CodeHostIcon from './CodeHostIcon.svelte'
+
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
     import RepoStars from './RepoStars.svelte'
-
     import SearchResult from './SearchResult.svelte'
 
     export let result: PathMatch
@@ -19,7 +19,4 @@
             <RepoStars repoStars={result.repoStars} />
         {/if}
     </svelte:fragment>
-    <div class="p-2">
-        <small>Path match</small>
-    </div>
 </SearchResult>

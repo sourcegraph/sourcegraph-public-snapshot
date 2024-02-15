@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -34,11 +34,22 @@ type AccessToken struct {
 	Internal   bool
 	CreatedAt  time.Time
 	LastUsedAt *time.Time
+	// ExpiresAt denotes the server time after which the token shall no longer be
+	// valid and not grant access anymore.
+	// IsZero will be true for access tokens without expiry.
+	ExpiresAt time.Time
 }
 
 // ErrAccessTokenNotFound occurs when a database operation expects a specific access token to exist
 // but it does not exist.
 var ErrAccessTokenNotFound = errors.New("access token not found")
+
+// ErrTooManyAccessTokens is returned when creating an access token would exceed the configured maximum number of active access tokens.
+var ErrTooManyAccessTokens = errors.New("number of active access tokens exceeds limit")
+
+// MaxAccessTokenLastUsedAtAge is the maximum amount of time we will wait before updating an access token's
+// last_used_at column. We are OK letting the value get a little stale in order to cut down on database writes.
+const MaxAccessTokenLastUsedAtAge = 5 * time.Minute
 
 // InvalidTokenError is returned when decoding the hex encoded token passed to any
 // of the methods on AccessTokenStore.
@@ -72,7 +83,7 @@ type AccessTokenStore interface {
 	//
 	// 🚨 SECURITY: The caller must ensure that the actor is permitted to create tokens for the
 	// specified user (i.e., that the actor is either the user or a site admin).
-	Create(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error)
+	Create(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32, expiresAt time.Time) (id int64, token string, err error)
 
 	// CreateInternal creates an *internal* access token for the specified user. An
 	// internal access token will be used by Sourcegraph to talk to its API from
@@ -126,7 +137,7 @@ type AccessTokenStore interface {
 	//
 	// The token prefix "sgp_", if present, is stripped.
 	//
-	// Calling Lookup also updates the access token's last-used-at date.
+	// Calling Lookup also updates the access token's last-used-at date as applicable.
 	//
 	// 🚨 SECURITY: This returns a user ID if and only if the token corresponds to a valid,
 	// non-deleted access token.
@@ -159,15 +170,15 @@ func (s *accessTokenStore) WithTransact(ctx context.Context, f func(AccessTokenS
 	})
 }
 
-func (s *accessTokenStore) Create(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error) {
-	return s.createToken(ctx, subjectUserID, scopes, note, creatorUserID, false)
+func (s *accessTokenStore) Create(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32, expiresAt time.Time) (id int64, token string, err error) {
+	return s.createToken(ctx, subjectUserID, scopes, note, creatorUserID, expiresAt, false)
 }
 
 func (s *accessTokenStore) CreateInternal(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error) {
-	return s.createToken(ctx, subjectUserID, scopes, note, creatorUserID, true)
+	return s.createToken(ctx, subjectUserID, scopes, note, creatorUserID, time.Time{}, true)
 }
 
-func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32, internal bool) (id int64, token string, err error) {
+func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32, expiresAt time.Time, internal bool) (id int64, token string, err error) {
 	if len(scopes) == 0 {
 		// Prevent mistakes. There is no point in creating an access token with no scopes, and the
 		// GraphQL API wouldn't let you do so anyway.
@@ -194,47 +205,61 @@ func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32,
 		// not been deleted. If they were deleted, the query will return an error.
 		`
 WITH subject_user AS (
-  SELECT id FROM users WHERE id=$1 AND deleted_at IS NULL FOR UPDATE
+  SELECT
+    id,
+	(
+		SELECT COUNT(*)
+		FROM access_tokens
+		WHERE
+		  subject_user_id = $1
+		  AND deleted_at IS NULL
+		  AND (expires_at IS NULL OR expires_at > NOW())
+		  AND internal IS NOT TRUE
+	) AS active_tokens
+   FROM users WHERE id=$1 AND deleted_at IS NULL FOR UPDATE
 ),
 creator_user AS (
   SELECT id FROM users WHERE id=$5 AND deleted_at IS NULL FOR UPDATE
 ),
 insert_values AS (
-  SELECT subject_user.id AS subject_user_id, $2::text[] AS scopes, $3::bytea AS value_sha256, $4::text AS note, creator_user.id AS creator_user_id, $6::boolean AS internal
+  SELECT subject_user.id AS subject_user_id, $2::text[] AS scopes, $3::bytea AS value_sha256, $4::text AS note, creator_user.id AS creator_user_id, $6::timestamp with time zone AS expires_at, $7::boolean AS internal
   FROM subject_user, creator_user
+  WHERE subject_user.active_tokens < $8::int OR $7::boolean
 )
-INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_user_id, internal) SELECT * FROM insert_values RETURNING id
+INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_user_id, expires_at, internal) SELECT * FROM insert_values RETURNING id
 `,
-		subjectUserID, pq.Array(scopes), hashutil.ToSHA256Bytes(b[:]), note, creatorUserID, internal,
+		subjectUserID, pq.Array(scopes), hashutil.ToSHA256Bytes(b[:]), note, creatorUserID, dbutil.NullTimeColumn(expiresAt), internal, conf.AccessTokensMaxPerUser(),
 	).Scan(&id); err != nil {
+		// if creation failed check to see if it was because too many tokens already
+		count, countErr := s.Count(ctx, AccessTokensListOptions{SubjectUserID: subjectUserID})
+		// if checking the count fails just return the original error
+		if countErr != nil {
+			return 0, "", err
+		}
+		if count >= conf.AccessTokensMaxPerUser() {
+			return 0, "", ErrTooManyAccessTokens
+		}
 		return 0, "", err
 	}
 
 	// only log access tokens created by users
 	if !internal {
-		arg, err := json.Marshal(struct {
-			SubjectUserId int32    `json:"subject_user_id"`
-			CreatorUserId int32    `json:"creator_user_id"`
-			Scopes        []string `json:"scopes"`
-			Note          string   `json:"note"`
+		arg := struct {
+			SubjectUserId int32     `json:"subject_user_id"`
+			CreatorUserId int32     `json:"creator_user_id"`
+			Scopes        []string  `json:"scopes"`
+			Note          string    `json:"note"`
+			ExpiresAt     time.Time `json:"expires_at"`
 		}{
 			SubjectUserId: subjectUserID,
 			CreatorUserId: creatorUserID,
 			Scopes:        scopes,
 			Note:          note,
-		})
-		if err != nil {
-			s.logger.Error("failed to marshall the access token log argument")
+			ExpiresAt:     expiresAt,
 		}
-
-		securityEventStore := NewDBWith(s.logger, s).SecurityEventLogs()
-		securityEventStore.LogEvent(ctx, &SecurityEvent{
-			Name:      SecurityEventAccessTokenCreated,
-			UserID:    uint32(creatorUserID),
-			Argument:  arg,
-			Source:    "BACKEND",
-			Timestamp: time.Now(),
-		})
+		if err := NewDBWith(s.logger, s).SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "", uint32(creatorUserID), "", "BACKEND", arg); err != nil {
+			s.logger.Warn("Failed to log security event", log.Error(err))
+		}
 	}
 
 	return id, token, nil
@@ -283,25 +308,41 @@ type TokenLookupOpts struct {
 	RequiredScope string
 }
 
-func (o TokenLookupOpts) ToQuery() string {
+// Returns a query to upload the token's LastUsedAt column to "now". The returned query
+// requires one parameter: the token ID to update.
+func (o TokenLookupOpts) toUpdateLastUsedQuery() string {
+	return `
+	UPDATE access_tokens t SET last_used_at=now()
+	WHERE t.id=$1 AND t.deleted_at IS NULL
+`
+}
+
+// toGetQuery returns a SQL query that will return the following columns from
+// the access_tokens table.
+// - id
+// - subject_user_id
+// - last_used_at
+//
+// The query requires two parameters: the token's value_sha256 and scopes.
+func (o TokenLookupOpts) toGetQuery() string {
 	query := `
-UPDATE access_tokens t SET last_used_at=now()
-WHERE t.id IN (
-	SELECT t2.id FROM access_tokens t2
-	JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
-	JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
-	WHERE t2.value_sha256=$1 AND t2.deleted_at IS NULL AND
-	$2 = ANY (t2.scopes)
-	`
+	SELECT t.id, t.subject_user_id, t.last_used_at
+	FROM access_tokens t
+	JOIN users subject_user ON t.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
+	JOIN users creator_user ON t.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
+	WHERE
+	    t.value_sha256=$1
+	    AND
+		t.deleted_at IS NULL
+		AND
+		(t.expires_at IS NULL OR t.expires_at > NOW())
+		AND
+	    $2 = ANY (t.scopes)
+`
 
 	if o.OnlyAdmin {
 		query += "AND subject_user.site_admin"
 	}
-
-	query += `
-	)
-RETURNING t.subject_user_id
-`
 
 	return query
 }
@@ -316,17 +357,34 @@ func (s *accessTokenStore) Lookup(ctx context.Context, token string, opts TokenL
 		return 0, errors.Wrap(err, "AccessTokens.Lookup")
 	}
 
-	if err := s.Handle().QueryRowContext(ctx,
+	var (
+		tokenID    int64
+		subjectID  int32
+		lastUsedAt *time.Time
+	)
+	row := s.Handle().QueryRowContext(ctx,
 		// Ensure that subject and creator users still exist.
-		opts.ToQuery(),
-		tokenHash, opts.RequiredScope,
-	).Scan(&subjectUserID); err != nil {
-		if err == sql.ErrNoRows {
+		opts.toGetQuery(),
+		tokenHash, opts.RequiredScope)
+	err = row.Scan(&tokenID, &subjectID, &lastUsedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
 			return 0, ErrAccessTokenNotFound
 		}
 		return 0, err
 	}
-	return subjectUserID, nil
+
+	if lastUsedAt == nil || time.Until(*lastUsedAt) < -MaxAccessTokenLastUsedAtAge {
+		logger := s.logger.With(log.Int64("tokenID", tokenID), log.Int32("subjectID", subjectID))
+		_, err := s.Handle().ExecContext(ctx, opts.toUpdateLastUsedQuery(), tokenID)
+		if err != nil {
+			logger.Warn("error trying to update token's last_used_at value", log.Error(err))
+		} else {
+			logger.Debug("updated access token's last_used_at value")
+		}
+	}
+
+	return subjectID, nil
 }
 
 func (s *accessTokenStore) GetByID(ctx context.Context, id int64) (*AccessToken, error) {
@@ -364,6 +422,7 @@ type AccessTokensListOptions struct {
 func (o AccessTokensListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{
 		sqlf.Sprintf("deleted_at IS NULL"),
+		sqlf.Sprintf("(expires_at IS NULL OR expires_at > NOW())"),
 		// We never want internal access tokens to show up in the UI.
 		sqlf.Sprintf("internal IS FALSE"),
 	}
@@ -385,7 +444,7 @@ func (s *accessTokenStore) List(ctx context.Context, opt AccessTokensListOptions
 
 func (s *accessTokenStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*AccessToken, error) {
 	q := sqlf.Sprintf(`
-SELECT id, subject_user_id, scopes, note, creator_user_id, internal, created_at, last_used_at FROM access_tokens
+SELECT id, subject_user_id, scopes, note, creator_user_id, internal, created_at, last_used_at, expires_at FROM access_tokens
 WHERE (%s)
 ORDER BY now() - created_at < interval '5 minutes' DESC, -- show recently created tokens first
 last_used_at DESC NULLS FIRST, -- ensure newly created tokens show first
@@ -404,7 +463,17 @@ created_at DESC
 	var results []*AccessToken
 	for rows.Next() {
 		var t AccessToken
-		if err := rows.Scan(&t.ID, &t.SubjectUserID, pq.Array(&t.Scopes), &t.Note, &t.CreatorUserID, &t.Internal, &t.CreatedAt, &t.LastUsedAt); err != nil {
+		if err := rows.Scan(
+			&t.ID,
+			&t.SubjectUserID,
+			pq.Array(&t.Scopes),
+			&t.Note,
+			&t.CreatorUserID,
+			&t.Internal,
+			&t.CreatedAt,
+			&t.LastUsedAt,
+			&dbutil.NullTime{Time: &t.ExpiresAt},
+		); err != nil {
 			return nil, err
 		}
 		results = append(results, &t)
@@ -431,14 +500,13 @@ func (s *accessTokenStore) DeleteByID(ctx context.Context, id int64) error {
 		return err
 	}
 
-	arg, err := json.Marshal(struct {
+	arg := struct {
 		AccessTokenId int64 `json:"access_token_id"`
-	}{AccessTokenId: id})
-	if err != nil {
-		s.logger.Error("failed to marshall the access token log argument")
-	}
+	}{AccessTokenId: id}
 
-	s.logAccessTokenDeleted(ctx, SecurityEventAccessTokenDeleted, arg)
+	if err := NewDBWith(s.logger, s).SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
+		s.logger.Warn("Error logging security event", log.Error(err))
+	}
 
 	return nil
 }
@@ -456,14 +524,14 @@ func (s *accessTokenStore) HardDeleteByID(ctx context.Context, id int64) error {
 		return ErrAccessTokenNotFound
 	}
 
-	arg, err := json.Marshal(struct {
+	arg := struct {
 		AccessTokenId int64 `json:"access_token_id"`
-	}{AccessTokenId: id})
-	if err != nil {
-		s.logger.Error("failed to marshall the access token log argument")
-	}
+	}{AccessTokenId: id}
 
-	s.logAccessTokenDeleted(ctx, SecurityEventAccessTokenHardDeleted, arg)
+	if err := NewDBWith(s.logger, s).SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenHardDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
+		s.logger.Warn("Error logging security event", log.Error(err))
+
+	}
 
 	return nil
 }
@@ -479,16 +547,15 @@ func (s *accessTokenStore) DeleteByToken(ctx context.Context, token string) erro
 		return err
 	}
 
-	arg, err := json.Marshal(struct {
+	arg := struct {
 		AccessTokenSHA256 []byte `json:"access_token_sha256"`
 	}{
 		AccessTokenSHA256: tokenHash,
-	})
-	if err != nil {
-		s.logger.Error("failed to marshall the access token log argument")
 	}
 
-	s.logAccessTokenDeleted(ctx, SecurityEventAccessTokenDeleted, arg)
+	if err := NewDBWith(s.logger, s).SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
+		s.logger.Warn("Error logging security event", log.Error(err))
+	}
 
 	return nil
 }
@@ -524,19 +591,6 @@ func tokenSHA256Hash(token string) ([]byte, error) {
 		return nil, InvalidTokenError{err}
 	}
 	return hashutil.ToSHA256Bytes(value), nil
-}
-
-func (s *accessTokenStore) logAccessTokenDeleted(ctx context.Context, deletionType SecurityEventName, arg []byte) {
-	a := actor.FromContext(ctx)
-
-	securityEventStore := NewDBWith(s.logger, s).SecurityEventLogs()
-	securityEventStore.LogEvent(ctx, &SecurityEvent{
-		Name:      deletionType,
-		UserID:    uint32(a.UID),
-		Argument:  arg,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	})
 }
 
 type MockAccessTokens struct {

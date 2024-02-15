@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
-
-	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // Request represents a request to searcher
@@ -52,27 +52,18 @@ type Request struct {
 	// Whether the revision to be searched is indexed or unindexed. This matters for
 	// structural search because it will query Zoekt for indexed structural search.
 	Indexed bool
+
+	NumContextLines int32
 }
 
-// PatternInfo describes a search request on a repo. Most of the fields
-// are based on PatternInfo used in vscode.
+// PatternInfo describes a search request on a repo.
 type PatternInfo struct {
-	// Pattern is the search query. It is a regular expression if IsRegExp
-	// is true, otherwise a fixed string. eg "route variable"
-	Pattern string
-
-	// IsNegated if true will invert the matching logic for regexp searches. IsNegated=true is
-	// not supported for structural searches.
-	IsNegated bool
-
-	// IsRegExp if true will treat the Pattern as a regular expression.
-	IsRegExp bool
+	// Query defines the search query. It supports regexp patterns optionally
+	// combined through boolean operators.
+	Query QueryNode
 
 	// IsStructuralPat if true will treat the pattern as a Comby structural search pattern.
 	IsStructuralPat bool
-
-	// IsWordMatch if true will only match the pattern at word boundaries.
-	IsWordMatch bool
 
 	// IsCaseSensitive if false will ignore the case of text and pattern
 	// when finding matches.
@@ -104,7 +95,7 @@ type PatternInfo struct {
 	// of files.
 	PatternMatchesContent bool
 
-	// PatternMatchesPath is whether a file whose path matches Pattern (but whose contents don't) should be
+	// PatternMatchesPath is whether a file whose path matches Query (but whose contents don't) should be
 	// considered a match.
 	PatternMatchesPath bool
 
@@ -125,19 +116,14 @@ type PatternInfo struct {
 }
 
 func (p *PatternInfo) String() string {
-	args := []string{fmt.Sprintf("%q", p.Pattern)}
-	if p.IsRegExp {
-		args = append(args, "re")
-	}
+	args := []string{p.Query.String()}
+
 	if p.IsStructuralPat {
 		if p.CombyRule != "" {
 			args = append(args, fmt.Sprintf("comby:%s", p.CombyRule))
 		} else {
 			args = append(args, "comby")
 		}
-	}
-	if p.IsWordMatch {
-		args = append(args, "word")
 	}
 	if p.IsCaseSensitive {
 		args = append(args, "case")
@@ -181,11 +167,8 @@ func (r *Request) ToProto() *proto.SearchRequest {
 		Indexed:   r.Indexed,
 		Url:       r.URL,
 		PatternInfo: &proto.PatternInfo{
-			Pattern:                      r.PatternInfo.Pattern,
-			IsNegated:                    r.PatternInfo.IsNegated,
-			IsRegexp:                     r.PatternInfo.IsRegExp,
+			Query:                        r.PatternInfo.Query.ToProto(),
 			IsStructural:                 r.PatternInfo.IsStructuralPat,
-			IsWordMatch:                  r.PatternInfo.IsWordMatch,
 			IsCaseSensitive:              r.PatternInfo.IsCaseSensitive,
 			ExcludePattern:               r.PatternInfo.ExcludePattern,
 			IncludePatterns:              r.PatternInfo.IncludePatterns,
@@ -197,7 +180,8 @@ func (r *Request) ToProto() *proto.SearchRequest {
 			Languages:                    r.PatternInfo.Languages,
 			Select:                       r.PatternInfo.Select,
 		},
-		FetchTimeout: durationpb.New(r.FetchTimeout),
+		FetchTimeout:    durationpb.New(r.FetchTimeout),
+		NumContextLines: r.NumContextLines,
 	}
 }
 
@@ -209,11 +193,8 @@ func (r *Request) FromProto(req *proto.SearchRequest) {
 		Commit: api.CommitID(req.CommitOid),
 		Branch: req.Branch,
 		PatternInfo: PatternInfo{
-			Pattern:                      req.PatternInfo.Pattern,
-			IsNegated:                    req.PatternInfo.IsNegated,
-			IsRegExp:                     req.PatternInfo.IsRegexp,
+			Query:                        NodeFromProto(req.PatternInfo.Query),
 			IsStructuralPat:              req.PatternInfo.IsStructural,
-			IsWordMatch:                  req.PatternInfo.IsWordMatch,
 			IsCaseSensitive:              req.PatternInfo.IsCaseSensitive,
 			ExcludePattern:               req.PatternInfo.ExcludePattern,
 			IncludePatterns:              req.PatternInfo.IncludePatterns,
@@ -225,8 +206,36 @@ func (r *Request) FromProto(req *proto.SearchRequest) {
 			CombyRule:                    req.PatternInfo.CombyRule,
 			Select:                       req.PatternInfo.Select,
 		},
-		FetchTimeout: req.FetchTimeout.AsDuration(),
-		Indexed:      req.Indexed,
+		FetchTimeout:    req.FetchTimeout.AsDuration(),
+		Indexed:         req.Indexed,
+		NumContextLines: req.NumContextLines,
+	}
+}
+
+func NodeFromProto(p *proto.QueryNode) QueryNode {
+	switch v := p.GetValue().(type) {
+	case *proto.QueryNode_Pattern:
+		return &PatternNode{
+			Value:     v.Pattern.Value,
+			IsRegExp:  v.Pattern.IsRegexp,
+			IsNegated: v.Pattern.IsNegated,
+		}
+	case *proto.QueryNode_And:
+		children := make([]QueryNode, 0, len(v.And.Children))
+		for _, child := range v.And.Children {
+			children = append(children, NodeFromProto(child))
+		}
+		return &AndNode{Children: children}
+	case *proto.QueryNode_Or:
+		children := make([]QueryNode, 0, len(v.Or.Children))
+		for _, child := range v.Or.Children {
+			children = append(children, NodeFromProto(child))
+		}
+		return &OrNode{Children: children}
+	default:
+		// Use a panic since this is used in a struct initializer, and there's not
+		// a nice way to handle an error
+		panic(fmt.Sprintf("unknown query node type %T", p.GetValue()))
 	}
 }
 

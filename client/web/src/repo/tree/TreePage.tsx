@@ -8,6 +8,7 @@ import {
     mdiHistory,
     mdiPackageVariantClosed,
     mdiSourceBranch,
+    mdiSourceCommit,
     mdiSourceFork,
     mdiSourceRepository,
     mdiTag,
@@ -110,6 +111,7 @@ export const treePageRepositoryFragment = gql`
             key
             value
         }
+        topics
         sourceType
     }
 `
@@ -268,6 +270,18 @@ export const TreePage: FC<Props> = ({
             </div>
             <div className={styles.menu}>
                 <ButtonGroup>
+                    <Tooltip content="Git commits">
+                        <Button
+                            className="flex-shrink-0"
+                            to={`/${encodeURIPathComponent(repoName)}/-/commits`}
+                            variant="secondary"
+                            outline={true}
+                            as={Link}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiSourceCommit} />{' '}
+                            <span className={styles.text}>Commits</span>
+                        </Button>
+                    </Tooltip>
                     {!isPackage && (
                         <Tooltip content="Git branches">
                             <Button
@@ -312,7 +326,8 @@ export const TreePage: FC<Props> = ({
                             <span className={styles.text}>Compare</span>
                         </Button>
                     </Tooltip>
-                    {codeIntelligenceEnabled && (
+                    {/** the code graph dashboard is only accessible to site admins */}
+                    {codeIntelligenceEnabled && authenticatedUser?.siteAdmin && (
                         <Tooltip content="Code graph data">
                             <Button
                                 className="flex-shrink-0"
@@ -434,6 +449,7 @@ export const TreePage: FC<Props> = ({
                             commitID={commitID}
                             isPackage={isPackage}
                             authenticatedUser={authenticatedUser}
+                            showOwnership={showOwnership}
                             {...props}
                         />
                     )}

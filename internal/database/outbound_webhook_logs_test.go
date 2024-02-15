@@ -2,7 +2,9 @@ package database
 
 import (
 	"context"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -263,7 +265,7 @@ func setupOutboundWebhookTest(t *testing.T, ctx context.Context, db DB, key encr
 	t.Helper()
 
 	userStore := db.Users()
-	user, err := userStore.Create(ctx, NewUser{Username: "test"})
+	user, err := userStore.Create(ctx, NewUser{Username: strconv.Itoa(int(time.Now().UnixMilli()))})
 	require.NoError(t, err)
 
 	webhookStore := db.OutboundWebhooks(key)

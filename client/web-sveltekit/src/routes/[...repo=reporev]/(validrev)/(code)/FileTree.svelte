@@ -5,6 +5,7 @@
     import { onMount } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
+    import { getFileIconInfo } from '$lib/wildcard'
     import Icon from '$lib/Icon.svelte'
     import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue, type TreeEntryFields } from '$lib/repo/api/tree'
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
@@ -19,14 +20,11 @@
     /**
      * Returns the corresponding icon for `entry`
      */
-    function getIconPath(entry: TreeEntryFields, open: boolean) {
+    function getDirectoryIconPath(entry: TreeEntryFields, open: boolean) {
         if (entry === treeRoot) {
             return mdiFolderArrowUpOutline
         }
-        if (entry.isDirectory) {
-            return open ? mdiFolderOpenOutline : mdiFolderOutline
-        }
-        return mdiFileCodeOutline
+        return open ? mdiFolderOpenOutline : mdiFolderOutline
     }
 
     /**
@@ -83,18 +81,18 @@
     }
 
     let treeView: TreeView<FileTreeNodeValue>
-    let repoID = treeProvider.getRepoID()
+    let repoName = treeProvider.getRepoName()
     // Since context is only set once when the component is created
     // we need to dynamically sync any changes to the corresponding
     // file tree state store
-    const treeState = createForwardStore(getSidebarFileTreeStateForRepo(treeProvider.getRepoID()))
+    const treeState = createForwardStore(getSidebarFileTreeStateForRepo(treeProvider.getRepoName()))
     // Propagating the tree state via context yielded better performance than passing
     // it via props.
     setTreeContext(treeState)
 
     $: treeRoot = treeProvider.getRoot()
-    $: repoID = treeProvider.getRepoID()
-    $: treeState.updateStore(getSidebarFileTreeStateForRepo(repoID))
+    $: repoName = treeProvider.getRepoName()
+    $: treeState.updateStore(getSidebarFileTreeStateForRepo(repoName))
     // Update open and selected nodes when the path changes.
     $: markSelected(selectedPath)
 
@@ -125,7 +123,16 @@
                     tabindex={-1}
                     data-go-up={isRoot ? true : undefined}
                 >
-                    <Icon svgPath={getIconPath(entry, expanded)} inline />
+                    {#if entry.isDirectory}
+                        <Icon svgPath={getDirectoryIconPath(entry, expanded)} inline />
+                    {:else}
+                        {@const icon = (entry.__typename === 'GitBlob' &&
+                            getFileIconInfo(entry.name, entry.languages.at(0) ?? '')?.svg) || {
+                            path: mdiFileCodeOutline,
+                            color: 'var(--gray-05)',
+                        }}
+                        <Icon svgPath={icon.path} inline --color={icon.color} />
+                    {/if}
                     {isRoot ? '..' : entry.name}
                 </a>
             {/if}
@@ -135,7 +142,9 @@
 
 <style lang="scss">
     div {
-        overflow: scroll;
+        overflow: auto;
+        // Don't scroll file/folder page when scrolling to the top or bottom of the file tree
+        overscroll-behavior-y: contain;
 
         :global(.treeitem.selectable) > :global(.label) {
             cursor: pointer;

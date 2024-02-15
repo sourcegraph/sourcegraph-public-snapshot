@@ -6,7 +6,9 @@
     import { isErrorLike } from '$lib/common'
     import { TemporarySettingsStorage } from '$lib/shared'
     import { isLightTheme, KEY, scrollAll, type SourcegraphContext } from '$lib/stores'
-    import { createTemporarySettingsStorage } from '$lib/temporarySettings'
+    import { createTemporarySettingsStorage, temporarySetting } from '$lib/temporarySettings'
+    import { setThemeFromString } from '$lib/theme'
+    import { classNames } from '$lib/dom'
 
     import Header from './Header.svelte'
 
@@ -15,12 +17,13 @@
     import { beforeNavigate } from '$app/navigation'
 
     import type { LayoutData, Snapshot } from './$types'
-    import { createFeatureFlagStore, fetchEvaluatedFeatureFlags } from '$lib/featureflags'
+    import { createFeatureFlagStore } from '$lib/featureflags'
+    import InfoBanner from './InfoBanner.svelte'
 
     export let data: LayoutData
 
     const user = writable(data.user ?? null)
-    const settings = writable(isErrorLike(data.settings) ? null : data.settings.final)
+    const settings = writable(isErrorLike(data.settings) ? null : data.settings)
     // It's OK to set the temporary storage during initialization time because
     // sign-in/out currently performs a full page refresh
     const temporarySettingsStorage = createTemporarySettingsStorage(
@@ -31,13 +34,21 @@
         user,
         settings,
         temporarySettingsStorage,
-        featureFlags: createFeatureFlagStore(data.featureFlags, fetchEvaluatedFeatureFlags),
+        featureFlags: createFeatureFlagStore(data.featureFlags, data.fetchEvaluatedFeatureFlags),
         client: readable(data.graphqlClient),
     })
 
     // Update stores when data changes
     $: $user = data.user ?? null
-    $: $settings = isErrorLike(data.settings) ? null : data.settings.final
+    $: $settings = isErrorLike(data.settings) ? null : data.settings
+
+    // Set initial, user configured theme
+    // TODO: This should be send be server in the HTML so that we don't flash the wrong theme
+    // on initial page load.
+    $: userTheme = temporarySetting('user.themePreference', 'System')
+    $: if (!$userTheme.loading && $userTheme.data) {
+        setThemeFromString($userTheme.data)
+    }
 
     $: if (browser) {
         document.documentElement.classList.toggle('theme-light', $isLightTheme)
@@ -79,27 +90,24 @@
     <meta name="description" content="Code search" />
 </svelte:head>
 
-<div class="app" class:overflowHidden={!$scrollAll}>
-    <Header authenticatedUser={$user} />
+<svelte:body use:classNames={$scrollAll ? '' : 'overflowHidden'} />
 
-    <main bind:this={main}>
-        <slot />
-    </main>
-</div>
+<InfoBanner />
+<Header authenticatedUser={$user} />
+
+<main bind:this={main}>
+    <slot />
+</main>
 
 <style lang="scss">
-    .app {
+    :global(body.overflowHidden) {
         display: flex;
         flex-direction: column;
         height: 100vh;
-        overflow-y: auto;
+        overflow: hidden;
 
-        &.overflowHidden {
-            overflow: hidden;
-
-            main {
-                overflow-y: auto;
-            }
+        main {
+            overflow-y: auto;
         }
     }
 

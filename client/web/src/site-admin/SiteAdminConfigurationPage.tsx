@@ -97,7 +97,7 @@ const quickConfigureActions: {
                         clientSecret: '<client secret>',
                     },
                     {
-                        COMMENT: '// See https://docs.sourcegraph.com/admin/auth#gitlab for instructions',
+                        COMMENT: '// See https://sourcegraph.com/docs/admin/auth#gitlab for instructions',
                     }
                 ),
             ]
@@ -121,7 +121,7 @@ const quickConfigureActions: {
                         clientID: '<client ID>',
                         clientSecret: '<client secret>',
                     },
-                    { COMMENT: '// See https://docs.sourcegraph.com/admin/auth#github for instructions' }
+                    { COMMENT: '// See https://sourcegraph.com/docs/admin/auth#github for instructions' }
                 ),
             ]
             return { edits, selectText: '<client ID>' }
@@ -143,7 +143,7 @@ const quickConfigureActions: {
                         identityProviderMetadataURL: '<identity provider metadata URL>',
                     },
                     {
-                        COMMENT: '// See https://docs.sourcegraph.com/admin/auth/saml/one_login for instructions',
+                        COMMENT: '// See https://sourcegraph.com/docs/admin/auth/saml/one_login for instructions',
                     }
                 ),
             ]
@@ -162,7 +162,7 @@ const quickConfigureActions: {
             }
             const edits = [
                 editWithComments(config, ['auth.providers', -1], value, {
-                    COMMENT: '// See https://docs.sourcegraph.com/admin/auth/saml/okta for instructions',
+                    COMMENT: '// See https://sourcegraph.com/docs/admin/auth/saml/okta for instructions',
                 }),
             ]
             return { edits, selectText: '<identity provider metadata URL>' }
@@ -182,7 +182,7 @@ const quickConfigureActions: {
                         displayName: 'SAML',
                         identityProviderMetadataURL: '<SAML IdP metadata URL>',
                     },
-                    { COMMENT: '// See https://docs.sourcegraph.com/admin/auth/saml for instructions' }
+                    { COMMENT: '// See https://sourcegraph.com/docs/admin/auth/saml for instructions' }
                 ),
             ]
             return { edits, selectText: '<SAML IdP metadata URL>' }
@@ -204,7 +204,7 @@ const quickConfigureActions: {
                         clientID: '<client ID>',
                         clientSecret: '<client secret>',
                     },
-                    { COMMENT: '// See https://docs.sourcegraph.com/admin/auth#openid-connect for instructions' }
+                    { COMMENT: '// See https://sourcegraph.com/docs/admin/auth#openid-connect for instructions' }
                 ),
             ]
             return { edits, selectText: '<identity provider URL>' }
@@ -215,7 +215,6 @@ const quickConfigureActions: {
 interface Props extends TelemetryProps {
     isLightTheme: boolean
     client: ApolloClient<{}>
-    isCodyApp: boolean
 }
 
 interface State {
@@ -231,7 +230,7 @@ interface State {
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 
-export const SiteAdminConfigurationPage: FC<TelemetryProps & { isCodyApp: boolean }> = props => {
+export const SiteAdminConfigurationPage: FC<TelemetryProps> = props => {
     const client = useApolloClient()
     return <SiteAdminConfigurationContent {...props} isLightTheme={useIsLightTheme()} client={client} />
 }
@@ -435,7 +434,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
                                 height={600}
                                 isLightTheme={this.props.isLightTheme}
                                 onSave={this.onSave}
-                                actions={this.props.isCodyApp ? [] : quickConfigureActions}
+                                actions={quickConfigureActions}
                                 telemetryService={this.props.telemetryService}
                                 explanation={
                                     <Text className="form-text text-muted">

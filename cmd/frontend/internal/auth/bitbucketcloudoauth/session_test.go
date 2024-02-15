@@ -203,7 +203,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				}
 
 				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-				_, actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+				_, actr, _, err := s.GetOrCreateUser(ctx, tok, nil)
 				if c.expErr && err == nil {
 					t.Errorf("expected err %v, but was nil", c.expErr)
 				} else if !c.expErr && err != nil {
@@ -283,7 +283,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		client:      bbClient,
 	}
 	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-	_, _, _, err = s.GetOrCreateUser(ctx, tok, "", "", "")
+	_, _, _, err = s.GetOrCreateUser(ctx, tok, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

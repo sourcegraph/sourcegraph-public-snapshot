@@ -23,6 +23,7 @@ go_library(
         "//cmd/executor/internal/worker/runner",
         "//cmd/executor/internal/worker/runtime",
         "//cmd/executor/internal/worker/workspace",
+        "//internal/binary",
         "//internal/executor/types",
         "//internal/executor/util",
         "//internal/goroutine",

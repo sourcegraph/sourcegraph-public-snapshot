@@ -4,7 +4,7 @@ import (
 	"os/exec"
 	"testing"
 
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSpecifyCommandInErrorMessage(t *testing.T) {

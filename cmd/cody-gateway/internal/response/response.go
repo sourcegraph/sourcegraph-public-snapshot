@@ -2,7 +2,10 @@ package response
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log"
 )
@@ -100,4 +103,32 @@ func (e HTTPStatusCodeError) HTTPStatusCode() int { return e.status }
 
 func (e HTTPStatusCodeError) IsCustom() (originalCode int, isCustom bool) {
 	return e.originalStatus, e.custom
+}
+
+type autoFlusher struct {
+	rw      http.ResponseWriter
+	flusher http.Flusher
+}
+
+var _ io.Writer = autoFlusher{}
+
+// NewAutoFlushingWriter returns an io.Writer that will flush after every Write()
+// call. It will return an error if the response writer doesn't implement the Flusher interface.
+func NewAutoFlushingWriter(w http.ResponseWriter) (io.Writer, error) {
+	if flusher, ok := w.(http.Flusher); !ok {
+		return nil, errors.Newf("can't flush response using %v as it doesn't implement http.Flusher", w)
+	} else {
+		return autoFlusher{
+			rw: w, flusher: flusher,
+		}, nil
+	}
+}
+
+func (a autoFlusher) Write(p []byte) (n int, err error) {
+	n, err = a.rw.Write(p)
+	if err != nil {
+		return 0, err
+	}
+	a.flusher.Flush()
+	return n, nil
 }

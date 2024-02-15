@@ -22,12 +22,6 @@ patterntype:regexp repo:^github\.com/sgtest/flutter_inappwebview$ count:800 add\
 # regex_file_scope
 patterntype:regexp repo:^github\.com/sgtest/kubernetes$ file:^cluster/gce/gci Installing
 
-# structural_repo_scope_small
-patterntype:structural repo:^github\.com/sgtest/fastapi-crud-async$ file:^src/app async def :[1](...)
-
-# structural_multi_repo_small
-patterntype:structural repo:^github\.com/sourcegraph/ strings.ToUpper(...)
-
 # literal_small
 patterntype:literal --exclude-task=test
 
@@ -71,27 +65,20 @@ patterntype:regexp \bdeadbeeeeef\b or \bdeadbeeeeeef\b or \bdeadBEEEEEF\b or \bd
 patterntype:literal readUInt16LE or readUInt8
 
 ## mono_ queries cherry-pick the above queries but are run on our synthetic
-## monorepo. The queries specifying rev: will use the latest commit, not just
-## the latest indexed commit.
+## monorepo. The queries specifying index:no will perform an unindexed search
+## at the latest commit, in order to test the searcher service.
 
 # mono_regex_small
 repo:^github\.com/sgtest/megarepo$ patterntype:regexp se[arc]{3}hZoekt
 
 # mono_rev_regex_small
-repo:^github\.com/sgtest/megarepo$ patterntype:regexp se[arc]{3}hZoekt rev:main
-
-# mono_structural_small
-repo:^github\.com/sgtest/megarepo$ patterntype:structural strings.ToUpper(...)
-
-## we have disabled this test because it was just too slow.
-## mono_rev_structural_small
-## repo:^github\.com/sgtest/megarepo$ patterntype:structural strings.ToUpper(...) rev:main
+repo:^github\.com/sgtest/megarepo$ patterntype:regexp se[arc]{3}hZoekt index:no
 
 # mono_symbol_small
 repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion
 
 # mono_rev_symbol_small
-repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion rev:main
+repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion index:no
 
 ## for diff and commit search we limit the count. We are more interested in
 ## time to first result. This depends on Camden remaining productive, so we
@@ -107,10 +94,16 @@ repo:^github\.com/sgtest/megarepo$ type:commit author:camden after:"february 1 2
 repo:^github\.com/sgtest/megarepo$ patterntype:literal --exclude-task=test
 
 # mono_rev_literal_small
-repo:^github\.com/sgtest/megarepo$ patterntype:literal --exclude-task=test rev:main
+repo:^github\.com/sgtest/megarepo$ patterntype:literal --exclude-task=test index:no
 
 # mono_literal_large
 repo:^github\.com/sgtest/megarepo$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir
 
 # mono_rev_literal_large
-repo:^github\.com/sgtest/megarepo$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir rev:main
+repo:^github\.com/sgtest/megarepo$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir index:no
+
+# mono_boolean_large
+repo:^github\.com/sgtest/megarepo$ patterntype:literal test AND server
+
+# mono_rev_boolean_large
+repo:^github\.com/sgtest/megarepo$ patterntype:literal test AND server index:no

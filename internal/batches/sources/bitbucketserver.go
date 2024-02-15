@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 

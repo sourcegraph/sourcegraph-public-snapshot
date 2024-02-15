@@ -9,9 +9,8 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/gomodule/redigo/redis"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
@@ -94,7 +93,7 @@ var disableSecurity, _ = strconv.ParseBool(env.Get("DISABLE_SECURITY", "false", 
 
 func init() {
 	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsSingleBinary() {
+		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
 			return nil
 		}
 		if c.SiteConfig().ExternalURL == "" {
@@ -115,8 +114,6 @@ func init() {
 
 	// Notify when updates are available, if the instance can access the public internet.
 	AlertFuncs = append(AlertFuncs, updateAvailableAlert)
-
-	AlertFuncs = append(AlertFuncs, storageLimitReachedAlert)
 
 	// Notify admins if critical alerts are firing, if Prometheus is configured.
 	prom, err := srcprometheus.NewClient(srcprometheus.PrometheusURL)
@@ -199,31 +196,7 @@ func init() {
 	AlertFuncs = append(AlertFuncs, codyGatewayUsageAlert)
 }
 
-func storageLimitReachedAlert(args AlertFuncArgs) []*Alert {
-	licenseInfo := hooks.GetLicenseInfo()
-	if licenseInfo == nil {
-		return nil
-	}
-
-	if licenseInfo.CodeScaleCloseToLimit {
-		return []*Alert{{
-			TypeValue:    AlertTypeWarning,
-			MessageValue: "You're about to reach the 100GiB storage limit. Upgrade to [Sourcegraph Enterprise](https://sourcegraph.com/pricing) for unlimited storage for your code.",
-		}}
-	} else if licenseInfo.CodeScaleExceededLimit {
-		return []*Alert{{
-			TypeValue:    AlertTypeError,
-			MessageValue: "You've used all 100GiB of storage. Upgrade to [Sourcegraph Enterprise](https://sourcegraph.com/pricing) for unlimited storage for your code.",
-		}}
-	}
-	return nil
-}
-
 func updateAvailableAlert(args AlertFuncArgs) []*Alert {
-	if deploy.IsApp() {
-		return nil
-	}
-
 	// We only show update alerts to admins. This is not for security reasons, as we already
 	// expose the version number of the instance to all users via the user settings page.
 	if !args.IsSiteAdmin {
@@ -267,7 +240,7 @@ func isMinorUpdateAvailable(currentVersion, updateVersion string) bool {
 }
 
 func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
-	if !args.IsSiteAdmin || deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsSingleBinary() {
+	if !args.IsSiteAdmin || deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
 		return nil
 	}
 	if conf.Get().EmailSmtp == nil || conf.Get().EmailSmtp.Host == "" {
@@ -288,10 +261,6 @@ func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
 }
 
 func outOfDateAlert(args AlertFuncArgs) []*Alert {
-	if deploy.IsApp() {
-		return nil
-	}
-
 	globalUpdateStatus := updatecheck.Last()
 	if globalUpdateStatus == nil || updatecheck.IsPending() {
 		return nil

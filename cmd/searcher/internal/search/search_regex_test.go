@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"reflect"
-	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"sort"
 	"strconv"
 	"testing"
@@ -27,7 +26,9 @@ func BenchmarkSearchRegex_large_fixed(b *testing.B) {
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
-			Pattern: "error handler",
+			Query: &protocol.PatternNode{
+				Value: "error handler",
+			},
 		},
 	})
 }
@@ -37,7 +38,9 @@ func BenchmarkSearchRegex_rare_fixed(b *testing.B) {
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
-			Pattern: "REBOOT_CMD",
+			Query: &protocol.PatternNode{
+				Value: "REBOOT_CMD",
+			},
 		},
 	})
 }
@@ -47,7 +50,9 @@ func BenchmarkSearchRegex_large_fixed_casesensitive(b *testing.B) {
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:         "error handler",
+			Query: &protocol.PatternNode{
+				Value: "error handler",
+			},
 			IsCaseSensitive: true,
 		},
 	})
@@ -58,8 +63,10 @@ func BenchmarkSearchRegex_large_re_dotstar(b *testing.B) {
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:  ".*",
-			IsRegExp: true,
+			Query: &protocol.PatternNode{
+				Value:    ".*",
+				IsRegExp: true,
+			},
 		},
 	})
 }
@@ -69,8 +76,10 @@ func BenchmarkSearchRegex_large_re_common(b *testing.B) {
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:         "func +[A-Z]",
-			IsRegExp:        true,
+			Query: &protocol.PatternNode{
+				Value:    "func +[A-Z]",
+				IsRegExp: true,
+			},
 			IsCaseSensitive: true,
 		},
 	})
@@ -87,8 +96,10 @@ func BenchmarkSearchRegex_large_re_anchor(b *testing.B) {
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:         "^func +[A-Z]",
-			IsRegExp:        true,
+			Query: &protocol.PatternNode{
+				Value:    "^func +[A-Z]",
+				IsRegExp: true,
+			},
 			IsCaseSensitive: true,
 		},
 	})
@@ -99,8 +110,10 @@ func BenchmarkSearchRegex_large_capture_group(b *testing.B) {
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:         "(TODO|FIXME)",
-			IsRegExp:        true,
+			Query: &protocol.PatternNode{
+				Value:    "(TODO|FIXME)",
+				IsRegExp: true,
+			},
 			IsCaseSensitive: true,
 		},
 	})
@@ -112,8 +125,10 @@ func BenchmarkSearchRegex_large_path(b *testing.B) {
 			Repo:   "github.com/golang/go",
 			Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 			PatternInfo: protocol.PatternInfo{
-				Pattern:               "http.*client",
-				IsRegExp:              true,
+				Query: &protocol.PatternNode{
+					Value:    "http.*client",
+					IsRegExp: true,
+				},
 				IsCaseSensitive:       true,
 				PatternMatchesContent: content,
 				PatternMatchesPath:    path,
@@ -130,7 +145,9 @@ func BenchmarkSearchRegex_small_fixed(b *testing.B) {
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
-			Pattern: "object not found",
+			Query: &protocol.PatternNode{
+				Value: "object not found",
+			},
 		},
 	})
 }
@@ -140,7 +157,9 @@ func BenchmarkSearchRegex_small_fixed_casesensitive(b *testing.B) {
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:         "object not found",
+			Query: &protocol.PatternNode{
+				Value: "object not found",
+			},
 			IsCaseSensitive: true,
 		},
 	})
@@ -151,8 +170,10 @@ func BenchmarkSearchRegex_small_re_dotstar(b *testing.B) {
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:  ".*",
-			IsRegExp: true,
+			Query: &protocol.PatternNode{
+				Value:    ".*",
+				IsRegExp: true,
+			},
 		},
 	})
 }
@@ -162,8 +183,10 @@ func BenchmarkSearchRegex_small_re_common(b *testing.B) {
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:         "func +[A-Z]",
-			IsRegExp:        true,
+			Query: &protocol.PatternNode{
+				Value:    "func +[A-Z]",
+				IsRegExp: true,
+			},
 			IsCaseSensitive: true,
 		},
 	})
@@ -174,8 +197,10 @@ func BenchmarkSearchRegex_small_re_anchor(b *testing.B) {
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:         "^func +[A-Z]",
-			IsRegExp:        true,
+			Query: &protocol.PatternNode{
+				Value:    "^func +[A-Z]",
+				IsRegExp: true,
+			},
 			IsCaseSensitive: true,
 		},
 	})
@@ -186,8 +211,10 @@ func BenchmarkSearchRegex_small_capture_group(b *testing.B) {
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:         "(TODO|FIXME)",
-			IsRegExp:        true,
+			Query: &protocol.PatternNode{
+				Value:    "(TODO|FIXME)",
+				IsRegExp: true,
+			},
 			IsCaseSensitive: true,
 		},
 	})
@@ -199,18 +226,14 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 	}
 	b.ReportAllocs()
 
+	p.Limit = 99999999
 	err := validateParams(p)
 	if err != nil {
 		b.Fatal(err)
 	}
 
-	rg, err := compile(&p.PatternInfo)
-	if err != nil {
-		b.Fatal(err)
-	}
-
 	ctx := context.Background()
-	path, err := githubStore.PrepareZip(ctx, p.Repo, p.Commit)
+	path, err := githubStore.PrepareZip(ctx, p.Repo, p.Commit, nil)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -225,49 +248,9 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		_, _, err := regexSearchBatch(ctx, rg, zf, 99999999, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated)
+		_, err := regexSearchBatch(ctx, &p.PatternInfo, zf, 0)
 		if err != nil {
 			b.Fatal(err)
-		}
-	}
-}
-
-func TestLongestLiteral(t *testing.T) {
-	cases := map[string]string{
-		"foo":       "foo",
-		"FoO":       "FoO",
-		"(?m:^foo)": "foo",
-		"(?m:^FoO)": "FoO",
-		"[Z]":       "Z",
-
-		`\wddSuballocation\(dump`:    "ddSuballocation(dump",
-		`\wfoo(\dlongest\wbam)\dbar`: "longest",
-
-		`(foo\dlongest\dbar)`:  "longest",
-		`(foo\dlongest\dbar)+`: "longest",
-		`(foo\dlongest\dbar)*`: "",
-
-		"(foo|bar)":     "",
-		"[A-Z]":         "",
-		"[^A-Z]":        "",
-		"[abB-Z]":       "",
-		"([abB-Z]|FoO)": "",
-		`[@-\[]`:        "",
-		`\S`:            "",
-	}
-
-	metaLiteral := "AddSuballocation(dump->guid(), system_allocator_name)"
-	cases[regexp.QuoteMeta(metaLiteral)] = metaLiteral
-
-	for expr, want := range cases {
-		re, err := syntax.Parse(expr, syntax.Perl)
-		if err != nil {
-			t.Fatal(expr, err)
-		}
-		re = re.Simplify()
-		got := longestLiteral(re)
-		if want != got {
-			t.Errorf("longestLiteral(%q) == %q != %q", expr, got, want)
 		}
 	}
 }
@@ -355,11 +338,23 @@ func TestMaxMatches(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rg, err := compile(&protocol.PatternInfo{Pattern: pattern})
+	p := &protocol.PatternInfo{Query: &protocol.PatternNode{Value: pattern}}
+	m, err := toMatchTree(p.Query, p.IsCaseSensitive)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, limitHit, err := regexSearchBatch(context.Background(), rg, zf, maxMatches, true, false, false)
+
+	pm, err := toPathMatcher(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), maxMatches)
+	defer cancel()
+	err = regexSearch(ctx, m, pm, zf, true, false, false, sender, 0)
+	fileMatches := sender.collected
+	limitHit := sender.LimitHit()
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -400,14 +395,18 @@ func TestPathMatches(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rg, err := compile(&protocol.PatternInfo{
-		Pattern:         "",
-		IncludePatterns: []string{"a", "b"},
-	})
-	if err != nil {
-		t.Fatal(err)
+	patternInfo := &protocol.PatternInfo{
+		Query: &protocol.PatternNode{
+			Value: "",
+		},
+		IncludePatterns:       []string{"a", "b"},
+		PatternMatchesContent: true,
+		PatternMatchesPath:    true,
+		IsCaseSensitive:       false,
+		Limit:                 10,
 	}
-	fileMatches, _, err := regexSearchBatch(context.Background(), rg, zf, 10, true, true, false)
+
+	fileMatches, err := regexSearchBatch(context.Background(), patternInfo, zf, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -443,60 +442,213 @@ func init() {
 }
 
 func TestRegexSearch(t *testing.T) {
-	match, err := compilePathPatterns([]string{`a\.go`}, `README\.md`, false)
+	pm, err := toPathMatcher(&protocol.PatternInfo{
+		IncludePatterns: []string{`a\.go`},
+		ExcludePattern:  `README\.md`,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	zipData, _ := createZip(map[string]string{
+		"a.go":      "aaaaa11111",
+		"b.go":      "bbbbb22222",
+		"c.go":      "ccccc3333",
+		"README.md": "important info on go",
+	})
+	file, _ := mockZipFile(zipData)
+
 	type args struct {
 		ctx                   context.Context
-		rg                    *readerGrep
+		m                     matchTree
+		pm                    *pathMatcher
 		zf                    *zipFile
 		limit                 int
 		patternMatchesContent bool
 		patternMatchesPaths   bool
 	}
 	tests := []struct {
-		name         string
-		args         args
-		wantFm       []protocol.FileMatch
-		wantLimitHit bool
-		wantErr      bool
+		name    string
+		args    args
+		wantFm  []protocol.FileMatch
+		wantErr bool
 	}{
 		{
-			name: "nil re returns a FileMatch with no LineMatches",
+			name: "nil matchTree returns a FileMatch with no LineMatches",
 			args: args{
 				ctx: context.Background(),
-				rg: &readerGrep{
-					// Check this case specifically.
-					re:        nil,
-					matchPath: match,
-				},
-				zf: &zipFile{
-					Files: []srcFile{
-						{
-							Name: "a.go",
-						},
-					},
-				},
+				// Check this case specifically.
+				m:                     &allMatchTree{},
+				pm:                    pm,
+				zf:                    file,
 				patternMatchesPaths:   false,
 				patternMatchesContent: true,
 				limit:                 5,
 			},
 			wantFm: []protocol.FileMatch{{Path: "a.go"}},
 		},
+		{
+			name: "'and' matchTree with matches",
+			args: args{
+				ctx: context.Background(),
+				m: &orMatchTree{
+					children: []matchTree{
+						&regexMatchTree{
+							re: regexp.MustCompile("aaaaa"),
+						},
+						&regexMatchTree{
+							re: regexp.MustCompile("11111"),
+						},
+					}},
+				pm:                    &pathMatcher{},
+				zf:                    file,
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: []protocol.FileMatch{{
+				Path: "a.go",
+				ChunkMatches: []protocol.ChunkMatch{{
+					Content:      "aaaaa11111",
+					ContentStart: protocol.Location{0, 0, 0},
+					Ranges: []protocol.Range{{
+						Start: protocol.Location{0, 0, 0},
+						End:   protocol.Location{5, 0, 5},
+					}, {
+						Start: protocol.Location{5, 0, 5},
+						End:   protocol.Location{10, 0, 10},
+					}},
+				}},
+			}},
+		},
+		{
+			name: "'and' matchTree with no match",
+			args: args{
+				ctx: context.Background(),
+				m: &andMatchTree{
+					children: []matchTree{
+						&regexMatchTree{
+							re: regexp.MustCompile("aaaaa"),
+						},
+						&regexMatchTree{
+							re: regexp.MustCompile("22222"),
+						},
+					}},
+				pm:                    &pathMatcher{},
+				zf:                    file,
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: nil,
+		},
+		{
+			name: "empty 'and' matchTree",
+			args: args{
+				ctx:                   context.Background(),
+				m:                     &andMatchTree{},
+				pm:                    pm,
+				zf:                    file,
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: []protocol.FileMatch{{Path: "a.go"}},
+		},
+		{
+			name: "'or' matchTree with matches",
+			args: args{
+				ctx: context.Background(),
+				m: &orMatchTree{
+					children: []matchTree{
+						&regexMatchTree{
+							re: regexp.MustCompile("aaaaa"),
+						},
+						&regexMatchTree{
+							re: regexp.MustCompile("99999"),
+						},
+					}},
+				pm:                    &pathMatcher{},
+				zf:                    file,
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: []protocol.FileMatch{{
+				Path: "a.go",
+				ChunkMatches: []protocol.ChunkMatch{{
+					Content:      "aaaaa11111",
+					ContentStart: protocol.Location{0, 0, 0},
+					Ranges: []protocol.Range{{
+						Start: protocol.Location{0, 0, 0},
+						End:   protocol.Location{5, 0, 5},
+					}},
+				}},
+			}},
+		},
+		{
+			name: "'or' matchTree with no match",
+			args: args{
+				ctx: context.Background(),
+				m: &orMatchTree{
+					children: []matchTree{
+						&regexMatchTree{
+							re: regexp.MustCompile("jjjjj"),
+						},
+						&regexMatchTree{
+							re: regexp.MustCompile("99999"),
+						},
+					}},
+				pm:                    &pathMatcher{},
+				zf:                    file,
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: nil,
+		},
+		{
+			name: "empty 'or' matchTree",
+			args: args{
+				ctx:                   context.Background(),
+				m:                     &orMatchTree{},
+				pm:                    &pathMatcher{},
+				zf:                    file,
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: nil,
+		},
+		{
+			name: "matchTree matches on content AND path",
+			args: args{
+				ctx: context.Background(),
+				m: &regexMatchTree{
+					re: regexp.MustCompile("go"),
+				},
+				pm:                    pm,
+				zf:                    file,
+				patternMatchesPaths:   true,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: []protocol.FileMatch{{Path: "a.go"}},
+		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFm, gotLimitHit, err := regexSearchBatch(tt.args.ctx, tt.args.rg, tt.args.zf, tt.args.limit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths, false)
+			ctx, cancel, sender := newLimitedStreamCollector(tt.args.ctx, tt.args.limit)
+			defer cancel()
+			err := regexSearch(ctx, tt.args.m, tt.args.pm, tt.args.zf, tt.args.patternMatchesContent, tt.args.patternMatchesPaths, false, sender, 0)
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("regexSearch() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotFm, tt.wantFm) {
-				t.Errorf("regexSearch() gotFm = %v, want %v", gotFm, tt.wantFm)
-			}
-			if gotLimitHit != tt.wantLimitHit {
-				t.Errorf("regexSearch() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
+			if !reflect.DeepEqual(sender.collected, tt.wantFm) {
+				t.Errorf("regexSearch() gotFm = %v, want %v", sender.collected, tt.wantFm)
 			}
 		})
 	}
@@ -550,7 +702,41 @@ func Test_locsToRanges(t *testing.T) {
 			Start: protocol.Location{0, 0, 0},
 			End:   protocol.Location{25, 2, 3},
 		}},
-	}}
+	}, {
+		// multiple matches on different lines
+		buf:  "0.2.🔧.9.\n12.15.18.\n22.25.28.",
+		locs: [][]int{{0, 2}, {2, 3}, {10, 14}, {23, 28}},
+		ranges: []protocol.Range{{
+			Start: protocol.Location{0, 0, 0},
+			End:   protocol.Location{2, 0, 2},
+		}, {
+			Start: protocol.Location{2, 0, 2},
+			End:   protocol.Location{3, 0, 3},
+		}, {
+			Start: protocol.Location{10, 0, 7},
+			End:   protocol.Location{14, 1, 2},
+		}, {
+			Start: protocol.Location{23, 2, 1},
+			End:   protocol.Location{28, 2, 6},
+		}},
+	}, {
+		// multiple adjacent matches with overlap
+		buf:  "0.2.🔧.9.\n12.15.18.\n22.25.28.",
+		locs: [][]int{{1, 3}, {3, 8}, {13, 14}, {14, 25}},
+		ranges: []protocol.Range{{
+			Start: protocol.Location{1, 0, 1},
+			End:   protocol.Location{3, 0, 3},
+		}, {
+			Start: protocol.Location{3, 0, 3},
+			End:   protocol.Location{8, 0, 5},
+		}, {
+			Start: protocol.Location{13, 1, 1},
+			End:   protocol.Location{14, 1, 2},
+		}, {
+			Start: protocol.Location{14, 1, 2},
+			End:   protocol.Location{25, 2, 3},
+		}}},
+	}
 
 	for _, tc := range cases {
 		t.Run("", func(t *testing.T) {

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
@@ -107,7 +107,7 @@ func (s *Service) HandleStatus(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintln(w, "⚠️ None of the enabled repositories have been indexed yet!")
 			fmt.Fprintln(w, "⚠️ Open the symbols sidebar on a repository with Rockskip enabled to trigger indexing.")
 			fmt.Fprintln(w, "⚠️ Check the logs for errors if requests fail or if there are no in-flight requests below.")
-			fmt.Fprintln(w, "⚠️ Docs: https://docs.sourcegraph.com/code_navigation/explanations/rockskip")
+			fmt.Fprintln(w, "⚠️ Docs: https://sourcegraph.com/docs/code_navigation/explanations/rockskip")
 			fmt.Fprintln(w, "")
 		}
 	} else if os.Getenv("ROCKSKIP_MIN_REPO_SIZE_MB") != "" {

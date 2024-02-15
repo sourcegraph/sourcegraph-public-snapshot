@@ -31,8 +31,8 @@ import (
 // stitch these relations back together, as it can't be done easily pre-composition across versions.
 //
 // See the method `linkVirtualPrivilegedMigrations`.
-func ReadMigrations(schemaName, root, rev string) (fs.FS, error) {
-	migrations, err := readRawMigrations(schemaName, root, rev)
+func ReadMigrations(ma MigrationsReader, schemaName, rev string) (fs.FS, error) {
+	migrations, err := readRawMigrations(ma, schemaName, rev)
 	if err != nil {
 		return nil, err
 	}

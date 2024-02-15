@@ -52,7 +52,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 	}
 	skipUpgradeValidationFlag := &cli.BoolFlag{
 		Name:  "skip-upgrade-validation",
-		Usage: "Do not attempt to compare the previous instance version with the target instance version for upgrade compatibility. Please refer to https://docs.sourcegraph.com/admin/updates#update-policy for our instance upgrade compatibility policy.",
+		Usage: "Do not attempt to compare the previous instance version with the target instance version for upgrade compatibility. Please refer to https://sourcegraph.com/docs/admin/updates#update-policy for our instance upgrade compatibility policy.",
 		// NOTE: version 0.0.0+dev (the development version) effectively skips this check as well
 		Value: development,
 	}

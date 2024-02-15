@@ -31,14 +31,14 @@ func TestConfigDefaults(t *testing.T) {
 	if have, want := config.SyncRepoStateUpdatePerSecond, 500; have != want {
 		t.Errorf("invalid value for SyncRepoStateUpdatePerSecond: have=%d want=%d", have, want)
 	}
-	if have, want := config.BatchLogGlobalConcurrencyLimit, 256; have != want {
-		t.Errorf("invalid value for BatchLogGlobalConcurrencyLimit: have=%d want=%d", have, want)
-	}
 	if have, want := config.JanitorReposDesiredPercentFree, 10; have != want {
 		t.Errorf("invalid value for JanitorReposDesiredPercentFree: have=%d want=%d", have, want)
 	}
 	if have, want := config.JanitorInterval, time.Minute; have != want {
 		t.Errorf("invalid value for JanitorInterval: have=%s want=%s", have, want)
+	}
+	if have, want := config.JanitorDisableDeleteReposOnWrongShard, false; have != want {
+		t.Errorf("invalid value for JanitorDisableDeleteReposOnWrongShard: have=%t want=%t", have, want)
 	}
 }
 

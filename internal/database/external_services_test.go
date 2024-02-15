@@ -275,30 +275,6 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	}
 }
 
-func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
-
-	ctx := context.Background()
-	confGet := func() *conf.Unified { return &conf.Unified{} }
-	es := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
-	}
-	store := db.ExternalServices()
-	BeforeCreateExternalService = func(context.Context, ExternalServiceStore, *types.ExternalService) error {
-		return errcode.NewPresentationError("test plan limit exceeded")
-	}
-	t.Cleanup(func() { BeforeCreateExternalService = nil })
-	if err := store.Create(ctx, confGet, es); err == nil {
-		t.Fatal("expected an error, got none")
-	}
-}
-
 func TestExternalServicesStore_Update(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1834,16 +1810,15 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	ctx := context.Background()
 
 	clock := timeutil.NewFakeClock(time.Now(), 0)
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	t.Run("no external services", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(t))
 		if err := db.ExternalServices().Upsert(ctx); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
 	})
 
 	t.Run("validation", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(t))
 		store := db.ExternalServices()
 
 		t.Run("config can't be empty", func(t *testing.T) {
@@ -1867,7 +1842,11 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("one external service", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(t))
+		t.Cleanup(func() {
+			_, err := db.ExecContext(ctx, "DELETE FROM external_services")
+			require.NoError(t, err)
+		})
+
 		store := db.ExternalServices()
 
 		svc := typestest.MakeGitLabExternalService()
@@ -1894,7 +1873,11 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("many external services", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(t))
+		t.Cleanup(func() {
+			_, err := db.ExecContext(ctx, "DELETE FROM external_services")
+			require.NoError(t, err)
+		})
+
 		store := db.ExternalServices()
 
 		svcs := typestest.MakeExternalServices()
@@ -1966,7 +1949,11 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("with encryption key", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(t))
+		t.Cleanup(func() {
+			_, err := db.ExecContext(ctx, "DELETE FROM external_services")
+			require.NoError(t, err)
+		})
+
 		store := db.ExternalServices().WithEncryptionKey(et.TestKey{})
 
 		svcs := typestest.MakeExternalServices()
@@ -2049,7 +2036,11 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("check code hosts created with many external services", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(t))
+		t.Cleanup(func() {
+			_, err := db.ExecContext(ctx, "DELETE FROM external_services")
+			require.NoError(t, err)
+		})
+
 		store := db.ExternalServices()
 
 		svcs := typestest.MakeExternalServices()
@@ -2542,7 +2533,7 @@ func TestExternalServiceStore_recalculateFields(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			require.NoError(t, e.recalculateFields(es, rawConfig))
+			e.recalculateFields(es, rawConfig)
 
 			require.Equal(t, es.Unrestricted, tc.expectUnrestricted)
 		})
@@ -2773,4 +2764,40 @@ func TestExternalServices_CleanupSyncJobs(t *testing.T) {
 			FinishedAt:        now.Add(-10 * 24 * time.Hour),
 		},
 	}, syncJobs)
+}
+
+func TestCalcUnrestricted(t *testing.T) {
+	// Separate test for dotcom mode to test a mix of cases
+	t.Run("dotcom mode always returns false", func(t *testing.T) {
+		require.False(t, calcUnrestricted("", true, false))
+		require.False(t, calcUnrestricted(`{"authorization": {}}`, true, false))
+		require.False(t, calcUnrestricted(`{"authorization": {}, "enforcePermissions": false}`, true, false))
+	})
+
+	otherTests := map[string]struct {
+		authorization          bool
+		enforcePermissions     bool
+		permissionsUserMapping bool
+		want                   bool
+	}{
+		"all false returns unrestricted":                                       {want: true},
+		"authorization true returns restricted":                                {authorization: true, want: false},
+		"permissionsUserMapping true returns restrcited":                       {permissionsUserMapping: true, want: false},
+		"enforcePermissions and no permissionsUserMapping returns restrictred": {enforcePermissions: true, want: false},
+	}
+
+	for testName, test := range otherTests {
+		t.Run(testName, func(t *testing.T) {
+			var vals []string
+			if test.authorization {
+				vals = append(vals, `"authorization": {}`)
+			}
+			if test.enforcePermissions {
+				vals = append(vals, `"enforcePermissions": true`)
+			}
+
+			conf := fmt.Sprintf("{%s}", strings.Join(vals, ","))
+			require.Equal(t, test.want, calcUnrestricted(conf, false, test.permissionsUserMapping))
+		})
+	}
 }

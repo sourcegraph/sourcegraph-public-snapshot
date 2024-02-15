@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from 'react'
+import React, { createContext } from 'react'
 
 import type { StoreApi, UseBoundStore } from 'zustand'
 
@@ -30,14 +30,6 @@ export const SearchQueryStateStoreProvider: React.FunctionComponent<
         {children}
     </SearchQueryStateStoreContext.Provider>
 )
-
-export const useSearchQueryStateStoreContext = (): SearchQueryStateStore => {
-    const context = useContext(SearchQueryStateStoreContext)
-    if (context === null) {
-        throw new Error('useSearchQueryStateStoreContext must be used within a SearchQueryStateStoreProvider')
-    }
-    return context
-}
 
 /**
  * Describes where settings have been loaded from when the app loads. Higher

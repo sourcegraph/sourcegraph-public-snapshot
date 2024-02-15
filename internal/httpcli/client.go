@@ -89,6 +89,7 @@ var (
 	externalRetryDelayMax         = env.MustGetDuration("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_MAX", 3*time.Second, "Max retry delay duration for external HTTP requests")
 	externalRetryMaxAttempts      = env.MustGetInt("SRC_HTTP_CLI_EXTERNAL_RETRY_MAX_ATTEMPTS", 20, "Max retry attempts for external HTTP requests")
 	externalRetryAfterMaxDuration = env.MustGetDuration("SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION", 3*time.Second, "Max duration to wait in retry-after header before we won't auto-retry")
+	codyGatewayDisableHTTP2       = env.MustGetBool("SRC_HTTP_CLI_DISABLE_CODY_GATEWAY_HTTP2", false, "Whether we should disable HTTP2 for Cody Gateway communication")
 )
 
 // NewExternalClientFactory returns a httpcli.Factory with common options
@@ -122,6 +123,10 @@ func NewExternalClientFactory(middleware ...Middleware) *Factory {
 // ExternalDoer is a shared client for external communication. This is a
 // convenience for existing uses of http.DefaultClient.
 var ExternalDoer, _ = NewExternalClientFactory().Doer()
+
+// CodyGatewayDoer is a client for communication with Cody Gateway.
+// This client does not cache responses.
+var CodyGatewayDoer, _ = NewExternalClientFactory().Doer(NewDisableHTTP2Opt(codyGatewayDisableHTTP2))
 
 var (
 	internalTimeout               = env.MustGetDuration("SRC_HTTP_CLI_INTERNAL_TIMEOUT", 0, "Timeout for internal HTTP requests")
@@ -452,6 +457,22 @@ func NewMaxIdleConnsPerHostOpt(max int) Opt {
 
 		tr.MaxIdleConnsPerHost = max
 
+		return nil
+	}
+}
+
+// NewDisableHTTP2Opt returns an Opt that makes the http.Client use HTTP/1.1 (instead of defaulting to HTTP/2).
+func NewDisableHTTP2Opt(disable bool) Opt {
+	return func(cli *http.Client) error {
+		tr, err := getTransportForMutation(cli)
+		if err != nil {
+			return errors.Wrap(err, "httpcli.NewDisableHTTP2Opt")
+		}
+		if disable {
+			tr.ForceAttemptHTTP2 = false
+			tr.TLSNextProto = make(map[string]func(authority string, c *tls.Conn) http.RoundTripper)
+			tr.TLSClientConfig = &tls.Config{}
+		}
 		return nil
 	}
 }

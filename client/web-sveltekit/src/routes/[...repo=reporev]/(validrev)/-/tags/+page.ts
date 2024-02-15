@@ -1,18 +1,28 @@
-import { GitRefType } from '$lib/graphql-operations'
-import { queryGitReferences } from '$lib/repo/api/refs'
+import { getGraphQLClient } from '$lib/graphql'
+import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
+import { TagsPage_TagsQuery } from './page.gql'
 
-export const load: PageLoad = async ({ parent }) => {
-    const { resolvedRevision } = await parent()
+export const load: PageLoad = async ({ params }) => {
+    const client = await getGraphQLClient()
+    const { repoName } = parseRepoRevision(params.repo)
 
     return {
-        deferred: {
-            tags: queryGitReferences({
-                repo: resolvedRevision.repo.id,
-                type: GitRefType.GIT_TAG,
-                first: 20,
+        tags: client
+            .query({
+                query: TagsPage_TagsQuery,
+                variables: {
+                    repoName,
+                    first: 20,
+                    withBehindAhead: false,
+                },
+            })
+            .then(result => {
+                if (!result.data.repository) {
+                    throw new Error('Expected Repository')
+                }
+                return result.data.repository.gitRefs
             }),
-        },
     }
 }

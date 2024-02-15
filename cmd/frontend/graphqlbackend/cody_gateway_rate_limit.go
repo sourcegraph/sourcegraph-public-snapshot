@@ -9,6 +9,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
+type RateLimitStatus interface {
+	Feature() string
+	Limit() BigInt
+	Usage() BigInt
+	PercentUsed() int32
+	Interval() string
+	NextLimitReset() *gqlutil.DateTime
+}
+
 func (r *siteResolver) CodyGatewayRateLimitStatus(ctx context.Context) (*[]RateLimitStatus, error) {
 	// 🚨 SECURITY: Only site admins may check rate limits.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -17,7 +26,7 @@ func (r *siteResolver) CodyGatewayRateLimitStatus(ctx context.Context) (*[]RateL
 
 	cgc, ok := codygateway.NewClientFromSiteConfig(httpcli.ExternalDoer)
 	if !ok {
-		// Not configured.
+		// Not configured for chat/autocomplete.
 		return nil, nil
 	}
 

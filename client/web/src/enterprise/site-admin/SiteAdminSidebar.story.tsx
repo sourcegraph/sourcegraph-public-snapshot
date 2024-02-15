@@ -20,13 +20,17 @@ const config: Meta = {
 
 export default config
 
+const licenseFeatures = {
+    isCodeSearchEnabled: true,
+    isCodyEnabled: true,
+}
+
 // Moved story under enterprise folder to avoid failing ci linting
 // due to importing enterprise path in oss folders.
 export const AdminSidebarItems: StoryFn = () => (
     <WebStory>
         {webProps => (
             <Grid columnCount={5}>
-                <Code>isCodyApp=true</Code>
                 <Code>default</Code>
                 <Code>isSourcegraphDotCom=true</Code>
                 <Code>batchChangesEnabled=false</Code>
@@ -35,56 +39,45 @@ export const AdminSidebarItems: StoryFn = () => (
                     {...webProps}
                     groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={false}
-                    isCodyApp={true}
                     batchChangesEnabled={true}
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={true}
                     endUserOnboardingEnabled={false}
-                />
-                <SiteAdminSidebar
-                    {...webProps}
-                    groups={siteAdminSidebarGroups}
-                    isSourcegraphDotCom={false}
-                    isCodyApp={false}
-                    batchChangesEnabled={true}
-                    batchChangesExecutionEnabled={true}
-                    batchChangesWebhookLogsEnabled={true}
-                    codeInsightsEnabled={true}
-                    endUserOnboardingEnabled={false}
+                    license={licenseFeatures}
                 />
                 <SiteAdminSidebar
                     {...webProps}
                     groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={true}
-                    isCodyApp={false}
                     batchChangesEnabled={true}
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={true}
                     endUserOnboardingEnabled={false}
+                    license={licenseFeatures}
                 />
                 <SiteAdminSidebar
                     {...webProps}
                     groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={false}
-                    isCodyApp={false}
                     batchChangesEnabled={false}
                     batchChangesExecutionEnabled={false}
                     batchChangesWebhookLogsEnabled={false}
                     codeInsightsEnabled={true}
                     endUserOnboardingEnabled={false}
+                    license={licenseFeatures}
                 />
                 <SiteAdminSidebar
                     {...webProps}
                     groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={false}
-                    isCodyApp={false}
                     batchChangesEnabled={true}
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={false}
                     endUserOnboardingEnabled={false}
+                    license={licenseFeatures}
                 />
             </Grid>
         )}

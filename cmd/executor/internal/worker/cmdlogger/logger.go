@@ -47,25 +47,24 @@ type ExecutionLogEntryStore interface {
 	UpdateExecutionLogEntry(ctx context.Context, job types.Job, entryID int, entry internalexecutor.ExecutionLogEntry) error
 }
 
+type SecretRedactor interface {
+	Replace(s string) string
+}
+
 // NewLogger creates a new logger instance with the given store, job, record,
 // and replacement map.
 // When the log messages are serialized, any occurrence of sensitive values are
 // replace with a non-sensitive value.
 // Each log message is written to the store in a goroutine. The Flush method
 // must be called to ensure all entries are written.
-func NewLogger(internalLogger log.Logger, store ExecutionLogEntryStore, job types.Job, replacements map[string]string) Logger {
-	oldnew := make([]string, 0, len(replacements)*2)
-	for k, v := range replacements {
-		oldnew = append(oldnew, k, v)
-	}
-
+func NewLogger(internalLogger log.Logger, store ExecutionLogEntryStore, job types.Job, redactor SecretRedactor) Logger {
 	l := &logger{
 		internalLogger: internalLogger,
 		store:          store,
 		job:            job,
 		done:           make(chan struct{}),
 		handles:        make(chan *entryHandle, logEntryBufSize),
-		replacer:       strings.NewReplacer(oldnew...),
+		redactor:       redactor,
 		errs:           nil,
 	}
 
@@ -149,8 +148,12 @@ func (l *logger) syncLogEntry(handle *entryHandle, entryID int, old internalexec
 			log.String("repositoryName", l.job.RepositoryName),
 			log.String("commit", l.job.Commit),
 			log.String("key", current.Key),
+			// Since the command may contain sensitive information, redact the
+			// command before logging it.
+			log.String("command", l.redactor.Replace(strings.Join(current.Command, " "))),
 			log.Int("outLen", len(current.Out)),
 			log.Intp("exitCode", current.ExitCode),
+			log.String("startTime", current.StartTime.String()),
 			log.Intp("durationMs", current.DurationMs),
 		)
 
@@ -194,7 +197,7 @@ type logger struct {
 
 	job types.Job
 
-	replacer *strings.Replacer
+	redactor SecretRedactor
 
 	errs   error
 	errsMu sync.Mutex
@@ -217,7 +220,7 @@ func (l *logger) LogEntry(key string, command []string) LogEntry {
 			Command:   command,
 			StartTime: time.Now(),
 		},
-		replacer: l.replacer,
+		redactor: l.redactor,
 		buf:      &bytes.Buffer{},
 		done:     make(chan struct{}),
 	}
@@ -228,7 +231,7 @@ func (l *logger) LogEntry(key string, command []string) LogEntry {
 
 type entryHandle struct {
 	logEntry internalexecutor.ExecutionLogEntry
-	replacer *strings.Replacer
+	redactor SecretRedactor
 
 	done chan struct{}
 
@@ -260,7 +263,7 @@ func (h *entryHandle) Close() error {
 
 func (h *entryHandle) CurrentLogEntry() internalexecutor.ExecutionLogEntry {
 	logEntry := h.currentLogEntry()
-	redact(&logEntry, h.replacer)
+	redact(&logEntry, h.redactor)
 	return logEntry
 }
 
@@ -275,7 +278,7 @@ func (h *entryHandle) currentLogEntry() internalexecutor.ExecutionLogEntry {
 	return logEntry
 }
 
-func redact(entry *internalexecutor.ExecutionLogEntry, replacer *strings.Replacer) {
+func redact(entry *internalexecutor.ExecutionLogEntry, replacer SecretRedactor) {
 	for i, arg := range entry.Command {
 		entry.Command[i] = replacer.Replace(arg)
 	}

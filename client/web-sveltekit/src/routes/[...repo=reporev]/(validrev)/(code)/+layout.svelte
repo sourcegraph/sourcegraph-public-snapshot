@@ -1,11 +1,11 @@
 <script lang="ts">
-    import { onMount } from 'svelte'
+    import { onMount, tick } from 'svelte'
 
-    import { afterNavigate, disableScrollHandling } from '$app/navigation'
+    import { afterNavigate, disableScrollHandling, goto } from '$app/navigation'
     import { page } from '$app/stores'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { fetchSidebarFileTree, FileTreeProvider, type FileTreeLoader } from '$lib/repo/api/tree'
-    import BottomPanel from '$lib/repo/BottomPanel.svelte'
+    import HistoryPanel, { type Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
@@ -13,24 +13,41 @@
 
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
-    import type { Scalars } from '$lib/graphql-operations'
+    import type { GitHistory_HistoryConnection } from './layout.gql'
+    import Tabs from '$lib/Tabs.svelte'
+    import TabPanel from '$lib/TabPanel.svelte'
+
+    interface Capture {
+        selectedTab: number | null
+        historyPanel: HistoryCapture
+        scrollTop: number
+    }
 
     export let data: LayoutData
 
-    export const snapshot: Snapshot = {
+    export const snapshot: Snapshot<Capture> = {
         capture() {
             return {
-                bottomPanel: bottomPanel.capture(),
+                selectedTab,
+                historyPanel: historyPanel?.capture(),
+                // This works because this specific page is fully scrollable
+                scrollTop: window.scrollY,
             }
         },
-        restore(data) {
-            if (data) {
-                bottomPanel.restore(data.bottomPanel)
+        async restore(data) {
+            selectedTab = data.selectedTab
+            // Wait until DOM was updated
+            await tick()
+            // `restore` is called before `afterNavigate`, which resets the scroll position
+            // Restore the scroll position after the componentent was updated
+            window.scrollTo(0, data.scrollTop)
+
+            // Restore history panel state if it is open
+            if (data.historyPanel) {
+                historyPanel?.restore(data.historyPanel)
             }
         },
     }
-
-    let bottomPanel: BottomPanel
 
     const fileTreeLoader: FileTreeLoader = args =>
         fetchSidebarFileTree(args).then(
@@ -42,10 +59,9 @@
                     ...args,
                 })
         )
-    let treeProvider: FileTreeProvider | null = null
 
-    async function updateFileTreeProvider(repoID: Scalars['ID'], commitID: string, parentPath: string) {
-        const result = await data.deferred.fileTree
+    async function updateFileTreeProvider(repoName: string, revision: string, parentPath: string) {
+        const result = await data.fileTree
         if (!result) {
             treeProvider = null
             return
@@ -53,28 +69,56 @@
         const { root, values } = result
 
         // Do nothing if update was called with new arguments in the meantime
-        if (
-            repoID !== data.resolvedRevision.repo.id ||
-            commitID !== data.resolvedRevision.commitID ||
-            parentPath !== data.parentPath
-        ) {
+        if (repoName !== data.repoName || revision !== (data.revision ?? '') || parentPath !== data.parentPath) {
             return
         }
         treeProvider = new FileTreeProvider({
             root,
             values,
-            repoID,
-            commitID,
+            repoName,
+            revision,
             loader: fileTreeLoader,
         })
     }
 
-    $: ({ revision, parentPath, resolvedRevision } = data)
-    $: commitID = resolvedRevision.commitID
-    $: repoID = resolvedRevision.repo.id
+    function fetchCommitHistory(afterCursor: string | null) {
+        // Only fetch more commits if there are more commits and if we are not already
+        // fetching more commits.
+        if ($commitHistoryQuery && !$commitHistoryQuery.loading && commitHistory?.pageInfo?.hasNextPage) {
+            data.commitHistory.fetchMore({
+                variables: {
+                    afterCursor: afterCursor,
+                },
+            })
+        }
+    }
+    async function selectTab(event: { detail: number | null }) {
+        if (event.detail === null) {
+            const url = new URL($page.url)
+            url.searchParams.delete('rev')
+            await goto(url, { replaceState: true, keepFocus: true, noScroll: true })
+        }
+        selectedTab = event.detail
+    }
+
+    let treeProvider: FileTreeProvider | null = null
+    let selectedTab: number | null = null
+    let historyPanel: HistoryPanel
+    let rootElement: HTMLElement | null = null
+
+    $: ({ revision = '', parentPath, repoName } = data)
     // Only update the file tree provider (which causes the tree to rerender) when repo, revision/commit or file path
     // update
-    $: updateFileTreeProvider(repoID, commitID, parentPath)
+    $: updateFileTreeProvider(repoName, revision, parentPath)
+    $: commitHistoryQuery = data.commitHistory
+    let commitHistory: GitHistory_HistoryConnection | null
+    $: if (commitHistoryQuery) {
+        // Reset commit history when the query observable changes. Without
+        // this we are showing the commit history of the previously selected
+        // file/folder until the new commit history is loaded.
+        commitHistory = null
+    }
+    $: commitHistory = $commitHistoryQuery?.data?.repository?.commit?.ancestors ?? null
 
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
     $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
@@ -86,12 +130,29 @@
     })
 
     afterNavigate(() => {
-        // Prevents SvelteKit from resetting the scroll position to the top
+        // When navigating to a new page we want to ensure two things:
+        // - The file sidebar doesn't move. It feels bad when you clicked on a file entry
+        //   and the click target moves away because the page is scrolled all the way to the top.
+        // - The beginning of the content should be visible (e.g. the top of the file or the
+        //   top of the file table).
+        // In other words, we want to scroll to the top but not all the way
+
+        // Prevents SvelteKit from resetting the scroll position to the very top of the page
         disableScrollHandling()
+
+        if (rootElement) {
+            // Because the whole page is scrollable we can get the current scroll position from
+            // the window object
+            const top = rootElement.offsetTop
+            if (window.scrollY > top) {
+                // Reset scroll to top of the content
+                window.scrollTo(0, top)
+            }
+        }
     })
 </script>
 
-<section>
+<section bind:this={rootElement}>
     <div class="sidebar" class:open={$sidebarOpen} style:min-width={sidebarWidth} style:max-width={sidebarWidth}>
         <h3>
             <SidebarToggleButton />&nbsp; Files
@@ -107,7 +168,21 @@
     {/if}
     <div class="main">
         <slot />
-        <BottomPanel bind:this={bottomPanel} history={data.deferred.codeCommits} />
+        <div class="bottom-panel" class:open={selectedTab !== null}>
+            <Tabs selected={selectedTab} toggable on:select={selectTab}>
+                <TabPanel title="History">
+                    {#key $page.params.path}
+                        <HistoryPanel
+                            bind:this={historyPanel}
+                            history={commitHistory}
+                            loading={$commitHistoryQuery?.loading ?? true}
+                            fetchMore={fetchCommitHistory}
+                            enableInlineDiffs={$page.route.id?.includes('/blob/') ?? false}
+                        />
+                    {/key}
+                </TabPanel>
+            </Tabs>
+        </div>
     </div>
 </section>
 
@@ -146,5 +221,29 @@
         display: flex;
         align-items: center;
         margin-bottom: 0.5rem;
+    }
+
+    .bottom-panel {
+        position: sticky;
+        bottom: 0px;
+        background-color: var(--code-bg);
+        --align-tabs: flex-start;
+        border-top: 1px solid var(--border-color);
+        max-height: 50vh;
+        overflow: hidden;
+
+        :global(.tabs) {
+            height: 100%;
+            max-height: 100%;
+            overflow: hidden;
+        }
+
+        :global(.tabs-header) {
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        &.open {
+            height: 30vh;
+        }
     }
 </style>

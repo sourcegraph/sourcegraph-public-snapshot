@@ -1,25 +1,46 @@
+<svelte:options immutable />
+
 <script lang="ts">
     import { mdiDotsHorizontal } from '@mdi/js'
 
-    import type { GitCommitFields } from '$lib/graphql-operations'
+    import type { Commit } from './Commit.gql'
     import Icon from '$lib/Icon.svelte'
-    import UserAvatar from '$lib/UserAvatar.svelte'
-    import Timestamp from './Timestamp.svelte'
+    import Avatar from '$lib/Avatar.svelte'
+    import Timestamp from '$lib/Timestamp.svelte'
+    import Tooltip from '$lib/Tooltip.svelte'
 
-    export let commit: GitCommitFields
+    export let commit: Commit
     export let alwaysExpanded: boolean = false
 
+    function getCommitter({ committer }: Commit): NonNullable<Commit['committer']>['person'] | null {
+        if (!committer) {
+            return null
+        }
+        // Do not show if committer is GitHub (e.g. squash merge)
+        if (committer.person.name === 'GitHub' && committer.person.email === 'noreply@github.com') {
+            return null
+        }
+        return committer.person
+    }
+
     $: commitDate = new Date(commit.committer ? commit.committer.date : commit.author.date)
+    $: author = commit.author.person
+    $: committer = getCommitter(commit)
+    $: authorAvatarTooltip = author.name + (committer ? ' (author)' : '')
     let expanded = alwaysExpanded
 </script>
 
 <div class="root">
     <div class="avatar">
-        <UserAvatar user={commit.author.person} />
+        <Tooltip tooltip={authorAvatarTooltip}>
+            <Avatar avatar={author} />
+        </Tooltip>
     </div>
-    {#if commit.committer}
+    {#if committer && committer.name !== author.name}
         <div class="avatar">
-            <UserAvatar user={commit.committer.person} />
+            <Tooltip tooltip="{committer.name} (committer)">
+                <Avatar avatar={committer} />
+            </Tooltip>
         </div>
     {/if}
     <div class="info">
@@ -31,7 +52,7 @@
                 </button>
             {/if}
         </span>
-        <span>committed by <strong>{commit.author.person.name}</strong> <Timestamp date={commitDate} /></span>
+        <span>committed by <strong>{author.name}</strong> <Timestamp date={commitDate} /></span>
         {#if expanded}
             <pre>{commit.body}</pre>
         {/if}

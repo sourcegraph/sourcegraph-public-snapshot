@@ -35,6 +35,7 @@ func GetSyntectClient() *Client {
 	return client
 }
 
+// Keep in sync with 'enum SyntaxEngine' in Rust code
 const (
 	SyntaxEngineSyntect    = "syntect"
 	SyntaxEngineTreesitter = "tree-sitter"
@@ -253,51 +254,4 @@ func New(syntectServer string) *Client {
 		syntectServer: strings.TrimSuffix(syntectServer, "/"),
 		cf:            httpcli.NewInternalClientFactory("syntect"),
 	}
-}
-
-type SymbolsQuery struct {
-	FileName string `json:"filename"`
-	Content  string `json:"content"`
-}
-
-// SymbolsResponse represents a response to a symbols query.
-type SymbolsResponse struct {
-	Scip      string `json:"scip"`
-	Plaintext bool   `json:"plaintext"`
-}
-
-func (c *Client) Symbols(ctx context.Context, q *SymbolsQuery) (*SymbolsResponse, error) {
-	serialized, err := json.Marshal(q)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to encode query")
-	}
-	body := bytes.NewReader(serialized)
-
-	req, err := http.NewRequest("POST", c.url("/symbols"), body)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to build request")
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	cli, err := c.cf.Doer()
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := cli.Do(req)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to perform symbols request")
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Newf("unexpected status code %d", resp.StatusCode)
-	}
-
-	var r SymbolsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return nil, errors.Wrap(err, "failed to decode symbols response")
-	}
-
-	return &r, nil
 }

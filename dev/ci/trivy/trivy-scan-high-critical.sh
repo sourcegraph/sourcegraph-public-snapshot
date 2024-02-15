@@ -83,6 +83,6 @@ case "${exitCode:-"0"}" in
     ;;
   *)
     # some other kind of error occurred
-    exit $exitCode
+    exit "$exitCode"
     ;;
 esac

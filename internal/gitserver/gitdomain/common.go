@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gobwas/glob"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 
@@ -158,6 +159,52 @@ type Commit struct {
 	Parents []api.CommitID `json:"Parents,omitempty"`
 }
 
+func (c *Commit) ToProto() *proto.GitCommit {
+	parents := make([]string, len(c.Parents))
+	for i, p := range c.Parents {
+		parents[i] = string(p)
+	}
+
+	return &proto.GitCommit{
+		Oid:     string(c.ID),
+		Message: string(c.Message),
+		Parents: parents,
+		Author: &proto.GitSignature{
+			Name:  c.Author.Name,
+			Email: c.Author.Email,
+			Date:  timestamppb.New(c.Author.Date),
+		},
+		Committer: &proto.GitSignature{
+			Name:  c.Committer.Name,
+			Email: c.Committer.Email,
+			Date:  timestamppb.New(c.Committer.Date),
+		},
+	}
+}
+
+func CommitFromProto(p *proto.GitCommit) *Commit {
+	parents := make([]api.CommitID, len(p.GetParents()))
+	for i, p := range p.GetParents() {
+		parents[i] = api.CommitID(p)
+	}
+
+	return &Commit{
+		ID:      api.CommitID(p.GetOid()),
+		Message: Message(p.GetMessage()),
+		Author: Signature{
+			Name:  p.GetAuthor().GetName(),
+			Email: p.GetAuthor().GetEmail(),
+			Date:  p.GetAuthor().GetDate().AsTime(),
+		},
+		Committer: &Signature{
+			Name:  p.GetCommitter().GetName(),
+			Email: p.GetCommitter().GetEmail(),
+			Date:  p.GetCommitter().GetDate().AsTime(),
+		},
+		Parents: parents,
+	}
+}
+
 // Message represents a git commit message
 type Message string
 
@@ -179,6 +226,60 @@ func (m Message) Body() string {
 		return ""
 	}
 	return strings.TrimSpace(message[i:])
+}
+
+// A Hunk is a contiguous portion of a file associated with a commit.
+type Hunk struct {
+	StartLine uint32 // 1-indexed start line number
+	EndLine   uint32 // 1-indexed end line number
+	StartByte uint32 // 0-indexed start byte position (inclusive)
+	EndByte   uint32 // 0-indexed end byte position (exclusive)
+	CommitID  api.CommitID
+	Author    Signature
+	Message   string
+	Filename  string
+}
+
+func HunkFromBlameProto(h *proto.BlameHunk) *Hunk {
+	if h == nil {
+		return nil
+	}
+
+	return &Hunk{
+		StartLine: h.GetStartLine(),
+		EndLine:   h.GetEndLine(),
+		StartByte: h.GetStartByte(),
+		EndByte:   h.GetEndByte(),
+		CommitID:  api.CommitID(h.GetCommit()),
+		Message:   h.GetMessage(),
+		Filename:  h.GetFilename(),
+		Author: Signature{
+			Name:  h.GetAuthor().GetName(),
+			Email: h.GetAuthor().GetEmail(),
+			Date:  h.GetAuthor().GetDate().AsTime(),
+		},
+	}
+}
+
+func (h *Hunk) ToProto() *proto.BlameHunk {
+	if h == nil {
+		return nil
+	}
+
+	return &proto.BlameHunk{
+		StartLine: uint32(h.StartLine),
+		EndLine:   uint32(h.EndLine),
+		StartByte: uint32(h.StartByte),
+		EndByte:   uint32(h.EndByte),
+		Commit:    string(h.CommitID),
+		Message:   h.Message,
+		Filename:  h.Filename,
+		Author: &proto.BlameAuthor{
+			Name:  h.Author.Name,
+			Email: h.Author.Email,
+			Date:  timestamppb.New(h.Author.Date),
+		},
+	}
 }
 
 // Signature represents a commit signature
@@ -222,12 +323,6 @@ type Tag struct {
 	CreatorDate  time.Time
 }
 
-type Tags []*Tag
-
-func (p Tags) Len() int           { return len(p) }
-func (p Tags) Less(i, j int) bool { return p[i].Name < p[j].Name }
-func (p Tags) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-
 // Ref describes a Git ref.
 type Ref struct {
 	Name     string // the full name of the ref (e.g., "refs/heads/mybranch")
@@ -246,11 +341,6 @@ type Branch struct {
 	Name string `json:"Name,omitempty"`
 	// Head is the commit ID of this branch's head commit.
 	Head api.CommitID `json:"Head,omitempty"`
-	// Commit optionally contains commit information for this branch's head commit.
-	// It is populated if IncludeCommit option is set.
-	Commit *Commit `json:"Commit,omitempty"`
-	// Counts optionally contains the commit counts relative to specified branch.
-	Counts *BehindAhead `json:"Counts,omitempty"`
 }
 
 // EnsureRefPrefix checks whether the ref is a full ref and contains the
@@ -265,22 +355,6 @@ func EnsureRefPrefix(ref string) string {
 func AbbreviateRef(ref string) string {
 	return strings.TrimPrefix(ref, "refs/heads/")
 }
-
-// Branches is a sortable slice of type Branch
-type Branches []*Branch
-
-func (p Branches) Len() int           { return len(p) }
-func (p Branches) Less(i, j int) bool { return p[i].Name < p[j].Name }
-func (p Branches) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-
-// ByAuthorDate sorts by author date. Requires full commit information to be included.
-type ByAuthorDate []*Branch
-
-func (p ByAuthorDate) Len() int { return len(p) }
-func (p ByAuthorDate) Less(i, j int) bool {
-	return p[i].Commit.Author.Date.Before(p[j].Commit.Author.Date)
-}
-func (p ByAuthorDate) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 
 var invalidBranch = lazyregexp.New(`\.\.|/\.|\.lock$|[\000-\037\177 ~^:?*[]+|^/|/$|//|\.$|@{|^@$|\\`)
 
@@ -384,9 +458,3 @@ func (gs RefGlobs) Match(ref string) bool {
 // Pathspec is a git term for a pattern that matches paths using glob-like syntax.
 // https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
 type Pathspec string
-
-// PathspecLiteral constructs a pathspec that matches a path without interpreting "*" or "?" as special
-// characters.
-//
-// See: https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-literal
-func PathspecLiteral(s string) Pathspec { return Pathspec(":(literal)" + s) }

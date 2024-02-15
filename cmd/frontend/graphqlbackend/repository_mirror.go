@@ -91,7 +91,7 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 		return strings.Replace(strings.Replace(u.String(), "fake://", "", 1), "/", ":", 1)
 	}
 
-	repo, err := r.repository.repo(ctx)
+	repo, err := r.repository.getRepo(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -136,17 +136,13 @@ func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*stri
 		}
 		return strptr(info.CloningProgress), nil
 	}
+
 	progress, err := r.gitServerClient.RepoCloneProgress(ctx, r.repository.RepoName())
 	if err != nil {
 		return nil, err
 	}
 
-	result, ok := progress.Results[r.repository.RepoName()]
-	if !ok {
-		return nil, errors.New("got empty result for repo from RepoCloneProgress")
-	}
-
-	return strptr(result.CloneProgress), nil
+	return strptr(progress.CloneProgress), nil
 }
 
 func (r *repositoryMirrorInfoResolver) LastError(ctx context.Context) (*string, error) {
@@ -159,7 +155,7 @@ func (r *repositoryMirrorInfoResolver) LastError(ctx context.Context) (*string, 
 }
 
 func (r *repositoryMirrorInfoResolver) LastSyncOutput(ctx context.Context) (*string, error) {
-	output, ok, err := r.db.GitserverRepos().GetLastSyncOutput(ctx, r.repository.innerRepo.Name)
+	output, ok, err := r.db.GitserverRepos().GetLastSyncOutput(ctx, r.repository.name)
 	if err != nil {
 		return nil, err
 	}

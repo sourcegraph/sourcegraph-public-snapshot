@@ -8,7 +8,7 @@ import { highlightNode } from '$lib/common'
  * Returns a unique ID to be used with accessible elements.
  * Generates stable IDs in tests.
  */
-export function uniqueID(prefix = '') {
+export function uniqueID(prefix = ''): string {
     if (process.env.VITEST) {
         return `test-${prefix}-123`
     }
@@ -124,6 +124,74 @@ export const restrictToViewport: Action<HTMLElement, { offset?: number }> = (nod
 
         destroy() {
             window.removeEventListener('resize', setMaxHeight)
+        },
+    }
+}
+
+interface ComputeFitAttributes {
+    'on:fit': (event: CustomEvent<{ itemCount: number }>) => void
+}
+
+/**
+ * An action to compute the number of elements that fit inside the container.
+ * This works by caching the position of the right hand of each child element,
+ * and then comparing it to the right hand of the container.
+ *
+ * Because of this this action only works for static element lists,
+ * i.e. on initial render the node needs to contain all possible child elements.
+ */
+export const computeFit: Action<HTMLElement, void, ComputeFitAttributes> = node => {
+    // Holds the cumulative width of all elements up to element i.
+    const widths: number[] = [0]
+
+    for (let i = 0; i < node.children.length; i++) {
+        widths[i + 1] = node.children[i].getBoundingClientRect().right
+    }
+
+    function compute(): void {
+        const right = node.getBoundingClientRect().right
+        for (let i = widths.length - 1; i >= 0; i--) {
+            if (widths[i] < right) {
+                node.dispatchEvent(new CustomEvent('fit', { detail: { itemCount: i } }))
+                return
+            }
+        }
+    }
+
+    compute()
+    const observer = new ResizeObserver(compute)
+    observer.observe(node)
+
+    return {
+        destroy() {
+            observer.disconnect()
+        },
+    }
+}
+
+/**
+ * Helper action to manage CSS classes on an element. This is used on svelte:body because
+ * it doesn't support the class directive.
+ * See https://github.com/sveltejs/svelte/issues/3105
+ */
+export const classNames: Action<HTMLElement, string | string[]> = (node, classes) => {
+    // Converts the input to an array of non-empty strings.
+    // Empty strings are not valid inputs for classList and would throw an error.
+    function clean(classes: string | string[]): string[] {
+        return (Array.isArray(classes) ? classes : [classes]).filter(cls => cls.trim().length > 0)
+    }
+
+    classes = clean(classes)
+    node.classList.add(...classes)
+
+    return {
+        update(newClasses) {
+            node.classList.remove(...classes)
+            classes = clean(newClasses)
+            node.classList.add(...classes)
+        },
+        destroy() {
+            node.classList.remove(...classes)
         },
     }
 }

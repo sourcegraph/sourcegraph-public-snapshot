@@ -1,4 +1,5 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 go_library(
     name = "shared",
@@ -16,4 +17,29 @@ go_library(
         "//internal/database/migration/definition",
         "//lib/errors",
     ],
+)
+
+genrule(
+    name = "generate_stitched_migration_graph",
+    srcs = [],
+    outs = ["stitched-migration-graph.json"],
+    cmd = """\
+        $(location //internal/database/migration/shared/data/cmd/generator) \
+            -output=$@ \
+            -frozen-output=. \
+            -archive=$(location @schemas_migrations//:archives)
+    """,
+    tools = [
+        "//dev/tools:gsutil",
+        "//internal/database/migration/shared/data/cmd/generator",
+        "@schemas_migrations//:archives",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+write_generated_to_source_files(
+    name = "write_stitched_migration_graph",
+    output_files = {"data/stitched-migration-graph.json": "stitched-migration-graph.json"},
+    tags = ["go_generate"],
+    target = ":generate_stitched_migration_graph",
 )

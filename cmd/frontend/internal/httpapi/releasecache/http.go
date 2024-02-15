@@ -140,7 +140,7 @@ func (h *handler) handleBranch(w http.ResponseWriter, branch string) {
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Write(raw)
+	_, _ = w.Write(raw)
 }
 
 func (h *handler) handleWebhook(w http.ResponseWriter, r *http.Request) {

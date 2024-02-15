@@ -176,7 +176,7 @@ func TestScheduleRepositoriesInvalidDefaultBranch(t *testing.T) {
 	require.Equal(t, "queued", jobs[0].State)
 }
 
-func TestScheduleRepositoriesFailed(t *testing.T) {
+func TestScheduleRepositoriesForPolicyFailed(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
@@ -196,7 +196,7 @@ func TestScheduleRepositoriesFailed(t *testing.T) {
 	store := repo.NewRepoEmbeddingJobsStore(db)
 
 	gitserverClient := gitserver.NewMockClient()
-	gitserverClient.GetDefaultBranchFunc.PushReturn("", "sgrevision", nil)
+	gitserverClient.GetDefaultBranchFunc.PushReturn("branch", "sgrevision", nil)
 	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "zoektrevision", nil)
 
 	repoIDs := []api.RepoID{createdRepo0.ID, createdRepo1.ID}
@@ -221,22 +221,11 @@ func TestScheduleRepositoriesFailed(t *testing.T) {
 
 	zoektJobID := jobs[0].ID
 
-	// Set jobs to expected completion states, with empty repo resulting in failed
+	// Set jobs to "failed" state
 	setJobState(t, ctx, store, sgJobID, "failed")
 	setJobState(t, ctx, store, zoektJobID, "failed")
 
 	// Reschedule
-	gitserverClient.GetDefaultBranchFunc.PushReturn("", "sgrevision", nil)
-	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "zoektrevision", nil)
-
-	err = ScheduleRepositoriesForPolicy(ctx, repoIDs, db, store, gitserverClient)
-	require.NoError(t, err)
-	count, err = store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
-	require.NoError(t, err)
-	// failed job is rescheduled unless revision is empty
-	require.Equal(t, 3, count)
-
-	// repo with previous failure due to empty revision is rescheduled when repo is valid (error is nil and ref is non-empty)
 	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "sgrevision", nil)
 	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "zoektrevision", nil)
 
@@ -244,8 +233,19 @@ func TestScheduleRepositoriesFailed(t *testing.T) {
 	require.NoError(t, err)
 	count, err = store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
-	// failed job is rescheduled for sourcegraph once repo is valid
-	require.Equal(t, 4, count)
+	// No jobs should be rescheduled, as there is already an attempted job for these revisions
+	require.Equal(t, 2, count)
+
+	// Update one repo's revision and reschedule repo
+	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "sgrevision-updated", nil)
+	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "zoektrevision", nil)
+
+	err = ScheduleRepositoriesForPolicy(ctx, repoIDs, db, store, gitserverClient)
+	require.NoError(t, err)
+	count, err = store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
+	require.NoError(t, err)
+	// Repo with previous failure is rescheduled since the revision changed
+	require.Equal(t, 3, count)
 }
 
 func setJobState(t *testing.T, ctx context.Context, store repo.RepoEmbeddingJobsStore, jobID int, state string) {

@@ -3,10 +3,13 @@ package graphqlbackend
 import (
 	"context"
 	"net/url"
-	"time"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
+	"github.com/sourcegraph/sourcegraph/internal/cody"
+	"github.com/sourcegraph/sourcegraph/internal/ssc"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
@@ -71,7 +74,10 @@ type UserResolver struct {
 	// actor containing current user (derived from request context), which lets us
 	// skip fetching actor from context in every resolver function and save DB calls,
 	// because user is fetched in actor only once.
-	actor *actor.Actor
+	actor                      *actor.Actor
+	codySubscription           *cody.UserSubscription
+	fetchCodySubscriptionError error
+	fetchCodySubscriptionOnce  sync.Once
 }
 
 // NewUserResolver returns a new UserResolver with given user object.
@@ -168,188 +174,196 @@ func (r *UserResolver) URL() string {
 
 func (r *UserResolver) SettingsURL() *string { return strptr(r.URL() + "/settings") }
 
-func (r *UserResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.user.CreatedAt}
+type CodySubscriptionResolver struct {
+	subscription *cody.UserSubscription
 }
 
-func (r *UserResolver) CodyProEnabledAt(ctx context.Context) *gqlutil.DateTime {
-	if !envvar.SourcegraphDotComMode() {
-		return nil
-	}
-
-	if !featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) {
-		return nil
-	}
-
-	if r.user.CodyProEnabledAt == nil {
-		return nil
-	}
-
-	return &gqlutil.DateTime{Time: *r.user.CodyProEnabledAt}
+func (r *CodySubscriptionResolver) Status() ssc.SubscriptionStatus {
+	return r.subscription.Status
 }
 
-func (r *UserResolver) CodyProEnabled(ctx context.Context) bool {
-	return r.CodyProEnabledAt(ctx) != nil
+func (r *CodySubscriptionResolver) Plan() cody.UserSubscriptionPlan {
+	return r.subscription.Plan
 }
 
-func (r *UserResolver) CodyCurrentPeriodChatLimit(ctx context.Context) (*int32, error) {
+func (r *CodySubscriptionResolver) ApplyProRateLimits() bool {
+	return r.subscription.ApplyProRateLimits
+}
+
+func (r *CodySubscriptionResolver) CurrentPeriodStartAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.subscription.CurrentPeriodStartAt}
+}
+
+func (r *CodySubscriptionResolver) CurrentPeriodEndAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.subscription.CurrentPeriodEndAt}
+}
+
+func (r *CodySubscriptionResolver) CancelAtPeriodEnd() bool {
+	return r.subscription.CancelAtPeriodEnd
+}
+
+func (r *UserResolver) fetchCodySubscription(ctx context.Context) (*cody.UserSubscription, error) {
+	r.fetchCodySubscriptionOnce.Do(func() {
+		subscription, err := cody.SubscriptionForUser(ctx, r.db, *r.user)
+		if err != nil {
+			r.fetchCodySubscriptionError = err
+			return
+		}
+
+		r.codySubscription = subscription
+	})
+
+	if r.fetchCodySubscriptionError != nil {
+		return nil, r.fetchCodySubscriptionError
+	}
+
+	return r.codySubscription, r.fetchCodySubscriptionError
+}
+
+func (r *UserResolver) CodySubscription(ctx context.Context) (*CodySubscriptionResolver, error) {
 	if !envvar.SourcegraphDotComMode() {
 		return nil, errors.New("this feature is only available on sourcegraph.com")
 	}
 
-	if r.user.CodyProEnabledAt != nil {
-		return nil, nil
+	subscription, err := r.fetchCodySubscription(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &CodySubscriptionResolver{subscription: subscription}, nil
+}
+
+func (r *UserResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.user.CreatedAt}
+}
+
+func (r *UserResolver) CodyProEnabled(ctx context.Context) (bool, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return false, errors.New("this feature is only available on sourcegraph.com")
+	}
+
+	subscription, err := r.fetchCodySubscription(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	return subscription.Plan == cody.UserSubscriptionPlanPro, nil
+}
+
+func (r *UserResolver) CodyCurrentPeriodChatLimit(ctx context.Context) (int32, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return 0, errors.New("this feature is only available on sourcegraph.com")
+	}
+
+	subscription, err := r.fetchCodySubscription(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	if subscription.ApplyProRateLimits {
+		return 0, nil
 	}
 
 	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 
 	limit := int32(cfg.PerCommunityUserChatMonthlyInteractionLimit)
 
-	return &limit, nil
+	return limit, nil
 }
 
-func (r *UserResolver) CodyCurrentPeriodCodeLimit(ctx context.Context) (*int32, error) {
+func (r *UserResolver) CodyCurrentPeriodCodeLimit(ctx context.Context) (int32, error) {
 	if !envvar.SourcegraphDotComMode() {
-		return nil, errors.New("this feature is only available on sourcegraph.com")
+		return 0, errors.New("this feature is only available on sourcegraph.com")
 	}
 
-	if r.user.CodyProEnabledAt != nil {
-		return nil, nil
+	subscription, err := r.fetchCodySubscription(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	if subscription.ApplyProRateLimits {
+		return 0, nil
 	}
 
 	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 
 	limit := int32(cfg.PerCommunityUserCodeCompletionsMonthlyInteractionLimit)
 
-	return &limit, nil
+	return limit, nil
 }
 
-func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (*int32, error) {
+func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (int32, error) {
 	if !envvar.SourcegraphDotComMode() {
-		return nil, errors.New("this feature is only available on sourcegraph.com")
+		return 0, errors.New("this feature is only available on sourcegraph.com")
 	}
 
-	currentPeriodStartDate, err := r.CodyCurrentPeriodStartDate(ctx)
+	subscription, err := r.fetchCodySubscription(ctx)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	query := sqlf.Sprintf(`WHERE user_id = %s AND timestamp >= %s AND timestamp <= NOW() AND (name LIKE '%%recipe%%' OR name LIKE '%%command%%' OR name LIKE '%%chat%%')`, r.user.ID, currentPeriodStartDate.Time)
+	query := sqlf.Sprintf(`
+		WHERE
+			user_id = %s
+			AND timestamp >= %s
+			AND timestamp <= NOW()
+			AND name NOT LIKE '%%clicked%%'
+			AND name NOT LIKE '%%resetChat%%'
+			AND name NOT LIKE '%%menu:opened%%'
+			AND name NOT LIKE 'cody.%%'
+			AND (
+					(
+						SOURCE = 'IDEEXTENSION'
+						AND (
+							name LIKE '%%recipe%%'
+							OR name LIKE '%%command%%'
+							OR name LIKE '%%chat:executed%%'
+							OR name LIKE '%%chat-question:executed%%'
+							OR name LIKE '%%inline-chat%%'
+							OR name LIKE '%%inline-assist%%'
+							OR name LIKE '%%chat:submitted%%'
+						)
+					)
+
+					OR
+
+					(
+						SOURCE = 'WEB'
+						AND (
+							name = 'web:codyChat:submit'
+							OR name LIKE 'web:codyChat:recipe:%%'
+						)
+					)
+			)
+	`, r.user.ID, subscription.CurrentPeriodStartAt)
 
 	count, err := r.db.EventLogs().CountBySQL(ctx, query)
 
-	intCount := int32(count)
-
-	return &intCount, err
+	return int32(count), err
 }
 
-func (r *UserResolver) CodyCurrentPeriodCodeUsage(ctx context.Context) (*int32, error) {
+func (r *UserResolver) CodyCurrentPeriodCodeUsage(ctx context.Context) (int32, error) {
 	if !envvar.SourcegraphDotComMode() {
-		return nil, errors.New("this feature is only available on sourcegraph.com")
+		return 0, errors.New("this feature is only available on sourcegraph.com")
 	}
 
-	currentPeriodStartDate, err := r.CodyCurrentPeriodStartDate(ctx)
+	subscription, err := r.fetchCodySubscription(ctx)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	query := sqlf.Sprintf(`WHERE user_id = %s AND timestamp >= %s AND timestamp <= NOW() AND name LIKE '%%completion:suggested%%'`, r.user.ID, currentPeriodStartDate.Time)
+	query := sqlf.Sprintf(`
+		WHERE
+			user_id = %s
+			AND timestamp >= %s
+			AND timestamp <= NOW()
+			AND source = 'IDEEXTENSION'
+			AND name LIKE '%%completion:suggested%%'
+	`, r.user.ID, subscription.CurrentPeriodStartAt)
 
 	count, err := r.db.EventLogs().CountBySQL(ctx, query)
 
-	intCount := int32(count)
-
-	return &intCount, err
-}
-
-func (r *UserResolver) CodyCurrentPeriodStartDate(ctx context.Context) (*gqlutil.DateTime, error) {
-	startDate, _, err := r.codyCurrentPeriodDateRange(ctx)
-
-	return startDate, err
-}
-
-func (r *UserResolver) CodyCurrentPeriodEndDate(ctx context.Context) (*gqlutil.DateTime, error) {
-	_, endDate, err := r.codyCurrentPeriodDateRange(ctx)
-
-	return endDate, err
-}
-
-type currentTimeCtxKey int
-
-const mockCurrentTimeKey currentTimeCtxKey = iota
-
-func currentTimeFromCtx(ctx context.Context) time.Time {
-	t, ok := ctx.Value(mockCurrentTimeKey).(*time.Time)
-	if !ok || t == nil {
-		return time.Now()
-	}
-	return *t
-}
-
-func withCurrentTimeMock(ctx context.Context, t time.Time) context.Context {
-	return context.WithValue(ctx, mockCurrentTimeKey, &t)
-}
-
-func (r *UserResolver) codyCurrentPeriodDateRange(ctx context.Context) (*gqlutil.DateTime, *gqlutil.DateTime, error) {
-	if !envvar.SourcegraphDotComMode() {
-		return nil, nil, errors.New("this feature is only available on sourcegraph.com")
-	}
-
-	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
-	// settings because they may contain secrets or other sensitive data.
-	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
-		return nil, nil, err
-	}
-
-	// to allow mocking current time during tests
-	currentDate := currentTimeFromCtx(ctx)
-
-	subscriptionStartDate := r.user.CreatedAt
-	gaReleaseDate := time.Date(2023, 12, 14, 0, 0, 0, 0, subscriptionStartDate.Location())
-
-	if r.user.CodyProEnabledAt == nil && currentDate.Before(gaReleaseDate) {
-		startDate := &gqlutil.DateTime{Time: time.Date(2023, 12, 14, 0, 0, 0, 0, subscriptionStartDate.Location())}
-		endDate := &gqlutil.DateTime{Time: time.Date(2024, 1, 13, 23, 59, 59, 59, subscriptionStartDate.Location())}
-
-		return startDate, endDate, nil
-	}
-
-	if subscriptionStartDate.Before(gaReleaseDate) {
-		subscriptionStartDate = gaReleaseDate
-	}
-
-	if r.user.CodyProEnabledAt != nil {
-		subscriptionStartDate = *r.user.CodyProEnabledAt
-	}
-
-	targetDay := subscriptionStartDate.Day()
-	startDayOfTheMonth := targetDay
-	endDayOfTheMonth := targetDay - 1
-	startMonth := currentDate
-	endMonth := currentDate
-
-	if currentDate.Day() < targetDay {
-		// Set to target day of the previous month
-		startMonth = currentDate.AddDate(0, -1, 0)
-	} else {
-		// Set to target day of the next month
-		endMonth = currentDate.AddDate(0, 1, 0)
-	}
-
-	daysInStartingMonth := time.Date(startMonth.Year(), startMonth.Month()+1, 0, 0, 0, 0, 0, startMonth.Location()).Day()
-	if startDayOfTheMonth > daysInStartingMonth {
-		startDayOfTheMonth = daysInStartingMonth
-	}
-
-	daysInEndingMonth := time.Date(endMonth.Year(), endMonth.Month()+1, 0, 0, 0, 0, 0, endMonth.Location()).Day()
-	if endDayOfTheMonth > daysInEndingMonth {
-		endDayOfTheMonth = daysInEndingMonth
-	}
-
-	startDate := &gqlutil.DateTime{Time: time.Date(startMonth.Year(), startMonth.Month(), startDayOfTheMonth, 0, 0, 0, 0, startMonth.Location())}
-	endDate := &gqlutil.DateTime{Time: time.Date(endMonth.Year(), endMonth.Month(), endDayOfTheMonth, 23, 59, 59, 59, endMonth.Location())}
-
-	return startDate, endDate, nil
+	return int32(count), err
 }
 
 func (r *UserResolver) UpdatedAt() *gqlutil.DateTime {
@@ -479,6 +493,13 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	if err := r.db.Users().Update(ctx, userID, update); err != nil {
 		return nil, err
 	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+		// Log an event when a user account is modified/updated
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameAccountModified, "", uint32(userID), "", "BACKEND", args); err != nil {
+			r.logger.Error("Error logging security event", log.Error(err))
+		}
+	}
 	return UserByIDInt32(ctx, r.db, userID)
 }
 
@@ -490,10 +511,6 @@ type changeCodyPlanArgs struct {
 func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPlanArgs) (*UserResolver, error) {
 	if !envvar.SourcegraphDotComMode() {
 		return nil, errors.New("this feature is only available on sourcegraph.com")
-	}
-
-	if !featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) {
-		return nil, errors.New("this feature is not enabled")
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
@@ -512,6 +529,12 @@ func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPla
 
 	if err := r.db.Users().ChangeCodyPlan(ctx, userID, args.Pro); err != nil {
 		return nil, err
+	}
+
+	if err := cody.RefreshGatewayRateLimits(ctx, userID, r.db); err != nil {
+		// We intentionally don't fail the upgrade flow here, Gateway will pickup
+		// the new limits automatically. (Just later than we'd like.)
+		r.logger.Warn("refresh gateway limits", log.Error(err))
 	}
 
 	return UserByIDInt32(ctx, r.db, userID)
@@ -870,7 +893,13 @@ func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUs
 	if err := r.db.Users().SetChatCompletionsQuota(ctx, user.ID, quota); err != nil {
 		return nil, err
 	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
+		// Log an event when a user's Completions quota is updated
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameUserCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", args); err != nil {
+			r.logger.Error("Error logging security event", log.Error(err))
+		}
+	}
 	return UserByIDInt32(ctx, r.db, user.ID)
 }
 
@@ -908,6 +937,12 @@ func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args S
 	if err := r.db.Users().SetCodeCompletionsQuota(ctx, user.ID, quota); err != nil {
 		return nil, err
 	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
+		// Log an event when user's code completions quota is updated
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameUserCodeCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", args); err != nil {
+			r.logger.Error("Error logging security event", log.Error(err))
+		}
+	}
 	return UserByIDInt32(ctx, r.db, user.ID)
 }

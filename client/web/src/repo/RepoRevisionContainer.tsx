@@ -1,4 +1,4 @@
-import { type FC, useCallback, useMemo, useState } from 'react'
+import { type FC, useCallback, useMemo, useState, useEffect } from 'react'
 
 import { Route, Routes } from 'react-router-dom'
 
@@ -18,6 +18,7 @@ import {
     PopoverContent,
     PopoverTrigger,
     Position,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -31,7 +32,7 @@ import type { OwnConfigProps } from '../own/OwnConfigProps'
 import type { SearchStreamingProps } from '../search'
 import type { RouteV6Descriptor } from '../util/contributions'
 
-import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
+import { CopyPermalinkAction } from './actions/CopyPermalinkAction'
 import type { ResolvedRevision } from './backend'
 import { RepoRevisionChevronDownIcon, RepoRevisionWrapper } from './components/RepoRevision'
 import { isPackageServiceType } from './packages/isPackageServiceType'
@@ -119,14 +120,28 @@ interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, '
 export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = props => {
     const { revision, resolvedRevision, repoName, repo } = props
 
+    const [revisionLabelElement, setRevisionLabelElement] = useState<HTMLElement | null>(null)
+    const [showRevisionTooltip, setShowRevisionTooltip] = useState(false)
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
 
-    const revisionLabel = (revision && revision === resolvedRevision?.commitID
-        ? resolvedRevision?.commitID.slice(0, 7)
-        : revision.slice(0, 7)) ||
-        resolvedRevision?.defaultBranch || <LoadingSpinner />
+    const revisionLabel = useMemo(
+        () =>
+            revision
+                ? revision === resolvedRevision?.commitID
+                    ? resolvedRevision?.commitID.slice(0, 7)
+                    : revision
+                : resolvedRevision?.defaultBranch || <LoadingSpinner />,
+        [revision, resolvedRevision]
+    )
 
+    // The revision label has a max-width, an ellipsis is shown when the revision is too long.
+    // In this case, we show the full revision in a tooltip.
+    useEffect(() => {
+        if (revisionLabel && revisionLabelElement) {
+            setShowRevisionTooltip(revisionLabelElement.scrollWidth > revisionLabelElement.offsetWidth)
+        }
+    }, [revisionLabelElement, revisionLabel])
     const isPopoverContentReady = repo && resolvedRevision
 
     return (
@@ -142,7 +157,11 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
                 size="sm"
                 disabled={!isPopoverContentReady}
             >
-                {revisionLabel}
+                <Tooltip content={showRevisionTooltip ? revision : ''}>
+                    <span ref={setRevisionLabelElement} className={styles.revisionLabel}>
+                        {revisionLabel}
+                    </span>
+                </Tooltip>
                 <RepoRevisionChevronDownIcon aria-hidden={true} />
             </PopoverTrigger>
             <PopoverContent
@@ -217,19 +236,19 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
                         )
                 )}
             </Routes>
-            {resolvedRevision && !isPackage && (
+            {!isPackage && (
                 <RepoHeaderContributionPortal
-                    id="go-to-permalink"
-                    priority={3}
                     position="right"
+                    priority={2}
+                    id="copy-permalink"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 >
                     {context => (
-                        <GoToPermalinkAction
-                            key="go-to-permalink"
+                        <CopyPermalinkAction
+                            key="copy-permalink"
                             telemetryService={props.telemetryService}
                             revision={props.revision}
-                            commitID={resolvedRevision.commitID}
+                            commitID={resolvedRevision?.commitID}
                             {...context}
                         />
                     )}

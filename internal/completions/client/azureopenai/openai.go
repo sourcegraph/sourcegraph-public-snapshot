@@ -4,6 +4,8 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/url"
+	"os"
 	"sync"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
@@ -13,6 +15,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// HTTP proxy value to be used for id token requests to Azure
+// This value will only used when using an access token is not provided
+// and it will only apply to requests made to the Azure authentication endpoint
+// not other requests such as to the OpenAI API
+var authProxyURL = os.Getenv("CODY_AZURE_OPENAI_IDENTITY_HTTP_PROXY")
 
 // We want to reuse the client because when using the DefaultAzureCredential
 // it will acquire a short lived token and reusing the client
@@ -46,19 +54,41 @@ func GetAPIClient(endpoint, accessToken string) (CompletionsClient, error) {
 	defer apiClient.mu.Unlock()
 	var err error
 	if accessToken != "" {
-		credential, credErr := azopenai.NewKeyCredential(accessToken)
-		if credErr != nil {
-			return nil, credErr
-		}
+		credential := azcore.NewKeyCredential(accessToken)
 		apiClient.client, err = azopenai.NewClientWithKeyCredential(endpoint, credential, nil)
 	} else {
-		credential, credErr := azidentity.NewDefaultAzureCredential(nil)
+		var opts *azidentity.DefaultAzureCredentialOptions
+		opts, err = getCredentialOptions()
+		if err != nil {
+			return nil, err
+		}
+		credential, credErr := azidentity.NewDefaultAzureCredential(opts)
 		if credErr != nil {
 			return nil, credErr
 		}
+		apiClient.endpoint = endpoint
 		apiClient.client, err = azopenai.NewClient(endpoint, credential, nil)
 	}
 	return apiClient.client, err
+
+}
+
+func getCredentialOptions() (*azidentity.DefaultAzureCredentialOptions, error) {
+	// if there is no proxy we don't need any options
+	if authProxyURL == "" {
+		return nil, nil
+	}
+
+	proxyUrl, err := url.Parse(authProxyURL)
+	if err != nil {
+		return nil, err
+	}
+	proxiedClient := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyUrl)}}
+	return &azidentity.DefaultAzureCredentialOptions{
+		ClientOptions: azcore.ClientOptions{
+			Transport: proxiedClient,
+		},
+	}, nil
 
 }
 
@@ -263,21 +293,17 @@ func hasValidFirstCompletionsChoice(choices []azopenai.Choice) bool {
 		choices[0].Text != nil
 }
 
-func getChatMessages(messages []types.Message) []azopenai.ChatMessage {
-	azureMessages := make([]azopenai.ChatMessage, len(messages))
+func getChatMessages(messages []types.Message) []azopenai.ChatRequestMessageClassification {
+	azureMessages := make([]azopenai.ChatRequestMessageClassification, len(messages))
 	for i, m := range messages {
-		var role azopenai.ChatRole
 		message := m.Text
 		switch m.Speaker {
 		case types.HUMAN_MESSAGE_SPEAKER:
-			role = azopenai.ChatRoleUser
+			azureMessages[i] = &azopenai.ChatRequestUserMessage{Content: azopenai.NewChatRequestUserMessageContent(message)}
 		case types.ASISSTANT_MESSAGE_SPEAKER:
-			role = azopenai.ChatRoleAssistant
+			azureMessages[i] = &azopenai.ChatRequestAssistantMessage{Content: &message}
 		}
-		azureMessages[i] = azopenai.ChatMessage{
-			Content: &message,
-			Role:    &role,
-		}
+
 	}
 	return azureMessages
 }
@@ -290,13 +316,13 @@ func getChatOptions(requestParams types.CompletionRequestParameters) azopenai.Ch
 		requestParams.TopP = 0
 	}
 	return azopenai.ChatCompletionsOptions{
-		Messages:    getChatMessages(requestParams.Messages),
-		Temperature: &requestParams.Temperature,
-		TopP:        &requestParams.TopP,
-		N:           intToInt32Ptr(1),
-		Stop:        requestParams.StopSequences,
-		MaxTokens:   intToInt32Ptr(requestParams.MaxTokensToSample),
-		Deployment:  requestParams.Model,
+		Messages:       getChatMessages(requestParams.Messages),
+		Temperature:    &requestParams.Temperature,
+		TopP:           &requestParams.TopP,
+		N:              intToInt32Ptr(1),
+		Stop:           requestParams.StopSequences,
+		MaxTokens:      intToInt32Ptr(requestParams.MaxTokensToSample),
+		DeploymentName: &requestParams.Model,
 	}
 }
 
@@ -312,13 +338,13 @@ func getCompletionsOptions(requestParams types.CompletionRequestParameters) (azo
 		return azopenai.CompletionsOptions{}, err
 	}
 	return azopenai.CompletionsOptions{
-		Prompt:      []string{prompt},
-		Temperature: &requestParams.Temperature,
-		TopP:        &requestParams.TopP,
-		N:           intToInt32Ptr(1),
-		Stop:        requestParams.StopSequences,
-		MaxTokens:   intToInt32Ptr(requestParams.MaxTokensToSample),
-		Deployment:  requestParams.Model,
+		Prompt:         []string{prompt},
+		Temperature:    &requestParams.Temperature,
+		TopP:           &requestParams.TopP,
+		N:              intToInt32Ptr(1),
+		Stop:           requestParams.StopSequences,
+		MaxTokens:      intToInt32Ptr(requestParams.MaxTokensToSample),
+		DeploymentName: &requestParams.Model,
 	}, nil
 }
 

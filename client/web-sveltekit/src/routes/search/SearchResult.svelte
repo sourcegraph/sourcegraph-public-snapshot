@@ -23,14 +23,16 @@
     .header {
         display: flex;
         align-items: center;
-        padding: 0.5rem 0.5rem 0.5rem 0;
+        padding: 0.5rem;
         position: sticky;
         top: 0;
         background-color: var(--body-bg);
+        border-bottom: 1px solid var(--border-color);
     }
 
     .icon {
         flex-shrink: 0;
+        --color: var(--text-muted);
     }
 
     .title {
@@ -41,28 +43,18 @@
 
         // .title-inner
         overflow-wrap: anywhere;
-
-        // .muted-repo-file-link
-        color: var(--text-muted);
-
-        :global(a) {
-            color: var(--text-muted);
-
-            &:hover {
-                color: var(--text-muted);
-            }
-        }
     }
 
     .info {
         margin-left: auto;
         display: flex;
         flex-wrap: wrap;
+        color: var(--text-muted);
+        flex-shrink: 0;
     }
 
     .body {
-        border-radius: var(--border-radius);
-        border: 1px solid var(--border-color);
         background-color: var(--code-bg);
+        border-bottom: 1px solid var(--border-color);
     }
 </style>

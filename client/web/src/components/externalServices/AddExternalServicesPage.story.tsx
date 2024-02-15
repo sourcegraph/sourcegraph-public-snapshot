@@ -33,31 +33,10 @@ export const Overview: StoryFn = () => (
                 autoFocusForm={false}
                 externalServicesFromFile={false}
                 allowEditExternalServicesWithFile={false}
-                isCodyApp={false}
             />
         )}
     </WebStory>
 )
-
-export const OverviewWithBusinessLicense: StoryFn = () => {
-    window.context.licenseInfo = { currentPlan: 'business-0' }
-    return (
-        <WebStory>
-            {webProps => (
-                <AddExternalServicesPage
-                    {...webProps}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                    codeHostExternalServices={codeHostExternalServices}
-                    nonCodeHostExternalServices={nonCodeHostExternalServices}
-                    autoFocusForm={false}
-                    externalServicesFromFile={false}
-                    allowEditExternalServicesWithFile={false}
-                    isCodyApp={false}
-                />
-            )}
-        </WebStory>
-    )
-}
 
 export const AddConnectionBykind: StoryFn = () => (
     <WebStory initialEntries={['/page?id=github']}>
@@ -70,7 +49,6 @@ export const AddConnectionBykind: StoryFn = () => (
                 autoFocusForm={false}
                 externalServicesFromFile={false}
                 allowEditExternalServicesWithFile={false}
-                isCodyApp={false}
             />
         )}
     </WebStory>

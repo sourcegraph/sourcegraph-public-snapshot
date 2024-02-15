@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -45,7 +46,8 @@ type JanitorConfig struct {
 	ShardID         string
 	ReposDir        string
 
-	DesiredPercentFree int
+	DesiredPercentFree             int
+	DisableDeleteReposOnWrongShard bool
 }
 
 func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wrexec.RecordingCommandFactory, cloneRepo cloneRepoFunc, logger log.Logger) goroutine.BackgroundRoutine {
@@ -78,7 +80,7 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wre
 
 			gitserverAddrs := gitserver.NewGitserverAddresses(conf.Get())
 			// TODO: Should this return an error?
-			cleanupRepos(ctx, logger, db, rcf, cfg.ShardID, cfg.ReposDir, cloneRepo, gitserverAddrs)
+			cleanupRepos(ctx, logger, db, rcf, cfg.ShardID, cfg.ReposDir, cloneRepo, gitserverAddrs, cfg.DisableDeleteReposOnWrongShard)
 
 			return nil
 		}),
@@ -127,7 +129,7 @@ const (
 )
 
 // gitGCMode describes which mode we should be running git gc.
-// See for a detailed description of the modes: https://docs.sourcegraph.com/dev/background-information/git_gc
+// See for a detailed description of the modes: https://sourcegraph.com/docs/dev/background-information/git_gc
 var gitGCMode = func() int {
 	// EnableGCAuto is a temporary flag that allows us to control whether or not
 	// `git gc --auto` is invoked during janitorial activities. This flag will
@@ -174,9 +176,6 @@ var sgmLogExpire = env.MustGetDuration("SRC_GIT_LOG_FILE_EXPIRY", 24*time.Hour, 
 // We mention this ENV variable in the header message of the sgmLog files. Make
 // sure that changes here are reflected in sgmLogHeader, too.
 var sgmRetries, _ = strconv.Atoi(env.Get("SRC_SGM_RETRIES", "3", "the maximum number of times we retry sg maintenance before triggering a reclone."))
-
-// The limit of repos cloned on the wrong shard to delete in one janitor run - value <=0 disables delete.
-var wrongShardReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "10", "the maximum number of repos not assigned to this shard we delete in one run"))
 
 // Controls if gitserver cleanup tries to remove repos from disk which are not defined in the DB. Defaults to false.
 var removeNonExistingRepos, _ = strconv.ParseBool(env.Get("SRC_REMOVE_NON_EXISTING_REPOS", "false", "controls if gitserver cleanup tries to remove repos from disk which are not defined in the DB"))
@@ -245,6 +244,7 @@ func cleanupRepos(
 	reposDir string,
 	cloneRepo cloneRepoFunc,
 	gitServerAddrs gitserver.GitserverAddresses,
+	disableDeleteReposOnWrongShard bool,
 ) {
 	logger = logger.Scoped("cleanup")
 
@@ -279,7 +279,7 @@ func cleanupRepos(
 	var wrongShardReposDeleted int64
 	defer func() {
 		// We want to set the gauge only when wrong shard clean-up is enabled
-		if wrongShardReposDeleteLimit > 0 {
+		if disableDeleteReposOnWrongShard {
 			wrongShardReposDeletedCounter.Add(float64(wrongShardReposDeleted))
 		}
 	}()
@@ -288,7 +288,7 @@ func cleanupRepos(
 		// Record the number of repos that should not belong on this instance and
 		// remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
 		name := gitserverfs.RepoNameFromDir(reposDir, dir)
-		addr := addrForRepo(ctx, name, gitServerAddrs)
+		addr := gitServerAddrs.AddrForRepo(ctx, name)
 
 		if hostnameMatch(shardID, addr) {
 			return false, nil
@@ -304,14 +304,8 @@ func cleanupRepos(
 			return false, nil
 		}
 
-		// Check that wrong shard deletion has not been deleted.
-		if wrongShardReposDeleteLimit < 0 {
-			return false, nil
-		}
-
-		// If we have reached the limit of repos to be deleted in each janitor
-		// run, don't do anything and skip over this repo.
-		if wrongShardReposDeleted >= int64(wrongShardReposDeleteLimit) {
+		// Check that wrong shard deletion has not been disabled.
+		if disableDeleteReposOnWrongShard {
 			return false, nil
 		}
 
@@ -324,6 +318,7 @@ func cleanupRepos(
 		if err := gitserverfs.RemoveRepoDirectory(ctx, logger, db, shardID, reposDir, dir, false); err != nil {
 			return true, err
 		}
+
 		wrongShardReposDeleted++
 
 		// Note: We just deleted the repo. So we're done with any further janitor tasks!
@@ -331,11 +326,22 @@ func cleanupRepos(
 	}
 
 	collectSize := func(dir common.GitDir) (done bool, err error) {
-		size := gitserverfs.DirSize(dir.Path("."))
-		name := gitserverfs.RepoNameFromDir(reposDir, dir)
-		repoToSize[name] = size
+		repoName := gitserverfs.RepoNameFromDir(reposDir, dir)
+		backend := gitcli.NewBackend(logger, rcf, dir, repoName)
+		last, err := getLastSizeCalculation(ctx, backend.Config())
+		if err != nil {
+			return false, err
+		}
 
-		return false, nil
+		if time.Since(last) < repoSizeRecalcInterval {
+			// Don't recalculate.
+			return false, nil
+		}
+
+		size := gitserverfs.DirSize(dir.Path("."))
+		repoToSize[repoName] = size
+
+		return false, setLastSizeCalculation(ctx, backend.Config())
 	}
 
 	maybeRemoveCorrupt := func(dir common.GitDir) (done bool, _ error) {
@@ -388,16 +394,22 @@ func cleanupRepos(
 	}
 
 	ensureAutoGC := func(dir common.GitDir) (done bool, err error) {
-		return false, gitSetAutoGC(rcf, reposDir, dir)
+		repoName := gitserverfs.RepoNameFromDir(reposDir, dir)
+		backend := gitcli.NewBackend(logger, rcf, dir, repoName)
+
+		return false, gitSetAutoGC(ctx, backend.Config())
 	}
 
 	maybeReclone := func(dir common.GitDir) (done bool, err error) {
-		repoType, err := git.GetRepositoryType(rcf, reposDir, dir)
+		repoName := gitserverfs.RepoNameFromDir(reposDir, dir)
+		backend := gitcli.NewBackend(logger, rcf, dir, repoName)
+
+		repoType, err := git.GetRepositoryType(ctx, backend.Config())
 		if err != nil {
 			return false, err
 		}
 
-		recloneTime, err := getRecloneTime(rcf, reposDir, dir)
+		recloneTime, err := getRecloneTime(ctx, backend.Config(), dir)
 		if err != nil {
 			return false, err
 		}
@@ -405,7 +417,8 @@ func cleanupRepos(
 		// Add a jitter to spread out re-cloning of repos cloned at the same time.
 		var reason string
 		const maybeCorrupt = "maybeCorrupt"
-		if maybeCorrupt, _ := git.ConfigGet(rcf, reposDir, dir, gitConfigMaybeCorrupt); maybeCorrupt != "" {
+
+		if maybeCorrupt, _ := backend.Config().Get(ctx, gitConfigMaybeCorrupt); maybeCorrupt != "" {
 			// Set the reason so that the repo cleaned up
 			reason = maybeCorrupt
 			// We don't log the corruption here, since the corruption *should* have already been
@@ -414,7 +427,7 @@ func cleanupRepos(
 			// the repo is not considered corrupted anymore.
 			//
 			// unset flag to stop constantly re-cloning if it fails.
-			_ = git.ConfigUnset(rcf, reposDir, dir, gitConfigMaybeCorrupt)
+			_ = backend.Config().Unset(ctx, gitConfigMaybeCorrupt)
 		}
 		if time.Since(recloneTime) > repoTTL+jitterDuration(string(dir), repoTTL/4) {
 			reason = "old"
@@ -455,7 +468,7 @@ func cleanupRepos(
 		// update the re-clone time so that we don't constantly re-clone if cloning fails.
 		// For example if a repo fails to clone due to being large, we will constantly be
 		// doing a clone which uses up lots of resources.
-		if err := setRecloneTime(rcf, reposDir, dir, recloneTime.Add(time.Since(recloneTime)/2)); err != nil {
+		if err := setRecloneTime(ctx, backend.Config(), dir, recloneTime.Add(time.Since(recloneTime)/2)); err != nil {
 			recloneLogger.Warn("setting backed off re-clone time failed", log.Error(err))
 		}
 
@@ -541,8 +554,6 @@ func cleanupRepos(
 		// maybe there's been a resharding event and we can actually remove it
 		// and not spend further CPU cycles fixing it.
 		{"delete wrong shard repos", maybeDeleteWrongShardRepos},
-		// Compute the amount of space used by the repo
-		{"compute stats", collectSize},
 		// Do some sanity checks on the repository.
 		{"maybe remove corrupt", maybeRemoveCorrupt},
 		// Remove repo if DB does not contain it anymore
@@ -590,6 +601,10 @@ func cleanupRepos(
 		})
 	}
 
+	// Compute the amount of space used by the repo. We do this last, because
+	// we want it to reflect the improvements that previous GC methods had.
+	cleanups = append(cleanups, cleanupFn{"compute stats", collectSize})
+
 	reposCleaned := 0
 
 	err := iterateGitDirs(reposDir, func(gitDir common.GitDir) (done bool) {
@@ -630,7 +645,7 @@ func cleanupRepos(
 	}
 
 	if len(repoToSize) > 0 {
-		_, err := db.GitserverRepos().UpdateRepoSizes(ctx, shardID, repoToSize)
+		_, err := db.GitserverRepos().UpdateRepoSizes(ctx, logger, shardID, repoToSize)
 		if err != nil {
 			logger.Error("setting repo sizes", log.Error(err))
 		}
@@ -842,8 +857,8 @@ func findGitDirs(reposDir string) ([]common.GitDir, error) {
 }
 
 // setRecloneTime sets the time a repository is cloned.
-func setRecloneTime(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, now time.Time) error {
-	err := git.ConfigSet(rcf, reposDir, dir, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
+func setRecloneTime(ctx context.Context, c git.GitConfigBackend, dir common.GitDir, now time.Time) error {
+	err := c.Set(ctx, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
 	if err != nil {
 		if err2 := git.EnsureHEAD(dir); err2 != nil {
 			err = errors.Append(err, err2)
@@ -856,16 +871,16 @@ func setRecloneTime(rcf *wrexec.RecordingCommandFactory, reposDir string, dir co
 // getRecloneTime returns an approximate time a repository is cloned. If the
 // value is not stored in the repository, the re-clone time for the repository is
 // set to now.
-func getRecloneTime(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir) (time.Time, error) {
+func getRecloneTime(ctx context.Context, c git.GitConfigBackend, dir common.GitDir) (time.Time, error) {
 	// We store the time we re-cloned the repository. If the value is missing,
 	// we store the current time. This decouples this timestamp from the
 	// different ways a clone can appear in gitserver.
 	update := func() (time.Time, error) {
 		now := time.Now()
-		return now, setRecloneTime(rcf, reposDir, dir, now)
+		return now, setRecloneTime(ctx, c, dir, now)
 	}
 
-	value, err := git.ConfigGet(rcf, reposDir, dir, "sourcegraph.recloneTimestamp")
+	value, err := c.Get(ctx, "sourcegraph.recloneTimestamp")
 	if err != nil {
 		return time.Unix(0, 0), errors.Wrap(err, "failed to determine clone timestamp")
 	}
@@ -1201,13 +1216,13 @@ func tooManyPackfiles(dir common.GitDir, limit int) (bool, error) {
 //
 // The purpose is to avoid repository corruption which can happen if several
 // git-gc operations are running at the same time.
-func gitSetAutoGC(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir) error {
+func gitSetAutoGC(ctx context.Context, c git.GitConfigBackend) error {
 	switch gitGCMode {
 	case gitGCModeGitAutoGC, gitGCModeJanitorAutoGC:
-		return git.ConfigUnset(rcf, reposDir, dir, "gc.auto")
+		return c.Unset(ctx, "gc.auto")
 
 	case gitGCModeMaintenance:
-		return git.ConfigSet(rcf, reposDir, dir, "gc.auto", "0")
+		return c.Set(ctx, "gc.auto", "0")
 
 	default:
 		// should not happen
@@ -1257,4 +1272,45 @@ func removeFileOlderThan(logger log.Logger, path string, maxAge time.Duration) (
 
 func mockRemoveNonExistingReposConfig(value bool) {
 	removeNonExistingRepos = value
+}
+
+const (
+	sizeCalculationConfigKey = "sourcegraph.sizeCalculationTime"
+	// We recalculate the repository size every day at most in the janitor.
+	// There's no need to recalculate it more often than that, since fetches
+	// update it anyways. So this will only be useful for "housekeeping" purposes
+	// in case we don't fetch for a while and the size on disk changes.
+	repoSizeRecalcInterval = 24 * time.Hour
+)
+
+// getLastSizeCalculation returns the time the repository size was last calculated
+// by the janitor. We don't set this timestamp in fetches, so janitor still runs
+// this task every now and then.
+func getLastSizeCalculation(ctx context.Context, c git.GitConfigBackend) (time.Time, error) {
+	value, err := c.Get(ctx, sizeCalculationConfigKey)
+	if err != nil {
+		return time.Unix(0, 0), errors.Wrap(err, "failed to determine last size calculation timestamp")
+	}
+	if value == "" {
+		// Return a time long in the past, to force an initial run.
+		return time.Time{}, setLastSizeCalculation(ctx, c)
+	}
+
+	sec, err := strconv.ParseInt(value, 10, 0)
+	if err != nil {
+		// If the value is bad update it to the current time
+		err2 := setLastSizeCalculation(ctx, c)
+		if err2 != nil {
+			err = err2
+		}
+		// And return a time long in the past, to force an update.
+		return time.Time{}, err
+	}
+
+	return time.Unix(sec, 0), nil
+}
+
+func setLastSizeCalculation(ctx context.Context, c git.GitConfigBackend) error {
+	now := time.Now()
+	return c.Set(ctx, sizeCalculationConfigKey, strconv.FormatInt(now.Unix(), 10))
 }

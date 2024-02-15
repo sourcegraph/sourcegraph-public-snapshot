@@ -1,10 +1,14 @@
 import { dirname } from 'path'
 
 import { browser } from '$app/environment'
-import { fetchRepoCommits } from '$lib/repo/api/commits'
+import { getGraphQLClient } from '$lib/graphql'
 import { fetchSidebarFileTree } from '$lib/repo/api/tree'
+import { parseRepoRevision } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
+import { GitHistoryQuery } from './layout.gql'
+
+const HISTORY_COMMITS_PER_PAGE = 20
 
 // Signifies the path of the repository root
 const REPO_ROOT = '.'
@@ -25,23 +29,35 @@ if (browser) {
 }
 
 export const load: LayoutLoad = async ({ parent, params }) => {
-    const { resolvedRevision, repoName } = await parent()
+    const client = await getGraphQLClient()
+    const { repoName, revision = '' } = parseRepoRevision(params.repo)
     const parentPath = getRootPath(repoName, params.path ? dirname(params.path) : REPO_ROOT)
+
+    // Fetches the most recent commits for current blob, tree or repo root
+    const commitHistory = client.watchQuery({
+        query: GitHistoryQuery,
+        variables: {
+            repoName,
+            revspec: revision,
+            filePath: params.path ?? '',
+            first: HISTORY_COMMITS_PER_PAGE,
+            afterCursor: null,
+        },
+        notifyOnNetworkStatusChange: true,
+    })
+    if (!client.readQuery({ query: GitHistoryQuery, variables: commitHistory.variables })) {
+        // Eagerly fetch data if it isn't in the cache already. This ensures that the data is fetched
+        // as soon as possible, not only after the layout subscribes to the query.
+        commitHistory.refetch()
+    }
 
     return {
         parentPath,
-        deferred: {
-            // Fetches the most recent commits for current blob, tree or repo root
-            codeCommits: fetchRepoCommits({
-                repoID: resolvedRevision.repo.id,
-                revision: resolvedRevision.commitID,
-                filePath: params.path,
-            }),
-            fileTree: fetchSidebarFileTree({
-                repoID: resolvedRevision.repo.id,
-                commitID: resolvedRevision.commitID,
-                filePath: parentPath,
-            }),
-        },
+        commitHistory,
+        fileTree: fetchSidebarFileTree({
+            repoName,
+            revision,
+            filePath: parentPath,
+        }),
     }
 }

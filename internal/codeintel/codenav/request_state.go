@@ -79,7 +79,7 @@ func (r *RequestState) SetUploadsDataLoader(uploads []shared.Dump) {
 	}
 }
 
-func (r *RequestState) SetLocalGitTreeTranslator(client gitserver.Client, repo *sgTypes.Repo, commit, path string, hunkCache HunkCache) error {
+func (r *RequestState) SetLocalGitTreeTranslator(client gitserver.Client, repo *sgTypes.Repo, commit, path string, hunkCache HunkCache) {
 	args := &requestArgs{
 		repo:   repo,
 		commit: commit,
@@ -87,8 +87,6 @@ func (r *RequestState) SetLocalGitTreeTranslator(client gitserver.Client, repo *
 	}
 
 	r.GitTreeTranslator = NewGitTreeTranslator(client, args, hunkCache)
-
-	return nil
 }
 
 func (r *RequestState) SetLocalCommitCache(repoStore database.RepoStore, client gitserver.Client) {

@@ -11,7 +11,7 @@ import (
 	"github.com/amit7itz/goset"
 	"github.com/grafana/regexp"
 	"github.com/grafana/regexp/syntax"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/keegancsmith/sqlf"
 	pg "github.com/lib/pq"
 	"github.com/segmentio/fasthash/fnv1"
@@ -43,10 +43,10 @@ func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ 
 				return
 			}
 
-			err = errors.Newf("Processing symbols is taking a while, try again later ([more details](https://docs.sourcegraph.com/code_navigation/explanations/rockskip)).")
+			err = errors.Newf("Processing symbols is taking a while, try again later ([more details](https://sourcegraph.com/docs/code_navigation/explanations/rockskip)).")
 			for _, status := range s.status.threadIdToThreadStatus {
 				if strings.HasPrefix(status.Name, fmt.Sprintf("indexing %s", args.Repo)) {
-					err = errors.Newf("Still processing symbols ([more details](https://docs.sourcegraph.com/code_navigation/explanations/rockskip)). Estimated completion: %s.", status.Remaining())
+					err = errors.Newf("Still processing symbols ([more details](https://sourcegraph.com/docs/code_navigation/explanations/rockskip)). Estimated completion: %s.", status.Remaining())
 				}
 			}
 		}()

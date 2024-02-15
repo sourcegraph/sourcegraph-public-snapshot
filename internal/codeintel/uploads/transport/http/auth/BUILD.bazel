@@ -42,7 +42,9 @@ go_test(
     embed = [":auth"],
     deps = [
         "//internal/extsvc/github",
+        "//internal/httpcli",
         "//lib/errors",
+        "@com_github_stretchr_testify//require",
         "@com_github_tomnomnom_linkheader//:linkheader",
     ],
 )
