@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
@@ -65,6 +66,13 @@ func TestAddRepoToExclude(t *testing.T) {
 			repo:           makeBitbucketServerRepo(),
 			initialConfig:  `{"repositoryQuery":["none"],"token":"abc","url":"https://bitbucket.sg.org","username":""}`,
 			expectedConfig: `{"exclude":[{"name":"SOURCEGRAPH/jsonrpc2"}],"repositoryQuery":["none"],"token":"abc","url":"https://bitbucket.sg.org","username":""}`,
+		},
+		{
+			name:           "second attempt of excluding same repo is ignored for Gerrit schema",
+			kind:           extsvc.KindGerrit,
+			repo:           makeGerritRepo(),
+			initialConfig:  `{"url": "https://gerrit.example.com/", "username": "test", "password": "test", "projects": ["test"]}`,
+			expectedConfig: `{"exclude":[{"name":"test"}],"password":"test","projects":["test"],"url":"https://gerrit.example.com/","username":"test"}`,
 		},
 		{
 			name:           "second attempt of excluding same repo is ignored for GitHub schema",
@@ -186,6 +194,14 @@ func makeBitbucketServerRepo() *types.Repo {
 		},
 	}
 
+	return repo
+}
+
+func makeGerritRepo() *types.Repo {
+	repo := typestest.MakeRepo("gerrit.com/test", "https://gerrit.com/", extsvc.TypeGerrit)
+	repo.Metadata = &gerrit.Project{
+		Name: "test",
+	}
 	return repo
 }
 

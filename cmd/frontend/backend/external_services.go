@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
@@ -359,6 +360,11 @@ func addRepoToExclude(ctx context.Context, logger log.Logger, externalService *t
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
 			c.Exclude = append(c.Exclude, &schema.ExcludedBitbucketServerRepo{Name: excludableName})
 		}
+	case *schema.GerritConnection:
+		exclusion := &schema.ExcludedGerritProject{Name: excludableName}
+		if !schemaContainsExclusion(c.Exclude, exclusion) {
+			c.Exclude = append(c.Exclude, &schema.ExcludedGerritProject{Name: excludableName})
+		}
 	case *schema.GitHubConnection:
 		exclusion := &schema.ExcludedGitHubRepo{Name: excludableName}
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
@@ -418,6 +424,12 @@ func ExcludableRepoName(repository *types.Repo, logger log.Logger) (name string)
 			name = fmt.Sprintf("%s/%s", repo.Project.Key, repo.Name)
 		} else {
 			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeBitbucketServer))
+		}
+	case extsvc.TypeGerrit:
+		if repo, ok := repository.Metadata.(*gerrit.Project); ok {
+			name = repo.Name
+		} else {
+			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeGerrit))
 		}
 	case extsvc.TypeGitHub:
 		if repo, ok := repository.Metadata.(*github.Repository); ok {
