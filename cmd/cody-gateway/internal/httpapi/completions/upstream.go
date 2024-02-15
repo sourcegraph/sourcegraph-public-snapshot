@@ -131,7 +131,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		allowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, allowedModels[i])
 	}
 
-	// turn off sanitization since we're only detecting
+	// turn off sanitization for profanity detection
 	d := goaway.NewProfanityDetector().WithSanitizeAccents(false).WithSanitizeLeetSpeak(false).WithSanitizeSpaces(false).WithSanitizeSpecialCharacters(false)
 
 	for i := range patternsToDetect {
