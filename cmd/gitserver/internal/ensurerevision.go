@@ -22,7 +22,7 @@ var (
 	}, []string{"status"})
 )
 
-func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev string, repoDir common.GitDir) (didUpdate bool) {
+func (s *Server) EnsureRevision(ctx context.Context, repo api.RepoName, rev string, repoDir common.GitDir) (didUpdate bool) {
 	if rev == "" || rev == "HEAD" {
 		ensureRevisionCounter.WithLabelValues("HEAD").Inc()
 		return false

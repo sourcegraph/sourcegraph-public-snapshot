@@ -20,7 +20,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/time/rate"
 
@@ -30,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
@@ -42,10 +40,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -279,25 +275,6 @@ type Server struct {
 type locks struct {
 	once *sync.Once  // consolidates multiple waiting updates
 	mu   *sync.Mutex // prevents updates running in parallel
-}
-
-// shortGitCommandSlow returns the threshold for regarding an git command as
-// slow. Some commands such as "git archive" are inherently slower than "git
-// rev-parse", so this will return an appropriate threshold given the command.
-func shortGitCommandSlow(args []string) time.Duration {
-	if len(args) < 1 {
-		return time.Second
-	}
-	switch args[0] {
-	case "archive":
-		return 1 * time.Minute
-
-	case "blame", "ls-tree", "log", "show":
-		return 5 * time.Second
-
-	default:
-		return 2500 * time.Millisecond
-	}
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
@@ -576,164 +553,6 @@ func (s *Server) RepoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 	}
 
 	return resp
-}
-
-type execStatus struct {
-	ExitStatus int
-	Stderr     string
-	Err        error
-}
-
-// TODO: eseliger
-// Exec runs a git command. After the first write to w, it must not return an error.
-// TODO(@camdencheek): once gRPC is the only consumer of this, do everything with errors
-// because gRPC can handle trailing errors on a stream.
-func (s *Server) Exec(ctx context.Context, req *protocol.ExecRequest, w io.Writer) (execStatus, error) {
-	repoName := protocol.NormalizeRepo(req.Repo)
-	dir := gitserverfs.RepoDirFromName(s.reposDir, repoName)
-	backend := s.getBackendFunc(dir, repoName)
-
-	if req.NoTimeout {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 24*time.Hour)
-		defer cancel()
-	}
-
-	start := time.Now()
-	var cmdStart time.Time // set once we have ensured commit
-	var execErr error
-	var exitStatus int = executil.UnsetExitStatus
-	ensureRevisionStatus := "noop"
-
-	// Instrumentation
-	{
-		cmd := ""
-		if len(req.Args) > 0 {
-			cmd = req.Args[0]
-		}
-		args := strings.Join(req.Args, " ")
-
-		var tr trace.Trace
-		tr, ctx = trace.New(ctx, "exec."+cmd, repoName.Attr())
-		tr.SetAttributes(
-			attribute.String("args", args),
-			attribute.String("ensure_revision", req.EnsureRevision),
-		)
-		logger := s.logger.WithTrace(trace.Context(ctx))
-
-		execRunning.WithLabelValues(cmd).Inc()
-		defer func() {
-			tr.AddEvent(
-				"done",
-				attribute.String("ensure_revision_status", ensureRevisionStatus),
-			)
-			tr.SetError(execErr)
-			tr.End()
-
-			duration := time.Since(start)
-			execRunning.WithLabelValues(cmd).Dec()
-			execDuration.WithLabelValues(cmd).Observe(duration.Seconds())
-
-			var cmdDuration time.Duration
-			var fetchDuration time.Duration
-			if !cmdStart.IsZero() {
-				cmdDuration = time.Since(cmdStart)
-				fetchDuration = cmdStart.Sub(start)
-			}
-
-			isSlow := cmdDuration > shortGitCommandSlow(req.Args)
-			isSlowFetch := fetchDuration > 10*time.Second
-			if honey.Enabled() || traceLogs || isSlow || isSlowFetch {
-				act := actor.FromContext(ctx)
-				ev := honey.NewEvent("gitserver-exec")
-				ev.SetSampleRate(honeySampleRate(cmd, act))
-				ev.AddField("repo", repoName)
-				ev.AddField("cmd", cmd)
-				ev.AddField("args", args)
-				ev.AddField("actor", act.UIDString())
-				ev.AddField("ensure_revision", req.EnsureRevision)
-				ev.AddField("ensure_revision_status", ensureRevisionStatus)
-				ev.AddField("duration_ms", duration.Milliseconds())
-				ev.AddField("exit_status", exitStatus)
-				if execErr != nil {
-					ev.AddField("error", execErr.Error())
-				}
-				if !cmdStart.IsZero() {
-					ev.AddField("cmd_duration_ms", cmdDuration.Milliseconds())
-					ev.AddField("fetch_duration_ms", fetchDuration.Milliseconds())
-				}
-
-				if traceID := trace.ID(ctx); traceID != "" {
-					ev.AddField("traceID", traceID)
-					ev.AddField("trace", trace.URL(traceID, conf.DefaultClient()))
-				}
-
-				if honey.Enabled() {
-					_ = ev.Send()
-				}
-
-				if traceLogs {
-					logger.Debug("TRACE gitserver exec", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
-				}
-				if isSlow {
-					logger.Warn("Long exec request", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
-				}
-				if isSlowFetch {
-					logger.Warn("Slow fetch/clone for exec request", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
-				}
-			}
-		}()
-	}
-
-	if s.ensureRevision(ctx, repoName, req.EnsureRevision, dir) {
-		ensureRevisionStatus = "fetched"
-	}
-
-	// Special-case `git rev-parse HEAD` requests. These are invoked by search queries for every repo in scope.
-	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
-	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
-	if len(req.Args) == 2 && req.Args[0] == "rev-parse" && req.Args[1] == "HEAD" {
-		if resolved, err := gitcli.QuickRevParseHead(dir); err == nil && gitdomain.IsAbsoluteRevision(resolved) {
-			_, _ = w.Write([]byte(resolved))
-			return execStatus{}, nil
-		}
-	}
-
-	// Special-case `git symbolic-ref HEAD` requests. These are invoked by resolvers determining the default branch of a repo.
-	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
-	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
-	if len(req.Args) == 2 && req.Args[0] == "symbolic-ref" && req.Args[1] == "HEAD" {
-		if resolved, err := gitcli.QuickSymbolicRefHead(dir); err == nil {
-			_, _ = w.Write([]byte(resolved))
-			return execStatus{}, nil
-		}
-	}
-
-	cmdStart = time.Now()
-	stdout, err := backend.Exec(ctx, req.Args...)
-	if err != nil {
-		return execStatus{}, err
-	}
-	defer stdout.Close()
-
-	_, execErr = io.Copy(w, stdout)
-	if execErr != nil {
-		s.LogIfCorrupt(ctx, repoName, execErr)
-		commandFailedErr := &gitcli.CommandFailedError{}
-		if errors.As(execErr, &commandFailedErr) {
-			exitStatus = commandFailedErr.ExitStatus
-			return execStatus{
-				ExitStatus: commandFailedErr.ExitStatus,
-				Stderr:     string(commandFailedErr.Stderr),
-				Err:        commandFailedErr.Unwrap(),
-			}, nil
-		}
-		return execStatus{}, execErr
-	}
-
-	exitStatus = 0
-
-	return execStatus{ExitStatus: exitStatus}, nil
 }
 
 func setLastFetched(ctx context.Context, db database.DB, shardID string, dir common.GitDir, name api.RepoName) error {
@@ -1199,16 +1018,6 @@ func scanCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {
 }
 
 var (
-	execRunning = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_gitserver_exec_running",
-		Help: "number of gitserver.GitCommand running concurrently.",
-	}, []string{"cmd"})
-	execDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_gitserver_exec_duration_seconds",
-		Help:    "gitserver.GitCommand latencies in seconds.",
-		Buckets: trace.UserLatencyBuckets,
-	}, []string{"cmd"})
-
 	searchRunning = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_search_running",
 		Help: "number of gitserver.Search running concurrently.",
@@ -1386,7 +1195,11 @@ func setHEAD(ctx context.Context, logger log.Logger, rcf *wrexec.RecordingComman
 	}
 	dir.Set(cmd)
 	r := urlredactor.New(remoteURL)
-	output, err := executil.RunRemoteGitCommand(ctx, rcf.WrapWithRepoName(ctx, logger, repoName, cmd).WithRedactorFunc(r.Redact), true)
+
+	// Configure the command to be able to talk to a remote.
+	executil.ConfigureRemoteGitCommand(cmd)
+
+	output, err := rcf.WrapWithRepoName(ctx, logger, repoName, cmd).WithRedactorFunc(r.Redact).CombinedOutput()
 	if err != nil {
 		logger.Error("Failed to fetch remote info", log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "failed to fetch remote info")
