@@ -33,20 +33,19 @@ steps:
             exit 1
           fi
 
-      - group: ":construction: workflows"
+      - key: aspect-workflows-setup
         depends_on: "after-commit-check"
-        steps:
-        - key: aspect-workflows-setup
-          label: ":aspect: Setup Aspect Workflows"
-          commands:
-            - "rosetta steps | buildkite-agent pipeline upload"
-          agents:
-            queue: aspect-small
-        - label: ":pipeline: Generate pipeline"
-          if: build.branch !~ /^main(-dry-run\/)?.*/
-          commands:
-            - "./dev/ci/gen-pipeline.sh"
-          agents:
-            queue: bazel
-          env:
-            ASPECT_WORKFLOWS_BUILD: "1"
+        label: ":aspect: Setup Aspect Workflows"
+        commands:
+          - "rosetta steps | buildkite-agent pipeline upload"
+        agents:
+          queue: aspect-small
+      - label: ":pipeline: Generate pipeline"
+        depends_on: "after-commit-check"
+        if: build.branch !~ /^main(-dry-run\/)?.*/
+        commands:
+          - "./dev/ci/gen-pipeline.sh"
+        agents:
+          queue: bazel
+        env:
+          ASPECT_WORKFLOWS_BUILD: "1"
