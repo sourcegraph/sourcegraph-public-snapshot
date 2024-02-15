@@ -52,7 +52,8 @@ for apk in "${apks[@]}"; do
 
   # Check whether this version of the package already exists in the main package repo
   echo "   * Checking if this package version already exists in the production repo..."
-  if gsutil -q -u "$GCP_PROJECT" stat "${dest_path_main}${apk}"; then
+  # TODO(burmudar): remove the || false
+  if gsutil -q -u "$GCP_PROJECT" stat "${dest_path_main}${apk}" && false; then
     echo -e "The production package repository already contains the package '$package_name' version '$package_version' at '${dest_path_main}${apk}'.\n\n
 Resolve this issue by incrementing the 'epoch' field in the package's YAML file." |
       ../../../dev/ci/scripts/annotate.sh -t "error"
