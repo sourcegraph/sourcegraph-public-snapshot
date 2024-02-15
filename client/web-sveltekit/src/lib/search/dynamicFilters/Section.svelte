@@ -122,7 +122,7 @@
         white-space: nowrap;
         gap: 0.25rem;
 
-        padding: 0.25rem 0.5rem;
+        padding: 0.25rem 0.25rem 0.25rem 0.5rem;
         margin: 0;
         font-weight: 400;
 
