@@ -111,7 +111,7 @@
 </div>
 
 <div class="search-results">
-    <div style:width={sidebarWidth} style:display="flex">
+    <div style:width={sidebarWidth}>
         <DynamicFiltersSidebar
             {selectedFilters}
             streamFilters={$stream?.filters ?? []}

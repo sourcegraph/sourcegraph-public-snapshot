@@ -101,6 +101,7 @@
         h3 {
             margin: 0;
         }
+        height: 100%;
         padding: 1rem;
         background-color: var(--sidebar-bg);
         overflow-y: auto;
