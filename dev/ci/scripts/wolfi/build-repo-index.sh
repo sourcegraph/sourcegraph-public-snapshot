@@ -5,7 +5,12 @@ set -eux -o pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
 # TODO: Manage these variables properly
-GCP_PROJECT="sourcegraph-ci"
+# TODO(burmudar): Remove this if
+if [[ "$BUILDKITE_PIPELINE_SLUG" == "sourcegraph" ]]; then
+  GCP_PROJECT="sourcegraph-ci"
+else
+  GCP_PROJECT="aspect-dev"
+fi
 GCS_BUCKET="package-repository"
 TARGET_ARCH="x86_64"
 MAIN_BRANCH="main"
