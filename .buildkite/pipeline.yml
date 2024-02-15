@@ -18,7 +18,7 @@ steps:
         # as possible, so as to better assess pipeline load e.g. to scale the Buildkite fleet.
         priority: 10
         command: './dev/ci/gen-pipeline.sh'
-  - group: "Aspect :nail_care: "
+  - group: ":aspect: Aspect Workflows "
     if: pipeline.slug == "aspect-experimental"
     steps:
       - key: "after-commit-check"
