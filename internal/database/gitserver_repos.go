@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -204,9 +203,6 @@ type ListPurgableReposOptions struct {
 	// Limit optionally limits the repos iterated over. The zero value means no
 	// limits are applied. Repos are ordered by their deleted at date, oldest first.
 	Limit int
-	// Limiter is an optional rate limiter that limits the rate at which we iterate
-	// through the repos.
-	Limiter *ratelimit.InstrumentedLimiter
 }
 
 var scanRepoNames = basestore.NewSliceScanner(basestore.ScanAny[api.RepoName])

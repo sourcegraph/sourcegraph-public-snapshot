@@ -3,8 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "purge",
     srcs = ["purge.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/purge",
-    visibility = ["//cmd/repo-updater:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/purge",
     deps = [
         "//internal/actor",
         "//internal/conf/conftypes",

@@ -25,10 +25,10 @@ import (
 )
 
 var (
-	repoSyncStateCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+	repoSyncStateCounter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_repo_sync_state_counter",
 		Help: "Incremented each time we check the state of repo",
-	}, []string{"type"})
+	})
 	repoStateUpsertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repo_sync_state_upsert_counter",
 		Help: "Incremented each time we upsert repo state in the database",
@@ -181,28 +181,21 @@ func syncRepoState(
 		BatchSize:        iteratePageSize,
 		OnlyWithoutShard: !fullSync,
 	}
+
 	for {
 		repos, nextRepo, err := db.GitserverRepos().IterateRepoGitserverStatus(ctx, options)
 		if err != nil {
 			return err
 		}
-		for _, repo := range repos {
-			repoSyncStateCounter.WithLabelValues("check").Inc()
+
+		it, err := iterateOverOwnedRepos(ctx, shardID, func(rn api.RepoName) error {
+			repoSyncStateCounter.Inc()
 
 			// We may have a deleted repo, we need to extract the original name both to
 			// ensure that the shard check is correct and also so that we can find the
 			// directory.
-			repo.Name = api.UndeletedRepoName(repo.Name)
-
-			// Ensure we're only dealing with repos we are responsible for.
-			addr := gitServerAddrs.AddrForRepo(ctx, repo.Name)
-			if !hostnameMatch(shardID, addr) {
-				repoSyncStateCounter.WithLabelValues("other_shard").Inc()
-				continue
-			}
-			repoSyncStateCounter.WithLabelValues("this_shard").Inc()
-
-			dir := gitserverfs.RepoDirFromName(reposDir, repo.Name)
+			rn = api.UndeletedRepoName(rn)
+			dir := gitserverfs.RepoDirFromName(reposDir, rn)
 			cloned := repoCloned(dir)
 			_, cloning := locker.Status(dir)
 
@@ -221,13 +214,24 @@ func syncRepoState(
 			}
 
 			if !shouldUpdate {
-				continue
+				return nil
 			}
 
 			batch = append(batch, repo.GitserverRepo)
 
 			if len(batch) >= batchSize {
 				writeBatch()
+			}
+
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+
+		for _, repo := range repos {
+			if err := it.Repo(repo); err != nil {
+				return err
 			}
 		}
 

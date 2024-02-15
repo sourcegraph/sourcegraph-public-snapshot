@@ -34,6 +34,12 @@ func deleteRepo(
 	reposDir string,
 	repo api.RepoName,
 ) error {
+	// TODO: This updates both
+	// - DELETED-XXX-src-cli
+	// - src-cli
+	// In the DB through two separate calls here.
+	// Make sure when we switch to only calling RemoveRepoDirectory that
+	// this cannot cause trouble.
 	// The repo may be deleted in the database, in this case we need to get the
 	// original name in order to find it on disk
 	err := gitserverfs.RemoveRepoDirectory(ctx, logger, db, shardID, reposDir, gitserverfs.RepoDirFromName(reposDir, api.UndeletedRepoName(repo)), true)

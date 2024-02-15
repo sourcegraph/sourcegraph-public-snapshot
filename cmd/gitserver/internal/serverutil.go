@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -11,8 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func cloneStatus(cloned, cloning bool) types.CloneStatus {
@@ -91,6 +95,47 @@ func hostnameMatch(shardID, addr string) bool {
 	// char
 	next := addr[len(shardID)]
 	return next == '.' || next == ':'
+}
+
+func iterateOverOwnedRepos(ctx context.Context, shardID string, onRepo func(*types.GitserverRepo) error) (*iterator, error) {
+	gitServerAddrs := gitserver.NewGitserverAddresses(conf.Get())
+
+	var found bool
+	for _, a := range gitServerAddrs.Addresses {
+		if hostnameMatch(shardID, a) {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil, errors.Errorf("gitserver hostname, %q, not found in list", shardID)
+	}
+
+	return &iterator{ctx: ctx, shardID: shardID, onRepo: onRepo, gitServerAddrs: gitServerAddrs}, nil
+}
+
+type iterator struct {
+	ctx            context.Context
+	onRepo         func(*types.GitserverRepo) error
+	shardID        string
+	gitServerAddrs gitserver.GitserverAddresses
+}
+
+func (it *iterator) Repo(repo *types.GitserverRepo) error {
+	if err := it.ctx.Err(); err != nil {
+		return err
+	}
+
+	// We may have a deleted repo, we need to extract the original name both to
+	// ensure that the shard check is correct and also so that we can find the
+	// directory.
+	// Ensure we're only dealing with repos we are responsible for.
+	addr := it.gitServerAddrs.AddrForRepo(it.ctx, api.UndeletedRepoName(repo.Name))
+	if !hostnameMatch(it.shardID, addr) {
+		return nil
+	}
+
+	return it.onRepo(name)
 }
 
 // Send 1 in 16 events to honeycomb. This is hardcoded since we only use this

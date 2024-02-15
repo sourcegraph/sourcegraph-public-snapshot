@@ -12,6 +12,7 @@ import (
 
 	"github.com/felixge/fgprof"
 	"github.com/gorilla/mux"
+	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -134,6 +135,8 @@ func NewServerRoutine(ready <-chan struct{}, extra ...Endpoint) goroutine.Backgr
 			router.Handle(e.Path, e.Handler)
 		}
 	})
+
+	log15.Info("debug server listening", "addr", addr)
 
 	return httpserver.NewFromAddr(addr, &http.Server{Handler: handler})
 }
