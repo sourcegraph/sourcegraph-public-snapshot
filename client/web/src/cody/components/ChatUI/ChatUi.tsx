@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
+import React, { useCallback, useEffect, useRef, useState, useMemo, type FC } from 'react'
 
 import {
     mdiClose,
@@ -22,10 +22,35 @@ import {
     type FeedbackButtonsProps,
 } from '@sourcegraph/cody-ui/dist/Chat'
 import type { FileLinkProps } from '@sourcegraph/cody-ui/dist/chat/ContextFiles'
+import { updateSettings } from '@sourcegraph/shared/src/api/client/services/settings'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourcegraph/wildcard'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { useSettings } from '@sourcegraph/shared/src/settings/settings'
+import {
+    Button,
+    Icon,
+    TextArea,
+    Link,
+    Tooltip,
+    Alert,
+    Text,
+    H2,
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+    Position,
+} from '@sourcegraph/wildcard'
 
+import {
+    buildEditorUrl,
+    buildRepoBaseNameAndPath,
+    getEditorSettingsErrorMessage,
+} from '../../../open-in-editor/build-url'
+import { type EditorId, getEditor, type Editor } from '../../../open-in-editor/editors'
+import { OpenInEditorPopover } from '../../../open-in-editor/OpenInEditorPopover'
+import { useOpenCurrentUrlInEditor } from '../../../open-in-editor/useOpenCurrentUrlInEditor'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { getLicenseFeatures } from '../../../util/license'
 import { CodyPageIcon } from '../../chat/CodyPageIcon'
 import { isCodyEnabled, isEmailVerificationNeededForCody, isSignInRequiredForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
@@ -46,9 +71,15 @@ interface IChatUIProps {
     codyChatStore: CodyChatStore
     isCodyChatPage?: boolean
     authenticatedUser: AuthenticatedUser | null
+    platformContext: PlatformContext
 }
 
-export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isCodyChatPage, authenticatedUser }): JSX.Element => {
+export const ChatUI: FC<IChatUIProps> = ({
+    codyChatStore,
+    isCodyChatPage,
+    authenticatedUser,
+    platformContext,
+}): JSX.Element => {
     const {
         submitMessage,
         editMessage,
@@ -136,6 +167,9 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isCodyChatPage, 
         )
     }
 
+    const FileLinkComponent = (props: FileLinkProps): JSX.Element => (
+        <FileLink {...props} platformContext={platformContext} />
+    )
     return (
         <>
             <Chat
@@ -150,7 +184,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isCodyChatPage, 
                 setInputHistory={setInputHistory}
                 onSubmit={onSubmit}
                 submitButtonComponent={SubmitButton}
-                fileLinkComponent={FileLink}
+                fileLinkComponent={FileLinkComponent}
                 className={styles.container}
                 transcriptItemClassName={styles.transcriptItem}
                 humanTranscriptItemClassName={styles.humanTranscriptItem}
@@ -291,89 +325,190 @@ export const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = Re
     )
 })
 
-export const FileLink: React.FunctionComponent<FileLinkProps> = React.memo(function FileLinkContent({
+interface OpenFileInEditorProps extends Pick<FileLinkProps, 'path' | 'repoName'> {
+    platformContext: PlatformContext
+}
+
+const OpenFileInEditor: FC<OpenFileInEditorProps> = ({ path, platformContext, repoName }) => {
+    const settings = useSettings()
+    const [popoverOpen, setPopoverOpen] = useState(false)
+    const togglePopover = useCallback(() => {
+        setPopoverOpen(previous => !previous)
+    }, [])
+    // const openCurrentUrlInEditor = useOpenCurrentUrlInEditor()
+    const openInEditor = useCallback(() => {
+        // openCurrentUrlInEditor(settings?.openInEditor, undefined, platformContext.sourcegraphURL)
+        // const url = buildEditorUrl()
+        // window.open(url.toString(), '_blank')
+        // sourcegraph/client/web/src/open-in-editor/editor-settings.ts
+        const url = buildRepoBaseNameAndPath(repoName || '', 'github', path)
+        console.log('opening', { url, repoName })
+    }, [])
+
+    const editorIds = settings?.openInEditor?.editorIds ?? []
+    const editorSettingsErrorMessage = getEditorSettingsErrorMessage(
+        settings?.openInEditor,
+        platformContext.sourcegraphURL
+    )
+    const editors = !editorSettingsErrorMessage ? editorIds.map(getEditor) : undefined
+
+    const onSave = useCallback(
+        async (selectedEditorId: EditorId, defaultProjectPath: string): Promise<void> => {
+            await updateSettings(platformContext, {
+                path: ['openInEditor', 'projectPaths.default'],
+                value: defaultProjectPath,
+            })
+            await updateSettings(platformContext, {
+                path: ['openInEditor', 'editorIds'],
+                value: [selectedEditorId],
+            })
+        },
+        [platformContext]
+    )
+
+    if (editors === undefined) {
+        return (
+            <Popover isOpen={popoverOpen} onOpenChange={event => setPopoverOpen(event.isOpen)}>
+                <PopoverTrigger as={Text} className={styles.openInEditorPath}>
+                    {path}
+                </PopoverTrigger>
+                <PopoverContent position={Position.bottomStart}>
+                    <OpenInEditorPopover
+                        editorSettings={settings?.openInEditor}
+                        onSave={onSave}
+                        togglePopover={togglePopover}
+                        sourcegraphUrl={platformContext.sourcegraphURL}
+                    />
+                </PopoverContent>
+            </Popover>
+        )
+    }
+
+    const filteredEditors = editors.filter(Boolean) as Editor[]
+
+    if (filteredEditors.length > 1) {
+        ;<Popover isOpen={popoverOpen} onOpenChange={event => setPopoverOpen(event.isOpen)}>
+            <PopoverTrigger as={Text} className={styles.openInEditorPath}>
+                {path}
+            </PopoverTrigger>
+            <PopoverContent position={Position.bottomStart}>
+                <section>
+                    {filteredEditors.map(e => (
+                        <Button className="p-0" onClick={openInEditor}>
+                            {e.name}
+                        </Button>
+                    ))}
+                </section>
+            </PopoverContent>
+        </Popover>
+    }
+
+    return (
+        <Button className="p-0" onClick={openInEditor}>
+            <Text className={styles.openInEditorPath}>{path}</Text>
+        </Button>
+    )
+}
+
+interface Props extends FileLinkProps {
+    platformContext: PlatformContext
+}
+
+export const FileLink: FC<Props> = React.memo(function FileLinkContent({
     path,
     repoName,
     revision,
+    platformContext,
+    ...props
 }) {
-    return repoName ? (
-        <Tooltip content={`${repoName}/-/blob/${path}`}>
-            <Link to={`/${repoName}${revision ? `@${revision}` : ''}/-/blob/${path}`}>{path}</Link>
-        </Tooltip>
-    ) : (
-        <>{path}</>
-    )
+    const features = getLicenseFeatures()
+    if (features.isCodeSearchEnabled) {
+        return repoName ? (
+            <Tooltip content={`${repoName}/-/blob/${path}`}>
+                <Link to={`/${repoName}${revision ? `@${revision}` : ''}/-/blob/${path}`}>{path}</Link>
+            </Tooltip>
+        ) : (
+            <>{path}</>
+        )
+    }
+    // When code search isn't enabled, the instance won't have access to Code Search, so
+    // we instead allow them open the file links in their local IDE.
+    return <OpenFileInEditor path={path} platformContext={platformContext} repoName={repoName} />
 })
 
 interface AutoResizableTextAreaProps extends ChatUITextAreaProps {}
 
-export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = React.memo(
-    function AutoResizableTextAreaContent({ value, onInput, onKeyDown, className, disabled = false }) {
-        const { inputNeedsFocus, setFocusProvided } = useCodySidebar() || {
-            inputNeedsFocus: false,
-            setFocusProvided: () => null,
-        }
-        const textAreaRef = useRef<HTMLTextAreaElement>(null)
-        const { width = 0 } = useResizeObserver({ ref: textAreaRef })
-
-        const adjustTextAreaHeight = useCallback((): void => {
-            if (textAreaRef.current) {
-                textAreaRef.current.style.height = '0px'
-                const scrollHeight = textAreaRef.current.scrollHeight
-                textAreaRef.current.style.height = `${scrollHeight}px`
-
-                // Hide scroll if the textArea isn't overflowing.
-                textAreaRef.current.style.overflowY = scrollHeight < 200 ? 'hidden' : 'auto'
-            }
-        }, [])
-
-        const handleChange = (): void => {
-            adjustTextAreaHeight()
-        }
-
-        useEffect(() => {
-            if (inputNeedsFocus && textAreaRef.current) {
-                textAreaRef.current.focus()
-                setFocusProvided()
-            }
-        }, [inputNeedsFocus, setFocusProvided])
-
-        useEffect(() => {
-            adjustTextAreaHeight()
-        }, [adjustTextAreaHeight, value, width])
-
-        const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
-            if (onKeyDown) {
-                onKeyDown(event, textAreaRef.current?.selectionStart ?? null)
-            }
-        }
-
-        return (
-            <Tooltip
-                content={
-                    isSignInRequiredForCody()
-                        ? 'Sign in to get access to Cody.'
-                        : isEmailVerificationNeededForCody()
-                        ? 'Verify your email to use Cody.'
-                        : ''
-                }
-            >
-                <TextArea
-                    ref={textAreaRef}
-                    className={className}
-                    value={isSignInRequiredForCody() ? 'Sign in to get access to use Cody' : value}
-                    onChange={handleChange}
-                    rows={1}
-                    autoFocus={false}
-                    required={true}
-                    onKeyDown={handleKeyDown}
-                    onInput={onInput}
-                    disabled={disabled}
-                />
-            </Tooltip>
-        )
+export const AutoResizableTextArea: FC<AutoResizableTextAreaProps> = React.memo(function AutoResizableTextAreaContent({
+    value,
+    onInput,
+    onKeyDown,
+    className,
+    disabled = false,
+}) {
+    const { inputNeedsFocus, setFocusProvided } = useCodySidebar() || {
+        inputNeedsFocus: false,
+        setFocusProvided: () => null,
     }
-)
+    const textAreaRef = useRef<HTMLTextAreaElement>(null)
+    const { width = 0 } = useResizeObserver({ ref: textAreaRef })
+
+    const adjustTextAreaHeight = useCallback((): void => {
+        if (textAreaRef.current) {
+            textAreaRef.current.style.height = '0px'
+            const scrollHeight = textAreaRef.current.scrollHeight
+            textAreaRef.current.style.height = `${scrollHeight}px`
+
+            // Hide scroll if the textArea isn't overflowing.
+            textAreaRef.current.style.overflowY = scrollHeight < 200 ? 'hidden' : 'auto'
+        }
+    }, [])
+
+    const handleChange = (): void => {
+        adjustTextAreaHeight()
+    }
+
+    useEffect(() => {
+        if (inputNeedsFocus && textAreaRef.current) {
+            textAreaRef.current.focus()
+            setFocusProvided()
+        }
+    }, [inputNeedsFocus, setFocusProvided])
+
+    useEffect(() => {
+        adjustTextAreaHeight()
+    }, [adjustTextAreaHeight, value, width])
+
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
+        if (onKeyDown) {
+            onKeyDown(event, textAreaRef.current?.selectionStart ?? null)
+        }
+    }
+
+    return (
+        <Tooltip
+            content={
+                isSignInRequiredForCody()
+                    ? 'Sign in to get access to Cody.'
+                    : isEmailVerificationNeededForCody()
+                    ? 'Verify your email to use Cody.'
+                    : ''
+            }
+        >
+            <TextArea
+                ref={textAreaRef}
+                className={className}
+                value={isSignInRequiredForCody() ? 'Sign in to get access to use Cody' : value}
+                onChange={handleChange}
+                rows={1}
+                autoFocus={false}
+                required={true}
+                onKeyDown={handleKeyDown}
+                onInput={onInput}
+                disabled={disabled}
+            />
+        </Tooltip>
+    )
+})
 
 const NeedsEmailVerificationNotice: React.FunctionComponent = React.memo(
     function NeedsEmailVerificationNoticeContent() {
