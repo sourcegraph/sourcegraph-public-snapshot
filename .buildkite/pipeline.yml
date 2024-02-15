@@ -21,7 +21,7 @@ steps:
   - group: "Aspect :nail_care: "
     if: pipeline.slug == "aspect-experimental"
     steps:
-      - key: "git-ensure-commit"
+      - key: "after-commit-check"
         label: ":oncoming_police_car: commit check"
         agents: { queue: aspect-small }
         command: |
@@ -34,7 +34,7 @@ steps:
           fi
 
       - group: ":construction: workflows"
-        depends_on: "git-ensure-commit"
+        depends_on: "after-commit-check"
         steps:
         - key: aspect-workflows-setup
           label: ":aspect: Setup Aspect Workflows"
