@@ -72,6 +72,7 @@ type AnthropicConfig struct {
 	AccessToken            string
 	MaxTokensToSample      int
 	AllowedPromptPatterns  []string
+	DetectedPromptPatterns []string
 	RequestBlockingEnabled bool
 }
 
@@ -135,6 +136,7 @@ func (c *Config) Load() {
 	}
 	c.Anthropic.MaxTokensToSample = c.GetInt("CODY_GATEWAY_ANTHROPIC_MAX_TOKENS_TO_SAMPLE", "10000", "Maximum permitted value of maxTokensToSample")
 	c.Anthropic.AllowedPromptPatterns = splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_ALLOWED_PROMPT_PATTERNS", "Prompt patterns to allow."))
+	c.Anthropic.DetectedPromptPatterns = splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_DETECTED_PROMPT_PATTERNS", "Patterns to detect in prompt."))
 	c.Anthropic.RequestBlockingEnabled = c.GetBool("CODY_GATEWAY_ANTHROPIC_REQUEST_BLOCKING_ENABLED", "false", "Whether we should block requests that match our blocking criteria.")
 
 	c.OpenAI.AccessToken = c.GetOptional("CODY_GATEWAY_OPENAI_ACCESS_TOKEN", "The OpenAI access token to be used.")
