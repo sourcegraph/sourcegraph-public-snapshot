@@ -66,7 +66,7 @@ const REQUESTERS: Record<string, TokenRequester> = {
         callbackType: 'new-tab',
     },
     CODY_VSCODIUM: {
-        name: 'Cody - VS Code Extension',
+        name: 'Cody - VSCodium Extension',
         redirectURL: 'vscodium://sourcegraph.cody-ai?code=$TOKEN',
         successMessage: 'Now opening VS Code...',
         infoMessage:
