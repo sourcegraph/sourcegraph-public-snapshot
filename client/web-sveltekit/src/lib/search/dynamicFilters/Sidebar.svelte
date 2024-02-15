@@ -8,6 +8,7 @@
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SymbolKind from '$lib/search/SymbolKind.svelte'
     import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
+    import Tooltip from '$lib/Tooltip.svelte'
 
     import { type URLQueryFilter, type SectionItem, staticTypeFilters, typeFilterIcons, groupFilters } from './index'
     import LoadingSkeleton from './LoadingSkeleton.svelte'
@@ -56,7 +57,9 @@
     <Section items={groupedFilters.repo} title="By repository" filterPlaceholder="Filter repositories">
         <svelte:fragment slot="label" let:label>
             <CodeHostIcon repository={label} />
-            {displayRepoName(label)}
+            <Tooltip tooltip={label} placement="right">
+                <span>{displayRepoName(label)}</span>
+            </Tooltip>
         </svelte:fragment>
     </Section>
     <Section items={groupedFilters.lang} title="By language" filterPlaceholder="Filter languages">
