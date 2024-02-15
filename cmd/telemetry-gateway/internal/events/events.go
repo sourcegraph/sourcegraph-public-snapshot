@@ -81,7 +81,7 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 			// then pretend the event succeeded. Pending decision from data team
 			// on what to do with these: https://sourcegraph.slack.com/archives/CN4FC7XT4/p1707986514302069
 			if len(payload) >= googlepubsub.MaxPublishRequestBytes {
-				return errors.Wrapf(err, "event %s/%s is oversized (ID: %s, size: %s)",
+				return errors.Newf("event %s/%s is oversized (ID: %s, size: %s)",
 					// Mark values as safe for cockroachdb Sentry reporting
 					redact.Safe(event.GetFeature()),
 					redact.Safe(event.GetAction()),
