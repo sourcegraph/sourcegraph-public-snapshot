@@ -18,6 +18,7 @@ import (
 // These commands are meant to be executed with a VERSION env var with a hypothetical stamped release version
 // This type is used to assign the stamp version from VERSION
 type stampVersionKey struct{}
+type postReleaseKey struct{}
 
 // Register upgrade commands -- see README.md for more details.
 func main() {
@@ -31,11 +32,15 @@ func main() {
 				Usage:   "Runs all upgrade test types\n\nRequires stamp-version for tryAutoUpgrade call.",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:     "stamp-version",
-						Aliases:  []string{"sv"},
-						Usage:    "stamp-version is the version frontend:candidate and  migrator:candidate are set as. If the $VERSION env var is set this flag inherits that value.",
-						EnvVars:  []string{"VERSION"},
-						Required: true,
+						Name:    "stamp-version",
+						Aliases: []string{"sv"},
+						Usage:   "stamp-version is the version frontend:candidate and  migrator:candidate are set as. If the $VERSION env var is set this flag inherits that value.",
+						EnvVars: []string{"VERSION"},
+					},
+					&cli.StringFlag{
+						Name:    "post-release-version",
+						Aliases: []string{"pv"},
+						Usage:   "Select an already released version as the target version for the test suite.",
 					},
 					&cli.IntFlag{
 						Name:    "max-routines",
@@ -61,6 +66,7 @@ func main() {
 				},
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
+					ctx = context.WithValue(ctx, postReleaseKey{}, cCtx.String("post-release-version"))
 
 					// check docker is running
 					if err := run.Cmd(ctx, "docker", "ps").Run().Wait(); err != nil {
@@ -69,15 +75,26 @@ func main() {
 					}
 
 					// Get init versions to use for initializing upgrade environments for tests
-					latestMinorVersion, latestStableVersion, targetVersion, stdVersions, mvuVersions, autoVersions, err := handleVersions(cCtx, cCtx.StringSlice("standard-versions"), cCtx.StringSlice("mvu-versions"), cCtx.StringSlice("auto-versions"))
+					latestMinorVersion, latestStableVersion, targetVersion, stdVersions, mvuVersions, autoVersions, err := handleVersions(cCtx, cCtx.StringSlice("standard-versions"), cCtx.StringSlice("mvu-versions"), cCtx.StringSlice("auto-versions"), cCtx.String("post-release-version"))
 					if err != nil {
 						fmt.Println("🚨 Error: failed to get test version ranges: ", err)
 						os.Exit(1)
 					}
 
+					var targetMigratorImage string
+					switch {
+					case ctx.Value(postReleaseKey{}) != "":
+						targetMigratorImage = fmt.Sprintf("sourcegraph/migrator:%s", ctx.Value(postReleaseKey{}))
+					case ctx.Value(stampVersionKey{}) != "":
+						targetMigratorImage = fmt.Sprintf("migrator:candidate stamped as %s", ctx.Value(stampVersionKey{}))
+					default:
+						targetMigratorImage = "migrator:candidate"
+					}
+
 					fmt.Println("Latest stable release version: ", latestStableVersion)
 					fmt.Println("Latest minor version: ", latestMinorVersion)
 					fmt.Println("Target version: ", targetVersion)
+					fmt.Println("Migrator image used to upgrade: ", targetMigratorImage)
 					fmt.Println("Standard Versions:", stdVersions)
 					fmt.Println("Multiversion Versions:", mvuVersions)
 					fmt.Println("Autoupgrade Versions:", autoVersions)
@@ -166,6 +183,11 @@ func main() {
 						Usage:   "stamp-version is the version frontend:candidate and  migrator:candidate are set as. If the $VERSION env var is set this flag inherits that value.",
 						EnvVars: []string{"VERSION"},
 					},
+					&cli.StringFlag{
+						Name:    "post-release-version",
+						Aliases: []string{"pv"},
+						Usage:   "Select an already released version as the target version for the test suite.",
+					},
 					&cli.IntFlag{
 						Name:    "max-routines",
 						Aliases: []string{"mr"},
@@ -180,6 +202,7 @@ func main() {
 				},
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
+					ctx = context.WithValue(ctx, postReleaseKey{}, cCtx.String("post-release-version"))
 
 					// check docker is running
 					if err := run.Cmd(ctx, "docker", "ps").Run().Wait(); err != nil {
@@ -188,15 +211,26 @@ func main() {
 					}
 
 					// Get init versions to use for initializing upgrade environments for tests
-					latestMinorVersion, latestStableVersion, targetVersion, stdVersions, _, _, err := handleVersions(cCtx, cCtx.StringSlice("standard-versions"), nil, nil)
+					latestMinorVersion, latestStableVersion, targetVersion, stdVersions, _, _, err := handleVersions(cCtx, cCtx.StringSlice("standard-versions"), nil, nil, cCtx.String("post-release-version"))
 					if err != nil {
 						fmt.Println("🚨 Error: failed to get test version ranges: ", err)
 						os.Exit(1)
 					}
 
+					var targetMigratorImage string
+					switch {
+					case ctx.Value(postReleaseKey{}) != "":
+						targetMigratorImage = fmt.Sprintf("sourcegraph/migrator:%s", ctx.Value(postReleaseKey{}))
+					case ctx.Value(stampVersionKey{}) != "":
+						targetMigratorImage = fmt.Sprintf("migrator:candidate stamped as %s", ctx.Value(stampVersionKey{}))
+					default:
+						targetMigratorImage = "migrator:candidate"
+					}
+
 					fmt.Println("Latest stable release version: ", latestStableVersion)
 					fmt.Println("Latest minor version: ", latestMinorVersion)
 					fmt.Println("Target version: ", targetVersion)
+					fmt.Println("Migrator image used to upgrade: ", targetMigratorImage)
 					fmt.Println("Standard Versions:", stdVersions)
 
 					// initialize test results
@@ -242,6 +276,11 @@ func main() {
 						Usage:   "stamp-version is the version frontend:candidate and  migrator:candidate are set as. If the $VERSION env var is set this flag inherits that value.",
 						EnvVars: []string{"VERSION"},
 					},
+					&cli.StringFlag{
+						Name:    "post-release-version",
+						Aliases: []string{"pv"},
+						Usage:   "Select an already released version as the target version for the test suite.",
+					},
 					&cli.IntFlag{
 						Name:    "max-routines",
 						Aliases: []string{"mr"},
@@ -256,6 +295,7 @@ func main() {
 				},
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
+					ctx = context.WithValue(ctx, postReleaseKey{}, cCtx.String("post-release-version"))
 
 					// check docker is running
 					if err := run.Cmd(ctx, "docker", "ps").Run().Wait(); err != nil {
@@ -264,15 +304,26 @@ func main() {
 					}
 
 					// Get init versions to use for initializing upgrade environments for tests
-					latestMinorVersion, latestStableVersion, targetVersion, _, mvuVersions, _, err := handleVersions(cCtx, nil, cCtx.StringSlice("mvu-versions"), nil)
+					latestMinorVersion, latestStableVersion, targetVersion, _, mvuVersions, _, err := handleVersions(cCtx, nil, cCtx.StringSlice("mvu-versions"), nil, cCtx.String("post-release-version"))
 					if err != nil {
 						fmt.Println("🚨 Error: failed to get test version ranges: ", err)
 						os.Exit(1)
 					}
 
+					var targetMigratorImage string
+					switch {
+					case ctx.Value(postReleaseKey{}) != "":
+						targetMigratorImage = fmt.Sprintf("sourcegraph/migrator:%s", ctx.Value(postReleaseKey{}))
+					case ctx.Value(stampVersionKey{}) != "":
+						targetMigratorImage = fmt.Sprintf("migrator:candidate stamped as %s", ctx.Value(stampVersionKey{}))
+					default:
+						targetMigratorImage = "migrator:candidate"
+					}
+
 					fmt.Println("Latest stable release version: ", latestStableVersion)
 					fmt.Println("Latest minor version: ", latestMinorVersion)
 					fmt.Println("Target version: ", targetVersion)
+					fmt.Println("Migrator image used to upgrade: ", targetMigratorImage)
 					fmt.Println("MVU Versions:", mvuVersions)
 
 					// initialize test results
@@ -310,11 +361,15 @@ func main() {
 				Usage:   "Runs autoupgrade upgrade tests for all versions.\n\nRequires stamp-version for tryAutoUpgrade call.",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:     "stamp-version",
-						Aliases:  []string{"sv"},
-						Usage:    "stamp-version is the version frontend:candidate and  migrator:candidate are set as. If the $VERSION env var is set this flag inherits that value.",
-						EnvVars:  []string{"VERSION"},
-						Required: true,
+						Name:    "stamp-version",
+						Aliases: []string{"sv"},
+						Usage:   "stamp-version is the version frontend:candidate and migrator:candidate are set as. If the $VERSION env var is set this flag inherits that value.",
+						EnvVars: []string{"VERSION"},
+					},
+					&cli.StringFlag{
+						Name:    "post-release-version",
+						Aliases: []string{"pv"},
+						Usage:   "Select an already released version as the target version for the test suite.",
 					},
 					&cli.IntFlag{
 						Name:    "max-routines",
@@ -330,6 +385,7 @@ func main() {
 				},
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
+					ctx = context.WithValue(ctx, postReleaseKey{}, cCtx.String("post-release-version"))
 
 					// check docker is running
 					if err := run.Cmd(ctx, "docker", "ps").Run().Wait(); err != nil {
@@ -338,15 +394,26 @@ func main() {
 					}
 
 					// Get init versions to use for initializing upgrade environments for tests
-					latestMinorVersion, latestStableVersion, targetVersion, _, _, autoVersions, err := handleVersions(cCtx, nil, nil, cCtx.StringSlice("auto-versions"))
+					latestMinorVersion, latestStableVersion, targetVersion, _, _, autoVersions, err := handleVersions(cCtx, nil, nil, cCtx.StringSlice("auto-versions"), cCtx.String("post-release-version"))
 					if err != nil {
 						fmt.Println("🚨 Error: failed to get test version ranges: ", err)
 						os.Exit(1)
 					}
 
+					var targetMigratorImage string
+					switch {
+					case ctx.Value(postReleaseKey{}) != "":
+						targetMigratorImage = fmt.Sprintf("sourcegraph/migrator:%s", ctx.Value(postReleaseKey{}))
+					case ctx.Value(stampVersionKey{}) != "":
+						targetMigratorImage = fmt.Sprintf("migrator:candidate stamped as %s", ctx.Value(stampVersionKey{}))
+					default:
+						targetMigratorImage = "migrator:candidate"
+					}
+
 					fmt.Println("Latest stable release version: ", latestStableVersion)
 					fmt.Println("Latest minor version: ", latestMinorVersion)
 					fmt.Println("Target version: ", targetVersion)
+					fmt.Println("Migrator image used to upgrade: ", targetMigratorImage)
 					fmt.Println("Auto Versions:", autoVersions)
 
 					// initialize test results

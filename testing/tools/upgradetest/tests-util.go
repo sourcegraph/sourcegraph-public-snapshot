@@ -437,7 +437,7 @@ func validateDBs(ctx context.Context, test *Test, version, migratorImage, networ
 
 	// Check DBs for drift
 	test.AddLog("🔎 Checking DBs for drift")
-	if postUpgrade {
+	if postUpgrade && ctx.Value(postReleaseKey{}) == "" {
 		// Get the last commit in the release branch, if validating an upgrade the upgrade boolean is true,
 		// in this case the drift target is the latest commit on the release candidate branch.
 		// If working on this, the drift check will fail if you have local commits not yet pushed to remote.
@@ -685,13 +685,21 @@ func newContainerHash() ([]byte, error) {
 //
 // Technically MVU is supported v3.20 and forward, but in older versions codeinsights-db didnt exist and postgres was using version 11.4
 // so we reduce the scope of the test, to cover only v3.39 and forward, for MVU and Auto upgrade testing.
-func handleVersions(cCtx *cli.Context, overrideStd, overrideMVU, overrideAuto []string) (latestMinor, latestFull, targetVersion *semver.Version, stdVersions, mvuVersions, autoVersions []*semver.Version, err error) {
+func handleVersions(cCtx *cli.Context, overrideStd, overrideMVU, overrideAuto []string, postRelease string) (latestMinor, latestFull, targetVersion *semver.Version, stdVersions, mvuVersions, autoVersions []*semver.Version, err error) {
 	ctx := cCtx.Context
 
+	if postRelease != "" && cCtx.String("stamp-version") != "" {
+		return nil, nil, nil, nil, nil, nil, errors.New("stamp-version and post-release cannot be set at the same time")
+	}
+
 	// Set target version to VERSION stamp if frontend and migrator are set at a stamped version, otherwise set it to 0.0.0+dev
-	if cCtx.String("stamp-version") != "" {
+	// If post release is set this is the target version
+	switch {
+	case postRelease != "":
+		targetVersion = semver.MustParse(postRelease)
+	case cCtx.String("stamp-version") != "":
 		targetVersion = semver.MustParse(cCtx.String("stamp-version"))
-	} else {
+	default:
 		targetVersion = semver.MustParse("0.0.0+dev") // If no stamp version is set, we assume version is in dev
 	}
 
