@@ -33,7 +33,7 @@ steps:
             exit 1
           fi
 
-      - key: aspect-workflows-setup
+      - key: aspect-workflows-upload
         depends_on: "after-commit-check"
         label: ":aspect: Setup Aspect Workflows"
         commands:
