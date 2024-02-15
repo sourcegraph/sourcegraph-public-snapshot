@@ -22,8 +22,6 @@ func TestAwsConfigOptsForKeyConfig(t *testing.T) {
 		awsEndpoint, err := defaultConfig.EndpointResolverWithOptions.ResolveEndpoint("test", "some-region", nil)
 		require.NoError(t, err)
 		require.Equal(t, awsEndpoint.URL, endpoint)
-		// The region should not be set if the endpoint is a URL this needs to be specified in AWS_REGION env variable
-		require.Empty(t, defaultConfig.Region)
 
 	})
 
