@@ -9,6 +9,7 @@
 
 steps:
   - group: "Pipeline setup"
+    if: pipeline.slug == "sourcegraph"
     steps:
       - label: ':bazel::pipeline: Generate pipeline'
         key: 'pipeline-gen'
@@ -17,9 +18,41 @@ steps:
         # as possible, so as to better assess pipeline load e.g. to scale the Buildkite fleet.
         priority: 10
         command: './dev/ci/gen-pipeline.sh'
-  - group: "Aspect"
+  - group: "Aspect :nail_care: "
     if: pipeline.slug == "aspect-experimental"
     steps:
-      - label: ':aspect: Setup workflows'
-        key: 'aspect-setup'
-        command: 'echo "--- :dynamite:"'
+      - key: "git-ensure-commit"
+        label: ":oncoming_police_car: commit check"
+        agents: { queue: aspect-small }
+        command: |
+          echo "--- :git: check we're after commit
+          if git merge-base --is-ancestor c844eaf2958bdc37fbc65488b98804a846ae9681 HEAD; then
+            echo ":white_checkmark: We are after the commit."
+          else
+            echo ":x: HEAD commit should be after c844eaf2958bdc37fbc65488b98804a846ae9681"
+            exit 1
+          fi
+
+      - group: ":construction: workflows"
+        depends_on: "git-ensure-commit"
+        steps:
+        - key: aspect-workflows-setup
+          label: ":aspect: Setup Aspect Workflows"
+          commands:
+            - "rosetta steps | buildkite-agent pipeline upload"
+          agents:
+            queue: aspect-small
+        - label: ":pipeline: Generate pipeline"
+          if: build.branch !~ /^main(-dry-run\/)?.*/ && build.branch != "wb/aspect/gen-pipeline"
+          commands:
+            - "./dev/ci/gen-pipeline.sh"
+          agents:
+            queue: bazel
+          env:
+            ASPECT_WORKFLOWS_BUILD: "1"
+        - label: ":pipeline: Generate pipeline(Aspect)"
+          if: build.branch == "wb/aspect/gen-pipeline"
+          commands:
+            - "./dev/ci/gen-pipeline.sh"
+          agents:
+            queue: aspect-default
