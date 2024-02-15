@@ -121,6 +121,9 @@ const (
 // isSpace returns true if the buffer only contains UTF-8 encoded whitespace as
 // defined by unicode.IsSpace.
 func isSpace(buf []byte) bool {
+	if len(buf) == 0 {
+		return false
+	}
 	for len(buf) > 0 {
 		r, n := utf8.DecodeRune(buf)
 		if !unicode.IsSpace(r) {
@@ -244,6 +247,9 @@ func (p *parser) expect(keyword keyword) bool {
 // matchKeyword is like match but checks whether the keyword has a valid prefix
 // and suffix.
 func (p *parser) matchKeyword(keyword keyword) bool {
+	if p.pos == 0 {
+		return false
+	}
 	if isSpace(p.buf[:p.pos]) {
 		return false
 	}
