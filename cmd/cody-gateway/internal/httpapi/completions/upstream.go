@@ -134,7 +134,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		patternsToDetect[i] = strings.ToLower(patternsToDetect[i])
 	}
 	if len(patternsToDetect) > 0 {
-		baseLogger.Debug("initialing pattern detector", log.Strings("patterns", patternsToDetect))
+		baseLogger.Debug("initializing pattern detector", log.Strings("patterns", patternsToDetect))
 	}
 
 	return featurelimiter.Handle(
