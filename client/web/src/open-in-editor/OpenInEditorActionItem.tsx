@@ -93,7 +93,6 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
         [props.platformContext, userSettingsSubject]
     )
 
-    console.log({ editors })
     return editors ? (
         <>
             {editors.map(
