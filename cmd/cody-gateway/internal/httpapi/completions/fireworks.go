@@ -7,6 +7,7 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"strings"
 
 	"github.com/sourcegraph/log"
 
@@ -58,6 +59,7 @@ func NewFireworksHandler(
 		// do any retries
 		30, // seconds
 		autoFlushStreamingResponses,
+		nil,
 	)
 }
 
@@ -82,6 +84,17 @@ func (fr fireworksRequest) ShouldStream() bool {
 
 func (fr fireworksRequest) GetModel() string {
 	return fr.Model
+}
+
+func (fr fireworksRequest) BuildPrompt() string {
+	if fr.Prompt != "" {
+		return fr.Prompt
+	}
+	var sb strings.Builder
+	for _, m := range fr.Messages {
+		sb.WriteString(m.Content + "\n")
+	}
+	return sb.String()
 }
 
 type message struct {
