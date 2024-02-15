@@ -37,6 +37,10 @@ if [ "${EXECUTOR_IS_TAGGED_RELEASE}" = "true" ]; then
 else
   PKR_VAR_aws_regions='["us-west-2"]'
 fi
+# TODO(burmudar): Remove this early exit
+echo "--- :rocket: SKIPPED Packer"
+exit 0
+
 
 "$packer" init docker-mirror.pkr.hcl
 "$packer" build -force docker-mirror.pkr.hcl

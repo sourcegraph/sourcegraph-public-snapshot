@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 set -eu
-
 ## Setting up inputs/data
 gcloud="$(pwd)/$1" # used in workdir folder, so need an absolute path
 packer="$(pwd)/$2"
@@ -54,6 +53,10 @@ if [ "${EXECUTOR_IS_TAGGED_RELEASE}" = "true" ]; then
 else
   PKR_VAR_aws_regions='["us-west-2"]'
 fi
+
+# TODO(burmudar): Remove this early exit
+echo "--- :rocket: SKIPPED Packer build"
+exit 0
 
 "$packer" init executor.pkr.hcl
 "$packer" build -force executor.pkr.hcl

@@ -2,6 +2,10 @@
 
 set -eu
 
+# TODO(burmudar): Remove this early exit
+echo "--- :rocket: SKIPPED"
+exit 0
+
 ## Setting up inputs/tools
 gcloud="$1"
 

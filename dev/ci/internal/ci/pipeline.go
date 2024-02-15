@@ -35,7 +35,7 @@ var legacyDockerImages = []string{
 // main CI cases, which are defined in the main switch statement in the function.
 func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// TODO(burmudar): REMOVE ME
-	c.RunType = runtype.PullRequest
+	c.RunType = runtype.ExecutorPatchNoTest
 
 	if err := c.ensureCommit(); err != nil {
 		return nil, err
