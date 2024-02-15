@@ -130,8 +130,16 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	for i := range allowedModels {
 		allowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, allowedModels[i])
 	}
+
 	// turn off sanitization since we're only detecting
 	d := goaway.NewProfanityDetector().WithSanitizeAccents(false).WithSanitizeLeetSpeak(false).WithSanitizeSpaces(false).WithSanitizeSpecialCharacters(false)
+
+	for i := range patternsToDetect {
+		patternsToDetect[i] = strings.ToLower(patternsToDetect[i])
+	}
+	if len(patternsToDetect) > 0 {
+		baseLogger.Debug("initializing pattern detector", log.Strings("patterns", patternsToDetect))
+	}
 
 	return featurelimiter.Handle(
 		baseLogger,
@@ -257,13 +265,14 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			model, requestMetadata := methods.getRequestMetadata(body)
 
 			if feature == codygateway.FeatureChatCompletions {
-				prompt := body.BuildPrompt()
+				prompt := strings.ToLower(body.BuildPrompt())
 				if d.IsProfane(prompt) {
 					requestMetadata["is_profane"] = true
 				}
 				for _, p := range patternsToDetect {
 					if strings.Contains(prompt, p) {
 						requestMetadata["detected_phrases"] = true
+						break
 					}
 				}
 			}

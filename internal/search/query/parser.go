@@ -121,6 +121,9 @@ const (
 // isSpace returns true if the buffer only contains UTF-8 encoded whitespace as
 // defined by unicode.IsSpace.
 func isSpace(buf []byte) bool {
+	if len(buf) == 0 {
+		return false
+	}
 	for len(buf) > 0 {
 		r, n := utf8.DecodeRune(buf)
 		if !unicode.IsSpace(r) {
@@ -129,16 +132,6 @@ func isSpace(buf []byte) bool {
 		buf = buf[n:]
 	}
 	return true
-}
-
-func isLeftParen(buf []byte) bool {
-	r, _ := utf8.DecodeRune(buf)
-	return r == '('
-}
-
-func isRightParen(buf []byte) bool {
-	r, _ := utf8.DecodeRune(buf)
-	return r == ')'
 }
 
 // skipSpace returns the number of whitespace bytes skipped from the beginning of a buffer buf.
@@ -244,10 +237,13 @@ func (p *parser) expect(keyword keyword) bool {
 // matchKeyword is like match but checks whether the keyword has a valid prefix
 // and suffix.
 func (p *parser) matchKeyword(keyword keyword) bool {
+	if p.pos == 0 {
+		return false
+	}
 	if isSpace(p.buf[:p.pos]) {
 		return false
 	}
-	if !(isSpace(p.buf[p.pos-1:p.pos]) || isRightParen(p.buf[p.pos-1:p.pos])) {
+	if !(isSpace(p.buf[p.pos-1:p.pos]) || p.buf[p.pos-1] == ')') {
 		return false
 	}
 	v, err := p.peek(len(string(keyword)))
@@ -255,7 +251,7 @@ func (p *parser) matchKeyword(keyword keyword) bool {
 		return false
 	}
 	after := p.pos + len(string(keyword))
-	if after >= len(p.buf) || !(isSpace(p.buf[after:after+1]) || isLeftParen(p.buf[after:after+1])) {
+	if after >= len(p.buf) || !(isSpace(p.buf[after:after+1]) || p.buf[after] == '(') {
 		return false
 	}
 	return strings.EqualFold(v, string(keyword))
@@ -263,7 +259,7 @@ func (p *parser) matchKeyword(keyword keyword) bool {
 
 // matchUnaryKeyword is like match but expects the keyword to be followed by whitespace.
 func (p *parser) matchUnaryKeyword(keyword keyword) bool {
-	if p.pos != 0 && !(isSpace(p.buf[p.pos-1:p.pos]) || isRightParen(p.buf[p.pos-1:p.pos]) || isLeftParen(p.buf[p.pos-1:p.pos])) {
+	if p.pos != 0 && !(isSpace(p.buf[p.pos-1:p.pos]) || p.buf[p.pos-1] == ')' || p.buf[p.pos-1] == '(') {
 		return false
 	}
 	v, err := p.peek(len(string(keyword)))
