@@ -255,14 +255,16 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 
 			// Retrieve metadata from the initial request.
 			model, requestMetadata := methods.getRequestMetadata(body)
-			prompt := body.BuildPrompt()
 
-			if d.IsProfane(prompt) {
-				requestMetadata["is_profane"] = true
-			}
-			for _, p := range patternsToDetect {
-				if strings.Contains(prompt, p) {
-					requestMetadata["detected_phrases"] = true
+			if feature == codygateway.FeatureChatCompletions {
+				prompt := body.BuildPrompt()
+				if d.IsProfane(prompt) {
+					requestMetadata["is_profane"] = true
+				}
+				for _, p := range patternsToDetect {
+					if strings.Contains(prompt, p) {
+						requestMetadata["detected_phrases"] = true
+					}
 				}
 			}
 
