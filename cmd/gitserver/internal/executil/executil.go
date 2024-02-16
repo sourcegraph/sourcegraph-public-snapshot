@@ -15,11 +15,9 @@ import (
 
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/cacert"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/trace" //nolint:staticcheck // OT is deprecated
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/process"
@@ -27,82 +25,6 @@ import (
 
 // UnsetExitStatus is a sentinel value for an unknown/unset exit status.
 const UnsetExitStatus = -10810
-
-// UpdateRunCommandMock sets the runCommand mock function for use in tests
-func UpdateRunCommandMock(mock func(context.Context, *exec.Cmd) (int, error)) {
-	runCommandMockMu.Lock()
-	defer runCommandMockMu.Unlock()
-
-	RunCommandMock = mock
-}
-
-// runCommmandMockMu protects runCommandMock against simultaneous access across
-// multiple goroutines
-var runCommandMockMu sync.RWMutex
-
-// RunCommandMock is set by tests. When non-nil it is run instead of
-// runCommand
-var RunCommandMock func(context.Context, *exec.Cmd) (int, error)
-
-// RunCommand runs the command and returns the exit status. All clients of this function should set the context
-// in cmd themselves, but we have to pass the context separately here for the sake of tracing.
-func RunCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error) {
-	runCommandMockMu.RLock()
-
-	if RunCommandMock != nil {
-		code, err := RunCommandMock(ctx, cmd.Unwrap())
-		runCommandMockMu.RUnlock()
-		return code, err
-	}
-	runCommandMockMu.RUnlock()
-
-	tr, _ := trace.New(ctx, "runCommand",
-		attribute.String("path", cmd.Unwrap().Path),
-		attribute.StringSlice("args", cmd.Unwrap().Args),
-		attribute.String("dir", cmd.Unwrap().Dir))
-	defer func() {
-		tr.SetAttributes(attribute.Int("exitCode", exitCode))
-		tr.EndWithErr(&err)
-	}()
-
-	err = cmd.Run()
-	exitStatus := UnsetExitStatus
-	if cmd.Unwrap().ProcessState != nil { // is nil if process failed to start
-		exitStatus = cmd.Unwrap().ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
-	}
-	return exitStatus, err
-}
-
-// RunCommandCombinedOutput runs the command with runCommand and returns its
-// combined standard output and standard error.
-func RunCommandCombinedOutput(ctx context.Context, cmd wrexec.Cmder) ([]byte, error) {
-	var buf bytes.Buffer
-	cmd.Unwrap().Stdout = &buf
-	cmd.Unwrap().Stderr = &buf
-	_, err := RunCommand(ctx, cmd)
-	return buf.Bytes(), err
-}
-
-// RunRemoteGitCommand runs the command after applying the remote options.
-func RunRemoteGitCommand(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool) ([]byte, error) {
-	if configRemoteOpts {
-		// Inherit process environment. This allows admins to configure
-		// variables like http_proxy/etc.
-		if cmd.Unwrap().Env == nil {
-			cmd.Unwrap().Env = os.Environ()
-		}
-		configureRemoteGitCommand(cmd.Unwrap(), tlsExternal())
-	}
-
-	var buf bytes.Buffer
-	cmd.Unwrap().Stdout = &buf
-	cmd.Unwrap().Stderr = &buf
-
-	// We don't care about exitStatus, we just rely on error.
-	_, err := RunCommand(ctx, cmd)
-
-	return buf.Bytes(), err
-}
 
 // tlsExternal will create a new cache for this gitserer process and store the certificates set in
 // the site config.
@@ -200,6 +122,11 @@ func getTlsExternalDoNotInvoke() *tlsConfig {
 }
 
 func ConfigureRemoteGitCommand(cmd *exec.Cmd) {
+	// Inherit process environment. This allows admins to configure
+	// variables like http_proxy/etc.
+	if cmd.Env == nil {
+		cmd.Env = os.Environ()
+	}
 	configureRemoteGitCommand(cmd, tlsExternal())
 }
 

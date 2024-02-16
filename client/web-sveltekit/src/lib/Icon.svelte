@@ -13,13 +13,15 @@
     interface $$Props extends SVGAttributes<SVGElement> {
         svgPath: string
         inline?: boolean
+        size?: number
     }
 
     export let svgPath: string
     export let inline: boolean = false
+    export let size: number = 24
 </script>
 
-<svg class:icon-inline={inline} height="24" width="24" viewBox="0 0 24 24" {...$$restProps}>
+<svg class:icon-inline={inline} height={size} width={size} viewBox="0 0 24 24" {...$$restProps}>
     <path d={svgPath} />
 </svg>
 
