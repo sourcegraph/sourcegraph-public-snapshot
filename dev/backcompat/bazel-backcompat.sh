@@ -3,6 +3,7 @@ set -eu
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
+bazelrcs=(--bazelrc=.bazelrc)
 current_commit=$(git rev-parse HEAD)
 tag="5.3.0"
 
@@ -17,11 +18,7 @@ if [[ $EXIT_CODE -ne 0 ]]; then
 fi
 
 if [[ ${CI:-} == "true" ]]; then
-  aspectRC="/tmp/aspect-generated.bazelrc"
-  rosetta bazelrc > "$aspectRC"
-  bazelrcs=(--bazelrc="$aspectRC")
-  echo "--- :cog::hammer::aspect: debug"
-  cat .aspect/bazelrc/ci.sourcegraph.bazelrc | grep -v -E "#|common --action_env|common --repository_cache|try-import" | grep -v "^$" >> "${aspectRC}"
+  bazelrcs=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
 else
   if [[ $EXIT_CODE -ne 0 ]]; then
     echo "The following files have changes:"
@@ -32,8 +29,7 @@ else
 fi
 
 echo "--- :git::rewind: checkout v${tag}"
-# make sure git knows about the tag
-git fetch origin tag "v${tag}"
+# --no-overlay makes so that git ensures the files match what is in the tree exactly, removing files that do not match
 git checkout --force "v${tag}"
 
 echo "--- :git: checkout migrations, patches and scripts at ${current_commit}"
@@ -50,9 +46,6 @@ fi
 
 echo "--- :snowflake: patch flake for tag ${tag}"
 ./dev/backcompat/patch_flakes.sh ${tag}
-
-echo "--- :aspect: debug"
-cat "${aspectRC}"
 
 echo "--- :bazel: bazel test"
 bazel "${bazelrcs[@]}" \
