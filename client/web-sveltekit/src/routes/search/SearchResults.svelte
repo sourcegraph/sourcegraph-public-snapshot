@@ -50,7 +50,7 @@
     let resultContainer: HTMLElement | null = null
 
     const sidebarSize = getSeparatorPosition('search-results-sidebar', 0.2)
-    $: sidebarWidth = `max(100px, min(50%, ${$sidebarSize * 100}%))`
+    $: sidebarWidth = `clamp(14rem, ${$sidebarSize * 100}%, 50%)`
 
     $: progress = $stream?.progress
     // NOTE: done is present but apparently not officially exposed. However
