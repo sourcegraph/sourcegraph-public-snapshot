@@ -5,7 +5,7 @@ set -eu -o pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
 # Update hashes for all base images
-aspectRC="aspect-generated.bazelrc"
+aspectRC="/tmp/aspect-generated.bazelrc"
 rosetta bazelrc > "$aspectRC"
 bazel --bazelrc="$aspectRC" run //dev/sg -- wolfi update-hashes
 # Print diff

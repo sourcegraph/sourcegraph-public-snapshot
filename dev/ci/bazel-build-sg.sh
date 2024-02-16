@@ -2,7 +2,7 @@
 
 set -o errexit -o nounset -o pipefail
 
-aspectRC="aspect-generated.bazelrc"
+aspectRC="/tmp/aspect-generated.bazelrc"
 rosetta bazelrc > "$aspectRC"
 bazelrc=(--bazelrc="$aspectRC")
 

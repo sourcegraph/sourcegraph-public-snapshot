@@ -30,7 +30,13 @@ cp "$srccli" workdir/
 docker tag executor-vm:candidate "sourcegraph/executor-vm:$VERSION"
 docker save --output workdir/executor-vm.tar "sourcegraph/executor-vm:$VERSION"
 
-"$gcloud" secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"workdir/builder-sa-key.json"
+if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" =~ "aspect-" ]]; then
+  GCP_PROJECT="aspect-dev"
+else
+  GCP_PROJECT="sourcegraph-ci"
+fi
+
+"$gcloud" secrets versions access latest --secret=e2e-builder-sa-key --quiet --project="$GCP_PROJECT" >"workdir/builder-sa-key.json"
 
 export PKR_VAR_name
 PKR_VAR_name="${IMAGE_FAMILY}-${BUILDKITE_BUILD_NUMBER}"

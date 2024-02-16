@@ -19,7 +19,7 @@ if [[ $EXIT_CODE -ne 0 ]]; then
 fi
 
 if [[ ${CI:-} == "true" ]]; then
-  aspectRC="aspect-generated.bazelrc"
+  aspectRC="/tmp/aspect-generated.bazelrc"
   rosetta bazelrc > "$aspectRC"
   bazelrcs=(--bazelrc="$aspectRC")
 else

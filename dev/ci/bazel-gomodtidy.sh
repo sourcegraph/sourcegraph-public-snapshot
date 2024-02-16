@@ -5,9 +5,7 @@ EXIT_CODE=0
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
-echo "--- :doctor: $(pwd)"
-
-aspectRC="$(pwd)/aspect-generated.bazelrc"
+aspectRC="/tmp/aspect-generated.bazelrc"
 rosetta bazelrc > "$aspectRC"
 
 runGoModTidy() {

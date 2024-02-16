@@ -3,7 +3,7 @@
 set -eu
 EXIT_CODE=0
 
-aspectRC="aspect-generated.bazelrc"
+aspectRC="/tmp/aspect-generated.bazelrc"
 rosetta bazelrc > "$aspectRC"
 bazelrc=(--bazelrc="$aspectRC")
 

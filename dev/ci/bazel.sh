@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [[ "${CI:-false}" == "true" ]]; then
-  aspectRC="aspect-generated.bazelrc"
+  aspectRC="/tmp/aspect-generated.bazelrc"
   rosetta bazelrc > "$aspectRC"
   bazelrc=(--bazelrc="$aspectRC")
 
