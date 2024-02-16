@@ -38,7 +38,7 @@ fi
 
 echo "--- :git::rewind: checkout v${tag}"
 # make sure git knows about the tag
-git fetch --tags
+git fetch origin tag "v${tag}"
 git checkout --force "v${tag}"
 
 echo "--- :git: checkout migrations, patches and scripts at ${current_commit}"
