@@ -180,7 +180,6 @@
         }
 
         .close {
-            margin-left: 0.25rem;
             flex-shrink: 0;
         }
     }
