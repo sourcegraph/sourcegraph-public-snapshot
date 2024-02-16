@@ -78,7 +78,9 @@
         <div class="header">
             <h3>Filter results</h3>
             {#if selectedFilters.length > 0}
-                <a href={resetFilters($page.url)}><small>Reset all <kbd>{resetModifier} ⌫</kbd></small></a>
+                <a href={resetFilters($page.url).toString()}>
+                    <small>Reset all <kbd>{resetModifier} ⌫</kbd></small>
+                </a>
             {/if}
         </div>
 

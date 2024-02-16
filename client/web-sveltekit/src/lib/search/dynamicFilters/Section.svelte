@@ -81,7 +81,7 @@
         </ul>
         {#if showMore}
             {#if filteredItems.length > limitedItems.length}
-                <small class="not-shown-message">
+                <small class="filter-message">
                     {filteredItems.length - limitedItems.length} not shown. Use
                     <Button variant="link" display="inline" on:click={() => filterInputRef.focus()}>search</Button>
                     to see more.
@@ -94,6 +94,13 @@
             <footer class="show-more">
                 <Button variant="link" on:click={() => (showMore = true)}>Show more</Button>
             </footer>
+        {:else if filteredItems.length === 0}
+            <small class="filter-message">
+                <div class="header"><strong>No matches in search results.</strong></div>
+                Try expanding your search using the
+                <Button variant="link" display="inline" on:click={() => filterInputRef.focus()}>search bar</Button>
+                above.
+            </small>
         {/if}
     </article>
 {/if}
@@ -127,12 +134,15 @@
         list-style: none;
     }
 
-    .not-shown-message {
-        text-align: center;
+    .filter-message {
         background-color: var(--secondary-2);
         color: var(--text-muted);
         padding: 0.75rem 1rem;
         border-radius: 0.5rem;
+
+        .header {
+            margin-bottom: 0.25rem;
+        }
         :global(button) {
             padding: 0;
             text-align: inherit;
