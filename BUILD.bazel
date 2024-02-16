@@ -23,7 +23,7 @@ load("@buildifier_prebuilt//:rules.bzl", "buildifier")
 # gazelle:js_npm_package_target_name {dirname}_pkg
 
 # Enable: Aspect javascript, standard go
-# gazelle:lang js,go,proto
+# gazelle:lang js,go,proto,gomockgen
 
 # Enable race detection for all go_test rules.
 # gazelle:map_kind go_test go_test //dev:go_defs.bzl
@@ -212,6 +212,7 @@ gazelle_binary(
         # Gazelle-buf does not include the Go plugin by default, so we have to add it
         # ourselves.
         "@bazel_gazelle//language/go:go_default_library",
+        "//dev/go-mockgen-gazelle:go-mockgen-gazelle",
         # Bundled with aspect-cli, but we're missing out on buf that way
         "@aspect_cli//gazelle/js:js",
         # Loads the Buf extension
@@ -335,7 +336,7 @@ exports_files([
     # under certain conditions. See //ui/assets/...
     "CONTRIBUTING.md",
     ".swcrc",
-])
+] + glob(["mockgen*.yaml"]))
 
 # sg msp settings
 

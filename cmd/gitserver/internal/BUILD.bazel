@@ -1,5 +1,6 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("//dev:go_defs.bzl", "go_test")
+load("//dev:go_mockgen.bzl", "go_mockgen")
 
 go_library(
     name = "internal",
@@ -22,7 +23,8 @@ go_library(
     ],
     embedsrcs = ["sg_maintenance.sh"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal",
-    visibility = ["//cmd/gitserver:__subpackages__"],
+    # visibility = ["//cmd/gitserver:__subpackages__"],
+    visibility = ["//visibility:public"],
     deps = [
         "//cmd/frontend/envvar",
         "//cmd/gitserver/internal/accesslog",
@@ -148,4 +150,15 @@ go_test(
         "@org_golang_google_protobuf//types/known/timestamppb",
         "@org_golang_x_time//rate",
     ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_test.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [":internal"],
 )

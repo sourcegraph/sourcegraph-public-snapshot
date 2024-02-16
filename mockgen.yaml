@@ -20,6 +20,8 @@ include-config-paths:
   - mockgen.test.yaml
   - mockgen.temp.yaml
 
+# some of these values are ignored by bazel (such as force and goimports) as theyre not
+# transferable or dont make sense
 force: true
 goimports: ./.bin/goimports
 file-prefix: |
