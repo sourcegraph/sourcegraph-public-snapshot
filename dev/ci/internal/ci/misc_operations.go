@@ -14,7 +14,7 @@ func triggerBackCompatTest(buildOpts bk.BuildOptions, isAspectWorkflows bool) fu
 	}
 	return func(pipeline *bk.Pipeline) {
 		steps := []bk.StepOpt{
-			bk.Async(true),
+			bk.Async(false),
 			bk.Key("trigger-backcompat"),
 			bk.AllowDependencyFailure(),
 			bk.Build(buildOpts),
