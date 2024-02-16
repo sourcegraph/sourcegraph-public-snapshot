@@ -57,7 +57,7 @@ func bazelPublishExecutorVM(c Config, alwaysRebuild bool) operations.Operation {
 
 		stepOpts = append(stepOpts, bk.Cmd(cmd))
 
-		pipeline.AddStep(":bazel::packer: :construction: Build executor image", stepOpts...)
+		pipeline.AddStep(":bazel::packer: :white_check_mark: Publish executor image", stepOpts...)
 	}
 }
 
@@ -88,7 +88,7 @@ func bazelPublishExecutorDockerMirror(c Config) operations.Operation {
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 			bk.Cmd(bazelStampedCmd("run //cmd/executor/docker-mirror:ami.push")),
 		}
-		pipeline.AddStep(":packer: :white_check_mark: Publish docker registry mirror image", stepOpts...)
+		pipeline.AddStep(":bazel::packer: :white_check_mark: Publish docker registry mirror image", stepOpts...)
 	}
 }
 
