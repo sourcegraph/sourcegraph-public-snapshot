@@ -16,8 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
@@ -45,6 +47,13 @@ func TestAddRepoToExclude(t *testing.T) {
 			expectedConfig: `{"accessKeyID":"accessKeyID","exclude":[{"name":"test"}],"gitCredentials":{"password":"","username":""},"region":"","secretAccessKey":""}`,
 		},
 		{
+			name:           "second attempt of excluding same repo is ignored for Azure DevOps schema",
+			kind:           extsvc.KindAzureDevOps,
+			repo:           makeAzureDevOpsRepo(),
+			initialConfig:  `{"url":"https://dev.azure.com","username":"test","token":"test","orgs":["org"]}`,
+			expectedConfig: `{"exclude":[{"name":"org/namespace/test"}],"orgs":["org"],"token":"test","url":"https://dev.azure.com","username":"test"}`,
+		},
+		{
 			name:           "second attempt of excluding same repo is ignored for BitbucketCloud schema",
 			kind:           extsvc.KindBitbucketCloud,
 			repo:           makeBitbucketCloudRepo(),
@@ -57,6 +66,13 @@ func TestAddRepoToExclude(t *testing.T) {
 			repo:           makeBitbucketServerRepo(),
 			initialConfig:  `{"repositoryQuery":["none"],"token":"abc","url":"https://bitbucket.sg.org","username":""}`,
 			expectedConfig: `{"exclude":[{"name":"SOURCEGRAPH/jsonrpc2"}],"repositoryQuery":["none"],"token":"abc","url":"https://bitbucket.sg.org","username":""}`,
+		},
+		{
+			name:           "second attempt of excluding same repo is ignored for Gerrit schema",
+			kind:           extsvc.KindGerrit,
+			repo:           makeGerritRepo(),
+			initialConfig:  `{"url": "https://gerrit.example.com/", "username": "test", "password": "test", "projects": ["test"]}`,
+			expectedConfig: `{"exclude":[{"name":"test"}],"password":"test","projects":["test"],"url":"https://gerrit.example.com/","username":"test"}`,
 		},
 		{
 			name:           "second attempt of excluding same repo is ignored for GitHub schema",
@@ -141,6 +157,19 @@ func makeAWSCodeCommitRepo() *types.Repo {
 	return repo
 }
 
+// makeAzureDevOpsRepo returns a configured Azure DevOps repository.
+func makeAzureDevOpsRepo() *types.Repo {
+	repo := typestest.MakeRepo("dev.azure.com/org/namespace/test", "https://dev.azure.com", extsvc.TypeAzureDevOps)
+	repo.Metadata = &azuredevops.Repository{
+		APIURL: "https://azure.devops.com/org/namespace/test",
+		Name:   "test",
+		Project: azuredevops.Project{
+			Name: "namespace",
+		},
+	}
+	return repo
+}
+
 // makeBitbucketCloudRepo returns a configured Bitbucket Cloud repository.
 func makeBitbucketCloudRepo() *types.Repo {
 	repo := typestest.MakeRepo("bitbucket.org/sg/sourcegraph", "https://bitbucket.org/", extsvc.TypeBitbucketCloud)
@@ -165,6 +194,14 @@ func makeBitbucketServerRepo() *types.Repo {
 		},
 	}
 
+	return repo
+}
+
+func makeGerritRepo() *types.Repo {
+	repo := typestest.MakeRepo("gerrit.com/test", "https://gerrit.com/", extsvc.TypeGerrit)
+	repo.Metadata = &gerrit.Project{
+		ID: "test",
+	}
 	return repo
 }
 

@@ -1,3 +1,4 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("//dev:go_defs.bzl", "go_test")
 
@@ -27,4 +28,15 @@ go_test(
         "//lib/errors",
         "@com_github_sourcegraph_log//logtest",
     ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_test.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [":cmdlogger"],
 )
