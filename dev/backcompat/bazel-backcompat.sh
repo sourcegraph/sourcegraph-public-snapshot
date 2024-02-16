@@ -20,12 +20,8 @@ if [[ ${CI:-} == "true" ]]; then
   aspectRC="/tmp/aspect-generated.bazelrc"
   rosetta bazelrc > "$aspectRC"
   bazelrcs=(--bazelrc="$aspectRC")
-  echo "--- :maple_leaf: before env"
-  env
-  echo "--- :four_leaf_clover: sourcing sourcegraph/env.sh"
-  source /etc/sourcegraph/env.sh
-  echo "--- :fallen_leaf: before env"
-  env
+  echo "--- :aspect: debug"
+  cat "${aspectRC}"
 else
   if [[ $EXIT_CODE -ne 0 ]]; then
     echo "The following files have changes:"
@@ -55,7 +51,9 @@ fi
 echo "--- :snowflake: patch flake for tag ${tag}"
 ./dev/backcompat/patch_flakes.sh ${tag}
 
-bazelrcs=(--bazelrc=.bazelrc)
+echo "--- :aspect: debug"
+cat "${aspectRC}"
+
 echo "--- :bazel: bazel test"
 bazel "${bazelrcs[@]}" \
   test --test_tag_filters=go -- \
