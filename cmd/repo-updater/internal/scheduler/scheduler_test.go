@@ -1428,7 +1428,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			contexts := make(chan context.Context, expectedRequestCount)
 			db := dbmocks.NewMockDB()
 			gs := gitserver.NewMockClient()
-			gs.RequestRepoUpdateFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, d time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
+			gs.RequestRepoUpdateFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName) (*gitserverprotocol.RepoUpdateResponse, error) {
 				select {
 				case mock := <-mockRequestRepoUpdates:
 					if !reflect.DeepEqual(mock.repo.Name, repo) {
