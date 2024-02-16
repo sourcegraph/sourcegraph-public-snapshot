@@ -1,5 +1,4 @@
-<!-- This file contains core-line icons by https://www.streamlinehq.com. It is licensed under CC BY 4.0 // Original source -->
-<!-- of icon set - https://www.streamlinehq.com/icons/core-line-free -->
+<!-- This file contains core-line icons by https://www.streamlinehq.com. It is licensed under CC BY 4.0 -->
 
 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" {...$$restProps}>
     <path
