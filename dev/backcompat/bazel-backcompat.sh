@@ -3,8 +3,10 @@ set -eu
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
+aspectRC="/tmp/aspect-generated.bazelrc"
+rosetta bazelrc > "$aspectRC"
 
-bazelrcs=(--bazelrc=.bazelrc)
+bazelrcs=(--bazelrc="$aspectRC")
 current_commit=$(git rev-parse HEAD)
 tag="5.3.0"
 
