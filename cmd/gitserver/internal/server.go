@@ -510,11 +510,31 @@ func (s *Server) RepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 	dir := gitserverfs.RepoDirFromName(s.reposDir, req.Repo)
 
-	if !repoCloned(dir) && !s.skipCloneForTests {
-		_, err := s.CloneRepo(ctx, req.Repo, CloneOptions{Block: true})
-		if err != nil {
-			logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
-			resp.Error = err.Error()
+	if !repoCloned(dir) {
+		_, cloneErr := s.CloneRepo(ctx, req.Repo, CloneOptions{Block: true})
+		if cloneErr != nil {
+			logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(cloneErr))
+			resp.Error = cloneErr.Error()
+		} else {
+			// attempts to acquire these values are not contingent on the success of
+			// the update.
+			var statusErr error
+			lastFetched, err := repoLastFetched(dir)
+			if err != nil {
+				statusErr = err
+			} else {
+				resp.LastFetched = &lastFetched
+			}
+			lastChanged, err := repoLastChanged(dir)
+			if err != nil {
+				statusErr = err
+			} else {
+				resp.LastChanged = &lastChanged
+			}
+			if statusErr != nil {
+				logger.Error("failed to get status of repo", log.String("repo", string(req.Repo)), log.Error(statusErr))
+				// We don't forward a statusErr to the caller.
+			}
 		}
 		return resp
 	}
