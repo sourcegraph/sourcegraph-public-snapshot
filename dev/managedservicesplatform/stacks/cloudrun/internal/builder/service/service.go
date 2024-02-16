@@ -140,7 +140,7 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 		// This is needed to override changes to traffic configuration from the UI. Otherwise,
 		// it's possible that traffic will always be routed to a stale revision after new deployment.
 		//
-		// https://cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration#send-to-latest
+		// https://cloud.google.com/run/docs/rollouts-rollbacks-traffiigration#send-to-latest
 		Traffic: []*cloudrunv2service.CloudRunV2ServiceTraffic{
 			{
 				Percent: pointers.Float64(100),
