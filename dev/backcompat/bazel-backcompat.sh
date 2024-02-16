@@ -20,6 +20,8 @@ if [[ ${CI:-} == "true" ]]; then
   aspectRC="/tmp/aspect-generated.bazelrc"
   rosetta bazelrc > "$aspectRC"
   bazelrcs=(--bazelrc="$aspectRC")
+  echo "--- :leaf: sourcing sourcegraph/env.sh"
+  source /etc/sourcegraph/env.sh
 else
   if [[ $EXIT_CODE -ne 0 ]]; then
     echo "The following files have changes:"
@@ -36,7 +38,7 @@ git checkout --force "v${tag}"
 
 echo "--- :git: checkout migrations, patches and scripts at ${current_commit}"
 # --no-overlay makes so that git ensures the files match what is in the tree exactly, removing files that do not match
-git checkout --force --no-overlay "${current_commit}" -- migrations/ dev/backcompat/patch_flakes.sh dev/backcompat/patches dev/backcompat/flakes.json
+git checkout --force --no-overlay "${current_commit}" -- migrations/ dev/backcompat/patch_flakes.sh dev/backcompat/patches dev/backcompat/flakes.json .aspect/
 
 if [[ -d "dev/backcompat/patches/${tag}" ]]; then
   echo "--- :adhesive_bandage: apply patches from dev/backcompat/patches/${tag}"
@@ -48,14 +50,6 @@ fi
 
 echo "--- :snowflake: patch flake for tag ${tag}"
 ./dev/backcompat/patch_flakes.sh ${tag}
-
-# TODO(burmudar): This fails on aspect agents, because the tests struggle to connect to the database
-# aspectRC="/tmp/aspect-generated.bazelrc"
-# rosetta bazelrc > "$aspectRC"
-# bazelrcs=(--bazelrc="$aspectRC")
-#
-# echo "--- :net: sourcing sourcegraph/env.sh"
-# source /etc/sourcegraph/env.sh
 
 bazelrcs=(--bazelrc=.bazelrc)
 echo "--- :bazel: bazel test"
