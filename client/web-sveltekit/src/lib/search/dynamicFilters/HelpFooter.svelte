@@ -6,10 +6,10 @@
 <footer class="help">
     <a href="/help/code_search/reference/queries" class="link">
         <div class="icon"><OpenBookIcon aria-hidden /></div>
-        <span>
+        <div>
             <h4>Need more advanced filters?</h4>
             <small>Explore the query syntax docs</small>
-        </span>
+        </div>
         <div class="icon"><LinkShareIcon aria-hidden /></div>
     </a>
 </footer>
@@ -43,18 +43,17 @@
         }
 
         a {
-            padding: 1rem;
-
             display: flex;
             align-items: center;
             gap: 1rem;
-            span {
-                margin-right: auto;
+            :last-child {
+                margin-left: auto;
             }
             .icon {
                 flex-shrink: 0;
             }
 
+            padding: 1rem;
             &:not(:hover) {
                 text-decoration: none;
                 color: var(--text-muted);
