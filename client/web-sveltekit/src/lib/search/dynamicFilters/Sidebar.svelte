@@ -53,74 +53,76 @@
 </script>
 
 <aside class="sidebar">
-    <h3>Filter results</h3>
+    <div class="scroll-container">
+        <h3>Filter results</h3>
 
-    {#if !queryHasTypeFilter(searchQuery)}
-        <Section items={typeFilters} title="By type" showAll>
+        {#if !queryHasTypeFilter(searchQuery)}
+            <Section items={typeFilters} title="By type" showAll>
+                <svelte:fragment slot="label" let:label>
+                    <Icon svgPath={typeFilterIcons[label]} inline aria-hidden="true" />&nbsp;
+                    {label}
+                </svelte:fragment>
+            </Section>
+        {/if}
+
+        <Section items={groupedFilters.repo} title="By repository" filterPlaceholder="Filter repositories">
             <svelte:fragment slot="label" let:label>
-                <Icon svgPath={typeFilterIcons[label]} inline aria-hidden="true" />&nbsp;
+                <CodeHostIcon repository={label} />
+                <Tooltip tooltip={label} placement="right">
+                    <span>{displayRepoName(label)}</span>
+                </Tooltip>
+            </svelte:fragment>
+        </Section>
+        <Section items={groupedFilters.lang} title="By language" filterPlaceholder="Filter languages">
+            <svelte:fragment slot="label" let:label>
+                <LanguageIcon class="icon" language={label} inline />&nbsp;
                 {label}
             </svelte:fragment>
         </Section>
-    {/if}
+        <Section items={groupedFilters['symbol type']} title="By symbol type" filterPlaceholder="Filter symbol types">
+            <svelte:fragment slot="label" let:label>
+                <SymbolKind symbolKind={label.toUpperCase()} />
+                {label}
+            </svelte:fragment>
+        </Section>
+        <Section items={groupedFilters.author} title="By author" filterPlaceholder="Filter authors" />
+        <Section items={groupedFilters['commit date']} title="By commit date">
+            <span class="commit-date-label" slot="label" let:label let:value>
+                {label}
+                <small><pre>{value}</pre></small>
+            </span>
+        </Section>
+        <Section items={groupedFilters.file} title="By file" showAll />
+        <Section items={groupedFilters.utility} title="Utility" showAll />
 
-    <Section items={groupedFilters.repo} title="By repository" filterPlaceholder="Filter repositories">
-        <svelte:fragment slot="label" let:label>
-            <CodeHostIcon repository={label} />
-            <Tooltip tooltip={label} placement="right">
-                <span>{displayRepoName(label)}</span>
-            </Tooltip>
-        </svelte:fragment>
-    </Section>
-    <Section items={groupedFilters.lang} title="By language" filterPlaceholder="Filter languages">
-        <svelte:fragment slot="label" let:label>
-            <LanguageIcon class="icon" language={label} inline />&nbsp;
-            {label}
-        </svelte:fragment>
-    </Section>
-    <Section items={groupedFilters['symbol type']} title="By symbol type" filterPlaceholder="Filter symbol types">
-        <svelte:fragment slot="label" let:label>
-            <SymbolKind symbolKind={label.toUpperCase()} />
-            {label}
-        </svelte:fragment>
-    </Section>
-    <Section items={groupedFilters.author} title="By author" filterPlaceholder="Filter authors" />
-    <Section items={groupedFilters['commit date']} title="By commit date">
-        <span class="commit-date-label" slot="label" let:label let:value>
-            {label}
-            <small><pre>{value}</pre></small>
-        </span>
-    </Section>
-    <Section items={groupedFilters.file} title="By file" showAll />
-    <Section items={groupedFilters.utility} title="Utility" showAll />
-
-    {#if loading}
-        <LoadingSkeleton />
-    {/if}
-
-    <div class="sidebar-footer">
-        <HelpFooter />
-
-        {#if selectedFilters.length > 0}
-            <div class="move-button">
-                <Button
-                    variant="secondary"
-                    display="block"
-                    outline
-                    on:click={() => goto(moveFiltersToQuery($page.url))}
-                >
-                    <svelte:fragment>
-                        Move filters to query&nbsp;
-                        <ArrowBendIcon aria-hidden class="arrow-icon" />
-                    </svelte:fragment>
-                </Button>
-            </div>
+        {#if loading}
+            <LoadingSkeleton />
         {/if}
+
+        <div class="sidebar-footer">
+            <HelpFooter />
+        </div>
     </div>
+    {#if selectedFilters.length > 0}
+        <div class="move-button">
+            <Button variant="secondary" display="block" outline on:click={() => goto(moveFiltersToQuery($page.url))}>
+                <svelte:fragment>
+                    Move filters to query&nbsp;
+                    <ArrowBendIcon aria-hidden class="arrow-icon" />
+                </svelte:fragment>
+            </Button>
+        </div>
+    {/if}
 </aside>
 
 <style lang="scss">
     .sidebar {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .scroll-container {
         padding-top: 1rem;
         h3 {
             margin: 0;
@@ -140,6 +142,7 @@
     }
 
     .move-button {
+        margin-top: auto;
         padding: 1rem;
         border-top: 1px solid var(--border-color);
         :global(svg) {
