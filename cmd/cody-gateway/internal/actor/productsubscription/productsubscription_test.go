@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/amit7itz/goset"
 	"github.com/sourcegraph/log"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/maps"
@@ -160,9 +161,7 @@ func TestGetSubscriptionAccountName(t *testing.T) {
 }
 func TestRemoveUnseenTokens(t *testing.T) {
 	t.Run("removes unseen tokens", func(t *testing.T) {
-		seen := map[string]struct{}{
-			"slk_token1": {},
-		}
+		seen := goset.NewSet("slk_token1")
 
 		cache := &fakeListingCache{
 			state: map[string][]byte{"v2:product-subscription:v1:slk_token1": nil, "v2:product-subscription:v2:slk_token3": nil},
@@ -173,7 +172,7 @@ func TestRemoveUnseenTokens(t *testing.T) {
 	})
 
 	t.Run("ignores malformed keys ", func(t *testing.T) {
-		seen := map[string]struct{}{}
+		seen := goset.NewSet[string]()
 
 		cache := &fakeListingCache{
 			state: map[string][]byte{"v2:product-subscription:": nil},
@@ -183,7 +182,7 @@ func TestRemoveUnseenTokens(t *testing.T) {
 		assert.Equal(t, cache.calls, []struct{ call, key string }{{"ListAllKeys", ""}})
 	})
 	t.Run("ignores malformed keys ", func(t *testing.T) {
-		seen := map[string]struct{}{}
+		seen := goset.NewSet[string]()
 
 		cache := &fakeListingCache{
 			state: map[string][]byte{"v2:product-subscription:v2:sgp_dotcom": nil},

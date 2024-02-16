@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Khan/genqlient/graphql"
+	"github.com/amit7itz/goset"
 	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
 	"github.com/vektah/gqlparser/v2/gqlerror"
@@ -135,7 +136,7 @@ func (s *Source) Update(ctx context.Context, act *actor.Actor) error {
 // to skip syncs if the frequency is too high.
 func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 	syncLog := sgtrace.Logger(ctx, s.log)
-	seenTokens := map[string]struct{}{}
+	seenTokens := goset.NewSet[string]()
 
 	resp, err := dotcom.ListProductSubscriptions(ctx, s.dotcom)
 	if err != nil {
@@ -153,7 +154,7 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 				return seen, ctx.Err()
 			default:
 			}
-			seenTokens[token] = struct{}{}
+			seenTokens.Add(token)
 			act := newActor(s, token, sub.ProductSubscriptionState, s.internalMode, s.concurrencyConfig)
 			data, err := json.Marshal(act)
 			if err != nil {
@@ -170,9 +171,9 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 	return seen, errs
 }
 
-func removeUnseenTokens(seen map[string]struct{}, cache listingCache, syncLog log.Logger) {
+func removeUnseenTokens(seen *goset.Set[string], cache listingCache, syncLog log.Logger) {
 	keys := cache.ListAllKeys()
-	syncLog.Debug("removing expired/disabled tokens", log.Int("seen", len(seen)), log.Int("all-keys", len(keys)))
+	syncLog.Debug("removing expired/disabled tokens", log.Int("seen", seen.Len()), log.Int("all-keys", len(keys)))
 	for _, key := range keys {
 		parts := strings.Split(key, ":")
 		if len(parts) != 4 {
@@ -185,11 +186,10 @@ func removeUnseenTokens(seen map[string]struct{}, cache listingCache, syncLog lo
 			// let's not touch other tokens
 			continue
 		}
-		if _, ok := seen[token]; !ok {
+		if !seen.Contains(token) {
 			cache.Delete(token)
 		}
 	}
-
 }
 
 func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.CheckAccessTokenResponse, error) {
