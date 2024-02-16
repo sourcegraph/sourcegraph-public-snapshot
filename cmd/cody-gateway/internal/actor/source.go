@@ -262,7 +262,7 @@ var _ goroutine.Handler = &sourcesSyncHandler{}
 
 func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 	var cancel func()
-	ctx, cancel = context.WithTimeout(ctx, s.syncInterval)
+	ctx, cancel = context.WithTimeout(ctx, 100*s.syncInterval)
 	defer cancel()
 
 	handleLogger := sgtrace.Logger(ctx, s.logger).

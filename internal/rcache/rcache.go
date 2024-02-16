@@ -115,6 +115,15 @@ func (r *Cache) KeyTTL(key string) (int, bool) {
 	return ttl, ttl >= 0
 }
 
+func (r *Cache) ListAllKeys() []string {
+	keys, err := kv().Keys(r.rkeyPrefix() + "*")
+	if err != nil {
+		log15.Warn("failed to execute redis command", "cmd", "KEYS", "error", err)
+		return nil
+	}
+	return keys
+}
+
 // FIFOList returns a FIFOList namespaced in r.
 func (r *Cache) FIFOList(key string, maxSize int) *FIFOList {
 	return NewFIFOList(r.rkeyPrefix()+key, maxSize)

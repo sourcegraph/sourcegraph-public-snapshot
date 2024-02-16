@@ -38,9 +38,14 @@ var (
 	defaultUpdateInterval = 24 * time.Hour
 )
 
+type listingCache interface {
+	httpcache.Cache
+	ListAllKeys() []string
+}
+
 type Source struct {
 	log    log.Logger
-	cache  httpcache.Cache // cache is expected to be something with automatic TTL
+	cache  listingCache // cache is expected to be something with automatic TTL
 	dotcom graphql.Client
 
 	// internalMode, if true, indicates only dev and internal licenses may use
@@ -54,7 +59,7 @@ var _ actor.Source = &Source{}
 var _ actor.SourceUpdater = &Source{}
 var _ actor.SourceSyncer = &Source{}
 
-func NewSource(logger log.Logger, cache httpcache.Cache, dotcomClient graphql.Client, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
+func NewSource(logger log.Logger, cache listingCache, dotcomClient graphql.Client, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
 	return &Source{
 		log:    logger.Scoped("productsubscriptions"),
 		cache:  cache,
@@ -130,6 +135,7 @@ func (s *Source) Update(ctx context.Context, act *actor.Actor) error {
 // to skip syncs if the frequency is too high.
 func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 	syncLog := sgtrace.Logger(ctx, s.log)
+	seenTokens := map[string]struct{}{}
 
 	resp, err := dotcom.ListProductSubscriptions(ctx, s.dotcom)
 	if err != nil {
@@ -147,7 +153,7 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 				return seen, ctx.Err()
 			default:
 			}
-
+			seenTokens[token] = struct{}{}
 			act := newActor(s, token, sub.ProductSubscriptionState, s.internalMode, s.concurrencyConfig)
 			data, err := json.Marshal(act)
 			if err != nil {
@@ -160,9 +166,30 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 			seen++
 		}
 	}
-	// TODO: Here we should prune all cache keys that we haven't seen in the sync
-	// loop.
+	removeUnseenTokens(seenTokens, s.cache, syncLog)
 	return seen, errs
+}
+
+func removeUnseenTokens(seen map[string]struct{}, cache listingCache, syncLog log.Logger) {
+	keys := cache.ListAllKeys()
+	syncLog.Debug("removing expired/disabled tokens", log.Int("seen", len(seen)), log.Int("all-keys", len(keys)))
+	for _, key := range keys {
+		parts := strings.Split(key, ":")
+		if len(parts) != 4 {
+			// weird, we expect things like v2:product-subscriptions:v2:TOKEN, but we can't log the TOKEN, so we log the # of parts and skip delete
+			syncLog.Warn("invalid key format, expected 4 parts, got", log.Int("parts", len(parts)))
+			continue
+		}
+		token := parts[3]
+		if !strings.HasPrefix(token, license.LicenseKeyBasedAccessTokenPrefix) {
+			// let's not touch other tokens
+			continue
+		}
+		if _, ok := seen[token]; !ok {
+			cache.Delete(token)
+		}
+	}
+
 }
 
 func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.CheckAccessTokenResponse, error) {
