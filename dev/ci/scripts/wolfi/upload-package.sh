@@ -5,7 +5,6 @@ set -eu -o pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
 # TODO: Manage these variables properly
-# TODO(burmudar): Remove this if
 if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" =~ "aspect-" ]]; then
   GCP_PROJECT="aspect-dev"
 else
