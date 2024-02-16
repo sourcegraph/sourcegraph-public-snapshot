@@ -59,7 +59,7 @@ func bazelStampedCmd(args ...string) string {
 
 func aspectBazelRC() (string, string) {
 	path := "/tmp/aspect-generated.bazelrc"
-	cmd := fmt.Sprintf("rosetta bazelrc > %s", path)
+	cmd := fmt.Sprintf("rosetta bazelrc > %s;", path)
 
 	return cmd, path
 }

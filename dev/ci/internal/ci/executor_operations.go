@@ -44,7 +44,6 @@ func bazelPublishExecutorVM(c Config, alwaysRebuild bool) operations.Operation {
 			bk.Env("IMAGE_FAMILY", imageFamily),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
-		pipeline.AddStep(":bazel::packer: :construction: Build executor image", stepOpts...)
 
 		cmd := bazelStampedCmd("run //cmd/executor/vm-image:ami.push")
 
