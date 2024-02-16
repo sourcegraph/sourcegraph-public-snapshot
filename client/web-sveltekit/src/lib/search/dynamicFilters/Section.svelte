@@ -19,7 +19,11 @@
     $: filteredItems = processedFilterText
         ? items.filter(item => item.label.toLowerCase().includes(processedFilterText))
         : items
-    $: limitedItems = showAll ? filteredItems : filteredItems.slice(0, 5)
+    let filterInputRef: HTMLInputElement
+
+    let showMore = false
+    $: showCount = showAll ? items.length : showMore ? 10 : 5
+    $: limitedItems = filteredItems.slice(0, showCount)
 
     function roundCount(count: number): number {
         const roundNumbers = [10000, 5000, 1000, 500, 100, 50, 10, 5, 1]
@@ -35,8 +39,8 @@
 {#if items.length > 0}
     <article>
         <header><h4>{title}</h4></header>
-        {#if !showAll && items.length > 5}
-            <input bind:value={filterText} placeholder={filterPlaceholder} />
+        {#if items.length > showCount}
+            <input bind:this={filterInputRef} bind:value={filterText} placeholder={filterPlaceholder} />
         {/if}
         <ul>
             {#each limitedItems as item}
@@ -75,15 +79,20 @@
                 </li>
             {/each}
         </ul>
-        {#if limitedItems.length < filteredItems.length}
-            <footer>
-                <Button variant="link" on:click={() => (showAll = true)}>
-                    Show all ({filteredItems.length})
-                </Button>
+        {#if showMore}
+            {#if filteredItems.length > limitedItems.length}
+                <small class="not-shown-message">
+                    {filteredItems.length - limitedItems.length} not shown. Use
+                    <Button variant="link" display="inline" on:click={() => filterInputRef.focus()}>search</Button>
+                    to see more.
+                </small>
+            {/if}
+            <footer class="show-more">
+                <Button variant="link" on:click={() => (showMore = false)}>Show less</Button>
             </footer>
-        {:else if !showAll && limitedItems.length > 5}
-            <footer>
-                <Button variant="link" on:click={() => (showAll = false)}>Show less</Button>
+        {:else if !showMore && filteredItems.length > limitedItems.length}
+            <footer class="show-more">
+                <Button variant="link" on:click={() => (showMore = true)}>Show more</Button>
             </footer>
         {/if}
     </article>
@@ -92,9 +101,9 @@
 <style lang="scss">
     article {
         padding: 0 1rem;
-    }
-    h4 {
-        white-space: nowrap;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
     }
 
     input {
@@ -110,7 +119,6 @@
         background-clip: padding-box;
         border: var(--input-border-width) solid var(--input-border-color);
         border-radius: var(--border-radius);
-        margin: 0.75rem 0;
     }
 
     ul {
@@ -119,11 +127,27 @@
         list-style: none;
     }
 
-    footer {
+    .not-shown-message {
+        text-align: center;
+        background-color: var(--secondary-2);
+        color: var(--text-muted);
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        :global(button) {
+            padding: 0;
+            text-align: inherit;
+            line-height: inherit;
+            font-size: inherit;
+            font-style: inherit;
+            vertical-align: inherit;
+        }
+    }
+
+    .show-more {
         text-align: center;
     }
 
-    a {
+    li a {
         display: flex;
         width: 100%;
         align-items: center;
