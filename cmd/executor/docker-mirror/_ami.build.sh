@@ -15,7 +15,13 @@ cp "${base}/docker-mirror.pkr.hcl" workdir/
 cp "${base}/aws_regions.json" workdir/
 cp "${base}/install.sh" workdir/
 
-"$gcloud" secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"workdir/builder-sa-key.json"
+if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" =~ "aspect-" ]]; then
+  GCP_PROJECT="aspect-dev"
+else
+  GCP_PROJECT="sourcegraph-ci"
+fi
+
+"$gcloud" secrets versions access latest --secret=e2e-builder-sa-key --quiet --project="$GCP_PROJECT" >"workdir/builder-sa-key.json"
 
 ## Setting up packer
 export PKR_VAR_name
@@ -37,10 +43,6 @@ if [ "${EXECUTOR_IS_TAGGED_RELEASE}" = "true" ]; then
 else
   PKR_VAR_aws_regions='["us-west-2"]'
 fi
-# TODO(burmudar): Remove this early exit
-echo "--- :rocket: SKIPPED Packer"
-exit 0
-
 
 "$packer" init docker-mirror.pkr.hcl
 "$packer" build -force docker-mirror.pkr.hcl
