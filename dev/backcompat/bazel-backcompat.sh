@@ -3,13 +3,6 @@ set -eu
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
-aspectRC="/tmp/aspect-generated.bazelrc"
-rosetta bazelrc > "$aspectRC"
-
-source /etc/sourcegraph/env.sh
-
-
-bazelrcs=(--bazelrc="$aspectRC")
 current_commit=$(git rev-parse HEAD)
 tag="5.3.0"
 
@@ -55,6 +48,14 @@ fi
 
 echo "--- :snowflake: patch flake for tag ${tag}"
 ./dev/backcompat/patch_flakes.sh ${tag}
+
+aspectRC="/tmp/aspect-generated.bazelrc"
+rosetta bazelrc > "$aspectRC"
+
+echo "--- :net: sourcing sourcegraph/env.sh"
+source /etc/sourcegraph/env.sh
+
+bazelrcs=(--bazelrc="$aspectRC")
 
 echo "--- :bazel: bazel test"
 bazel "${bazelrcs[@]}" \
