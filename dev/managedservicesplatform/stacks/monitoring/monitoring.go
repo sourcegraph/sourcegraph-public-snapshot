@@ -112,6 +112,9 @@ type Variables struct {
 	ServiceHealthProbes *spec.EnvironmentServiceHealthProbesSpec
 	// SentryProject is the project in Sentry for the service environment
 	SentryProject sentryproject.Project
+	// JobSchedule is used to determine if an alert on job absence should be
+	// provisioned and the appropriate thresholds.
+	JobSchedule *spec.EnvironmentJobScheduleSpec
 }
 
 const StackName = "monitoring"
@@ -391,7 +394,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		}
 	}
 
-	if vars.Monitoring.Nobl9 {
+	if pointers.DerefZero(vars.Monitoring.Nobl9) {
 		createNobl9Project(stack, id.Group("nobl9"), vars)
 	}
 

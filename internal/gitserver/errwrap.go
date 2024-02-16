@@ -83,23 +83,6 @@ type errorTranslatingClient struct {
 	base proto.GitserverServiceClient
 }
 
-func (r *errorTranslatingClient) P4Exec(ctx context.Context, in *proto.P4ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_P4ExecClient, error) {
-	cc, err := r.base.P4Exec(ctx, in, opts...) //nolint:SA1019
-	if err != nil {
-		return nil, convertGRPCErrorToGitDomainError(err)
-	}
-	return &errorTranslatingP4ExecClient{cc}, nil
-}
-
-type errorTranslatingP4ExecClient struct {
-	proto.GitserverService_P4ExecClient
-}
-
-func (r *errorTranslatingP4ExecClient) Recv() (*proto.P4ExecResponse, error) {
-	res, err := r.GitserverService_P4ExecClient.Recv()
-	return res, convertGRPCErrorToGitDomainError(err)
-}
-
 func (r *errorTranslatingClient) RepoDelete(ctx context.Context, in *proto.RepoDeleteRequest, opts ...grpc.CallOption) (*proto.RepoDeleteResponse, error) {
 	res, err := r.base.RepoDelete(ctx, in, opts...)
 	return res, convertGRPCErrorToGitDomainError(err)
@@ -299,6 +282,11 @@ func (r *errorTranslatingReadFileClient) Recv() (*proto.ReadFileResponse, error)
 
 func (r *errorTranslatingClient) GetCommit(ctx context.Context, in *proto.GetCommitRequest, opts ...grpc.CallOption) (*proto.GetCommitResponse, error) {
 	res, err := r.base.GetCommit(ctx, in, opts...)
+	return res, convertGRPCErrorToGitDomainError(err)
+}
+
+func (r *errorTranslatingClient) ResolveRevision(ctx context.Context, in *proto.ResolveRevisionRequest, opts ...grpc.CallOption) (*proto.ResolveRevisionResponse, error) {
+	res, err := r.base.ResolveRevision(ctx, in, opts...)
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 

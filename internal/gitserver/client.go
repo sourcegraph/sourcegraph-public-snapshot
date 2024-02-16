@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -36,7 +35,6 @@ import (
 const git = "git"
 
 var ClientMocks, emptyClientMocks struct {
-	GetObject               func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
 	LocalGitserver          bool
 	LocalGitCommandReposDir string
 }
@@ -349,7 +347,7 @@ type Client interface {
 	// Remove removes the repository clone from gitserver.
 	Remove(context.Context, api.RepoName) error
 
-	RepoCloneProgress(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
+	RepoCloneProgress(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error)
 
 	// ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
 	// used.
@@ -360,9 +358,6 @@ type Client interface {
 	// * Empty repository: gitdomain.RevisionNotFoundError
 	// * Other unexpected errors.
 	ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error)
-
-	// ResolveRevisions expands a set of RevisionSpecifiers into an equivalent set of commit hashes.
-	ResolveRevisions(_ context.Context, repo api.RepoName, _ []protocol.RevisionSpecifier) ([]string, error)
 
 	// RequestRepoUpdate is the new protocol endpoint for synchronous requests
 	// with more detailed responses. Do not use this if you are not repo-updater.
@@ -623,9 +618,6 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		Repo:      string(repoName),
 		Args:      stringsToByteSlices(c.args[1:]),
 		NoTimeout: c.noTimeout,
-
-		// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string.
-		EnsureRevision: []byte(c.EnsureRevision()),
 	}
 
 	stream, err := client.Exec(ctx, req)
@@ -651,12 +643,6 @@ type readCloseWrapper struct {
 func (r *readCloseWrapper) Close() error {
 	r.closeFn()
 	return nil
-}
-
-func isRevisionNotFound(err string) bool {
-	// error message is lowercased in to handle case insensitive error messages
-	loweredErr := strings.ToLower(err)
-	return strings.Contains(loweredErr, "not a valid object")
 }
 
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (_ bool, err error) {
@@ -854,60 +840,29 @@ func (e *RepoNotCloneableErr) Error() string {
 	return fmt.Sprintf("%s (name=%q notfound=%v) because %s", msg, e.repo, e.notFound, e.reason)
 }
 
-func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (_ *protocol.RepoCloneProgressResponse, err error) {
+func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repo api.RepoName) (_ *protocol.RepoCloneProgress, err error) {
 	ctx, _, endObservation := c.operations.repoCloneProgress.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
-			attribute.Int("repos", len(repos)),
+			repo.Attr(),
 		},
 	})
 	defer endObservation(1, observation.Args{})
 
-	numPossibleShards := len(c.clientSource.Addresses())
-
-	shards := make(map[proto.GitserverServiceClient]*proto.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
-	for _, r := range repos {
-		client, err := c.ClientForRepo(ctx, r)
-		if err != nil {
-			return nil, err
-		}
-
-		shard := shards[client]
-		if shard == nil {
-			shard = new(proto.RepoCloneProgressRequest)
-			shards[client] = shard
-		}
-
-		shard.Repos = append(shard.Repos, string(r))
-	}
-
-	p := pool.NewWithResults[*proto.RepoCloneProgressResponse]().WithContext(ctx)
-
-	for client, req := range shards {
-		client := client
-		req := req
-		p.Go(func(ctx context.Context) (*proto.RepoCloneProgressResponse, error) {
-			return client.RepoCloneProgress(ctx, req)
-		})
-	}
-
-	res, err := p.Wait()
+	client, err := c.ClientForRepo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
 
-	result := &protocol.RepoCloneProgressResponse{
-		Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
-	}
-	for _, r := range res {
-		for repo, info := range r.Results {
-			var rp protocol.RepoCloneProgress
-			rp.FromProto(info)
-			result.Results[api.RepoName(repo)] = &rp
-		}
+	res, err := client.RepoCloneProgress(ctx, &proto.RepoCloneProgressRequest{RepoName: string(repo)})
+	if err != nil {
+		return nil, err
 	}
 
-	return result, nil
+	var rcp protocol.RepoCloneProgress
+	rcp.FromProto(res)
+
+	return &rcp, nil
 }
 
 func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) (err error) {
@@ -1239,10 +1194,6 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 	})
 	defer endObservation(1, observation.Args{})
 
-	if ClientMocks.GetObject != nil {
-		return ClientMocks.GetObject(repo, objectName)
-	}
-
 	req := protocol.GetObjectRequest{
 		Repo:       repo,
 		ObjectName: objectName,
@@ -1261,78 +1212,6 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 	res.FromProto(grpcResp)
 
 	return &res.Object, nil
-}
-
-var ambiguousArgPattern = lazyregexp.New(`ambiguous argument '([^']+)'`)
-
-func (c *clientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoName, revs []protocol.RevisionSpecifier) (_ []string, err error) {
-	ctx, _, endObservation := c.operations.resolveRevisions.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.Int("revs", len(revs)),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	args := append([]string{"rev-parse"}, revsToGitArgs(revs)...)
-
-	cmd := c.gitCommand(repo, args...)
-	stdout, stderr, err := cmd.DividedOutput(ctx)
-	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
-			return nil, err
-		}
-		if match := ambiguousArgPattern.FindSubmatch(stderr); match != nil {
-			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(match[1])}
-		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args(), stderr))
-	}
-
-	return strings.Fields(string(stdout)), nil
-}
-
-func revsToGitArgs(revSpecs []protocol.RevisionSpecifier) []string {
-	args := make([]string, 0, len(revSpecs))
-	for _, r := range revSpecs {
-		if r.RevSpec != "" {
-			args = append(args, r.RevSpec)
-		} else {
-			args = append(args, "HEAD")
-		}
-	}
-
-	// If revSpecs is empty, git treats it as equivalent to HEAD
-	if len(revSpecs) == 0 {
-		args = append(args, "HEAD")
-	}
-	return args
-}
-
-// readResponseBody will attempt to read the body of the HTTP response and return it as a
-// string. However, in the unlikely scenario that it fails to read the body, it will encode and
-// return the error message as a string.
-//
-// This allows us to use this function directly without yet another if err != nil check. As a
-// result, this function should **only** be used when we're attempting to return the body's content
-// as part of an error. In such scenarios we don't need to return the potential error from reading
-// the body, but can get away with returning that error as a string itself.
-//
-// This is an unusual pattern of not returning an error. Be careful of replicating this in other
-// parts of the code.
-func readResponseBody(body io.Reader) string {
-	content, err := io.ReadAll(body)
-	if err != nil {
-		return fmt.Sprintf("failed to read response body, error: %v", err)
-	}
-
-	// strings.TrimSpace is needed to remove trailing \n characters that is added by the
-	// server. We use http.Error in the server which in turn uses fmt.Fprintln to format
-	// the error message. And in translation that newline gets escaped into a \n
-	// character.  For what the error message would look in the UI without
-	// strings.TrimSpace, see attached screenshots in this pull request:
-	// https://github.com/sourcegraph/sourcegraph/pull/39358.
-	return strings.TrimSpace(string(content))
 }
 
 func stringsToByteSlices(in []string) [][]byte {

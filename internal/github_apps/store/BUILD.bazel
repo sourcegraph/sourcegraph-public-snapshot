@@ -15,6 +15,7 @@ go_library(
         "//internal/encryption",
         "//internal/encryption/keyring",
         "//internal/extsvc",
+        "//internal/extsvc/github",
         "//internal/github_apps/types",
         "//internal/types",
         "//lib/errors",
@@ -36,8 +37,10 @@ go_test(
     deps = [
         "//internal/database/basestore",
         "//internal/database/dbtest",
+        "//internal/extsvc/github",
         "//internal/github_apps/types",
         "//internal/types",
+        "//lib/errors",
         "@com_github_google_go_github_v55//github",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//logtest",

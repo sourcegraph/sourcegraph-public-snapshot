@@ -468,10 +468,15 @@ exports_files(["bundle"])
 filegroup(
     name = "srcs",
     srcs = glob(["**"]),
-    visibility = ["//visibility:public"]
 )
     """,
     integrity = "sha256-Spx8LyM7k+dsGOlZ4TdAq+CNk5EzvYB/oxnY4zGpqPg=",
     strip_prefix = "sourcegraph-extensions-bundles-5.0.1",
     url = "https://github.com/sourcegraph/sourcegraph-extensions-bundles/archive/v5.0.1.zip",
+)
+
+load("//dev:schema_migrations.bzl", "schema_migrations")
+
+schema_migrations(
+    name = "schemas_migrations",
 )

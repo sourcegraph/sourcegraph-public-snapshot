@@ -337,6 +337,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             repoName: blobInfo.repoName,
             filePath: blobInfo.filePath,
             commitID: blobInfo.commitID,
+            revision: blobInfo.revision,
             languages: blobInfo.languages,
         },
         blobInfo.mode
@@ -560,7 +561,7 @@ function useCodeIntelExtension(
         commitID,
         revision,
         languages,
-    }: { repoName: string; filePath: string; commitID: string; revision?: string; languages: string[] },
+    }: { repoName: string; filePath: string; commitID: string; revision: string; languages: string[] },
     mode: string
 ): Extension {
     const navigate = useNavigate()

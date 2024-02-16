@@ -326,7 +326,7 @@ func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
 
 	// Set up observability
 	w.options.Metrics.numJobs.Inc()
-	processLog.Info("Dequeued record for processing", log.String("id", record.RecordUID()))
+	processLog.Debug("Dequeued record for processing", log.String("id", record.RecordUID()))
 	processArgs := observation.Args{
 		Attrs: []attribute.KeyValue{attribute.String("record.id", record.RecordUID())},
 	}

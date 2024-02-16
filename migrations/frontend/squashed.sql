@@ -4196,7 +4196,6 @@ CREATE TABLE users (
     billing_customer_id text,
     invalidated_sessions_at timestamp with time zone DEFAULT now() NOT NULL,
     tos_accepted boolean DEFAULT false NOT NULL,
-    searchable boolean DEFAULT true NOT NULL,
     completions_quota integer,
     code_completions_quota integer,
     completed_post_signup boolean DEFAULT false NOT NULL,

@@ -22,12 +22,6 @@ type automaticRetryClient struct {
 
 // Non-idempotent methods.
 
-func (r *automaticRetryClient) P4Exec(ctx context.Context, in *proto.P4ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_P4ExecClient, error) {
-	// Not every usage of P4Exec is safe to retry.
-	// Also, currently unused.
-	return r.base.P4Exec(ctx, in, opts...)
-}
-
 func (r *automaticRetryClient) RepoDelete(ctx context.Context, in *proto.RepoDeleteRequest, opts ...grpc.CallOption) (*proto.RepoDeleteResponse, error) {
 	// RepoDelete isn't idempotent.
 	return r.base.RepoDelete(ctx, in, opts...)
@@ -159,6 +153,11 @@ func (r *automaticRetryClient) ReadFile(ctx context.Context, in *proto.ReadFileR
 func (r *automaticRetryClient) GetCommit(ctx context.Context, in *proto.GetCommitRequest, opts ...grpc.CallOption) (*proto.GetCommitResponse, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.GetCommit(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) ResolveRevision(ctx context.Context, in *proto.ResolveRevisionRequest, opts ...grpc.CallOption) (*proto.ResolveRevisionResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.ResolveRevision(ctx, in, opts...)
 }
 
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

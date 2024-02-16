@@ -32,6 +32,7 @@ go_library(
         "//lib/errors",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_twin_go_away//:go-away",
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel//codes",
         "@io_opentelemetry_go_otel_trace//:trace",

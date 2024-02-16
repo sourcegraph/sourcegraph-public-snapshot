@@ -8,48 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-func TestBuildFilter(t *testing.T) {
-	for _, tc := range []struct {
-		name   string
-		config Config
-		want   autogold.Value
-	}{
-		{
-			name: "Service Metric",
-			config: Config{
-				ResourceName: "my-service-name",
-				ResourceKind: CloudRunService,
-				ThresholdAggregation: &ThresholdAggregation{
-					Filters: map[string]string{
-						"metric.type": "run.googleapis.com/container/startup_latencies",
-					},
-				},
-			},
-			want: autogold.Expect(`metric.type = "run.googleapis.com/container/startup_latencies" AND resource.type = "cloud_run_revision" AND resource.labels.service_name = starts_with("my-service-name")`),
-		},
-		{
-			name: "Job Metric",
-			config: Config{
-				ResourceName: "my-job-name",
-				ResourceKind: CloudRunJob,
-				ThresholdAggregation: &ThresholdAggregation{
-					Filters: map[string]string{
-						"metric.type":          "run.googleapis.com/job/completed_task_attempt_count",
-						"metric.labels.result": "failed",
-					},
-				},
-			},
-			want: autogold.Expect(`metric.labels.result = "failed" AND metric.type = "run.googleapis.com/job/completed_task_attempt_count" AND resource.type = "cloud_run_job" AND resource.labels.job_name = starts_with("my-job-name")`),
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			got := buildFilter(&tc.config)
-			tc.want.Equal(t, got)
-		})
-	}
-}
-
-func TestResponseCodeBuilder(t *testing.T) {
+func TestResponseCodeMQLBuilder(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 		ResponseCodeMetric
@@ -126,8 +85,7 @@ func TestResponseCodeBuilder(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			got := responseCodeBuilder(&Config{
-				ResourceName:       "test-service",
+			got := responseCodeMQLBuilder(&Config{
 				ResponseCodeMetric: &tc.ResponseCodeMetric,
 			})
 			tc.want.Equal(t, got)

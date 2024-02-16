@@ -33,3 +33,6 @@ for indexer in scip-go scip-rust scip-java scip-python scip-typescript scip-ruby
 done
 
 go fmt "$SCRIPT_DIR/indexes.go"
+
+echo "Updating SHAs in test snapshots"
+go test "$SCRIPT_DIR/../..." -update

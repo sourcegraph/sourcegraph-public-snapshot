@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
+
 	p4types "github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -58,7 +58,7 @@ func GetChangelistByID(ctx context.Context, args GetChangeListByIDArguments) (*p
 
 	cmd := NewBaseCommand(ctx, args.P4Home, scratchDir, options...)
 
-	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = errors.Wrap(ctxerr, "p4 changes context error")
@@ -122,7 +122,7 @@ func GetChangelistByClient(ctx context.Context, args GetChangeListByClientArgume
 
 	cmd := NewBaseCommand(ctx, args.P4Home, args.WorkDir, options...)
 
-	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = errors.Wrap(ctxerr, "p4 changes context error")

@@ -20,6 +20,8 @@ type GitBackend interface {
 	GetObject(ctx context.Context, objectName string) (*gitdomain.GitObject, error)
 	// MergeBase finds the merge base commit for the given base and head revspecs.
 	// Returns an empty string and no error if no common merge-base was found.
+	// If one of the two given revspecs does not exist, a RevisionNotFoundError
+	// is returned.
 	MergeBase(ctx context.Context, baseRevspec, headRevspec string) (api.CommitID, error)
 	// Blame returns a reader for the blame info of the given path.
 	// BlameHunkReader must always be closed.
@@ -52,6 +54,11 @@ type GitBackend interface {
 	// If the commit does not exist, a RevisionNotFoundError is returned.
 	// If any path does not exist, a os.PathError is returned.
 	ArchiveReader(ctx context.Context, format ArchiveFormat, treeish string, paths []string) (io.ReadCloser, error)
+	// ResolveRevision resolves the given revspec to a commit ID.
+	// I.e., HEAD, deadbeefdeadbeefdeadbeefdeadbeef, or refs/heads/main.
+	// If passed a commit sha, will also verify that the commit exists.
+	// If the revspec can not be resolved to a commit, a RevisionNotFoundError is returned.
+	ResolveRevision(ctx context.Context, revspec string) (api.CommitID, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will

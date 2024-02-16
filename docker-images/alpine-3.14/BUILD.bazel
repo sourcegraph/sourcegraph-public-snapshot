@@ -1,4 +1,4 @@
-load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("//dev:oci_defs.bzl", "oci_image", "oci_push", "oci_tarball")
 load("//dev:oci_defs.bzl", "image_repository")
 
 oci_image(
