@@ -488,7 +488,6 @@ func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protoc
 func (s *Server) RepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) (resp protocol.RepoUpdateResponse) {
 	logger := s.logger.Scoped("handleRepoUpdate")
 
-	req.Repo = protocol.NormalizeRepo(req.Repo)
 	dir := gitserverfs.RepoDirFromName(s.reposDir, req.Repo)
 
 	if !repoCloned(dir) {
@@ -1187,7 +1186,6 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 			return err
 		}
 
-		repo = protocol.NormalizeRepo(repo)
 		dir := gitserverfs.RepoDirFromName(s.reposDir, repo)
 
 		remoteURL, err := s.getRemoteURL(ctx, repo)

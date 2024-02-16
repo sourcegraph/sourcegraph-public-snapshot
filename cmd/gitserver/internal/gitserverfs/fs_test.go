@@ -17,6 +17,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+func TestRepoPathNameMapping(t *testing.T) {
+	reposDir := "/data/repos"
+	require.Equal(t, "/data/repos/github.com/sourcegraph/sourcegraph/.git", RepoDirFromName(reposDir, "github.com/sourcegraph/sourcegraph").Path())
+	require.Equal(t, api.RepoName("github.com/sourcegraph/sourcegraph"), RepoNameFromDir(reposDir, "/data/repos/github.com/sourcegraph/sourcegraph/.git"))
+
+	require.Equal(t, "/data/repos/github.com/sourcegraph/sourcegraph/.git", RepoDirFromName(reposDir, "github.com/sourcegraph/sourcegraph.git").Path())
+
+	require.Equal(t, "/data/repos/github.com/sourcegraph/sourcegraph/.git", RepoDirFromName(reposDir, "github.com/sourcegraph/sourcegraph/").Path())
+
+	require.Equal(t, "/data/repos/github.com/sourcegraph/sourcegraph.exe/.git", RepoDirFromName(reposDir, "github.com/sourcegraph/sourcegraph.exe").Path())
+
+	require.Equal(t, "/data/repos/github.staging.sgdev.org/sg-test/sourcegraph.com-replica/.git", RepoDirFromName(reposDir, "github.staging.sgdev.org/sg-test/sourcegraph.com-replica").Path())
+}
+
 func TestIgnorePath(t *testing.T) {
 	reposDir := "/data/repos"
 

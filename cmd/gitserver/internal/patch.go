@@ -45,15 +45,11 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 	var resp protocol.CreateCommitFromPatchResponse
 
-	repo := string(protocol.NormalizeRepo(req.Repo))
-	repoDir := filepath.Join(s.reposDir, repo)
-	repoGitDir := filepath.Join(repoDir, ".git")
-	if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {
-		repoGitDir = filepath.Join(s.reposDir, repo)
-		if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {
-			resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: repo does not exist"))
-			return resp
-		}
+	repoDir := gitserverfs.RepoDirFromName(s.reposDir, req.Repo)
+
+	if !repoCloned(repoDir) {
+		resp.SetError(string(req.Repo), "", "", errors.New("gitserver: repo does not exist"))
+		return resp
 	}
 
 	var (
@@ -73,10 +69,10 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 		ref = *req.PushRef
 	}
 	if req.UniqueRef {
-		refs, err := s.repoRemoteRefs(ctx, remoteURL, repo, ref)
+		refs, err := s.repoRemoteRefs(ctx, remoteURL, req.Repo, ref)
 		if err != nil {
 			logger.Error("Failed to get remote refs", log.Error(err))
-			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteRefs"))
+			resp.SetError(string(req.Repo), "", "", errors.Wrap(err, "repoRemoteRefs"))
 			return resp
 		}
 
@@ -98,7 +94,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 	if err != nil {
 		logger.Error("Failed to get remote URL", log.Error(err))
-		resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteURL"))
+		resp.SetError(string(req.Repo), "", "", errors.Wrap(err, "repoRemoteURL"))
 		return resp
 	}
 
@@ -116,7 +112,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	// Ensure tmp directory exists
 	tmpRepoDir, err := gitserverfs.TempDir(s.reposDir, "patch-repo-")
 	if err != nil {
-		resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: make tmp repo"))
+		resp.SetError(string(req.Repo), "", "", errors.Wrap(err, "gitserver: make tmp repo"))
 		return resp
 	}
 	defer cleanUpTmpRepo(logger, tmpRepoDir)
@@ -126,7 +122,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	// Temporary logging command wrapper
-	prefix := fmt.Sprintf("%d %s ", atomic.AddUint64(&patchID, 1), repo)
+	prefix := fmt.Sprintf("%d %s ", atomic.AddUint64(&patchID, 1), req.Repo)
 	run := func(cmd *exec.Cmd, reason string) ([]byte, error) {
 		if !gitcli.IsAllowedGitCmd(logger, cmd.Args[1:], common.GitDir(tmpRepoDir)) {
 			return nil, errors.New("command not on allow list")
@@ -147,7 +143,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 		)
 
 		if err != nil {
-			resp.SetError(repo, argsToString(cmd.Args), string(out), errors.Wrap(err, "gitserver: "+reason))
+			resp.SetError(string(req.Repo), argsToString(cmd.Args), string(out), errors.Wrap(err, "gitserver: "+reason))
 			logger.Warn("command failed", log.Error(err))
 		} else {
 			logger.Info("command ran successfully")
@@ -158,7 +154,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	tmpGitPathEnv := "GIT_DIR=" + filepath.Join(tmpRepoDir, ".git")
 
 	tmpObjectsDir := filepath.Join(tmpRepoDir, ".git", "objects")
-	repoObjectsDir := filepath.Join(repoGitDir, "objects")
+	repoObjectsDir := repoDir.Path("objects")
 
 	altObjectsEnv := "GIT_ALTERNATE_OBJECT_DIRECTORIES=" + repoObjectsDir
 
@@ -247,7 +243,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	// We don't use 'run' here as we only want stdout
 	out, err := cmd.Output()
 	if err != nil {
-		resp.SetError(repo, argsToString(cmd.Args), string(out), errors.Wrap(err, "gitserver: retrieving new commit id"))
+		resp.SetError(string(req.Repo), argsToString(cmd.Args), string(out), errors.Wrap(err, "gitserver: retrieving new commit id"))
 		return resp
 	}
 	cmtHash := strings.TrimSpace(string(out))
@@ -276,7 +272,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return nil
 	})
 	if err != nil {
-		resp.SetError(repo, "", "", errors.Wrap(err, "copying git objects"))
+		resp.SetError(string(req.Repo), "", "", errors.Wrap(err, "copying git objects"))
 		return resp
 	}
 
@@ -286,14 +282,14 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 			// shelve the changelist instead of pushing to a Git host
 			cid, err := s.shelveChangelist(ctx, req, cmtHash, remoteURL, tmpGitPathEnv, altObjectsEnv)
 			if err != nil {
-				resp.SetError(repo, "", "", err)
+				resp.SetError(string(req.Repo), "", "", err)
 				return resp
 			}
 
 			resp.ChangelistId = cid
 		} else {
 			cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL.String(), fmt.Sprintf("%s:%s", cmtHash, ref))
-			cmd.Dir = repoGitDir
+			repoDir.Set(cmd)
 
 			// If the protocol is SSH and a private key was given, we want to
 			// use it for communication with the code host.
@@ -305,7 +301,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 				// without the need to store it on the disk.
 				agent, err := sshagent.New(logger, []byte(req.Push.PrivateKey), []byte(req.Push.Passphrase))
 				if err != nil {
-					resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: error creating ssh-agent"))
+					resp.SetError(string(req.Repo), "", "", errors.Wrap(err, "gitserver: error creating ssh-agent"))
 					return resp
 				}
 				go agent.Listen()
@@ -330,7 +326,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 	if req.PushRef == nil {
 		cmd = exec.CommandContext(ctx, "git", "update-ref", "--", ref, cmtHash)
-		cmd.Dir = repoGitDir
+		repoDir.Set(cmd)
 
 		if out, err = run(cmd, "creating ref"); err != nil {
 			logger.Error("Failed to create ref for commit.", log.String("commit", cmtHash), log.String("output", string(out)))
@@ -346,7 +342,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 //
 // The ref prefix `ref/<ref type>/` is stripped away from the returned
 // refs.
-func (s *Server) repoRemoteRefs(ctx context.Context, remoteURL *vcs.URL, repoName, prefix string) (map[string]string, error) {
+func (s *Server) repoRemoteRefs(ctx context.Context, remoteURL *vcs.URL, repoName api.RepoName, prefix string) (map[string]string, error) {
 	// The expected output of this git command is a list of:
 	// <commit hash> <ref name>
 	cmd := exec.Command("git", "ls-remote", remoteURL.String(), prefix+"*")
@@ -355,7 +351,7 @@ func (s *Server) repoRemoteRefs(ctx context.Context, remoteURL *vcs.URL, repoNam
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	r := urlredactor.New(remoteURL)
-	err := s.recordingCommandFactory.WrapWithRepoName(ctx, s.logger, api.RepoName(repoName), cmd).WithRedactorFunc(r.Redact).Run()
+	err := s.recordingCommandFactory.WrapWithRepoName(ctx, s.logger, repoName, cmd).WithRedactorFunc(r.Redact).Run()
 	if err != nil {
 		stderr := stderr.Bytes()
 		if len(stderr) > 200 {

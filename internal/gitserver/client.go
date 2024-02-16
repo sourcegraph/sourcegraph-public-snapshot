@@ -598,20 +598,18 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		}
 	}()
 
-	repoName := protocol.NormalizeRepo(c.repo)
-
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 
-	client, err := c.execer.ClientForRepo(ctx, repoName)
+	client, err := c.execer.ClientForRepo(ctx, c.repo)
 	if err != nil {
 		return nil, err
 	}
 
 	req := &proto.ExecRequest{
-		Repo:      string(repoName),
+		Repo:      string(c.repo),
 		Args:      stringsToByteSlices(c.args[1:]),
 		NoTimeout: c.noTimeout,
 	}
@@ -653,9 +651,7 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 	})
 	defer endObservation(1, observation.Args{})
 
-	repoName := protocol.NormalizeRepo(args.Repo)
-
-	client, err := c.ClientForRepo(ctx, repoName)
+	client, err := c.ClientForRepo(ctx, args.Repo)
 	if err != nil {
 		return false, err
 	}

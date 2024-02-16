@@ -175,6 +175,7 @@ func (g *GitserverAddresses) AddrForRepo(ctx context.Context, repoName api.RepoN
 	addrForRepoInvoked.Inc()
 
 	// Normalizing the name in case the caller didn't.
+	// TODO: I don't think we need/should do that.
 	name := string(protocol.NormalizeRepo(repoName))
 	if pinnedAddr, ok := g.PinnedServers[name]; ok {
 		return pinnedAddr
