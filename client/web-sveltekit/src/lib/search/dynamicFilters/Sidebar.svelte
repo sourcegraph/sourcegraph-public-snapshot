@@ -1,3 +1,30 @@
+<script context="module" lang="ts">
+    function queryHasTypeFilter(query: string): boolean {
+        const tokens = scanSearchQuery(query)
+        if (tokens.type !== 'success') {
+            return false
+        }
+        const filters = tokens.term.filter((token): token is QueryFilter => token.type === 'filter')
+        return filters.some(filter => filter.field.value === 'type')
+    }
+
+    function inferOperatingSystem(userAgent: string): 'Windows' | 'MacOS' | 'Linux' | undefined {
+        if (userAgent.includes('Win')) {
+            return 'Windows'
+        }
+
+        if (userAgent.includes('Mac')) {
+            return 'MacOS'
+        }
+
+        if (userAgent.includes('Linux')) {
+            return 'Linux'
+        }
+
+        return undefined
+    }
+</script>
+
 <script lang="ts">
     import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 
@@ -20,6 +47,7 @@
         typeFilterIcons,
         groupFilters,
         moveFiltersToQuery,
+        resetFilters,
     } from './index'
     import LoadingSkeleton from './LoadingSkeleton.svelte'
     import Section from './Section.svelte'
@@ -29,14 +57,7 @@
     export let streamFilters: Filter[]
     export let selectedFilters: URLQueryFilter[]
 
-    function queryHasTypeFilter(query: string): boolean {
-        const tokens = scanSearchQuery(query)
-        if (tokens.type !== 'success') {
-            return false
-        }
-        const filters = tokens.term.filter((token): token is QueryFilter => token.type === 'filter')
-        return filters.some(filter => filter.field.value === 'type')
-    }
+    const resetModifier = inferOperatingSystem(navigator.userAgent) === 'MacOS' ? '⌥' : 'Alt'
 
     $: groupedFilters = groupFilters(streamFilters, selectedFilters)
     $: typeFilters = staticTypeFilters.map((staticTypeFilter): SectionItem => {
@@ -54,7 +75,12 @@
 
 <aside class="sidebar">
     <div class="scroll-container">
-        <h3>Filter results</h3>
+        <div class="header">
+            <h3>Filter results</h3>
+            {#if selectedFilters.length > 0}
+                <a href={resetFilters($page.url)}><small>Reset all <kbd>{resetModifier} ⌫</kbd></small></a>
+            {/if}
+        </div>
 
         {#if !queryHasTypeFilter(searchQuery)}
             <Section items={typeFilters} title="By type" showAll>
@@ -99,7 +125,7 @@
             <LoadingSkeleton />
         {/if}
 
-        <div class="sidebar-footer">
+        <div class="help-footer">
             <HelpFooter />
         </div>
     </div>
@@ -124,10 +150,6 @@
 
     .scroll-container {
         padding-top: 1rem;
-        h3 {
-            margin: 0;
-            padding: 0 1rem;
-        }
         height: 100%;
         background-color: var(--sidebar-bg);
         overflow-y: auto;
@@ -135,10 +157,29 @@
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
-    }
 
-    .sidebar-footer {
-        margin-top: auto;
+        .header {
+            display: flex;
+            padding: 0 1rem;
+            h3 {
+                margin: 0;
+            }
+            a {
+                margin-left: auto;
+                kbd {
+                    // TODO: use this style globally
+                    font-family: var(--font-family-base);
+                    color: var(--text-muted);
+                    background: var(--color-bg-1);
+                    box-shadow: inset 0 -2px 0 var(--border-color-2);
+                    border: 1px solid var(--border-color-2);
+                }
+            }
+        }
+
+        .help-footer {
+            margin-top: auto;
+        }
     }
 
     .move-button {

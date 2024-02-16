@@ -68,6 +68,12 @@ export function moveFiltersToQuery(url: URL): URL {
     return newURL
 }
 
+export function resetFilters(url: URL): URL {
+    const newURL = new URL(url)
+    newURL.searchParams.delete(DYNAMIC_FILTER_URL_QUERY_KEY)
+    return newURL
+}
+
 export function filtersFromParams(params: URLSearchParams): URLQueryFilter[] {
     return params.getAll(DYNAMIC_FILTER_URL_QUERY_KEY).map(deserializeURLFilter)
 }
