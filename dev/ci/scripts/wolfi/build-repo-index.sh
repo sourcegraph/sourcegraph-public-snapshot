@@ -5,8 +5,7 @@ set -eux -o pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
 # TODO: Manage these variables properly
-# TODO(burmudar): Remove this if
-if [[ "$BUILDKITE_PIPELINE_SLUG" == "aspect-experimental" ]]; then
+if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" =~ "aspect-" ]]; then
   GCP_PROJECT="aspect-dev"
   KEY_DIR="$(pwd)/keys"
   # TODO(burmudar): fix this in aspect image
@@ -63,7 +62,6 @@ touch DESCRIPTION
 tar zcf APKINDEX.tar.gz APKINDEX DESCRIPTION
 
 # Sign index, using separate keys from GCS for staging and prod repos
-# TODO(burmudar): fix key paths
 if [[ "$IS_MAIN" == "true" ]]; then
   key_path="$KEY_DIR/sourcegraph-melange-prod.rsa"
 else

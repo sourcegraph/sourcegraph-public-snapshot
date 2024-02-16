@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 set -eu
-# TODO(burmudar): Remove this early exit
-echo "--- :rocket: SKIPPED"
-exit 0
-
 
 ## Setting up tools
 gcloud="$1"

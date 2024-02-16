@@ -33,11 +33,6 @@ echo "Publishing GCP compute image"
 echo "Made GCP compute image public"
 "$gcloud" compute images update --project=sourcegraph-ci "${GOOGLE_IMAGE_NAME}" --family="${IMAGE_FAMILY}"
 echo "Added GCP compute image to image family ${IMAGE_FAMILY}"
-#
-# TODO(burmudar): Remove this early exit
-echo "--- :rocket: SKIPPED"
-exit 0
-
 
 # Set the AMIs to public.
 if [ "${EXECUTOR_IS_TAGGED_RELEASE}" = "true" ]; then

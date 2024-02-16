@@ -113,7 +113,6 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 				},
 			}),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
-			// TODO(burmudar): should this be small instead?
 			bk.Agent("queue", AspectWorkflows.QueueDefault),
 			bk.DependsOn(AspectWorkflows.TestStepKey),
 			bk.Key(stepKey),
@@ -343,9 +342,7 @@ func wolfiGenerateBaseImagePR() *operations.Set {
 	ops.Append(
 		func(pipeline *bk.Pipeline) {
 			pipeline.AddStep(":clown_face::whale::hash: Update Base Image Hashes",
-				//bk.Cmd("./dev/ci/scripts/wolfi/update-base-image-hashes.sh"),
-				//TODO(burmudar): undry me
-				bk.Cmd(`echo "--- DRY RUN: wolfiGEnerateBaseImagePR"`),
+				bk.Cmd("./dev/ci/scripts/wolfi/update-base-image-hashes.sh"),
 				bk.Agent("queue", AspectWorkflows.QueueSmall),
 				bk.DependsOn("buildAllBaseImages"),
 				bk.Key("updateBaseImageHashes"),

@@ -127,8 +127,7 @@ docker load <"$tarball"
 # there is an unexpcted behaviour in upstream
 # where the arch is always appended to the tag
 # hardcode for now as we only support linux/amd64 anyway
-# TODO(burmudar): uncomment below
-# local_image_name="$image_name:latest-amd64"
+local_image_name="$image_name:latest-amd64"
 
 # Push to internal dev repo
 echo " :x: * Pushing image to internal dev repo..."
@@ -140,11 +139,10 @@ echo " :x: * Pushing image to internal dev repo..."
 # Push to Dockerhub only on main branch
 if [[ "$IS_MAIN" == "true" ]]; then
   echo " :x: * Pushing image to prod repo..."
-  # TODO(burmudar): Remove me
-  # docker tag "$local_image_name" "sourcegraph/wolfi-${name}-base:$tag"
-  # docker push "sourcegraph/wolfi-${name}-base:$tag"
-  # docker tag "$local_image_name" "sourcegraph/wolfi-${name}-base:latest"
-  # docker push "sourcegraph/wolfi-${name}-base:latest"
+  docker tag "$local_image_name" "sourcegraph/wolfi-${name}-base:$tag"
+  docker push "sourcegraph/wolfi-${name}-base:$tag"
+  docker tag "$local_image_name" "sourcegraph/wolfi-${name}-base:latest"
+  docker push "sourcegraph/wolfi-${name}-base:latest"
 fi
 
 # Show image usage message on branches

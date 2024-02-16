@@ -6,7 +6,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
 # TODO: Manage these variables properly
 # TODO(burmudar): Remove this if
-if [[ "$BUILDKITE_PIPELINE_SLUG" == "aspect-experimental" ]]; then
+if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" =~ "aspect-" ]]; then
   GCP_PROJECT="aspect-dev"
 else
   GCP_PROJECT="sourcegraph-ci"
@@ -52,8 +52,7 @@ for apk in "${apks[@]}"; do
 
   # Check whether this version of the package already exists in the main package repo
   echo "   * Checking if this package version already exists in the production repo..."
-  # TODO(burmudar): remove the || false
-  if gsutil -q -u "$GCP_PROJECT" stat "${dest_path_main}${apk}" && false; then
+  if gsutil -q -u "$GCP_PROJECT" stat "${dest_path_main}${apk}"; then
     echo -e "The production package repository already contains the package '$package_name' version '$package_version' at '${dest_path_main}${apk}'.\n\n
 Resolve this issue by incrementing the 'epoch' field in the package's YAML file." |
       ../../../dev/ci/scripts/annotate.sh -t "error"

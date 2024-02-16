@@ -31,8 +31,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# TODO(burmudar): remove forcing this version
-CANDIDATE_VERSION="5.2.7"
 export POSTGRES_IMAGE="us.gcr.io/sourcegraph-dev/postgres-12-alpine:${CANDIDATE_VERSION}"
 export SERVER_IMAGE="us.gcr.io/sourcegraph-dev/server:${CANDIDATE_VERSION}"
 export EXECUTOR_IMAGE="us.gcr.io/sourcegraph-dev/executor:${CANDIDATE_VERSION}"
