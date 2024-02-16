@@ -28,7 +28,7 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
 }) => {
     React.useEffect(() => {
         telemetryService.log('OwnershipPanelOpened')
-        telemetryRecorder.recordEvent('blob.ownership-panel', 'open')
+        telemetryRecorder.recordEvent('blob.ownershipPanel', 'open')
     }, [telemetryService, telemetryRecorder])
 
     const { data, loading, error, refetch } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {

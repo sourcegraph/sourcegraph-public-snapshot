@@ -25,7 +25,7 @@ export const CopyPathAction: React.FunctionComponent<
     const onClick = (event: React.MouseEvent<HTMLButtonElement>): void => {
         event.preventDefault()
         telemetryService.log('CopyFilePath')
-        telemetryRecorder.recordEvent('search.header.file-path', 'copy')
+        telemetryRecorder.recordEvent('search.header.filePath', 'copy')
         copy(filePath)
         setCopied(true)
         screenReaderAnnounce('Path copied to clipboard')

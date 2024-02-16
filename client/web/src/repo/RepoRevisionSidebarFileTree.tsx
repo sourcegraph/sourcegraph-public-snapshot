@@ -194,7 +194,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             }
 
             telemetryService.log('FileTreeLoadDirectory')
-            telemetryRecorder.recordEvent('blob-sidebar.file-tree-directory', 'load')
+            telemetryRecorder.recordEvent('blobSidebar.fileTreeDirectory', 'load')
             await fetchEntries({
                 ...defaultVariables,
                 filePath: fullPath,
@@ -227,7 +227,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
 
             if (element.dotdot) {
                 telemetryService.log('FileTreeLoadParent')
-                telemetryRecorder.recordEvent('blob-sidebar.file-tree-parent-link', 'click')
+                telemetryRecorder.recordEvent('blobSidebar.fileTreeParentLink', 'click')
                 navigate(element.dotdot)
 
                 let parent = props.initialFilePathIsDirectory
@@ -242,7 +242,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
 
             if (element.entry) {
                 telemetryService.log('FileTreeClick')
-                telemetryRecorder.recordEvent('blob-sidebar.file-tree-link', 'click')
+                telemetryRecorder.recordEvent('blobSidebar.fileTreeLink', 'click')
                 navigate(element.entry.url)
             }
             setSelectedIds([element.id])

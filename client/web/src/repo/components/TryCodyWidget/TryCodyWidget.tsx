@@ -196,7 +196,7 @@ export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
         const eventPage = type === 'blob' ? 'BlobPage' : 'RepoPage'
         telemetryService.log(EventName.TRY_CODY_WEB_ONBOARDING_DISPLAYED, { type: eventPage }, { type: eventPage })
         const v2EventPage = type === 'blob' ? 0 : 1
-        telemetryRecorder.recordEvent('cta.try-cody-web-onboarding', 'view', { page: v2EventPage })
+        telemetryRecorder.recordEvent('cta.tryCodyWebOnboarding', 'view', { metadata: { page: v2EventPage } })
     }, [isDismissed, telemetryService, telemetryRecorder, type])
 
     if (isDismissed) {
