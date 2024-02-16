@@ -116,9 +116,10 @@ func (r *Cache) KeyTTL(key string) (int, bool) {
 }
 
 func (r *Cache) ListAllKeys() []string {
-	keys, err := kv().Keys(r.rkeyPrefix() + "*")
+	pattern := r.rkeyPrefix() + "*"
+	keys, err := kv().Keys(pattern)
 	if err != nil {
-		log15.Warn("failed to execute redis command", "cmd", "KEYS", "error", err)
+		log15.Warn("failed to execute redis command", "cmd", "KEYS", "pattern", pattern, "error", err)
 		return nil
 	}
 	return keys
