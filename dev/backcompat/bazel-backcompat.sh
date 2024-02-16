@@ -34,7 +34,8 @@ else
 fi
 
 echo "--- :git::rewind: checkout v${tag}"
-# --no-overlay makes so that git ensures the files match what is in the tree exactly, removing files that do not match
+# make sure git knows about the tag
+git fetch --tags
 git checkout --force "v${tag}"
 
 echo "--- :git: checkout migrations, patches and scripts at ${current_commit}"
