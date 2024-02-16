@@ -5464,8 +5464,8 @@ def go_dependencies():
         name = "com_github_twin_go_away",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/TwiN/go-away",
-        sum = "h1:80AjDyeTjfQaSFYbALzRcDKMAmxKW0a5PoxwXKZlW2A=",
-        version = "v1.6.12",
+        sum = "h1:aB6l/FPXmA5ds+V7I9zdhxzpsLLUvVtEuS++iU/ZmgE=",
+        version = "v1.6.13",
     )
     go_repository(
         name = "com_github_uber_gonduit",
