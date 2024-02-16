@@ -1,3 +1,6 @@
+<!-- This file contains core-line icons by https://www.streamlinehq.com. It is licensed under CC BY 4.0 // Original source -->
+<!-- of icon set - https://www.streamlinehq.com/icons/core-line-free -->
+
 <svg viewBox="0 0 14 14" height="14" width="14" fill="none !important" {...$$restProps}>
     <path
         id="Vector"
