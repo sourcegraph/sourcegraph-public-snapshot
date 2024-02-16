@@ -130,6 +130,10 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	for i := range allowedModels {
 		allowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, allowedModels[i])
 	}
+
+	// turn off sanitization for profanity detection
+	d := goaway.NewProfanityDetector().WithSanitizeAccents(false).WithSanitizeLeetSpeak(false).WithSanitizeSpaces(false).WithSanitizeSpecialCharacters(false)
+
 	for i := range patternsToDetect {
 		patternsToDetect[i] = strings.ToLower(patternsToDetect[i])
 	}
@@ -259,14 +263,17 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 
 			// Retrieve metadata from the initial request.
 			model, requestMetadata := methods.getRequestMetadata(body)
-			prompt := strings.ToLower(body.BuildPrompt())
-			if goaway.IsProfane(prompt) {
-				requestMetadata["is_profane"] = true
-			}
-			for _, p := range patternsToDetect {
-				if strings.Contains(prompt, p) {
-					requestMetadata["detected_phrases"] = true
-					break
+
+			if feature == codygateway.FeatureChatCompletions {
+				prompt := strings.ToLower(body.BuildPrompt())
+				if d.IsProfane(prompt) {
+					requestMetadata["is_profane"] = true
+				}
+				for _, p := range patternsToDetect {
+					if strings.Contains(prompt, p) {
+						requestMetadata["detected_phrases"] = true
+						break
+					}
 				}
 			}
 
