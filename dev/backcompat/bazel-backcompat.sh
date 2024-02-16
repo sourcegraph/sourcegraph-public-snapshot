@@ -20,8 +20,8 @@ if [[ ${CI:-} == "true" ]]; then
   aspectRC="/tmp/aspect-generated.bazelrc"
   rosetta bazelrc > "$aspectRC"
   bazelrcs=(--bazelrc="$aspectRC")
-  echo "--- :aspect: debug"
-  cat "${aspectRC}"
+  echo "--- :cog::hammer::aspect: debug"
+  cat .aspect/bazelrc/ci.sourcegraph.bazelrc | grep -v -E "#|common --action_env|common --repository_cache|try-import" | grep -v "^$" >> "${aspectRC}"
 else
   if [[ $EXIT_CODE -ne 0 ]]; then
     echo "The following files have changes:"
@@ -38,7 +38,7 @@ git checkout --force "v${tag}"
 
 echo "--- :git: checkout migrations, patches and scripts at ${current_commit}"
 # --no-overlay makes so that git ensures the files match what is in the tree exactly, removing files that do not match
-git checkout --force --no-overlay "${current_commit}" -- migrations/ dev/backcompat/patch_flakes.sh dev/backcompat/patches dev/backcompat/flakes.json .aspect/
+git checkout --force --no-overlay "${current_commit}" -- migrations/ dev/backcompat/patch_flakes.sh dev/backcompat/patches dev/backcompat/flakes.json
 
 if [[ -d "dev/backcompat/patches/${tag}" ]]; then
   echo "--- :adhesive_bandage: apply patches from dev/backcompat/patches/${tag}"
