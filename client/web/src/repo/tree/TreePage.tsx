@@ -164,6 +164,8 @@ export const TreePage: FC<Props> = ({
                         filePath={filePath}
                         isDir={true}
                         telemetryService={props.telemetryService}
+                        // TODO (dadlerj): update to use a real telemetry recorder
+                        telemetryRecorder={noOpTelemetryRecorder}
                     />
                 ),
             }
