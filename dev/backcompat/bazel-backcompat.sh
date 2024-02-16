@@ -49,14 +49,15 @@ fi
 echo "--- :snowflake: patch flake for tag ${tag}"
 ./dev/backcompat/patch_flakes.sh ${tag}
 
-aspectRC="/tmp/aspect-generated.bazelrc"
-rosetta bazelrc > "$aspectRC"
+# TODO(burmudar): This fails on aspect agents, because the tests struggle to connect to the database
+# aspectRC="/tmp/aspect-generated.bazelrc"
+# rosetta bazelrc > "$aspectRC"
+# bazelrcs=(--bazelrc="$aspectRC")
+#
+# echo "--- :net: sourcing sourcegraph/env.sh"
+# source /etc/sourcegraph/env.sh
 
-echo "--- :net: sourcing sourcegraph/env.sh"
-source /etc/sourcegraph/env.sh
-
-bazelrcs=(--bazelrc="$aspectRC")
-
+bazelrcs=(--bazelrc=.bazelrc)
 echo "--- :bazel: bazel test"
 bazel "${bazelrcs[@]}" \
   test --test_tag_filters=go -- \

@@ -1,6 +1,6 @@
 steps:
   - label: ':recycle: backwards compatibility tests'
     key: "bazel-backcompat"
-    agents: { queue: aspect-default }
+    agents: { queue: bazel }
     commands:
     - ./dev/backcompat/bazel-backcompat.sh
