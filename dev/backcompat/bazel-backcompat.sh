@@ -20,8 +20,12 @@ if [[ ${CI:-} == "true" ]]; then
   aspectRC="/tmp/aspect-generated.bazelrc"
   rosetta bazelrc > "$aspectRC"
   bazelrcs=(--bazelrc="$aspectRC")
-  echo "--- :leaf: sourcing sourcegraph/env.sh"
+  echo "--- :maple_leaf: before env"
+  env
+  echo "--- :four_leaf_clover: sourcing sourcegraph/env.sh"
   source /etc/sourcegraph/env.sh
+  echo "--- :fallen_leaf: before env"
+  env
 else
   if [[ $EXIT_CODE -ne 0 ]]; then
     echo "The following files have changes:"
