@@ -200,7 +200,7 @@ func makeBitbucketServerRepo() *types.Repo {
 func makeGerritRepo() *types.Repo {
 	repo := typestest.MakeRepo("gerrit.com/test", "https://gerrit.com/", extsvc.TypeGerrit)
 	repo.Metadata = &gerrit.Project{
-		Name: "test",
+		ID: "test",
 	}
 	return repo
 }
