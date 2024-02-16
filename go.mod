@@ -250,7 +250,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.4.1
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.1
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.4.0
-	github.com/TwiN/go-away v1.6.12
+	github.com/TwiN/go-away v1.6.13
 	github.com/aws/constructs-go/constructs/v10 v10.2.69
 	github.com/aws/jsii-runtime-go v1.84.0
 	github.com/dghubble/gologin/v2 v2.4.0
