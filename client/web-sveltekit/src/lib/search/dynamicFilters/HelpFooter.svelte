@@ -5,17 +5,19 @@
 
 <footer class="help">
     <a href="/help/code_search/reference/queries" class="link">
-        <OpenBookIcon aria-hidden />
+        <div class="icon"><OpenBookIcon aria-hidden /></div>
         <span>
             <h4>Need more advanced filters?</h4>
             <small>Explore the query syntax docs</small>
         </span>
-        <LinkShareIcon aria-hidden />
+        <div class="icon"><LinkShareIcon aria-hidden /></div>
     </a>
 </footer>
 
 <style lang="scss">
     .help {
+        line-height: 1;
+
         &::before {
             content: '';
             height: 1px;
@@ -42,9 +44,6 @@
 
         a {
             padding: 1rem;
-            h4 {
-                margin: 0;
-            }
 
             display: flex;
             align-items: center;
@@ -52,7 +51,7 @@
             span {
                 margin-right: auto;
             }
-            :global(svg) {
+            .icon {
                 flex-shrink: 0;
             }
 
@@ -60,7 +59,6 @@
                 text-decoration: none;
                 color: var(--text-muted);
             }
-            font-size: 0.75rem;
         }
     }
 </style>
