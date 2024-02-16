@@ -341,7 +341,7 @@ func wolfiGenerateBaseImagePR() *operations.Set {
 
 	ops.Append(
 		func(pipeline *bk.Pipeline) {
-			pipeline.AddStep(":clown_face::whale::hash: Update Base Image Hashes",
+			pipeline.AddStep(":whale::hash: Update Base Image Hashes",
 				bk.Cmd("./dev/ci/scripts/wolfi/update-base-image-hashes.sh"),
 				bk.Agent("queue", AspectWorkflows.QueueSmall),
 				bk.DependsOn("buildAllBaseImages"),

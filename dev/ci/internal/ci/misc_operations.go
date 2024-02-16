@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 )
 
+func triggerBackCompatTest(buildOpts bk.BuildOptions) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		steps := []bk.StepOpt{
 			bk.Async(false),
