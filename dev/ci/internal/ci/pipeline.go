@@ -188,7 +188,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		baseImageOps := wolfiRebuildAllBaseImages(c)
 		if baseImageOps != nil {
 			ops.Merge(baseImageOps)
-			//ops.Merge(wolfiGenerateBaseImagePR())
+			ops.Merge(wolfiGenerateBaseImagePR())
 		}
 
 	// Use CandidateNoTest if you want to build legacy Docker Images
