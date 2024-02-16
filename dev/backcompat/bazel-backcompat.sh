@@ -53,6 +53,4 @@ bazel "${bazelrcs[@]}" \
   //cmd/... \
   //lib/... \
   //internal/... \
-  //enterprise/cmd/... \
-  //enterprise/internal/...\
   -//cmd/migrator/...
