@@ -95,9 +95,11 @@
 
         <Section items={groupedFilters.repo} title="By repository" filterPlaceholder="Filter repositories">
             <svelte:fragment slot="label" let:label>
-                <CodeHostIcon repository={label} />
                 <Tooltip tooltip={label} placement="right">
-                    <span>{displayRepoName(label)}</span>
+                    <span>
+                        <CodeHostIcon disableTooltip repository={label} />
+                        <span>{displayRepoName(label)}</span>
+                    </span>
                 </Tooltip>
             </svelte:fragment>
         </Section>

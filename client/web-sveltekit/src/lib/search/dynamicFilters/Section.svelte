@@ -2,11 +2,10 @@
     import { mdiClose } from '@mdi/js'
 
     import { page } from '$app/stores'
-    import { pluralize } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
-    import Tooltip from '$lib/Tooltip.svelte'
-    import { Badge, Button } from '$lib/wildcard'
+    import { Button } from '$lib/wildcard'
 
+    import CountBadge from './CountBadge.svelte'
     import { updateFilterInURL, type SectionItem } from './index'
 
     export let items: SectionItem[]
@@ -24,16 +23,6 @@
     let showMore = false
     $: showCount = showAll ? items.length : showMore ? 10 : 5
     $: limitedItems = filteredItems.slice(0, showCount)
-
-    function roundCount(count: number): number {
-        const roundNumbers = [10000, 5000, 1000, 500, 100, 50, 10, 5, 1]
-        for (const roundNumber of roundNumbers) {
-            if (count >= roundNumber) {
-                return roundNumber
-            }
-        }
-        return 0
-    }
 </script>
 
 {#if items.length > 0}
@@ -54,22 +43,7 @@
                                 {item.label}
                             </slot>
                         </span>
-                        {#if item.count !== undefined}
-                            <span class="count">
-                                {#if item.exhaustive}
-                                    <Badge variant="secondary">{item.count}</Badge>
-                                {:else}
-                                    <Tooltip
-                                        tooltip="At least {item.count} {pluralize(
-                                            'result',
-                                            item.count
-                                        )} match this filter."
-                                    >
-                                        <Badge variant="secondary">{roundCount(item.count)}+</Badge>
-                                    </Tooltip>
-                                {/if}
-                            </span>
-                        {/if}
+                        <CountBadge count={item.count} exhaustive={item.exhaustive} />
                         {#if item.selected}
                             <span class="close">
                                 <Icon svgPath={mdiClose} inline />
