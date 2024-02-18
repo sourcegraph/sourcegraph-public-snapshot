@@ -20,7 +20,7 @@ func init() {
 	chroma.StandardTypes = sourcegraphTypes
 }
 
-// SyntaxHighlightingOptions
+// SyntaxHighlightingOptions customize chroma code formatter.
 func SyntaxHighlightingOptions() []html.Option {
 	return []html.Option{
 		html.WithClasses(true),

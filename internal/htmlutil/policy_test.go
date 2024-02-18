@@ -116,10 +116,6 @@ func TestSanitizationPolicy(t *testing.T) {
 		// htmlutil should enforce a set of sanitization rules to make sure the generated HTML is safe to render.
 		// We also want to make sure all 3 wrapper functions produce identical results.
 		t.Run(tt.name, func(t *testing.T) {
-			t.Run("using the policy directly", func(t *testing.T) {
-				cmp(t, htmlutil.Policy().Sanitize(tt.inputHTML), tt.want)
-			})
-
 			t.Run("Sanitize", func(t *testing.T) {
 				cmp(t, htmlutil.Sanitize(tt.inputHTML), tt.want)
 			})

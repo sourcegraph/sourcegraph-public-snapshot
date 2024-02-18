@@ -16,11 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/markdown"
 )
 
-var (
-	once sync.Once
-	n    *nb.Notebook
-)
-
 // Render renders Jupyter Notebook file (.ipynb) to sanitized HTML that is safe to render anywhere.
 func Render(content string) (string, error) {
 	var buf bytes.Buffer
@@ -31,24 +26,20 @@ func Render(content string) (string, error) {
 	return htmlutil.SanitizeReader(&buf).String(), nil
 }
 
-func notebook() *nb.Notebook {
-	once.Do(func() {
-		md := markdown.Goldmark()
-		n = nb.New(
-			nb.WithExtensions(
-				jupyter.Goldmark(md),
-				synth.NewHighlighting(
-					synth.WithFormatOptions(
-						htmlutil.SyntaxHighlightingOptions()...,
-					),
+var notebook = sync.OnceValue(func() *nb.Notebook {
+	md := markdown.Goldmark()
+	return nb.New(
+		nb.WithExtensions(
+			jupyter.Goldmark(md),
+			synth.NewHighlighting(
+				synth.WithFormatOptions(
+					htmlutil.SyntaxHighlightingOptions()...,
 				),
-				extension.NewStream(adapter.AnsiHtml(ansi2html)),
 			),
-		)
-	})
-
-	return n
-}
+			extension.NewStream(adapter.AnsiHtml(ansi2html)),
+		),
+	)
+})
 
 // ansi2html calls ansihtml.ConvertToHTMLWithClasses with empty class prefix.
 func ansi2html(b []byte) []byte {

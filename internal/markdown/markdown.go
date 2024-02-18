@@ -2,7 +2,7 @@ package markdown
 
 import (
 	"bytes"
-	"fmt" //nolint:depguard // bluemonday requires this pkg
+	"fmt"
 	"sync"
 
 	jupyter "github.com/bevzzz/nb/extension/extra/goldmark-jupyter"
@@ -18,11 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/htmlutil"
 )
 
-var (
-	once sync.Once
-	md   goldmark.Markdown
-)
-
 // Render renders Markdown content into sanitized HTML that is safe to render anywhere.
 func Render(content string) (string, error) {
 	var buf bytes.Buffer
@@ -33,34 +28,31 @@ func Render(content string) (string, error) {
 }
 
 // Goldmark returns a preconfigured Markdown renderer.
-func Goldmark() goldmark.Markdown {
-	once.Do(func() {
-		html.LinkAttributeFilter.Add([]byte("aria-hidden"))
-		html.LinkAttributeFilter.Add([]byte("name"))
+var Goldmark = sync.OnceValue(func() goldmark.Markdown {
+	html.LinkAttributeFilter.Add([]byte("aria-hidden"))
+	html.LinkAttributeFilter.Add([]byte("name"))
 
-		md = goldmark.New(
-			goldmark.WithExtensions(
-				extension.GFM,
-				highlighting.NewHighlighting(
-					highlighting.WithFormatOptions(
-						htmlutil.SyntaxHighlightingOptions()...,
-					),
+	md := goldmark.New(
+		goldmark.WithExtensions(
+			extension.GFM,
+			highlighting.NewHighlighting(
+				highlighting.WithFormatOptions(
+					htmlutil.SyntaxHighlightingOptions()...,
 				),
-				jupyter.Attachments(),
 			),
-			goldmark.WithParserOptions(
-				parser.WithAutoHeadingID(),
-				parser.WithASTTransformers(util.Prioritized(mdTransformFunc(mdLinkHeaders), 1)),
-			),
-			goldmark.WithRendererOptions(
-				// HTML sanitization is handled by htmlutil
-				html.WithUnsafe(),
-			),
-		)
-	})
-
+			jupyter.Attachments(),
+		),
+		goldmark.WithParserOptions(
+			parser.WithAutoHeadingID(),
+			parser.WithASTTransformers(util.Prioritized(mdTransformFunc(mdLinkHeaders), 1)),
+		),
+		goldmark.WithRendererOptions(
+			// HTML sanitization is handled by htmlutil
+			html.WithUnsafe(),
+		),
+	)
 	return md
-}
+})
 
 type mdTransformFunc func(*ast.Document, text.Reader, parser.Context)
 
