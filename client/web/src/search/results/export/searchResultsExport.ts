@@ -242,7 +242,11 @@ export const downloadSearchResults = (
     shouldRerunSearch: boolean
 ): Promise<void> => {
     const resultsObservable = shouldRerunSearch
-        ? aggregateStreamingSearch(of(query), { ...options, displayLimit: EXPORT_RESULT_DISPLAY_LIMIT })
+        ? aggregateStreamingSearch(of(query), {
+              ...options,
+              displayLimit: EXPORT_RESULT_DISPLAY_LIMIT,
+              maxLineLen: -1, // disable content truncation
+          })
         : of(results)
 
     // Once we update to RxJS 7, we need to change `toPromise` to `lastValueFrom`.

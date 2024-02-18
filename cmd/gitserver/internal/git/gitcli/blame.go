@@ -16,46 +16,41 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (g *gitCLIBackend) Blame(ctx context.Context, path string, opt git.BlameOptions) (git.BlameHunkReader, error) {
-	if err := checkSpecArgSafety(string(opt.NewestCommit)); err != nil {
+func (g *gitCLIBackend) Blame(ctx context.Context, startCommit api.CommitID, path string, opt git.BlameOptions) (git.BlameHunkReader, error) {
+	if err := checkSpecArgSafety(string(startCommit)); err != nil {
 		return nil, err
 	}
 
-	cmd, cancel, err := g.gitCommand(ctx, buildBlameArgs(path, opt)...)
+	// Verify that the blob exists.
+	_, err := g.getBlobOID(ctx, startCommit, path)
 	if err != nil {
-		cancel()
 		return nil, err
 	}
 
-	r, err := g.runGitCommand(ctx, cmd)
+	r, err := g.NewCommand(ctx, WithArguments(buildBlameArgs(startCommit, path, opt)...))
 	if err != nil {
-		cancel()
 		return nil, err
 	}
 
-	return newBlameHunkReader(r, cancel), nil
+	return newBlameHunkReader(r), nil
 }
 
-func buildBlameArgs(path string, opt git.BlameOptions) []string {
+func buildBlameArgs(startCommit api.CommitID, path string, opt git.BlameOptions) []string {
 	args := []string{"blame", "--porcelain", "--incremental"}
 	if opt.IgnoreWhitespace {
 		args = append(args, "-w")
 	}
-	if opt.StartLine != 0 || opt.EndLine != 0 {
-		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
+	if opt.Range != nil {
+		args = append(args, fmt.Sprintf("-L%d,%d", opt.Range.StartLine, opt.Range.EndLine))
 	}
-	if opt.NewestCommit != "" {
-		args = append(args, string(opt.NewestCommit))
-	}
-	args = append(args, "--", filepath.ToSlash(path))
+	args = append(args, string(startCommit), "--", filepath.ToSlash(path))
 	return args
 }
 
 // blameHunkReader enables to read hunks from an io.Reader.
 type blameHunkReader struct {
-	rc      io.ReadCloser
-	sc      *bufio.Scanner
-	onClose func()
+	rc io.ReadCloser
+	sc *bufio.Scanner
 
 	cur *gitdomain.Hunk
 
@@ -66,12 +61,11 @@ type blameHunkReader struct {
 	commits map[api.CommitID]*gitdomain.Hunk
 }
 
-func newBlameHunkReader(rc io.ReadCloser, onClose func()) git.BlameHunkReader {
+func newBlameHunkReader(rc io.ReadCloser) git.BlameHunkReader {
 	return &blameHunkReader{
 		rc:      rc,
 		sc:      bufio.NewScanner(rc),
 		commits: make(map[api.CommitID]*gitdomain.Hunk),
-		onClose: onClose,
 	}
 }
 
@@ -143,9 +137,7 @@ func (br *blameHunkReader) Read() (_ *gitdomain.Hunk, err error) {
 }
 
 func (br *blameHunkReader) Close() error {
-	err := br.rc.Close()
-	br.onClose()
-	return err
+	return br.rc.Close()
 }
 
 // parseEntry turns a `67b7b725a7ff913da520b997d71c840230351e30 10 20 1` line from

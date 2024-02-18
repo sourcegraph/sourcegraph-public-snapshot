@@ -45,4 +45,6 @@ build --action_env=PGDATABASE
 build --action_env=PGDATASOURCE
 build --action_env=PGUSER
 build --sandbox_add_mount_pair=/tmp/zig-cache
+build --sandbox_writable_path=/tmp/zig-cache
+build --noincompatible_sandbox_hermetic_tmp
 EOF

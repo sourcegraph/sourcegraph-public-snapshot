@@ -60,10 +60,6 @@ func TestCleanup_computeStats(t *testing.T) {
 		}
 	}
 
-	// This may be different in practice, but the way we setup the tests
-	// we only have .git dirs to measure so this is correct.
-	wantGitDirBytes := gitserverfs.DirSize(root)
-
 	logger, capturedLogs := logtest.Captured(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
@@ -89,6 +85,10 @@ UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 		false,
 	)
+
+	// This may be different in practice, but the way we setup the tests
+	// we only have .git dirs to measure so this is correct.
+	wantGitDirBytes := gitserverfs.DirSize(root)
 
 	for i := 1; i <= 3; i++ {
 		repo, err := db.GitserverRepos().GetByID(context.Background(), api.RepoID(i))

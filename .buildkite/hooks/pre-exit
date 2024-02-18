@@ -10,6 +10,10 @@ if [[ "$BUILDKITE_PIPELINE_NAME" != "sourcegraph" && "$BUILDKITE_PIPELINE_SLUG" 
   exit 0
 fi
 
+if [[ "$BUILDKITE_LABEL" == ":bazel::pipeline: Generate pipeline" ]]; then
+    exit 0
+fi
+
 # The bazel queue is running stateful agents, so we need to ensure we're cleaning after us.
 if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" == "bazel" || "$BUILDKITE_AGENT_META_DATA_QUEUE" == "aspect-default" ]]; then
   # Ensure all test databases are wiped, in case a test process was interrupted.

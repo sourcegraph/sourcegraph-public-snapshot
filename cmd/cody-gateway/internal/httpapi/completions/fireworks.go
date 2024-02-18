@@ -7,11 +7,12 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"strings"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
@@ -58,6 +59,7 @@ func NewFireworksHandler(
 		// do any retries
 		30, // seconds
 		autoFlushStreamingResponses,
+		nil,
 	)
 }
 
@@ -82,6 +84,17 @@ func (fr fireworksRequest) ShouldStream() bool {
 
 func (fr fireworksRequest) GetModel() string {
 	return fr.Model
+}
+
+func (fr fireworksRequest) BuildPrompt() string {
+	if fr.Prompt != "" {
+		return fr.Prompt
+	}
+	var sb strings.Builder
+	for _, m := range fr.Messages {
+		sb.WriteString(m.Content + "\n")
+	}
+	return sb.String()
 }
 
 type message struct {
@@ -118,22 +131,6 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 		body.N = 1
 	}
 
-	// This code rewrites an older model identifier that we've used when testing a single-tenant
-	// deployment and that is no longer live. Since the clients used to hard code these, some
-	// outdated clients might still be sending these requests and we want to make sure they are
-	// compatible with the new virtual model strings.
-	if f.config.DisableSingleTenant {
-		oldModel := body.Model
-		if body.Model == "accounts/sourcegraph/models/starcoder-16b" {
-			body.Model = "starcoder-16b"
-		} else if body.Model == "accounts/sourcegraph/models/starcoder-7b" {
-			body.Model = "starcoder-7b"
-		}
-		if oldModel != body.Model {
-			f.baseLogger.Debug("rewriting model", log.String("old-model", oldModel), log.String("new-model", body.Model))
-		}
-	}
-
 	// Enterprise virtual model string
 	if body.Model == "starcoder" {
 		body.Model = pickModelBasedOnTrafficSplit(f.config.StarcoderEnterpriseSingleTenantPercent, fireworks.Starcoder16bSingleTenant, fireworks.Starcoder16b)
@@ -151,33 +148,7 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 		body.Model = pickModelBasedOnTrafficSplit(f.config.StarcoderCommunitySingleTenantPercent, fireworks.Starcoder16bSingleTenant, multiTenantModel)
 	}
 }
-func (f *FireworksHandlerMethods) getRequestMetadata(ctx context.Context, logger log.Logger, act *actor.Actor, feature codygateway.Feature, body fireworksRequest) (model string, additionalMetadata map[string]any) {
-	// Check that this is a code completion request and that the actor is a PLG user
-	if feature == codygateway.FeatureCodeCompletions && f.config.LogSelfServeCodeCompletionRequests && act.IsDotComActor() {
-		// LogEvent is a channel send (not an external request), so should be ok here
-		if err := f.eventLogger.LogEvent(
-			ctx,
-			events.Event{
-				Name:       codygateway.EventNameCodeCompletionLogged,
-				Source:     act.Source.Name(),
-				Identifier: act.ID,
-				Metadata: map[string]any{
-					"request": map[string]any{
-						"prompt":      body.Prompt,
-						"model":       body.Model,
-						"max_tokens":  body.MaxTokens,
-						"temperature": body.Temperature,
-						"top_p":       body.TopP,
-						"n":           body.N,
-						"stream":      body.Stream,
-						"echo":        body.Echo,
-						"stop":        body.Stop,
-					},
-				},
-			}); err != nil {
-			logger.Error("failed to log event", log.Error(err))
-		}
-	}
+func (f *FireworksHandlerMethods) getRequestMetadata(body fireworksRequest) (model string, additionalMetadata map[string]any) {
 	return body.Model, map[string]any{"stream": body.Stream}
 }
 func (f *FireworksHandlerMethods) transformRequest(r *http.Request) {

@@ -1,0 +1,126 @@
+load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load("//dev:oci_defs.bzl", "oci_image", "oci_tarball")
+
+rust_binary(
+    name = "scip-syntax",
+    srcs = ["src/main.rs"],
+    aliases = aliases(),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    visibility = ["//visibility:public"],
+    deps = all_crate_deps(
+        normal = True,
+    ) + [
+        ":scip_syntax_lib",
+    ],
+)
+
+WORKSPACE_DEPS = [
+    "//docker-images/syntax-highlighter/crates/syntax-analysis",
+    "//docker-images/syntax-highlighter/crates/tree-sitter-all-languages",
+]
+
+# This separate library target is needed so that the integration
+# test can re-use some of the code in the CLI.
+rust_library(
+    name = "scip_syntax_lib",
+    srcs = glob(
+        [
+            "src/*.rs",
+        ],
+        allow_empty = False,
+        exclude = ["src/main.rs"],
+    ),
+    aliases = aliases(),
+    # Workaround for https://github.com/bazelbuild/rules_rust/issues/2455
+    crate_name = "scip_syntax",
+    crate_root = "src/lib.rs",
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    visibility = [":__subpackages__"],
+    deps = all_crate_deps(normal = True) + WORKSPACE_DEPS,
+)
+
+rust_test(
+    name = "unit_test",
+    size = "small",
+    srcs = glob(["src/*.rs"]),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    deps = all_crate_deps(normal = True) + WORKSPACE_DEPS,
+)
+
+# This separate integration test is needed because in Cargo,
+# unit tests don't have an implicit dependency on the binary
+# target, but integration tests do.
+#
+# https://users.rust-lang.org/t/cargo-how-do-i-make-a-integration-test-a-depend-on-binary-b/9821
+#
+# This extra target makes sure that Bazel & Cargo have the
+# same configuration.
+rust_test(
+    name = "integration_test",
+    size = "small",
+    srcs = glob(["tests/*.rs"]),
+    compile_data = glob(
+        [
+            "testdata/**",
+        ],
+        allow_empty = False,
+    ),
+    data = [
+        ":java_groundtruth_scip",
+        ":scip-syntax",
+    ] + glob(
+        ["tests/snapshots/**"],
+        allow_empty = False,
+    ) + glob(
+        ["testdata/**"],
+        allow_empty = False,
+    ),
+    env = {
+        "INSTA_WORKSPACE_ROOT": ".",
+        "RUST_BACKTRACE": "1",
+        "JAVA_SCIP_INDEX": "$(rootpath :java_groundtruth_scip)",
+        "SCIP_SYNTAX_PATH": "$(rootpath :scip-syntax)",
+    },
+    deps = all_crate_deps(
+        normal = True,
+    ) + [
+        ":scip-syntax",
+        ":scip_syntax_lib",
+    ] + WORKSPACE_DEPS,
+)
+
+oci_image(
+    name = "scip_java_image",
+    base = "@scip-java",
+)
+
+oci_tarball(
+    name = "scip_java_image_tarball",
+    image = ":scip_java_image",
+    repo_tags = ["scip-java:tmp"],
+)
+
+genrule(
+    name = "java_groundtruth_scip",
+    srcs = [
+        "testdata/scip-index.sh",
+        ":scip_java_image_tarball",
+    ] + glob(["testdata/java/**"]),
+    outs = ["index-java.scip"],
+    cmd = """\
+    $(location testdata/scip-index.sh) \
+        $(location :scip_java_image_tarball) \
+        scip-java:tmp \
+        $(location testdata/java/build.gradle) \
+        'scip-java index' \
+        $@
+    """,
+    tags = ["requires-network"],
+)

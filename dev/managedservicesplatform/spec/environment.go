@@ -6,8 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/alecthomas/units"
+	"github.com/hashicorp/cronexpr"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/imageupdater"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -151,7 +153,25 @@ func (c EnvironmentCategory) Validate() error {
 	return nil
 }
 
+type EnvironmentDeployType string
+
+const (
+	EnvironmentDeployTypeManual       = "manual"
+	EnvironmentDeployTypeSubscription = "subscription"
+	EnvironmentDeployTypeRollout      = "rollout"
+)
+
+func (c EnvironmentCategory) IsProduction() bool {
+	return c == EnvironmentCategoryExternal || c == EnvironmentCategoryInternal
+}
+
 type EnvironmentDeploySpec struct {
+	// Type specifies the deployment method for the environment. There are
+	// 3 supported types:
+	//
+	//  - 'manual': Revisions are deployed manually by configuring it in 'deploy.manual.tag'
+	//  - 'subscription': Revisions are deployed via GitHub Action, which pins to the latest image SHA of 'deploy.subscription.tag'.
+	//  - 'rollout': Revisions are deployed via Cloud Deploy - an env-level 'rollout' spec is required, and a 'rollout.clouddeploy.yaml' is rendered with further instructions.
 	Type         EnvironmentDeployType                  `yaml:"type"`
 	Manual       *EnvironmentDeployManualSpec           `yaml:"manual,omitempty"`
 	Subscription *EnvironmentDeployTypeSubscriptionSpec `yaml:"subscription,omitempty"`
@@ -175,16 +195,7 @@ func (s EnvironmentDeploySpec) Validate() []error {
 	return errs
 }
 
-type EnvironmentDeployType string
-
-const (
-	EnvironmentDeployTypeManual       = "manual"
-	EnvironmentDeployTypeSubscription = "subscription"
-)
-
 // ResolveTag uses the deploy spec to resolve an appropriate tag for the environment.
-//
-// TODO: Implement ability to resolve latest concrete tag from a source
 func (d EnvironmentDeploySpec) ResolveTag(repo string) (string, error) {
 	switch d.Type {
 	case EnvironmentDeployTypeManual:
@@ -203,8 +214,11 @@ func (d EnvironmentDeploySpec) ResolveTag(repo string) (string, error) {
 			return "", errors.Wrapf(err, "resolve digest for tag %q", "insiders")
 		}
 		return tagAndDigest, nil
+	case EnvironmentDeployTypeRollout:
+		// Enforce convention
+		return "insiders", nil
 	default:
-		return "", errors.New("unable to resolve tag")
+		return "", errors.Newf("unable to resolve tag for unknown deploy type %q", d.Type)
 	}
 }
 
@@ -259,6 +273,10 @@ type EnvironmentServiceDomainSpec struct {
 	// Type is one of 'none' or 'cloudflare'. If empty, defaults to 'none'.
 	Type       EnvironmentDomainType            `yaml:"type"`
 	Cloudflare *EnvironmentDomainCloudflareSpec `yaml:"cloudflare,omitempty"`
+
+	// Networking configures additional networking configuration.
+	// Only applicable if a domain 'type' is configured.
+	Networking *EnvironmentDomainNetworkingSpec `yaml:"networking,omitempty"`
 }
 
 // GetDNSName generates the DNS name for the environment. If nil or not configured,
@@ -289,10 +307,6 @@ type EnvironmentDomainCloudflareSpec struct {
 	//
 	// Default: true
 	Proxied *bool `yaml:"proxied,omitempty"`
-
-	// Required configures whether traffic can only be allowed through Cloudflare.
-	// TODO: Unimplemented.
-	Required bool `yaml:"required,omitempty"`
 }
 
 // ShouldProxy evaluates whether Cloudflare WAF proxying should be used.
@@ -301,6 +315,14 @@ func (e *EnvironmentDomainCloudflareSpec) ShouldProxy() bool {
 		return false
 	}
 	return pointers.Deref(e.Proxied, true)
+}
+
+type EnvironmentDomainNetworkingSpec struct {
+	// LoadBalancerLogging enables logs on load balancers:
+	// https://cloud.google.com/load-balancing/docs/https/https-logging-monitoring#viewing_logs
+	//
+	// Defaults to false. When enabled, no sampling is configured.
+	LoadBalancerLogging *bool `yaml:"loadBalancerLogging,omitempty"`
 }
 
 type EnvironmentInstancesSpec struct {
@@ -541,11 +563,80 @@ type EnvironmentJobSpec struct {
 	Schedule *EnvironmentJobScheduleSpec `yaml:"schedule,omitempty"`
 }
 
+func (s *EnvironmentJobSpec) Validate() []error {
+	if s == nil {
+		return nil
+	}
+
+	var errs []error
+	errs = append(errs, s.Schedule.Validate()...)
+	return errs
+}
+
 type EnvironmentJobScheduleSpec struct {
 	// Cron is a cron schedule in the form of "* * * * *".
+	//
+	// Protip: use https://crontab.guru
 	Cron string `yaml:"cron"`
 	// Deadline of each attempt, in seconds.
 	Deadline *int `yaml:"deadline,omitempty"`
+}
+
+func (s *EnvironmentJobScheduleSpec) Validate() []error {
+	if s == nil {
+		return nil
+	}
+
+	var errs []error
+	if _, err := s.FindMaxCronInterval(); err != nil {
+		errs = append(errs, errors.Wrap(err, "schedule.cron: invalid schedule"))
+	}
+	return errs
+}
+
+// FindMaxCronInterval tries to find the largest gap between events in the cron
+// schedule. It may return 'nil, nil' if no configuration is available.
+func (s *EnvironmentJobScheduleSpec) FindMaxCronInterval() (*time.Duration, error) {
+	if s == nil {
+		return nil, nil
+	}
+
+	expr, err := cronexpr.Parse(s.Cron)
+	if err != nil {
+		return nil, errors.Wrap(err, "invalid cron schedule")
+	}
+
+	// get 64 scheduled events to try and see what the largest gap is - this
+	// is not performance sensitive, we just need to be able to reliably find
+	// the largest interval. some silly crons won't generate reliable intervals
+	// but this will hopefully give us a realistic indicator that we can error
+	// out on below.
+	scheduled := expr.NextN(time.Now(), 64)
+
+	// scheduled is in chronological order, so we can compare subsequent events
+	// to find the largest gap in this cron.
+	var maxGap time.Duration
+	for i := 0; i < len(scheduled)-2; i += 1 {
+		t1 := scheduled[i]
+		t2 := scheduled[i+1]
+		gap := t2.Sub(t1)
+		if gap > maxGap {
+			maxGap = gap
+		}
+	}
+
+	// should not be possible to have <1m schedule
+	if maxGap < time.Minute {
+		return nil, errors.Newf("the longest interval must be >1m, got %s", maxGap.String())
+	}
+
+	// once we get into the monthly territory, things might get funky - forbid
+	// these very long intervals for now
+	if maxGap > 27*24*time.Hour {
+		return nil, errors.Newf("the longest interval must be <28 days, got %s", maxGap.String())
+	}
+
+	return &maxGap, nil
 }
 
 type EnvironmentResourcesSpec struct {
@@ -742,6 +833,9 @@ func (s *EnvironmentResourceBigQueryDatasetSpec) GetSchema(tableID string) []byt
 }
 
 type EnvironmentAlertingSpec struct {
-	// Opsgenie, if true, disables suppression of Opsgenie alerts.
+	// Opsgenie, if true, disables suppression of Opsgenie alerts. Note that
+	// only critical alerts are delivered to Opsgenie - this is a curated set
+	// of alerts that are considered high-signal indicators that something is
+	// definitely wrong with your service.
 	Opsgenie *bool `yaml:"opsgenie,omitempty"`
 }

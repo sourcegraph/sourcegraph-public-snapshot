@@ -1,25 +1,32 @@
 import { readFileSync } from 'node:fs'
-import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import path from 'path'
 
 import { faker } from '@faker-js/faker'
-import { test as base, type Page } from '@playwright/test'
+import { test as base, type Page, type Locator } from '@playwright/test'
 import glob from 'glob'
 import { buildSchema } from 'graphql'
 
 import { GraphQLMockServer } from './graphql-mocking'
 import type { TypeMocks, ObjectMock, UserMock, OperationMocks } from './graphql-type-mocks'
 
-export { expect, defineConfig } from '@playwright/test'
+export { expect, defineConfig, type Locator, type Page } from '@playwright/test'
 
 const defaultMocks: TypeMocks = {
     Query: () => ({
         // null means not signed in
         currentUser: null,
     }),
-    Person: () => ({
-        avatarURL: null,
-    }),
+    Person: () => {
+        const firstName = faker.person.firstName()
+        const lastName = faker.person.lastName()
+        return {
+            name: `${firstName} ${lastName}`,
+            email: faker.internet.email({ firstName, lastName }),
+            displayName: faker.internet.userName({ firstName, lastName }),
+            avatarURL: null,
+        }
+    },
     User: () => ({
         avatarURL: null,
     }),
@@ -37,12 +44,16 @@ const defaultMocks: TypeMocks = {
             lsif: '{}',
         },
     }),
+    GitRef: () => ({
+        url: faker.internet.url(),
+    }),
     Signature: () => ({
         date: faker.date.past().toISOString(),
     }),
     GitObjectID: () => faker.git.commitSha(),
     GitCommit: () => ({
         abbreviatedOID: faker.git.commitSha({ length: 7 }),
+        subject: faker.git.commitMessage(),
     }),
     JSONCString: () => '{}',
 }
@@ -117,7 +128,24 @@ class Sourcegraph {
     }
 }
 
-export const test = base.extend<{ sg: Sourcegraph }, { graphqlMock: GraphQLMockServer }>({
+interface Utils {
+    scrollYAt(locator: Locator, distance: number): Promise<void>
+}
+
+export const test = base.extend<{ sg: Sourcegraph; utils: Utils }, { graphqlMock: GraphQLMockServer }>({
+    utils: async ({ page }, use) => {
+        use({
+            async scrollYAt(locator: Locator, distance: number): Promise<void> {
+                // Position mouse over target that wheel events will scrolls the container
+                // that contains the target
+                const { x, y } = (await locator.boundingBox()) ?? { x: 0, y: 0 }
+                await page.mouse.move(x, y)
+
+                // Scroll list, which should load next page
+                await page.mouse.wheel(0, distance)
+            },
+        })
+    },
     sg: [
         async ({ page, graphqlMock }, use) => {
             const sg = new Sourcegraph(page, graphqlMock)
@@ -134,6 +162,9 @@ export const test = base.extend<{ sg: Sourcegraph }, { graphqlMock: GraphQLMockS
                 mocks: defaultMocks,
                 typePolicies: {
                     GitBlob: {
+                        keyField: 'canonicalURL',
+                    },
+                    GitTree: {
                         keyField: 'canonicalURL',
                     },
                 },

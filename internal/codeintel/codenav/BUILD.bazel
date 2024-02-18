@@ -1,3 +1,4 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
@@ -39,7 +40,6 @@ go_library(
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_scip//bindings/go/scip",
         "@io_opentelemetry_go_otel//attribute",
-        "@org_golang_x_exp//slices",
     ],
 )
 
@@ -76,5 +76,19 @@ go_test(
         "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_go_diff//diff",
         "@com_github_sourcegraph_scip//bindings/go/scip",
+    ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_test.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [
+        ":codenav",
+        "//internal/codeintel/codenav/internal/lsifstore",
     ],
 )

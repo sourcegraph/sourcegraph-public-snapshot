@@ -108,7 +108,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                             <Link
                                 onClick={() => telemetryService.log('NoResultsMore', { link: 'Docs' })}
                                 target="blank"
-                                to="https://docs.sourcegraph.com/"
+                                to="https://sourcegraph.com/docs/"
                             >
                                 Sourcegraph Docs <Icon svgPath={mdiOpenInNew} aria-label="Open in a new tab" />
                             </Link>

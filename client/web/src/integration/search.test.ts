@@ -353,9 +353,7 @@ describe('Search', () => {
                     await driver.page.click('.test-case-sensitivity-toggle')
                     await editor.focus()
                     await driver.page.keyboard.press(Key.Enter)
-                    await driver.assertWindowLocation(
-                        '/search?q=context:global+test&patternType=standard&case=yes&sm=1'
-                    )
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=keyword&case=yes&sm=0')
                 })
 
                 test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
@@ -384,7 +382,9 @@ describe('Search', () => {
                 beforeEach(() => {
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
-                        ...createViewerSettingsGraphQLOverride({ user: applySettings() }),
+                        ...createViewerSettingsGraphQLOverride({
+                            user: applySettings({ experimentalFeatures: { keywordSearch: false } }),
+                        }),
                     })
                     testContext.overrideJsContext({ experimentalFeatures: { structuralSearch: 'enabled' } })
                 })

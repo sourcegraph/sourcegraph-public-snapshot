@@ -67,16 +67,15 @@ fn parse_files(dir: &Path, language: Language) -> Vec<ParseTiming> {
                 continue;
             }
         };
-        let source_bytes = source.as_bytes();
         let mut parser = config.get_parser();
-        let tree = parser.parse(source_bytes, None).unwrap();
+        let tree = parser.parse(source.as_bytes(), None).unwrap();
 
-        locals::find_locals(config, &tree, source_bytes);
+        locals::find_locals(config, &tree, &source).unwrap();
         let finish = Instant::now();
 
         timings.push(ParseTiming {
             file_path: entry.file_stem().unwrap().to_string_lossy().to_string(),
-            file_size: source_bytes.len(),
+            file_size: source.len(),
             duration: finish - start,
         });
     }

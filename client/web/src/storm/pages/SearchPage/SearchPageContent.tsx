@@ -19,15 +19,16 @@ import { GettingStartedTour } from '../../../tour/GettingStartedTour'
 import { useShowOnboardingTour } from '../../../tour/hooks'
 
 import { AddCodeHostWidget } from './AddCodeHostWidget'
+import { CodyUpsell } from './CodyUpsell'
+import { KeywordSearchCtaSection } from './KeywordSearchCtaSection'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
-import { TryCodyCtaSection } from './TryCodyCtaSection'
-import { TryCodySignUpCtaSection } from './TryCodySignUpCtaSection'
 
 import styles from './SearchPageContent.module.scss'
 
 interface SearchPageContentProps {
     shouldShowAddCodeHostWidget?: boolean
+    isSourcegraphDotCom: boolean
 }
 
 export const SearchPageContent: FC<SearchPageContentProps> = props => {
@@ -68,8 +69,6 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
     const [simpleSearchEnabled] = useFeatureFlag('enable-simple-search', false)
 
     const showOnboardingTour = useShowOnboardingTour({ authenticatedUser, isSourcegraphDotCom })
-    const showCodyCTA = !showOnboardingTour
-
     const patternType = useNavbarQueryState.getState().searchPatternType
 
     const showKeywordSearchToggle = useKeywordSearch()
@@ -134,17 +133,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                                 authenticatedUser={authenticatedUser}
                             />
                         )}
-                        {showCodyCTA ? (
-                            authenticatedUser ? (
-                                <TryCodyCtaSection
-                                    className="mx-auto my-5"
-                                    telemetryService={telemetryService}
-                                    isSourcegraphDotCom={isSourcegraphDotCom}
-                                />
-                            ) : (
-                                <TryCodySignUpCtaSection className="mx-auto my-5" telemetryService={telemetryService} />
-                            )
-                        ) : null}
+                        <KeywordSearchCtaSection />
                     </>
                 )}
             </div>
@@ -160,7 +149,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                     )}
                 </div>
             )}
-
+            <CodyUpsell isSourcegraphDotCom={isSourcegraphDotCom} />
             <SearchPageFooter />
         </div>
     )

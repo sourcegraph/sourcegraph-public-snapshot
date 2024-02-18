@@ -168,3 +168,30 @@ export const computeFit: Action<HTMLElement, void, ComputeFitAttributes> = node 
         },
     }
 }
+
+/**
+ * Helper action to manage CSS classes on an element. This is used on svelte:body because
+ * it doesn't support the class directive.
+ * See https://github.com/sveltejs/svelte/issues/3105
+ */
+export const classNames: Action<HTMLElement, string | string[]> = (node, classes) => {
+    // Converts the input to an array of non-empty strings.
+    // Empty strings are not valid inputs for classList and would throw an error.
+    function clean(classes: string | string[]): string[] {
+        return (Array.isArray(classes) ? classes : [classes]).filter(cls => cls.trim().length > 0)
+    }
+
+    classes = clean(classes)
+    node.classList.add(...classes)
+
+    return {
+        update(newClasses) {
+            node.classList.remove(...classes)
+            classes = clean(newClasses)
+            node.classList.add(...classes)
+        },
+        destroy() {
+            node.classList.remove(...classes)
+        },
+    }
+}

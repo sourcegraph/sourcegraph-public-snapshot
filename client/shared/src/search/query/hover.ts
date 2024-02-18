@@ -129,7 +129,7 @@ const toRegexpHover = (token: MetaRegexp): string => {
 const toStructuralHover = (token: MetaStructural): string => {
     switch (token.kind) {
         case MetaStructuralKind.Hole: {
-            return '**Structural hole**. Matches code structures contextually. See the [syntax reference](https://docs.sourcegraph.com/code_search/reference/structural#syntax-reference) for a complete description.'
+            return '**Structural hole**. Matches code structures contextually. See the [syntax reference](https://sourcegraph.com/docs/code-search/queries#structural-search) for a complete description.'
         }
         case MetaStructuralKind.RegexpHole: {
             return '**Regular expression hole**. Match the regular expression defined inside this hole.'

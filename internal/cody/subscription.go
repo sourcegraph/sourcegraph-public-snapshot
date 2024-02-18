@@ -14,7 +14,7 @@ import (
 )
 
 // featureFlagUseSCCForSubscription determines if we should attempt to lookup subscription data from SSC.
-const featureFlagUseSCCForSubscription = "use-ssc-for-cody-subscription"
+const featureFlagUseSCCForSubscription = "use-ssc-for-cody-subscription-on-web"
 
 // featureFlagCodyProTrialEnded indicates if the Cody Pro "Free Trial"  has ended.
 // (Enabling users to use Cody Pro for free for 3-months starting in late Q4'2023.)
@@ -135,7 +135,7 @@ func getSAMSAccountIDForUser(ctx context.Context, db database.DB, dotcomUserID i
 	oidcAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 		UserID:      dotcomUserID,
 		ServiceType: "openidconnect",
-		ServiceID:   fmt.Sprintf("https://%s", ssc.SAMSProdHostname),
+		ServiceID:   fmt.Sprintf("https://%s", ssc.GetSAMSHostName()),
 		LimitOffset: &database.LimitOffset{
 			Limit: 1,
 		},

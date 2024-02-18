@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react'
 import React, { useEffect, useState } from 'react'
 
-import { mdiInformationOutline, mdiTrendingUp } from '@mdi/js'
+import { mdiArrowLeft, mdiInformationOutline, mdiTrendingUp, mdiCreditCardOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -10,6 +10,7 @@ import {
     Badge,
     Button,
     ButtonLink,
+    Link,
     H1,
     H2,
     Icon,
@@ -22,12 +23,12 @@ import {
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { CodySubscriptionPlan } from '../../graphql-operations'
+import { CodySubscriptionPlan, CodySubscriptionStatus } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
-import { useArePaymentsEnabled, useHasTrialEnded } from '../featurFlags'
+import { useArePaymentsEnabled, useHasTrialEnded, useIsCodyPaymentsTestingMode } from '../featureFlags'
 import { isCodyEnabled } from '../isCodyEnabled'
 
 import { CancelProModal } from './CancelProModal'
@@ -40,7 +41,16 @@ interface CodySubscriptionPageProps {
     isSourcegraphDotCom: boolean
     authenticatedUser?: AuthenticatedUser | null
 }
-const MANAGE_SUBSCRIPTION_REDIRECT_URL = 'https://accounts.sourcegraph.com/cody/subscription'
+
+export const useCodyPaymentsUrl = (): string => {
+    const isCodyPaymentsTestingMode = useIsCodyPaymentsTestingMode()
+
+    if (isCodyPaymentsTestingMode) {
+        return 'https://accounts.sgdev.org'
+    }
+
+    return 'https://accounts.sourcegraph.com'
+}
 
 export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageProps> = ({
     isSourcegraphDotCom,
@@ -52,12 +62,14 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
 
     const arePaymentsEnabled = useArePaymentsEnabled()
     const hasTrialEnded = useHasTrialEnded()
+    const codyPaymentsUrl = useCodyPaymentsUrl()
+    const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
 
     useEffect(() => {
         eventLogger.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source }, { utm_source })
     }, [utm_source])
 
-    const { data } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
+    const { data, error: dataError } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
 
     const [showUpgradeToPro, setShowUpgradeToPro] = useState<boolean>(false)
     const [showCancelPro, setShowCancelPro] = useState<boolean>(false)
@@ -70,9 +82,16 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         }
     }, [data, navigate])
 
+    if (dataError) {
+        throw dataError
+    }
+
     if (!isCodyEnabled() || !isSourcegraphDotCom || !data?.currentUser || !authenticatedUser) {
         return null
     }
+
+    const isProUser = data.currentUser.codySubscription?.plan === CodySubscriptionPlan.PRO
+    const hasAddedCreditCard = data.currentUser.codySubscription?.status !== CodySubscriptionStatus.PENDING
 
     return (
         <>
@@ -81,9 +100,20 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                 <PageHeader
                     className="mb-4"
                     actions={
-                        <ButtonLink to="/cody/manage" variant="secondary" outline={true} size="sm">
-                            Dashboard
-                        </ButtonLink>
+                        isProUser &&
+                        arePaymentsEnabled &&
+                        hasAddedCreditCard && (
+                            <Button
+                                variant="primary"
+                                onClick={() => {
+                                    eventLogger.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
+                                    window.location.href = manageSubscriptionRedirectURL
+                                }}
+                            >
+                                <Icon svgPath={mdiCreditCardOutline} className="mr-1" aria-hidden={true} />
+                                Manage subscription
+                            </Button>
+                        )
                     }
                 >
                     <PageHeader.Heading as="h2" styleAs="h1">
@@ -92,6 +122,11 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                         </div>
                     </PageHeader.Heading>
                 </PageHeader>
+
+                <Link to="/cody/manage" className="my-4">
+                    <Icon className="mr-1 text-link" svgPath={mdiArrowLeft} aria-hidden={true} />
+                    Back to Cody Dashboard
+                </Link>
 
                 <div className={classNames('d-flex mt-4', styles.responsiveContainer)}>
                     <div className="border d-flex flex-column flex-1 bg-1 rounded">
@@ -189,41 +224,87 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             </div>
                             <div className="d-flex flex-column border-bottom py-4">
                                 <div className="mb-1">
-                                    <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>$9</H2>
+                                    <H2
+                                        className={classNames('text-muted d-inline mb-0', {
+                                            [styles.proPricing]: !hasTrialEnded,
+                                        })}
+                                    >
+                                        $9
+                                    </H2>
                                     <Text className="mb-0 text-muted d-inline">/month</Text>
                                 </div>
                                 {!hasTrialEnded && (
                                     <Text className="mb-3 text-muted" size="small">
-                                        Free until Feb 2024,{' '}
-                                        {!arePaymentsEnabled && <strong>no credit card needed</strong>}
+                                        {/* The free trial has not ended, but we are not yet accepting payments. */}
+                                        {!arePaymentsEnabled && (
+                                            <strong>Free until Feb 2024, no credit card needed</strong>
+                                        )}
+                                        {/* The free trial has not ended, but we ARE accepting payments. */}
+                                        {arePaymentsEnabled && !hasTrialEnded && (
+                                            <strong>Free until February 21, 2024.</strong>
+                                        )}
+                                        {arePaymentsEnabled && hasTrialEnded && (
+                                            <strong>Billed monthly. Cancel anytime.</strong>
+                                        )}
                                     </Text>
                                 )}
-                                {data.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO ? (
-                                    <div>
-                                        <Text
-                                            className="mb-0 text-muted d-inline cursor-pointer"
-                                            size="small"
-                                            onClick={() => {
-                                                eventLogger.log(
-                                                    EventName.CODY_SUBSCRIPTION_PLAN_CLICKED,
-                                                    {
-                                                        tier: 'free',
-                                                    },
-                                                    {
-                                                        tier: 'free',
+                                {isProUser ? (
+                                    arePaymentsEnabled ? (
+                                        hasAddedCreditCard ? (
+                                            <Text
+                                                className="mb-0 text-muted d-inline cursor-pointer"
+                                                size="small"
+                                                onClick={() => {
+                                                    eventLogger.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
+                                                    window.location.href = manageSubscriptionRedirectURL
+                                                }}
+                                            >
+                                                Manage subscription
+                                            </Text>
+                                        ) : (
+                                            <Button
+                                                className="flex-1 mt-1"
+                                                variant="primary"
+                                                onClick={() => {
+                                                    eventLogger.log(EventName.CODY_SUBSCRIPTION_ADD_CREDIT_CARD_CLICKED)
+                                                    window.location.href = manageSubscriptionRedirectURL
+                                                }}
+                                            >
+                                                <Icon
+                                                    svgPath={mdiCreditCardOutline}
+                                                    className="mr-1"
+                                                    aria-hidden={true}
+                                                />
+                                                Add credit card
+                                            </Button>
+                                        )
+                                    ) : (
+                                        <div>
+                                            <Text
+                                                className="mb-0 text-muted d-inline cursor-pointer"
+                                                size="small"
+                                                onClick={() => {
+                                                    eventLogger.log(
+                                                        EventName.CODY_SUBSCRIPTION_PLAN_CLICKED,
+                                                        {
+                                                            tier: 'free',
+                                                        },
+                                                        {
+                                                            tier: 'free',
+                                                        }
+                                                    )
+                                                    if (arePaymentsEnabled) {
+                                                        window.location.href = manageSubscriptionRedirectURL
+                                                        return
                                                     }
-                                                )
-                                                if (arePaymentsEnabled) {
-                                                    window.location.href = MANAGE_SUBSCRIPTION_REDIRECT_URL
-                                                    return
-                                                }
 
-                                                setShowCancelPro(true)
-                                            }}
-                                        >
-                                            {arePaymentsEnabled ? 'Manage' : 'Cancel'} subscription
-                                        </Text>
-                                    </div>
+                                                    setShowCancelPro(true)
+                                                }}
+                                            >
+                                                {arePaymentsEnabled ? 'Manage' : 'Cancel'} subscription
+                                            </Text>
+                                        </div>
+                                    )
                                 ) : (
                                     <Button
                                         className="flex-1"
@@ -235,7 +316,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 { tier: 'pro' }
                                             )
                                             if (arePaymentsEnabled) {
-                                                window.location.href = MANAGE_SUBSCRIPTION_REDIRECT_URL
+                                                window.location.href = manageSubscriptionRedirectURL
                                                 return
                                             }
 
@@ -243,7 +324,9 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         }}
                                     >
                                         <Icon svgPath={mdiTrendingUp} className="mr-1" aria-hidden={true} />
-                                        {arePaymentsEnabled ? 'Get Pro' : 'Get Pro trial'}
+                                        {!arePaymentsEnabled && 'Get Pro'}
+                                        {arePaymentsEnabled && !hasTrialEnded && 'Get Pro trial'}
+                                        {arePaymentsEnabled && hasTrialEnded && 'Purchase Cody Pro'}
                                     </Button>
                                 )}
                             </div>

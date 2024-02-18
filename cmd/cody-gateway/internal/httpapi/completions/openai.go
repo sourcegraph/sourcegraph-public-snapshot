@@ -6,11 +6,10 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
-
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -50,6 +49,7 @@ func NewOpenAIHandler(
 		// help in a minute-long rate limit window.
 		30, // seconds
 		autoFlushStreamingResponses,
+		nil,
 	)
 }
 
@@ -80,6 +80,14 @@ func (r openaiRequest) ShouldStream() bool {
 
 func (r openaiRequest) GetModel() string {
 	return r.Model
+}
+
+func (r openaiRequest) BuildPrompt() string {
+	var sb strings.Builder
+	for _, m := range r.Messages {
+		sb.WriteString(m.Content + "\n")
+	}
+	return sb.String()
 }
 
 type openaiUsage struct {
@@ -127,7 +135,7 @@ func (_ *OpenAIHandlerMethods) transformBody(body *openaiRequest, identifier str
 	// We forward the actor ID to support tracking.
 	body.User = identifier
 }
-func (_ *OpenAIHandlerMethods) getRequestMetadata(_ context.Context, _ log.Logger, _ *actor.Actor, _ codygateway.Feature, body openaiRequest) (model string, additionalMetadata map[string]any) {
+func (_ *OpenAIHandlerMethods) getRequestMetadata(body openaiRequest) (model string, additionalMetadata map[string]any) {
 	return body.Model, map[string]any{"stream": body.Stream}
 }
 
@@ -197,9 +205,9 @@ func (_ *OpenAIHandlerMethods) parseResponseAndUsage(logger log.Logger, body ope
 		if event.Usage.CompletionTokens > 0 {
 			completionUsage.tokens = event.Usage.CompletionTokens
 		}
-		if completionUsage.tokens == -1 || promptUsage.tokens == -1 {
-			logger.Warn("did not extract token counts from OpenAI streaming response", log.Int("prompt-tokens", promptUsage.tokens), log.Int("completion-tokens", completionUsage.tokens))
-		}
+	}
+	if completionUsage.tokens == -1 || promptUsage.tokens == -1 {
+		logger.Warn("did not extract token counts from OpenAI streaming response", log.Int("prompt-tokens", promptUsage.tokens), log.Int("completion-tokens", completionUsage.tokens))
 	}
 	if err := dec.Err(); err != nil {
 		logger.Error("failed to decode OpenAI streaming response", log.Error(err))

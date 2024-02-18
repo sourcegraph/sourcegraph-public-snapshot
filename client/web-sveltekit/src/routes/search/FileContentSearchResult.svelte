@@ -8,7 +8,6 @@
 
 <script lang="ts">
     import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
-    import { observeIntersection } from '$lib/intersection-observer'
 
     import {
         addLineRangeQueryParameter,
@@ -17,17 +16,18 @@
         toPositionOrRangeQueryParameter,
     } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
-    import { getFileMatchUrl, type ContentMatch, rankByLine, rankPassthrough } from '$lib/shared'
-
-    import SearchResult from './SearchResult.svelte'
-    import { getSearchResultsContext } from './searchResultsContext'
-    import CodeHostIcon from './CodeHostIcon.svelte'
-    import RepoStars from './RepoStars.svelte'
-    import { settings } from '$lib/stores'
-    import { rankContentMatch } from '$lib/search/results'
-    import FileSearchResultHeader from './FileSearchResultHeader.svelte'
+    import { observeIntersection } from '$lib/intersection-observer'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
     import CodeExcerpt from '$lib/search/CodeExcerpt.svelte'
+    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import { rankContentMatch } from '$lib/search/results'
+    import { getFileMatchUrl, type ContentMatch, rankByLine, rankPassthrough } from '$lib/shared'
+    import { settings } from '$lib/stores'
+
+    import FileSearchResultHeader from './FileSearchResultHeader.svelte'
+    import RepoStars from './RepoStars.svelte'
+    import SearchResult from './SearchResult.svelte'
+    import { getSearchResultsContext } from './searchResultsContext'
 
     export let result: ContentMatch
 

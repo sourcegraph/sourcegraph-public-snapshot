@@ -1,32 +1,30 @@
+import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
 import { findReadme } from '$lib/repo/tree'
 
 import type { PageLoad } from './$types'
 import { RepoPageReadmeQuery } from './page.gql'
 
-export const load: PageLoad = async ({ parent }) => {
-    const { resolvedRevision, graphqlClient, fileTree } = await parent()
-
+export const load: PageLoad = ({ parent }) => {
     return {
-        readme: fileTree.then(result => {
-            const readme = findReadme(result.root.entries)
-            if (!readme) {
-                return null
-            }
-            return graphqlClient
-                .query({
-                    query: RepoPageReadmeQuery,
-                    variables: {
-                        repoID: resolvedRevision.repo.id,
-                        revspec: resolvedRevision.commitID,
-                        path: readme.path,
-                    },
-                })
+        readme: parent().then(({ resolvedRevision, fileTree, repoName }) =>
+            fileTree
                 .then(result => {
-                    if (result.data.node?.__typename !== 'Repository') {
-                        throw new Error('Expected Repository')
+                    if (!result) {
+                        return null
                     }
-                    return result.data.node.commit?.blob ?? null
+                    const readme = findReadme(result.root.entries)
+                    if (!readme) {
+                        return null
+                    }
+                    return getGraphQLClient()
+                        .query(RepoPageReadmeQuery, {
+                            repoName,
+                            revspec: resolvedRevision.commitID,
+                            path: readme.path,
+                        })
+                        .then(mapOrThrow(result => result.data?.repository?.commit?.blob ?? null))
                 })
-        }),
+                .catch(() => null)
+        ),
     }
 }

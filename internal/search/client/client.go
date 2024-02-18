@@ -89,7 +89,7 @@ func (s *searchClient) Plan(
 	protocol search.Protocol,
 	contextLines *int32,
 ) (_ *search.Inputs, err error) {
-	tr, ctx := trace.New(ctx, "NewSearchInputs", attribute.String("query", searchQuery))
+	tr, ctx := trace.New(ctx, "Plan", attribute.String("query", searchQuery))
 	defer tr.EndWithErr(&err)
 
 	searchType, err := detectSearchType(version, patternType)
@@ -122,6 +122,12 @@ func (s *searchClient) Plan(
 	if err != nil {
 		return nil, &QueryError{Query: searchQuery, Err: err}
 	}
+
+	if searchType == query.SearchTypeKeyword {
+		plan = query.MapPlan(plan, query.ExperimentalPhraseBoost(s.runtimeClients.Logger, searchQuery))
+		tr.AddEvent("applied phrase boost")
+	}
+
 	tr.AddEvent("parsing done")
 
 	var finalContextLines int32
@@ -310,7 +316,6 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 	return &search.Features{
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
 		Debug:                   flagSet.GetBoolOr("search-debug", false),
-		PhraseBoost:             flagSet.GetBoolOr("search-boost-phrase", false),
 	}
 }
 

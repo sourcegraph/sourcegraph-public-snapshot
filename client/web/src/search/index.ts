@@ -115,7 +115,7 @@ export function parseSearchURL(
     let query = queryInput
     const { queryInput: newQuery, patternTypeInput: patternType } = literalSearchCompatibility({
         queryInput,
-        patternTypeInput: patternTypeInput || SearchPatternType.standard,
+        patternTypeInput,
     })
     query = newQuery
 
@@ -168,11 +168,11 @@ export function quoteIfNeeded(string: string): string {
 
 interface QueryCompatibility {
     queryInput: string
-    patternTypeInput: SearchPatternType
+    patternTypeInput?: SearchPatternType
 }
 
 export function literalSearchCompatibility({ queryInput, patternTypeInput }: QueryCompatibility): QueryCompatibility {
-    if (patternTypeInput !== SearchPatternType.literal) {
+    if (patternTypeInput === undefined || patternTypeInput !== SearchPatternType.literal) {
         return { queryInput, patternTypeInput }
     }
     const tokens = scanSearchQuery(queryInput, false, SearchPatternType.standard)

@@ -23,9 +23,12 @@ if (browser) {
     }
 }
 
-export const load: LayoutLoad = async () => {
-    const graphqlClient = await getGraphQLClient()
-    const result = await graphqlClient.query({ query: Init, fetchPolicy: 'no-cache' })
+export const load: LayoutLoad = async ({ fetch }) => {
+    const client = getGraphQLClient()
+    const result = await client.query(Init, {}, { fetch, requestPolicy: 'network-only' })
+    if (!result.data || result.error) {
+        error(500, `Failed to initialize app: ${result.error}`)
+    }
 
     const settings = parseJSONCOrError<Settings>(result.data.viewerSettings.final)
     if (isErrorLike(settings)) {
@@ -33,13 +36,15 @@ export const load: LayoutLoad = async () => {
     }
 
     return {
-        graphqlClient,
         user: result.data.currentUser,
         // Initial user settings
         settings,
         featureFlags: result.data.evaluatedFeatureFlags,
         fetchEvaluatedFeatureFlags: async () => {
-            const result = await graphqlClient.query({ query: EvaluatedFeatureFlagsQuery, fetchPolicy: 'no-cache' })
+            const result = await client.query(EvaluatedFeatureFlagsQuery, {}, { requestPolicy: 'network-only', fetch })
+            if (!result.data || result.error) {
+                throw new Error(`Failed to fetch evaluated feature flags: ${result.error}`)
+            }
             return result.data.evaluatedFeatureFlags
         },
     }

@@ -228,7 +228,7 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store
       interfaces:
         - Store
-    - path: internal/codeintel/uploads
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads
       interfaces:
         - RepoStore
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore

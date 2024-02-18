@@ -123,19 +123,26 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 		case "/login": // Endpoint that starts the Authentication Request Code Flow.
+			// NOTE: Within the Sourcegraph application, we have been using both the
+			// "redirect" and "returnTo" query parameters inconsistently, and some of the
+			// usages are also on the client side (Cody clients). If we ever settle on one
+			// and updated all usages on both server and client side, we need to make sure
+			// to have a grace period (e.g. 3 months) for the client side because we have no
+			// control over when users will actually upgrade their clients.
+			redirect := r.URL.Query().Get("redirect")
+			if redirect == "" {
+				redirect = r.URL.Query().Get("returnTo")
+			}
+
 			p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), r.URL.Query().Get("pc"), GetProvider)
 			if errors.Is(err, errNoSuchProvider) {
 				log15.Warn("Failed to get provider.", "error", err)
-				http.Redirect(w, r, "/sign-in?returnTo="+r.URL.Query().Get("returnTo"), http.StatusFound)
+				http.Redirect(w, r, "/sign-in?returnTo="+redirect, http.StatusFound)
 				return
 			} else if err != nil {
 				log15.Error("Failed to get provider.", "error", err)
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
 				return
-			}
-			redirect := r.URL.Query().Get("redirect")
-			if redirect == "" {
-				redirect = r.URL.Query().Get("returnTo")
 			}
 			RedirectToAuthRequest(w, r, p, redirect)
 			return

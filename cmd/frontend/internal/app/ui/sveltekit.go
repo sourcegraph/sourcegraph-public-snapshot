@@ -27,7 +27,7 @@ var sveltekitEnabledRoutes = map[string]struct{}{
 }
 
 // useSvelteKit returns true if the route is configured to be supported by useSvelteKit
-// (see svelteKitEnabledRoutes) and the 'enable-sveltekit' feature flag is set
+// (see svelteKitEnabledRoutes) and the 'enable-sveltekit' or 'enable-sveltekit' feature flag is set
 func useSvelteKit(r *http.Request) bool {
 	route := mux.CurrentRoute(r)
 	if route == nil {
@@ -38,7 +38,9 @@ func useSvelteKit(r *http.Request) bool {
 		return false
 	}
 
-	return featureflag.FromContext(r.Context()).GetBoolOr("enable-sveltekit", false)
+	ff := featureflag.FromContext(r.Context())
+
+	return ff.GetBoolOr("enable-sveltekit", false) || ff.GetBoolOr("web-next", false)
 }
 
 // renderSvelteKit writes SvelteKit's fallback page to the provided writer

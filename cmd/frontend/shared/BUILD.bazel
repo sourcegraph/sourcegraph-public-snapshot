@@ -12,7 +12,6 @@ go_library(
     deps = [
         "//cmd/frontend/enterprise",
         "//cmd/frontend/internal/auth",
-        "//cmd/frontend/internal/auth/githubappauth",
         "//cmd/frontend/internal/authz",
         "//cmd/frontend/internal/batches",
         "//cmd/frontend/internal/cli",
@@ -25,6 +24,7 @@ go_library(
         "//cmd/frontend/internal/dotcom",
         "//cmd/frontend/internal/embeddings",
         "//cmd/frontend/internal/executorqueue",
+        "//cmd/frontend/internal/githubapp",
         "//cmd/frontend/internal/guardrails",
         "//cmd/frontend/internal/insights",
         "//cmd/frontend/internal/licensing/init",

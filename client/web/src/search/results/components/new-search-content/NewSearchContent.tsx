@@ -6,8 +6,8 @@ import {
     useCallback,
     useEffect,
     useLayoutEffect,
-    useRef,
     useMemo,
+    useRef,
 } from 'react'
 
 import { mdiClose } from '@mdi/js'
@@ -38,7 +38,7 @@ import {
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { Button, Icon, H2, H4, useScrollManager, Panel, useLocalStorage, Link } from '@sourcegraph/wildcard'
+import { Button, H2, H4, Icon, Link, Panel, useLocalStorage, useScrollManager } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { useKeywordSearch } from '../../../../featureFlags/useFeatureFlag'
@@ -141,6 +141,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
     const containerRef = useRef<HTMLDivElement>(null)
     const { previewBlob, clearPreview } = useSearchResultState()
 
+    const showKeywordSearchToggle = useKeywordSearch()
     const newFiltersEnabled = useIsNewSearchFiltersEnabled()
     const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage('search.sidebar.collapsed', true)
 
@@ -175,7 +176,10 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         [onSearchSubmit]
     )
 
-    const showKeywordSearchToggle = useKeywordSearch()
+    const handleFilterPanelClose = useCallback(() => {
+        clearPreview()
+        telemetryService.log('SearchFilePreviewClose', {}, {})
+    }, [telemetryService, clearPreview])
 
     return (
         <div className={classNames(styles.root, { [styles.rootWithNewFilters]: newFiltersEnabled })}>
@@ -184,8 +188,10 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                     query={submittedURLQuery}
                     filters={results?.filters}
                     withCountAllFilter={isSearchLimitHit(results)}
+                    isFilterLoadingComplete={results?.state === 'complete'}
                     className={styles.newFilters}
                     onQueryChange={handleFilterPanelQueryChange}
+                    telemetryService={telemetryService}
                 />
             )}
 
@@ -251,33 +257,35 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                         patternType={patternType}
                         caseSensitive={caseSensitive}
                         aria-label="Aggregation results panel"
-                        className="mt-3"
                         onQuerySubmit={onQuerySubmit}
                         telemetryService={telemetryService}
+                        className="m-3"
                     />
                 )}
 
                 {aggregationUIMode !== AggregationUIMode.SearchPage && (
-                    <>
+                    <div className={styles.contentMetaInfo}>
                         <DidYouMean
                             telemetryService={props.telemetryService}
                             query={submittedURLQuery}
                             patternType={patternType}
                             caseSensitive={caseSensitive}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
+                            className="m-2"
                         />
 
                         {results?.alert?.kind && isSmartSearchAlert(results.alert.kind) && (
-                            <SmartSearch alert={results?.alert} onDisableSmartSearch={onDisableSmartSearch} />
+                            <SmartSearch
+                                alert={results?.alert}
+                                onDisableSmartSearch={onDisableSmartSearch}
+                                className="m-2"
+                            />
                         )}
 
-                        <GettingStartedTour.Info
-                            className="mt-2 mb-3"
-                            isSourcegraphDotCom={props.isSourcegraphDotCom}
-                        />
+                        <GettingStartedTour.Info className="m-2" isSourcegraphDotCom={props.isSourcegraphDotCom} />
 
                         {results?.alert && (!results?.alert.kind || !isSmartSearchAlert(results.alert.kind)) && (
-                            <div className={classNames(styles.alertArea, 'mt-4')}>
+                            <div className={classNames(styles.alertArea, 'm-2')}>
                                 {results?.alert?.kind === 'unowned-results' ? (
                                     <UnownedResultsAlert
                                         alertTitle={results.alert.title}
@@ -296,29 +304,31 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                                 )}
                             </div>
                         )}
+                    </div>
+                )}
 
-                        <StreamingSearchResultsList
-                            telemetryService={telemetryService}
-                            platformContext={platformContext}
-                            settingsCascade={settingsCascade}
-                            searchContextsEnabled={searchContextsEnabled}
-                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                            isSourcegraphDotCom={isSourcegraphDotCom}
-                            enableRepositoryMetadata={enableRepositoryMetadata}
-                            results={results}
-                            allExpanded={allExpanded}
-                            executedQuery={location.search}
-                            prefetchFileEnabled={true}
-                            prefetchFile={prefetchFile}
-                            enableKeyboardNavigation={true}
-                            showQueryExamplesOnNoResultsPage={true}
-                            queryState={queryState}
-                            buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
-                            selectedSearchContextSpec={selectedSearchContextSpec}
-                            logSearchResultClicked={onLogSearchResultClick}
-                            queryExamplesPatternType={patternType}
-                        />
-                    </>
+                {aggregationUIMode !== AggregationUIMode.SearchPage && (
+                    <StreamingSearchResultsList
+                        telemetryService={telemetryService}
+                        platformContext={platformContext}
+                        settingsCascade={settingsCascade}
+                        searchContextsEnabled={searchContextsEnabled}
+                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                        isSourcegraphDotCom={isSourcegraphDotCom}
+                        enableRepositoryMetadata={enableRepositoryMetadata}
+                        results={results}
+                        allExpanded={allExpanded}
+                        executedQuery={location.search}
+                        prefetchFileEnabled={true}
+                        prefetchFile={prefetchFile}
+                        enableKeyboardNavigation={true}
+                        showQueryExamplesOnNoResultsPage={true}
+                        queryState={queryState}
+                        buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                        selectedSearchContextSpec={selectedSearchContextSpec}
+                        logSearchResultClicked={onLogSearchResultClick}
+                        queryExamplesPatternType={patternType}
+                    />
                 )}
             </div>
 
@@ -328,7 +338,8 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                     platformContext={platformContext}
                     extensionsController={extensionsController}
                     settingsCascade={settingsCascade}
-                    onClose={clearPreview}
+                    telemetryService={telemetryService}
+                    onClose={handleFilterPanelClose}
                 />
             )}
         </div>
@@ -369,13 +380,17 @@ const NewSearchSidebarWrapper: FC<PropsWithChildren<NewSearchSidebarWrapper>> = 
     )
 }
 
-interface FilePreviewPanelProps extends PlatformContextProps, SettingsCascadeProps, ExtensionsControllerProps {
+interface FilePreviewPanelProps
+    extends PlatformContextProps,
+        SettingsCascadeProps,
+        ExtensionsControllerProps,
+        TelemetryProps {
     blobInfo: SearchResultPreview
     onClose: () => void
 }
 
 const FilePreviewPanel: FC<FilePreviewPanelProps> = props => {
-    const { blobInfo, onClose, platformContext, settingsCascade, extensionsController } = props
+    const { blobInfo, onClose, platformContext, settingsCascade, extensionsController, telemetryService } = props
 
     const staticHighlights = useMemo(() => {
         if (blobInfo.type === 'path') {
@@ -384,10 +399,15 @@ const FilePreviewPanel: FC<FilePreviewPanelProps> = props => {
         return blobInfo.chunkMatches?.flatMap(chunkMatch => chunkMatch.ranges)
     }, [blobInfo])
 
+    useEffect(() => {
+        telemetryService.logViewEvent('SearchFilePreview')
+    }, [telemetryService])
+
     return (
         <Panel
             defaultSize={300}
             minSize={256}
+            maxSize={600}
             position="right"
             storageKey="file preview"
             ariaLabel="File sidebar"

@@ -73,4 +73,8 @@ export const legacyLayoutRouteContextMock = {
     ...dynamicWebAppConfig,
     ...legacyRouteComputedContext,
     ...legacyRouteInjectedContext,
+    licenseFeatures: {
+        isCodeSearchEnabled: true,
+        isCodyEnabled: true,
+    },
 } satisfies LegacyLayoutRouteContext

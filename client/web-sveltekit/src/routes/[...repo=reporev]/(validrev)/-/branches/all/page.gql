@@ -1,10 +1,13 @@
-query GitBranchesQuery($repo: ID!, $first: Int!, $withBehindAhead: Boolean!, $revspec: String = "") {
-    node(id: $repo) {
+query AllBranchesPage_BranchesQuery(
+    $repoName: String!
+    $first: Int!
+    $withBehindAhead: Boolean!
+    $revspec: String = ""
+) {
+    repository(name: $repoName) {
         id
-        ... on Repository {
-            branches(first: $first, orderBy: AUTHORED_OR_COMMITTED_AT) {
-                ...GitBranchesConnection
-            }
+        branches(first: $first, orderBy: AUTHORED_OR_COMMITTED_AT) {
+            ...GitBranchesConnection
         }
     }
 }

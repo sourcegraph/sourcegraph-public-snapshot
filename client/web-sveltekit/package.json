@@ -74,9 +74,11 @@
     "@sourcegraph/shared": "workspace:*",
     "@sourcegraph/web": "workspace:*",
     "@sourcegraph/wildcard": "workspace:*",
+    "@urql/core": "^4.2.3",
     "highlight.js": "^10.0.0",
     "prismjs": "^1.29.0",
-    "ts-key-enum": "^2.0.12"
+    "ts-key-enum": "^2.0.12",
+    "wonka": "^6.3.4"
   },
   "msw": {
     "workerDirectory": "static"
