@@ -25,9 +25,7 @@ interface MarkdownProps {
 
 export const Markdown = React.forwardRef<HTMLElement, MarkdownProps>(
     ({ wrapper: RootComponent = 'div', className, dangerousInnerHTML, testId, enableMathJax = false }, reference) => {
-        if (enableMathJax) {
-            useMathJax()
-        }
+        useMathJax(enableMathJax)
         const navigate = useNavigate()
 
         // Links in markdown cannot use react-router's <Link>.

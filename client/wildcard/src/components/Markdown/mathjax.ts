@@ -5,6 +5,7 @@ export const mathjaxElementId = 'MathJax-script'
 
 /**
  * useMathJax enables rendering mathematical expressions on the page.
+ * @param enabled Set to `false` to disable the hook (default: `true`).
  *
  * @details
  * On component mount, useMathJax injects a script to load MathJax
@@ -19,12 +20,16 @@ export const mathjaxElementId = 'MathJax-script'
  *
  * On component unmount, removes the script via useEffect destructor.
  */
-export const useMathJax = () => {
+export const useMathJax = (enabled: boolean = true) => {
+    if (!enabled) {
+        return;
+    }
+
     useEffect(() => {
         const mj = document.createElement('script')
 
         mj.setAttribute('type', 'text/javascript')
-        // mj.setAttribute('src', mathjaxURL)
+        mj.setAttribute('src', mathjaxURL)
         mj.setAttribute('async', '')
         mj.setAttribute('id', mathjaxElementId)
 
