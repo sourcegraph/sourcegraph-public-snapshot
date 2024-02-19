@@ -3233,6 +3233,11 @@
           "description": "Name of the SAML assertion attribute that holds group membership for allowGroups setting",
           "type": "string",
           "default": "groups"
+        },
+        "usernameKey": {
+          "description": "Assertion key to use as the user's username. If set and the key is not present during sign-in, the sign-in will fail.",
+          "type": "string",
+          "examples": ["preferred_username"]
         }
       }
     },

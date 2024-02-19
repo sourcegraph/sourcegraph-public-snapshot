@@ -49,7 +49,7 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 		return nil, errors.New("the SAML response did not contain an email attribute")
 	}
 
-	unnormalizedUsername := attr.getUnnormalizedUsername(email)
+	unnormalizedUsername := attr.getUnnormalizedUsername(email, p.config.UsernameKey)
 	if unnormalizedUsername == "" {
 		return nil, errors.New("the SAML response did not contain a username attribute")
 	}
@@ -182,14 +182,19 @@ func (v samlAssertionValues) getEmail(assertions *saml2.AssertionInfo) string {
 	return email
 }
 
-// getUnnormalizedUsername returns a username from samlAssertionValues
-// in the following order of preference:
+// getUnnormalizedUsername returns a username from samlAssertionValues.
+// If usernameKey is provided, that's the only key that will be checked.
+// Otherwise, a username is selected in the following order of preference:
 // 1. "login"
 // 2. "uid"
 // 3. "username"
 // 4. "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"
 // 5. email
-func (v samlAssertionValues) getUnnormalizedUsername(email string) string {
+func (v samlAssertionValues) getUnnormalizedUsername(email string, usernameKey string) string {
+	if usernameKey != "" {
+		return v.Get(usernameKey)
+	}
+
 	return firstNonEmpty(
 		v.Get("login"),
 		v.Get("uid"),
