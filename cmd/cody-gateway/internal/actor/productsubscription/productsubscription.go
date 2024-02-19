@@ -154,7 +154,6 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 				return seen, ctx.Err()
 			default:
 			}
-			seenTokens.Add(token)
 			act := newActor(s, token, sub.ProductSubscriptionState, s.internalMode, s.concurrencyConfig)
 			data, err := json.Marshal(act)
 			if err != nil {
@@ -164,6 +163,7 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 				continue
 			}
 			s.cache.Set(token, data)
+			seenTokens.Add(token)
 			seen++
 		}
 	}
