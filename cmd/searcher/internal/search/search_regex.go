@@ -155,7 +155,7 @@ func regexSearch(
 
 				if !match && patternMatchesContent {
 					if _, ok := m.(allMatchTree); ok {
-						// Avoid loading the file is this pattern always matches
+						// Avoid loading the file if this pattern always matches
 						match = true
 					} else {
 						l.load(f)
@@ -197,12 +197,12 @@ type fileLoader struct {
 	zf              *zipFile
 	isCaseSensitive bool
 
-	// fileMatchBuf is what we run match on, fileBuf is the original data
-	// (used for the content preview).
-	fileBuf      []byte
-	fileMatchBuf []byte
+	currFile *srcFile
 
-	prevFile *srcFile
+	// fileBuf is the original data (used for the content preview)
+	fileBuf []byte
+	// fileMatchBuf is what we match against, and may be a lower-cased version of fileBuf
+	fileMatchBuf []byte
 
 	// scratchBuf is reused between file searches to avoid
 	// re-allocating. It is only used if we need to transform the input
@@ -212,9 +212,10 @@ type fileLoader struct {
 }
 
 func (l *fileLoader) load(f *srcFile) {
-	if f == l.prevFile {
+	if f == l.currFile {
 		return
 	}
+	l.currFile = f
 
 	l.fileBuf = l.zf.DataFor(f)
 	l.fileMatchBuf = l.fileBuf
