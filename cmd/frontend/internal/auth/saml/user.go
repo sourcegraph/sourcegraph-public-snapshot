@@ -49,7 +49,7 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 		return nil, errors.New("the SAML response did not contain an email attribute")
 	}
 
-	unnormalizedUsername := attr.getUnnormalizedUsername(email, p.config.UsernameKeys)
+	unnormalizedUsername := attr.getUnnormalizedUsername(email, p.config.UsernameAttributeNames)
 	if unnormalizedUsername == "" {
 		return nil, errors.New("the SAML response did not contain a username attribute")
 	}
