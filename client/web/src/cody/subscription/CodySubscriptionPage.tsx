@@ -471,6 +471,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             </Text>
                             <Text className="mb-1 text-muted">
                                 Bring your own LLM key
+                                <Tooltip content="Bring your own LLM key with Azure OpenAI or Amazon Bedrock">
                                     <Icon
                                         className="ml-1 text-muted"
                                         svgPath={mdiInformationOutline}
