@@ -88,6 +88,8 @@ func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context,
 		return nil, errors.Wrap(err, "gitserver.RefDescriptions")
 	}
 
+	fmt.Println(refDescriptions)
+
 	for commit, refDescriptions := range refDescriptions {
 		for _, refDescription := range refDescriptions {
 			switch refDescription.Type {

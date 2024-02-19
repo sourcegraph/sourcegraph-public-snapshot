@@ -11,6 +11,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/reposcheduler",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/api",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbutil",

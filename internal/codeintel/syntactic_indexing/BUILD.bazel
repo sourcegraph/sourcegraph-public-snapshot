@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "syntactic_indexing",
+    srcs = [
+        "scheduler.go",
+        "scheduler_config.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/codeintel",
+        "//cmd/worker/shared/init/db",
+        "//internal/actor",
+        "//internal/codeintel/autoindexing",
+        "//internal/codeintel/policies",
+        "//internal/codeintel/policies/shared",
+        "//internal/codeintel/reposcheduler",
+        "//internal/database",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/observation",
+    ],
+)

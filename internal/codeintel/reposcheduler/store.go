@@ -29,6 +29,7 @@ type RepositorySchedulingStore interface {
 	GetQueuedRepoRev(ctx context.Context, batchSize int) ([]RepoRev, error)
 	MarkRepoRevsAsProcessed(ctx context.Context, ids []int) error
 	QueueRepoRev(ctx context.Context, repositoryID int, commit string) error
+	IsQueued(ctx context.Context, repositoryID int, commit string) (_ bool, err error)
 }
 
 type operations struct {

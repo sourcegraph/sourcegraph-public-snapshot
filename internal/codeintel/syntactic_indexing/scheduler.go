@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type syntacticIndexingScheduler struct{}
@@ -53,16 +54,18 @@ func (j *syntacticIndexingScheduler) Routines(_ context.Context, observationCtx 
 	matcher := policies.NewMatcher(
 		services.GitserverClient,
 		policies.IndexingExtractor,
-		false,
+		true,
 		true,
 	)
 
 	repoSchedulingStore := reposcheduler.NewSyntacticStore(observationCtx, db)
 	repoSchedulingSvc := reposcheduler.NewService(repoSchedulingStore)
 
+	enqueuer := NewIndexEnqueuer(observationCtx, repoSchedulingStore, db.Repos(), services.GitserverClient)
+
 	return []goroutine.BackgroundRoutine{
 		newScheduler(
-			observationCtx, repoSchedulingSvc, matcher, *services.PoliciesService, db.Repos(),
+			observationCtx, repoSchedulingSvc, matcher, *services.PoliciesService, db.Repos(), enqueuer,
 		),
 	}, nil
 
@@ -74,6 +77,7 @@ func newScheduler(
 	policyMatcher autoindexing.PolicyMatcher,
 	policiesService policies.Service,
 	repoStore database.RepoStore,
+	enqueuer IndexEnqueuer,
 ) goroutine.BackgroundRoutine {
 	batchOptions := reposcheduler.NewBatchOptions(config.RepositoryProcessDelay, true, &config.PolicyBatchSize, config.RepositoryBatchSize)
 
@@ -91,30 +95,52 @@ func newScheduler(
 			for _, repoToIndex := range repos {
 				repo, _ := repoStore.Get(ctx, repoToIndex.ID)
 				fmt.Println(repo.Name)
+				if repo.Name == "github.com/indoorvivants/detective" {
 
-				offset := 0
-				t := true
+					offset := 0
+					t := true
 
-				policies, totalCount, err := policiesService.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
-					RepositoryID:         int(repoToIndex.ID),
-					ForSyntacticIndexing: &t,
-					Limit:                config.PolicyBatchSize,
-					Offset:               offset,
-				})
+					policies, _, err := policiesService.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
+						RepositoryID:         int(repoToIndex.ID),
+						ForSyntacticIndexing: &t,
+						Limit:                config.PolicyBatchSize,
+						Offset:               offset,
+					})
 
-				if err != nil {
-					return err
+					if err != nil {
+						return err
+					}
+					commitMap, err := policyMatcher.CommitsDescribedByPolicy(ctx, int(repoToIndex.ID), repo.Name, policies, time.Now())
+					if err != nil {
+						return err
+					}
+
+					for commit, policyMatches := range commitMap {
+						if len(policyMatches) == 0 {
+							continue
+						}
+
+						options := EnqueueOptions{force: false, bypassLimit: false}
+
+						// Attempt to queue an index if one does not exist for each of the matching commits
+						if _, err := enqueuer.QueueIndexes(ctx, int(repoToIndex.ID), commit, "", options); err != nil {
+							// if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+							// 	continue
+							// }
+
+							return errors.Wrap(err, "indexEnqueuer.QueueIndexes")
+						}
+					}
+
+					// if len(policies) == 0 || offset >= totalCount {
+					// 	return nil
+					// }
+
+					// fmt.Println("Commits", commits)
 				}
 
-				fmt.Println("Policies: ", policies, totalCount)
-				// if err != nil {
-				// 	return errors.Wrap(err, "policySvc.GetConfigurationPolicies")
-				// }
-				// offset += len(policies)
-
 			}
-			// return job.handleScheduler(ctx, config.RepositoryProcessDelay, config.RepositoryBatchSize, config.PolicyBatchSize, config.InferenceConcurrency)
-			return nil
+			return nil //errors.New("just erroring to reschedule")
 		}),
 		goroutine.WithName("codeintel.autoindexing-background-scheduler"),
 		goroutine.WithDescription("schedule autoindexing jobs in the background using defined or inferred configurations"),
