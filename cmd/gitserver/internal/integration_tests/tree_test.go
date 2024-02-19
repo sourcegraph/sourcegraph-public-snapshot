@@ -392,8 +392,6 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 }
 
 func TestReadDir_SubRepoFiltering(t *testing.T) {
-	InitGitserver()
-
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
