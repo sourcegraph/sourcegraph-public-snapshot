@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/reposcheduler"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/job_store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -61,7 +62,9 @@ func (j *syntacticIndexingScheduler) Routines(_ context.Context, observationCtx 
 	repoSchedulingStore := reposcheduler.NewSyntacticStore(observationCtx, db)
 	repoSchedulingSvc := reposcheduler.NewService(repoSchedulingStore)
 
-	enqueuer := NewIndexEnqueuer(observationCtx, repoSchedulingStore, db.Repos(), services.GitserverClient)
+	jobStore, err := job_store.NewStore(observationCtx, "syntactic-indexing-scheduler")
+
+	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, db.Repos(), services.GitserverClient)
 
 	return []goroutine.BackgroundRoutine{
 		newScheduler(

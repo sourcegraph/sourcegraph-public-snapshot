@@ -1,4 +1,4 @@
-package shared
+package job_store
 
 import (
 	"context"
@@ -33,7 +33,7 @@ func TestIndexingWorkerStore(t *testing.T) {
 
 	ctx := context.Background()
 
-	initCount, _ := store.QueuedCount(ctx, true)
+	initCount, _ := store.DBWorkerStore().QueuedCount(ctx, true)
 
 	require.Equal(t, 0, initCount)
 
@@ -76,11 +76,11 @@ func TestIndexingWorkerStore(t *testing.T) {
 		},
 	)
 
-	afterCount, _ := store.QueuedCount(ctx, true)
+	afterCount, _ := store.DBWorkerStore().QueuedCount(ctx, true)
 
 	require.Equal(t, 3, afterCount)
 
-	record1, hasRecord, err := store.Dequeue(ctx, "worker1", nil)
+	record1, hasRecord, err := store.DBWorkerStore().Dequeue(ctx, "worker1", nil)
 
 	require.NoError(t, err)
 	require.True(t, hasRecord)
@@ -88,7 +88,7 @@ func TestIndexingWorkerStore(t *testing.T) {
 	require.Equal(t, "tangy/tacos", record1.RepositoryName)
 	require.Equal(t, "deadbeefdeadbeefdeadbeefdeadbeefdead1111", record1.Commit)
 
-	record2, hasRecord, err := store.Dequeue(ctx, "worker2", nil)
+	record2, hasRecord, err := store.DBWorkerStore().Dequeue(ctx, "worker2", nil)
 
 	require.NoError(t, err)
 	require.True(t, hasRecord)
@@ -96,7 +96,7 @@ func TestIndexingWorkerStore(t *testing.T) {
 	require.Equal(t, "salty/empanadas", record2.RepositoryName)
 	require.Equal(t, "deadbeefdeadbeefdeadbeefdeadbeefdead2222", record2.Commit)
 
-	_, hasRecord, err = store.Dequeue(ctx, "worker2", nil)
+	_, hasRecord, err = store.DBWorkerStore().Dequeue(ctx, "worker2", nil)
 	require.NoError(t, err)
 	require.False(t, hasRecord)
 

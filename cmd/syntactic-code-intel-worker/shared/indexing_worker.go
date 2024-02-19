@@ -10,17 +10,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 func NewIndexingWorker(ctx context.Context,
 	observationCtx *observation.Context,
-	workerStore dbworkerstore.Store[*job_store.SyntacticIndexingJob],
+	store job_store.SyntacticIndexingJobStore,
 	config IndexingWorkerConfig) *workerutil.Worker[*job_store.SyntacticIndexingJob] {
 
 	name := "syntactic_code_intel_indexing_worker"
 
-	return dbworker.NewWorker[*job_store.SyntacticIndexingJob](ctx, workerStore, &indexingHandler{}, workerutil.WorkerOptions{
+	return dbworker.NewWorker[*job_store.SyntacticIndexingJob](ctx, store.DBWorkerStore(), &indexingHandler{}, workerutil.WorkerOptions{
 		Name:                 name,
 		Interval:             config.PollInterval,
 		HeartbeatInterval:    10 * time.Second,

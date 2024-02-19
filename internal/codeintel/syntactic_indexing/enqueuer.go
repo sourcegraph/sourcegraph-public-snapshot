@@ -25,25 +25,28 @@ type EnqueueOptions struct {
 }
 
 type indexEnqueuerImpl struct {
-	store           reposcheduler.RepositorySchedulingStore
-	repoStore       database.RepoStore
-	gitserverClient gitserver.Client
-	operations      *operations
+	jobStore            job_store.SyntacticIndexingJobStore
+	repoSchedulingStore reposcheduler.RepositorySchedulingStore
+	repoStore           database.RepoStore
+	gitserverClient     gitserver.Client
+	operations          *operations
 }
 
 var _ IndexEnqueuer = &indexEnqueuerImpl{}
 
 func NewIndexEnqueuer(
 	observationCtx *observation.Context,
+	jobStore job_store.SyntacticIndexingJobStore,
 	store reposcheduler.RepositorySchedulingStore,
 	repoStore database.RepoStore,
 	gitserverClient gitserver.Client,
 ) IndexEnqueuer {
 	return &indexEnqueuerImpl{
-		store:           store,
-		repoStore:       repoStore,
-		gitserverClient: gitserverClient,
-		operations:      newOperations(observationCtx),
+		repoSchedulingStore: store,
+		repoStore:           repoStore,
+		gitserverClient:     gitserverClient,
+		jobStore:            jobStore,
+		operations:          newOperations(observationCtx),
 	}
 }
 
@@ -117,7 +120,7 @@ func (s *indexEnqueuerImpl) QueueIndexes(ctx context.Context, repositoryID int, 
 // when the flag is false.
 func (s *indexEnqueuerImpl) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, options EnqueueOptions) ([]job_store.SyntacticIndexingJob, error) {
 	if !options.force {
-		isQueued, err := s.store.IsQueued(ctx, repositoryID, commit)
+		isQueued, err := s.jobStore.IsQueued(ctx, repositoryID, commit)
 		fmt.Println("Queueing", repositoryID, commit, isQueued)
 		if err != nil {
 			return nil, errors.Wrap(err, "dbstore.IsQueued")

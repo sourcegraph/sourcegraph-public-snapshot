@@ -1,4 +1,4 @@
-package shared
+package job_store
 
 import (
 	"context"
