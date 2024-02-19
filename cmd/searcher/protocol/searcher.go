@@ -115,7 +115,7 @@ type PatternInfo struct {
 	// optimizations.
 	Select string
 
-	// Languages represents the set of languages requested in the query. It is only uesd for
+	// Languages represents the set of languages requested in the query. It is only used for
 	// structural search and is separate from IncludeLangs, which represents language filters.
 	Languages []string
 }
@@ -261,9 +261,10 @@ type Response struct {
 	DeadlineHit bool
 }
 
-// FileMatch is the struct used by vscode to receive search results
+// FileMatch is the struct used to represent search results
 type FileMatch struct {
-	Path string
+	Path     string
+	Language string
 
 	ChunkMatches []ChunkMatch
 
@@ -278,6 +279,7 @@ func (fm *FileMatch) ToProto() *proto.FileMatch {
 	}
 	return &proto.FileMatch{
 		Path:         []byte(fm.Path),
+		Language:     []byte(fm.Language),
 		ChunkMatches: chunkMatches,
 		LimitHit:     fm.LimitHit,
 	}
@@ -290,6 +292,7 @@ func (fm *FileMatch) FromProto(pm *proto.FileMatch) {
 	}
 	*fm = FileMatch{
 		Path:         string(pm.GetPath()), // WARNING: It is not safe to assume that Path is utf-8 encoded.
+		Language:     string(pm.GetLanguage()),
 		ChunkMatches: chunkMatches,
 		LimitHit:     pm.GetLimitHit(),
 	}

@@ -697,7 +697,9 @@ func TestLangFilters(t *testing.T) {
 				},
 				zf: file,
 			},
-			wantFm: []protocol.FileMatch{{Path: "a.go"}},
+			wantFm: []protocol.FileMatch{{
+				Path:     "a.go",
+				Language: "Go"}},
 		},
 		{
 			name: "include filter with no matches",
@@ -726,7 +728,8 @@ func TestLangFilters(t *testing.T) {
 				zf: file,
 			},
 			wantFm: []protocol.FileMatch{{
-				Path: "a.go",
+				Path:     "a.go",
+				Language: "Go",
 				ChunkMatches: []protocol.ChunkMatch{{
 					Content:      "aaaaa11111",
 					ContentStart: protocol.Location{0, 0, 0},
@@ -750,7 +753,9 @@ func TestLangFilters(t *testing.T) {
 				},
 				zf: file,
 			},
-			wantFm: []protocol.FileMatch{{Path: "README.md"}},
+			wantFm: []protocol.FileMatch{{
+				Path:     "README.md",
+				Language: "Markdown"}},
 		},
 		{
 			name: "include filter with ambiguous extension",
@@ -764,7 +769,9 @@ func TestLangFilters(t *testing.T) {
 				},
 				zf: file,
 			},
-			wantFm: []protocol.FileMatch{{Path: "file.m"}},
+			wantFm: []protocol.FileMatch{{
+				Path:     "file.m",
+				Language: "MATLAB"}},
 		},
 		{
 			name: "include filter with ambiguous extension and no matches",
