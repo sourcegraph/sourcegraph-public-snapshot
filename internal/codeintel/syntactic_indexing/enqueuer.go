@@ -130,6 +130,20 @@ func (s *indexEnqueuerImpl) queueIndexForRepositoryAndCommit(ctx context.Context
 		}
 	}
 
+	if !options.force {
+		values := make([]job_store.SyntacticIndexingJob, 1)
+		values[0] = job_store.SyntacticIndexingJob{
+			State:        job_store.Queued,
+			Commit:       commit,
+			RepositoryID: repositoryID,
+		}
+
+		_, err := s.jobStore.InsertIndexes(ctx, values)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// indexes, err := s.jobSelector.GetIndexRecords(ctx, repositoryID, commit, configuration, bypassLimit)
 	// if err != nil {
 	// 	return nil, err
