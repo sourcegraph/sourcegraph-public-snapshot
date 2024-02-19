@@ -224,13 +224,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             </div>
                             <div className="d-flex flex-column border-bottom py-4">
                                 <div className="mb-1">
-                                    <H2
-                                        className={classNames('text-muted d-inline mb-0', {
-                                            [styles.proPricing]: !hasTrialEnded,
-                                        })}
-                                    >
-                                        $9
-                                    </H2>
+                                    <H2 className="text-muted d-inline mb-0">$9</H2>
                                     <Text className="mb-0 text-muted d-inline">/month</Text>
                                 </div>
                                 {!hasTrialEnded && (
