@@ -36,6 +36,8 @@ func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWri
 			attribute.Int("numIncludePatterns", len(args.IncludePatterns)),
 			attribute.String("includePatterns", strings.Join(args.IncludePatterns, ":")),
 			attribute.String("excludePattern", args.ExcludePattern),
+			attribute.String("includeLangs", strings.Join(args.IncludeLangs, ":")),
+			attribute.String("excludeLangs", strings.Join(args.ExcludeLangs, ":")),
 			attribute.Int("first", args.First),
 			attribute.Float64("timeoutSeconds", args.Timeout.Seconds()),
 		}})

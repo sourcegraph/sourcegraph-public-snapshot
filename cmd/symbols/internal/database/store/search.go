@@ -75,6 +75,13 @@ func makeSearchConditions(args search.SymbolsParameters) []*sqlf.Query {
 		conditions = append(conditions, makeSearchCondition("path", includePattern, args.IsCaseSensitive))
 	}
 
+	for _, includeLang := range args.IncludeLangs {
+		conditions = append(conditions, makeLangCondition(includeLang))
+	}
+	for _, excludeLang := range args.ExcludeLangs {
+		conditions = append(conditions, negate(makeLangCondition(excludeLang)))
+	}
+
 	filtered := conditions[:0]
 	for _, condition := range conditions {
 		if condition != nil {
@@ -118,6 +125,10 @@ func makeSearchCondition(column string, regex string, isCaseSensitive bool) *sql
 		regex = "(?i:" + regex + ")"
 	}
 	return sqlf.Sprintf(column+" REGEXP %s", regex)
+}
+
+func makeLangCondition(lang string) *sqlf.Query {
+	return sqlf.Sprintf("lower(language) = %s", strings.ToLower(lang))
 }
 
 // isLiteralEquality returns true if the given regex matches literal strings exactly.

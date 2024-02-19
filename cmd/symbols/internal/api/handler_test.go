@@ -43,14 +43,16 @@ func TestHandler(t *testing.T) {
 		pathToEntries := map[string][]*ctags.Entry{
 			"a.js": {
 				{
-					Name: "x",
-					Path: "a.js",
-					Line: 1, // ctags line numbers are 1-based
+					Name:     "x",
+					Path:     "a.js",
+					Language: "JavaScript",
+					Line:     1, // ctags line numbers are 1-based
 				},
 				{
-					Name: "y",
-					Path: "a.js",
-					Line: 2,
+					Name:     "y",
+					Path:     "a.js",
+					Language: "JavaScript",
+					Line:     2,
 				},
 			},
 		}
@@ -83,8 +85,8 @@ func TestHandler(t *testing.T) {
 		GRPCConnectionCache: connectionCache,
 	}
 
-	x := result.Symbol{Name: "x", Path: "a.js", Line: 0, Character: 4}
-	y := result.Symbol{Name: "y", Path: "a.js", Line: 1, Character: 4}
+	x := result.Symbol{Name: "x", Path: "a.js", Language: "JavaScript", Line: 0, Character: 4}
+	y := result.Symbol{Name: "y", Path: "a.js", Language: "JavaScript", Line: 1, Character: 4}
 
 	testCases := map[string]struct {
 		args     search.SymbolsParameters
@@ -128,6 +130,14 @@ func TestHandler(t *testing.T) {
 		},
 		"exclude": {
 			args:     search.SymbolsParameters{ExcludePattern: "a.js", IsCaseSensitive: true, First: 10},
+			expected: nil,
+		},
+		"include lang filters": {
+			args:     search.SymbolsParameters{Query: "x", IncludeLangs: []string{"Javascript"}, IsCaseSensitive: true, First: 10},
+			expected: []result.Symbol{x},
+		},
+		"exclude lang filters": {
+			args:     search.SymbolsParameters{Query: "y", ExcludeLangs: []string{"Javascript"}, IsCaseSensitive: true, First: 10},
 			expected: nil,
 		},
 	}

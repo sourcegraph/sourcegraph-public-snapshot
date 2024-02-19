@@ -15,6 +15,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-ctags"
+
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -118,7 +119,11 @@ func TestIndex(t *testing.T) {
 	verifyBlobs := func() {
 		repo := "somerepo"
 		commit := getHead()
-		args := search.SymbolsParameters{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
+		args := search.SymbolsParameters{
+			Repo:         api.RepoName(repo),
+			CommitID:     api.CommitID(commit),
+			Query:        "",
+			IncludeLangs: []string{"Text"}}
 		symbols, err := service.Search(context.Background(), args)
 		fatalIfError(err, "Search")
 
