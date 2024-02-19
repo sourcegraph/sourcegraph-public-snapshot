@@ -173,6 +173,8 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 
 func removeUnseenTokens(seen *goset.Set[string], cache listingCache, syncLog log.Logger) {
 	start := time.Now()
+	// Listing keys can get slow, but we only expect NUMBER_OF_SUBSCRIPTIONS * NUMBER_OF_ACTIVE_LICENCE_KEYS here
+	// Listing 2000 keys takes ~3ms, and fixing this would require changing our Redis client to support scanning / context so let's leave like that until we fix listing subscriptions in Q2 2024.
 	keys := cache.ListAllKeys()
 	elapsed := time.Since(start)
 	syncLog.Info("removing expired/disabled tokens", log.Int("seen", seen.Len()), log.Int("allKeys", len(keys)), log.Duration("listLatency", elapsed))
