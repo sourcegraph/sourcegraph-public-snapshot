@@ -36,7 +36,7 @@ echo "Added GCP compute image to image family ${IMAGE_FAMILY}"
 
 # Set the AMIs to public.
 if [ "${EXECUTOR_IS_TAGGED_RELEASE}" = "true" ]; then
-  REGIONS=$(jq -r '.[]' <aws_regions.json)
+  REGIONS=$(jq -r '.[]' <cmd/executor/vm-image/aws_regions.json)
   for region in $REGIONS; do
     echo "Getting AMI ID in region ${region}"
     AWS_AMI_ID=$(aws ec2 --region="${region}" describe-images --filter "Name=name,Values=${NAME}" --query 'Images[*].[ImageId]' --output text)
