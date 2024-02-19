@@ -131,21 +131,24 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 		body.N = 1
 	}
 
-	// Enterprise virtual model string
 	if body.Model == "starcoder" {
+		// Enterprise virtual model string
 		body.Model = pickModelBasedOnTrafficSplit(f.config.StarcoderEnterpriseSingleTenantPercent, fireworks.Starcoder16bSingleTenant, fireworks.Starcoder16b)
-	}
-
-	// PLG virtual model strings
-	//
-	// TODO: Remove the support for the full 7b MT model names here as soon as we can remove the
-	//       virtual model resolution on the SG instance in codecompletion.go
-	if body.Model == "starcoder-16b" || body.Model == "starcoder-7b" || body.Model == fireworks.Starcoder7b || body.Model == fireworks.Starcoder16b {
+	} else if body.Model == "starcoder-16b" || body.Model == "starcoder-7b" {
+		// PLG virtual model strings
 		multiTenantModel := fireworks.Starcoder16b
-		if body.Model == "starcoder-7b" || body.Model == fireworks.Starcoder7b {
+		if body.Model == "starcoder-7b" {
 			multiTenantModel = fireworks.Starcoder7b
 		}
 		body.Model = pickModelBasedOnTrafficSplit(f.config.StarcoderCommunitySingleTenantPercent, fireworks.Starcoder16bSingleTenant, multiTenantModel)
+	}
+
+	// Resolve to the legacy quantized versions if necessary.
+	// TODO: Remove this as soon as the migration to the unquantized models is complete.
+	if body.Model == fireworks.Starcoder16b {
+		body.Model = pickModelBasedOnTrafficSplit(f.config.StarcoderQuantizedPercent, fireworks.Starcoder16b8bit, fireworks.Starcoder16b)
+	} else if body.Model == fireworks.Starcoder7b {
+		body.Model = pickModelBasedOnTrafficSplit(f.config.StarcoderQuantizedPercent, fireworks.Starcoder7b8bit, fireworks.Starcoder7b)
 	}
 }
 func (f *FireworksHandlerMethods) getRequestMetadata(body fireworksRequest) (model string, additionalMetadata map[string]any) {
