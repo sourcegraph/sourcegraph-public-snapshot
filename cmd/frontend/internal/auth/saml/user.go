@@ -49,7 +49,7 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 		return nil, errors.New("the SAML response did not contain an email attribute")
 	}
 
-	unnormalizedUsername := attr.getUnnormalizedUsername(email, p.config.UsernameKey)
+	unnormalizedUsername := attr.getUnnormalizedUsername(email, p.config.UsernameKeys)
 	if unnormalizedUsername == "" {
 		return nil, errors.New("the SAML response did not contain a username attribute")
 	}
@@ -137,6 +137,16 @@ func (v samlAssertionValues) Get(key string) string {
 	return ""
 }
 
+func (v samlAssertionValues) getFirstNonEmpty(keys []string) string {
+	for _, key := range keys {
+		if s := v.Get(key); s != "" {
+			return s
+		}
+	}
+
+	return ""
+}
+
 func (v samlAssertionValues) GetMap(key string) map[string]bool {
 	for _, a := range v {
 		if a.Name == key || a.FriendlyName == key {
@@ -183,16 +193,16 @@ func (v samlAssertionValues) getEmail(assertions *saml2.AssertionInfo) string {
 }
 
 // getUnnormalizedUsername returns a username from samlAssertionValues.
-// If usernameKey is provided, that's the only key that will be checked.
+// If usernameKeys is provided, that list of keys will be checked in order.
 // Otherwise, a username is selected in the following order of preference:
 // 1. "login"
 // 2. "uid"
 // 3. "username"
 // 4. "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"
 // 5. email
-func (v samlAssertionValues) getUnnormalizedUsername(email string, usernameKey string) string {
-	if usernameKey != "" {
-		return v.Get(usernameKey)
+func (v samlAssertionValues) getUnnormalizedUsername(email string, usernameKeys []string) string {
+	if len(usernameKeys) > 0 {
+		return v.getFirstNonEmpty(usernameKeys)
 	}
 
 	return firstNonEmpty(

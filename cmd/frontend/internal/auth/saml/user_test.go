@@ -54,7 +54,7 @@ func TestReadAuthnResponse(t *testing.T) {
 func TestReadAuthnResponseWithUsernameKey(t *testing.T) {
 	p := &provider{
 		config: schema.SAMLAuthProvider{
-			UsernameKey: "givenName",
+			UsernameKeys: []string{"givenName"},
 		},
 		samlSP: &saml2.SAMLServiceProvider{
 			IdentityProviderSSOURL:      "http://localhost:3220/auth/realms/master",
