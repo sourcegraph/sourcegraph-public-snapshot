@@ -27,6 +27,7 @@ func regexSearchBatch(
 		return nil, err
 	}
 
+	lm := toLangMatcher(p)
 	pm, err := toPathMatcher(p)
 	if err != nil {
 		return nil, err
@@ -34,7 +35,7 @@ func regexSearchBatch(
 
 	ctx, cancel, sender := newLimitedStreamCollector(ctx, p.Limit)
 	defer cancel()
-	err = regexSearch(ctx, m, pm, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsCaseSensitive, sender, contextLines)
+	err = regexSearch(ctx, m, pm, lm, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsCaseSensitive, sender, contextLines)
 	return sender.collected, err
 }
 
@@ -56,6 +57,7 @@ func regexSearch(
 	ctx context.Context,
 	m matchTree,
 	pm *pathMatcher,
+	lm langMatcher,
 	zf *zipFile,
 	patternMatchesContent, patternMatchesPaths bool,
 	isCaseSensitive bool,
@@ -88,21 +90,6 @@ func regexSearch(
 		files = zf.Files
 	)
 
-	if _, ok := m.(allMatchTree); ok || (patternMatchesPaths && !patternMatchesContent) {
-		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
-		// so is effectively matching only on file paths).
-		for _, f := range files {
-			if pm.Matches(f.Name) && m.MatchesString(f.Name) {
-				if ctx.Err() != nil {
-					return ctx.Err()
-				}
-				fm := protocol.FileMatch{Path: f.Name}
-				sender.Send(fm)
-			}
-		}
-		return nil
-	}
-
 	var (
 		lastFileIdx   = atomic.NewInt32(-1)
 		filesSkipped  atomic.Uint32
@@ -122,11 +109,16 @@ func regexSearch(
 
 	// Start workers. They read from files and write to matches.
 	for i := 0; i < numWorkers; i++ {
-		// transformBuf is reused between file searches to avoid
-		// re-allocating. It is only used if we need to transform the input
-		// before matching. For example we lower case the input in the case of
-		// ignoreCase.
-		var transformBuf []byte
+		l := fileLoader{zf: zf, isCaseSensitive: isCaseSensitive}
+		var f *srcFile
+
+		// A callback to use when detecting the language. The function signature includes an
+		// error so to match the expectations of the library we use, helping avoid allocations.
+		getContent := func() ([]byte, error) { //nolint:unparam
+			l.load(f)
+			return l.fileBuf, nil
+		}
+
 		g.Go(func() error {
 			for !contextCanceled.Load() {
 				idx := int(lastFileIdx.Inc())
@@ -134,42 +126,47 @@ func regexSearch(
 					return nil
 				}
 
-				f := &files[idx]
+				f = &files[idx]
 
-				// decide whether to process, record that decision
+				// Apply path filters
 				if !pm.Matches(f.Name) {
+					filesSkipped.Inc()
+					continue
+				}
+
+				// Apply language filters
+				if !lm.Matches(f.Name, getContent) {
 					filesSkipped.Inc()
 					continue
 				}
 				filesSearched.Inc()
 
-				// fileMatchBuf is what we run match on, fileBuf is the original
-				// data (for Preview).
-				fileBuf := zf.DataFor(f)
-				fileMatchBuf := fileBuf
-				if !isCaseSensitive {
-					// If we are ignoring case, we transform the input instead of
-					// relying on the regular expression engine which can be
-					// slow. compilePattern has already lowercased the pattern. We also
-					// trade some correctness for perf by using a non-utf8 aware
-					// lowercase function.
-					if transformBuf == nil {
-						transformBuf = make([]byte, zf.MaxLen)
-					}
-					fileMatchBuf = transformBuf[:len(fileBuf)]
-					casetransform.BytesToLowerASCII(fileMatchBuf, fileBuf)
+				// Check pattern against file path and contents
+				match := false
+				fm := protocol.FileMatch{
+					Path:     f.Name,
+					LimitHit: false,
 				}
 
-				// find limit+1 matches so we know whether we hit the limit
-				match, locs := m.MatchesFile(fileMatchBuf, sender.Remaining()+1)
-				fm := locsToFileMatch(fileBuf, f.Name, locs, contextLines)
-				if !match && patternMatchesPaths {
-					// Try matching against the file path.
+				// Check if the pattern matches
+				if patternMatchesPaths {
 					match = m.MatchesString(f.Name)
-					if match {
-						fm.Path = f.Name
+				}
+
+				if !match && patternMatchesContent {
+					if _, ok := m.(allMatchTree); ok {
+						// Avoid loading the file if this pattern always matches
+						match = true
+					} else {
+						l.load(f)
+
+						// find limit+1 matches so we know whether we hit the limit
+						var locs [][]int
+						match, locs = m.MatchesFile(l.fileMatchBuf, sender.Remaining()+1)
+						fm = locsToFileMatch(l.fileBuf, f.Name, locs, contextLines)
 					}
 				}
+
 				if match {
 					sender.Send(fm)
 				}
@@ -191,6 +188,49 @@ func regexSearch(
 	)
 
 	return err
+}
+
+// fileLoader loads files from the zipfile. It keeps a reference to the last
+// file it loaded, in case it's requested twice (for example first from language
+// detection, then pattern matching).
+type fileLoader struct {
+	zf              *zipFile
+	isCaseSensitive bool
+
+	currFile *srcFile
+
+	// fileBuf is the original data (used for the content preview)
+	fileBuf []byte
+	// fileMatchBuf is what we match against, and may be a lower-cased version of fileBuf
+	fileMatchBuf []byte
+
+	// scratchBuf is reused between file searches to avoid
+	// re-allocating. It is only used if we need to transform the input
+	// before matching. For example we lower case the input in the case of
+	// ignoreCase.
+	scratchBuf []byte
+}
+
+func (l *fileLoader) load(f *srcFile) {
+	if f == l.currFile {
+		return
+	}
+	l.currFile = f
+
+	l.fileBuf = l.zf.DataFor(f)
+	l.fileMatchBuf = l.fileBuf
+	if !l.isCaseSensitive {
+		// If we are ignoring case, we transform the input instead of
+		// relying on the regular expression engine which can be
+		// slow. compilePattern has already lowercased the pattern. We also
+		// trade some correctness for perf by using a non-utf8 aware
+		// lowercase function.
+		if l.scratchBuf == nil {
+			l.scratchBuf = make([]byte, l.zf.MaxLen)
+		}
+		l.fileMatchBuf = l.scratchBuf[:len(l.fileBuf)]
+		casetransform.BytesToLowerASCII(l.fileMatchBuf, l.fileBuf)
+	}
 }
 
 // readAll will read r until EOF into b. It returns the number of bytes

@@ -1,9 +1,11 @@
 package jobutil
 
 import (
+	"slices"
 	"strings"
 	"time"
 
+	"github.com/go-enry/go-enry/v2"
 	"github.com/grafana/regexp"
 
 	zoektquery "github.com/sourcegraph/zoekt/query"
@@ -277,7 +279,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 func NewTextSearchJob(b query.Basic, inputs *search.Inputs, types result.Types, options search.RepoOptions) job.Job {
 	// searcher to use full deadline if timeout: set or we are not batch.
 	useFullDeadline := b.GetTimeout() != nil || b.Count() != nil || inputs.Protocol != search.Batch
-	patternInfo := toTextPatternInfo(b, types, inputs.DefaultLimit())
+	patternInfo := toTextPatternInfo(b, types, inputs.Features, inputs.DefaultLimit())
 
 	searcherJob := &searcher.TextSearchJob{
 		PatternInfo:     patternInfo,
@@ -389,7 +391,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 		}
 
 		if resultTypes.Has(result.TypeStructural) {
-			patternInfo := toTextPatternInfo(f.ToBasic(), resultTypes, searchInputs.DefaultLimit())
+			patternInfo := toTextPatternInfo(f.ToBasic(), resultTypes, searchInputs.Features, searchInputs.DefaultLimit())
 			searcherArgs := &search.SearcherParameters{
 				PatternInfo:     patternInfo,
 				UseFullDeadline: useFullDeadline,
@@ -504,7 +506,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 // file paths. We pass in the original query.Basic in addition to the TextPatternInfo just
 // for convenience, so we can use methods like query.VisitPattern.
 func getPathRegexps(b query.Basic, p *search.TextPatternInfo) (pathRegexps []*regexp.Regexp) {
-	for _, pattern := range p.IncludePatterns {
+	for _, pattern := range p.IncludePaths {
 		if p.IsCaseSensitive {
 			pathRegexps = append(pathRegexps, regexp.MustCompile(pattern))
 		} else {
@@ -652,14 +654,23 @@ func toSymbolSearchRequest(f query.Flat) (*searcher.SymbolSearchRequest, error) 
 	}, nil
 }
 
-// toTextPatternInfo converts an query to internal values that drive text search.
-func toTextPatternInfo(b query.Basic, resultTypes result.Types, defaultLimit int) *search.TextPatternInfo {
+// toTextPatternInfo converts a query to internal values that drive text search.
+func toTextPatternInfo(b query.Basic, resultTypes result.Types, feat *search.Features, defaultLimit int) *search.TextPatternInfo {
 	// Handle file: and -file: filters.
 	filesInclude, filesExclude := b.IncludeExcludeValues(query.FieldFile)
+
 	// Handle lang: and -lang: filters.
-	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
-	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
-	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
+	langAliasInclude, langAliasExclude := b.IncludeExcludeValues(query.FieldLang)
+	var langInclude, langExclude []string
+	if feat.ContentBasedLangFilters {
+		langInclude = toLangFilters(langAliasInclude)
+		langExclude = toLangFilters(langAliasExclude)
+	} else {
+		// If the 'search-content-based-lang-detection' feature is disabled, then we convert the filters
+		// to file path regexes and do not pass any explicit language filters to the backend.
+		filesInclude = append(filesInclude, mapSlice(langAliasInclude, query.LangToFileRegexp)...)
+		filesExclude = append(filesExclude, mapSlice(langAliasExclude, query.LangToFileRegexp)...)
+	}
 
 	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 	count := b.MaxResults(defaultLimit)
@@ -669,16 +680,29 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, defaultLimit int
 		IsStructuralPat:              b.IsStructural(),
 		IsCaseSensitive:              b.IsCaseSensitive(),
 		FileMatchLimit:               int32(count),
-		IncludePatterns:              filesInclude,
-		ExcludePattern:               query.UnionRegExps(filesExclude),
+		Languages:                    langAliasInclude,
+		IncludePaths:                 filesInclude,
+		ExcludePaths:                 query.UnionRegExps(filesExclude),
+		IncludeLangs:                 langInclude,
+		ExcludeLangs:                 langExclude,
 		PatternMatchesPath:           resultTypes.Has(result.TypePath),
 		PatternMatchesContent:        resultTypes.Has(result.TypeFile),
-		Languages:                    langInclude,
 		PathPatternsAreCaseSensitive: b.IsCaseSensitive(),
 		CombyRule:                    b.FindValue(query.FieldCombyRule),
 		Index:                        b.Index(),
 		Select:                       selector,
 	}
+}
+
+func toLangFilters(aliases []string) []string {
+	var filters []string
+	for _, alias := range aliases {
+		lang, _ := enry.GetLanguageByAlias(alias) // Invariant: lang is valid.
+		if !slices.Contains(filters, lang) {
+			filters = append(filters, lang)
+		}
+	}
+	return filters
 }
 
 // computeResultTypes returns result types based three inputs: `type:...` in the query,

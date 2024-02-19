@@ -269,14 +269,19 @@ type TextPatternInfo struct {
 	Index           query.YesNoOnly
 	Select          filter.SelectPath
 
-	IncludePatterns []string
-	ExcludePattern  string
+	IncludePaths []string
+	ExcludePaths string
+
+	IncludeLangs []string
+	ExcludeLangs []string
 
 	PathPatternsAreCaseSensitive bool
 
 	PatternMatchesContent bool
 	PatternMatchesPath    bool
 
+	// Languages is only used for structural search, and is separate from IncludeLangs above
+	// TODO: remove this once the 'search-content-based-lang-detection' feature is enabled by default
 	Languages []string
 }
 
@@ -305,11 +310,11 @@ func (p *TextPatternInfo) Fields() []attribute.KeyValue {
 	if len(p.Select) > 0 {
 		add(attribute.StringSlice("select", p.Select))
 	}
-	if len(p.IncludePatterns) > 0 {
-		add(attribute.StringSlice("includePatterns", p.IncludePatterns))
+	if len(p.IncludePaths) > 0 {
+		add(attribute.StringSlice("includePatterns", p.IncludePaths))
 	}
-	if p.ExcludePattern != "" {
-		add(attribute.String("excludePattern", p.ExcludePattern))
+	if p.ExcludePaths != "" {
+		add(attribute.String("excludePattern", p.ExcludePaths))
 	}
 	if p.PathPatternsAreCaseSensitive {
 		add(attribute.Bool("pathPatternsAreCaseSensitive", p.PathPatternsAreCaseSensitive))
@@ -353,10 +358,10 @@ func (p *TextPatternInfo) String() string {
 	if p.PathPatternsAreCaseSensitive {
 		path = "F"
 	}
-	if p.ExcludePattern != "" {
-		args = append(args, fmt.Sprintf("-%s:%q", path, p.ExcludePattern))
+	if p.ExcludePaths != "" {
+		args = append(args, fmt.Sprintf("-%s:%q", path, p.ExcludePaths))
 	}
-	for _, inc := range p.IncludePatterns {
+	for _, inc := range p.IncludePaths {
 		args = append(args, fmt.Sprintf("%s:%q", path, inc))
 	}
 
