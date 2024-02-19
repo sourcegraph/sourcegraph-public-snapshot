@@ -67,6 +67,10 @@ var OpsUpdateImagesCommand = &cli.Command{
 			Aliases: []string{"skip-images"}, // deprecated
 			Usage:   "List of comma separated images to skip updating, ex: --skip 'gitserver,indexed-server'",
 		},
+		&cli.StringFlag{
+			Name:  "only",
+			Usage: "List of comma separated images to update, ex: --only 'gitserver,indexed-server'. If not specified, all images will be updated. Cannot be combined with --skip",
+		},
 	},
 	Action: func(ctx *cli.Context) error {
 		// Ensure args are correct.
@@ -80,6 +84,19 @@ var OpsUpdateImagesCommand = &cli.Command{
 			return flag.ErrHelp
 		}
 
+		var skip, only []string
+		if s := ctx.String("skip"); s != "" {
+			skip = strings.Split(ctx.String("skip"), ",")
+		}
+		if s := ctx.String("only"); s != "" {
+			only = strings.Split(ctx.String("only"), ",")
+		}
+
+		if len(skip) != 0 && len(only) != 0 {
+			std.Out.WriteLine(output.Styled(output.StyleWarning, "Cannot specify both --skip and --only"))
+			return flag.ErrHelp
+		}
+
 		return opsUpdateImages(
 			ctx.Context,
 			args[0],
@@ -89,6 +106,7 @@ var OpsUpdateImagesCommand = &cli.Command{
 			ctx.String("docker-username"),
 			ctx.String("docker-password"),
 			strings.Split(ctx.String("skip"), ","),
+			strings.Split(ctx.String("only"), ","),
 		)
 	},
 }
@@ -163,6 +181,7 @@ func opsUpdateImages(
 	dockerUsername string,
 	dockerPassword string,
 	skipImages []string,
+	onlyImages []string,
 ) error {
 	{
 		// Select the registry we're going to work with.
@@ -198,6 +217,16 @@ func opsUpdateImages(
 		foundTags := []string{}
 
 		shouldSkip := func(r *images.Repository) bool {
+			// If only is used, check that the image is in the list of only images.
+			if len(onlyImages) > 0 {
+				for _, img := range skipImages {
+					if r.Name() == img {
+						return false
+					}
+				}
+				return true
+			}
+			// Otherwise, check that it's not in skipped.
 			for _, img := range skipImages {
 				if r.Name() == img {
 					return true
