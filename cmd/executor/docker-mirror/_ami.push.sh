@@ -17,7 +17,8 @@ GOOGLE_IMAGE_NAME="${NAME}"
 "$gcloud" compute images update --project=sourcegraph-ci "${GOOGLE_IMAGE_NAME}" --family="${IMAGE_FAMILY}"
 
 if [ "${EXECUTOR_IS_TAGGED_RELEASE}" = "true" ]; then
-  for region in $(jq -r '.[]' <aws_regions.json); do
+  REGIONS=$(jq -r '.[]' <aws_regions.json)
+  for region in $REGIONS; do
     AWS_AMI_ID=$(aws ec2 --region="${region}" describe-images --filter "Name=name,Values=${NAME}" --query 'Images[*].[ImageId]' --output text)
     # Make AMI usable outside of Sourcegraph.
     aws ec2 --region="${region}" modify-image-attribute --image-id "${AWS_AMI_ID}" --launch-permission "Add=[{Group=all}]"
