@@ -124,7 +124,7 @@ func sendEmail(ctx context.Context, db database.DB, userID int32, template txtyp
 		if errcode.IsNotFound(err) {
 			return errors.Errorf("unable to send email to user ID %d with unknown email address", userID)
 		}
-		return errors.Errorf("internalapi.Client.UserEmailsGetEmail for userID=%d: %w", userID, err)
+		return errors.Errorf("get primary email for userID=%d: %w", userID, err)
 	}
 	if !verified {
 		return errors.Newf("unable to send email to user ID %d's unverified primary email address", userID)
@@ -135,7 +135,7 @@ func sendEmail(ctx context.Context, db database.DB, userID int32, template txtyp
 		Template: template,
 		Data:     data,
 	}); err != nil {
-		return errors.Errorf("internalapi.Client.SendEmail to email=%q userID=%d: %w", email, userID, err)
+		return errors.Errorf("send mail to email=%q userID=%d: %w", email, userID, err)
 	}
 	return nil
 }
