@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/Khan/genqlient/graphql"
-	"github.com/amit7itz/goset"
 	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -136,7 +136,7 @@ func (s *Source) Update(ctx context.Context, act *actor.Actor) error {
 // to skip syncs if the frequency is too high.
 func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 	syncLog := sgtrace.Logger(ctx, s.log)
-	seenTokens := goset.NewSet[string]()
+	seenTokens := collections.NewSet[string]()
 
 	resp, err := dotcom.ListProductSubscriptions(ctx, s.dotcom)
 	if err != nil {
@@ -171,13 +171,13 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 	return seen, errs
 }
 
-func removeUnseenTokens(seen *goset.Set[string], cache listingCache, syncLog log.Logger) {
+func removeUnseenTokens(seen collections.Set[string], cache listingCache, syncLog log.Logger) {
 	start := time.Now()
 	// Using Redis KEYS can get slow, but we only expect NUMBER_OF_SUBSCRIPTIONS * NUMBER_OF_ACTIVE_LICENCE_KEYS here
 	// Right now, listing 2000 keys takes ~3ms, and replacing this with SCAN this would require changing our Redis client to support scanning / context, so let's leave like that until we fix listing subscriptions in Q2 2024.
 	keys := cache.ListAllKeys()
 	elapsed := time.Since(start)
-	syncLog.Info("removing expired/disabled tokens", log.Int("seen", seen.Len()), log.Int("allKeys", len(keys)), log.Duration("listLatency", elapsed))
+	syncLog.Info("removing expired/disabled tokens", log.Int("seen", len(seen.Values())), log.Int("allKeys", len(keys)), log.Duration("listLatency", elapsed))
 	for _, key := range keys {
 		parts := strings.Split(key, ":")
 		if len(parts) != 4 {
@@ -191,7 +191,7 @@ func removeUnseenTokens(seen *goset.Set[string], cache listingCache, syncLog log
 			// let's not touch other types of tokens
 			continue
 		}
-		if !seen.Contains(token) {
+		if !seen.Has(token) {
 			cache.Delete(token)
 		}
 	}
