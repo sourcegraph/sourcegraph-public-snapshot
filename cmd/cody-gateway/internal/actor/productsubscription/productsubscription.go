@@ -172,18 +172,21 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 }
 
 func removeUnseenTokens(seen *goset.Set[string], cache listingCache, syncLog log.Logger) {
+	start := time.Now()
 	keys := cache.ListAllKeys()
-	syncLog.Debug("removing expired/disabled tokens", log.Int("seen", seen.Len()), log.Int("all-keys", len(keys)))
+	elapsed := time.Since(start)
+	syncLog.Info("removing expired/disabled tokens", log.Int("seen", seen.Len()), log.Int("allKeys", len(keys)), log.Duration("listLatency", elapsed))
 	for _, key := range keys {
 		parts := strings.Split(key, ":")
 		if len(parts) != 4 {
-			// weird, we expect things like v2:product-subscriptions:v2:TOKEN, but we can't log the TOKEN, so we log the # of parts and skip delete
+			// weird, we expect things like v2:product-subscriptions:v2:TOKEN (3 ":", 4 parts)
+			// we can't log the TOKEN, so we log the # of parts and skip delete
 			syncLog.Warn("invalid key format, expected 4 parts, got", log.Int("parts", len(parts)))
 			continue
 		}
 		token := parts[3]
 		if !strings.HasPrefix(token, license.LicenseKeyBasedAccessTokenPrefix) {
-			// let's not touch other tokens
+			// let's not touch other types of tokens
 			continue
 		}
 		if !seen.Contains(token) {
