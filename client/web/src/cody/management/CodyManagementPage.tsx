@@ -355,14 +355,14 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </div>
                     {editorGroups.map((group, index) => (
                         <div
-                            key={index}
+                            key={group.map(editor => editor.name).join('-')}
                             className={classNames('d-flex mt-3', styles.responsiveContainer, {
                                 'border-bottom pb-3': index < group.length - 1,
                             })}
                         >
                             {group.map((editor, index) => (
                                 <div
-                                    key={index}
+                                    key={editor.name}
                                     className={classNames('d-flex flex-column flex-1 pt-3 px-3', {
                                         'border-left': index !== 0,
                                     })}
@@ -427,7 +427,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                         selectedEditorStep !== null &&
                                         editor.instructions && (
                                             <Modal
-                                                key={index + '-modal'}
+                                                key={editor.name + '-modal'}
                                                 isOpen={true}
                                                 aria-label={`${editor.name} Info`}
                                                 className={styles.modal}
@@ -446,6 +446,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             ))}
                             {group.length < 4
                                 ? [...new Array(4 - group.length)].map((_, index) => (
+                                      // eslint-disable-next-line react/no-array-index-key
                                       <div key={index} className="flex-1 p-3" />
                                   ))
                                 : null}
