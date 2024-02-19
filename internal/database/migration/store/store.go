@@ -171,7 +171,12 @@ func (s *Store) BackfillSchemaVersions(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	idsToBackfill := []int64{}
+	for _, id := range backfillOverrides {
+		idsToBackfill = append(idsToBackfill, int64(id))
+	}
+
 	for _, id := range ancestorIDs {
 		idsToBackfill = append(idsToBackfill, int64(id))
 	}
@@ -186,6 +191,12 @@ func (s *Store) BackfillSchemaVersions(ctx context.Context) error {
 		s.schemaName,
 		pq.Int64Array(idsToBackfill),
 	))
+}
+
+// backfillOverrides contains a list of migration IDs that are to be backfilled
+// after the stitched-migration graph has already been constructed.
+var backfillOverrides = []int64{
+	1648115472, // See https://github.com/sourcegraph/sourcegraph/pull/46969 and https://github.com/sourcegraph/sourcegraph/pull/55650
 }
 
 const backfillSchemaVersionsQuery = `
