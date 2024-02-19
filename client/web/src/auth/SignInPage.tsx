@@ -100,7 +100,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
         // Add '?returnTo=' + encodeURIComponent(returnTo) to thirdPartyAuthProviders[0].authenticationURL in a safe way.
         const redirectUrl = new URL(thirdPartyAuthProviders[0].authenticationURL)
         if (returnTo) {
-            redirectUrl.searchParams.set('returnTo', returnTo)
+            redirectUrl.searchParams.set('returnTo', new URL(returnTo, window.location.href).toString())
         }
         window.location.replace(redirectUrl)
 
