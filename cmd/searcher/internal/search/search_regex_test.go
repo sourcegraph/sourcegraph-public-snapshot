@@ -890,3 +890,41 @@ func Test_locsToRanges(t *testing.T) {
 		})
 	}
 }
+
+func TestFileLoader(t *testing.T) {
+	zipData, err := createZip(map[string]string{
+		"a": "content A",
+		"b": "content B",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	zf, err := mockZipFile(zipData)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	loader := fileLoader{zf: zf, isCaseSensitive: false}
+
+	// Load a file and check its contents
+	f1 := &zf.Files[0]
+	loader.load(f1)
+	content := loader.fileBuf
+	matchContent := loader.fileMatchBuf
+	require.Equal(t, f1, loader.currFile)
+	require.Len(t, content, 9)
+	require.NotEqual(t, content, matchContent)
+
+	// Reload the file and check we return the same contents
+	loader.load(f1)
+	require.Equal(t, f1, loader.currFile)
+	require.Equal(t, content, loader.fileBuf)
+	require.Equal(t, matchContent, loader.fileMatchBuf)
+
+	// Load another file
+	f2 := &zf.Files[1]
+	loader.load(f2)
+	require.NotEqual(t, f1, loader.currFile)
+	require.NotEqual(t, content, loader.fileBuf)
+	require.NotEqual(t, loader.fileBuf, loader.fileMatchBuf)
+}
