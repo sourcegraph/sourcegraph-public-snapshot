@@ -2,7 +2,8 @@
 
 set -eo pipefail
 
-for dbname in $(psql -Xc "copy (select datname from pg_database where datname like 'sourcegraph-test-%') to stdout"); do
+DB_NAMES=$(psql -Xc "copy (select datname from pg_database where datname like 'sourcegraph-test-%') to stdout")
+for dbname in $DB_NAMES; do
   dropdb "$dbname"
   echo "dropped $dbname"
 done
