@@ -105,8 +105,8 @@ var OpsUpdateImagesCommand = &cli.Command{
 			ctx.String("pin-tag"),
 			ctx.String("docker-username"),
 			ctx.String("docker-password"),
-			strings.Split(ctx.String("skip"), ","),
-			strings.Split(ctx.String("only"), ","),
+			skip,
+			only,
 		)
 	},
 }
@@ -219,7 +219,7 @@ func opsUpdateImages(
 		shouldSkip := func(r *images.Repository) bool {
 			// If only is used, check that the image is in the list of only images.
 			if len(onlyImages) > 0 {
-				for _, img := range skipImages {
+				for _, img := range onlyImages {
 					if r.Name() == img {
 						return false
 					}
