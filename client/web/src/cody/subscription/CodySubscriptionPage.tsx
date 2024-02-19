@@ -401,7 +401,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 <Text weight="bold" className="mb-3">
                                     Support
                                 </Text>
-                                <Text className="d-inline text-muted">Support with limited SLAs</Text>
+                                <Text className="d-inline text-muted">Email support with limited SLAs</Text>
                             </div>
                         </div>
                     </div>
