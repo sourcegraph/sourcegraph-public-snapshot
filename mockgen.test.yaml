@@ -386,9 +386,9 @@
     - InsightPermissionStore
 - filename: cmd/cody-gateway/internal/auth/mocks_test.go
   sources:
-    - path: github.com/gregjones/httpcache
+    - path: github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription
       interfaces:
-        - Cache
+        - ListingCache
 - filename: cmd/cody-gateway/internal/dotcom/mocks.go
   sources:
     - path: github.com/Khan/genqlient/graphql

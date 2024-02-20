@@ -313,7 +313,7 @@ func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 
 			return err
 		}
-		// We've succesfully extended the lock, continue!
+		// We've successfully extended the lock, continue!
 		span.SetAttributes(attribute.Bool("lock.extended", true))
 	}
 

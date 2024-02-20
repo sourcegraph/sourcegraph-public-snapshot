@@ -40,6 +40,7 @@ type KeyValue interface {
 	LLen(key string) (int, error)
 	LRange(key string, start, stop int) Values
 
+	Keys(prefix string) ([]string, error)
 	// WithContext will return a KeyValue that should respect ctx for all
 	// blocking operations.
 	WithContext(ctx context.Context) KeyValue
@@ -246,6 +247,10 @@ func (r *redisKeyValue) WithPrefix(prefix string) KeyValue {
 		ctx:    r.ctx,
 		prefix: r.prefix + prefix + ":",
 	}
+}
+
+func (r *redisKeyValue) Keys(prefix string) ([]string, error) {
+	return Values(r.do("KEYS", prefix)).Strings()
 }
 
 func (r *redisKeyValue) Pool() *redis.Pool {
