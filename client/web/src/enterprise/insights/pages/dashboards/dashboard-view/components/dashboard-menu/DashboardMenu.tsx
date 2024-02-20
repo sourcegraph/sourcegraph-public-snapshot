@@ -9,7 +9,7 @@ import {
     Icon,
     Menu,
     MenuButton,
-    MenuDivide,
+    MenuDivider,
     MenuItem,
     MenuList,
     Position,
@@ -88,7 +88,7 @@ export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<Dash
                 </MenuItem>
 
                 {(menuPermissions.configure.display || menuPermissions.copy.display) &&
-                    menuPermissions.delete.display && <MenuDivide />}
+                    menuPermissions.delete.display && <MenuDivider />}
 
                 {menuPermissions.delete.display && (
                     <Tooltip content={menuPermissions.delete.tooltip} placement="right">

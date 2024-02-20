@@ -13,7 +13,7 @@ import {
     MenuList,
     Position,
     MenuItem,
-    MenuDivide,
+    MenuDivider,
     H4,
     Text,
     Icon,
@@ -153,7 +153,7 @@ export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Pro
                         {actions.map((action, index) => (
                             <React.Fragment key={action.type}>
                                 <DropdownItem action={action} setSelectedType={onSelectedTypeSelect} />
-                                {index !== actions.length - 1 && <MenuDivide />}
+                                {index !== actions.length - 1 && <MenuDivider />}
                             </React.Fragment>
                         ))}
                     </MenuList>

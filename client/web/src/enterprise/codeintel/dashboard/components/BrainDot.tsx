@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import {
     Icon,
     LoadingSpinner,
-    MenuDivide,
+    MenuDivider,
     MenuHeader,
     RadioButton,
     useSessionStorage,
@@ -26,7 +26,7 @@ export interface BrainDotProps {
 
 export const BrainDot: React.FunctionComponent<BrainDotProps> = ({ repoName, commit, path }) => (
     <>
-        <MenuDivide />
+        <MenuDivider />
         <MenuHeader className="d-flex">
             <Icon aria-hidden={true} svgPath={mdiBrain} fill="text-muted" />
             <Text className="mb-0 ml-2">Code intelligence preview</Text>

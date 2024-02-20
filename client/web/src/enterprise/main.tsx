@@ -7,8 +7,8 @@
 import '@sourcegraph/shared/src/polyfills'
 // prettier-ignore-end
 
-import '../monitoring/initMonitoring'
 import '../initBuildInfo'
+import '../monitoring/initMonitoring'
 
 import { createRoot } from 'react-dom/client'
 

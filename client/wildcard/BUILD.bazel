@@ -259,7 +259,7 @@ ts_project(
         "src/components/Menu/Menu.tsx",
         "src/components/Menu/MenuButton.tsx",
         "src/components/Menu/MenuDisabledItem.tsx",
-        "src/components/Menu/MenuDivide.tsx",
+        "src/components/Menu/MenuDivider.tsx",
         "src/components/Menu/MenuHeader.tsx",
         "src/components/Menu/MenuItem.tsx",
         "src/components/Menu/MenuLink.tsx",

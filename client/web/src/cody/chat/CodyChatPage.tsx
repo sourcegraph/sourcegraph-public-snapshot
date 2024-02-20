@@ -23,7 +23,7 @@ import {
     Menu,
     MenuButton,
     MenuList,
-    MenuDivide,
+    MenuDivider,
     MenuItem,
     MenuLink,
     PageHeader,
@@ -245,7 +245,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                         <MenuItem onSelect={clearHistory}>
                                             <Icon aria-hidden={true} svgPath={mdiDelete} /> Clear all chats
                                         </MenuItem>
-                                        <MenuDivide />
+                                        <MenuDivider />
                                     </>
                                 )}
                                 <MenuLink as={Link} to="/help/cody" target="_blank" rel="noopener">

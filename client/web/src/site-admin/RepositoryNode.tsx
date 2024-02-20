@@ -30,7 +30,7 @@ import {
     LoadingSpinner,
     Menu,
     MenuButton,
-    MenuDivide,
+    MenuDivider,
     MenuItem,
     MenuList,
     Popover,
@@ -161,7 +161,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                         </Button>
                                     </div>
 
-                                    <MenuDivide />
+                                    <MenuDivider />
 
                                     <Alert variant="warning" className={classNames('m-2', styles.alertOverflow)}>
                                         <H4>Error syncing repository:</H4>

@@ -9,7 +9,7 @@ import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetry
 import {
     Menu,
     MenuButton,
-    MenuDivide,
+    MenuDivider,
     MenuItem,
     Button,
     useEventObservable,
@@ -174,7 +174,7 @@ const NotebookSettingsDropdown: React.FunctionComponent<React.PropsWithChildren<
                 </MenuButton>
                 <MenuList position={Position.bottomEnd}>
                     <MenuHeader>Settings</MenuHeader>
-                    <MenuDivide />
+                    <MenuDivider />
                     <MenuItem
                         as={Button}
                         variant="danger"

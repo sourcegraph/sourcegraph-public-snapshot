@@ -9,7 +9,7 @@ import { Icon } from '../Icon'
 import { Link } from '../Link'
 import {
     Menu,
-    MenuDivide,
+    MenuDivider,
     MenuHeader,
     MenuButton,
     MenuList,
@@ -31,7 +31,7 @@ export interface NavMenuSectionProps {
 const NavMenuSection = forwardRef(
     ({ headerContent, headerAs, navItems = [], children, hideDivider, ...otherAttributes }, reference) => (
         <div {...otherAttributes} ref={reference}>
-            {hideDivider && <MenuDivide />}
+            {hideDivider && <MenuDivider />}
             {headerContent && <MenuHeader as={headerAs}>{headerContent}</MenuHeader>}
             {navItems.map(({ key, ...rest }) => (
                 <NavMenuItem key={key} {...rest} />
