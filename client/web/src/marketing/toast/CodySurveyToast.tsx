@@ -333,7 +333,7 @@ export const CodySurveyToast: React.FC<
 
     const handleSubmitEnd = (): void => {
         // Redirects once user submits the post-sign-up form
-        const returnTo = getReturnTo(location, PageRoutes.GetCody)
+        const returnTo = getReturnTo(location, PageRoutes.CodyManagement)
         window.location.replace(returnTo)
     }
 

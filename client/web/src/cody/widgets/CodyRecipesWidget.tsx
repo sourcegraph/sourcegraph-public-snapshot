@@ -87,7 +87,7 @@ export const CodyRecipesWidget: React.FC<{ editor?: CodeMirrorEditor }> = ({ edi
                     onClick={() => void executeRecipe('find-code-smells', { scope: { editor } })}
                     disabled={isMessageInProgress}
                 />
-                <RecipeAction title="Get Cody in your editor" to="/get-cody" disabled={isMessageInProgress} />
+                <RecipeAction title="Get Cody in your editor" to="/cody/manage" disabled={isMessageInProgress} />
             </Recipe>
         </Recipes>
     )
