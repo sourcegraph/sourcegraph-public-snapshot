@@ -1,6 +1,15 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
+    name = "platforms",
+    sha256 = "8150406605389ececb6da07cbcb509d5637a3ab9a24bc69b1101531367d89d74",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
+        "https://github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
+    ],
+)
+
+http_archive(
     name = "bazel_skylib",
     sha256 = "66ffd9315665bfaafc96b52278f57c7e2dd09f5ede279ea6d39b2be471e7e3aa",
     urls = [
@@ -156,6 +165,13 @@ http_archive(
     sha256 = "9cd384e42b2da00104f0e18f25e66285aa21f64b573c667638a7a213206885ab",
     strip_prefix = "rules_multirun-0.6.1",
     url = "https://github.com/keith/rules_multirun/archive/refs/tags/0.6.1.tar.gz",
+)
+
+http_archive(
+    name = "with_cfg.bzl",
+    sha256 = "c6b80cad298afa8a46bc01cd96df4f4d8660651101f6bf5af58f2724e349017d",
+    strip_prefix = "with_cfg.bzl-0.2.1",
+    url = "https://github.com/fmeum/with_cfg.bzl/releases/download/v0.2.1/with_cfg.bzl-v0.2.1.tar.gz",
 )
 
 # hermetic_cc_toolchain setup ================================
