@@ -166,7 +166,6 @@ func regexSearch(
 					if langMatch {
 						fm.Language = lang
 						sender.Send(fm)
-						continue
 					}
 				}
 			}
