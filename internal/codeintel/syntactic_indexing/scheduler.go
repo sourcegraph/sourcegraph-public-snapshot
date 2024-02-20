@@ -98,49 +98,49 @@ func newScheduler(
 			for _, repoToIndex := range repos {
 				repo, _ := repoStore.Get(ctx, repoToIndex.ID)
 				fmt.Println(repo.Name)
-				if repo.Name == "github.com/indoorvivants/detective" {
+				// if repo.Name == "github.com/indoorvivants/detective" {
 
-					offset := 0
-					t := true
+				offset := 0
+				t := true
 
-					policies, _, err := policiesService.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
-						RepositoryID:         int(repoToIndex.ID),
-						ForSyntacticIndexing: &t,
-						Limit:                config.PolicyBatchSize,
-						Offset:               offset,
-					})
+				policies, _, err := policiesService.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
+					RepositoryID:         int(repoToIndex.ID),
+					ForSyntacticIndexing: &t,
+					Limit:                config.PolicyBatchSize,
+					Offset:               offset,
+				})
 
-					if err != nil {
-						return err
-					}
-					commitMap, err := policyMatcher.CommitsDescribedByPolicy(ctx, int(repoToIndex.ID), repo.Name, policies, time.Now())
-					if err != nil {
-						return err
-					}
-
-					for commit, policyMatches := range commitMap {
-						if len(policyMatches) == 0 {
-							continue
-						}
-
-						options := EnqueueOptions{force: false, bypassLimit: false}
-
-						// Attempt to queue an index if one does not exist for each of the matching commits
-						if _, err := enqueuer.QueueIndexes(ctx, int(repoToIndex.ID), commit, "", options); err != nil {
-							// if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-							// 	continue
-							// }
-
-							return errors.Wrap(err, "indexEnqueuer.QueueIndexes")
-						}
-					}
-
-					// if len(policies) == 0 || offset >= totalCount {
-					// 	return nil
-					// }
-
-					// fmt.Println("Commits", commits)
+				if err != nil {
+					return err
 				}
+				commitMap, err := policyMatcher.CommitsDescribedByPolicy(ctx, int(repoToIndex.ID), repo.Name, policies, time.Now())
+				if err != nil {
+					return err
+				}
+
+				for commit, policyMatches := range commitMap {
+					if len(policyMatches) == 0 {
+						continue
+					}
+
+					options := EnqueueOptions{force: false, bypassLimit: false}
+
+					// Attempt to queue an index if one does not exist for each of the matching commits
+					if _, err := enqueuer.QueueIndexes(ctx, int(repoToIndex.ID), commit, "", options); err != nil {
+						// if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+						// 	continue
+						// }
+
+						return errors.Wrap(err, "indexEnqueuer.QueueIndexes")
+					}
+				}
+
+				// if len(policies) == 0 || offset >= totalCount {
+				// 	return nil
+				// }
+
+				// fmt.Println("Commits", commits)
+				// }
 
 			}
 			return nil //errors.New("just erroring to reschedule")

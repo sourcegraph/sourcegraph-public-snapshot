@@ -121,7 +121,6 @@ func (s *indexEnqueuerImpl) QueueIndexes(ctx context.Context, repositoryID int, 
 func (s *indexEnqueuerImpl) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, options EnqueueOptions) ([]job_store.SyntacticIndexingJob, error) {
 	if !options.force {
 		isQueued, err := s.jobStore.IsQueued(ctx, repositoryID, commit)
-		fmt.Println("Queueing", repositoryID, commit, isQueued)
 		if err != nil {
 			return nil, errors.Wrap(err, "dbstore.IsQueued")
 		}
@@ -138,35 +137,13 @@ func (s *indexEnqueuerImpl) queueIndexForRepositoryAndCommit(ctx context.Context
 			RepositoryID: repositoryID,
 		}
 
-		_, err := s.jobStore.InsertIndexes(ctx, values)
+		jobs, err := s.jobStore.InsertIndexes(ctx, values)
 		if err != nil {
 			return nil, err
 		}
+
+		return jobs, nil
 	}
-
-	// indexes, err := s.jobSelector.GetIndexRecords(ctx, repositoryID, commit, configuration, bypassLimit)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if len(indexes) == 0 {
-	// 	return nil, nil
-	// }
-
-	// indexesToInsert := indexes
-	// if !force {
-	// 	indexesToInsert = []uploadsshared.Index{}
-	// 	for _, index := range indexes {
-	// 		isQueued, err := s.store.IsQueuedRootIndexer(ctx, repositoryID, commit, index.Root, index.Indexer)
-	// 		if err != nil {
-	// 			return nil, errors.Wrap(err, "dbstore.IsQueuedRootIndexer")
-	// 		}
-	// 		if !isQueued {
-	// 			indexesToInsert = append(indexesToInsert, index)
-	// 		}
-	// 	}
-	// }
-
-	// return s.store.InsertIndexes(ctx, indexesToInsert)
 
 	return nil, nil
 }
