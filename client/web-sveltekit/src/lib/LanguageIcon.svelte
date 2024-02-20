@@ -6,9 +6,10 @@
     import Icon from './Icon.svelte'
 
     export let language: string
-    const icon = getFileIconInfo('', language)?.svg
-    const svgPath = icon?.path ?? mdiFileCodeOutline
-    const svgColor = icon?.color
+
+    $: icon = getFileIconInfo('', language)?.svg
+    $: svgPath = icon?.path ?? mdiFileCodeOutline
+    $: svgColor = icon?.color
 </script>
 
 <Icon {svgPath} --color={svgColor} {...$$restProps} />
