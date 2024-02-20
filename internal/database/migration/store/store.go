@@ -93,6 +93,12 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	return nil
 }
 
+// backfillOverrides contains a list of migration IDs that are to be backfilled
+// after the stitched-migration graph has already been constructed.
+var backfillOverrides = []int64{
+	1648115472, // See https://github.com/sourcegraph/sourcegraph/pull/46969 and https://github.com/sourcegraph/sourcegraph/pull/55650
+}
+
 // BackfillSchemaVersions adds "backfilled" rows into the migration_logs table to make instances
 // upgraded from older versions work uniformly with instances booted from a newer version.
 //
@@ -191,12 +197,6 @@ func (s *Store) BackfillSchemaVersions(ctx context.Context) error {
 		s.schemaName,
 		pq.Int64Array(idsToBackfill),
 	))
-}
-
-// backfillOverrides contains a list of migration IDs that are to be backfilled
-// after the stitched-migration graph has already been constructed.
-var backfillOverrides = []int64{
-	1648115472, // See https://github.com/sourcegraph/sourcegraph/pull/46969 and https://github.com/sourcegraph/sourcegraph/pull/55650
 }
 
 const backfillSchemaVersionsQuery = `
