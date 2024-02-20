@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-const mathjaxURL = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+const mathjaxURL = `/.assets/mathjax/tex-mml-chtml.js`
 export const mathjaxElementId = 'MathJax-script'
 
 /**
@@ -8,21 +8,26 @@ export const mathjaxElementId = 'MathJax-script'
  * @param enabled Set to `false` to disable the hook (default: `true`).
  *
  * @details
- * On component mount, useMathJax injects a script to load MathJax
- * from a dedicated CDN. This is the approach recommended in the
- * {@link https://docs.mathjax.org/en/latest/web/configuration.html#local-configuration-file | official documentation}.
+ * On component mount, useMathJax injects a script to load MathJax component
+ * from the static files (.assets). This is the approach described in the
+ * {@link https://docs.mathjax.org/en/latest/web/hosting.html#hosting-your-own-copy-of-mathjax | official documentation}.
  *
  * ```
  *  <script type="text/javascript" id="MathJax-script" async
- *      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+ *      src="/.assets/mathjax/tex-mml-chtml.js">
  *  </script>
- * ````
+ * ```
+ *
+ * Although sourcing the files form the CDN is the *recommended* approach,
+ * it is neither secure nor feasible for some of the on-prem environments
+ * in which Sourcegraph may be deployed.
+ * Once loaded, the component will scan the page and typeset any math in it.
  *
  * On component unmount, removes the script via useEffect destructor.
  */
 export const useMathJax = (enabled: boolean = true) => {
     if (!enabled) {
-        return;
+        return
     }
 
     useEffect(() => {
