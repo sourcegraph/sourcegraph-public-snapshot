@@ -19,6 +19,18 @@ def oci_tarball(name, **kwargs):
         **kwargs
     )
 
+# Apply a transition on oci_image targets and their deps to apply a transition on platforms
+# to build binaries for Linux when building on MacOS.
+#
+# Note: internally, this does some magic with wrapper rules and aliases that will be visible
+# in bazel (c)query outputs, and will make {,a,c}query output be non-obvious. For a given
+# oci_image target e.g. //cmd/server:image, the following targets will be created:
+#   - //cmd/server:image, which is an alias to //cmd/server:image_with_cfg
+#   - //cmd/server:image_with_cfg, uses an internal rule to apply the transition
+#   - //cmd/server:image_/image, the actual oci_image target
+#
+# When querying oci_image rules, you should query the final one noted above. The others will
+# not surface the information you're actually looking for for things like aquery etc.
 _oci_image_builder = with_cfg(_oci_image)
 _oci_image_builder.set("platforms", select({
     "@platforms//os:macos": [Label("@zig_sdk//platform:linux_amd64")],
