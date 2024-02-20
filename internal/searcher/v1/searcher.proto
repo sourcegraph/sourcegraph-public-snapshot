@@ -205,7 +205,7 @@ message PatternInfo {
   string comby_rule = 13;
 
   // languages is the list of languages passed via the lang filters (e.g.,
-  // "lang:c")
+  // "lang:c") and is used for structural search
   repeated string languages = 14;
 
   // select is the value of the the select field in the query. It is not
@@ -216,4 +216,8 @@ message PatternInfo {
   // query defines the query to match files against. It supports regexp
   // patterns optionally combined through boolean operators.
   QueryNode query = 16;
+
+  // include_langs and exclude_langs represent the languages to filter on
+  repeated string include_langs = 17;
+  repeated string exclude_langs = 18;
 }

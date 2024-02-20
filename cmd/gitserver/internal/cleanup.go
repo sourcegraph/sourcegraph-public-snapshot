@@ -456,10 +456,8 @@ func cleanupRepos(
 			return false, nil
 		}
 
-		// name is the relative path to ReposDir, but without the .git suffix.
-		repo := gitserverfs.RepoNameFromDir(reposDir, dir)
 		recloneLogger := logger.With(
-			log.String("repo", string(repo)),
+			log.String("repo", string(repoName)),
 			log.Time("cloned", recloneTime),
 			log.String("reason", reason),
 		)
@@ -475,7 +473,7 @@ func cleanupRepos(
 
 		cmdCtx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 		defer cancel()
-		if _, err := cloneRepo(cmdCtx, repo, CloneOptions{Block: true, Overwrite: true}); err != nil {
+		if _, err := cloneRepo(cmdCtx, repoName, CloneOptions{Block: true, Overwrite: true}); err != nil {
 			return true, err
 		}
 		reposRecloned.Inc()
