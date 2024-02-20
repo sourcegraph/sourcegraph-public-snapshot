@@ -9,7 +9,7 @@ import {
     Link,
     Menu,
     MenuButton,
-    MenuDivider,
+    MenuDivide,
     MenuItem,
     MenuLink,
     MenuList,
@@ -229,7 +229,7 @@ const MenuSection: FC<PropsWithChildren<MenuSectionProps>> = props => {
         <>
             <MenuHeader>{name}</MenuHeader>
             {children}
-            {divider && <MenuDivider />}
+            {divider && <MenuDivide />}
         </>
     )
 }

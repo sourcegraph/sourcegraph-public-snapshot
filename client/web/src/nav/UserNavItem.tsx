@@ -13,7 +13,7 @@ import { useTheme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import {
     Menu,
     MenuButton,
-    MenuDivider,
+    MenuDivide,
     MenuHeader,
     MenuItem,
     MenuLink,
@@ -130,7 +130,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             <MenuHeader className={styles.dropdownHeader}>
                                 Signed in as <strong>@{authenticatedUser.username}</strong>
                             </MenuHeader>
-                            <MenuDivider className={styles.dropdownDivider} />
+                            <MenuDivide className={styles.dropdownDivider} />
                             <MenuLink as={Link} to={authenticatedUser.settingsURL!}>
                                 Settings
                             </MenuLink>
@@ -142,7 +142,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     Teams
                                 </MenuLink>
                             )}
-                            <MenuDivider />
+                            <MenuDivide />
                             <div className="px-2 py-1">
                                 <div className="d-flex align-items-center">
                                     <div className="mr-2">Theme</div>
@@ -196,7 +196,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
 
                             {organizations.length > 0 && (
                                 <>
-                                    <MenuDivider className={styles.dropdownDivider} />
+                                    <MenuDivide className={styles.dropdownDivider} />
                                     <MenuHeader className={styles.dropdownHeader}>Your organizations</MenuHeader>
                                     {organizations.slice(0, MAX_VISIBLE_ORGS).map(org => (
                                         <MenuLink as={Link} key={org.id} to={org.settingsURL || org.url}>
@@ -211,7 +211,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                 </>
                             )}
 
-                            <MenuDivider className={styles.dropdownDivider} />
+                            <MenuDivide className={styles.dropdownDivider} />
                             {authenticatedUser.siteAdmin && (
                                 <MenuLink as={Link} to="/site-admin">
                                     Site admin
@@ -228,7 +228,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                 </MenuLink>
                             )}
 
-                            {isSourcegraphDotCom && <MenuDivider className={styles.dropdownDivider} />}
+                            {isSourcegraphDotCom && <MenuDivide className={styles.dropdownDivider} />}
                             {isSourcegraphDotCom && (
                                 <MenuLink as={AnchorLink} to="https://sourcegraph.com" target="_blank" rel="noopener">
                                     About Sourcegraph <Icon aria-hidden={true} svgPath={mdiOpenInNew} />

@@ -12,7 +12,7 @@ import {
     Button,
     Position,
     Link,
-    MenuDivider,
+    MenuDivide,
     MenuHeader,
     Icon,
     MenuText,
@@ -57,7 +57,7 @@ export const SearchHelpDropdownButton: FC<SearchHelpDropdownButtonProps> = props
                 <MenuHeader>
                     <strong>Search reference</strong>
                 </MenuHeader>
-                <MenuDivider />
+                <MenuDivide />
                 <MenuHeader>Finding matches:</MenuHeader>
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
@@ -70,7 +70,7 @@ export const SearchHelpDropdownButton: FC<SearchHelpDropdownButtonProps> = props
                         <span className="text-muted small">Exact:</span> <Code weight="bold">fs.open(f)</Code>
                     </li>
                 </ul>
-                <MenuDivider />
+                <MenuDivide />
                 <MenuHeader>Common search keywords:</MenuHeader>
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
@@ -96,7 +96,7 @@ export const SearchHelpDropdownButton: FC<SearchHelpDropdownButtonProps> = props
                         </Code>
                     </li>
                 </ul>
-                <MenuDivider />
+                <MenuDivide />
                 <MenuHeader>Diff/commit search keywords:</MenuHeader>
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
@@ -119,7 +119,7 @@ export const SearchHelpDropdownButton: FC<SearchHelpDropdownButtonProps> = props
                         <span className="text-muted small">(all branches)</span>
                     </li>
                 </ul>
-                <MenuDivider className="mb-0" />
+                <MenuDivide className="mb-0" />
                 <MenuText
                     target="_blank"
                     rel="noopener"

@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import { mdiMenuDown } from '@mdi/js'
 
 import type { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
-import { Menu, MenuButton, MenuDivider, MenuItem, MenuList, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Menu, MenuButton, MenuDivide, MenuItem, MenuList, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 
@@ -74,7 +74,7 @@ export const SearchContextOwnerDropdown: React.FunctionComponent<
                 ))}
                 {authenticatedUser.siteAdmin && (
                     <>
-                        <MenuDivider />
+                        <MenuDivide />
                         <MenuItem onSelect={() => setSelectedNamespace({ id: null, type: 'global-owner', name: '' })}>
                             <div>Global owner</div>
                             <div className="text-muted">Available to everyone.</div>

@@ -4,7 +4,7 @@ import { noop } from 'lodash'
 import { BrandedStory } from '../../stories/BrandedStory'
 import { Link } from '../Link'
 
-import { Menu, MenuButton, MenuDivider, MenuHeader, MenuItem, MenuLink, MenuList } from '.'
+import { Menu, MenuButton, MenuDivide, MenuHeader, MenuItem, MenuLink, MenuList } from '.'
 
 const config: Meta = {
     title: 'wildcard/Menu',
@@ -35,7 +35,7 @@ export const MenuExample: StoryFn = () => (
             <MenuItem onSelect={noop} disabled={true}>
                 I'm disabled
             </MenuItem>
-            <MenuDivider />
+            <MenuDivide />
             <MenuLink as={Link} to="https://www.example.com">
                 Go somewhere
             </MenuLink>
