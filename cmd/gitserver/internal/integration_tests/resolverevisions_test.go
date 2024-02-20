@@ -16,6 +16,7 @@ import (
 	common "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -68,9 +69,12 @@ func TestClient_ResolveRevision(t *testing.T) {
 	db := newMockDB()
 	ctx := context.Background()
 
+	fs := gitserverfs.New(&observation.TestContext, filepath.Join(root, "repos"))
+	require.NoError(t, fs.Initialize())
+
 	s := server.NewServer(&server.ServerOpts{
-		Logger:   logger,
-		ReposDir: filepath.Join(root, "repos"),
+		Logger: logger,
+		FS:     fs,
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 		},

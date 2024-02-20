@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -24,7 +25,7 @@ func NewRubyPackagesSyncer(
 	connection *schema.RubyPackagesConnection,
 	svc *dependencies.Service,
 	client *rubygems.Client,
-	reposDir string,
+	fs gitserverfs.FS,
 ) VCSSyncer {
 	return &vcsPackagesSyncer{
 		logger:      log.Scoped("RubyPackagesSyncer"),
@@ -33,8 +34,8 @@ func NewRubyPackagesSyncer(
 		placeholder: reposource.NewRubyVersionedPackage("sourcegraph/placeholder", "0.0.0"),
 		svc:         svc,
 		configDeps:  connection.Dependencies,
-		reposDir:    reposDir,
 		source:      &rubyDependencySource{client: client},
+		fs:          fs,
 	}
 }
 

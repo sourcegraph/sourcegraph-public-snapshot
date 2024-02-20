@@ -71,10 +71,10 @@ type NewVCSSyncerOpts struct {
 	RepoStore               database.RepoStore
 	DepsSvc                 *dependencies.Service
 	Repo                    api.RepoName
-	ReposDir                string
 	CoursierCacheDir        string
 	RecordingCommandFactory *wrexec.RecordingCommandFactory
 	Logger                  log.Logger
+	FS                      gitserverfs.FS
 }
 
 func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error) {
@@ -115,18 +115,13 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 			return nil, err
 		}
 
-		p4Home, err := gitserverfs.MakeP4HomeDir(opts.ReposDir)
-		if err != nil {
-			return nil, err
-		}
-
-		return NewPerforceDepotSyncer(opts.Logger, opts.RecordingCommandFactory, &c, opts.ReposDir, p4Home), nil
+		return NewPerforceDepotSyncer(opts.Logger, opts.RecordingCommandFactory, opts.FS, &c), nil
 	case extsvc.TypeJVMPackages:
 		var c schema.JVMPackagesConnection
 		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return NewJVMPackagesSyncer(&c, opts.DepsSvc, opts.CoursierCacheDir, opts.ReposDir), nil
+		return NewJVMPackagesSyncer(&c, opts.DepsSvc, opts.CoursierCacheDir, opts.FS), nil
 	case extsvc.TypeNpmPackages:
 		var c schema.NpmPackagesConnection
 		urn, err := extractOptions(&c)
@@ -137,7 +132,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		return NewNpmPackagesSyncer(c, opts.DepsSvc, cli, opts.ReposDir), nil
+		return NewNpmPackagesSyncer(c, opts.DepsSvc, cli, opts.FS), nil
 	case extsvc.TypeGoModules:
 		var c schema.GoModulesConnection
 		urn, err := extractOptions(&c)
@@ -145,7 +140,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 			return nil, err
 		}
 		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
-		return NewGoModulesSyncer(&c, opts.DepsSvc, cli, opts.ReposDir), nil
+		return NewGoModulesSyncer(&c, opts.DepsSvc, cli, opts.FS), nil
 	case extsvc.TypePythonPackages:
 		var c schema.PythonPackagesConnection
 		urn, err := extractOptions(&c)
@@ -156,7 +151,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		return NewPythonPackagesSyncer(&c, opts.DepsSvc, cli, opts.ReposDir), nil
+		return NewPythonPackagesSyncer(&c, opts.DepsSvc, cli, opts.FS), nil
 	case extsvc.TypeRustPackages:
 		var c schema.RustPackagesConnection
 		urn, err := extractOptions(&c)
@@ -167,7 +162,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		return NewRustPackagesSyncer(&c, opts.DepsSvc, cli, opts.ReposDir), nil
+		return NewRustPackagesSyncer(&c, opts.DepsSvc, cli, opts.FS), nil
 	case extsvc.TypeRubyPackages:
 		var c schema.RubyPackagesConnection
 		urn, err := extractOptions(&c)
@@ -178,7 +173,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		return NewRubyPackagesSyncer(&c, opts.DepsSvc, cli, opts.ReposDir), nil
+		return NewRubyPackagesSyncer(&c, opts.DepsSvc, cli, opts.FS), nil
 	}
 
 	return NewGitRepoSyncer(opts.Logger, opts.RecordingCommandFactory), nil

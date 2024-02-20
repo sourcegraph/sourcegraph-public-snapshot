@@ -51,9 +51,12 @@ func TestClone(t *testing.T) {
 	lock := NewMockRepositoryLock()
 	locker.TryAcquireFunc.SetDefaultReturn(lock, true)
 
+	fs := gitserverfs.New(&observation.TestContext, reposDir)
+	require.NoError(t, fs.Initialize())
+
 	s := server.NewServer(&server.ServerOpts{
-		Logger:   logger,
-		ReposDir: reposDir,
+		Logger: logger,
+		FS:     fs,
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 		},
@@ -127,7 +130,7 @@ func TestClone(t *testing.T) {
 	mockassert.CalledWith(t, gsStore.SetLastErrorFunc, mockassert.Values(mockassert.Skip, repo, "", "test-shard"))
 
 	// Check that the repo is in the expected location on disk.
-	_, err = os.Stat(gitserverfs.RepoDirFromName(reposDir, repo).Path())
+	_, err = os.Stat(fs.RepoDir(repo).Path())
 	require.NoError(t, err)
 }
 
@@ -147,9 +150,12 @@ func TestClone_Fail(t *testing.T) {
 	lock := NewMockRepositoryLock()
 	locker.TryAcquireFunc.SetDefaultReturn(lock, true)
 
+	fs := gitserverfs.New(&observation.TestContext, reposDir)
+	require.NoError(t, fs.Initialize())
+
 	s := server.NewServer(&server.ServerOpts{
-		Logger:   logger,
-		ReposDir: reposDir,
+		Logger: logger,
+		FS:     fs,
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 		},
@@ -258,7 +264,7 @@ func TestClone_Fail(t *testing.T) {
 	require.Contains(t, gsStore.SetLastErrorFunc.History()[0].Arg2, "failed to fetch: exit status 128")
 
 	// Check that no repo is in the expected location on disk.
-	_, err = os.Stat(gitserverfs.RepoDirFromName(reposDir, repo).Path())
+	_, err = os.Stat(fs.RepoDir(repo).Path())
 	require.Error(t, err)
 	require.True(t, os.IsNotExist(err))
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -21,7 +22,7 @@ func NewRustPackagesSyncer(
 	connection *schema.RustPackagesConnection,
 	svc *dependencies.Service,
 	client *crates.Client,
-	reposDir string,
+	fs gitserverfs.FS,
 ) VCSSyncer {
 	return &vcsPackagesSyncer{
 		logger:      log.Scoped("RustPackagesSyncer"),
@@ -30,8 +31,8 @@ func NewRustPackagesSyncer(
 		placeholder: reposource.ParseRustVersionedPackage("sourcegraph.com/placeholder@0.0.0"),
 		svc:         svc,
 		configDeps:  connection.Dependencies,
-		reposDir:    reposDir,
 		source:      &rustDependencySource{client: client},
+		fs:          fs,
 	}
 }
 

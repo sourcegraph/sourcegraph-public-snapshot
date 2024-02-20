@@ -25,7 +25,7 @@ func NewPythonPackagesSyncer(
 	connection *schema.PythonPackagesConnection,
 	svc *dependencies.Service,
 	client *pypi.Client,
-	reposDir string,
+	fs gitserverfs.FS,
 ) VCSSyncer {
 	return &vcsPackagesSyncer{
 		logger:      log.Scoped("PythonPackagesSyncer"),
@@ -34,15 +34,15 @@ func NewPythonPackagesSyncer(
 		placeholder: reposource.ParseVersionedPackage("sourcegraph.com/placeholder@v0.0.0"),
 		svc:         svc,
 		configDeps:  connection.Dependencies,
-		source:      &pythonPackagesSyncer{client: client, reposDir: reposDir},
-		reposDir:    reposDir,
+		source:      &pythonPackagesSyncer{client: client, fs: fs},
+		fs:          fs,
 	}
 }
 
 // pythonPackagesSyncer implements packagesSource
 type pythonPackagesSyncer struct {
-	client   *pypi.Client
-	reposDir string
+	client *pypi.Client
+	fs     gitserverfs.FS
 }
 
 func (pythonPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
@@ -74,7 +74,11 @@ func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep rep
 	}
 	defer pkgData.Close()
 
-	if err = unpackPythonPackage(pkgData, packageURL, s.reposDir, dir); err != nil {
+	mkdirTemp := func() (string, error) {
+		return s.fs.TempDir("pypi-packages")
+	}
+
+	if err = unpackPythonPackage(pkgData, packageURL, mkdirTemp, dir); err != nil {
 		return errors.Wrap(err, "failed to unzip python module")
 	}
 
@@ -84,7 +88,7 @@ func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep rep
 // unpackPythonPackage unpacks the given python package archive into workDir, skipping any
 // files that aren't valid or that are potentially malicious. It detects the kind of archive
 // and compression used with the given packageURL.
-func unpackPythonPackage(pkg io.Reader, packageURL, reposDir, workDir string) error {
+func unpackPythonPackage(pkg io.Reader, packageURL string, mkdirTemp func() (string, error), workDir string) error {
 	logger := log.Scoped("unpackPythonPackage")
 	u, err := url.Parse(packageURL)
 	if err != nil {
@@ -126,7 +130,7 @@ func unpackPythonPackage(pkg io.Reader, packageURL, reposDir, workDir string) er
 		// memory, which isn't great for multi-megabyte+ files.
 
 		// Create a tmpdir that gitserver manages.
-		tmpdir, err := gitserverfs.TempDir(reposDir, "pypi-packages")
+		tmpdir, err := mkdirTemp()
 		if err != nil {
 			return err
 		}
