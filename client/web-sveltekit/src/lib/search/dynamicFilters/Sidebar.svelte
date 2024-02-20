@@ -26,6 +26,8 @@
 </script>
 
 <script lang="ts">
+    import { onDestroy, onMount } from 'svelte'
+
     import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 
     import { goto } from '$app/navigation'
@@ -57,8 +59,6 @@
     export let streamFilters: Filter[]
     export let selectedFilters: URLQueryFilter[]
 
-    const resetModifier = inferOperatingSystem(navigator.userAgent) === 'MacOS' ? '⌥' : 'Alt'
-
     $: groupedFilters = groupFilters(streamFilters, selectedFilters)
     $: typeFilters = staticTypeFilters.map((staticTypeFilter): SectionItem => {
         const selectedOrStreamFilter = groupedFilters.type.find(
@@ -71,14 +71,25 @@
             selected: selectedOrStreamFilter?.selected || false,
         }
     })
+
+    $: resetModifier = inferOperatingSystem(navigator.userAgent) === 'MacOS' ? '⌥' : 'Alt'
+    $: resetURL = resetFilters($page.url).toString()
+    $: enableReset = selectedFilters.length > 0
+    $: handleResetKeydown = (event: KeyboardEvent) => {
+        if (enableReset && event.altKey && event.key === 'Backspace') {
+            goto(resetURL)
+        }
+    }
+    onMount(() => window.addEventListener('keydown', handleResetKeydown))
+    onDestroy(() => window.removeEventListener('keydown', handleResetKeydown))
 </script>
 
 <aside class="sidebar">
     <div class="scroll-container">
         <div class="header">
             <h3>Filter results</h3>
-            {#if selectedFilters.length > 0}
-                <a href={resetFilters($page.url).toString()}>
+            {#if enableReset}
+                <a href={resetURL}>
                     <small>Reset all <kbd>{resetModifier} ⌫</kbd></small>
                 </a>
             {/if}
