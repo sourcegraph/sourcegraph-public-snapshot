@@ -33,9 +33,6 @@ type File struct {
 // In the case that the file has PreciseLanguage set, it uses that.
 // Otherwise, it falls back to language matching on the path.
 // It will return an empty string in the case language matching fails.
-//
-// TODO(camdencheek): this lazy detection can be removed once
-// we add language detection in searcher.
 func (f *File) Languages() []string {
 	if f.PreciseLanguage != "" {
 		return []string{f.PreciseLanguage}
@@ -46,8 +43,6 @@ func (f *File) Languages() []string {
 	return candidates
 }
 
-// TODO(camdencheek): this lazy detection can be removed once
-// we add language detection in searcher.
 func (f *File) MostLikelyLanguage() string {
 	if f.PreciseLanguage != "" {
 		return f.PreciseLanguage

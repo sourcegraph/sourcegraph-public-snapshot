@@ -133,12 +133,6 @@ func regexSearch(
 					filesSkipped.Inc()
 					continue
 				}
-
-				// Apply language filters
-				if !lm.Matches(f.Name, getContent) {
-					filesSkipped.Inc()
-					continue
-				}
 				filesSearched.Inc()
 
 				// Check pattern against file path and contents
@@ -148,7 +142,6 @@ func regexSearch(
 					LimitHit: false,
 				}
 
-				// Check if the pattern matches
 				if patternMatchesPaths {
 					match = m.MatchesString(f.Name)
 				}
@@ -168,7 +161,12 @@ func regexSearch(
 				}
 
 				if match {
-					sender.Send(fm)
+					// Apply language filters and send result
+					langMatch, lang := lm.Matches(f.Name, getContent)
+					if langMatch {
+						fm.Language = lang
+						sender.Send(fm)
+					}
 				}
 			}
 			return nil

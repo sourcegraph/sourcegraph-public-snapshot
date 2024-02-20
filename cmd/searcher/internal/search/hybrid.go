@@ -212,6 +212,7 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 
 			sender.Send(protocol.FileMatch{
 				Path:         fm.FileName,
+				Language:     fm.Language,
 				ChunkMatches: zoektChunkMatches(fm.ChunkMatches),
 			})
 		}
