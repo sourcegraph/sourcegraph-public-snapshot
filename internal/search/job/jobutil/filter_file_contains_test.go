@@ -257,7 +257,7 @@ func TestFileContainsFilterJob(t *testing.T) {
 				return nil, nil
 			})
 			searcher.MockSearch = func(_ context.Context, _ api.RepoName, _ api.RepoID, _ api.CommitID, p *search.TextPatternInfo, _ time.Duration, onMatch func(*protocol.FileMatch)) (limitHit bool, err error) {
-				if len(p.IncludePatterns) > 0 {
+				if len(p.IncludePaths) > 0 {
 					onMatch(&protocol.FileMatch{Path: "file4"})
 				}
 				return false, nil

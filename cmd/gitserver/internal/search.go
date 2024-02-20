@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -43,7 +44,7 @@ func (s *Server) SearchWithObservability(ctx context.Context, tr trace.Trace, ar
 		if honey.Enabled() || traceLogs {
 			act := actor.FromContext(ctx)
 			ev := honey.NewEvent("gitserver-search")
-			ev.SetSampleRate(honeySampleRate("", act))
+			ev.SetSampleRate(gitcli.HoneySampleRate("", act))
 			ev.AddField("repo", args.Repo)
 			ev.AddField("revisions", args.Revisions)
 			ev.AddField("include_diff", args.IncludeDiff)

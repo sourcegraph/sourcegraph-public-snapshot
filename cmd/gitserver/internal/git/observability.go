@@ -245,6 +245,20 @@ func (b *observableBackend) ArchiveReader(ctx context.Context, format ArchiveFor
 	}, nil
 }
 
+func (b *observableBackend) ResolveRevision(ctx context.Context, revspec string) (_ api.CommitID, err error) {
+	ctx, _, endObservation := b.operations.resolveRevision.With(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{
+			attribute.String("revspec", revspec),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("ResolveRevision").Inc()
+	defer concurrentOps.WithLabelValues("ResolveRevision").Dec()
+
+	return b.backend.ResolveRevision(ctx, revspec)
+}
+
 type observableReadCloser struct {
 	inner          io.ReadCloser
 	endObservation func(err error)
@@ -273,6 +287,7 @@ type operations struct {
 	exec            *observation.Operation
 	getCommit       *observation.Operation
 	archiveReader   *observation.Operation
+	resolveRevision *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -310,6 +325,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		exec:            op("exec"),
 		getCommit:       op("get-commit"),
 		archiveReader:   op("archive-reader"),
+		resolveRevision: op("resolve-revision"),
 	}
 }
 

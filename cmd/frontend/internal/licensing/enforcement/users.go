@@ -88,7 +88,7 @@ func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) er
 			return err
 		}
 
-		if info.Plan().IsFree() {
+		if info.Plan().IsFreePlan() {
 			store := tx.Users()
 			user.SiteAdmin = true
 			if err := store.SetIsSiteAdmin(ctx, user.ID, user.SiteAdmin); err != nil {
@@ -122,12 +122,12 @@ func NewBeforeSetUserIsSiteAdmin() func(ctx context.Context, isSiteAdmin bool) e
 			if info.IsExpired() {
 				return errors.New("The Sourcegraph license has expired. No site-admins can be created until the license is updated.")
 			}
-			if !info.Plan().IsFree() {
+			if !info.Plan().IsFreePlan() {
 				return nil
 			}
 
 			// Allow users to be promoted to site admins on the Free plan.
-			if info.Plan().IsFree() && isSiteAdmin {
+			if info.Plan().IsFreePlan() && isSiteAdmin {
 				return nil
 			}
 		}

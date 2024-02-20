@@ -415,135 +415,6 @@ index 51a59ef1c..493090958 100644
 	})
 }
 
-func TestRepository_ResolveBranch(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
-	}
-	tests := map[string]struct {
-		repo         api.RepoName
-		branch       string
-		wantCommitID api.CommitID
-	}{
-		"git cmd": {
-			repo:         MakeGitRepository(t, gitCommands...),
-			branch:       "master",
-			wantCommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
-		},
-	}
-
-	for label, test := range tests {
-		commitID, err := NewClient("test").ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
-		if err != nil {
-			t.Errorf("%s: ResolveRevision: %s", label, err)
-			continue
-		}
-
-		if commitID != test.wantCommitID {
-			t.Errorf("%s: got commitID == %v, want %v", label, commitID, test.wantCommitID)
-		}
-	}
-}
-
-func TestRepository_ResolveBranch_error(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
-	}
-	tests := map[string]struct {
-		repo    api.RepoName
-		branch  string
-		wantErr func(error) bool
-	}{
-		"git cmd": {
-			repo:    MakeGitRepository(t, gitCommands...),
-			branch:  "doesntexist",
-			wantErr: func(err error) bool { return errors.HasType(err, &gitdomain.RevisionNotFoundError{}) },
-		},
-	}
-
-	for label, test := range tests {
-		commitID, err := NewClient("test").ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
-		if !test.wantErr(err) {
-			t.Errorf("%s: ResolveRevision: %s", label, err)
-			continue
-		}
-
-		if commitID != "" {
-			t.Errorf("%s: got commitID == %v, want empty", label, commitID)
-		}
-	}
-}
-
-func TestRepository_ResolveTag(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
-		"git tag t",
-	}
-	tests := map[string]struct {
-		repo         api.RepoName
-		tag          string
-		wantCommitID api.CommitID
-	}{
-		"git cmd": {
-			repo:         MakeGitRepository(t, gitCommands...),
-			tag:          "t",
-			wantCommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
-		},
-	}
-
-	for label, test := range tests {
-		commitID, err := NewClient("test").ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
-		if err != nil {
-			t.Errorf("%s: ResolveRevision: %s", label, err)
-			continue
-		}
-
-		if commitID != test.wantCommitID {
-			t.Errorf("%s: got commitID == %v, want %v", label, commitID, test.wantCommitID)
-		}
-	}
-}
-
-func TestRepository_ResolveTag_error(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
-	}
-	tests := map[string]struct {
-		repo    api.RepoName
-		tag     string
-		wantErr func(error) bool
-	}{
-		"git cmd": {
-			repo:    MakeGitRepository(t, gitCommands...),
-			tag:     "doesntexist",
-			wantErr: func(err error) bool { return errors.HasType(err, &gitdomain.RevisionNotFoundError{}) },
-		},
-	}
-
-	for label, test := range tests {
-		commitID, err := NewClient("test").ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
-		if !test.wantErr(err) {
-			t.Errorf("%s: ResolveRevision: %s", label, err)
-			continue
-		}
-
-		if commitID != "" {
-			t.Errorf("%s: got commitID == %v, want empty", label, commitID)
-		}
-	}
-}
-
 func TestLsFiles(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
@@ -1079,9 +950,18 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 	}
 
 	t.Run("basic", func(t *testing.T) {
-		client := NewClient("test")
 		for _, tc := range testCases {
 			t.Run(tc.label, func(t *testing.T) {
+				client := NewTestClient(t).WithClientSource(NewTestClientSource(t, []string{"test"}, func(o *TestClientSourceOptions) {
+					o.ClientFunc = func(conn *grpc.ClientConn) proto.GitserverServiceClient {
+						c := NewMockGitserverServiceClient()
+						c.ResolveRevisionFunc.SetDefaultReturn(&proto.ResolveRevisionResponse{
+							CommitSha: tc.revspec,
+						}, nil)
+						return c
+					}
+				}))
+
 				gitCommands := make([]string, len(tc.commitDates))
 				for i, date := range tc.commitDates {
 					gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
@@ -1533,7 +1413,7 @@ func TestRepository_Commits_options(t *testing.T) {
 			before := ""
 			after := time.Date(2022, 11, 11, 12, 10, 0, 4, time.UTC).Format(time.RFC3339)
 			client := NewTestClient(t).WithChecker(checker)
-			_, err := client.Commits(ctx, repo, CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after, Before: before})
+			_, err := client.Commits(ctx, repo, CommitsOptions{N: 0, DateOrder: true, After: after, Before: before})
 			if err == nil {
 				t.Error("expected error, got nil")
 			}
@@ -2206,13 +2086,18 @@ func TestClient_GetDefaultBranch(t *testing.T) {
 		require.Equal(t, api.CommitID("deadbeef"), sha)
 	})
 	t.Run("returns empty for common errors", func(t *testing.T) {
+		calls := 0
 		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
 			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 				c := NewMockGitserverServiceClient()
-				s, err := status.New(codes.NotFound, "bad revision").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "deadbeef"})
-				require.NoError(t, err)
-				c.DefaultBranchFunc.PushReturn(nil, s.Err())
-				s, err = status.New(codes.NotFound, "repo cloning").WithDetails(&proto.RepoNotFoundPayload{Repo: "repo", CloneInProgress: true})
+				if calls == 0 {
+					s, err := status.New(codes.NotFound, "bad revision").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "deadbeef"})
+					require.NoError(t, err)
+					c.DefaultBranchFunc.PushReturn(nil, s.Err())
+					calls++
+					return c
+				}
+				s, err := status.New(codes.NotFound, "repo cloning").WithDetails(&proto.RepoNotFoundPayload{Repo: "repo", CloneInProgress: true})
 				require.NoError(t, err)
 				c.DefaultBranchFunc.PushReturn(nil, s.Err())
 				return c
@@ -2618,5 +2503,53 @@ func TestClient_ArchiveReader(t *testing.T) {
 		require.NoError(t, err)
 		require.Empty(t, content)
 		require.NoError(t, r.Close())
+	})
+}
+
+func TestClient_ResolveRevision(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.ResolveRevisionFunc.SetDefaultReturn(&proto.ResolveRevisionResponse{CommitSha: "deadbeef"}, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		sha, err := c.ResolveRevision(context.Background(), "repo", "HEAD", ResolveRevisionOptions{})
+		require.NoError(t, err)
+		require.Equal(t, api.CommitID("deadbeef"), sha)
+	})
+	t.Run("returns common errors correctly", func(t *testing.T) {
+		calls := 0
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				if calls == 0 {
+					s, err := status.New(codes.NotFound, "bad revision").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "deadbeef"})
+					require.NoError(t, err)
+					c.ResolveRevisionFunc.PushReturn(nil, s.Err())
+					calls++
+					return c
+				}
+				s, err := status.New(codes.NotFound, "repo cloning").WithDetails(&proto.RepoNotFoundPayload{Repo: "repo", CloneInProgress: true})
+				require.NoError(t, err)
+				c.ResolveRevisionFunc.PushReturn(nil, s.Err())
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		// First request fails with revision error
+		_, err := c.ResolveRevision(context.Background(), "repo", "HEAD", ResolveRevisionOptions{})
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		// First request fails with clone error
+		_, err = c.ResolveRevision(context.Background(), "repo", "HEAD", ResolveRevisionOptions{})
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RepoNotExistError{}))
 	})
 }

@@ -135,6 +135,7 @@ func NewAnthropicHandler(
 		// user.
 		2, // seconds
 		autoFlushStreamingResponses,
+		config.DetectedPromptPatterns,
 	), nil
 }
 
@@ -160,6 +161,10 @@ func (ar anthropicRequest) ShouldStream() bool {
 
 func (ar anthropicRequest) GetModel() string {
 	return ar.Model
+}
+
+func (ar anthropicRequest) BuildPrompt() string {
+	return ar.Prompt
 }
 
 type anthropicTokenCount struct {

@@ -3,7 +3,6 @@ package conf
 import (
 	"context"
 	"math/rand"
-	"net"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -257,20 +256,10 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 	}
 
 	isFrontendUnreachableError := func(err error) bool {
-		var e *net.OpError
-		if errors.As(err, &e) && e.Op == "dial" {
-			return true
-		}
-
-		// If we're using gRPC to fetch configuration, gRPC clients will return
-		// a status code of "Unavailable" if the server is unreachable. See
-		// https://grpc.github.io/grpc/core/md_doc_statuscodes.html for more
-		// information.
-		if status.Code(err) == codes.Unavailable {
-			return true
-		}
-
-		return false
+		// gRPC clients will return a status code of "Unavailable" if the server
+		// is unreachable. See https://grpc.github.io/grpc/core/md_doc_statuscodes.html
+		// for more information.
+		return status.Code(err) == codes.Unavailable
 	}
 
 	waitForSleep := func() <-chan struct{} {

@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -395,7 +394,8 @@ func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory 
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_NAME="+gitName)
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_EMAIL="+gitEmail)
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_DATE="+stableGitCommitDate)
-	output, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, nil, cmd))
+	wrCmd := wrexec.Wrap(ctx, nil, cmd)
+	output, err := wrCmd.CombinedOutput()
 	if err != nil {
 		return "", errors.Wrapf(err, "command %s failed with output %s", cmd.Args, string(output))
 	}

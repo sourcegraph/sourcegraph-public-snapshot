@@ -220,14 +220,9 @@ func SignatureFromProto(p *proto.CommitMatch_Signature) Signature {
 // internal proxy route and any major change to this structure will need to
 // be reconciled in both places.
 type ExecRequest struct {
-	Repo api.RepoName `json:"repo"`
-
-	// ensureRevision is the revision to ensure is present in the repository before running the git command.
-	//
-	// 🚨Warning🚨: EnsureRevision might not be a utf 8 encoded string.
-	EnsureRevision string   `json:"ensureRevision"`
-	Args           []string `json:"args"`
-	NoTimeout      bool     `json:"noTimeout"`
+	Repo      api.RepoName `json:"repo"`
+	Args      []string     `json:"args"`
+	NoTimeout bool         `json:"noTimeout"`
 }
 
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.

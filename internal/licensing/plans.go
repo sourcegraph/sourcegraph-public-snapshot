@@ -58,10 +58,6 @@ func (p Plan) isKnown() bool {
 	return false
 }
 
-func (p Plan) IsFree() bool {
-	return p == PlanFree0 || p == PlanFree1
-}
-
 // Plan is the pricing plan of the license.
 func (info *Info) Plan() Plan {
 	return PlanFromTags(info.Tags)

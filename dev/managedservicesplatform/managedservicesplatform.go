@@ -149,6 +149,7 @@ func (r *Renderer) RenderEnvironment(
 		CloudSQLMaxConections: pointers.DerefZero(pointers.DerefZero(env.Resources).PostgreSQL).MaxConnections,
 		ServiceHealthProbes:   pointers.DerefZero(env.EnvironmentServiceSpec).HealthProbes,
 		SentryProject:         cloudrunOutput.SentryProject,
+		JobSchedule:           pointers.DerefZero(env.EnvironmentJobSpec).Schedule,
 	}); err != nil {
 		return nil, errors.Wrap(err, "failed to create monitoring stack")
 	}

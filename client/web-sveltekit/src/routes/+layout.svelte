@@ -1,6 +1,6 @@
 <script lang="ts">
     import { setContext } from 'svelte'
-    import { readable, writable } from 'svelte/store'
+    import { writable } from 'svelte/store'
 
     import { browser } from '$app/environment'
     import { isErrorLike } from '$lib/common'
@@ -14,11 +14,10 @@
 
     import './styles.scss'
 
-    import { beforeNavigate } from '$app/navigation'
-
-    import type { LayoutData, Snapshot } from './$types'
+    import type { LayoutData } from './$types'
     import { createFeatureFlagStore } from '$lib/featureflags'
     import InfoBanner from './InfoBanner.svelte'
+    import { getGraphQLClient } from '$lib/graphql/apollo'
 
     export let data: LayoutData
 
@@ -27,7 +26,7 @@
     // It's OK to set the temporary storage during initialization time because
     // sign-in/out currently performs a full page refresh
     const temporarySettingsStorage = createTemporarySettingsStorage(
-        data.user ? new TemporarySettingsStorage(data.graphqlClient, true) : undefined
+        data.user ? new TemporarySettingsStorage(getGraphQLClient(), true) : undefined
     )
 
     setContext<SourcegraphContext>(KEY, {
@@ -35,7 +34,6 @@
         settings,
         temporarySettingsStorage,
         featureFlags: createFeatureFlagStore(data.featureFlags, data.fetchEvaluatedFeatureFlags),
-        client: readable(data.graphqlClient),
     })
 
     // Update stores when data changes
@@ -54,35 +52,6 @@
         document.documentElement.classList.toggle('theme-light', $isLightTheme)
         document.documentElement.classList.toggle('theme-dark', !$isLightTheme)
     }
-
-    let main: HTMLElement | null = null
-    let scrollTop = 0
-    beforeNavigate(() => {
-        // It looks like `snapshot.capture` is called "too late", i.e. after the
-        // content has been updated. beforeNavigate is used to capture the correct
-        // scroll offset
-        scrollTop = main?.scrollTop ?? 0
-    })
-    export const snapshot: Snapshot<{ x: number }> = {
-        capture() {
-            return { x: scrollTop }
-        },
-        restore(value) {
-            restoreScrollPosition(value.x)
-        },
-    }
-
-    function restoreScrollPosition(y: number) {
-        const start = Date.now()
-        requestAnimationFrame(function scroll() {
-            if (main) {
-                main.scrollTo(0, y)
-            }
-            if ((!main || main.scrollTop !== y) && Date.now() - start < 3000) {
-                requestAnimationFrame(scroll)
-            }
-        })
-    }
 </script>
 
 <svelte:head>
@@ -95,7 +64,7 @@
 <InfoBanner />
 <Header authenticatedUser={$user} />
 
-<main bind:this={main}>
+<main>
     <slot />
 </main>
 

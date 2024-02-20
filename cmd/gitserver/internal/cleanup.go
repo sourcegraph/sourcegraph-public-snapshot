@@ -369,7 +369,8 @@ func cleanupRepos(
 			return false, nil
 		}
 
-		_, err := db.GitserverRepos().GetByName(ctx, gitserverfs.RepoNameFromDir(reposDir, dir))
+		repoName := gitserverfs.RepoNameFromDir(reposDir, dir)
+		_, err := db.GitserverRepos().GetByName(ctx, repoName)
 		// Repo still exists, nothing to do.
 		if err == nil {
 			return false, nil
@@ -377,7 +378,7 @@ func cleanupRepos(
 
 		// Failed to talk to DB, skip this repo.
 		if !errcode.IsNotFound(err) {
-			logger.Warn("failed to look up repo", log.Error(err), log.String("repo", string(dir)))
+			logger.Warn("failed to look up repo", log.Error(err), log.String("repo", string(repoName)))
 			return false, nil
 		}
 
@@ -455,10 +456,8 @@ func cleanupRepos(
 			return false, nil
 		}
 
-		// name is the relative path to ReposDir, but without the .git suffix.
-		repo := gitserverfs.RepoNameFromDir(reposDir, dir)
 		recloneLogger := logger.With(
-			log.String("repo", string(repo)),
+			log.String("repo", string(repoName)),
 			log.Time("cloned", recloneTime),
 			log.String("reason", reason),
 		)
@@ -474,7 +473,7 @@ func cleanupRepos(
 
 		cmdCtx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 		defer cancel()
-		if _, err := cloneRepo(cmdCtx, repo, CloneOptions{Block: true, Overwrite: true}); err != nil {
+		if _, err := cloneRepo(cmdCtx, repoName, CloneOptions{Block: true, Overwrite: true}); err != nil {
 			return true, err
 		}
 		reposRecloned.Inc()

@@ -69,22 +69,26 @@ type PatternInfo struct {
 	// when finding matches.
 	IsCaseSensitive bool
 
-	// ExcludePattern is a pattern that may not match the returned files' paths.
+	// ExcludePaths is a pattern that may not match the returned files' paths.
 	// eg '**/node_modules'
-	ExcludePattern string
+	ExcludePaths string
 
-	// IncludePatterns is a list of patterns that must *all* match the returned
+	// IncludePaths is a list of patterns that must *all* match the returned
 	// files' paths.
 	// eg '**/node_modules'
 	//
 	// The patterns are ANDed together; a file's path must match all patterns
 	// for it to be kept. That is also why it is a list (unlike the singular
-	// ExcludePattern); it is not possible in general to construct a single
+	// ExcludePaths); it is not possible in general to construct a single
 	// glob or Go regexp that represents multiple such patterns ANDed together.
-	IncludePatterns []string
+	IncludePaths []string
 
-	// IncludeExcludePatternAreCaseSensitive indicates that ExcludePattern, IncludePattern,
-	// and IncludePatterns are case sensitive.
+	// IncludeLangs and ExcludeLangs are the languages passed via the lang filters (e.g., "lang:c")
+	IncludeLangs []string
+	ExcludeLangs []string
+
+	// IncludeExcludePatternAreCaseSensitive indicates that ExcludePaths, IncludePattern,
+	// and IncludePaths are case sensitive.
 	PathPatternsAreCaseSensitive bool
 
 	// Limit is the cap on the total number of matches returned.
@@ -99,9 +103,6 @@ type PatternInfo struct {
 	// considered a match.
 	PatternMatchesPath bool
 
-	// Languages is the languages passed via the lang filters (e.g., "lang:c")
-	Languages []string
-
 	// CombyRule is a rule that constrains matching for structural search.
 	// It only applies when IsStructuralPat is true.
 	// As a temporary measure, the expression `where "backcompat" == "backcompat"` acts as
@@ -113,6 +114,10 @@ type PatternInfo struct {
 	// use it since selection is done after the query completes, but exposing it can enable
 	// optimizations.
 	Select string
+
+	// Languages represents the set of languages requested in the query. It is only uesd for
+	// structural search and is separate from IncludeLangs, which represents language filters.
+	Languages []string
 }
 
 func (p *PatternInfo) String() string {
@@ -137,8 +142,11 @@ func (p *PatternInfo) String() string {
 	if p.Limit > 0 {
 		args = append(args, fmt.Sprintf("limit:%d", p.Limit))
 	}
-	for _, lang := range p.Languages {
+	for _, lang := range p.IncludeLangs {
 		args = append(args, fmt.Sprintf("lang:%s", lang))
+	}
+	for _, lang := range p.ExcludeLangs {
+		args = append(args, fmt.Sprintf("-lang:%s", lang))
 	}
 	if p.Select != "" {
 		args = append(args, fmt.Sprintf("select:%s", p.Select))
@@ -148,10 +156,10 @@ func (p *PatternInfo) String() string {
 	if p.PathPatternsAreCaseSensitive {
 		path = "F"
 	}
-	if p.ExcludePattern != "" {
-		args = append(args, fmt.Sprintf("-%s:%q", path, p.ExcludePattern))
+	if p.ExcludePaths != "" {
+		args = append(args, fmt.Sprintf("-%s:%q", path, p.ExcludePaths))
 	}
-	for _, inc := range p.IncludePatterns {
+	for _, inc := range p.IncludePaths {
 		args = append(args, fmt.Sprintf("%s:%q", path, inc))
 	}
 
@@ -170,15 +178,17 @@ func (r *Request) ToProto() *proto.SearchRequest {
 			Query:                        r.PatternInfo.Query.ToProto(),
 			IsStructural:                 r.PatternInfo.IsStructuralPat,
 			IsCaseSensitive:              r.PatternInfo.IsCaseSensitive,
-			ExcludePattern:               r.PatternInfo.ExcludePattern,
-			IncludePatterns:              r.PatternInfo.IncludePatterns,
+			ExcludePattern:               r.PatternInfo.ExcludePaths,
+			IncludePatterns:              r.PatternInfo.IncludePaths,
 			PathPatternsAreCaseSensitive: r.PatternInfo.PathPatternsAreCaseSensitive,
 			Limit:                        int64(r.PatternInfo.Limit),
 			PatternMatchesContent:        r.PatternInfo.PatternMatchesContent,
 			PatternMatchesPath:           r.PatternInfo.PatternMatchesPath,
 			CombyRule:                    r.PatternInfo.CombyRule,
-			Languages:                    r.PatternInfo.Languages,
+			IncludeLangs:                 r.PatternInfo.IncludeLangs,
+			ExcludeLangs:                 r.PatternInfo.ExcludeLangs,
 			Select:                       r.PatternInfo.Select,
+			Languages:                    r.PatternInfo.Languages,
 		},
 		FetchTimeout:    durationpb.New(r.FetchTimeout),
 		NumContextLines: r.NumContextLines,
@@ -196,13 +206,14 @@ func (r *Request) FromProto(req *proto.SearchRequest) {
 			Query:                        NodeFromProto(req.PatternInfo.Query),
 			IsStructuralPat:              req.PatternInfo.IsStructural,
 			IsCaseSensitive:              req.PatternInfo.IsCaseSensitive,
-			ExcludePattern:               req.PatternInfo.ExcludePattern,
-			IncludePatterns:              req.PatternInfo.IncludePatterns,
+			ExcludePaths:                 req.PatternInfo.ExcludePattern,
+			IncludePaths:                 req.PatternInfo.IncludePatterns,
 			PathPatternsAreCaseSensitive: req.PatternInfo.PathPatternsAreCaseSensitive,
 			Limit:                        int(req.PatternInfo.Limit),
 			PatternMatchesContent:        req.PatternInfo.PatternMatchesContent,
 			PatternMatchesPath:           req.PatternInfo.PatternMatchesPath,
-			Languages:                    req.PatternInfo.Languages,
+			IncludeLangs:                 req.PatternInfo.IncludeLangs,
+			ExcludeLangs:                 req.PatternInfo.ExcludeLangs,
 			CombyRule:                    req.PatternInfo.CombyRule,
 			Select:                       req.PatternInfo.Select,
 		},

@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
@@ -448,6 +449,11 @@ func TestGitserverReposGetByID(t *testing.T) {
 	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLogs")); diff != "" {
 		t.Fatal(diff)
 	}
+
+	_, err = db.GitserverRepos().GetByID(ctx, gitserverRepo.RepoID+1)
+	if !errcode.IsNotFound(err) {
+		t.Fatal("expected not found error for non-existant ID", err)
+	}
 }
 
 func TestGitserverReposGetByName(t *testing.T) {
@@ -470,6 +476,11 @@ func TestGitserverReposGetByName(t *testing.T) {
 
 	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLogs")); diff != "" {
 		t.Fatal(diff)
+	}
+
+	_, err = db.GitserverRepos().GetByName(ctx, repo.Name+"404")
+	if !errcode.IsNotFound(err) {
+		t.Fatal("expected not found error for non-existant repo name", err)
 	}
 }
 

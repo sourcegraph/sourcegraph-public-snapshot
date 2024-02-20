@@ -155,4 +155,9 @@ func (r *automaticRetryClient) GetCommit(ctx context.Context, in *proto.GetCommi
 	return r.base.GetCommit(ctx, in, opts...)
 }
 
+func (r *automaticRetryClient) ResolveRevision(ctx context.Context, in *proto.ResolveRevisionRequest, opts ...grpc.CallOption) (*proto.ResolveRevisionResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.ResolveRevision(ctx, in, opts...)
+}
+
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

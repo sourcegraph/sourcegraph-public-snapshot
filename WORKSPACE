@@ -151,6 +151,13 @@ http_archive(
     url = "https://github.com/aspect-build/aspect-cli/archive/5.8.20.tar.gz",
 )
 
+http_archive(
+    name = "rules_multirun",
+    sha256 = "9cd384e42b2da00104f0e18f25e66285aa21f64b573c667638a7a213206885ab",
+    strip_prefix = "rules_multirun-0.6.1",
+    url = "https://github.com/keith/rules_multirun/archive/refs/tags/0.6.1.tar.gz",
+)
+
 # hermetic_cc_toolchain setup ================================
 HERMETIC_CC_TOOLCHAIN_VERSION = "v2.2.1"
 
@@ -468,10 +475,15 @@ exports_files(["bundle"])
 filegroup(
     name = "srcs",
     srcs = glob(["**"]),
-    visibility = ["//visibility:public"]
 )
     """,
     integrity = "sha256-Spx8LyM7k+dsGOlZ4TdAq+CNk5EzvYB/oxnY4zGpqPg=",
     strip_prefix = "sourcegraph-extensions-bundles-5.0.1",
     url = "https://github.com/sourcegraph/sourcegraph-extensions-bundles/archive/v5.0.1.zip",
+)
+
+load("//dev:schema_migrations.bzl", "schema_migrations")
+
+schema_migrations(
+    name = "schemas_migrations",
 )
