@@ -39,14 +39,14 @@ var (
 	defaultUpdateInterval = 24 * time.Hour
 )
 
-type listingCache interface {
+type ListingCache interface {
 	httpcache.Cache
 	ListAllKeys() []string
 }
 
 type Source struct {
 	log    log.Logger
-	cache  listingCache // cache is expected to be something with automatic TTL
+	cache  ListingCache // cache is expected to be something with automatic TTL
 	dotcom graphql.Client
 
 	// internalMode, if true, indicates only dev and internal licenses may use
@@ -60,7 +60,7 @@ var _ actor.Source = &Source{}
 var _ actor.SourceUpdater = &Source{}
 var _ actor.SourceSyncer = &Source{}
 
-func NewSource(logger log.Logger, cache listingCache, dotcomClient graphql.Client, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
+func NewSource(logger log.Logger, cache ListingCache, dotcomClient graphql.Client, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
 	return &Source{
 		log:    logger.Scoped("productsubscriptions"),
 		cache:  cache,
@@ -171,7 +171,7 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 	return seen, errs
 }
 
-func removeUnseenTokens(seen collections.Set[string], cache listingCache, syncLog log.Logger) {
+func removeUnseenTokens(seen collections.Set[string], cache ListingCache, syncLog log.Logger) {
 	start := time.Now()
 	// Using Redis KEYS can get slow, but we only expect NUMBER_OF_SUBSCRIPTIONS * NUMBER_OF_ACTIVE_LICENCE_KEYS here
 	// Right now, listing 2000 keys takes ~3ms, and replacing this with SCAN this would require changing our Redis client to support scanning / context, so let's leave like that until we fix listing subscriptions in Q2 2024.

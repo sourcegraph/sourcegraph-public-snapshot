@@ -198,7 +198,7 @@ type fakeListingCache struct {
 	calls []struct{ call, key string }
 }
 
-var _ listingCache = &fakeListingCache{}
+var _ ListingCache = &fakeListingCache{}
 
 func (m *fakeListingCache) Set(key string, responseBytes []byte) {
 	m.state[key] = responseBytes
