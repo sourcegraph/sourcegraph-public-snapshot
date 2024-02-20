@@ -126,6 +126,8 @@ export const load: PageLoad = ({ url, depends }) => {
             featureOverrides: [],
             chunkMatches: true,
             searchMode,
+            displayLimit: 500,
+            maxLineLen: 1000,
         }
 
         // We create a new stream only if
