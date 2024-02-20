@@ -272,8 +272,7 @@ func (r *redisKeyValue) do(commandName string, args ...any) Value {
 	reply, err := c.Do(commandName, args...)
 	if r.recorder != nil {
 		elapsed := time.Since(start)
-		// call the recorder after we return
-		defer (*r.recorder)(commandName, elapsed, err)
+		(*r.recorder)(commandName, elapsed, err)
 	}
 	return Value{
 		reply: reply,
