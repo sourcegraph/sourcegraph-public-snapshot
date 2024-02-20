@@ -493,10 +493,16 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             <Text className="mb-1 text-muted">
                                 Enterprise admin and security features (SSO, SAML, SCIM, audit logs, etc.)
                             </Text>
-                            <Text className="mb-1 text-muted">Guardrails</Text>
-                            <Tooltip content="We scan Cody's output for OSS code, reducing the risk of copyrighted code in suggestions">
-                                <Icon className="ml-1 text-muted" svgPath={mdiInformationOutline} aria-hidden={true} />
-                            </Tooltip>
+                            <Text className="mb-1 text-muted">
+                                Guardrails
+                                <Tooltip content="We scan Cody's output for OSS code, reducing the risk of copyrighted code in suggestions">
+                                    <Icon
+                                        className="ml-1 text-muted"
+                                        svgPath={mdiInformationOutline}
+                                        aria-hidden={true}
+                                    />
+                                </Tooltip>
+                            </Text>
                         </div>
                     </div>
                 </div>
