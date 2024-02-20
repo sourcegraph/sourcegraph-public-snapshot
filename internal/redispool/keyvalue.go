@@ -43,6 +43,7 @@ type KeyValue interface {
 	// WithContext will return a KeyValue that should respect ctx for all
 	// blocking operations.
 	WithContext(ctx context.Context) KeyValue
+	WithLatencyRecorder(r LatencyRecorder) KeyValue
 
 	// Pool returns the underlying redis pool.
 	// The intention of this API is Pool is only for advanced use cases and the caller
@@ -109,10 +110,13 @@ func (v Values) StringMap() (map[string]string, error) {
 	return redis.StringMap(v.reply, v.err)
 }
 
+type LatencyRecorder func(call string, latency time.Duration, err error)
+
 type redisKeyValue struct {
-	pool   *redis.Pool
-	ctx    context.Context
-	prefix string
+	pool     *redis.Pool
+	ctx      context.Context
+	prefix   string
+	recorder *LatencyRecorder
 }
 
 // NewKeyValue returns a KeyValue for addr.
@@ -225,6 +229,15 @@ func (r *redisKeyValue) WithContext(ctx context.Context) KeyValue {
 	}
 }
 
+func (r *redisKeyValue) WithLatencyRecorder(rec LatencyRecorder) KeyValue {
+	return &redisKeyValue{
+		pool:     r.pool,
+		ctx:      r.ctx,
+		prefix:   r.prefix,
+		recorder: &rec,
+	}
+}
+
 // WithPrefix wraps r to return a RedisKeyValue that prefixes all keys with
 // prefix + ":".
 func (r *redisKeyValue) WithPrefix(prefix string) KeyValue {
@@ -252,8 +265,15 @@ func (r *redisKeyValue) do(commandName string, args ...any) Value {
 		c = r.pool.Get()
 		defer c.Close()
 	}
-
+	var start time.Time
+	if r.recorder != nil {
+		start = time.Now()
+	}
 	reply, err := c.Do(commandName, args...)
+	if r.recorder != nil {
+		elapsed := time.Since(start)
+		(*r.recorder)(commandName, elapsed, err)
+	}
 	return Value{
 		reply: reply,
 		err:   err,
