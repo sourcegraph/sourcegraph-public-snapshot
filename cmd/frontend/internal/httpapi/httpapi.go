@@ -262,14 +262,14 @@ func RegisterInternalServices(
 		WriteErrBody: true,
 	})
 
-	// zoekt-indexserver endpoints
-	gsClient := gitserver.NewClient("http.zoektindexerserver")
+	gsClient := gitserver.NewClient("http.internalapi")
 
+	// zoekt-indexserver endpoints
 	indexer := &searchIndexerServer{
 		db:              db,
 		logger:          logger.Scoped("searchIndexerServer"),
-		gitserverClient: gsClient,
-		ListIndexable:   backend.NewRepos(logger, db, gsClient).ListIndexable,
+		gitserverClient: gsClient.Scoped("zoektindexerserver"),
+		ListIndexable:   backend.NewRepos(logger, db, gsClient.Scoped("zoektindexerserver")).ListIndexable,
 		RepoStore:       db.Repos(),
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
@@ -279,12 +279,9 @@ func RegisterInternalServices(
 		MinLastChangedDisabled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
 	}
 
-	gitService := &gitServiceHandler{Gitserver: gsClient}
+	gitService := &gitServiceHandler{Gitserver: gsClient.Scoped("gitservice")}
 	m.Path("/git/{RepoName:.*}/info/refs").Methods("GET").Name(gitInfoRefs).Handler(trace.Route(handler(gitService.serveInfoRefs())))
 	m.Path("/git/{RepoName:.*}/git-upload-pack").Methods("GET", "POST").Name(gitUploadPack).Handler(trace.Route(handler(gitService.serveGitUploadPack())))
-
-	// TODO: Can be removed after 5.3 is cut.
-	m.Path("/configuration").Methods("POST").Handler(trace.Route(handler(serveConfiguration)))
 
 	m.Path("/lsif/upload").Methods("POST").Handler(trace.Route(newCodeIntelUploadHandler(false)))
 	m.Path("/scip/upload").Methods("POST").Handler(trace.Route(newCodeIntelUploadHandler(false)))
@@ -375,5 +372,5 @@ var noopHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 
 var lsifDeprecationHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("Sourcegraph v4.5+ no longer accepts LSIF uploads. The Sourcegraph CLI v4.4.2+ will translate LSIF to SCIP prior to uploading. Please check the version of the CLI utility used to upload this artifact."))
+	_, _ = w.Write([]byte("Sourcegraph v4.5+ no longer accepts LSIF uploads. The Sourcegraph CLI v4.4.2+ will translate LSIF to SCIP prior to uploading. Please check the version of the CLI utility used to upload this artifact."))
 })

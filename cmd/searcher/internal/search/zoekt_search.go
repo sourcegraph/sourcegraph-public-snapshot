@@ -27,15 +27,15 @@ func handleFilePathPatterns(query *protocol.PatternInfo) (zoektquery.Q, error) {
 
 	// Zoekt uses regular expressions for file paths.
 	// Unhandled cases: PathPatternsAreCaseSensitive and whitespace in file path patterns.
-	for _, p := range query.IncludePatterns {
+	for _, p := range query.IncludePaths {
 		q, err := zoektutil.FileRe(p, query.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
 		and = append(and, q)
 	}
-	if query.ExcludePattern != "" {
-		q, err := zoektutil.FileRe(query.ExcludePattern, query.IsCaseSensitive)
+	if query.ExcludePaths != "" {
+		q, err := zoektutil.FileRe(query.ExcludePaths, query.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
@@ -99,9 +99,9 @@ func zoektSearch(ctx context.Context, logger log.Logger, client zoekt.Streamer, 
 	}
 
 	var extensionHint string
-	if len(args.IncludePatterns) > 0 {
+	if len(args.IncludePaths) > 0 {
 		// Remove anchor that's added by autocomplete
-		extensionHint = strings.TrimSuffix(filepath.Ext(args.IncludePatterns[0]), "$")
+		extensionHint = strings.TrimSuffix(filepath.Ext(args.IncludePaths[0]), "$")
 	}
 
 	pool := pool.New().WithErrors()

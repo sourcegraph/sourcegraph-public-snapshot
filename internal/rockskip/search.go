@@ -429,12 +429,12 @@ func convertSearchArgsToSqlQuery(args search.SymbolsParameters) *sqlf.Query {
 	// Query
 	conjunctOrNils = append(conjunctOrNils, regexMatch(nameConditions, args.Query, args.IsCaseSensitive))
 
-	// IncludePatterns
+	// IncludePaths
 	for _, includePattern := range args.IncludePatterns {
 		conjunctOrNils = append(conjunctOrNils, regexMatch(pathConditions, includePattern, args.IsCaseSensitive))
 	}
 
-	// ExcludePattern
+	// ExcludePaths
 	conjunctOrNils = append(conjunctOrNils, negate(regexMatch(pathConditions, args.ExcludePattern, args.IsCaseSensitive)))
 
 	// Drop nils
