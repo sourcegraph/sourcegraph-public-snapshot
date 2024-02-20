@@ -1,11 +1,4 @@
-<script lang="ts">
-    import { pluralize } from '$lib/common'
-    import Tooltip from '$lib/Tooltip.svelte'
-    import { Badge } from '$lib/wildcard'
-
-    export let count: number | undefined
-    export let exhaustive: boolean
-
+<script context="module">
     function roundCount(count: number): number {
         const roundNumbers = [10000, 5000, 1000, 500, 100, 50, 10, 5, 1]
         for (const roundNumber of roundNumbers) {
@@ -15,6 +8,15 @@
         }
         return 0
     }
+</script>
+
+<script lang="ts">
+    import { pluralize } from '$lib/common'
+    import Tooltip from '$lib/Tooltip.svelte'
+    import { Badge } from '$lib/wildcard'
+
+    export let count: number | undefined
+    export let exhaustive: boolean
 </script>
 
 {#if count !== undefined}
