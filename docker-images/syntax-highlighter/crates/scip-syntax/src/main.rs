@@ -32,6 +32,10 @@ enum Commands {
         /// List of files to analyse
         filenames: Vec<String>,
 
+        /// Tar file to index
+        #[arg(long)]
+        tar: Option<String>,
+
         /// Analysis mode
         #[arg(short, long, default_value = "full")]
         mode: AnalysisMode,
@@ -107,16 +111,29 @@ pub fn main() -> anyhow::Result<()> {
             fail_fast,
             project_root,
             evaluate,
+            tar,
         } => {
             let index_mode = {
-                match workspace {
-                    None => IndexMode::Files { list: filenames },
-                    Some(location) => {
-                        if !filenames.is_empty() {
-                            panic!("--workspace option cannot be combined with a list of files");
-                        } else {
-                            IndexMode::Workspace {
-                                location: location.into(),
+                match tar {
+                    Some(loc) if loc == "-" => IndexMode::TarArchive {
+                        input: scip_syntax::index::TarMode::Stdin,
+                    },
+                    Some(loc) => IndexMode::TarArchive {
+                        input: scip_syntax::index::TarMode::File {
+                            location: PathBuf::from(loc),
+                        },
+                    },
+                    None => {
+                        match workspace {
+                            None => IndexMode::Files { list: filenames },
+                            Some(location) => {
+                                if !filenames.is_empty() {
+                                    panic!("--workspace option cannot be combined with a list of files");
+                                } else {
+                                    IndexMode::Workspace {
+                                        location: location.into(),
+                                    }
+                                }
                             }
                         }
                     }

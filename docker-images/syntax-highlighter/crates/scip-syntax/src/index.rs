@@ -1,8 +1,9 @@
-use std::path::PathBuf;
+use std::{fs::File, path::PathBuf};
 
 use anyhow::{anyhow, Context, Result};
 use clap::ValueEnum;
 use scip::{types::Document, write_message_to_file};
+use std::io::{self, prelude::*};
 use syntax_analysis::{get_globals, get_locals};
 use tree_sitter_all_languages::ParserId;
 use walkdir::DirEntry;
@@ -40,12 +41,25 @@ impl AnalysisMode {
     }
 }
 
+pub enum TarMode {
+    Stdin,
+    File { location: PathBuf },
+}
+
 pub enum IndexMode {
     /// Index only this list of files, without checking file extensions
-    Files { list: Vec<String> },
+    Files {
+        list: Vec<String>,
+    },
     /// Discover all files that can be handled by the chosen language
     /// in the passed location (which has to be a directory)
-    Workspace { location: PathBuf },
+    Workspace {
+        location: PathBuf,
+    },
+
+    TarArchive {
+        input: TarMode,
+    },
 }
 
 pub fn index_command(
@@ -60,6 +74,7 @@ pub fn index_command(
     let project_root = {
         match index_mode {
             IndexMode::Files { .. } => project_root,
+            IndexMode::TarArchive { .. } => project_root,
             IndexMode::Workspace { ref location } => location.clone(),
         }
     };
@@ -115,6 +130,24 @@ pub fn index_command(
         }
     };
 
+    let extensions = ParserId::language_extensions(&p);
+
+    let file_matches_language = |filename: &str| -> bool {
+        filename
+            .split('.')
+            .last()
+            .filter(|ext| extensions.contains(ext))
+            .is_some()
+    };
+
+    let is_indexable_path = |path: &PathBuf| -> bool {
+        match path.extension().and_then(|e| e.to_str()) {
+            None => false,
+            Some(ext) if file_matches_language(ext) => true,
+            Some(_) => false,
+        }
+    };
+
     match index_mode {
         IndexMode::Files { list } => {
             let bar = create_progress_bar(list.len() as u64);
@@ -127,19 +160,68 @@ pub fn index_command(
 
             bar.finish();
         }
+        IndexMode::TarArchive { input } => {
+            let mut index_entry = |path: &PathBuf, contents: &str| -> Result<()> {
+                match index_content(&contents, p, &options) {
+                    Ok(mut document) => {
+                        document.relative_path = path.display().to_string();
+                        index.documents.push(document);
+                        Ok(())
+                    }
+                    Err(error) => {
+                        if options.fail_fast {
+                            Err(anyhow!("Failed to index {}: {:?}", path.display(), error))
+                        } else {
+                            eprintln!("Failed to index {}: {:?}", path.display(), error);
+                            Ok(())
+                        }
+                    }
+                }
+            };
+
+            match input {
+                TarMode::File { location } => {
+                    let mut ar = tar::Archive::new(File::open(location).unwrap());
+                    let entries = ar.entries()?;
+                    let mut contents = String::new();
+                    for entry in entries {
+                        let mut e = entry?;
+                        let path = PathBuf::from(e.path()?);
+                        if is_indexable_path(&path) {
+                            let read = e.read_to_string(&mut contents)?;
+                            index_entry(&path, &contents)?;
+                            if read > 0 {
+                                contents.clear();
+                            }
+                        }
+                    }
+                }
+                TarMode::Stdin => {
+                    let stdin = io::stdin();
+                    let mut ar = tar::Archive::new(stdin);
+                    let entries = ar.entries()?;
+                    let mut contents = String::new();
+                    for entry in entries {
+                        let mut e = entry?;
+                        let path = PathBuf::from(e.path()?);
+                        if is_indexable_path(&path) {
+                            let read = e.read_to_string(&mut contents)?;
+                            index_entry(&path, &contents)?;
+                            if read > 0 {
+                                contents.clear();
+                            }
+                        }
+                    }
+                }
+            }
+        }
         IndexMode::Workspace { location } => {
-            let extensions = ParserId::language_extensions(&p);
             let is_valid = |entry: &DirEntry| {
                 entry.file_type().is_dir()
                     || entry
                         .file_name()
                         .to_str()
-                        .map(|s| {
-                            s.split('.')
-                                .last()
-                                .filter(|ext| extensions.contains(ext))
-                                .is_some()
-                        })
+                        .map(|s| file_matches_language(s))
                         .unwrap_or(false)
             };
 
