@@ -3,7 +3,7 @@
     import OpenBookIcon from '$lib/icons/OpenBook.svelte'
 </script>
 
-<footer class="help">
+<footer>
     <a href="/help/code_search/reference/queries" class="link">
         <div class="icon"><OpenBookIcon aria-hidden /></div>
         <div>
@@ -15,7 +15,7 @@
 </footer>
 
 <style lang="scss">
-    .help {
+    footer {
         line-height: 1;
 
         &::before {

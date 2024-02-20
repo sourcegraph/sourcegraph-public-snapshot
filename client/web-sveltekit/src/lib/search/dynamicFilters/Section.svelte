@@ -131,7 +131,7 @@
         text-align: center;
     }
 
-    li a {
+    a {
         display: flex;
         width: 100%;
         align-items: center;
