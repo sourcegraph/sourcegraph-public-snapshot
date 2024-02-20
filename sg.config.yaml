@@ -408,7 +408,8 @@ commands:
       pnpm run generate
     env:
       ENABLE_OPEN_TELEMETRY: true
-        # NODE_TLS_REJECT_UNAUTHORIZED: 0
+      # Needed so that node can ping the caddy server
+      NODE_TLS_REJECT_UNAUTHORIZED: 0
 
   web-standalone-http:
     description: Standalone web frontend (dev) with API proxy to a configurable URL
