@@ -107,7 +107,6 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	}
 
 	redisCache := redispool.Cache.WithLatencyRecorder(func(call string, latency time.Duration, err error) {
-		fmt.Println(call, latency, err)
 		redisLatency.Record(context.Background(), latency.Milliseconds(), metric.WithAttributeSet(attribute.NewSet(
 			attribute.Bool("error", err != nil),
 			attribute.String("command", call))))
