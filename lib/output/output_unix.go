@@ -4,6 +4,7 @@
 package output
 
 import (
+	"io"
 	"os"
 	"os/signal"
 	"sync"
@@ -30,7 +31,7 @@ func init() {
 		once sync.Once
 	)
 
-	newCapabilityWatcher = func(opts OutputOpts) chan capabilities {
+	newCapabilityWatcher = func(w io.Writer, opts OutputOpts) chan capabilities {
 		// Lazily initialise the required global state if we haven't already.
 		once.Do(func() {
 			mu.Lock()
@@ -46,7 +47,7 @@ func init() {
 			go func() {
 				for {
 					<-c
-					caps, err := detectCapabilities(opts)
+					caps, err := detectCapabilities(w, opts)
 					// We won't bother reporting an error here; there's no harm
 					// in the previous capabilities being used besides possibly
 					// being ugly.

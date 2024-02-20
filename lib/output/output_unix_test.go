@@ -20,7 +20,7 @@ func TestCapabilityWatcher(t *testing.T) {
 	received := make(chan capabilities)
 
 	createWatcher := func(opts OutputOpts) {
-		c := newCapabilityWatcher(opts)
+		c := newCapabilityWatcher(os.Stdout, opts)
 		if c == nil {
 			t.Error("unexpected nil watcher channel")
 		}

@@ -91,7 +91,7 @@ var newOutputPlatformQuirks func(o *Output) error
 // newCapabilityWatcher returns a channel that receives a message when
 // capabilities are updated. By default, no watching functionality is
 // available.
-var newCapabilityWatcher = func(opts OutputOpts) chan capabilities { return nil }
+var newCapabilityWatcher = func(w io.Writer, opts OutputOpts) chan capabilities { return nil }
 
 func NewOutput(w io.Writer, opts OutputOpts) *Output {
 	// Not being able to detect capabilities is alright. It might mean output will look
@@ -99,7 +99,7 @@ func NewOutput(w io.Writer, opts OutputOpts) *Output {
 	// Before, we logged an error
 	// "An error was returned when detecting the terminal size and capabilities"
 	// but it was super noisy and confused people into thinking something would be broken.
-	caps, _ := detectCapabilities(opts)
+	caps, _ := detectCapabilities(w, opts)
 
 	o := &Output{caps: caps, verbose: opts.Verbose, w: w}
 	if newOutputPlatformQuirks != nil {
@@ -110,7 +110,7 @@ func NewOutput(w io.Writer, opts OutputOpts) *Output {
 
 	// Set up a watcher so we can adjust the size of the output if the terminal
 	// is resized.
-	if c := newCapabilityWatcher(opts); c != nil {
+	if c := newCapabilityWatcher(w, opts); c != nil {
 		go func() {
 			for caps := range c {
 				o.caps = caps

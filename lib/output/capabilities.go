@@ -1,6 +1,7 @@
 package output
 
 import (
+	"io"
 	"os"
 	"strconv"
 
@@ -29,11 +30,11 @@ type capabilities struct {
 // detectCapabilities lazily evaluates capabilities using the given options. This means
 // that if an override is indicated in opts, no inference of the relevant capabilities
 // is done at all.
-func detectCapabilities(opts OutputOpts) (caps capabilities, err error) {
+func detectCapabilities(w io.Writer, opts OutputOpts) (caps capabilities, err error) {
 	// Set atty
 	caps.Isatty = opts.ForceTTY
-	if !opts.ForceTTY {
-		caps.Isatty = isatty.IsTerminal(os.Stdout.Fd())
+	if fder, hasFd := w.(interface{ Fd() uintptr }); !opts.ForceTTY && hasFd {
+		caps.Isatty = isatty.IsTerminal(fder.Fd())
 	}
 
 	// Default width and height
