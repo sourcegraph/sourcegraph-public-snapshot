@@ -402,7 +402,9 @@ const CodyNotEnabledNotice: React.FunctionComponent = React.memo(function CodyNo
 
     // default to false; only include UTM source if the link comes from a private instance and goes to dotcom.
     const includeUTMSource: boolean = !window.context?.sourcegraphDotComMode || false
-    const dotcomCodyLink: string = `https://sourcegraph.com/cody${includeUTMSource ? '?utm_source=server' : ''}`
+    const dotcomCodyLink: string = `https://sourcegraph.com/cody${
+        includeUTMSource ? '?utm_source=private-sourcegraph-instance' : ''
+    }`
 
     return (
         <div className={classNames('p-3', styles.notEnabledBlock)}>
