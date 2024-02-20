@@ -133,24 +133,15 @@ func regexSearch(
 					filesSkipped.Inc()
 					continue
 				}
-
-				// Apply language filters
-				langMatch, lang := lm.Matches(f.Name, getContent)
-				if !langMatch {
-					filesSkipped.Inc()
-					continue
-				}
 				filesSearched.Inc()
 
 				// Check pattern against file path and contents
 				match := false
 				fm := protocol.FileMatch{
 					Path:     f.Name,
-					Language: lang,
 					LimitHit: false,
 				}
 
-				// Check if the pattern matches
 				if patternMatchesPaths {
 					match = m.MatchesString(f.Name)
 				}
@@ -165,12 +156,18 @@ func regexSearch(
 						// find limit+1 matches so we know whether we hit the limit
 						var locs [][]int
 						match, locs = m.MatchesFile(l.fileMatchBuf, sender.Remaining()+1)
-						fm = locsToFileMatch(l.fileBuf, f.Name, lang, locs, contextLines)
+						fm = locsToFileMatch(l.fileBuf, f.Name, locs, contextLines)
 					}
 				}
 
 				if match {
-					sender.Send(fm)
+					// Apply language filters and send result
+					langMatch, lang := lm.Matches(f.Name, getContent)
+					if langMatch {
+						fm.Language = lang
+						sender.Send(fm)
+						continue
+					}
 				}
 			}
 			return nil
@@ -265,11 +262,10 @@ func readAll(r io.Reader, b []byte) (int, error) {
 	}
 }
 
-func locsToFileMatch(fileBuf []byte, name string, lang string, locs [][]int, contextLines int32) protocol.FileMatch {
+func locsToFileMatch(fileBuf []byte, name string, locs [][]int, contextLines int32) protocol.FileMatch {
 	if len(locs) == 0 {
 		return protocol.FileMatch{
 			Path:     name,
-			Language: lang,
 			LimitHit: false,
 		}
 	}
@@ -278,7 +274,6 @@ func locsToFileMatch(fileBuf []byte, name string, lang string, locs [][]int, con
 	cms := chunksToMatches(fileBuf, chunks, contextLines)
 	return protocol.FileMatch{
 		Path:         name,
-		Language:     lang,
 		ChunkMatches: cms,
 		LimitHit:     false,
 	}
