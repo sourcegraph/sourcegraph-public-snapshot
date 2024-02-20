@@ -20,8 +20,6 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/golang/groupcache/lru"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -39,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type DiffOptions struct {
@@ -897,11 +896,6 @@ type ResolveRevisionOptions struct {
 	NoEnsureRevision bool // do not try to fetch from remote if revision doesn't exist locally
 }
 
-var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_resolve_revision_total",
-	Help: "The number of times we call internal/vcs/git/ResolveRevision",
-}, []string{"ensure_revision"})
-
 // ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
 // used.
 //
@@ -911,12 +905,6 @@ var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 // * Empty repository: gitdomain.RevisionNotFoundError
 // * Other unexpected errors.
 func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (_ api.CommitID, err error) {
-	labelEnsureRevisionValue := "true"
-	if opt.NoEnsureRevision {
-		labelEnsureRevisionValue = "false"
-	}
-	resolveRevisionCounter.WithLabelValues(labelEnsureRevisionValue).Inc()
-
 	ctx, _, endObservation := c.operations.resolveRevision.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
@@ -927,58 +915,24 @@ func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoNa
 	})
 	defer endObservation(1, observation.Args{})
 
-	if err := checkSpecArgSafety(spec); err != nil {
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
 		return "", err
 	}
-	if spec == "" {
-		spec = "HEAD"
+
+	req := &proto.ResolveRevisionRequest{
+		RepoName: string(repo),
+		RevSpec:  []byte(spec),
 	}
-	if spec != "HEAD" {
-		// "git rev-parse HEAD^0" is slower than "git rev-parse HEAD"
-		// since it checks that the resolved git object exists. We can
-		// assume it exists for HEAD, but for other commits we should
-		// check.
-		spec = spec + "^0"
+	if !opt.NoEnsureRevision {
+		req.EnsureRevision = pointers.Ptr(true)
 	}
-
-	cmd := c.gitCommand(repo, "rev-parse", spec)
-	cmd.SetEnsureRevision(spec)
-
-	// We don't ever need to ensure that HEAD is in git-server.
-	// HEAD is always there once a repo is cloned
-	// (except empty repos, but we don't need to ensure revision on those).
-	if opt.NoEnsureRevision || spec == "HEAD" {
-		cmd.SetEnsureRevision("")
-	}
-
-	return runRevParse(ctx, cmd, spec)
-}
-
-// runRevParse sends the git rev-parse command to gitserver. It interprets
-// missing revision responses and converts them into RevisionNotFoundError.
-func runRevParse(ctx context.Context, cmd GitCommand, spec string) (api.CommitID, error) {
-	stdout, stderr, err := cmd.DividedOutput(ctx)
+	res, err := client.ResolveRevision(ctx, req)
 	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
-			return "", err
-		}
-		if bytes.Contains(stderr, []byte("unknown revision")) {
-			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
-		}
-		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args(), stderr))
+		return "", err
 	}
-	commit := api.CommitID(bytes.TrimSpace(stdout))
-	if !gitdomain.IsAbsoluteRevision(string(commit)) {
-		if commit == "HEAD" {
-			// We don't verify the existence of HEAD (see above comments), but
-			// if HEAD doesn't point to anything git just returns `HEAD` as the
-			// output of rev-parse. An example where this occurs is an empty
-			// repository.
-			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
-		}
-		return "", &gitdomain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo()}
-	}
-	return commit, nil
+
+	return api.CommitID(res.GetCommitSha()), nil
 }
 
 // LsFiles returns the output of `git ls-files`.
@@ -1457,9 +1411,6 @@ type CommitsOptions struct {
 
 	Follow bool // follow the history of the path beyond renames (works only for a single path)
 
-	// When true we opt out of attempting to fetch missing revisions
-	NoEnsureRevision bool
-
 	// When true return the names of the files changed in the commit
 	NameOnly bool
 }
@@ -1682,7 +1633,7 @@ func (c *clientImplementor) HasCommitAfter(ctx context.Context, repo api.RepoNam
 }
 
 func (c *clientImplementor) hasCommitAfterWithFiltering(ctx context.Context, repo api.RepoName, date, revspec string) (bool, error) {
-	if commits, err := c.Commits(ctx, repo, CommitsOptions{After: date, Range: revspec, NoEnsureRevision: true}); err != nil {
+	if commits, err := c.Commits(ctx, repo, CommitsOptions{After: date, Range: revspec}); err != nil {
 		return false, err
 	} else if len(commits) > 0 {
 		return true, nil
@@ -1701,9 +1652,6 @@ func (c *clientImplementor) getWrappedCommits(ctx context.Context, repo api.Repo
 	}
 
 	cmd := c.gitCommand(repo, args...)
-	if !opt.NoEnsureRevision {
-		cmd.SetEnsureRevision(opt.Range)
-	}
 	wrappedCommits, err := runCommitLog(ctx, cmd, opt)
 	if err != nil {
 		return nil, err

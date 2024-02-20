@@ -26,11 +26,9 @@ try-import %workspace%/user.bazelrc
 try-import %workspace%/.bazelrc-nix
 
 # Used to locally cross compile, when targeting docker images
-build:darwin-docker --platforms @zig_sdk//platform:linux_amd64
-build:darwin-docker --extra_toolchains @zig_sdk//toolchain:linux_amd64_gnu.2.34
-build:darwin-docker --sandbox_add_mount_pair=/tmp
- # build setting to tell some go test runner to force targeting to macos even if we're building containers with the linux/amd64 toolchain.
-build:darwin-docker --//:darwin_docker=True
+common --enable_platform_specific_config
+common:macos --extra_toolchains @zig_sdk//toolchain:linux_amd64_gnu.2.34
+common:macos --sandbox_add_mount_pair=/tmp
 
 # Helper to run only fast go unit tests
 test:go-short --test_tag_filters=go --test_timeout_filters=short

@@ -1,3 +1,4 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
@@ -62,5 +63,19 @@ go_test(
         "//internal/types",
         "//lib/codeintel/autoindex/config",
         "@com_github_google_go_cmp//cmp",
+    ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_test.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [
+        ":autoindexing",
+        "//internal/codeintel/autoindexing/internal/store",
     ],
 )

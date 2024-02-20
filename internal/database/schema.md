@@ -1687,20 +1687,14 @@ Check constraints:
  external_service_id | bigint                   |           | not null | 
  repo_id             | integer                  |           | not null | 
  clone_url           | text                     |           | not null | 
- user_id             | integer                  |           |          | 
- org_id              | integer                  |           |          | 
  created_at          | timestamp with time zone |           | not null | transaction_timestamp()
 Indexes:
     "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
     "external_service_repos_clone_url_idx" btree (clone_url)
     "external_service_repos_idx" btree (external_service_id, repo_id)
-    "external_service_repos_org_id_idx" btree (org_id) WHERE org_id IS NOT NULL
-    "external_service_user_repos_idx" btree (user_id, repo_id) WHERE user_id IS NOT NULL
 Foreign-key constraints:
     "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
-    "external_service_repos_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE
     "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
-    "external_service_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -1761,11 +1755,9 @@ Foreign-key constraints:
  deleted_at        | timestamp with time zone |           |          | 
  last_sync_at      | timestamp with time zone |           |          | 
  next_sync_at      | timestamp with time zone |           |          | 
- namespace_user_id | integer                  |           |          | 
  unrestricted      | boolean                  |           | not null | false
  cloud_default     | boolean                  |           | not null | false
  encryption_key_id | text                     |           | not null | ''::text
- namespace_org_id  | integer                  |           |          | 
  has_webhooks      | boolean                  |           |          | 
  token_expires_at  | timestamp with time zone |           |          | 
  code_host_id      | integer                  |           |          | 
@@ -1773,21 +1765,14 @@ Foreign-key constraints:
  last_updater_id   | integer                  |           |          | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
-    "external_services_unique_kind_org_id" UNIQUE, btree (kind, namespace_org_id) WHERE deleted_at IS NULL AND namespace_user_id IS NULL AND namespace_org_id IS NOT NULL
-    "external_services_unique_kind_user_id" UNIQUE, btree (kind, namespace_user_id) WHERE deleted_at IS NULL AND namespace_org_id IS NULL AND namespace_user_id IS NOT NULL
     "kind_cloud_default" UNIQUE, btree (kind, cloud_default) WHERE cloud_default = true AND deleted_at IS NULL
     "external_services_has_webhooks_idx" btree (has_webhooks)
-    "external_services_namespace_org_id_idx" btree (namespace_org_id)
-    "external_services_namespace_user_id_idx" btree (namespace_user_id)
 Check constraints:
     "check_non_empty_config" CHECK (btrim(config) <> ''::text)
-    "external_services_max_1_namespace" CHECK (namespace_user_id IS NULL AND namespace_org_id IS NULL OR (namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
 Foreign-key constraints:
     "external_services_code_host_id_fkey" FOREIGN KEY (code_host_id) REFERENCES code_hosts(id) ON UPDATE CASCADE ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED
     "external_services_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     "external_services_last_updater_id_fkey" FOREIGN KEY (last_updater_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
-    "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
-    "external_services_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
     TABLE "external_service_sync_jobs" CONSTRAINT "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE
@@ -2921,8 +2906,6 @@ Referenced by:
     TABLE "cm_monitors" CONSTRAINT "cm_monitors_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "cm_recipients" CONSTRAINT "cm_recipients_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "executor_secrets" CONSTRAINT "executor_secrets_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
-    TABLE "external_service_repos" CONSTRAINT "external_service_repos_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE
-    TABLE "external_services" CONSTRAINT "external_services_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "notebooks" CONSTRAINT "notebooks_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE SET NULL DEFERRABLE
@@ -4398,10 +4381,8 @@ Referenced by:
     TABLE "executor_secrets" CONSTRAINT "executor_secrets_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
     TABLE "executor_secrets" CONSTRAINT "executor_secrets_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "exhaustive_search_jobs" CONSTRAINT "exhaustive_search_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE
-    TABLE "external_service_repos" CONSTRAINT "external_service_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "external_services" CONSTRAINT "external_services_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "external_services" CONSTRAINT "external_services_last_updater_id_fkey" FOREIGN KEY (last_updater_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
-    TABLE "external_services" CONSTRAINT "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "namespace_permissions" CONSTRAINT "namespace_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
@@ -4443,7 +4424,6 @@ Referenced by:
 Triggers:
     trig_delete_user_repo_permissions_on_user_soft_delete AFTER UPDATE ON users FOR EACH ROW EXECUTE FUNCTION delete_user_repo_permissions_on_user_soft_delete()
     trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE FUNCTION invalidate_session_for_userid_on_password_change()
-    trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE FUNCTION soft_delete_user_reference_on_external_service()
 
 ```
 
