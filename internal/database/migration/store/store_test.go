@@ -127,6 +127,9 @@ func testBackfillSchemaVersion(
 	}
 
 	sort.Ints(appliedVersions)
+	for _, version := range backfillOverrides {
+		expectedVersions = append(expectedVersions, int(version))
+	}
 	sort.Ints(expectedVersions)
 	if diff := cmp.Diff(expectedVersions, appliedVersions); diff != "" {
 		t.Errorf("unexpected applied migrations (-want +got):\n%s", diff)
