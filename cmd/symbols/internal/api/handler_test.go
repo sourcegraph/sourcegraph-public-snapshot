@@ -55,6 +55,14 @@ func TestHandler(t *testing.T) {
 					Line:     2,
 				},
 			},
+			".zshrc": {
+				{
+					Name:     "z",
+					Path:     ".zshrc",
+					Language: "Zsh",
+					Line:     1,
+				},
+			},
 		}
 		return newMockParser(pathToEntries), nil
 	}
@@ -65,6 +73,7 @@ func TestHandler(t *testing.T) {
 
 	files := map[string]string{
 		"a.js": "var x = 1\nvar y = 2",
+		".zshrc": "z=42",
 	}
 	gitserverClient := NewMockGitserverClient()
 	gitserverClient.FetchTarFunc.SetDefaultHook(gitserver.CreateTestFetchTarFunc(files))
@@ -87,6 +96,7 @@ func TestHandler(t *testing.T) {
 
 	x := result.Symbol{Name: "x", Path: "a.js", Language: "JavaScript", Line: 0, Character: 4}
 	y := result.Symbol{Name: "y", Path: "a.js", Language: "JavaScript", Line: 1, Character: 4}
+	z := result.Symbol{Name: "z", Path: ".zshrc", Language: "Zsh"}
 
 	testCases := map[string]struct {
 		args     search.SymbolsParameters
@@ -94,7 +104,7 @@ func TestHandler(t *testing.T) {
 	}{
 		"simple": {
 			args:     search.SymbolsParameters{First: 10},
-			expected: []result.Symbol{x, y},
+			expected: []result.Symbol{z, x, y},
 		},
 		"onematch": {
 			args:     search.SymbolsParameters{Query: "x", First: 10},
@@ -130,15 +140,19 @@ func TestHandler(t *testing.T) {
 		},
 		"exclude": {
 			args:     search.SymbolsParameters{ExcludePattern: "a.js", IsCaseSensitive: true, First: 10},
-			expected: nil,
+			expected: []result.Symbol{z},
 		},
 		"include lang filters": {
-			args:     search.SymbolsParameters{Query: "x", IncludeLangs: []string{"Javascript"}, IsCaseSensitive: true, First: 10},
-			expected: []result.Symbol{x},
+			args:     search.SymbolsParameters{Query: ".*", IncludeLangs: []string{"Javascript"}, IsCaseSensitive: true, First: 10},
+			expected: []result.Symbol{x, y},
+		},
+		"include lang filters with ctags conversion": {
+			args:     search.SymbolsParameters{Query: ".*", IncludeLangs: []string{"Shell"}, IsCaseSensitive: true, First: 10},
+			expected: []result.Symbol{z},
 		},
 		"exclude lang filters": {
-			args:     search.SymbolsParameters{Query: "y", ExcludeLangs: []string{"Javascript"}, IsCaseSensitive: true, First: 10},
-			expected: nil,
+			args:     search.SymbolsParameters{Query: ".*", ExcludeLangs: []string{"Javascript"}, IsCaseSensitive: true, First: 10},
+			expected: []result.Symbol{z},
 		},
 	}
 
