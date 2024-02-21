@@ -268,12 +268,10 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				prompt := strings.ToLower(body.BuildPrompt())
 				prof := d.ExtractProfanity(prompt)
 				if prof != "" {
-					requestMetadata["is_profane"] = true
 					requestMetadata["profanity"] = prof
 				}
 				for _, p := range patternsToDetect {
 					if strings.Contains(prompt, p) {
-						requestMetadata["detected_phrases"] = true
 						pat := p
 						if len(p) > 5 {
 							pat = p[:5]
