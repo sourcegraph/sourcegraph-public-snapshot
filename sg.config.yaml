@@ -490,6 +490,12 @@ commands:
       docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
       docker inspect syntax-highlighter >/dev/null 2>&1 && docker rm -f syntax-highlighter || true
       docker inspect sourcegraph/syntax-highlighter:insiders >/dev/null 2>&1 docker rm -f sourcegraph/syntax-highlighter:insiders || true
+    env:
+      IMAGE: syntect-server:candidate
+      # TODO: This is required but should only be set on M1 Macs.
+      PLATFORM: linux/arm64
+    watch:
+      - docker-images/syntax-highlighter
 
   zoekt-indexserver-template: &zoekt_indexserver_template
     cmd: |
