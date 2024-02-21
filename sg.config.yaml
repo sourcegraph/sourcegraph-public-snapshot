@@ -475,9 +475,10 @@ commands:
   syntax-highlighter:
     ignoreStdout: true
     ignoreStderr: true
-    cmd: |
+    install: |
       bazel build //docker-images/syntax-highlighter:image_tarball
       docker load --input $(bazel cquery //docker-images/syntax-highlighter:image_tarball --output=files)
+    cmd: |
       docker run \
         --name=syntax-highlighter \
         --rm -p9238:9238 \
