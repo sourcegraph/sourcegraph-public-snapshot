@@ -72,14 +72,12 @@ fn rocket() -> _ {
         .get(&tree_sitter_all_languages::ParserId::Go);
 
     // Only list features if QUIET != "true"
-    let mut config: rocket::config::Config = Default::default();
     match std::env::var("QUIET") {
-        Ok(v) if v == "true" => config.log_level = rocket::log::LogLevel::Off,
+        Ok(v) if v == "true" => {}
         _ => syntect_server::list_features(),
     };
 
     rocket::build()
-        .configure(config)
         .mount("/", routes![syntect, lsif, scip, health])
         .register("/", catchers![not_found])
 }
