@@ -245,12 +245,6 @@ further, you *can* develop Sourcegraph with no connectivity by setting the
 OFFLINE=true sg start
 ```
 
-Ensure that the `sourcegraph/syntax-highlighter:insiders` image is already available locally. If not, pull it with the following command before going offline to ensure that offline mode works seamlessly:
-
-```bash
-docker pull -q sourcegraph/syntax-highlighter:insiders
-```
-
 ## `sg` and pre-commit hooks
 
 When `sg setup` is run, it will automatically install pre-commit hooks (using [pre-commit.com](https://pre-commit.com)), with a [provided configuration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/.pre-commit-config.yaml) that will perform a series of fast checks before each commit you create locally.
