@@ -72,7 +72,7 @@ func TestHandler(t *testing.T) {
 	}
 
 	files := map[string]string{
-		"a.js": "var x = 1\nvar y = 2",
+		"a.js":   "var x = 1\nvar y = 2",
 		".zshrc": "z=42",
 	}
 	gitserverClient := NewMockGitserverClient()
