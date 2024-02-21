@@ -556,8 +556,6 @@ where last_fetched < now() - interval '8 hours'
                       join repo r on external_service_repos.repo_id = r.id
              where not es.cloud_default
                and gitserver_repos.repo_id = repo_id
-               and external_service_repos.user_id is null
-               and external_service_repos.org_id is null
                and es.deleted_at is null
                and r.deleted_at is null
     )

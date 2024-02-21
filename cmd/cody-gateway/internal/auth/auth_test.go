@@ -56,7 +56,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 	})
 
 	t.Run("authenticated without cache hit", func(t *testing.T) {
-		cache := NewMockCache()
+		cache := NewMockListingCache()
 		client := dotcom.NewMockClient()
 		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
 			resp.Data.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
@@ -105,7 +105,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 	})
 
 	t.Run("authenticated with cache hit", func(t *testing.T) {
-		cache := NewMockCache()
+		cache := NewMockListingCache()
 		cache.GetFunc.SetDefaultReturn(
 			[]byte(`{"id":"UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==","accessEnabled":true,"rateLimit":null}`),
 			true,
@@ -129,7 +129,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 	})
 
 	t.Run("authenticated but not enabled", func(t *testing.T) {
-		cache := NewMockCache()
+		cache := NewMockListingCache()
 		cache.GetFunc.SetDefaultReturn(
 			[]byte(`{"id":"UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==","accessEnabled":false,"rateLimit":null}`),
 			true,
@@ -148,7 +148,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 	})
 
 	t.Run("authenticated bypassing attribution while not enabled", func(t *testing.T) {
-		cache := NewMockCache()
+		cache := NewMockListingCache()
 		cache.GetFunc.SetDefaultReturn(
 			[]byte(`{"id":"UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==","accessEnabled":false,"endpointAccess":{"/v1/attribution":true},"rateLimit":null}`),
 			true,
@@ -181,7 +181,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 	})
 
 	t.Run("access token denied from sources", func(t *testing.T) {
-		cache := NewMockCache()
+		cache := NewMockListingCache()
 		client := dotcom.NewMockClient()
 		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
 			return gqlerror.List{
@@ -204,7 +204,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 	})
 
 	t.Run("server error from sources", func(t *testing.T) {
-		cache := NewMockCache()
+		cache := NewMockListingCache()
 		client := dotcom.NewMockClient()
 		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
 			return errors.New("server error")
@@ -222,7 +222,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 	})
 
 	t.Run("internal mode, authenticated but not dev license", func(t *testing.T) {
-		cache := NewMockCache()
+		cache := NewMockListingCache()
 		client := dotcom.NewMockClient()
 		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
 			resp.Data.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
@@ -271,7 +271,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 	})
 
 	t.Run("internal mode, authenticated dev license", func(t *testing.T) {
-		cache := NewMockCache()
+		cache := NewMockListingCache()
 		client := dotcom.NewMockClient()
 		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
 			resp.Data.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
@@ -320,7 +320,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 	})
 
 	t.Run("internal mode, authenticated internal license", func(t *testing.T) {
-		cache := NewMockCache()
+		cache := NewMockListingCache()
 		client := dotcom.NewMockClient()
 		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
 			resp.Data.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{

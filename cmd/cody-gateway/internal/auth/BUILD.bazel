@@ -37,7 +37,6 @@ go_test(
         "//internal/productsubscription",
         "//lib/errors",
         "@com_github_derision_test_go_mockgen//testutil/require",
-        "@com_github_gregjones_httpcache//:httpcache",
         "@com_github_khan_genqlient//graphql",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
@@ -54,5 +53,5 @@ go_mockgen(
         "//:mockgen.test.yaml",
         "//:mockgen.temp.yaml",
     ],
-    deps = ["@com_github_gregjones_httpcache//:httpcache"],
+    deps = ["//cmd/cody-gateway/internal/actor/productsubscription"],
 )

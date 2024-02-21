@@ -637,13 +637,8 @@ commands:
         sleep 1
       done
     install: |
-      if [[ $(uname) == "Linux" ]]; then
-        bazel build //cmd/executor-kubernetes:image_tarball
-        docker load --input $(bazel cquery //cmd/executor-kubernetes:image_tarball --output=files)
-      else
-        bazel build //cmd/executor-kubernetes:image_tarball --config darwin-docker
-        docker load --input $(bazel cquery //cmd/executor-kubernetes:image_tarball --config darwin-docker --output=files)
-      fi
+      bazel build //cmd/executor-kubernetes:image_tarball
+      docker load --input $(bazel cquery //cmd/executor-kubernetes:image_tarball --output=files)
 
     env:
       IMAGE: executor-kubernetes:candidate
@@ -708,13 +703,8 @@ commands:
     # Nothing to run for this, we just want to re-run the install script every time.
     cmd: exit 0
     install: |
-      if [[ $(uname) == "Linux" ]]; then
-        bazel build //cmd/batcheshelper:image_tarball
-        docker load --input $(bazel cquery //cmd/batcheshelper:image_tarball --output=files)
-      else
-        bazel build //cmd/batcheshelper:image_tarball --config darwin-docker
-        docker load --input $(bazel cquery //cmd/batcheshelper:image_tarball --config darwin-docker --output=files)
-      fi
+      bazel build //cmd/batcheshelper:image_tarball
+      docker load --input $(bazel cquery //cmd/batcheshelper:image_tarball --output=files)
     env:
       IMAGE: batcheshelper:candidate
       # TODO: This is required but should only be set on M1 Macs.
@@ -863,13 +853,8 @@ commands:
 
       cp ${PROM_TARGETS} "${CONFIG_DIR}"/prometheus_targets.yml
 
-      if [[ $(uname) == "Linux" ]]; then
-        bazel build //docker-images/prometheus:image_tarball
-        docker load --input $(bazel cquery //docker-images/prometheus:image_tarball --output=files)
-      else
-        bazel build //docker-images/prometheus:image_tarball --config darwin-docker
-        docker load --input $(bazel cquery //docker-images/prometheus:image_tarball --config darwin-docker --output=files)
-      fi
+      bazel build //docker-images/prometheus:image_tarball
+      docker load --input $(bazel cquery //docker-images/prometheus:image_tarball --output=files)
     env:
       PROMETHEUS_DISK: $HOME/.sourcegraph-dev/data/prometheus
       # See comment above for `grafana`
@@ -956,13 +941,8 @@ commands:
 
   otel-collector:
     install: |
-      if [[ $(uname) == "Linux" ]]; then
-        bazel build //docker-images/opentelemetry-collector:image_tarball
-        docker load --input $(bazel cquery //docker-images/opentelemetry-collector:image_tarball --output=files)
-      else
-        bazel build //docker-images/opentelemetry-collector:image_tarball --config darwin-docker
-        docker load --input $(bazel cquery //docker-images/opentelemetry-collector:image_tarball --config darwin-docker --output=files)
-      fi
+      bazel build //docker-images/opentelemetry-collector:image_tarball
+      docker load --input $(bazel cquery //docker-images/opentelemetry-collector:image_tarball --output=files)
     description: OpenTelemetry collector
     cmd: |
       JAEGER_HOST='host.docker.internal'
@@ -1621,12 +1601,7 @@ tests:
       export SOURCEGRAPH_LICENSE_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_KEY --quiet --project=sourcegraph-ci)
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_GENERATION_KEY --quiet --project=sourcegraph-ci)
 
-      if [[ $(uname) == "Darwin" ]]; then
-        BAZEL_FLAGS=("--config darwin-docker")
-      else
-        BAZEL_FLAGS=()
-      fi
-      bazel test //testing:backend_integration_test ${BAZEL_FLAGS[*]} --verbose_failures --sandbox_debug
+      bazel test //testing:backend_integration_test --verbose_failures --sandbox_debug
 
   bazel-e2e:
     cmd: |
@@ -1635,12 +1610,7 @@ tests:
       export SOURCEGRAPH_LICENSE_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_KEY --quiet --project=sourcegraph-ci)
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_GENERATION_KEY --quiet --project=sourcegraph-ci)
 
-      if [[ $(uname) == "Darwin" ]]; then
-        BAZEL_FLAGS="--config darwin-docker"
-      else
-        BAZEL_FLAGS=""
-      fi
-      bazel test //testing:e2e_test $BAZEL_FLAGS --action_env=HEADLESS=false --action_env=SOURCEGRAPH_BASE_URL="http://localhost:7080" --action_env=GHE_GITHUB_TOKEN=$GHE_GITHUB_TOKEN --action_env=GH_TOKEN=$GH_TOKEN --action_env=DISPLAY=$DISPLAY
+      bazel test //testing:e2e_test --action_env=HEADLESS=false --action_env=SOURCEGRAPH_BASE_URL="http://localhost:7080" --action_env=GHE_GITHUB_TOKEN=$GHE_GITHUB_TOKEN --action_env=GH_TOKEN=$GH_TOKEN --action_env=DISPLAY=$DISPLAY
 
   bazel-web-integration:
     cmd: |

@@ -477,7 +477,11 @@ func isAllowedModel(allowedModels []string, model string) bool {
 		}
 
 		// Expand virtual model names
-		if m == "fireworks/starcoder" && (model == "fireworks/"+fireworks.Starcoder7b || model == "fireworks/"+fireworks.Starcoder16b || model == "fireworks/"+fireworks.Starcoder16bSingleTenant) {
+		if m == "fireworks/starcoder" && (model == "fireworks/"+fireworks.Starcoder7b ||
+			model == "fireworks/"+fireworks.Starcoder16b ||
+			model == "fireworks/"+fireworks.Starcoder7b8bit ||
+			model == "fireworks/"+fireworks.Starcoder16b8bit ||
+			model == "fireworks/"+fireworks.Starcoder16bSingleTenant) {
 			return true
 		}
 	}
