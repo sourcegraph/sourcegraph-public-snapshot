@@ -7,5 +7,8 @@ import (
 )
 
 func main() {
+	println("why you no run hello world")
+	println("plzz run")
+	println("_dab_")
 	runtime.Start[example.Config](example.Service{})
 }

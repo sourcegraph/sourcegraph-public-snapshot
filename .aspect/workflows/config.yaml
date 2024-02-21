@@ -32,3 +32,7 @@ tasks:
         - //testing:codeintel_integration_test
   - finalization:
       queue: aspect-small
+  - delivery:
+      auto_deliver: true
+      branches: ['jcjh/msp-bazel-delivery']
+      deliverable: 'attr(tags, "\bmsp-deliverable\b", //cmd/...)'

@@ -60,3 +60,17 @@ oci_push(
     image = ":image",
     repository = image_repository("msp-example"),
 )
+
+sh_binary(
+    name = "msp.deploy",
+    srcs = ["msp.deploy.sh"],
+    args = [
+        "$(location //dev/tools:gcloud)",
+        "$(location :candidate_push)",
+    ],
+    data = [
+        ":candidate_push",
+        "//dev/tools:gcloud",
+    ],
+    tags = ["msp-deliverable"],
+)
