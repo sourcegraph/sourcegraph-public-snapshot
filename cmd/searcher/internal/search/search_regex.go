@@ -82,7 +82,7 @@ func regexSearch(
 		files = zf.Files
 	)
 
-	if _, ok := m.(allMatchTree); ok || (patternMatchesPaths && !patternMatchesContent) {
+	if _, ok := m.(*allMatchTree); ok || (patternMatchesPaths && !patternMatchesContent) {
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
 		for _, f := range files {
