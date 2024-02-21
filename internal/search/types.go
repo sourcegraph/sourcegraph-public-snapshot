@@ -128,6 +128,10 @@ type SymbolsParameters struct {
 	// need to match to get included in the result
 	ExcludePattern string
 
+	// IncludeLangs and ExcludeLangs hold the language filters to apply.
+	IncludeLangs []string
+	ExcludeLangs []string
+
 	// First indicates that only the first n symbols should be returned.
 	First int
 

@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -436,6 +437,16 @@ func convertSearchArgsToSqlQuery(args search.SymbolsParameters) *sqlf.Query {
 
 	// ExcludePaths
 	conjunctOrNils = append(conjunctOrNils, negate(regexMatch(pathConditions, args.ExcludePattern, args.IsCaseSensitive)))
+
+	// Rockskip doesn't store the file's language, so we convert the language filters into path filters as a
+	// best effort approximation. We ignore the search's case-sensitivity, since it doesn't apply to these filters.
+	for _, includeLang := range args.IncludeLangs {
+		conjunctOrNils = append(conjunctOrNils, regexMatch(pathConditions, query.LangToFileRegexp(includeLang), false))
+	}
+
+	for _, excludeLang := range args.ExcludeLangs {
+		conjunctOrNils = append(conjunctOrNils, negate(regexMatch(pathConditions, query.LangToFileRegexp(excludeLang), false)))
+	}
 
 	// Drop nils
 	conjuncts := []*sqlf.Query{}
