@@ -64,7 +64,7 @@ function disable_test_path() {
 if [ -f "${FLAKE_FILE}" ]; then
   echo "Disabling tests listed in flakefile ${FLAKE_FILE} for tag ${version}"
 
-  pairs=$(jq -r --arg version "${version}" '.[$version][] | "\(.path):\(.prefix)"' "${FLAKE_FILE}" )
+  pairs=$(jq -r --arg version "${version}" 'select(.[$version] != null) | .[$version][] | "\(.path):\(.prefix)"' "${FLAKE_FILE}" )
   for pair in $pairs; do
     IFS=' ' read -ra parts <<<"${pair/:/ }"
     disable_test_path "${parts[0]}" "${parts[1]}"

@@ -253,3 +253,68 @@ Our Cloud instances provide [audit logs](../admin/audit_log.md#cloud) to help yo
 ## Accommodating special requirements
 
 We may be able to support special requests (network access policies, infrastructure requirements, custom version control systems, etc.) with additional time, support, and fees. [Contact us](https://sourcegraph.com/contact/sales) to discuss any special requirements you may have.
+
+## FAQ
+
+### Why Sourcegraph Cloud?
+
+Sourcegraph Cloud is fully managed by a dedicated team of Sourcegraph experts who maintain 24 x 7 x 365 incident response and perform routine updates with [uptime SLA](https://docs.sourcegraph.com/sla#sourcegraph-cloud-sla-managed-instance). Sourcegraph Cloud is SOC 2 Type II audited.
+
+Sourcegraph Cloud instances are single-tenant, limiting exposure to outages and security risks to individual instances. Each customer instance is isolated in a dedicated and fully segregated GCP project.
+
+[Diagram 1](https://link.excalidraw.com/readonly/YGpFIX7DcEBezf5iGXTP)
+
+<iframe src="https://link.excalidraw.com/readonly/YGpFIX7DcEBezf5iGXTP" width="100%" height="100%" style="border: none;"></iframe>
+
+[Diagram 2](https://link.excalidraw.com/readonly/Dbs30t8ahBZadGHZACoc)
+
+<iframe src="https://link.excalidraw.com/readonly/Dbs30t8ahBZadGHZACoc" width="100%" height="100%" style="border: none;"></iframe>
+
+### Is data safe with Sourcegraph Cloud?
+
+Sourcegraph Cloud utilizes a single-tenant architecture. Each customer's data is isolated and stored in a dedicated GCP project. Data is [encrypted in transit](https://cloud.google.com/docs/security/encryption-in-transit) and [at rest](https://cloud.google.com/docs/security/encryption/default-encryption) and is backed up daily. The data encryption keys are unique to each customer and are fully managed by GCP. Such data includes but is not limited to, customer source code, repository metadata, code host connection configuration, and user profile. Sourcegraph Cloud also has [4 supported regions](https://docs.sourcegraph.com/cloud#multiple-region-availability) on GCP to meet data sovereignty requirements.
+
+Sourcegraph continuously monitors Cloud instances for security vulnerability using manual reviews and automated tools. Third-party auditors regularly perform testing to ensure maximum protection against vulnerabilities and are automatically upgraded to fix any vulnerability in third-party dependencies. In addition, GCP’s managed offering regularly patches any vulnerability in the underlying infrastructure. Any infrastructure changes must pass security checks, which are tested against industry-standard controls. 
+
+Access to Cloud instances are not permitted by default to all Sourcegraph teammates and requires an audit-logged approval to escalate permissions.
+
+### What data does Sourcegraph have access to?
+
+For Sourcegraph Cloud to function properly, we will have possession of some customer data. This is a non-exhaustive list and may not be up-to-date. Please refer to our [Security Portal](https://security.sourcegraph.com/) for the latest information.
+
+- source code
+- user metadata, such as email address, username, and name
+- code host connection credentials
+- repository metadata, such as name, labels
+
+### Do Sourcegraph employees have access to my source code?
+
+Customer source code is stored in an isolated GCP project dedicated to the customer, and the data is [encrypted at rest](https://cloud.google.com/docs/security/encryption/default-encryption). Sourcegraph employees do not have access to customer data, and it always requires an audit-logged approval to obtain permissions. Learn more from our compliance report from [Security Portal](https://security.sourcegraph.com/).
+
+### How to protect access to Sourcegraph Cloud instances?
+
+Sourcegraph supports most well-known [identity providers](../admin/auth/index.md) and integrates with customers’ existing Single Sign-On (SSO) solutions. Experimental support for [SCIM](../admin/scim.md) is also available for Azure AD and Okta.
+
+Optionally, access to Cloud instances can be restricted to a list of IP addresses and ranges customers provide.
+
+### How do you detect malicious activity in Sourcegraph Cloud instances?
+
+All Sourcegraph employee access to the instance and underlying infrastructure is audit-logged and continuously analyzed for unexpected behavior. All logs from Sourcegraph Cloud instances are ingested in a SIEM and alerts managed by our Security team.
+
+Sourcegraph Cloud instances have intrusion detection capabilities through [Falco](https://falco.org/), a runtime security tool, to monitor behavior within the server.
+
+### What are uptime guarantees?
+
+Sourcegraph Cloud offers a 99.5% uptime guarantee. Learn more from our [SLA](../sla/index.md#sourcegraph-cloud-sla-managed-instance).
+
+### How to connect Sourcegraph Cloud instances to on-prem resources?
+
+Sourcegraph Cloud can securely connect to customer-owned resources on cloud provider platforms or on-prem data centers, such as GitHub Enterprise server in a private network on GCP and Artifact Registry on AWS. Learn more from [Private Connectivity](#private-connectivity).
+
+### How often do Sourcegraph Cloud instances receive updates?
+
+The exact cadence depends on the product release schedule. Sourcegraph Cloud instances receive timely upgrades whenever a new release is available, and there is a need for emergency security patches. Learn more about our [release schedule](https://handbook.sourcegraph.com/departments/cloud/technical-docs/#release-process). The schedule is for information only, and it is subject to change anytime.
+
+### What audit logs are available?
+
+Sourcegraph Cloud instances retain critical audit logs for 30 days by default. Logs are available upon request. For enterprise customers, we can also accommodate for extended retention periods.

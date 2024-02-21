@@ -1,6 +1,4 @@
-#import "$lib/Commit.gql"
-
-fragment Commits on GitCommitConnection {
+fragment CommitsPage_GitCommitConnection on GitCommitConnection {
     nodes {
         ...Commit
     }
@@ -10,16 +8,13 @@ fragment Commits on GitCommitConnection {
     }
 }
 
-query CommitsQuery($repo: ID!, $revspec: String!, $first: Int, $afterCursor: String) {
-    node(id: $repo) {
-        __typename
-        ... on Repository {
+query CommitsPage_CommitsQuery($repoName: String!, $revision: String!, $first: Int, $afterCursor: String) {
+    repository(name: $repoName) {
+        id
+        commit(rev: $revision) {
             id
-            commit(rev: $revspec) {
-                id
-                ancestors(first: $first, afterCursor: $afterCursor) {
-                    ...Commits
-                }
+            ancestors(first: $first, afterCursor: $afterCursor) {
+                ...CommitsPage_GitCommitConnection
             }
         }
     }

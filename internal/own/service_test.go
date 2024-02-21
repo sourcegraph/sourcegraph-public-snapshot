@@ -1,7 +1,9 @@
 package own
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"os"
 	"sort"
 	"testing"
@@ -12,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+
 	types2 "github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -43,12 +46,12 @@ type repoPath struct {
 // repoFiles is a fake git client mapping a file
 type repoFiles map[repoPath]string
 
-func (fs repoFiles) ReadFile(_ context.Context, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
+func (fs repoFiles) NewFileReader(_ context.Context, repoName api.RepoName, commitID api.CommitID, file string) (io.ReadCloser, error) {
 	content, ok := fs[repoPath{Repo: repoName, CommitID: commitID, Path: file}]
 	if !ok {
 		return nil, os.ErrNotExist
 	}
-	return []byte(content), nil
+	return io.NopCloser(bytes.NewReader([]byte(content))), nil
 }
 
 func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
@@ -70,7 +73,7 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			git := gitserver.NewMockClient()
-			git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
+			git.NewFileReaderFunc.SetDefaultHook(repo.NewFileReader)
 
 			reposStore := dbmocks.NewMockRepoStore()
 			reposStore.GetFunc.SetDefaultReturn(&types2.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
@@ -103,7 +106,7 @@ func TestOwnersCannotFindFile(t *testing.T) {
 		{"repo", "SHA", "notCODEOWNERS"}: codeownersFile.Repr(),
 	}
 	git := gitserver.NewMockClient()
-	git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
+	git.NewFileReaderFunc.SetDefaultHook(repo.NewFileReader)
 
 	codeownersStore := dbmocks.NewMockCodeownersStore()
 	codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, database.CodeownersFileNotFoundError{})
@@ -147,7 +150,7 @@ func TestOwnersServesIngestedFile(t *testing.T) {
 	})
 	t.Run("file not found and codeowners file does not exist return nil", func(t *testing.T) {
 		git := gitserver.NewMockClient()
-		git.ReadFileFunc.SetDefaultReturn(nil, nil)
+		git.NewFileReaderFunc.SetDefaultReturn(nil, os.ErrNotExist)
 
 		codeownersStore := dbmocks.NewMockCodeownersStore()
 		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, database.CodeownersFileNotFoundError{})

@@ -117,7 +117,7 @@ export const searchResultsToFileContent = (
 
         case 'repo': {
             content = [
-                enableRepositoryMetadata ? [...headers, 'Repository metadata'] : headers,
+                enableRepositoryMetadata ? [...headers, 'Repository metadata', 'Repository metadata JSON'] : headers,
                 ...searchResults
                     .filter((result: SearchMatch): result is RepositoryMatch => result.type === 'repo')
                     .map(result => [
@@ -129,6 +129,19 @@ export const searchResultsToFileContent = (
                                   Object.entries(result.metadata ?? {})
                                       .map(([key, value]) => (value ? `${key}:${value}` : key))
                                       .join('\n'),
+                              ]
+                            : []),
+                        ...(enableRepositoryMetadata
+                            ? [
+                                  JSON.stringify(
+                                      Object.entries(result.metadata ?? {}).reduce(
+                                          (obj: { [key: string]: string | null }, [key, value]) => {
+                                              obj[key] = value ?? null
+                                              return obj
+                                          },
+                                          {}
+                                      )
+                                  ),
                               ]
                             : []),
                     ]),
@@ -229,7 +242,11 @@ export const downloadSearchResults = (
     shouldRerunSearch: boolean
 ): Promise<void> => {
     const resultsObservable = shouldRerunSearch
-        ? aggregateStreamingSearch(of(query), { ...options, displayLimit: EXPORT_RESULT_DISPLAY_LIMIT })
+        ? aggregateStreamingSearch(of(query), {
+              ...options,
+              displayLimit: EXPORT_RESULT_DISPLAY_LIMIT,
+              maxLineLen: -1, // disable content truncation
+          })
         : of(results)
 
     // Once we update to RxJS 7, we need to change `toPromise` to `lastValueFrom`.

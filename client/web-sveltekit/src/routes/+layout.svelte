@@ -1,6 +1,6 @@
 <script lang="ts">
     import { setContext } from 'svelte'
-    import { readable, writable } from 'svelte/store'
+    import { writable } from 'svelte/store'
 
     import { browser } from '$app/environment'
     import { isErrorLike } from '$lib/common'
@@ -8,38 +8,37 @@
     import { isLightTheme, KEY, scrollAll, type SourcegraphContext } from '$lib/stores'
     import { createTemporarySettingsStorage, temporarySetting } from '$lib/temporarySettings'
     import { setThemeFromString } from '$lib/theme'
+    import { classNames } from '$lib/dom'
 
     import Header from './Header.svelte'
 
     import './styles.scss'
 
-    import { beforeNavigate } from '$app/navigation'
-
-    import type { LayoutData, Snapshot } from './$types'
-    import { createFeatureFlagStore, fetchEvaluatedFeatureFlags } from '$lib/featureflags'
+    import type { LayoutData } from './$types'
+    import { createFeatureFlagStore } from '$lib/featureflags'
     import InfoBanner from './InfoBanner.svelte'
+    import { getGraphQLClient } from '$lib/graphql/apollo'
 
     export let data: LayoutData
 
     const user = writable(data.user ?? null)
-    const settings = writable(isErrorLike(data.settings) ? null : data.settings.final)
+    const settings = writable(isErrorLike(data.settings) ? null : data.settings)
     // It's OK to set the temporary storage during initialization time because
     // sign-in/out currently performs a full page refresh
     const temporarySettingsStorage = createTemporarySettingsStorage(
-        data.user ? new TemporarySettingsStorage(data.graphqlClient, true) : undefined
+        data.user ? new TemporarySettingsStorage(getGraphQLClient(), true) : undefined
     )
 
     setContext<SourcegraphContext>(KEY, {
         user,
         settings,
         temporarySettingsStorage,
-        featureFlags: createFeatureFlagStore(data.featureFlags, fetchEvaluatedFeatureFlags),
-        client: readable(data.graphqlClient),
+        featureFlags: createFeatureFlagStore(data.featureFlags, data.fetchEvaluatedFeatureFlags),
     })
 
     // Update stores when data changes
     $: $user = data.user ?? null
-    $: $settings = isErrorLike(data.settings) ? null : data.settings.final
+    $: $settings = isErrorLike(data.settings) ? null : data.settings
 
     // Set initial, user configured theme
     // TODO: This should be send be server in the HTML so that we don't flash the wrong theme
@@ -53,35 +52,6 @@
         document.documentElement.classList.toggle('theme-light', $isLightTheme)
         document.documentElement.classList.toggle('theme-dark', !$isLightTheme)
     }
-
-    let main: HTMLElement | null = null
-    let scrollTop = 0
-    beforeNavigate(() => {
-        // It looks like `snapshot.capture` is called "too late", i.e. after the
-        // content has been updated. beforeNavigate is used to capture the correct
-        // scroll offset
-        scrollTop = main?.scrollTop ?? 0
-    })
-    export const snapshot: Snapshot<{ x: number }> = {
-        capture() {
-            return { x: scrollTop }
-        },
-        restore(value) {
-            restoreScrollPosition(value.x)
-        },
-    }
-
-    function restoreScrollPosition(y: number) {
-        const start = Date.now()
-        requestAnimationFrame(function scroll() {
-            if (main) {
-                main.scrollTo(0, y)
-            }
-            if ((!main || main.scrollTop !== y) && Date.now() - start < 3000) {
-                requestAnimationFrame(scroll)
-            }
-        })
-    }
 </script>
 
 <svelte:head>
@@ -89,28 +59,24 @@
     <meta name="description" content="Code search" />
 </svelte:head>
 
-<div class="app" class:overflowHidden={!$scrollAll}>
-    <InfoBanner />
-    <Header authenticatedUser={$user} />
+<svelte:body use:classNames={$scrollAll ? '' : 'overflowHidden'} />
 
-    <main bind:this={main}>
-        <slot />
-    </main>
-</div>
+<InfoBanner />
+<Header authenticatedUser={$user} />
+
+<main>
+    <slot />
+</main>
 
 <style lang="scss">
-    .app {
+    :global(body.overflowHidden) {
         display: flex;
         flex-direction: column;
         height: 100vh;
-        overflow-y: auto;
+        overflow: hidden;
 
-        &.overflowHidden {
-            overflow: hidden;
-
-            main {
-                overflow-y: auto;
-            }
+        main {
+            overflow-y: auto;
         }
     }
 

@@ -208,7 +208,7 @@ Generated query for warning alert: `max((sum by (alert_type) (increase(src_graph
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 - Investigate potential sources of latency by selecting Explore and modifying the `sum by(le)` section to include additional labels: for example, `sum by(le, job)` or `sum by (le, instance)`.
-- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
+- Trace a request to see what the slowest part is: https://sourcegraph.com/docs/admin/observability/tracing
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-page-load-latency).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -224,40 +224,6 @@ Generated query for warning alert: `max((sum by (alert_type) (increase(src_graph
 <summary>Technical details</summary>
 
 Generated query for warning alert: `max((histogram_quantile(0.9, sum by (le) (rate(src_http_request_duration_seconds_bucket{route!="blob",route!="raw",route!~"graphql.*"}[10m])))) >= 2)`
-
-</details>
-
-<br />
-
-## frontend: blob_load_latency
-
-<p class="subtitle">90th percentile blob load latency over 10m</p>
-
-**Descriptions**
-
-- <span class="badge badge-critical">critical</span> frontend: 5s+ 90th percentile blob load latency over 10m
-
-**Next steps**
-
-- When this alert fires, calls to the blob route are slow to return a response. The UI will likely experience delays loading files and code snippets. It is likely that the gitserver and/or frontend services are experiencing issues, leading to slower responses.
-- Confirm that the Sourcegraph gitserver and frontend services have enough CPU/memory using the provisioning panels.
-- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
-- Check that gitserver containers have enough CPU/memory and are not getting throttled.
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-blob-load-latency).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_frontend_blob_load_latency"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for critical alert: `max((histogram_quantile(0.9, sum by (le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))) >= 5)`
 
 </details>
 
@@ -639,7 +605,7 @@ Generated query for warning alert: `max((sum by (alert_type) (increase(src_graph
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~"(sourcegraph-)?frontend"}[1m]))) >= 300)`
 
 </details>
 
@@ -702,37 +668,6 @@ Generated query for warning alert: `max((sum by (code) (increase(src_zoekt_reque
 <summary>Technical details</summary>
 
 Generated query for warning alert: `max((sum by (code) (increase(searcher_service_request_total{code!~"2.."}[5m])) / ignoring (code) group_left () sum(increase(searcher_service_request_total[5m])) * 100) >= 5)`
-
-</details>
-
-<br />
-
-## frontend: internalapi_error_responses
-
-<p class="subtitle">internal API error responses every 5m by route</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 5%+ internal API error responses every 5m by route for 15m0s
-
-**Next steps**
-
-- May not be a substantial issue, check the `frontend` logs for potential causes.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-internalapi-error-responses).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_internalapi_error_responses"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum by (category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring (code) group_left () sum(increase(src_frontend_internal_request_duration_seconds_count[5m])) * 100) >= 5)`
 
 </details>
 
@@ -901,13 +836,14 @@ Generated query for critical alert: `max((sum(increase(src_cloudkms_cryptographi
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 0.05s+ mean blocked seconds per conn request for 10m0s
-- <span class="badge badge-critical">critical</span> frontend: 0.1s+ mean blocked seconds per conn request for 15m0s
+- <span class="badge badge-warning">warning</span> frontend: 0.1s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> frontend: 0.5s+ mean blocked seconds per conn request for 10m0s
 
 **Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Scale up Postgres memory/cpus - [see our scaling guide](https://sourcegraph.com/docs/admin/config/postgres-conf)
+- If using GCP Cloud SQL, check for high lock waits or CPU usage in query insights
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -923,9 +859,9 @@ Generated query for critical alert: `max((sum(increase(src_cloudkms_cryptographi
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="frontend"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="frontend"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="frontend"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="frontend"}[5m]))) >= 0.1)`
 
-Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="frontend"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="frontend"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="frontend"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="frontend"}[5m]))) >= 0.5)`
 
 </details>
 
@@ -1538,76 +1474,6 @@ Generated query for warning alert: `max((sum(src_gitserver_clone_queue)) >= 25)`
 
 <br />
 
-## gitserver: repository_existence_check_queue_size
-
-<p class="subtitle">repository existence check queue size</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> gitserver: 25+ repository existence check queue size
-
-**Next steps**
-
-- **Check the code host status indicator for errors:** on the Sourcegraph app homepage, when signed in as an admin click the cloud icon in the top right corner of the page.
-- **Check if the issue continues to happen after 30 minutes**, it may be temporary.
-- **Check the gitserver logs for more information.**
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-repository-existence-check-queue-size).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_gitserver_repository_existence_check_queue_size"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum(src_gitserver_lsremote_queue)) >= 25)`
-
-</details>
-
-<br />
-
-## gitserver: frontend_internal_api_error_responses
-
-<p class="subtitle">frontend-internal API error responses every 5m by route</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> gitserver: 2%+ frontend-internal API error responses every 5m by route for 5m0s
-
-**Next steps**
-
-- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
-- **Kubernetes:**
-	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
-	- Check `kubectl logs gitserver` for logs indicate request failures to `frontend` or `frontend-internal`.
-- **Docker Compose:**
-	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
-	- Check `docker logs gitserver` for logs indicating request failures to `frontend` or `frontend-internal`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-frontend-internal-api-error-responses).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_gitserver_frontend_internal_api_error_responses"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum by (category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="gitserver"}[5m])) / ignoring (category) group_left () sum(increase(src_frontend_internal_request_duration_seconds_count{job="gitserver"}[5m]))) >= 2)`
-
-</details>
-
-<br />
-
 ## gitserver: gitserver_site_configuration_duration_since_last_successful_update_by_instance
 
 <p class="subtitle">maximum duration since last successful site configuration update (all "gitserver" instances)</p>
@@ -1634,7 +1500,7 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~".*gitserver"}[1m]))) >= 300)`
 
 </details>
 
@@ -1646,13 +1512,14 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> gitserver: 0.05s+ mean blocked seconds per conn request for 10m0s
-- <span class="badge badge-critical">critical</span> gitserver: 0.1s+ mean blocked seconds per conn request for 15m0s
+- <span class="badge badge-warning">warning</span> gitserver: 0.1s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> gitserver: 0.5s+ mean blocked seconds per conn request for 10m0s
 
 **Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Scale up Postgres memory/cpus - [see our scaling guide](https://sourcegraph.com/docs/admin/config/postgres-conf)
+- If using GCP Cloud SQL, check for high lock waits or CPU usage in query insights
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1668,9 +1535,9 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="gitserver"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="gitserver"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="gitserver"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="gitserver"}[5m]))) >= 0.1)`
 
-Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="gitserver"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="gitserver"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="gitserver"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="gitserver"}[5m]))) >= 0.5)`
 
 </details>
 
@@ -1969,7 +1836,7 @@ Generated query for warning alert: `min((sum by (job) (pg_stat_activity_count{da
 
 **Next steps**
 
-- Consider increasing [max_connections](https://www.postgresql.org/docs/current/runtime-config-connection.html#GUC-MAX-CONNECTIONS) of the database instance, [learn more](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Consider increasing [max_connections](https://www.postgresql.org/docs/current/runtime-config-connection.html#GUC-MAX-CONNECTIONS) of the database instance, [learn more](https://sourcegraph.com/docs/admin/config/postgres-conf)
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-usage-connections-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -2354,7 +2221,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*(pgsql|codein
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> precise-code-intel-worker: 18000s+ unprocessed upload record queue longest time in queue
+- <span class="badge badge-warning">warning</span> precise-code-intel-worker: 18000s+ unprocessed upload record queue longest time in queue
 
 **Next steps**
 
@@ -2366,7 +2233,7 @@ count being required for the volume of uploads.
 
 ```json
 "observability.silenceAlerts": [
-  "critical_precise-code-intel-worker_codeintel_upload_queued_max_age"
+  "warning_precise-code-intel-worker_codeintel_upload_queued_max_age"
 ]
 ```
 
@@ -2375,44 +2242,7 @@ count being required for the volume of uploads.
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(src_codeintel_upload_queued_duration_seconds_total{job=~"^precise-code-intel-worker.*"})) >= 18000)`
-
-</details>
-
-<br />
-
-## precise-code-intel-worker: frontend_internal_api_error_responses
-
-<p class="subtitle">frontend-internal API error responses every 5m by route</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> precise-code-intel-worker: 2%+ frontend-internal API error responses every 5m by route for 5m0s
-
-**Next steps**
-
-- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
-- **Kubernetes:**
-	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
-	- Check `kubectl logs precise-code-intel-worker` for logs indicate request failures to `frontend` or `frontend-internal`.
-- **Docker Compose:**
-	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
-	- Check `docker logs precise-code-intel-worker` for logs indicating request failures to `frontend` or `frontend-internal`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#precise-code-intel-worker-frontend-internal-api-error-responses).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_frontend_internal_api_error_responses"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum by (category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="precise-code-intel-worker"}[5m])) / ignoring (category) group_left () sum(increase(src_frontend_internal_request_duration_seconds_count{job="precise-code-intel-worker"}[5m]))) >= 2)`
+Generated query for warning alert: `max((max(src_codeintel_upload_queued_duration_seconds_total{job=~"^precise-code-intel-worker.*"})) >= 18000)`
 
 </details>
 
@@ -2424,13 +2254,14 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> precise-code-intel-worker: 0.05s+ mean blocked seconds per conn request for 10m0s
-- <span class="badge badge-critical">critical</span> precise-code-intel-worker: 0.1s+ mean blocked seconds per conn request for 15m0s
+- <span class="badge badge-warning">warning</span> precise-code-intel-worker: 0.1s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> precise-code-intel-worker: 0.5s+ mean blocked seconds per conn request for 10m0s
 
 **Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Scale up Postgres memory/cpus - [see our scaling guide](https://sourcegraph.com/docs/admin/config/postgres-conf)
+- If using GCP Cloud SQL, check for high lock waits or CPU usage in query insights
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#precise-code-intel-worker-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -2446,9 +2277,9 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="precise-code-intel-worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="precise-code-intel-worker"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="precise-code-intel-worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="precise-code-intel-worker"}[5m]))) >= 0.1)`
 
-Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="precise-code-intel-worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="precise-code-intel-worker"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="precise-code-intel-worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="precise-code-intel-worker"}[5m]))) >= 0.5)`
 
 </details>
 
@@ -3246,9 +3077,9 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*redis-store"}
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `(min((sum(src_worker_jobs{job="worker",job_name="codeintel-upload-janitor"})) < 1)) or (absent(sum(src_worker_jobs{job="worker",job_name="codeintel-upload-janitor"})) == 1)`
+Generated query for warning alert: `(min((sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-upload-janitor"})) < 1)) or (absent(sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-upload-janitor"})) == 1)`
 
-Generated query for critical alert: `(min((sum(src_worker_jobs{job="worker",job_name="codeintel-upload-janitor"})) < 1)) or (absent(sum(src_worker_jobs{job="worker",job_name="codeintel-upload-janitor"})) == 1)`
+Generated query for critical alert: `(min((sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-upload-janitor"})) < 1)) or (absent(sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-upload-janitor"})) == 1)`
 
 </details>
 
@@ -3284,9 +3115,9 @@ Generated query for critical alert: `(min((sum(src_worker_jobs{job="worker",job_
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `(min((sum(src_worker_jobs{job="worker",job_name="codeintel-commitgraph-updater"})) < 1)) or (absent(sum(src_worker_jobs{job="worker",job_name="codeintel-commitgraph-updater"})) == 1)`
+Generated query for warning alert: `(min((sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-commitgraph-updater"})) < 1)) or (absent(sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-commitgraph-updater"})) == 1)`
 
-Generated query for critical alert: `(min((sum(src_worker_jobs{job="worker",job_name="codeintel-commitgraph-updater"})) < 1)) or (absent(sum(src_worker_jobs{job="worker",job_name="codeintel-commitgraph-updater"})) == 1)`
+Generated query for critical alert: `(min((sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-commitgraph-updater"})) < 1)) or (absent(sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-commitgraph-updater"})) == 1)`
 
 </details>
 
@@ -3322,9 +3153,9 @@ Generated query for critical alert: `(min((sum(src_worker_jobs{job="worker",job_
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `(min((sum(src_worker_jobs{job="worker",job_name="codeintel-autoindexing-scheduler"})) < 1)) or (absent(sum(src_worker_jobs{job="worker",job_name="codeintel-autoindexing-scheduler"})) == 1)`
+Generated query for warning alert: `(min((sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-autoindexing-scheduler"})) < 1)) or (absent(sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-autoindexing-scheduler"})) == 1)`
 
-Generated query for critical alert: `(min((sum(src_worker_jobs{job="worker",job_name="codeintel-autoindexing-scheduler"})) < 1)) or (absent(sum(src_worker_jobs{job="worker",job_name="codeintel-autoindexing-scheduler"})) == 1)`
+Generated query for critical alert: `(min((sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-autoindexing-scheduler"})) < 1)) or (absent(sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-autoindexing-scheduler"})) == 1)`
 
 </details>
 
@@ -3362,6 +3193,101 @@ Generated query for warning alert: `max((max(src_codeintel_commit_graph_queued_d
 
 <br />
 
+## worker: perms_syncer_outdated_perms
+
+<p class="subtitle">number of entities with outdated permissions</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 100+ number of entities with outdated permissions for 5m0s
+
+**Next steps**
+
+- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
+- **Otherwise:** Increase the API rate limit to [GitHub](https://sourcegraph.com/docs/admin/external_service/github#github-com-rate-limits), [GitLab](https://sourcegraph.com/docs/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://sourcegraph.com/docs/admin/external_service/bitbucket_server#internal-rate-limits).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-perms-syncer-outdated-perms).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_perms_syncer_outdated_perms"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((max by (type) (src_repo_perms_syncer_outdated_perms)) >= 100)`
+
+</details>
+
+<br />
+
+## worker: perms_syncer_sync_duration
+
+<p class="subtitle">95th permissions sync duration</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 30s+ 95th permissions sync duration for 5m0s
+
+**Next steps**
+
+- Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-perms-syncer-sync-duration).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_perms_syncer_sync_duration"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((histogram_quantile(0.95, max by (le, type) (rate(src_repo_perms_syncer_sync_duration_seconds_bucket[1m])))) >= 30)`
+
+</details>
+
+<br />
+
+## worker: perms_syncer_sync_errors
+
+<p class="subtitle">permissions sync error rate</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> worker: 1+ permissions sync error rate for 1m0s
+
+**Next steps**
+
+- Check the network connectivity the Sourcegraph and the code host.
+- Check if API rate limit quota is exhausted on the code host.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-perms-syncer-sync-errors).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_worker_perms_syncer_sync_errors"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max by (type) (ceil(rate(src_repo_perms_syncer_sync_errors_total[1m])))) >= 1)`
+
+</details>
+
+<br />
+
 ## worker: insights_queue_unutilized_size
 
 <p class="subtitle">insights queue size that is not utilized (not processing)</p>
@@ -3393,56 +3319,20 @@ Generated query for warning alert: `max((max(src_query_runner_worker_total{job=~
 
 <br />
 
-## worker: frontend_internal_api_error_responses
-
-<p class="subtitle">frontend-internal API error responses every 5m by route</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> worker: 2%+ frontend-internal API error responses every 5m by route for 5m0s
-
-**Next steps**
-
-- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
-- **Kubernetes:**
-	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
-	- Check `kubectl logs worker` for logs indicate request failures to `frontend` or `frontend-internal`.
-- **Docker Compose:**
-	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
-	- Check `docker logs worker` for logs indicating request failures to `frontend` or `frontend-internal`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-frontend-internal-api-error-responses).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_worker_frontend_internal_api_error_responses"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum by (category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="worker"}[5m])) / ignoring (category) group_left () sum(increase(src_frontend_internal_request_duration_seconds_count{job="worker"}[5m]))) >= 2)`
-
-</details>
-
-<br />
-
 ## worker: mean_blocked_seconds_per_conn_request
 
 <p class="subtitle">mean blocked seconds per conn request</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> worker: 0.05s+ mean blocked seconds per conn request for 10m0s
-- <span class="badge badge-critical">critical</span> worker: 0.1s+ mean blocked seconds per conn request for 15m0s
+- <span class="badge badge-warning">warning</span> worker: 0.1s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> worker: 0.5s+ mean blocked seconds per conn request for 10m0s
 
 **Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Scale up Postgres memory/cpus - [see our scaling guide](https://sourcegraph.com/docs/admin/config/postgres-conf)
+- If using GCP Cloud SQL, check for high lock waits or CPU usage in query insights
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -3458,9 +3348,9 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="worker"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="worker"}[5m]))) >= 0.1)`
 
-Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="worker"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="worker"}[5m]))) >= 0.5)`
 
 </details>
 
@@ -3808,7 +3698,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*worker"}) / c
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~"^worker.*"}[1m]))) >= 300)`
 
 </details>
 
@@ -4265,101 +4155,6 @@ Generated query for critical alert: `max((max(rate(src_repoupdater_sched_error[1
 
 <br />
 
-## repo-updater: perms_syncer_outdated_perms
-
-<p class="subtitle">number of entities with outdated permissions</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> repo-updater: 100+ number of entities with outdated permissions for 5m0s
-
-**Next steps**
-
-- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-outdated-perms).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_perms_syncer_outdated_perms"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max by (type) (src_repoupdater_perms_syncer_outdated_perms)) >= 100)`
-
-</details>
-
-<br />
-
-## repo-updater: perms_syncer_sync_duration
-
-<p class="subtitle">95th permissions sync duration</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> repo-updater: 30s+ 95th permissions sync duration for 5m0s
-
-**Next steps**
-
-- Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-sync-duration).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_perms_syncer_sync_duration"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((histogram_quantile(0.95, max by (le, type) (rate(src_repoupdater_perms_syncer_sync_duration_seconds_bucket[1m])))) >= 30)`
-
-</details>
-
-<br />
-
-## repo-updater: perms_syncer_sync_errors
-
-<p class="subtitle">permissions sync error rate</p>
-
-**Descriptions**
-
-- <span class="badge badge-critical">critical</span> repo-updater: 1+ permissions sync error rate for 1m0s
-
-**Next steps**
-
-- Check the network connectivity the Sourcegraph and the code host.
-- Check if API rate limit quota is exhausted on the code host.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-sync-errors).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_repo-updater_perms_syncer_sync_errors"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for critical alert: `max((max by (type) (ceil(rate(src_repoupdater_perms_syncer_sync_errors_total[1m])))) >= 1)`
-
-</details>
-
-<br />
-
 ## repo-updater: src_repoupdater_external_services_total
 
 <p class="subtitle">the total number of external services</p>
@@ -4635,44 +4430,7 @@ Generated query for critical alert: `min((max by (name) (src_gitlab_rate_limit_r
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
-
-</details>
-
-<br />
-
-## repo-updater: frontend_internal_api_error_responses
-
-<p class="subtitle">frontend-internal API error responses every 5m by route</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> repo-updater: 2%+ frontend-internal API error responses every 5m by route for 5m0s
-
-**Next steps**
-
-- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
-- **Kubernetes:**
-	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
-	- Check `kubectl logs repo-updater` for logs indicate request failures to `frontend` or `frontend-internal`.
-- **Docker Compose:**
-	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
-	- Check `docker logs repo-updater` for logs indicating request failures to `frontend` or `frontend-internal`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-frontend-internal-api-error-responses).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_frontend_internal_api_error_responses"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum by (category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="repo-updater"}[5m])) / ignoring (category) group_left () sum(increase(src_frontend_internal_request_duration_seconds_count{job="repo-updater"}[5m]))) >= 2)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~".*repo-updater"}[1m]))) >= 300)`
 
 </details>
 
@@ -4684,13 +4442,14 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> repo-updater: 0.05s+ mean blocked seconds per conn request for 10m0s
-- <span class="badge badge-critical">critical</span> repo-updater: 0.1s+ mean blocked seconds per conn request for 15m0s
+- <span class="badge badge-warning">warning</span> repo-updater: 0.1s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> repo-updater: 0.5s+ mean blocked seconds per conn request for 10m0s
 
 **Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Scale up Postgres memory/cpus - [see our scaling guide](https://sourcegraph.com/docs/admin/config/postgres-conf)
+- If using GCP Cloud SQL, check for high lock waits or CPU usage in query insights
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -4706,9 +4465,9 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="repo-updater"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="repo-updater"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="repo-updater"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="repo-updater"}[5m]))) >= 0.1)`
 
-Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="repo-updater"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="repo-updater"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="repo-updater"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="repo-updater"}[5m]))) >= 0.5)`
 
 </details>
 
@@ -5116,7 +4875,7 @@ Generated query for warning alert: `max((sum by (code) (increase(searcher_servic
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~".*searcher"}[1m]))) >= 300)`
 
 </details>
 
@@ -5128,13 +4887,14 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> searcher: 0.05s+ mean blocked seconds per conn request for 10m0s
-- <span class="badge badge-critical">critical</span> searcher: 0.1s+ mean blocked seconds per conn request for 15m0s
+- <span class="badge badge-warning">warning</span> searcher: 0.1s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> searcher: 0.5s+ mean blocked seconds per conn request for 10m0s
 
 **Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Scale up Postgres memory/cpus - [see our scaling guide](https://sourcegraph.com/docs/admin/config/postgres-conf)
+- If using GCP Cloud SQL, check for high lock waits or CPU usage in query insights
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -5150,46 +4910,9 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="searcher"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="searcher"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="searcher"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="searcher"}[5m]))) >= 0.1)`
 
-Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="searcher"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="searcher"}[5m]))) >= 0.1)`
-
-</details>
-
-<br />
-
-## searcher: frontend_internal_api_error_responses
-
-<p class="subtitle">frontend-internal API error responses every 5m by route</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> searcher: 2%+ frontend-internal API error responses every 5m by route for 5m0s
-
-**Next steps**
-
-- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
-- **Kubernetes:**
-	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
-	- Check `kubectl logs searcher` for logs indicate request failures to `frontend` or `frontend-internal`.
-- **Docker Compose:**
-	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
-	- Check `docker logs searcher` for logs indicating request failures to `frontend` or `frontend-internal`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-frontend-internal-api-error-responses).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_searcher_frontend_internal_api_error_responses"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum by (category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="searcher"}[5m])) / ignoring (category) group_left () sum(increase(src_frontend_internal_request_duration_seconds_count{job="searcher"}[5m]))) >= 2)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="searcher"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="searcher"}[5m]))) >= 0.5)`
 
 </details>
 
@@ -5537,7 +5260,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*searcher"}) /
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~".*symbols"}[1m]))) >= 300)`
 
 </details>
 
@@ -5549,13 +5272,14 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> symbols: 0.05s+ mean blocked seconds per conn request for 10m0s
-- <span class="badge badge-critical">critical</span> symbols: 0.1s+ mean blocked seconds per conn request for 15m0s
+- <span class="badge badge-warning">warning</span> symbols: 0.1s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> symbols: 0.5s+ mean blocked seconds per conn request for 10m0s
 
 **Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Scale up Postgres memory/cpus - [see our scaling guide](https://sourcegraph.com/docs/admin/config/postgres-conf)
+- If using GCP Cloud SQL, check for high lock waits or CPU usage in query insights
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -5571,46 +5295,9 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="symbols"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="symbols"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="symbols"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="symbols"}[5m]))) >= 0.1)`
 
-Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="symbols"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="symbols"}[5m]))) >= 0.1)`
-
-</details>
-
-<br />
-
-## symbols: frontend_internal_api_error_responses
-
-<p class="subtitle">frontend-internal API error responses every 5m by route</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> symbols: 2%+ frontend-internal API error responses every 5m by route for 5m0s
-
-**Next steps**
-
-- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
-- **Kubernetes:**
-	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
-	- Check `kubectl logs symbols` for logs indicate request failures to `frontend` or `frontend-internal`.
-- **Docker Compose:**
-	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
-	- Check `docker logs symbols` for logs indicating request failures to `frontend` or `frontend-internal`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-frontend-internal-api-error-responses).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_symbols_frontend_internal_api_error_responses"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum by (category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="symbols"}[5m])) / ignoring (category) group_left () sum(increase(src_frontend_internal_request_duration_seconds_count{job="symbols"}[5m]))) >= 2)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="symbols"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="symbols"}[5m]))) >= 0.5)`
 
 </details>
 
@@ -6300,7 +5987,7 @@ Generated query for warning alert: `max((sum by (code) (increase(src_zoekt_reque
 
     - Enabling shard merging for Zoekt: Set SRC_ENABLE_SHARD_MERGING="1" for zoekt-indexserver. Use this option
 if your corpus of repositories has a high percentage of small, rarely updated repositories. See
-[documentation](https://docs.sourcegraph.com/code_search/explanations/search_details#shard-merging).
+[documentation](https://sourcegraph.com/docs/code-search/features#shard-merging).
     - Creating additional Zoekt replicas: This spreads all the shards out amongst more replicas, which
 means that each _individual_ replica will have fewer shards. This, in turn, decreases the
 amount of memory map areas that a _single_ replica can create (in order to load the shards into memory).
@@ -6889,7 +6576,7 @@ Generated query for warning alert: `max((sum by (rule_group) (rate(prometheus_ru
 **Next steps**
 
 - Check the Container monitoring (not available on server) panels and try increasing resources for Prometheus if necessary.
-- Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
+- Ensure that your [`observability.alerts` configuration](https://sourcegraph.com/docs/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
 - Check if the relevant alert integration service is experiencing downtime or issues.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#prometheus-alertmanager-notification-latency).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -6921,7 +6608,7 @@ Generated query for warning alert: `max((sum by (integration) (rate(alertmanager
 
 **Next steps**
 
-- Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
+- Ensure that your [`observability.alerts` configuration](https://sourcegraph.com/docs/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
 - Check if the relevant alert integration service is experiencing downtime or issues.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#prometheus-alertmanager-notification-failures).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -6954,7 +6641,7 @@ Generated query for warning alert: `max((sum by (integration) (rate(alertmanager
 **Next steps**
 
 - Check Prometheus logs for messages related to configuration loading.
-- Ensure any [custom configuration you have provided Prometheus](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration) is valid.
+- Ensure any [custom configuration you have provided Prometheus](https://sourcegraph.com/docs/admin/observability/metrics#prometheus-configuration) is valid.
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-prometheus-config-status).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -6985,7 +6672,7 @@ Generated query for warning alert: `min((prometheus_config_last_reload_successfu
 
 **Next steps**
 
-- Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
+- Ensure that your [`observability.alerts` configuration](https://sourcegraph.com/docs/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-alertmanager-config-status).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -7956,7 +7643,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*otel-collecto
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~".*embeddings"}[1m]))) >= 300)`
 
 </details>
 
@@ -7968,13 +7655,14 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> embeddings: 0.05s+ mean blocked seconds per conn request for 10m0s
-- <span class="badge badge-critical">critical</span> embeddings: 0.1s+ mean blocked seconds per conn request for 15m0s
+- <span class="badge badge-warning">warning</span> embeddings: 0.1s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> embeddings: 0.5s+ mean blocked seconds per conn request for 10m0s
 
 **Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Scale up Postgres memory/cpus - [see our scaling guide](https://sourcegraph.com/docs/admin/config/postgres-conf)
+- If using GCP Cloud SQL, check for high lock waits or CPU usage in query insights
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#embeddings-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -7990,46 +7678,9 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="embeddings"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="embeddings"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="embeddings"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="embeddings"}[5m]))) >= 0.1)`
 
-Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="embeddings"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="embeddings"}[5m]))) >= 0.1)`
-
-</details>
-
-<br />
-
-## embeddings: frontend_internal_api_error_responses
-
-<p class="subtitle">frontend-internal API error responses every 5m by route</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> embeddings: 2%+ frontend-internal API error responses every 5m by route for 5m0s
-
-**Next steps**
-
-- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
-- **Kubernetes:**
-	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
-	- Check `kubectl logs embeddings` for logs indicate request failures to `frontend` or `frontend-internal`.
-- **Docker Compose:**
-	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
-	- Check `docker logs embeddings` for logs indicating request failures to `frontend` or `frontend-internal`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#embeddings-frontend-internal-api-error-responses).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_embeddings_frontend_internal_api_error_responses"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum by (category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="embeddings"}[5m])) / ignoring (category) group_left () sum(increase(src_frontend_internal_request_duration_seconds_count{job="embeddings"}[5m]))) >= 2)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="embeddings"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="embeddings"}[5m]))) >= 0.5)`
 
 </details>
 
@@ -8350,4 +8001,3 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*embeddings"})
 </details>
 
 <br />
-

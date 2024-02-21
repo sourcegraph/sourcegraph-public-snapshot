@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker'
 import { cleanup } from '@testing-library/svelte'
 import { vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest'
 
-import { mockedContexts } from '$mocks'
+import { mockedContexts } from '$testing/mocks'
 
 type SvelteAPI = typeof import('svelte')
 

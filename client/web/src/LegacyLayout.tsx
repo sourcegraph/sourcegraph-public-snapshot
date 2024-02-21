@@ -24,7 +24,7 @@ import { useHandleSubmitFeedback } from './hooks'
 import type { LegacyLayoutRouteContext } from './LegacyRouteContext'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import { NewGlobalNavigationBar } from './nav/new-global-navigation/NewGlobalNavigationBar'
+import { NewGlobalNavigationBar, useNewSearchNavigation } from './nav/new-global-navigation'
 import { PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
@@ -96,7 +96,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     // so that Layout can always render the navbar.
     const needsSiteInit = window.context?.needsSiteInit
     const disableFeedbackSurvey = window.context?.disableFeedbackSurvey
-    const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
+    const isSiteInit = location.pathname === PageRoutes.SiteAdminInit.toString()
     const isSignInOrUp =
         routeMatch &&
         [
@@ -106,13 +106,11 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
             PageRoutes.Welcome,
             PageRoutes.RequestAccess,
         ].includes(routeMatch as PageRoutes)
-    const isGetCodyPage = location.pathname === PageRoutes.GetCody
-    const isPostSignUpPage = location.pathname === PageRoutes.PostSignUp
+    const isGetCodyPage = location.pathname === PageRoutes.GetCody.toString()
+    const isPostSignUpPage = location.pathname === PageRoutes.PostSignUp.toString()
 
-    const newSearchNavigation = useExperimentalFeatures<boolean>(features => features.newSearchNavigationUI ?? false)
+    const [newSearchNavigation] = useNewSearchNavigation()
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
-    // Start with `true` to avoid redirecting before having a chance to check the real value of the flag.
-    const [isCodyProEnabled] = useFeatureFlag('cody-pro', true)
 
     const { theme } = useTheme()
     const showHelpShortcut = useKeyboardShortcut('keyboardShortcutsHelp')
@@ -182,24 +180,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         return <ApplicationRoutes routes={props.routes} />
     }
 
-    if (
-        props.isSourcegraphDotCom &&
-        !isCodyProEnabled &&
-        props.authenticatedUser &&
-        !props.authenticatedUser.completedPostSignup &&
-        !isPostSignUpPage
-    ) {
-        if (location.pathname !== '/search') {
-            const returnTo = window.location.href
-            const params = new URLSearchParams()
-            params.set('returnTo', returnTo)
-            const navigateTo = PageRoutes.PostSignUp + '?' + params.toString()
-            return <Navigate to={navigateTo.toString()} replace={true} />
-        }
-
-        return <Navigate to={PageRoutes.PostSignUp} replace={true} />
-    }
-
     const showNavigationSearchBox =
         isSearchRelatedPage &&
         !isSearchHomepage &&
@@ -246,6 +226,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 <>
                     {newSearchNavigation ? (
                         <NewGlobalNavigationBar
+                            routes={props.routes}
                             showSearchBox={showNavigationSearchBox}
                             authenticatedUser={props.authenticatedUser}
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
@@ -255,6 +236,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                             codeMonitoringEnabled={props.codeMonitoringEnabled}
                             batchChangesEnabled={props.batchChangesEnabled}
                             codeInsightsEnabled={props.codeInsightsEnabled ?? false}
+                            showFeedbackModal={showFeedbackModal}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             telemetryService={props.telemetryService}
                         />

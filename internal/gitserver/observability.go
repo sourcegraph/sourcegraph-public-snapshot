@@ -14,17 +14,12 @@ import (
 
 type operations struct {
 	archiveReader            *observation.Operation
-	batchLog                 *observation.Operation
-	batchLogSingle           *observation.Operation
-	blameFile                *observation.Operation
 	commits                  *observation.Operation
 	contributorCount         *observation.Operation
-	do                       *observation.Operation
 	exec                     *observation.Operation
 	firstEverCommit          *observation.Operation
 	getBehindAhead           *observation.Operation
 	getCommit                *observation.Operation
-	getCommits               *observation.Operation
 	hasCommitAfter           *observation.Operation
 	listBranches             *observation.Operation
 	listRefs                 *observation.Operation
@@ -33,7 +28,6 @@ type operations struct {
 	mergeBase                *observation.Operation
 	newFileReader            *observation.Operation
 	readDir                  *observation.Operation
-	readFile                 *observation.Operation
 	resolveRevision          *observation.Operation
 	revList                  *observation.Operation
 	search                   *observation.Operation
@@ -56,13 +50,9 @@ type operations struct {
 	perforceGetChangelist    *observation.Operation
 	createCommitFromPatch    *observation.Operation
 	getObject                *observation.Operation
-	resolveRevisions         *observation.Operation
 	commitGraph              *observation.Operation
-	commitDate               *observation.Operation
 	refDescriptions          *observation.Operation
 	branchesContaining       *observation.Operation
-	head                     *observation.Operation
-	commitExists             *observation.Operation
 	commitsUniqueToBranch    *observation.Operation
 	getDefaultBranch         *observation.Operation
 	listDirectoryChildren    *observation.Operation
@@ -121,17 +111,12 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 	return &operations{
 		archiveReader:            op("ArchiveReader"),
-		batchLog:                 op("BatchLog"),
-		batchLogSingle:           subOp("batchLogSingle"),
-		blameFile:                op("BlameFile"),
 		commits:                  op("Commits"),
 		contributorCount:         op("ContributorCount"),
-		do:                       subOp("do"),
 		exec:                     op("Exec"),
 		firstEverCommit:          op("FirstEverCommit"),
 		getBehindAhead:           op("GetBehindAhead"),
 		getCommit:                op("GetCommit"),
-		getCommits:               op("GetCommits"),
 		hasCommitAfter:           op("HasCommitAfter"),
 		listBranches:             op("ListBranches"),
 		listRefs:                 op("ListRefs"),
@@ -140,7 +125,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		mergeBase:                op("MergeBase"),
 		newFileReader:            op("NewFileReader"),
 		readDir:                  op("ReadDir"),
-		readFile:                 op("ReadFile"),
 		resolveRevision:          resolveRevisionOperation,
 		revList:                  op("RevList"),
 		search:                   op("Search"),
@@ -163,13 +147,9 @@ func newOperations(observationCtx *observation.Context) *operations {
 		perforceGetChangelist:    op("PerforceGetChangelist"),
 		createCommitFromPatch:    op("CreateCommitFromPatch"),
 		getObject:                op("GetObject"),
-		resolveRevisions:         op("ResolveRevisions"),
 		commitGraph:              op("CommitGraph"),
-		commitDate:               op("CommitDate"),
 		refDescriptions:          op("RefDescriptions"),
 		branchesContaining:       op("BranchesContaining"),
-		head:                     op("Head"),
-		commitExists:             op("CommitExists"),
 		commitsUniqueToBranch:    op("CommitsUniqueToBranch"),
 		getDefaultBranch:         op("GetDefaultBranch"),
 		listDirectoryChildren:    op("ListDirectoryChildren"),

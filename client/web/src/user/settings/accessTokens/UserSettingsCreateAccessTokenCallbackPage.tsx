@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { NEVER, type Observable } from 'rxjs'
 import { catchError, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { asError, isErrorLike } from '@sourcegraph/common'
+import { asError, isErrorLike, isMobile, pluralize } from '@sourcegraph/common'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Link, Text, ErrorAlert, Card, H1, H2, useEventObservable } from '@sourcegraph/wildcard'
@@ -65,6 +65,14 @@ const REQUESTERS: Record<string, TokenRequester> = {
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
         callbackType: 'new-tab',
     },
+    CODY_VSCODIUM: {
+        name: 'Cody - VSCodium Extension',
+        redirectURL: 'vscodium://sourcegraph.cody-ai?code=$TOKEN',
+        successMessage: 'Now opening VS Code...',
+        infoMessage:
+            'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
+        callbackType: 'new-tab',
+    },
     CODY_INSIDERS: {
         name: 'Cody - VS Code Insiders Extension',
         redirectURL: 'vscode-insiders://sourcegraph.cody-ai?code=$TOKEN',
@@ -116,10 +124,10 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     const isLightTheme = useIsLightTheme()
     const navigate = useNavigate()
     const location = useLocation()
+    const defaultAccessTokenExpiryDays = window.context.accessTokensExpirationDaysDefault
     useEffect(() => {
         telemetryService.logPageView('NewAccessTokenCallback')
     }, [telemetryService])
-
     /** Get the requester, port, and destination from the url parameters */
     const urlSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search])
     let requestFrom = useMemo(() => urlSearchParams.get('requestFrom'), [urlSearchParams])
@@ -185,6 +193,8 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
         setNote(REQUESTERS[requestFrom].name)
     }, [isSourcegraphDotCom, location.search, navigate, requestFrom, requester, port, destination])
 
+    const isRequestFromMobileDevice = isMobile()
+
     /**
      * We use this to handle token creation request from redirections.
      * Don't create token if this page wasn't linked to from a valid
@@ -195,11 +205,20 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
             (click: Observable<React.MouseEvent>) =>
                 click.pipe(
                     switchMap(() =>
-                        (requester ? createAccessToken(user.id, [AccessTokenScopes.UserAll], note) : NEVER).pipe(
+                        (requester
+                            ? createAccessToken(
+                                  user.id,
+                                  [AccessTokenScopes.UserAll],
+                                  note,
+                                  defaultAccessTokenExpiryDays * 86400 // days to seconds
+                              )
+                            : NEVER
+                        ).pipe(
                             tap(result => {
-                                // SECURITY: If the request was from a valid requester, redirect to the allowlisted redirect URL.
+                                // SECURITY: If the request was from a valid requester and from a non-mobile device,
+                                // redirect to the allowlisted redirect URL. (https://github.com/sourcegraph/security-issues/issues/361)
                                 // SECURITY: Local context ONLY
-                                if (requester) {
+                                if (requester && !isRequestFromMobileDevice) {
                                     onDidCreateAccessToken(result)
                                     setNewToken(result.token)
                                     let uri = replacePlaceholder(requester?.redirectURL, 'TOKEN', result.token)
@@ -225,7 +244,16 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                         )
                     )
                 ),
-            [requester, user.id, note, onDidCreateAccessToken, requestFrom, port]
+            [
+                requester,
+                user.id,
+                note,
+                defaultAccessTokenExpiryDays,
+                isRequestFromMobileDevice,
+                onDidCreateAccessToken,
+                requestFrom,
+                port,
+            ]
         )
     )
 
@@ -257,6 +285,9 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                             variant="primary"
                             label="Authorize"
                             loading={creationOrError === 'loading'}
+                            // we disable this if the request is made from a mobile device so the access token doesn't
+                            // get created at all. This prevents redirecting to an external site from a mobile app.
+                            disabled={isRequestFromMobileDevice}
                             onClick={onAuthorize}
                         />
                         <Button
@@ -280,8 +311,10 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                 <Text>{requester.name} access token successfully generated.</Text>
                                 <CopyableText className="test-access-token" text={newToken} />
                                 <Text className="form-help text-muted" size="small">
-                                    This is a one-time access token to connect your account to {requester.name}. You
-                                    will not be able to see this token again once the window is closed.
+                                    This is an access token to connect your account to {requester.name}. This token will
+                                    expire in {defaultAccessTokenExpiryDays}{' '}
+                                    {pluralize('day', defaultAccessTokenExpiryDays)}. You will not be able to see this
+                                    token again once the window is closed.
                                 </Text>
                             </div>
                         </details>

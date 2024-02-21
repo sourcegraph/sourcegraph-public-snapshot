@@ -13,10 +13,9 @@
     import { submitSearch, type QueryStateStore } from '../state'
     import BaseCodeMirrorQueryInput from '$lib/search/BaseQueryInput.svelte'
     import { createSuggestionsSource } from '$lib/web'
-    import { gql, query } from '$lib/graphql'
+    import { query, type DocumentInput } from '$lib/graphql'
     import Suggestions from './Suggestions.svelte'
     import { user } from '$lib/stores'
-    import SmartSearchToggleButton from './SmartSearchToggleButton.svelte'
 
     import { EditorSelection, EditorState, Prec, type Extension } from '@codemirror/state'
     import { EditorView } from '@codemirror/view'
@@ -100,14 +99,15 @@
         }),
     ]
 
-    function graphqlQuery<T, V extends Record<string, any>>(request: string, variables: V) {
-        return query<T, V>(gql(request), variables)
+    async function graphqlQuery<T, V extends Record<string, any>>(request: DocumentInput, variables: V) {
+        const result = await query<T, V>(request, variables)
+        // This is a hack to make urlq work with the API that createSuggestionsSource expects
+        return result.data ?? ({} as any)
     }
 </script>
 
 <script lang="ts">
     export let queryState: QueryStateStore
-    export let showSmartSearchButton = false
 
     export function focus() {
         input?.focus()
@@ -121,14 +121,12 @@
     let suggestionsPaddingTop = 0
     let suggestionsUI: Extension = []
 
-    $: patternType = $queryState.patternType
-    $: regularExpressionEnabled = patternType === SearchPatternType.regexp
-    $: structuralEnabled = patternType === SearchPatternType.structural
+    $: regularExpressionEnabled = $queryState.patternType === SearchPatternType.regexp
+    $: structuralEnabled = $queryState.patternType === SearchPatternType.structural
     $: extension = [
         suggestions({
             id: popoverID,
             source: createSuggestionsSource({
-                valueType: patternType === SearchPatternType.newStandardRC1 ? 'glob' : 'regex',
                 graphqlQuery,
                 authenticatedUser: $user,
                 isSourcegraphDotCom: false,
@@ -141,7 +139,7 @@
 
     function setOrUnsetPatternType(patternType: SearchPatternType): void {
         queryState.setPatternType(currentPatternType =>
-            currentPatternType === patternType ? SearchPatternType.standard : patternType
+            currentPatternType === patternType ? SearchPatternType.keyword : patternType
         )
     }
 
@@ -202,19 +200,17 @@
                     <Icon svgPath={mdiRegex} inline />
                 </button>
             </Tooltip>
-            <Tooltip tooltip="{structuralEnabled ? 'Disable' : 'Enable'} structural search">
-                <button
-                    class="toggle icon"
-                    type="button"
-                    class:active={structuralEnabled}
-                    on:click={() => setOrUnsetPatternType(SearchPatternType.structural)}
-                >
-                    <Icon svgPath={mdiCodeBrackets} inline />
-                </button>
-            </Tooltip>
-            {#if showSmartSearchButton}
-                <span class="divider" />
-                <SmartSearchToggleButton {queryState} />
+            {#if structuralEnabled}
+                <Tooltip tooltip="Disable structural search">
+                    <button
+                        class="toggle icon"
+                        type="button"
+                        class:active={structuralEnabled}
+                        on:click={() => setOrUnsetPatternType(SearchPatternType.structural)}
+                    >
+                        <Icon svgPath={mdiCodeBrackets} inline />
+                    </button>
+                </Tooltip>
             {/if}
         {/if}
     </div>
@@ -308,13 +304,6 @@
         :global(svg) {
             transform: scale(1.172);
         }
-    }
-
-    .divider {
-        width: 1px;
-        height: 1rem;
-        background-color: var(--border-color-2);
-        margin: 0 0.5rem;
     }
 
     button.icon {

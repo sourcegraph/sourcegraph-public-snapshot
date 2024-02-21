@@ -94,7 +94,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	isAspectWorkflowBuild := os.Getenv("ASPECT_WORKFLOWS_BUILD") == "1"
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "5.2.0"
+	const minimumUpgradeableVersion = "5.3.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -147,6 +147,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		if !isAspectWorkflowBuild {
 			securityOps := operations.NewNamedSet("Security Scanning")
+			securityOps.Append(semgrepScan())
 			securityOps.Append(sonarcloudScan())
 			ops.Merge(securityOps)
 		}
@@ -297,16 +298,18 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			AspectWorkflows:           isAspectWorkflowBuild,
 		}))
 
-		// Security scanning - sonarcloud
+		// Security scanning - sonarcloud & semgrep scan
+		// Sonarcloud scan will soon be phased out after semgrep scan is fully enabled
 		if isAspectWorkflowBuild {
 			securityOps := operations.NewNamedSet("Security Scanning")
+			securityOps.Append(semgrepScan())
 			securityOps.Append(sonarcloudScan())
 			ops.Merge(securityOps)
 		}
 
 		// Publish candidate images to dev registry
 		publishOpsDev := operations.NewNamedSet("Publish candidate images")
-		publishOpsDev.Append(bazelPushImagesCandidates(c.Version, isAspectWorkflowBuild))
+		publishOpsDev.Append(bazelPushImagesCandidates(c.Version))
 		ops.Merge(publishOpsDev)
 
 		// End-to-end tests

@@ -2,6 +2,8 @@
 
 set -eu
 
+bazelrc=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
+
 function preview_tags() {
   IFS=' ' read -r -a registries <<<"$1"
   IFS=' ' read -r -a tags <<<"$2"
@@ -30,9 +32,7 @@ function create_push_command() {
   done
 
   cmd="bazel \
-    --bazelrc=.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+    ${bazelrc[*]} \
     run \
     $target \
     --stamp \
@@ -67,10 +67,17 @@ push_prod=false
 # ok: main-dry-run
 # ok: main-dry-run-123
 # no: main-foo
-if [[ "$BUILDKITE_BRANCH" =~ ^main(-dry-run/)?.* ]] || [[ "$BUILDKITE_BRANCH" =~ ^docker-images-candidates-notest/.* ]]; then
+if [[ "$BUILDKITE_BRANCH" =~ ^main$ ]] || [[ "$BUILDKITE_BRANCH" =~ ^docker-images-candidates-notest/.* ]]; then
   dev_tags+=("insiders")
   prod_tags+=("insiders")
   push_prod=true
+fi
+
+# We only push on internal registries on a main-dry-run.
+if [[ "$BUILDKITE_BRANCH" =~ ^main-dry-run/.*  ]]; then
+  dev_tags+=("insiders")
+  prod_tags+=("insiders")
+  push_prod=false
 fi
 
 # All release branch builds must be published to prod tags to support
@@ -114,7 +121,7 @@ if $push_prod; then
   done
 fi
 
-images=$(bazel query 'kind("oci_push rule", //...)')
+images=$(bazel "${bazelrc[@]}" query 'kind("oci_push rule", //...)')
 
 job_file=$(mktemp)
 # shellcheck disable=SC2064

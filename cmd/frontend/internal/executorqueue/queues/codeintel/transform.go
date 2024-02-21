@@ -118,7 +118,7 @@ func transformRecord(ctx context.Context, db database.DB, index uploadsshared.In
 		Commands: []string{
 			shellquote.Join(
 				"src",
-				"lsif",
+				"code-intel",
 				"upload",
 				"-no-progress",
 				"-repo", index.RepositoryName,

@@ -1,6 +1,7 @@
 load("//dev:go_defs.bzl", "go_test")
 load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_mockgen.bzl", "go_mockgen")
 
 go_library(
     name = "dotcom",
@@ -27,6 +28,7 @@ genrule(
         "operations.graphql",
         "//cmd/frontend/graphqlbackend:schema.graphql",
         "//cmd/frontend/graphqlbackend:dotcom.graphql",
+        "//cmd/frontend/graphqlbackend:guardrails.graphql",
     ],
     outs = ["_operations.go"],
     cmd = "$(execpath @com_github_khan_genqlient//:genqlient) $(location genql.yaml) && mv cmd/cody-gateway/internal/dotcom/operations.go $@",
@@ -45,4 +47,15 @@ go_test(
     srcs = ["dotcom_test.go"],
     embed = [":dotcom"],
     deps = ["@com_github_stretchr_testify//assert"],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = ["@com_github_khan_genqlient//graphql"],
 )

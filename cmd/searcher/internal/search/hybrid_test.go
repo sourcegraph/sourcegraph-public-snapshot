@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"sort"
 	"strings"
@@ -135,7 +136,7 @@ Hello world example in go`, typeFile},
 		Service: service,
 	})
 
-	handler := internalgrpc.MultiplexHandlers(grpcServer, service)
+	handler := internalgrpc.MultiplexHandlers(grpcServer, http.HandlerFunc(http.NotFound))
 
 	ts := httptest.NewServer(handler)
 
@@ -150,7 +151,7 @@ Hello world example in go`, typeFile},
 		Want    string
 	}{{
 		Name:    "all",
-		Pattern: protocol.PatternInfo{Pattern: "world"},
+		Pattern: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}},
 		Want: `
 added.md:1:1:
 hello world I am added
@@ -164,25 +165,53 @@ Hello world example in go
 	}, {
 		Name: "added",
 		Pattern: protocol.PatternInfo{
-			Pattern:         "world",
-			IncludePatterns: []string{"added"},
+			Query:        &protocol.PatternNode{Value: "world"},
+			IncludePaths: []string{"added"},
 		},
 		Want: `
 added.md:1:1:
 hello world I am added
 `,
 	}, {
-		Name:    "example",
-		Pattern: protocol.PatternInfo{Pattern: "example"},
+		Name: "example",
+		Pattern: protocol.PatternInfo{
+			Query: &protocol.PatternNode{Value: "example"},
+		},
 		Want: `
+unchanged.md:3:3:
+Hello world example in go
+`,
+	}, {
+		Name: "boolean query",
+		Pattern: protocol.PatternInfo{
+			Query: &protocol.AndNode{
+				Children: []protocol.QueryNode{
+					&protocol.OrNode{
+						Children: []protocol.QueryNode{
+							&protocol.PatternNode{Value: "w.rld", IsRegExp: true},
+							&protocol.PatternNode{Value: "package"},
+						},
+					},
+					&protocol.PatternNode{Value: "nonexistent", IsNegated: true},
+				},
+			},
+		},
+		Want: `
+added.md:1:1:
+hello world I am added
+changed.go:1:1:
+package main
+changed.go:6:6:
+	fmt.Println("Hello world")
+unchanged.md:1:1:
+# Hello World
 unchanged.md:3:3:
 Hello world example in go
 `,
 	}, {
 		Name: "negated-pattern-example",
 		Pattern: protocol.PatternInfo{
-			Pattern:   "example",
-			IsNegated: true,
+			Query: &protocol.PatternNode{Value: "example", IsNegated: true},
 		},
 		Want: `
 added.md
@@ -191,7 +220,8 @@ changed.go
 	}, {
 		Name: "path-include",
 		Pattern: protocol.PatternInfo{
-			IncludePatterns: []string{"^added"},
+			Query:        &protocol.PatternNode{Value: ""},
+			IncludePaths: []string{"^added"},
 		},
 		Want: `
 added.md
@@ -199,7 +229,8 @@ added.md
 	}, {
 		Name: "path-exclude-added",
 		Pattern: protocol.PatternInfo{
-			ExcludePattern: "added",
+			Query:        &protocol.PatternNode{Value: ""},
+			ExcludePaths: "added",
 		},
 		Want: `
 changed.go
@@ -208,7 +239,8 @@ unchanged.md
 	}, {
 		Name: "path-exclude-unchanged",
 		Pattern: protocol.PatternInfo{
-			ExcludePattern: "unchanged",
+			Query:        &protocol.PatternNode{Value: ""},
+			ExcludePaths: "unchanged",
 		},
 		Want: `
 added.md
@@ -217,7 +249,8 @@ changed.go
 	}, {
 		Name: "path-all",
 		Pattern: protocol.PatternInfo{
-			IncludePatterns: []string{"."},
+			Query:        &protocol.PatternNode{Value: ""},
+			IncludePaths: []string{"."},
 		},
 		Want: `
 added.md
@@ -227,7 +260,7 @@ unchanged.md
 	}, {
 		Name: "pattern-path",
 		Pattern: protocol.PatternInfo{
-			Pattern:               "go",
+			Query:                 &protocol.PatternNode{Value: "go"},
 			PatternMatchesContent: true,
 			PatternMatchesPath:    true,
 		},
@@ -239,15 +272,44 @@ Hello world example in go
 	}, {
 		Name: "negated-pattern-path",
 		Pattern: protocol.PatternInfo{
-			Pattern:            "go",
-			IsNegated:          true,
+			Query:              &protocol.PatternNode{Value: "go", IsNegated: true},
 			PatternMatchesPath: true,
 		},
 		Want: `
 added.md
 unchanged.md
 `,
-	}}
+	}, {
+		Name: "lang-filters-include",
+		Pattern: protocol.PatternInfo{
+			Query:        &protocol.PatternNode{Value: ""},
+			IncludeLangs: []string{"Markdown"},
+		},
+		Want: `
+added.md
+unchanged.md
+`,
+	}, {
+		Name: "lang-filters-exclude",
+		Pattern: protocol.PatternInfo{
+			Query:        &protocol.PatternNode{Value: ""},
+			ExcludeLangs: []string{"Markdown"},
+		},
+		Want: `
+changed.go
+`,
+	}, {
+		Name: "lang-filters-with-paths",
+		Pattern: protocol.PatternInfo{
+			Query:        &protocol.PatternNode{Value: ""},
+			IncludePaths: []string{"change"},
+			ExcludeLangs: []string{"Markdown"},
+		},
+		Want: `
+changed.go
+`,
+	},
+	}
 
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
@@ -260,7 +322,7 @@ unchanged.md
 				FetchTimeout: fetchTimeoutForCI(t),
 			}
 
-			m, err := doSearch(ts.URL, &req)
+			m, err := doSearch(t, ts.URL, &req)
 			if err != nil {
 				t.Fatal(err)
 			}

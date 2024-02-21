@@ -3,10 +3,12 @@ package events
 import (
 	"context"
 	"encoding/json"
-	"strconv"
 
+	googlepubsub "cloud.google.com/go/pubsub"
+	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"github.com/cockroachdb/redact"
 	"github.com/sourcegraph/conc/pool"
 
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
@@ -25,6 +27,9 @@ type PublishStreamOptions struct {
 	// ConcurrencyLimit sets the maximum number of concurrent publishes for
 	// a stream.
 	ConcurrencyLimit int
+	// MessageSizeHistogram, if provided, records the size of message payloads
+	// published to the events topic.
+	MessageSizeHistogram metric.Int64Histogram
 }
 
 func NewPublisherForStream(eventsTopic pubsub.TopicPublisher, metadata *telemetrygatewayv1.RecordEventsRequestMetadata, opts PublishStreamOptions) (*Publisher, error) {
@@ -72,17 +77,35 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 				return errors.Wrap(err, "marshalling event payload")
 			}
 
+			if p.opts.MessageSizeHistogram != nil {
+				p.opts.MessageSizeHistogram.Record(ctx, int64(len(payload)))
+			}
+
+			// If the payload is obviously oversized, don't bother publishing it
+			// - record it with some additional details instead
+			//
+			// TODO: We can't error forever, as the instance will keep trying to
+			// deliver this event - eventually we may just need to take an action,
+			// then pretend the event succeeded. Pending decision from data team
+			// on what to do with these: https://sourcegraph.slack.com/archives/CN4FC7XT4/p1707986514302069
+			if len(payload) >= googlepubsub.MaxPublishRequestBytes {
+				return errors.Newf("event %s/%s is oversized (ID: %s, size: %s)",
+					// Mark values as safe for cockroachdb Sentry reporting
+					redact.Safe(event.GetFeature()),
+					redact.Safe(event.GetAction()),
+					redact.Safe(event.GetId()),
+					len(payload))
+			}
+
 			// Publish a single message in each callback to manage concurrency
-			// ourselves, and
-			if err := p.topic.PublishMessage(ctx, payload, map[string]string{
-				"event.feature": event.Feature,
-				"event.action":  event.Action,
-				"event.hasPrivateMetadata": strconv.FormatBool(
-					event.GetParameters().GetPrivateMetadata() != nil),
-			}); err != nil {
-				// Try to record the cancel cause in case one is recorded.
+			// ourselves, and attach attributes for ease of routing the pub/sub
+			// message.
+			if err := p.topic.PublishMessage(ctx, payload, extractPubSubAttributes(event)); err != nil {
+				// Try to record the cancel cause as the primary error in case
+				// one is recorded.
 				if cancelCause := context.Cause(ctx); cancelCause != nil {
-					return errors.Wrap(err, "interrupted event publish")
+					return errors.Wrapf(cancelCause, "%s: interrupted event publish",
+						err.Error())
 				}
 				return errors.Wrap(err, "publishing event")
 			}

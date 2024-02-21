@@ -1,35 +1,63 @@
-import { getPaginationParams } from '$lib/Paginator'
+import { from } from 'rxjs'
+
+import { getGraphQLClient, infinityQuery } from '$lib/graphql'
+import { resolveRevision } from '$lib/repo/utils'
+import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
-import { CommitsQuery } from './page.gql'
+import { CommitsPage_CommitsQuery } from './page.gql'
 
-const pageSize = 20
+const PAGE_SIZE = 20
 
-export const load: PageLoad = async ({ parent, url }) => {
-    const { resolvedRevision, graphqlClient } = await parent()
-    const { first, after } = getPaginationParams(url.searchParams, pageSize)
+export const load: PageLoad = ({ parent, params }) => {
+    const client = getGraphQLClient()
+    const { repoName, revision = '' } = parseRepoRevision(params.repo)
+    const resolvedRevision = resolveRevision(parent, revision)
+
+    const commitsQuery = infinityQuery({
+        client,
+        query: CommitsPage_CommitsQuery,
+        variables: from(
+            resolvedRevision.then(revision => ({
+                repoName,
+                revision,
+                first: PAGE_SIZE,
+                afterCursor: null as string | null,
+            }))
+        ),
+        nextVariables: previousResult => {
+            if (previousResult?.data?.repository?.commit?.ancestors?.pageInfo?.hasNextPage) {
+                return {
+                    afterCursor: previousResult.data.repository.commit.ancestors.pageInfo.endCursor,
+                }
+            }
+            return undefined
+        },
+        combine: (previousResult, nextResult) => {
+            if (!nextResult.data?.repository?.commit) {
+                return nextResult
+            }
+            const previousNodes = previousResult.data?.repository?.commit?.ancestors?.nodes ?? []
+            const nextNodes = nextResult.data.repository?.commit?.ancestors.nodes ?? []
+            return {
+                ...nextResult,
+                data: {
+                    repository: {
+                        ...nextResult.data.repository,
+                        commit: {
+                            ...nextResult.data.repository.commit,
+                            ancestors: {
+                                ...nextResult.data.repository.commit.ancestors,
+                                nodes: [...previousNodes, ...nextNodes],
+                            },
+                        },
+                    },
+                },
+            }
+        },
+    })
 
     return {
-        deferred: {
-            commits: graphqlClient
-                .query({
-                    query: CommitsQuery,
-                    variables: {
-                        repo: resolvedRevision.repo.id,
-                        revspec: resolvedRevision.commitID,
-                        first,
-                        afterCursor: after,
-                    },
-                })
-                .then(result => {
-                    if (result.data.node?.__typename !== 'Repository') {
-                        throw new Error('Unable to find repository')
-                    }
-                    if (!result.data.node.commit) {
-                        throw new Error('Unable to find commit')
-                    }
-                    return result.data.node.commit.ancestors
-                }),
-        },
+        commitsQuery,
     }
 }

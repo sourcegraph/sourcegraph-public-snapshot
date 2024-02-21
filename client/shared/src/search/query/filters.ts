@@ -271,8 +271,9 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         placeholder: '"content"',
     },
     [FilterType.patterntype]: {
-        discreteValues: () => ['regexp', 'structural', 'literal', 'standard'].map(value => ({ label: value })),
-        description: 'The pattern type (standard, regexp, literal, structural) in use',
+        discreteValues: () =>
+            ['keyword', 'literal', 'regexp', 'standard', 'structural'].map(value => ({ label: value })),
+        description: 'The pattern type (standard, keyword, regexp, literal) in use',
         singular: true,
     },
     [FilterType.repo]: {
@@ -511,16 +512,6 @@ export const escapeSpaces = (value: string): string => {
         }
     }
     return escaped.join('')
-}
-
-/**
- * Helper function to quote a string if it contains whitespace characters.
- */
-export function quoteIfWhitespace(value: string): string {
-    if (/\s/.test(value)) {
-        return `"${value}"`
-    }
-    return value
 }
 
 /**

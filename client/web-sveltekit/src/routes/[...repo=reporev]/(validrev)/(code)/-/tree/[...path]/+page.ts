@@ -1,68 +1,78 @@
-import { fetchBlobPlaintext } from '$lib/repo/api/blob'
-import { fetchDiff } from '$lib/repo/api/commits'
+import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
 import { fetchTreeEntries } from '$lib/repo/api/tree'
 import { findReadme } from '$lib/repo/tree'
+import { resolveRevision } from '$lib/repo/utils'
+import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
-import { TreeEntriesCommitInfo } from './page.gql'
+import { TreePageCommitInfoQuery, TreePageReadmeQuery } from './page.gql'
 
-export const load: PageLoad = async ({ params, parent, url }) => {
-    const revisionToCompare = url.searchParams.get('rev')
-    const { resolvedRevision, graphqlClient } = await parent()
+export const load: PageLoad = ({ parent, params }) => {
+    const client = getGraphQLClient()
+    const { repoName, revision = '' } = parseRepoRevision(params.repo)
+    const resolvedRevision = resolveRevision(parent, revision)
 
-    const treeEntries = fetchTreeEntries({
-        repoID: resolvedRevision.repo.id,
-        commitID: resolvedRevision.commitID,
-        filePath: params.path,
-        first: null,
-    }).then(
-        commit => commit.tree,
-        () => null
-    )
+    const treeEntries = resolvedRevision
+        .then(resolvedRevision =>
+            fetchTreeEntries({
+                repoName,
+                revision: resolvedRevision,
+                filePath: params.path,
+                first: null,
+            })
+        )
+        .then(commit => commit.tree)
 
     return {
         filePath: params.path,
-        deferred: {
-            treeEntries,
-            commitInfo: graphqlClient
-                .query({
-                    query: TreeEntriesCommitInfo,
-                    variables: {
-                        repoID: resolvedRevision.repo.id,
-                        commitID: resolvedRevision.commitID,
-                        filePath: params.path,
-                        first: null,
-                    },
+        treeEntries,
+        treeEntriesWithCommitInfo: resolvedRevision
+            .then(resolvedRevision =>
+                client.query(TreePageCommitInfoQuery, {
+                    repoName,
+                    revision: resolvedRevision,
+                    filePath: params.path,
+                    first: null,
                 })
-                .then(result => {
-                    if (result.data.node?.__typename !== 'Repository') {
-                        throw new Error('Unable to load repository')
+            )
+            .then(
+                mapOrThrow(result => {
+                    if (!result.data?.repository) {
+                        throw new Error('Unable to fetch repository information')
                     }
-                    return result.data.node.commit?.tree ?? null
-                }),
-            readme: treeEntries.then(result => {
-                if (!result) {
-                    return null
-                }
-                const readme = findReadme(result.entries)
-                if (!readme) {
-                    return null
-                }
-                return fetchBlobPlaintext({
-                    repoID: resolvedRevision.repo.id,
-                    commitID: resolvedRevision.commitID,
-                    filePath: readme.path,
-                }).then(result => ({
-                    name: readme.name,
-                    ...result,
-                }))
-            }),
-            compare: revisionToCompare
-                ? {
-                      revisionToCompare,
-                      diff: fetchDiff(resolvedRevision.repo.id, revisionToCompare, [params.path]),
-                  }
-                : null,
-        },
+                    if (!result.data.repository.commit) {
+                        throw new Error('Unable to fetch commit information')
+                    }
+                    return result.data.repository.commit.tree?.entries ?? []
+                })
+            ),
+        readme: treeEntries.then(result => {
+            if (!result) {
+                return null
+            }
+            const readme = findReadme(result.entries)
+            if (!readme) {
+                return null
+            }
+            return resolvedRevision
+                .then(resolvedRevision =>
+                    client.query(TreePageReadmeQuery, {
+                        repoName,
+                        revision: resolvedRevision,
+                        path: readme.path,
+                    })
+                )
+                .then(
+                    mapOrThrow(result => {
+                        if (!result.data?.repository) {
+                            throw new Error('Unable to fetch repository information')
+                        }
+                        if (!result.data.repository.commit) {
+                            throw new Error('Unable to fetch commit information')
+                        }
+                        return result.data.repository.commit.blob
+                    })
+                )
+        }),
     }
 }

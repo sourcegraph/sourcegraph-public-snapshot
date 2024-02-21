@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Meta, Story, Template } from '@storybook/addon-svelte-csf'
+    import { Story } from '@storybook/addon-svelte-csf'
     import SearchResults from './SearchResults.svelte'
     import {
         createCommitMatch,
@@ -9,7 +9,7 @@
         createPersonMatch,
         createSymbolMatch,
         createTeamMatch,
-    } from '$testdata'
+    } from '$testing/testdata'
     import FileContentSearchResult from './FileContentSearchResult.svelte'
     import { SvelteComponent, setContext } from 'svelte'
     import { KEY, type SourcegraphContext } from '$lib/stores'
@@ -25,14 +25,27 @@
     import SymbolSearchResult from './SymbolSearchResult.svelte'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
     import { setSearchResultsContext } from './searchResultsContext'
-    import { createTestGraphqlClient } from '$testing/graphql'
+
+    export const meta = {
+        title: 'search/SearchResults',
+        component: SearchResults,
+        parameters: {
+            msw: {
+                handlers: {
+                    highlightedFile: graphql.query<HighlightedFileResult, HighlightedFileVariables>(
+                        'HighlightedFile',
+                        (req, res, ctx) => res(ctx.data(createHighlightedFileResult(req.variables.ranges)))
+                    ),
+                },
+            },
+        },
+    }
 
     setContext<SourcegraphContext>(KEY, {
         user: readable(null),
         settings: readable({}),
         featureFlags: readable([]),
         temporarySettingsStorage: createTemporarySettingsStorage(),
-        client: readable(createTestGraphqlClient()),
     })
 
     setSearchResultsContext({
@@ -61,22 +74,9 @@
     function randomizeData(i: number) {
         data[i] = results[i][2]()
     }
-
-    $: parameters = {
-        msw: {
-            handlers: {
-                highlightedFile: graphql.query<HighlightedFileResult, HighlightedFileVariables>(
-                    'HighlightedFile',
-                    (req, res, ctx) => res(ctx.data(createHighlightedFileResult(req.variables.ranges)))
-                ),
-            },
-        },
-    }
 </script>
 
-<Meta title="search/SearchResults" component={SearchResults} {parameters} />
-
-<Template>
+<Story name="Default">
     {#each results as [title, component], i}
         <div>
             <h2>{title}</h2>
@@ -84,9 +84,7 @@
         </div>
         <svelte:component this={component} result={data[i]} />
     {/each}
-</Template>
-
-<Story name="Default" />
+</Story>
 
 <style lang="scss">
     div {

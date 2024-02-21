@@ -1,0 +1,29 @@
+query Init {
+    currentUser {
+        ...AuthenticatedUser
+    }
+
+    viewerSettings {
+        final
+    }
+
+    evaluatedFeatureFlags {
+        ...FeatureFlag
+    }
+}
+
+query EvaluatedFeatureFlagsQuery {
+    evaluatedFeatureFlags {
+        ...FeatureFlag
+    }
+}
+
+fragment FeatureFlag on EvaluatedFeatureFlag {
+    name
+    value
+}
+
+fragment AuthenticatedUser on User {
+    ...Header_User
+    ...SearchInput_AuthenticatedUser
+}

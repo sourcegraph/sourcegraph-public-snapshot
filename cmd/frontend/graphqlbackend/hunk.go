@@ -5,12 +5,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type hunkResolver struct {
 	db   database.DB
 	repo *RepositoryResolver
-	hunk *gitserver.Hunk
+	hunk *gitdomain.Hunk
 }
 
 func (r *hunkResolver) Author() signatureResolver {

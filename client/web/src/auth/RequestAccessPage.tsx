@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Text, Link, ErrorAlert, Form, Input, TextArea, Container, Alert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
@@ -116,11 +117,16 @@ const RequestAccessForm: React.FunctionComponent<RequestAccessFormProps> = ({ on
     )
 }
 
+export interface RequestAccessPageProps extends TelemetryV2Props {}
+
 /**
  * The request access page component.
  */
-export const RequestAccessPage: React.FunctionComponent = () => {
-    useEffect(() => eventLogger.logPageView('RequestAccessPage'), [])
+export const RequestAccessPage: React.FunctionComponent<RequestAccessPageProps> = ({ telemetryRecorder }) => {
+    useEffect(() => {
+        eventLogger.logPageView('RequestAccessPage')
+        telemetryRecorder.recordEvent('auth.requestAccess', 'view')
+    }, [telemetryRecorder])
     const location = useLocation()
     const navigate = useNavigate()
     const [error, setError] = useState<Error | null>(null)

@@ -14,11 +14,12 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/gitserver/gitdomain",
-        "//internal/inventory",
         "//internal/lazyregexp",
         "//internal/search",
         "//internal/search/result",
         "@com_github_grafana_regexp//:regexp",
+        "@org_golang_x_text//cases",
+        "@org_golang_x_text//language",
         "@org_uber_go_atomic//:atomic",
     ],
 )

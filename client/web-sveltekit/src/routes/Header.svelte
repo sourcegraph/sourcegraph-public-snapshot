@@ -1,8 +1,7 @@
 <script lang="ts">
-    import { mdiBookOutline, mdiChartBar, mdiMagnify } from '@mdi/js'
+    import { mdiBookOutline, mdiChartBar, mdiFlaskOutline, mdiMagnify } from '@mdi/js'
 
-    import { mark, svelteLogoEnabled } from '$lib/images'
-    import type { AuthenticatedUser } from '$lib/shared'
+    import { mark } from '$lib/images'
 
     import HeaderNavLink from './HeaderNavLink.svelte'
     import { Button } from '$lib/wildcard'
@@ -12,18 +11,20 @@
     import CodyIcon from '$lib/icons/Cody.svelte'
     import CodeMonitoringIcon from '$lib/icons/CodeMonitoring.svelte'
     import BatchChangesIcon from '$lib/icons/BatchChanges.svelte'
+    import type { Header_User } from './Header.gql'
+    import Icon from '$lib/Icon.svelte'
 
-    export let authenticatedUser: AuthenticatedUser | null | undefined
+    export let authenticatedUser: Header_User | null | undefined
 
     $: reactURL = (function (url) {
         const urlCopy = new URL(url)
         urlCopy.searchParams.delete('feat')
         for (let feature of urlCopy.searchParams.getAll('feat')) {
-            if (feature !== 'enable-sveltekit') {
+            if (feature !== 'web-next') {
                 urlCopy.searchParams.append('feat', feature)
             }
         }
-        urlCopy.searchParams.append('feat', '-enable-sveltekit')
+        urlCopy.searchParams.append('feat', '-web-next')
         return urlCopy.toString()
     })($page.url)
 </script>
@@ -51,14 +52,14 @@
             <HeaderNavLink external href="/insights" svgIconPath={mdiChartBar}>Insights</HeaderNavLink>
         </ul>
     </nav>
-    <Tooltip tooltip="Disable SvelteKit (go to React)">
+    <Tooltip tooltip="Leave experimental web app">
         <a href={reactURL} data-sveltekit-reload>
-            <img src={svelteLogoEnabled} alt="Svelte logo" width="20" height="20" />
+            <Icon svgPath={mdiFlaskOutline} --color="var(--oc-green-6)" />
         </a>
     </Tooltip>
     <div>
         {#if authenticatedUser}
-            <UserMenu {authenticatedUser} />
+            <UserMenu user={authenticatedUser} />
         {:else}
             <Button variant="secondary" outline>
                 <svelte:fragment slot="custom" let:buttonClass>

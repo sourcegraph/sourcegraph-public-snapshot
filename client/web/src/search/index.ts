@@ -6,7 +6,7 @@ import { startWith, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 import { memoizeObservable } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode } from '@sourcegraph/shared/src/search'
-import { discreteValueAliases, escapeSpaces, quoteIfWhitespace } from '@sourcegraph/shared/src/search/query/filters'
+import { discreteValueAliases, escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { findFilter, FilterKind, getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
@@ -42,7 +42,7 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
         case SearchPatternType.regexp:
         case SearchPatternType.structural:
         case SearchPatternType.lucky:
-        case SearchPatternType.newStandardRC1:
+        case SearchPatternType.codycontext:
         case SearchPatternType.keyword: {
             return patternType
         }
@@ -115,7 +115,7 @@ export function parseSearchURL(
     let query = queryInput
     const { queryInput: newQuery, patternTypeInput: patternType } = literalSearchCompatibility({
         queryInput,
-        patternTypeInput: patternTypeInput || SearchPatternType.standard,
+        patternTypeInput,
     })
     query = newQuery
 
@@ -144,26 +144,12 @@ export function parseSearchURL(
     }
 }
 
-export function filterValueForRepoRevision(repoName: string, revision?: string): string {
+export function repoFilterForRepoRevision(repoName: string, revision?: string): string {
     return `${escapeSpaces(`^${escapeRegExp(repoName)}$${revision ? `@${abbreviateOID(revision)}` : ''}`)}`
 }
 
-export function repoFilterForRepoRevision(
-    repoName: string,
-    revision?: string,
-    patternType?: SearchPatternType
-): string {
-    if (patternType === SearchPatternType.newStandardRC1) {
-        return `repo:${quoteIfWhitespace(repoName)}${revision ? `@${abbreviateOID(revision)}` : ''} `
-    }
-    return `repo:${filterValueForRepoRevision(repoName, revision)} `
-}
-
-export function fileFilterForFilePath(filePath: string, patternType?: SearchPatternType): string {
-    if (patternType === SearchPatternType.newStandardRC1) {
-        return `file:${quoteIfWhitespace(filePath)}`
-    }
-    return `file:${escapeSpaces('^' + escapeRegExp(filePath))}`
+export function searchQueryForRepoRevision(repoName: string, revision?: string): string {
+    return `repo:${repoFilterForRepoRevision(repoName, revision)} `
 }
 
 function abbreviateOID(oid: string): string {
@@ -182,11 +168,11 @@ export function quoteIfNeeded(string: string): string {
 
 interface QueryCompatibility {
     queryInput: string
-    patternTypeInput: SearchPatternType
+    patternTypeInput?: SearchPatternType
 }
 
 export function literalSearchCompatibility({ queryInput, patternTypeInput }: QueryCompatibility): QueryCompatibility {
-    if (patternTypeInput !== SearchPatternType.literal) {
+    if (patternTypeInput === undefined || patternTypeInput !== SearchPatternType.literal) {
         return { queryInput, patternTypeInput }
     }
     const tokens = scanSearchQuery(queryInput, false, SearchPatternType.standard)

@@ -2,6 +2,7 @@ package check
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -52,4 +53,16 @@ func WrapErrMessage(check CheckFunc, message string) CheckFunc {
 		}
 		return nil
 	}
+}
+
+// SkipOnNix will not run check if running inside of our nix develop
+// environment. reason is not read, but is used to document why at the
+// callsite.
+func SkipOnNix(reason string, check CheckFunc) CheckFunc {
+	if os.Getenv("IN_NIX_SHELL") != "" && os.Getenv("name") == "sourcegraph-dev-env" {
+		return func(ctx context.Context) error {
+			return nil
+		}
+	}
+	return check
 }

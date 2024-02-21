@@ -1,6 +1,27 @@
-import type { Filter } from '@sourcegraph/shared/src/search/stream'
+export enum FilterKind {
+    SymbolKind = 'symbol type',
+    Language = 'lang',
+    Author = 'author',
+    Repository = 'repo',
+    CommitDate = 'commit date',
+    File = 'file',
+    Utility = 'utility',
 
-export enum SearchFilterType {
+    // Synthetic filters, lives only on the client
+    Count = 'count',
+    Type = 'type',
+}
+
+export const DYNAMIC_FILTER_KINDS = [
+    FilterKind.SymbolKind,
+    FilterKind.Language,
+    FilterKind.Author,
+    FilterKind.Repository,
+    FilterKind.CommitDate,
+    FilterKind.File,
+]
+
+export enum SearchTypeFilter {
     Code = 'Code',
     Repositories = 'Repositories',
     Paths = 'Paths',
@@ -9,24 +30,42 @@ export enum SearchFilterType {
     Diffs = 'Diffs',
 }
 
-/**
- * Backend doesn't support all possible kind of filters yet, in order
- * to extend it with got this client-based filter type.
- */
-export interface DynamicClientFilter extends Filter {
-    kind: Filter['kind'] | 'select' | 'after' | 'before' | 'author'
+export const SEARCH_TYPES_TO_FILTER_TYPES: Record<`${SearchTypeFilter}`, `${FilterKind}`[]> = {
+    [SearchTypeFilter.Code]: [
+        FilterKind.Language,
+        FilterKind.Repository,
+        FilterKind.File,
+        FilterKind.Utility,
+        FilterKind.Count,
+    ],
+    [SearchTypeFilter.Repositories]: [FilterKind.Utility, FilterKind.Count],
+    [SearchTypeFilter.Paths]: [
+        FilterKind.Language,
+        FilterKind.Repository,
+        FilterKind.File,
+        FilterKind.Utility,
+        FilterKind.Count,
+    ],
+    [SearchTypeFilter.Symbols]: [
+        FilterKind.SymbolKind,
+        FilterKind.Language,
+        FilterKind.Repository,
+        FilterKind.File,
+        FilterKind.Utility,
+        FilterKind.Count,
+    ],
+    [SearchTypeFilter.Commits]: [
+        FilterKind.Author,
+        FilterKind.Repository,
+        FilterKind.CommitDate,
+        FilterKind.Utility,
+        FilterKind.Count,
+    ],
+    [SearchTypeFilter.Diffs]: [
+        FilterKind.Author,
+        FilterKind.Repository,
+        FilterKind.CommitDate,
+        FilterKind.Utility,
+        FilterKind.Count,
+    ],
 }
-
-export const SYMBOL_KIND_FILTERS: DynamicClientFilter[] = [
-    { kind: 'select', label: 'Function', count: 0, exhaustive: true, value: 'select:symbol.function' },
-    { kind: 'select', label: 'Method', count: 0, exhaustive: true, value: 'select:symbol.method' },
-    { kind: 'select', label: 'Module', count: 0, exhaustive: true, value: 'select:symbol.module' },
-    { kind: 'select', label: 'Class', count: 0, exhaustive: true, value: 'select:symbol.class' },
-    { kind: 'select', label: 'Enum', count: 0, exhaustive: true, value: 'select:symbol.enum' },
-]
-
-export const COMMIT_DATE_FILTERS: DynamicClientFilter[] = [
-    { kind: 'after', label: 'Last 24 hours', count: 0, exhaustive: true, value: 'after:yesterday' },
-    { kind: 'before', label: 'Last week', count: 0, exhaustive: true, value: 'before:"1 week ago"' },
-    { kind: 'before', label: 'Last month', count: 0, exhaustive: true, value: 'before:"1 month ago"' },
-]

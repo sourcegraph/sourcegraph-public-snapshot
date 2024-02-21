@@ -1,0 +1,84 @@
+---
+source: crates/syntax-analysis/src/lib.rs
+expression: dumped
+---
+  package multierror
+//        ^^^^^^^^^^ definition(Package) scip-ctags multierror/
+  
+  import "sync"
+  
+  // Group is a collection of goroutines which return errors that need to be
+  // coalesced.
+  type Group struct {
+//     ^^^^^ definition(Struct) scip-ctags multierror/Group#
+   mutex  sync.Mutex
+// ^^^^^ definition(Field) scip-ctags multierror/Group#mutex.
+   err    *Error
+// ^^^ definition(Field) scip-ctags multierror/Group#err.
+   wg     sync.WaitGroup
+// ^^ definition(Field) scip-ctags multierror/Group#wg.
+   nested struct {
+// ^^^^^^ definition(Struct) scip-ctags multierror/Group#nested#
+    inner bool
+//  ^^^^^ definition(Field) scip-ctags multierror/Group#nested#inner.
+   }
+  
+   innerface interface {
+// ^^^^^^^^^ definition(Interface) scip-ctags multierror/Group#innerface#
+    Another() bool
+//  ^^^^^^^ definition(MethodSpecification) scip-ctags multierror/Group#innerface#Another().
+   }
+  }
+  
+  type SomeInterface interface {
+//     ^^^^^^^^^^^^^ definition(Interface) scip-ctags multierror/SomeInterface#
+   Something() bool
+// ^^^^^^^^^ definition(MethodSpecification) scip-ctags multierror/SomeInterface#Something().
+   Incredible() int
+// ^^^^^^^^^^ definition(MethodSpecification) scip-ctags multierror/SomeInterface#Incredible().
+  }
+  
+  type TypeDef uint8
+//     ^^^^^^^ definition(TypeAlias) scip-ctags multierror/TypeDef#
+  type TypeAlias = uint8
+//     ^^^^^^^^^ definition(TypeAlias) scip-ctags multierror/TypeAlias#
+  
+  // Go calls the given function in a new goroutine.
+  //
+  // If the function returns an error it is added to the group multierror which
+  // is returned by Wait.
+  func (g *Group) Go(f func() error) {
+//                ^^ definition(Method) scip-ctags multierror/Group#Go().
+   g.wg.Add(1)
+  
+   go func() {
+    defer g.wg.Done()
+  
+    if err := f(); err != nil {
+     g.mutex.Lock()
+     g.err = Append(g.err, err)
+     g.mutex.Unlock()
+    }
+   }()
+  }
+  
+  // Wait blocks until all function calls from the Go method have returned, then
+  // returns the multierror.
+  func (g *Group) Wait() *Error {
+//                ^^^^ definition(Method) scip-ctags multierror/Group#Wait().
+   g.wg.Wait()
+   g.mutex.Lock()
+   defer g.mutex.Unlock()
+   return g.err
+  }
+  
+  var (
+   diffPath = flag.String("f", stdin, "filename of diff (default: stdin)")
+// ^^^^^^^^ definition(Variable) scip-ctags multierror/diffPath.
+   fileIdx  = flag.Int("i", -1, "if >= 0, only print and report errors from the i'th file (0-indexed)")
+// ^^^^^^^ definition(Variable) scip-ctags multierror/fileIdx.
+  )
+  
+  func RegularFunc() {}
+//     ^^^^^^^^^^^ definition(Function) scip-ctags multierror/RegularFunc().
+

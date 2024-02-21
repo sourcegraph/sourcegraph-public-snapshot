@@ -4,6 +4,7 @@ import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, H2, H4, Icon, Link, Text } from '@sourcegraph/wildcard'
@@ -11,7 +12,7 @@ import { Button, H2, H4, Icon, Link, Text } from '@sourcegraph/wildcard'
 import type { AuthenticatedUser } from '../../../auth'
 import { ExternalsAuth } from '../../../auth/components/ExternalsAuth'
 import { MarketingBlock } from '../../../components/MarketingBlock'
-import type { AuthProvider, SourcegraphContext } from '../../../jscontext'
+import type { SourcegraphContext } from '../../../jscontext'
 import { EventName } from '../../../util/constants'
 
 import { GlowingCodySVG, MeetCodySVG } from './WidgetIcons'
@@ -58,18 +59,8 @@ function useTryCodyWidget(telemetryService: TelemetryProps['telemetryService']):
 }
 
 const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetryService, context }) => {
-    const logEvent = (provider: AuthProvider['serviceType']): void => {
-        const eventType = provider === 'builtin' ? 'form' : provider
-        const eventPage = type === 'blob' ? 'Blobview' : 'RepositoryPage'
-        const eventArguments = {
-            type: eventType,
-            page: eventPage,
-            description: '',
-        }
-        telemetryService.log(EventName.AUTH_INITIATED, eventArguments, eventArguments)
-    }
-
     const title = type === 'blob' ? 'Sign up to get Cody, our AI assistant, free' : 'Meet Cody, your AI assistant'
+    const eventPage = type === 'blob' ? 'try-cody-widget-blob' : 'try-cody-widget-repo'
 
     return (
         <>
@@ -82,13 +73,16 @@ const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetr
                 </Text>
                 <div className={styles.authButtonsWrap}>
                     <ExternalsAuth
+                        page={eventPage}
                         context={context}
                         githubLabel="GitHub"
                         gitlabLabel="GitLab"
                         googleLabel="Google"
                         withCenteredText={true}
-                        onClick={logEvent}
+                        onClick={() => {}}
                         ctaClassName={styles.authButton}
+                        telemetryRecorder={noOpTelemetryRecorder}
+                        telemetryService={telemetryService}
                     />
                 </div>
                 <Text className="mb-2 mt-2">

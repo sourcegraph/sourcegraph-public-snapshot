@@ -156,6 +156,23 @@ func (r *productSubscription) CodyGatewayAccess() graphqlbackend.CodyGatewayAcce
 	return codyGatewayAccessResolver{sub: r}
 }
 
+func NewErrActiveLicenseRequired() error {
+	return &ErrActiveLicenseRequired{error: errors.New("an active license is required")}
+}
+
+type ErrActiveLicenseRequired struct {
+	// Embed error to please GraphQL-go.
+	error
+}
+
+func (e ErrActiveLicenseRequired) Error() string {
+	return e.error.Error()
+}
+
+func (e ErrActiveLicenseRequired) Extensions() map[string]any {
+	return map[string]any{"code": "ErrActiveLicenseRequired"}
+}
+
 func (r *productSubscription) CurrentSourcegraphAccessToken(ctx context.Context) (*string, error) {
 	activeLicense, err := r.computeActiveLicense(ctx)
 	if err != nil {
@@ -163,7 +180,7 @@ func (r *productSubscription) CurrentSourcegraphAccessToken(ctx context.Context)
 	}
 
 	if activeLicense == nil {
-		return nil, errors.New("an active license is required")
+		return nil, NewErrActiveLicenseRequired()
 	}
 
 	if !activeLicense.AccessTokenEnabled {

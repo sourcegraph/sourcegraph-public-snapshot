@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Output is a wrapper with convenience functions for sg output.
@@ -51,7 +52,7 @@ func NewFixedOutput(dst io.Writer, verbose bool) *Output {
 // TTY and color, useful for testing and getting simpler output.
 func NewSimpleOutput(dst io.Writer, verbose bool) *Output {
 	opts := newStaticOutputOptions(verbose)
-	opts.ForceTTY = false
+	opts.ForceTTY = pointers.Ptr(false)
 	opts.ForceColor = false
 
 	return &Output{
@@ -64,7 +65,7 @@ func NewSimpleOutput(dst io.Writer, verbose bool) *Output {
 func newStaticOutputOptions(verbose bool) output.OutputOpts {
 	return output.OutputOpts{
 		ForceColor:          true,
-		ForceTTY:            true,
+		ForceTTY:            pointers.Ptr(true),
 		Verbose:             verbose,
 		ForceWidth:          80,
 		ForceHeight:         25,

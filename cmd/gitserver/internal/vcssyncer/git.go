@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -48,18 +49,22 @@ func (s *gitRepoSyncer) IsCloneable(ctx context.Context, repoName api.RepoName, 
 	}
 
 	args := []string{"ls-remote", remoteURL.String(), "HEAD"}
-	ctx, cancel := context.WithTimeout(ctx, executil.ShortGitCommandTimeout(args))
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
 	r := urlredactor.New(remoteURL)
 	cmd := exec.CommandContext(ctx, "git", args...)
-	out, err := executil.RunRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.Redact), true)
+
+	// Configure the command to be able to talk to a remote.
+	executil.ConfigureRemoteGitCommand(cmd)
+
+	out, err := s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.Redact).CombinedOutput()
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
 		}
 		if len(out) > 0 {
-			err = &common.GitCommandError{Err: err, Output: string(out)}
+			err = errors.Wrap(err, "failed to check remote access: "+string(out))
 		}
 		return err
 	}
@@ -79,7 +84,7 @@ func (s *gitRepoSyncer) Clone(ctx context.Context, repo api.RepoName, remoteURL 
 	// Next, initialize a bare repo in that tmp path.
 	tryWrite(s.logger, progressWriter, "Creating bare repo\n")
 	if err := git.MakeBareRepo(ctx, tmpPath); err != nil {
-		return &common.GitCommandError{Err: err}
+		return err
 	}
 	tryWrite(s.logger, progressWriter, "Created bare repo at %s\n", tmpPath)
 
@@ -113,9 +118,15 @@ func (s *gitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, repoName 
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
 	r := urlredactor.New(remoteURL)
-	output, err := executil.RunRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.Redact), configRemoteOpts)
+
+	if configRemoteOpts {
+		// Configure the command to be able to talk to a remote.
+		executil.ConfigureRemoteGitCommand(cmd)
+	}
+
+	output, err := s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.Redact).CombinedOutput()
 	if err != nil {
-		return nil, &common.GitCommandError{Err: err, Output: r.Redact(string(output))}
+		return nil, errors.Wrap(err, "failed to fetch from remote: "+string(output))
 	}
 	return output, nil
 }

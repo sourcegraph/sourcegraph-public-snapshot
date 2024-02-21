@@ -18,6 +18,8 @@ type queueMetricsJob struct {
 	store database.TelemetryEventsExportQueueDiagnosticsStore
 
 	sizeGauge prometheus.Gauge
+	// Age of the oldest unexported event in seconds
+	oldestUnexportedEventGauge prometheus.Gauge
 }
 
 func newQueueMetricsJob(obctx *observation.Context, store database.TelemetryEventsExportQueueStore) goroutine.BackgroundRoutine {
@@ -28,6 +30,12 @@ func newQueueMetricsJob(obctx *observation.Context, store database.TelemetryEven
 			Subsystem: "telemetrygatewayexporter",
 			Name:      "queue_size",
 			Help:      "Current number of events waiting to be exported.",
+		}),
+		oldestUnexportedEventGauge: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: "src",
+			Subsystem: "telemetrygatewayexporter",
+			Name:      "oldest_unexported_event",
+			Help:      "Age of the oldest unexported event in seconds.",
 		}),
 	}
 	return goroutine.NewPeriodicGoroutine(
@@ -44,11 +52,18 @@ func newQueueMetricsJob(obctx *observation.Context, store database.TelemetryEven
 }
 
 func (j *queueMetricsJob) Handle(ctx context.Context) error {
-	count, err := j.store.CountUnexported(ctx)
+	count, oldest, err := j.store.CountUnexported(ctx)
 	if err != nil {
 		return errors.Wrap(err, "store.CountUnexported")
 	}
 	j.sizeGauge.Set(float64(count))
+
+	if oldest.IsZero() {
+		j.oldestUnexportedEventGauge.Set(0)
+	} else {
+		oldestAge := time.Since(oldest)
+		j.oldestUnexportedEventGauge.Set(float64(oldestAge.Seconds()))
+	}
 
 	return nil
 }

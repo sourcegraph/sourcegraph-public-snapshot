@@ -37,6 +37,12 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 			return
 		}
 
+		// Temporary(sourcegraph#59625) SSC API uses SAMS auth token.
+		if strings.HasPrefix(r.URL.Path, "/.api/ssc/") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		// The license check handler uses a Bearer token and request body which
 		// is checked in `productsubscription/license_check_handler.go`
 		if envvar.SourcegraphDotComMode() && strings.HasPrefix(r.URL.Path, "/.api/license/check") {

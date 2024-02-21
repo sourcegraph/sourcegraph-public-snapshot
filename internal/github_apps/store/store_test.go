@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
@@ -13,8 +14,11 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	gh "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -677,12 +681,12 @@ type mockGitHubClient struct {
 	mock.Mock
 }
 
-func (m *mockGitHubClient) GetAppInstallations(ctx context.Context) ([]*github.Installation, error) {
-	args := m.Called(ctx)
+func (m *mockGitHubClient) GetAppInstallations(ctx context.Context, page int) ([]*github.Installation, bool, error) {
+	args := m.Called(ctx, page)
 	if args.Get(0) != nil {
-		return args.Get(0).([]*github.Installation), args.Error(1)
+		return args.Get(0).([]*github.Installation), args.Get(1).(bool), args.Error(2)
 	}
-	return nil, args.Error(1)
+	return nil, false, args.Error(1)
 }
 
 func TestSyncInstallations(t *testing.T) {
@@ -698,12 +702,13 @@ func TestSyncInstallations(t *testing.T) {
 		githubClient       *mockGitHubClient
 		expectedInstallIDs []int
 		app                ghtypes.GitHubApp
+		expectedErr        error
 	}{
 		{
 			name: "no installations",
 			githubClient: func() *mockGitHubClient {
 				client := &mockGitHubClient{}
-				client.On("GetAppInstallations", ctx).Return([]*github.Installation{}, nil)
+				client.On("GetAppInstallations", ctx, 1).Return([]*github.Installation{}, false, nil)
 				return client
 			}(),
 			expectedInstallIDs: []int{},
@@ -718,9 +723,9 @@ func TestSyncInstallations(t *testing.T) {
 			name: "one installation",
 			githubClient: func() *mockGitHubClient {
 				client := &mockGitHubClient{}
-				client.On("GetAppInstallations", ctx).Return([]*github.Installation{
+				client.On("GetAppInstallations", ctx, 1).Return([]*github.Installation{
 					{ID: github.Int64(1)},
-				}, nil)
+				}, false, nil)
 				return client
 			}(),
 			expectedInstallIDs: []int{1},
@@ -735,17 +740,59 @@ func TestSyncInstallations(t *testing.T) {
 			name: "multiple installations",
 			githubClient: func() *mockGitHubClient {
 				client := &mockGitHubClient{}
-				client.On("GetAppInstallations", ctx).Return([]*github.Installation{
+				client.On("GetAppInstallations", ctx, 1).Return([]*github.Installation{
 					{ID: github.Int64(2)},
 					{ID: github.Int64(3)},
 					{ID: github.Int64(4)},
-				}, nil)
+				}, false, nil)
 				return client
 			}(),
 			expectedInstallIDs: []int{2, 3, 4},
 			app: ghtypes.GitHubApp{
 				AppID:      3,
 				Name:       "Test App With Multiple Installs",
+				BaseURL:    "https://example.com",
+				PrivateKey: "private-key",
+			},
+		},
+		{
+			name: "paged installations",
+			githubClient: func() *mockGitHubClient {
+				client := &mockGitHubClient{}
+				client.On("GetAppInstallations", ctx, 1).Return([]*github.Installation{
+					{ID: github.Int64(1)},
+					{ID: github.Int64(2)},
+				}, true, nil)
+				client.On("GetAppInstallations", ctx, 2).Return([]*github.Installation{
+					{ID: github.Int64(3)},
+					{ID: github.Int64(4)},
+				}, false, nil)
+				return client
+			}(),
+			expectedInstallIDs: []int{1, 2, 3, 4},
+			app: ghtypes.GitHubApp{
+				AppID:      4,
+				Name:       "Test App With Paged Installs",
+				BaseURL:    "https://example.com",
+				PrivateKey: "private-key",
+			},
+		},
+		{
+			name: "deleted github app",
+			githubClient: func() *mockGitHubClient {
+				client := &mockGitHubClient{}
+				client.On("GetAppInstallations", ctx, 1).Return([]*github.Installation{}, false, errors.New("request to https://ghe.sgdev.org/api/v3/app/installations?page=1 returned status 404: Integration not found"))
+				return client
+			}(),
+			expectedInstallIDs: []int{},
+			expectedErr: &gh.APIError{
+				URL:     "https://ghe.sgdev.org/api/v3/app/installations?page=1",
+				Code:    http.StatusNotFound,
+				Message: "request to https://ghe.sgdev.org/api/v3/app/installations?page=1 returned status 404: Integration not found",
+			},
+			app: ghtypes.GitHubApp{
+				AppID:      5,
+				Name:       "Test Deleted GitHub App",
 				BaseURL:    "https://example.com",
 				PrivateKey: "private-key",
 			},
@@ -781,7 +828,13 @@ func TestSyncInstallations(t *testing.T) {
 			}
 
 			errs := store.SyncInstallations(ctx, app, logger, tc.githubClient)
-			require.NoError(t, errs)
+
+			if tc.expectedErr != nil {
+				var e *gh.APIError
+				require.ErrorAs(t, tc.expectedErr, &e)
+			} else {
+				require.NoError(t, errs)
+			}
 
 			installations, err := store.GetInstallations(ctx, tc.app.AppID)
 			require.NoError(t, err)

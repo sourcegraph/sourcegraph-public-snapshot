@@ -20,7 +20,7 @@ const (
 	IsAlias
 	Standard
 	QuotesAsLiterals
-	GlobFilters
+	Boost
 )
 
 var allLabels = map[labels]string{
@@ -34,6 +34,9 @@ var allLabels = map[labels]string{
 	Structural:                "Structural",
 	IsPredicate:               "IsPredicate",
 	IsAlias:                   "IsAlias",
+	Standard:                  "Standard",
+	QuotesAsLiterals:          "QuotesAsLiterals",
+	Boost:                     "Boost",
 }
 
 func (l *labels) IsSet(label labels) bool {

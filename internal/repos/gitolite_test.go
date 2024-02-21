@@ -4,21 +4,33 @@ import (
 	"context"
 	"testing"
 
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGitoliteSource(t *testing.T) {
-	cf, save := newClientFactoryWithOpt(t, "basic", httpcli.ExternalTransportOpt)
-	defer save(t)
-
+	gc := gitserver.NewMockClient()
+	gc.ScopedFunc.SetDefaultReturn(gc)
 	svc := typestest.MakeExternalService(t, extsvc.VariantGitolite, &schema.GitoliteConnection{})
 
 	ctx := context.Background()
-	_, err := NewGitoliteSource(ctx, svc, cf)
+	s, err := NewGitoliteSource(ctx, svc, gc)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	res := make(chan SourceResult)
+	go func() {
+		s.ListRepos(ctx, res)
+		close(res)
+	}()
+
+	for range res {
+	}
+
+	mockrequire.Called(t, gc.ListGitoliteReposFunc)
 }

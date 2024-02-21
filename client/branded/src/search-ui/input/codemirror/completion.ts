@@ -154,7 +154,11 @@ const theme = EditorView.theme({
  * searchQueryAutocompletion registers extensions for automcompletion, using the
  * provided suggestion sources.
  */
-export function searchQueryAutocompletion(sources: StandardSuggestionSource[], navigate?: NavigateFunction): Extension {
+export function searchQueryAutocompletion(
+    sources: StandardSuggestionSource[],
+    enableJumpToSuggestion: boolean,
+    navigate?: NavigateFunction
+): Extension {
     const override: CompletionSource[] = sources.map(source => context => {
         const position = context.pos
         const query = context.state.facet(queryTokens)
@@ -172,7 +176,7 @@ export function searchQueryAutocompletion(sources: StandardSuggestionSource[], n
         {
             render(completion) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-                if ((completion as any)?.url) {
+                if (enableJumpToSuggestion && navigate && (completion as any)?.url) {
                     return createSVGIcon(mdiLightningBoltCircle, '')
                 }
                 const icon = createSVGIcon(
@@ -263,7 +267,7 @@ export function searchQueryAutocompletion(sources: StandardSuggestionSource[], n
                         const selected = selectedCompletion(view.state)
                         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
                         const url = (selected as any)?.url
-                        if (navigate && typeof url === 'string') {
+                        if (enableJumpToSuggestion && navigate && typeof url === 'string') {
                             navigate(url)
                             return true
                         }

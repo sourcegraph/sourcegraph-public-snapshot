@@ -1,6 +1,15 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
+    name = "platforms",
+    sha256 = "8150406605389ececb6da07cbcb509d5637a3ab9a24bc69b1101531367d89d74",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
+        "https://github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
+    ],
+)
+
+http_archive(
     name = "bazel_skylib",
     sha256 = "66ffd9315665bfaafc96b52278f57c7e2dd09f5ede279ea6d39b2be471e7e3aa",
     urls = [
@@ -15,6 +24,10 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "aspect_bazel_lib",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party/bazel_lib:use_default_shell_env.patch",
+    ],
     sha256 = "4d6010ca5e3bb4d7045b071205afa8db06ec11eb24de3f023d74d77cca765f66",
     strip_prefix = "bazel-lib-1.39.0",
     url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.39.0/bazel-lib-v1.39.0.tar.gz",
@@ -30,6 +43,10 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_js",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party/rules_js:use_default_shell_env.patch",
+    ],
     sha256 = "76a04ef2120ee00231d85d1ff012ede23963733339ad8db81f590791a031f643",
     strip_prefix = "rules_js-1.34.1",
     url = "https://github.com/aspect-build/rules_js/releases/download/v1.34.1/rules_js-v1.34.1.tar.gz",
@@ -55,10 +72,10 @@ http_archive(
     patches = [
         "//third_party/rules_go:package_main.patch",
     ],
-    sha256 = "c8035e8ae248b56040a65ad3f0b7434712e2037e5dfdcebfe97576e620422709",
+    sha256 = "de7974538c31f76658e0d333086c69efdf6679dbc6a466ac29e65434bf47076d",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.44.0/rules_go-v0.44.0.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.44.0/rules_go-v0.44.0.zip",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.45.0/rules_go-v0.45.0.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.45.0/rules_go-v0.45.0.zip",
     ],
 )
 
@@ -98,8 +115,8 @@ http_archive(
 
 http_archive(
     name = "rules_rust",
-    sha256 = "75177226380b771be36d7efc538da842c433f14cd6c36d7660976efb53defe86",
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.34.1/rules_rust-v0.34.1.tar.gz"],
+    integrity = "sha256-ZQGWDD5NoySV0eEAfe0HaaU0yxlcMN6jaqVPnYo/A2E=",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.38.0/rules_rust-v0.38.0.tar.gz"],
 )
 
 # Container rules
@@ -133,8 +150,32 @@ http_archive(
     urls = ["https://github.com/keith/buildifier-prebuilt/archive/6.1.0.tar.gz"],
 )
 
+http_archive(
+    name = "aspect_cli",
+    repo_mapping = {
+        "@com_github_smacker_go_tree_sitter": "@aspectcli-com_github_smacker_go_tree_sitter",
+    },
+    sha256 = "045f0186edb25706dfe77d9c4916eec630a2b2736f9abb59e37eaac122d4b771",
+    strip_prefix = "aspect-cli-5.8.20",
+    url = "https://github.com/aspect-build/aspect-cli/archive/5.8.20.tar.gz",
+)
+
+http_archive(
+    name = "rules_multirun",
+    sha256 = "9cd384e42b2da00104f0e18f25e66285aa21f64b573c667638a7a213206885ab",
+    strip_prefix = "rules_multirun-0.6.1",
+    url = "https://github.com/keith/rules_multirun/archive/refs/tags/0.6.1.tar.gz",
+)
+
+http_archive(
+    name = "with_cfg.bzl",
+    sha256 = "c6b80cad298afa8a46bc01cd96df4f4d8660651101f6bf5af58f2724e349017d",
+    strip_prefix = "with_cfg.bzl-0.2.1",
+    url = "https://github.com/fmeum/with_cfg.bzl/releases/download/v0.2.1/with_cfg.bzl-v0.2.1.tar.gz",
+)
+
 # hermetic_cc_toolchain setup ================================
-HERMETIC_CC_TOOLCHAIN_VERSION = "v2.1.2"
+HERMETIC_CC_TOOLCHAIN_VERSION = "v2.2.1"
 
 # Please note that we only use hermetic-cc for local development purpose and Nix, at it eases the path to cross-compile
 # so we can produce container images locally on Mac laptops.
@@ -150,7 +191,7 @@ http_archive(
     patches = [
         "//third_party/hermetic_cc:disable_ubsan.patch",
     ],
-    sha256 = "28fc71b9b3191c312ee83faa1dc65b38eb70c3a57740368f7e7c7a49bedf3106",
+    sha256 = "3b8107de0d017fe32e6434086a9568f97c60a111b49dc34fc7001e139c30fdea",
     urls = [
         "https://mirror.bazel.build/github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
         "https://github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
@@ -253,8 +294,8 @@ go_repository(
     name = "com_github_aws_aws_sdk_go_v2_service_ssooidc",
     build_file_proto_mode = "disable_global",
     importpath = "github.com/aws/aws-sdk-go-v2/service/ssooidc",
-    sum = "h1:0bLhH6DRAqox+g0LatcjGKjjhU6Eudyys6HB6DJVPj8=",
-    version = "v1.14.1",
+    sum = "h1:xLPZMyuZ4GuqRCIec/zWuIhRFPXh2UOJdLXBSi64ZWQ=",
+    version = "v1.14.5",
 )
 
 # Overrides the default provided protobuf dep from rules_go by a more
@@ -263,9 +304,9 @@ go_repository(
     name = "org_golang_google_protobuf",
     build_file_proto_mode = "disable_global",
     importpath = "google.golang.org/protobuf",
-    sum = "h1:7QBf+IK2gx70Ap/hDsOmam3GE0v9HicjfEdAxE62UoM=",
-    version = "v1.31.1",
-)  # keep
+    sum = "h1:pPC6BG5ex8PDFnkbrGU3EixyhKcQ2aDuBS36lqK/C7I=",
+    version = "v1.32.0",
+)
 
 # Pin protoc-gen-go-grpc to 1.3.0
 # See also //:gen-go-grpc
@@ -277,6 +318,20 @@ go_repository(
     version = "v1.3.0",
 )  # keep
 
+# Pin specific version for aspect-cli's gazelle rules, with versions
+# that it requires but that our codebase doesnt support.
+go_repository(
+    name = "aspectcli-com_github_smacker_go_tree_sitter",
+    build_file_proto_mode = "disable_global",
+    importpath = "github.com/smacker/go-tree-sitter",
+    sum = "h1:DxgjlvWYsb80WEN2Zv3WqJFAg2DKjUQJO6URGdf1x6Y=",
+    version = "v0.0.0-20230720070738-0d0a9f78d8f8",
+)  # keep
+
+load("@aspect_cli//:go.bzl", aspect_cli_deps = "deps")
+
+aspect_cli_deps()
+
 # gazelle:repository_macro deps.bzl%go_dependencies
 go_dependencies()
 
@@ -284,7 +339,7 @@ go_rules_dependencies()
 
 go_register_toolchains(
     nogo = "@//:sg_nogo",
-    version = "1.21.4",
+    version = "1.21.6",
 )
 
 linter_dependencies()
@@ -330,12 +385,9 @@ crates_repository(
     # glob doesn't work in WORKSPACE files: https://github.com/bazelbuild/bazel/issues/11935
     manifests = [
         "//docker-images/syntax-highlighter:Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/scip-macros/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/syntax-analysis/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/tree-sitter-all-languages/Cargo.toml",
         "//docker-images/syntax-highlighter:crates/scip-syntax/Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/scip-treesitter/Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/scip-treesitter-languages/Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/scip-treesitter-cli/Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/sg-syntax/Cargo.toml",
     ],
 )
 
@@ -426,3 +478,28 @@ gazelle_buf_dependencies()
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 
 protobuf_deps()
+
+# keep revision up-to-date with client/browser/scripts/build-inline-extensions.js
+http_archive(
+    name = "sourcegraph_extensions_bundle",
+    add_prefix = "bundle",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["bundle"])
+
+filegroup(
+    name = "srcs",
+    srcs = glob(["**"]),
+)
+    """,
+    integrity = "sha256-Spx8LyM7k+dsGOlZ4TdAq+CNk5EzvYB/oxnY4zGpqPg=",
+    strip_prefix = "sourcegraph-extensions-bundles-5.0.1",
+    url = "https://github.com/sourcegraph/sourcegraph-extensions-bundles/archive/v5.0.1.zip",
+)
+
+load("//dev:schema_migrations.bzl", "schema_migrations")
+
+schema_migrations(
+    name = "schemas_migrations",
+)

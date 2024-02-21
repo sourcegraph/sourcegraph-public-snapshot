@@ -84,7 +84,7 @@ const sgBugReportTemplate = "https://github.com/sourcegraph/sourcegraph/issues/n
 // sg is the main sg CLI application.
 var sg = &cli.App{
 	Usage:       "The Sourcegraph developer tool!",
-	Description: "Learn more: https://docs.sourcegraph.com/dev/background-information/sg",
+	Description: "Learn more: https://sourcegraph.com/docs/dev/background-information/sg",
 	Version:     BuildCommit,
 	Compiled:    time.Now(),
 	Flags: []cli.Flag{
@@ -266,6 +266,7 @@ var sg = &cli.App{
 		testCommand,
 		lintCommand,
 		generateCommand,
+		bazelCommand,
 		dbCommand,
 		migrationCommand,
 		insightsCommand,
