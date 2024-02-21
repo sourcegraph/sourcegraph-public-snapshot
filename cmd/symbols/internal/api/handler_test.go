@@ -96,15 +96,15 @@ func TestHandler(t *testing.T) {
 
 	x := result.Symbol{Name: "x", Path: "a.js", Language: "JavaScript", Line: 0, Character: 4}
 	y := result.Symbol{Name: "y", Path: "a.js", Language: "JavaScript", Line: 1, Character: 4}
-	z := result.Symbol{Name: "z", Path: ".zshrc", Language: "Zsh"}
+	z := result.Symbol{Name: "z", Path: ".zshrc", Language: "Zsh", Line: 0, Character: 0}
 
 	testCases := map[string]struct {
 		args     search.SymbolsParameters
 		expected result.Symbols
 	}{
 		"simple": {
-			args:     search.SymbolsParameters{First: 10},
-			expected: []result.Symbol{z, x, y},
+			args:     search.SymbolsParameters{IncludePatterns: []string{"^a.js$"}, First: 10},
+			expected: []result.Symbol{x, y},
 		},
 		"onematch": {
 			args:     search.SymbolsParameters{Query: "x", First: 10},
