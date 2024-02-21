@@ -147,7 +147,7 @@ func regexSearch(
 				}
 
 				if !match && patternMatchesContent {
-					if _, ok := m.(allMatchTree); ok {
+					if _, ok := m.(*allMatchTree); ok {
 						// Avoid loading the file if this pattern always matches
 						match = true
 					} else {
