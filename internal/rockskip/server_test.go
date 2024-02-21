@@ -138,7 +138,10 @@ func TestIndex(t *testing.T) {
 		}
 		wantPaths := []string{}
 		for wantPath := range state {
-			wantPaths = append(wantPaths, wantPath)
+			// We only want .txt files since we're filtering by lang: text
+			if strings.Contains(wantPath, ".txt") {
+				wantPaths = append(wantPaths, wantPath)
+			}
 		}
 		sort.Strings(gotPaths)
 		sort.Strings(wantPaths)
@@ -183,6 +186,9 @@ func TestIndex(t *testing.T) {
 
 	add("c.txt", "sym1\nsym2")
 	commit("add another file with 2 symbols")
+
+	add("a.java", "sym1\nsym2")
+	commit("System.out.println(\"hello, world!\"")
 
 	add("a.txt", "sym1\nsym2")
 	commit("add a symbol to a.txt")
