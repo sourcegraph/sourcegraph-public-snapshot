@@ -1707,6 +1707,16 @@
           "IndexDefinition": "CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE deleted_at IS NULL",
           "ConstraintType": "",
           "ConstraintDefinition": ""
+        },
+        {
+          "Name": "access_tokens_lookup_double_hash",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX access_tokens_lookup_double_hash ON access_tokens USING hash (digest(value_sha256, 'sha256'::text)) WHERE deleted_at IS NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [

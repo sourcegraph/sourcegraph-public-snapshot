@@ -39,6 +39,7 @@ Indexes:
     "access_tokens_pkey" PRIMARY KEY, btree (id)
     "access_tokens_value_sha256_key" UNIQUE CONSTRAINT, btree (value_sha256)
     "access_tokens_lookup" hash (value_sha256) WHERE deleted_at IS NULL
+    "access_tokens_lookup_double_hash" hash (digest(value_sha256, 'sha256'::text)) WHERE deleted_at IS NULL
 Foreign-key constraints:
     "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
