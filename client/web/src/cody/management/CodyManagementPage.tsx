@@ -180,7 +180,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             <Text className="text-muted mb-0">
                                 {userIsOnProTier ? (
                                     hasTrialEnded && hasNotAddedCreditCard ? (
-                                        'Your Cody Pro trial has ended'
+                                        'Your Cody Pro trial has ended.'
                                     ) : (
                                         'You are on the Pro tier.'
                                     )
@@ -495,7 +495,7 @@ const DoNotLoseCodyProBanner: React.FunctionComponent<{
                 <div className="d-flex align-items-center text-dark">
                     <div className={styles.creditCardEmoji}>💳</div>
                     <div className="ml-3">
-                        <H3>Don't lose Cody Pro</H3>
+                        <H3>Keep using Cody Pro</H3>
                         <Text className="mb-0">
                             {hasTrialEnded ? (
                                 <span>Enter your credit card details now and keep your Pro subscription.</span>
