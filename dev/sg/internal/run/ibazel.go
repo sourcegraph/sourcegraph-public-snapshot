@@ -14,16 +14,17 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/nxadm/tail"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func ibazelLogPath(tempDir string) string {
-	return path.Join(tempDir, "ibazel.log")
+func ibazelLogPath(logsDir string) string {
+	return path.Join(logsDir, "ibazel.log")
 }
 
-func profileEventsPath(tempDir string) string {
-	return path.Join(tempDir, "profile.json")
+func profileEventsPath(logsDir string) string {
+	return path.Join(logsDir, "profile.json")
 }
 
 var watchErrorRegex = regexp.MustCompile(`Bazel query failed: exit status 7`)
@@ -31,7 +32,7 @@ var watchErrorRegex = regexp.MustCompile(`Bazel query failed: exit status 7`)
 type IBazel struct {
 	targets []string
 	events  *iBazelEventHandler
-	tempDir string
+	logsDir string
 	logFile *os.File
 	dir     string
 	proc    *startedCmd
@@ -40,12 +41,12 @@ type IBazel struct {
 
 // returns a runner to interact with ibazel.
 func NewIBazel(cmds []BazelCommand, dir string) (*IBazel, error) {
-	tempDir, err := os.MkdirTemp("", "ibazel")
+	logsDir, err := initLogsDir()
 	if err != nil {
 		return nil, err
 	}
 
-	logFile, err := os.Create(ibazelLogPath(tempDir))
+	logFile, err := os.Create(ibazelLogPath(logsDir))
 	if err != nil {
 		return nil, err
 	}
@@ -59,11 +60,27 @@ func NewIBazel(cmds []BazelCommand, dir string) (*IBazel, error) {
 
 	return &IBazel{
 		targets: targets,
-		events:  newIBazelEventHandler(profileEventsPath(tempDir)),
-		tempDir: tempDir,
+		events:  newIBazelEventHandler(profileEventsPath(logsDir)),
+		logsDir: logsDir,
 		logFile: logFile,
 		dir:     dir,
 	}, nil
+}
+
+func initLogsDir() (string, error) {
+	sghomedir, err := root.GetSGHomePath()
+	if err != nil {
+		return "", err
+	}
+
+	logsdir := path.Join(sghomedir, "sg_start/logs")
+	os.RemoveAll(logsdir)
+	if err := os.MkdirAll(logsdir, 0744); err != nil && !os.IsExist(err) {
+		return "", err
+	}
+
+	return logsdir, nil
+
 }
 
 func (ibazel *IBazel) GetName() string {
@@ -88,8 +105,8 @@ func (ibazel *IBazel) RunInstall(ctx context.Context, env map[string]string) err
 }
 
 func (ib *IBazel) SetInstallerOutput(logs chan<- output.FancyLine) {
-	logs <- output.Styledf(output.StyleGrey, "iBazel output can be found at %s", ibazelLogPath(ib.tempDir))
-	logs <- output.Styledf(output.StyleGrey, "iBazel log events can be found at %s", profileEventsPath(ib.tempDir))
+	logs <- output.Styledf(output.StyleGrey, "iBazel output can be found at %s", ibazelLogPath(ib.logsDir))
+	logs <- output.Styledf(output.StyleGrey, "iBazel log events can be found at %s", profileEventsPath(ib.logsDir))
 	ib.logs = logs
 }
 
@@ -100,7 +117,7 @@ func (ib *IBazel) Count() int {
 func (ib *IBazel) GetExecCmd(ctx context.Context) *exec.Cmd {
 	// Writes iBazel events out to a log file. These are much easier to parse
 	// than trying to understand the output directly
-	profilePath := "--profile_dev=" + profileEventsPath(ib.tempDir)
+	profilePath := "--profile_dev=" + profileEventsPath(ib.logsDir)
 	// This enables iBazel to try to apply the fixes from .bazel_fix_commands.json automatically
 	enableAutoFix := "--run_output_interactive=false"
 	args := append([]string{profilePath, enableAutoFix, "build"}, ib.targets...)
@@ -149,7 +166,6 @@ func (ib *IBazel) StartOutput() {
 
 func (ib *IBazel) Close() {
 	ib.logFile.Close()
-	os.RemoveAll(ib.tempDir)
 	ib.proc.cancel()
 }
 

@@ -30,22 +30,22 @@ func WatchPaths(ctx context.Context, paths []string, skipEvents ...notify.Event)
 	// Set up the watchers.
 	restart := make(chan struct{})
 	events := make(chan notify.EventInfo, 1)
-	skip := make(map[notify.Event]struct{}, len(skipEvents))
-	for _, event := range skipEvents {
-		skip[event] = struct{}{}
-	}
 
 	// Do nothing if no watch paths are configured
 	if len(paths) == 0 {
 		return restart, nil
 	}
+	relevant := notify.All
+	// lil bit magic to remove the skipEvents from the relevant events
+	for _, skip := range skipEvents {
+		relevant &= ^skip
+	}
 
 	for _, path := range paths {
-		if err := notify.Watch(path+"/...", events, notify.All); err != nil {
+		if err := notify.Watch(path+"/...", events, relevant); err != nil {
 			return nil, err
 		}
 	}
-
 	// Start watching for changes to the source tree
 	go func() {
 		defer close(events)
@@ -55,12 +55,9 @@ func WatchPaths(ctx context.Context, paths []string, skipEvents ...notify.Event)
 			select {
 			case <-ctx.Done():
 				return
-			case evt := <-events:
-				if _, shouldSkip := skip[evt.Event()]; !shouldSkip {
-					restart <- struct{}{}
-				}
+			case <-events:
+				restart <- struct{}{}
 			}
-
 		}
 	}()
 

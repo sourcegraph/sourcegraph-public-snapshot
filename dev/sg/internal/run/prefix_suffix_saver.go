@@ -16,6 +16,7 @@ type prefixSuffixSaver struct {
 	suffix    []byte // ring buffer once len(suffix) == N
 	suffixOff int    // offset to write into suffix
 	skipped   int64
+	reader    *bytes.Buffer // when read is called, we construct a buffer with the prefix and suffix and free the rest
 
 	// TODO(bradfitz): we could keep one large []byte and use part of it for
 	// the prefix, reserve space for the '... Omitting N bytes ...' message,
@@ -59,8 +60,12 @@ func (w *prefixSuffixSaver) fill(dst *[]byte, p []byte) (pRemain []byte) {
 	return p
 }
 
+// Read is destructive and will consume the prefixSuffixSaver buffer.
 func (w *prefixSuffixSaver) Read(p []byte) (n int, err error) {
-	return w.Bytes().Read(p)
+	if w.reader == nil {
+		*w = prefixSuffixSaver{N: w.N, reader: w.Bytes()}
+	}
+	return w.reader.Read(p)
 }
 
 func (w *prefixSuffixSaver) Bytes() *bytes.Buffer {

@@ -370,6 +370,19 @@ func startCmd(ctx context.Context, opts commandOptions) (*startedCmd, error) {
 	return sc, nil
 }
 
+func (sc *startedCmd) connectOutput(ctx context.Context) error {
+	stdoutWriter := sc.getOutputWriter(ctx, &sc.opts.stdout, "stdout")
+	stderrWriter := sc.getOutputWriter(ctx, &sc.opts.stderr, "stderr")
+
+	eg, err := process.PipeOutputUnbuffered(ctx, sc.Cmd, stdoutWriter, stderrWriter)
+	if err != nil {
+		return err
+	}
+	sc.outEg = eg
+
+	return nil
+}
+
 func (sc *startedCmd) getOutputWriter(ctx context.Context, opts *outputOptions, outputName string) io.Writer {
 	writers := opts.additionalWriters
 	if writers == nil {
@@ -403,19 +416,6 @@ func (sc *startedCmd) getOutputWriter(ctx context.Context, opts *outputOptions, 
 	return io.MultiWriter(writers...)
 }
 
-func (sc *startedCmd) connectOutput(ctx context.Context) error {
-	stdoutWriter := sc.getOutputWriter(ctx, &sc.opts.stdout, "stdout")
-	stderrWriter := sc.getOutputWriter(ctx, &sc.opts.stderr, "stderr")
-
-	eg, err := process.PipeOutputUnbuffered(ctx, sc.Cmd, stdoutWriter, stderrWriter)
-	if err != nil {
-		return err
-	}
-	sc.outEg = eg
-
-	return nil
-}
-
 func (sc *startedCmd) Exit() <-chan error {
 	if sc.result == nil {
 		sc.result = make(chan error)
@@ -447,6 +447,7 @@ func (sc *startedCmd) wait() error {
 	}
 	return sc.Cmd.Wait()
 }
+
 func (sc *startedCmd) CapturedStdout() string {
 	return captured(sc.opts.stdout)
 }

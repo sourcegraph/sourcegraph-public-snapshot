@@ -39,7 +39,7 @@ type InstallManager struct {
 
 	// State vars
 	installed           chan string
-	failures            chan failedRun
+	failures            chan failedInstall
 	logs                chan output.FancyLine
 	done                int
 	total               int
@@ -74,7 +74,7 @@ func newInstallManager(cmds []Installer, out *std.Output, env map[string]string,
 		env:     env,
 
 		installed: make(chan string, total),
-		failures:  make(chan failedRun, total),
+		failures:  make(chan failedInstall, total),
 		logs:      make(chan output.FancyLine, 10),
 		done:      0,
 		total:     total,
@@ -106,7 +106,7 @@ func (installer *InstallManager) install(ctx context.Context, cmds []Installer) 
 
 			if err := cmd.RunInstall(ctx, installer.env); err != nil {
 				// if failed, put on the failure queue and exit
-				installer.failures <- failedRun{cmdName: cmd.GetName(), err: err}
+				installer.failures <- failedInstall{cmdName: cmd.GetName(), err: err}
 			}
 
 			installer.installed <- cmd.GetName()
@@ -314,6 +314,16 @@ var installFuncs = map[string]installFunc{
 
 		return download.ArchivedExecutable(ctx, url, target, fmt.Sprintf("%s/jaeger-all-in-one", archiveName))
 	},
+}
+
+// failedInstall is returned by run when a command failed to run and run exits
+type failedInstall struct {
+	cmdName string
+	err     error
+}
+
+func (e failedInstall) Error() string {
+	return fmt.Sprintf("failed to run %s", e.cmdName)
 }
 
 // As per tradition, if you edit this file you must add a new waiting message

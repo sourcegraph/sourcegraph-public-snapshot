@@ -182,16 +182,6 @@ func (runner *cmdRunner) reinstall(ctx context.Context, cmd SGConfigCommand) (bo
 	}
 }
 
-// failedRun is returned by run when a command failed to run and run exits
-type failedRun struct {
-	cmdName string
-	err     error
-}
-
-func (e failedRun) Error() string {
-	return fmt.Sprintf("failed to run %s", e.cmdName)
-}
-
 // installErr is returned by runWatch if the cmd.Install step fails.
 type installErr struct {
 	cmdName string
@@ -262,7 +252,7 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 			})
 			return
 		} else {
-			message = fmt.Sprintf("Failed to run %s: %#v", cmdName, err)
+			message = fmt.Sprintf("Failed to run %s: %+v", cmdName, err)
 		}
 
 	}

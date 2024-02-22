@@ -4,6 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"path/filepath"
 	"sort"
@@ -87,6 +89,10 @@ sg start -describe single-program
 			&cli.BoolFlag{
 				Name:  "sgtail",
 				Usage: "Connects to running sgtail instance",
+			},
+			&cli.BoolFlag{
+				Name:  "profile",
+				Usage: "Starts up pprof on port 6060",
 			},
 
 			&cli.StringSliceFlag{
@@ -277,6 +283,27 @@ func startExec(ctx *cli.Context) error {
 		} else {
 			update.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done checking dev-private changes"))
 		}
+	}
+	if ctx.Bool("profile") {
+		// start a pprof server
+		go func() {
+			err := http.ListenAndServe("127.0.0.1:6060", nil)
+			if err != nil {
+				std.Out.WriteAlertf("Failed to start pprof server: %s", err)
+			}
+		}()
+		std.Out.WriteAlertf(`pprof profiling started at 6060. Try some of the following to profile:
+# Start a web UI on port 6061 to view the current heap profile
+go tool pprof -http 127.0.0.1:6061 http://127.0.0.1:6060/debug/pprof/heap
+
+# Start a web UI on port 6061 to view a CPU profile of the next 30 seconds
+go tool pprof -http 127.0.0.1:6061 http://127.0.0.1:6060/debug/pprof/profile?seconds=30
+
+Find more here: https://pkg.go.dev/net/http/pprof
+or run
+
+go tool pprof -help
+`)
 	}
 
 	return startCommandSet(ctx.Context, set, config)
