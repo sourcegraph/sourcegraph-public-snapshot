@@ -123,6 +123,7 @@ func TestHandleEnqueueAuth(t *testing.T) {
 				uploadhandler.NewOperations(&observation.TestContext, "test"),
 			),
 			db.Users(),
+			repoStore,
 			authValidators,
 			newOperations(&observation.TestContext).authMiddleware,
 		).ServeHTTP(w, r)
