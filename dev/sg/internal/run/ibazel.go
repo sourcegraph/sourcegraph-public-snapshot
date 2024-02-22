@@ -131,7 +131,12 @@ func (ib *IBazel) WaitForInitialBuild(ctx context.Context) error {
 			return nil
 		}
 		if event.Type == buildFailed {
-			return errors.Newf("initial ibazel build failed")
+			bytes, err := os.ReadFile(ibazelLogPath(ib.logsDir))
+			if err != nil {
+				return errors.Newf("initial ibazel build failed\nfailed to read log file at %s: %w", ibazelLogPath(ib.logsDir), err)
+			} else {
+				return errors.Newf("initial ibazel build failed\niBazel logs:\n%s", string(bytes))
+			}
 		}
 	}
 	return nil
