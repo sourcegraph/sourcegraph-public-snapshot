@@ -53,7 +53,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
-
 ## 5.3.0
 
 ### Added
