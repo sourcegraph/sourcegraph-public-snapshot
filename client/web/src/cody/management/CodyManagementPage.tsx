@@ -179,7 +179,11 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             <H2>My subscription</H2>
                             <Text className="text-muted mb-0">
                                 {userIsOnProTier ? (
-                                    'You are on the Pro tier.'
+                                    hasTrialEnded && hasNotAddedCreditCard ? (
+                                        'Your Cody Pro trial has ended.'
+                                    ) : (
+                                        'You are on the Pro tier.'
+                                    )
                                 ) : (
                                     <span>
                                         You are on the Free tier.{' '}
@@ -199,7 +203,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </div>
                     <div className={classNames('d-flex align-items-center mt-3', styles.responsiveContainer)}>
                         <div className="d-flex flex-column align-items-center flex-grow-1 p-3">
-                            {userIsOnProTier ? (
+                            {userIsOnProTier && !(hasTrialEnded && hasNotAddedCreditCard) ? (
                                 <ProTierIcon />
                             ) : (
                                 <Text className={classNames(styles.planName, 'mb-0')}>Free</Text>
@@ -491,7 +495,7 @@ const DoNotLoseCodyProBanner: React.FunctionComponent<{
                 <div className="d-flex align-items-center text-dark">
                     <div className={styles.creditCardEmoji}>💳</div>
                     <div className="ml-3">
-                        <H3>Don't lose Cody Pro</H3>
+                        <H3>Keep using Cody Pro</H3>
                         <Text className="mb-0">
                             {hasTrialEnded ? (
                                 <span>Enter your credit card details now and keep your Pro subscription.</span>
