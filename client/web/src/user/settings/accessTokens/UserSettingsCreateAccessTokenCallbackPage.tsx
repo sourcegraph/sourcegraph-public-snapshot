@@ -45,6 +45,11 @@ interface TokenRequester {
     onlyDotCom?: boolean
     /** If true, it will forward the `destination` param to the redirect URL if it starts with / */
     forwardDestination?: boolean
+    /**
+     * If true, will attempt to POST the newly created auth token to the URL supplied via the
+     * tokenReceiverUrl param. This enables the clients to continue the authentication process
+     * even if the redirect is not working as expected. */
+    postTokenToReceiverUrl?: boolean
 }
 
 // SECURITY: Only accept callback requests from requesters on this allowed list
@@ -64,6 +69,7 @@ const REQUESTERS: Record<string, TokenRequester> = {
         infoMessage:
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
         callbackType: 'new-tab',
+        postTokenToReceiverUrl: true,
     },
     CODY_VSCODIUM: {
         name: 'Cody - VSCodium Extension',
@@ -72,6 +78,7 @@ const REQUESTERS: Record<string, TokenRequester> = {
         infoMessage:
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
         callbackType: 'new-tab',
+        postTokenToReceiverUrl: true,
     },
     CODY_INSIDERS: {
         name: 'Cody - VS Code Insiders Extension',
@@ -80,6 +87,7 @@ const REQUESTERS: Record<string, TokenRequester> = {
         infoMessage:
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
         callbackType: 'new-tab',
+        postTokenToReceiverUrl: true,
     },
     JETBRAINS: {
         name: 'JetBrains IDE',
@@ -131,6 +139,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     /** Get the requester, port, and destination from the url parameters */
     const urlSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search])
     let requestFrom = useMemo(() => urlSearchParams.get('requestFrom'), [urlSearchParams])
+    let tokenReceiverUrl = useMemo(() => urlSearchParams.get('tokenReceiverUrl'), [urlSearchParams])
     let port = useMemo(() => urlSearchParams.get('port'), [urlSearchParams])
 
     // Allow a single query parameter `requestFrom=JETBRAIN-PORT_NUMBER`. The motivation for this parameter encoding is that
@@ -214,7 +223,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                               )
                             : NEVER
                         ).pipe(
-                            tap(result => {
+                            tap(async result => {
                                 // SECURITY: If the request was from a valid requester and from a non-mobile device,
                                 // redirect to the allowlisted redirect URL. (https://github.com/sourcegraph/security-issues/issues/361)
                                 // SECURITY: Local context ONLY
@@ -224,6 +233,10 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                     let uri = replacePlaceholder(requester?.redirectURL, 'TOKEN', result.token)
                                     if (isRedirectable(requestFrom) && port) {
                                         uri = replacePlaceholder(uri, 'PORT', port)
+                                    }
+
+                                    if (requester.postTokenToReceiverUrl && tokenReceiverUrl) {
+                                        await postTokenToReceiverUrl(tokenReceiverUrl, result.token)
                                     }
 
                                     switch (requester.callbackType) {
@@ -330,4 +343,23 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
 function replacePlaceholder(subject: string, search: string, replace: string): string {
     // %24 is the URL encoded version of $
     return subject.replace('$' + search, replace).replace('%24' + search, replace)
+}
+
+async function postTokenToReceiverUrl(tokenReceiverUrl: string, accessToken: string): Promise<void> {
+    const url = new URL(tokenReceiverUrl)
+
+    // Do not post data on anything but the local computer
+    if (url.hostname !== '127.0.0.1') {
+        return
+    }
+
+    try {
+        await fetch(tokenReceiverUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accessToken }),
+        })
+    } catch {
+        // Ignore eventual errors
+    }
 }
