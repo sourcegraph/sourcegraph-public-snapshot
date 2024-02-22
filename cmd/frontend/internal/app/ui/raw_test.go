@@ -49,7 +49,6 @@ func initHTTPTestGitServer(t *testing.T, httpStatusCode int, resp string) {
 
 	t.Cleanup(func() {
 		s.Close()
-		gitserver.ResetClientMocks()
 	})
 }
 

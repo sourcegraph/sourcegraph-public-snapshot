@@ -35,7 +35,6 @@ import (
 const git = "git"
 
 var ClientMocks, emptyClientMocks struct {
-	GetObject               func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
 	LocalGitserver          bool
 	LocalGitCommandReposDir string
 }
@@ -619,9 +618,6 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		Repo:      string(repoName),
 		Args:      stringsToByteSlices(c.args[1:]),
 		NoTimeout: c.noTimeout,
-
-		// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string.
-		EnsureRevision: []byte(c.EnsureRevision()),
 	}
 
 	stream, err := client.Exec(ctx, req)
@@ -647,12 +643,6 @@ type readCloseWrapper struct {
 func (r *readCloseWrapper) Close() error {
 	r.closeFn()
 	return nil
-}
-
-func isRevisionNotFound(err string) bool {
-	// error message is lowercased in to handle case insensitive error messages
-	loweredErr := strings.ToLower(err)
-	return strings.Contains(loweredErr, "not a valid object")
 }
 
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (_ bool, err error) {
@@ -1203,10 +1193,6 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 		},
 	})
 	defer endObservation(1, observation.Args{})
-
-	if ClientMocks.GetObject != nil {
-		return ClientMocks.GetObject(repo, objectName)
-	}
 
 	req := protocol.GetObjectRequest{
 		Repo:       repo,

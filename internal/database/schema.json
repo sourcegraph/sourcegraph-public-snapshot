@@ -183,10 +183,6 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.soft_delete_orphan_repo_by_external_service_repos()\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    -- When an external service is soft or hard-deleted,\n    -- performs a clean up to soft-delete orphan repositories.\n    UPDATE\n        repo\n    SET\n        name = soft_deleted_repository_name(name),\n        deleted_at = transaction_timestamp()\n    WHERE\n      deleted_at IS NULL\n      AND NOT EXISTS (\n        SELECT FROM external_service_repos WHERE repo_id = repo.id\n      );\nEND;\n$function$\n"
     },
     {
-      "Name": "soft_delete_user_reference_on_external_service",
-      "Definition": "CREATE OR REPLACE FUNCTION public.soft_delete_user_reference_on_external_service()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    -- If a user is soft-deleted, delete every row that references that user\n    IF (OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL) THEN\n        UPDATE external_services\n        SET deleted_at = NOW()\n        WHERE namespace_user_id = OLD.id;\n    END IF;\n\n    RETURN OLD;\nEND;\n$function$\n"
-    },
-    {
       "Name": "soft_deleted_repository_name",
       "Definition": "CREATE OR REPLACE FUNCTION public.soft_deleted_repository_name(name text)\n RETURNS text\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    IF name LIKE 'DELETED-%' THEN\n        RETURN name;\n    ELSE\n        RETURN 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || name;\n    END IF;\nEND;\n$function$\n"
     },
@@ -12648,36 +12644,10 @@
           "Comment": ""
         },
         {
-          "Name": "org_id",
-          "Index": 5,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "repo_id",
           "Index": 2,
           "TypeName": "integer",
           "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "user_id",
-          "Index": 4,
-          "TypeName": "integer",
-          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -12717,26 +12687,6 @@
           "IndexDefinition": "CREATE INDEX external_service_repos_idx ON external_service_repos USING btree (external_service_id, repo_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
-        },
-        {
-          "Name": "external_service_repos_org_id_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX external_service_repos_org_id_idx ON external_service_repos USING btree (org_id) WHERE org_id IS NOT NULL",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "external_service_user_repos_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX external_service_user_repos_idx ON external_service_repos USING btree (user_id, repo_id) WHERE user_id IS NOT NULL",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -12748,25 +12698,11 @@
           "ConstraintDefinition": "FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE"
         },
         {
-          "Name": "external_service_repos_org_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "orgs",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE"
-        },
-        {
           "Name": "external_service_repos_repo_id_fkey",
           "ConstraintType": "f",
           "RefTableName": "repo",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE"
-        },
-        {
-          "Name": "external_service_repos_user_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "users",
-          "IsDeferrable": true,
-          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE"
         }
       ],
       "Triggers": []
@@ -13246,32 +13182,6 @@
           "Comment": ""
         },
         {
-          "Name": "namespace_org_id",
-          "Index": 14,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "namespace_user_id",
-          "Index": 10,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "next_sync_at",
           "Index": 9,
           "TypeName": "timestamp with time zone",
@@ -13336,26 +13246,6 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "external_services_unique_kind_org_id",
-          "IsPrimaryKey": false,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX external_services_unique_kind_org_id ON external_services USING btree (kind, namespace_org_id) WHERE deleted_at IS NULL AND namespace_user_id IS NULL AND namespace_org_id IS NOT NULL",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "external_services_unique_kind_user_id",
-          "IsPrimaryKey": false,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX external_services_unique_kind_user_id ON external_services USING btree (kind, namespace_user_id) WHERE deleted_at IS NULL AND namespace_org_id IS NULL AND namespace_user_id IS NOT NULL",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
           "Name": "kind_cloud_default",
           "IsPrimaryKey": false,
           "IsUnique": true,
@@ -13372,26 +13262,6 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX external_services_has_webhooks_idx ON external_services USING btree (has_webhooks)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "external_services_namespace_org_id_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX external_services_namespace_org_id_idx ON external_services USING btree (namespace_org_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "external_services_namespace_user_id_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX external_services_namespace_user_id_idx ON external_services USING btree (namespace_user_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -13424,27 +13294,6 @@
           "RefTableName": "users",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (last_updater_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE"
-        },
-        {
-          "Name": "external_services_max_1_namespace",
-          "ConstraintType": "c",
-          "RefTableName": "",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "CHECK (namespace_user_id IS NULL AND namespace_org_id IS NULL OR (namespace_user_id IS NULL) \u003c\u003e (namespace_org_id IS NULL))"
-        },
-        {
-          "Name": "external_services_namepspace_user_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "users",
-          "IsDeferrable": true,
-          "ConstraintDefinition": "FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE"
-        },
-        {
-          "Name": "external_services_namespace_org_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "orgs",
-          "IsDeferrable": true,
-          "ConstraintDefinition": "FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE"
         }
       ],
       "Triggers": []
@@ -28712,10 +28561,6 @@
         {
           "Name": "trig_invalidate_session_on_password_change",
           "Definition": "CREATE TRIGGER trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE FUNCTION invalidate_session_for_userid_on_password_change()"
-        },
-        {
-          "Name": "trig_soft_delete_user_reference_on_external_service",
-          "Definition": "CREATE TRIGGER trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE FUNCTION soft_delete_user_reference_on_external_service()"
         }
       ]
     },

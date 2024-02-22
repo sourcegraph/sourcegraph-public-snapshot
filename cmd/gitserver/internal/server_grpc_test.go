@@ -13,6 +13,7 @@ import (
 	"time"
 
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
@@ -35,6 +36,7 @@ import (
 	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestGRPCServer_Blame(t *testing.T) {
@@ -697,6 +699,80 @@ func TestGRPCServer_GetCommit(t *testing.T) {
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RevisionNotFoundPayload{})
+	})
+}
+
+func TestGRPCServer_ResolveRevision(t *testing.T) {
+	ctx := context.Background()
+	t.Run("argument validation", func(t *testing.T) {
+		gs := &grpcServer{}
+		_, err := gs.ResolveRevision(ctx, &v1.ResolveRevisionRequest{RepoName: ""})
+		require.ErrorContains(t, err, "repo must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+	})
+	t.Run("checks for uncloned repo", func(t *testing.T) {
+		svc := NewMockService()
+		svc.MaybeStartCloneFunc.SetDefaultReturn(&protocol.NotFoundPayload{CloneInProgress: true, CloneProgress: "cloning"}, false)
+		gs := &grpcServer{svc: svc}
+		_, err := gs.ResolveRevision(ctx, &v1.ResolveRevisionRequest{RepoName: "therepo"})
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
+		require.Contains(t, err.Error(), "repo not found")
+		mockassert.Called(t, svc.MaybeStartCloneFunc)
+	})
+	t.Run("e2e", func(t *testing.T) {
+		svc := NewMockService()
+		// Repo is cloned, proceed!
+		svc.MaybeStartCloneFunc.SetDefaultReturn(nil, true)
+		b := git.NewMockGitBackend()
+		b.ResolveRevisionFunc.SetDefaultReturn("deadbeef", nil)
+		gs := &grpcServer{
+			svc: svc,
+			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+				return b
+			},
+		}
+
+		cli := spawnServer(t, gs)
+		res, err := cli.ResolveRevision(ctx, &v1.ResolveRevisionRequest{
+			RepoName: "therepo",
+		})
+		require.NoError(t, err)
+		if diff := cmp.Diff(&proto.ResolveRevisionResponse{
+			CommitSha: "deadbeef",
+		}, res, cmpopts.IgnoreUnexported(proto.ResolveRevisionResponse{})); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+
+		// Check that RevNotFoundErrors are mapped correctly:
+		b.ResolveRevisionFunc.SetDefaultReturn("", &gitdomain.RevisionNotFoundError{Repo: "therepo", Spec: "HEAD"})
+		_, err = cli.ResolveRevision(ctx, &v1.ResolveRevisionRequest{
+			RepoName: "therepo",
+		})
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RevisionNotFoundPayload{})
+
+		// Test EnsureRevision is called correctly.
+		// Initially, the revision is not found.
+		b.ResolveRevisionFunc.PushReturn("", &gitdomain.RevisionNotFoundError{Repo: "therepo", Spec: "HEAD"})
+		// EnsureRevision was able to run a fetch, retry.
+		svc.EnsureRevisionFunc.SetDefaultReturn(true)
+		// After the fetch, resolve revision succeeds.
+		b.ResolveRevisionFunc.PushReturn("deadbeef", nil)
+		_, err = cli.ResolveRevision(ctx, &v1.ResolveRevisionRequest{
+			RepoName:       "therepo",
+			RevSpec:        []byte("HEAD"),
+			EnsureRevision: pointers.Ptr(true),
+		})
+		require.NoError(t, err)
+		if diff := cmp.Diff(&proto.ResolveRevisionResponse{
+			CommitSha: "deadbeef",
+		}, res, cmpopts.IgnoreUnexported(proto.ResolveRevisionResponse{})); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+		mockrequire.Called(t, svc.EnsureRevisionFunc)
 	})
 }
 

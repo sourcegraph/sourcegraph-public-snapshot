@@ -16,6 +16,7 @@ go_library(
         "@com_github_cockroachdb_redact//:redact",
         "@com_github_sourcegraph_conc//pool",
         "@com_google_cloud_go_pubsub//:pubsub",
+        "@io_opentelemetry_go_otel_metric//:metric",
         "@org_golang_google_protobuf//encoding/protojson",
     ],
 )

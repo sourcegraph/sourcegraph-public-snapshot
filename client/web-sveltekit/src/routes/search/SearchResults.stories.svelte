@@ -25,7 +25,6 @@
     import SymbolSearchResult from './SymbolSearchResult.svelte'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
     import { setSearchResultsContext } from './searchResultsContext'
-    import { createTestGraphqlClient } from '$testing/graphql'
 
     export const meta = {
         title: 'search/SearchResults',
@@ -47,7 +46,6 @@
         settings: readable({}),
         featureFlags: readable([]),
         temporarySettingsStorage: createTemporarySettingsStorage(),
-        client: readable(createTestGraphqlClient()),
     })
 
     setSearchResultsContext({

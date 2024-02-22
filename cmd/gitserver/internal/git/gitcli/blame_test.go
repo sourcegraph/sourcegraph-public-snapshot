@@ -377,7 +377,7 @@ var testGitBlameOutputHunks = []*gitdomain.Hunk{
 func TestBlameHunkReader(t *testing.T) {
 	t.Run("OK matching hunks", func(t *testing.T) {
 		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental))
-		reader := newBlameHunkReader(rc, func() {})
+		reader := newBlameHunkReader(rc)
 		defer reader.Close()
 
 		hunks := []*gitdomain.Hunk{}
@@ -416,7 +416,7 @@ func TestBlameHunkReader(t *testing.T) {
 
 	t.Run("OK parsing hunks", func(t *testing.T) {
 		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental2))
-		reader := newBlameHunkReader(rc, func() {})
+		reader := newBlameHunkReader(rc)
 		defer reader.Close()
 
 		for {

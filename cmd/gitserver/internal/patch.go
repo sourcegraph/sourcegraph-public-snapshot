@@ -134,8 +134,11 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 		t := time.Now()
 
-		// runRemoteGitCommand since one of our commands could be git push
-		out, err := executil.RunRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.logger, cmd), true)
+		// Configure the command to be able to talk to a remote since one of our
+		// commands could be git push
+		executil.ConfigureRemoteGitCommand(cmd)
+
+		out, err := s.recordingCommandFactory.Wrap(ctx, s.logger, cmd).CombinedOutput()
 		logger := logger.With(
 			log.String("prefix", prefix),
 			log.String("command", redactor.Redact(argsToString(cmd.Args))),
@@ -352,7 +355,7 @@ func (s *Server) repoRemoteRefs(ctx context.Context, remoteURL *vcs.URL, repoNam
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	r := urlredactor.New(remoteURL)
-	_, err := executil.RunCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, s.logger, api.RepoName(repoName), cmd).WithRedactorFunc(r.Redact))
+	err := s.recordingCommandFactory.WrapWithRepoName(ctx, s.logger, api.RepoName(repoName), cmd).WithRedactorFunc(r.Redact).Run()
 	if err != nil {
 		stderr := stderr.Bytes()
 		if len(stderr) > 200 {

@@ -253,21 +253,37 @@ describe('custom mocks', () => {
                 }),
             },
         })
-        server.addOperationMocks({ customOperation: () => ({ currentUser: { name: 'custom' } }) })
+        server.addOperationMocks({
+            customOperation: () => ({ currentUser: { name: 'custom', friends: [{ name: 'friend1' }] } }),
+        })
         server.addTypeMocks({ User: () => ({ name: 'user2' }) })
 
-        expect(server.query(`query {currentUser {name age}}`)).toMatchObject({
-            data: { currentUser: { name: 'user2', age: 42 } },
+        expect(server.query(`query {currentUser {name age friends {name age}}}`)).toMatchObject({
+            data: { currentUser: { name: 'user2', age: 42, friends: [{ name: 'user2', age: 42 }] } },
         })
 
-        expect(server.query(`query customOperation {currentUser {name age}}`)).toMatchObject({
-            data: { currentUser: { name: 'custom', age: 42 } },
+        expect(server.query(`query customOperation {currentUser {name age friends {name age}}}`)).toMatchObject({
+            data: { currentUser: { name: 'custom', age: 42, friends: [{ name: 'friend1', age: 42 }] } },
+        })
+    })
+
+    test('override partial non-id object', () => {
+        const server = new GraphQLMockServer({
+            schema,
+            mocks: {
+                Action: () => ({
+                    name: 'default',
+                }),
+            },
+        })
+        server.addOperationMocks({
+            customOperation: () => ({
+                action: { name: 'custom' },
+            }),
         })
 
-        server.addTypeMocks({ User: () => ({ friends: [{ name: 'friend1' }] }) })
-
-        expect(server.query(`query {currentUser { friends {name age}}}`)).toMatchObject({
-            data: { currentUser: { friends: [{ name: 'friend1', age: 42 }] } },
+        expect(server.query(`query customOperation {action {name}}`)).toMatchObject({
+            data: { action: { name: 'custom' } },
         })
     })
 })

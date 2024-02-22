@@ -132,6 +132,11 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 
 	err = m.Streamer.StreamSearch(ctx, q, opts, ZoektStreamFunc(func(zsr *zoekt.SearchResult) {
 		first.Do(func() {
+			latency := attribute.Int64("stream.latency_ms", time.Since(start).Milliseconds())
+			tr.SetAttributes(latency)
+			event.AddAttributes([]attribute.KeyValue{latency})
+
+			// Only leafs do RPC
 			if isLeaf {
 				if !writeRequestStart.IsZero() {
 					tr.SetAttributes(
@@ -139,9 +144,6 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 						attribute.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
 					)
 				}
-				tr.SetAttributes(
-					attribute.Int64("stream.latency_ms", time.Since(start).Milliseconds()),
-				)
 			}
 		})
 

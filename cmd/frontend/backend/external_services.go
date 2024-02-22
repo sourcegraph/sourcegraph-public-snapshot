@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -15,8 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
@@ -343,6 +346,11 @@ func addRepoToExclude(ctx context.Context, logger log.Logger, externalService *t
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
 			c.Exclude = append(c.Exclude, &schema.ExcludedAWSCodeCommitRepo{Name: excludableName})
 		}
+	case *schema.AzureDevOpsConnection:
+		exclusion := &schema.ExcludedAzureDevOpsServerRepo{Name: excludableName}
+		if !schemaContainsExclusion(c.Exclude, exclusion) {
+			c.Exclude = append(c.Exclude, &schema.ExcludedAzureDevOpsServerRepo{Name: excludableName})
+		}
 	case *schema.BitbucketCloudConnection:
 		exclusion := &schema.ExcludedBitbucketCloudRepo{Name: excludableName}
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
@@ -352,6 +360,11 @@ func addRepoToExclude(ctx context.Context, logger log.Logger, externalService *t
 		exclusion := &schema.ExcludedBitbucketServerRepo{Name: excludableName}
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
 			c.Exclude = append(c.Exclude, &schema.ExcludedBitbucketServerRepo{Name: excludableName})
+		}
+	case *schema.GerritConnection:
+		exclusion := &schema.ExcludedGerritProject{Name: excludableName}
+		if !schemaContainsExclusion(c.Exclude, exclusion) {
+			c.Exclude = append(c.Exclude, &schema.ExcludedGerritProject{Name: excludableName})
 		}
 	case *schema.GitHubConnection:
 		exclusion := &schema.ExcludedGitHubRepo{Name: excludableName}
@@ -388,6 +401,16 @@ func ExcludableRepoName(repository *types.Repo, logger log.Logger) (name string)
 		} else {
 			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeAWSCodeCommit))
 		}
+	case extsvc.TypeAzureDevOps:
+		if repo, ok := repository.Metadata.(*azuredevops.Repository); ok {
+			name = fmt.Sprintf("%s/%s", repo.Project.Name, repo.Name)
+			org, err := repo.GetOrganization()
+			if err == nil {
+				name = fmt.Sprintf("%s/%s", org, name)
+			}
+		} else {
+			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeAzureDevOps))
+		}
 	case extsvc.TypeBitbucketCloud:
 		if repo, ok := repository.Metadata.(*bitbucketcloud.Repo); ok {
 			name = repo.FullName
@@ -402,6 +425,16 @@ func ExcludableRepoName(repository *types.Repo, logger log.Logger) (name string)
 			name = fmt.Sprintf("%s/%s", repo.Project.Key, repo.Name)
 		} else {
 			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeBitbucketServer))
+		}
+	case extsvc.TypeGerrit:
+		if repo, ok := repository.Metadata.(*gerrit.Project); ok {
+			var err error
+			name, err = url.QueryUnescape(repo.ID)
+			if err != nil {
+				logger.Error("failed to unescape Gerrit project id", log.String("repoID", repo.ID))
+			}
+		} else {
+			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeGerrit))
 		}
 	case extsvc.TypeGitHub:
 		if repo, ok := repository.Metadata.(*github.Repository); ok {

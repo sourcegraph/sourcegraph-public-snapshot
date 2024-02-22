@@ -11,16 +11,14 @@ import (
 )
 
 func (g *gitCLIBackend) MergeBase(ctx context.Context, baseRevspec, headRevspec string) (api.CommitID, error) {
-	cmd, cancel, err := g.gitCommand(ctx, "merge-base", "--", baseRevspec, headRevspec)
-	defer cancel()
+	out, err := g.NewCommand(
+		ctx,
+		WithArguments("merge-base", "--", baseRevspec, headRevspec),
+	)
 	if err != nil {
 		return "", err
 	}
 
-	out, err := g.runGitCommand(ctx, cmd)
-	if err != nil {
-		return "", err
-	}
 	defer out.Close()
 
 	stdout, err := io.ReadAll(out)

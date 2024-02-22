@@ -1,3 +1,4 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("//dev:go_defs.bzl", "go_test")
 
@@ -79,4 +80,15 @@ go_test(
         "@com_github_stretchr_testify//require",
         "@org_golang_x_time//rate",
     ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = ["//cmd/gitserver/internal"],
 )

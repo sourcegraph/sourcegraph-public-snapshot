@@ -20,7 +20,6 @@ go_library(
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//cmd/gitserver/internal/common",
-        "//cmd/gitserver/internal/executil",
         "//cmd/gitserver/internal/gitserverfs",
         "//internal/api",
         "//internal/byteutils",

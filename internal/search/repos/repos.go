@@ -852,7 +852,7 @@ func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, searcherGRPCC
 	}
 
 	if args.Path != "" {
-		patternInfo.IncludePatterns = []string{args.Path}
+		patternInfo.IncludePaths = []string{args.Path}
 		patternInfo.PatternMatchesPath = true
 	}
 
