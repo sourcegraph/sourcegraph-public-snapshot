@@ -73,6 +73,14 @@ const REQUESTERS: Record<string, TokenRequester> = {
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
         callbackType: 'new-tab',
     },
+    CODY_CURSOR: {
+        name: 'Cody - Cursor Extension',
+        redirectURL: 'cursor://sourcegraph.cody-ai?code=$TOKEN',
+        successMessage: 'Now opening Cursor...',
+        infoMessage:
+            'Please make sure you have Cursor running on your machine if you do not see an open dialog in your browser.',
+        callbackType: 'new-tab',
+    },
     CODY_INSIDERS: {
         name: 'Cody - VS Code Insiders Extension',
         redirectURL: 'vscode-insiders://sourcegraph.cody-ai?code=$TOKEN',
