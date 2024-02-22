@@ -13,7 +13,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 <!-- START CHANGELOG -->
 
-## Unreleased
+## Unreleased (5.4.0 - Release Date TBD)
 
 ### Added
 
@@ -32,6 +32,26 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 -
+
+## Unreleased
+
+### Added
+
+### Changed
+
+### Fixed
+
+### Removed
+
+## 5.3.1
+
+### Added
+
+### Changed
+
+### Fixed
+
+### Removed
 
 ## 5.3.0
 
