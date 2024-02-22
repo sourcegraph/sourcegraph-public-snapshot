@@ -105,7 +105,7 @@ func NewConfig(now time.Time) Config {
 
 	diff, changedFilesByDiffType := changed.ParseDiff(changedFiles)
 
-	fmt.Printf("Parsed diff:\n\tgit command: %v\n\tchanged files: %v\n\tdiff changes: %q\n",
+	fmt.Fprintf(os.Stderr, "Parsed diff:\n\tgit command: %v\n\tchanged files: %v\n\tdiff changes: %q\n",
 		append([]string{"git"}, diffCommand...),
 		changedFiles,
 		diff.String(),
