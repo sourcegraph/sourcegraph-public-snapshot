@@ -110,6 +110,7 @@ func NewConfig(now time.Time) Config {
 		changedFiles,
 		diff.String(),
 	)
+	fmt.Fprint(os.Stderr, "The generated build pipeline will now follow, see you next time!")
 
 	return Config{
 		RunType: runType,
