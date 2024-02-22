@@ -8,7 +8,7 @@ packer="$(pwd)/$2"
 base="cmd/executor/docker-mirror/"
 
 ## Setting up the folder we're going to use with packer
-mkdir workdir
+mkdir workdir -p
 trap "rm -Rf workdir" EXIT
 
 cp "${base}/docker-mirror.pkr.hcl" workdir/
