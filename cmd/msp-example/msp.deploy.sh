@@ -12,7 +12,12 @@ REPOSITORY="us.gcr.io/sourcegraph-dev/msp-example"
 # -=Env Variable Defaults=-
 BUILDKITE_BUILD_NUMBER="${BUILDKITE_BUILD_NUMBER:-9425}"
 BUILDKITE_COMMIT="${BUILDKITE_COMMIT:-f8a6c059c1b0}"
-BUILDKITE_BUILD_AUTHOR_EMAIL="${BUILDKITE_BUILD_AUTHOR_EMAIL:-foo.bar@example.com}"
+
+# TODO: figure out a good way to capture author details
+# can contain only lowercase letters, numeric characters, underscores, and dashes.
+# All characters must use UTF-8 encoding, and international characters are allowed.
+# Keys must start with a lowercase letter or international character
+# BUILDKITE_BUILD_AUTHOR_EMAIL="${BUILDKITE_BUILD_AUTHOR_EMAIL:-foo.bar@example.com}"
 
 # -=Computed Variables=-
 SHORT_SHA="${BUILDKITE_COMMIT:0:12}"
@@ -33,5 +38,5 @@ push=$2
     --region="${GCP_REGION}" \
     --delivery-pipeline=${GCP_DELIVERY_PIPELINE} \
     --source="${GCP_CLOUDRUN_SKAFFOLD_SOURCE}" \
-    --labels="commit=${BUILDKITE_COMMIT},author=${BUILDKITE_BUILD_AUTHOR_EMAIL%@*}" \
+    --labels="commit=${BUILDKITE_COMMIT}" \
     --deploy-parameters="customTarget/tag=${TAG}"
