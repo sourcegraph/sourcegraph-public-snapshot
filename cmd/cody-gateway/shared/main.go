@@ -17,6 +17,9 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/contrib/detectors/gcp"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 
@@ -96,15 +99,28 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		return errors.Wrap(err, "failed to initialize external http client")
 	}
 
+	var meter = otel.GetMeterProvider().Meter("cody-gateway/redis")
+	redisLatency, err := meter.Int64Histogram("cody-gateway.redis_latency",
+		metric.WithDescription("Cody Gateway Redis client-side latency in milliseconds"))
+	if err != nil {
+		return errors.Wrap(err, "init metric 'redis_latency'")
+	}
+
+	redisCache := redispool.Cache.WithLatencyRecorder(func(call string, latency time.Duration, err error) {
+		redisLatency.Record(context.Background(), latency.Milliseconds(), metric.WithAttributeSet(attribute.NewSet(
+			attribute.Bool("error", err != nil),
+			attribute.String("command", call))))
+	})
+
 	// Add a prefix to the store for globally unique keys and simpler pruning.
-	rs := limiter.NewPrefixRedisStore("rate_limit:", newRedisStore(redispool.Cache))
+	rs := limiter.NewPrefixRedisStore("rate_limit:", newRedisStore(redisCache))
 
 	// Ignore the error because it's already validated in the cfg.
 	dotcomURL, _ := url.Parse(cfg.Dotcom.URL)
 	dotcomURL.Path = ""
 	rateLimitNotifier := notify.NewSlackRateLimitNotifier(
 		obctx.Logger,
-		redispool.Cache,
+		redisCache,
 		dotcomURL.String(),
 		notify.Thresholds{
 			// Detailed notifications for product subscriptions.
@@ -154,7 +170,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			// TODO: Make configurable
 			ttlSeconds: 60 * // minutes
 				60,
-			redis: redispool.Cache,
+			redis: redisCache,
 		},
 		&httpapi.Config{
 			RateLimitNotifier:           rateLimitNotifier,

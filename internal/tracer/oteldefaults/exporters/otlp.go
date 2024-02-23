@@ -55,6 +55,8 @@ func NewOTLPTraceExporter(ctx context.Context, logger log.Logger) (oteltracesdk.
 			opts = append(opts, otlptracehttp.WithInsecure())
 		}
 		client = otlptracehttp.NewClient(opts...)
+	default:
+		return nil, errors.Newf("unexpected protocol %q", protocol)
 	}
 
 	// Initialize the exporter

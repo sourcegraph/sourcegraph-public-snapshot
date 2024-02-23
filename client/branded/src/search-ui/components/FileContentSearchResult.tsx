@@ -138,7 +138,8 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                 filePath: result.path,
                 disableTimeout: false,
                 format: HighlightResponseFormat.HTML_HIGHLIGHT,
-                ranges: unhighlightedGroups,
+                // Explicitly narrow the object otherwise we'll send a bunch of extra data in the request.
+                ranges: unhighlightedGroups.map(({ startLine, endLine }) => ({ startLine, endLine })),
             },
             false
         )

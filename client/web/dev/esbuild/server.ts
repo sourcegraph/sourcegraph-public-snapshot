@@ -66,12 +66,47 @@ export const esbuildDevelopmentServer = async (
     const proxyServer = proxyApp.listen(listenAddress)
     // eslint-disable-next-line @typescript-eslint/return-await
     return await new Promise<void>((_resolve, reject) => {
-        proxyServer.once('listening', () => {
+        proxyServer.once('listening', async () => {
+            await pingUntilReady({ url: HTTPS_WEB_SERVER_URL })
             signale.success(`esbuild server is ready after ${Math.round(performance.now() - start)}ms`)
             printSuccessBanner(['✱ Sourcegraph is really ready now!', `Click here: ${HTTPS_WEB_SERVER_URL}/search`])
         })
         proxyServer.once('error', error => reject(error))
     })
+}
+
+interface PingOptions {
+    url: string
+    backoffMillis?: number
+    factor?: number
+    maxBackoffMillis?: number
+}
+
+function pingUntilReady({
+    url,
+    backoffMillis = 500,
+    factor = 1.5,
+    maxBackoffMillis = 10000,
+}: PingOptions): Promise<void> {
+    const ping = (backoff: number) => (resolve: () => void) => {
+        fetch(url)
+            .then(response => {
+                if (response.ok) {
+                    resolve()
+                } else {
+                    throw new Error(`${url} produced ${response.status} ${response.statusText}`)
+                }
+            })
+            .catch(console.error)
+            .then(sleep(backoff))
+            .then(() => ping(Math.min(backoff * factor, maxBackoffMillis))(resolve))
+    }
+
+    return new Promise(ping(backoffMillis))
+}
+
+function sleep(ms: number): () => Promise<void> {
+    return () => new Promise(resolve => setTimeout(resolve, ms))
 }
 
 if (require.main === module) {

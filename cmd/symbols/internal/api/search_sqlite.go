@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/dustin/go-humanize"
@@ -34,8 +33,10 @@ func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWri
 			attribute.Bool("isRegExp", args.IsRegExp),
 			attribute.Bool("isCaseSensitive", args.IsCaseSensitive),
 			attribute.Int("numIncludePatterns", len(args.IncludePatterns)),
-			attribute.String("includePatterns", strings.Join(args.IncludePatterns, ":")),
+			attribute.StringSlice("includePatterns", args.IncludePatterns),
 			attribute.String("excludePattern", args.ExcludePattern),
+			attribute.StringSlice("includeLangs", args.IncludeLangs),
+			attribute.StringSlice("excludeLangs", args.ExcludeLangs),
 			attribute.Int("first", args.First),
 			attribute.Float64("timeoutSeconds", args.Timeout.Seconds()),
 		}})

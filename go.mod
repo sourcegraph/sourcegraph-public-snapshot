@@ -1,6 +1,6 @@
 module github.com/sourcegraph/sourcegraph
 
-go 1.21
+go 1.21.4
 
 // Permanent replace directives
 // ============================
@@ -31,6 +31,8 @@ replace (
 // These entries indicate temporary replace directives due to a pending pull request upstream
 // or issues with specific versions.
 replace (
+	// Pending: https://github.com/derision-test/go-mockgen/pull/50
+	github.com/derision-test/go-mockgen => github.com/strum355/go-mockgen v0.0.0-20240212213912-87f69a62e0d3
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
 	// Dependency declares incorrect, old version of redigo, so we must override it: https://github.com/boj/redistore/blob/master/go.mod
@@ -227,8 +229,6 @@ require (
 	golang.org/x/sync v0.6.0
 	golang.org/x/sys v0.16.0
 	golang.org/x/time v0.5.0
-	// golang.org/x/tools should not be upgraded until https://github.com/bazelbuild/bazel-gazelle/issues/1579
-	// is resolved.
 	golang.org/x/tools v0.17.0
 	gonum.org/v1/gonum v0.13.0
 	google.golang.org/api v0.156.0
@@ -253,6 +253,7 @@ require (
 	github.com/TwiN/go-away v1.6.13
 	github.com/aws/constructs-go/constructs/v10 v10.2.69
 	github.com/aws/jsii-runtime-go v1.84.0
+	github.com/bazelbuild/bazel-gazelle v0.35.0
 	github.com/dghubble/gologin/v2 v2.4.0
 	github.com/edsrzf/mmap-go v1.1.0
 	github.com/go-json-experiment/json v0.0.0-20231102232822-2e55bd4e08b0
@@ -314,6 +315,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.1.25 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.5 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
+	github.com/bazelbuild/buildtools v0.0.0-20231115204819-d4c9dccdfbb1 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/cockroachdb/apd/v2 v2.0.1 // indirect
@@ -393,6 +395,7 @@ require (
 	go.opentelemetry.io/collector/featuregate v1.0.1 // indirect
 	go.uber.org/goleak v1.3.0 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
+	golang.org/x/tools/go/vcs v0.1.0-deprecated // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240125205218-1f4bbc51befe // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 )
