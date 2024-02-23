@@ -1014,7 +1014,6 @@ type CodyUsageStatistics struct {
 type CodyUsagePeriod struct {
 	StartTime                  time.Time
 	TotalCodyUsers             *CodyCountStatistics
-	TotalNonCodyUsers          *CodyCountStatistics
 	TotalProductUsers          *CodyCountStatistics
 	TotalVSCodeProductUsers    *CodyCountStatistics
 	TotalJetBrainsProductUsers *CodyCountStatistics
@@ -1041,9 +1040,6 @@ type CodyAggregatedUsage struct {
 	UniquesMonth               int32
 	UniquesWeek                int32
 	UniquesDay                 int32
-	NonCodyUsersMonth          int32
-	NonCodyUsersWeek           int32
-	NonCodyUsersDay            int32
 	ProductUsersMonth          int32
 	ProductUsersWeek           int32
 	ProductUsersDay            int32

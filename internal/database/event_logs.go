@@ -1611,9 +1611,8 @@ var codyEventPatterns = []string{
 
 // Definition: https://handbook.sourcegraph.com/departments/data-analytics/cody_analytics/#cody-product-dau
 // Sources:
-//   - https://console.cloud.google.com/bigquery?project=telligentsourcegraph&ws=!1m5!1m4!4m3!1stelligentsourcegraph!2sdotcom_events!3scody_dau_lookup
-//   - https://docs.google.com/spreadsheets/d/1rNdsk4mRojLwEIcGIDezKzKSnltZOLFFiFN4QcbrPnQ/edit#gid=1567985033
-//
+//  - https://console.cloud.google.com/bigquery?project=telligentsourcegraph&ws=!1m5!1m4!4m3!1stelligentsourcegraph!2sdotcom_events!3scody_dau_lookup
+//	- https://docs.google.com/spreadsheets/d/1rNdsk4mRojLwEIcGIDezKzKSnltZOLFFiFN4QcbrPnQ/edit#gid=1567985033
 // Last updated: 2024-02-22
 var codyProductUserEvents = []string{
 	"CodyJetBrainsPlugin:completion:partiallyAccepted",
