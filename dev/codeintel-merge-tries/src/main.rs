@@ -25,20 +25,20 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut remap: HashMap<u32, u32> = HashMap::new();
     let mut earliest_ids = HashMap::new();
     for record in records.iter() {
-      let mut prefix_id = record.prefix_id;
-      if let Some(p_id) = prefix_id {
-        if let Some(old_id) = remap.get(&p_id) {
-          prefix_id = Some(*old_id);
+        let mut prefix_id = record.prefix_id;
+        if let Some(p_id) = prefix_id {
+            if let Some(old_id) = remap.get(&p_id) {
+                prefix_id = Some(*old_id);
+            }
         }
-      }
 
-      let key = (prefix_id, &record.name_segment);
-      if let Some(earliest_id) = earliest_ids.get(&key) {
-        remap.insert(record.id, *earliest_id);
-        continue;
-      }
+        let key = (prefix_id, &record.name_segment);
+        if let Some(earliest_id) = earliest_ids.get(&key) {
+            remap.insert(record.id, *earliest_id);
+            continue;
+        }
 
-      earliest_ids.insert(key, record.id);
+        earliest_ids.insert(key, record.id);
     }
 
     let compressed_size = earliest_ids.len();
