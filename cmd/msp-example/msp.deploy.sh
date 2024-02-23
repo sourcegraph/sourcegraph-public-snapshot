@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu
+set -eux -o pipefail
 
 # -=Service Specific Parameters=-
 GCP_PROJECT="msp-testbed-robert-7be9"
