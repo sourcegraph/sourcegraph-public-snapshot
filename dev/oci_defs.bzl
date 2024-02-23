@@ -5,9 +5,6 @@ load("@rules_oci//oci:defs.bzl", _oci_image = "oci_image", _oci_push = "oci_push
 REGISTRY_REPOSITORY_PREFIX = "europe-west1-docker.pkg.dev/sourcegraph-security-logging/rules-oci-test/{}"
 # REGISTRY_REPOSITORY_PREFIX = "us.gcr.io/sourcegraph-dev/{}"
 
-# Passthrough the @rules_oci oci_push, so users only have to import this file and not @rules_oci//oci:defs.bzl
-oci_push = _oci_push
-
 def image_repository(image):
     return REGISTRY_REPOSITORY_PREFIX.format(image)
 
@@ -25,32 +22,40 @@ def oci_tarball(name, **kwargs):
 # to build binaries for Linux when building on MacOS.
 def oci_image(name, **kwargs):
     _oci_image(
-        name = name + "_underlying",
+        name = name + "_base",
         **kwargs
     )
 
-    oci_image_cross(
+    multi_arch(
         name = name,
-        image = ":" + name + "_underlying",
+        image = ":" + name + "_base",
         platforms = select({
             "@platforms//os:macos": [Label("@zig_sdk//platform:linux_amd64")],
             "//conditions:default": [],
         }),
-        visibility = kwargs.pop("visibility", ["//visibility:public"]),
     )
 
-# rule that allows transitioning in order to transition an oci_image target and its deps
-oci_image_cross = rule(
-    implementation = lambda ctx: DefaultInfo(files = depset(ctx.files.image)),
+oci_push = _oci_push
+
+def _multiarch_transition(settings, attr):
+    return [
+        {"//command_line_option:platforms": str(platform)}
+        for platform in attr.platforms
+    ]
+
+multiarch_transition = transition(
+    implementation = _multiarch_transition,
+    inputs = [],
+    outputs = ["//command_line_option:platforms"],
+)
+
+def _impl(ctx):
+    return DefaultInfo(files = depset(ctx.files.image))
+
+multi_arch = rule(
+    implementation = _impl,
     attrs = {
-        "image": attr.label(cfg = transition(
-            implementation = lambda settings, attr: [
-                {"//command_line_option:platforms": str(platform)}
-                for platform in attr.platforms
-            ],
-            inputs = [],
-            outputs = ["//command_line_option:platforms"],
-        )),
+        "image": attr.label(cfg = multiarch_transition),
         "platforms": attr.label_list(),
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
