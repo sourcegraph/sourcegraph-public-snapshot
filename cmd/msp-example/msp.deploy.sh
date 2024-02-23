@@ -37,4 +37,4 @@ push=$2
     --labels="commit=${BUILDKITE_COMMIT},author=${BUILDKITE_BUILD_AUTHOR_EMAIL}" \
     --deploy-parameters="customTarget/tag=${TAG}"
 
-exit 1001
+exit 101
