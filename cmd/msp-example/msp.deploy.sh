@@ -25,7 +25,7 @@ RELEASE_NAME="deploy-${SHORT_SHA}-${BUILDKITE_BUILD_NUMBER}"
 gcloud=$1
 push=$2
 
-1>&2 echo "${push}" --tag "${TAG}"
+1>&2 "${push}" --tag "${TAG}"
 
 1>&2 echo "${gcloud}" deploy releases create "${RELEASE_NAME}" \
     --project="${GCP_PROJECT}" \
