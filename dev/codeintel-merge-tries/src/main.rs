@@ -1,6 +1,6 @@
 use csv;
 use serde::Deserialize;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::{error::Error, io};
 
 #[derive(Debug, Deserialize)]
@@ -12,51 +12,36 @@ struct Record {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut rdr = csv::Reader::from_reader(io::stdin());
-    let mut records = HashMap::new();
-    let mut deleted_ids = HashSet::new();
+    let mut records = Vec::new();
     for result in rdr.deserialize() {
         let record: Record = result?;
-        records.insert(record.id, record);
+        records.push(record);
     }
+    records.sort_by_key(|r| r.id);
 
     let initial_size = records.len();
 
-    loop {
-        let mut seen: HashMap<(String, Option<u32>), u32> = HashMap::new();
-        let mut remap = HashMap::new();
-
-        for (id, record) in &records {
-            let key = (record.name_segment.clone(), record.prefix_id);
-            if let Some(prev) = seen.get(&key) {
-                remap.insert(*id, *prev);
-            } else {
-                seen.insert(key, *id);
+    // id -> id
+    let mut remap: HashMap<u32, u32> = HashMap::new();
+    let mut earliest_ids = HashMap::new();
+    for record in records.iter() {
+        let mut prefix_id = record.prefix_id;
+        if let Some(p_id) = prefix_id {
+            if let Some(old_id) = remap.get(&p_id) {
+                prefix_id = Some(*old_id);
             }
         }
 
-        // Fixpoint reached
-        if remap.is_empty() {
-            break;
+        let key = (prefix_id, &record.name_segment);
+        if let Some(earliest_id) = earliest_ids.get(&key) {
+            remap.insert(record.id, *earliest_id);
+            continue;
         }
 
-        let keys: Vec<u32> = records.keys().copied().collect();
-
-        for id in keys {
-            if remap.contains_key(&id) {
-                deleted_ids.insert(id);
-                records.remove(&id);
-                continue;
-            }
-
-            records.entry(id).and_modify(|e| {
-                if let Some(parent) = e.prefix_id {
-                    e.prefix_id = Some(remap.get(&parent).copied().unwrap_or(parent))
-                }
-            });
-        }
+        earliest_ids.insert(key, record.id);
     }
 
-    let compressed_size = records.len();
+    let compressed_size = earliest_ids.len();
     let saved = (initial_size as f64 - compressed_size as f64) / initial_size as f64 * 100f64;
 
     println!("from {initial_size} rows\nto   {compressed_size} rows\nreduction by {saved:.2}%");
