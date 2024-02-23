@@ -34,7 +34,7 @@ def oci_image(name, **kwargs):
         image = ":" + name + "_base",
         platform = select({
             "@platforms//os:macos": Label("@zig_sdk//platform:linux_amd64"),
-            "//conditions:default": None,
+            "//conditions:default": Label("@local_config_platform//:host"),
         }),
         visibility = kwargs.pop("visibility", ["//visibility:public"]),
     )
