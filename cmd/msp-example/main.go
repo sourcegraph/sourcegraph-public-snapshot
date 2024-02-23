@@ -10,6 +10,6 @@ func main() {
 	println("hello")
 	println("world")
 	println("banana")
-	println(":jotter:")
+	println(":jotter: + :noah:")
 	runtime.Start[example.Config](example.Service{})
 }
