@@ -71,8 +71,6 @@ sh_binary(
     data = [
         "//dev/tools:gcloud",
     ],
-    deps = [
-        ":candidate_push",
-    ],
     tags = ["msp-deliverable"],
+    deps = [":candidate_push"],
 )
