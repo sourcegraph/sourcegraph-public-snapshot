@@ -69,9 +69,10 @@ sh_binary(
         "$(location :candidate_push)",
     ],
     data = [
-        ":candidate_push",
-        ":image_tarball",
         "//dev/tools:gcloud",
+    ],
+    deps = [
+        ":candidate_push",
     ],
     tags = ["msp-deliverable"],
 )
