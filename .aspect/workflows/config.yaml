@@ -34,5 +34,6 @@ tasks:
       queue: aspect-small
   - delivery:
       auto_deliver: true
+      icon: 'ship'
       branches: ['jcjh/msp-bazel-delivery']
       deliverable: 'attr(tags, "\bmsp-deliverable\b", //cmd/...)'
