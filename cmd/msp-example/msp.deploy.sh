@@ -7,6 +7,7 @@ GCP_PROJECT="msp-testbed-robert-7be9"
 GCP_REGION="us-central1"
 GCP_DELIVERY_PIPELINE="msp-testbed-us-central1-rollout"
 GCP_CLOUDRUN_SKAFFOLD_SOURCE="gs://msp-testbed-robert-7be9-cloudrun-skaffold/source.tar.gz"
+REPOSITORY="us.gcr.io/sourcegraph-dev/msp-example"
 
 # -=Env Variable Defaults=-
 BUILDKITE_BUILD_NUMBER="${BUILDKITE_BUILD_NUMBER:-263017}"
@@ -25,7 +26,7 @@ RELEASE_NAME="deploy-${SHORT_SHA}-${BUILDKITE_BUILD_NUMBER}"
 gcloud=$1
 push=$2
 
-1>&2 "${push}" --stamp -- --tag "${TAG}" --repository us.gcr.io/sourcegraph-dev/msp-example
+1>&2 "${push}" --tag "${TAG}" --repository "${REPOSITORY}"
 
 1>&2 echo "${gcloud}" deploy releases create "${RELEASE_NAME}" \
     --project="${GCP_PROJECT}" \
