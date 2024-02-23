@@ -25,17 +25,23 @@ oci_push = _oci_push
 # to build binaries for Linux when building on MacOS.
 def oci_image(name, **kwargs):
     _oci_image(
-        name = name + "_base",
+        name = name + "_underlying",
         **kwargs
     )
 
     oci_image_cross(
-        name = name,
-        image = ":" + name + "_base",
+        name = name + "_transitioned",
+        image = ":" + name + "_underlying",
         platforms = select({
             "@platforms//os:macos": [Label("@zig_sdk//platform:linux_amd64")],
             "//conditions:default": [],
         }),
+        visibility = kwargs.pop("visibility", ["//visibility:public"]),
+    )
+
+    native.alias(
+        name = name,
+        actual = ":" + name + "_transitioned",
         visibility = kwargs.pop("visibility", ["//visibility:public"]),
     )
 
