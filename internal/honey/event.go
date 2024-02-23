@@ -1,6 +1,11 @@
 package honey
 
 import (
+	"fmt"
+	"os"
+	"slices"
+	"strings"
+
 	"github.com/honeycombio/libhoney-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -77,6 +82,15 @@ func (w eventWrapper) SetSampleRate(rate uint) {
 }
 
 func (w eventWrapper) Send() error {
+	if local {
+		var fields []string
+		for k, v := range w.event.Fields() {
+			fields = append(fields, fmt.Sprintf("  %s: %v", k, v))
+		}
+		slices.Sort(fields)
+		_, _ = fmt.Fprintf(os.Stderr, "EVENT %s\n%s\n", w.event.Dataset, strings.Join(fields, "\n"))
+		return nil
+	}
 	return w.event.Send()
 }
 

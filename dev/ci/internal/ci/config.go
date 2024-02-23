@@ -105,6 +105,13 @@ func NewConfig(now time.Time) Config {
 
 	diff, changedFilesByDiffType := changed.ParseDiff(changedFiles)
 
+	fmt.Fprintf(os.Stderr, "Parsed diff:\n\tgit command: %v\n\tchanged files: %v\n\tdiff changes: %q\n",
+		append([]string{"git"}, diffCommand...),
+		changedFiles,
+		diff.String(),
+	)
+	fmt.Fprint(os.Stderr, "The generated build pipeline will now follow, see you next time!")
+
 	return Config{
 		RunType: runType,
 
