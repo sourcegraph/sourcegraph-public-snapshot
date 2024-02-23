@@ -50,6 +50,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 ### Fixed
+
 - Updated container images to fix CVE-2023-4408, CVE-2023-50387, CVE-2023-50868, CVE-2023-5517, CVE-2023-5679, CVE-2023-6516
 
 ### Removed
