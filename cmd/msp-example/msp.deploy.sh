@@ -34,5 +34,3 @@ push=$2
     --source="${GCP_CLOUDRUN_SKAFFOLD_SOURCE}" \
     --labels="commit=${BUILDKITE_COMMIT},author=${BUILDKITE_BUILD_AUTHOR_EMAIL}" \
     --deploy-parameters="customTarget/tag=${TAG}"
-
-exit 101
