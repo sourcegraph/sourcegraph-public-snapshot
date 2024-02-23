@@ -2,8 +2,6 @@
 
 set -eu
 
-echo "--- MSP Deploy"
-echo "Test"
 # -=Service Specific Parameters=-
 GCP_PROJECT="msp-testbed-robert-7be9"
 GCP_REGION="us-central1"
