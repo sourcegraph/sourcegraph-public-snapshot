@@ -74,4 +74,7 @@ sh_binary(
         "//dev/tools:gcloud",
     ],
     tags = ["msp-deliverable"],
+    deps = [
+        ":image_tarball",
+    ],
 )

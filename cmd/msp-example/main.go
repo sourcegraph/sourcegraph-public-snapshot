@@ -9,5 +9,6 @@ import (
 func main() {
 	println("hello")
 	println("world")
+	println("banana")
 	runtime.Start[example.Config](example.Service{})
 }
