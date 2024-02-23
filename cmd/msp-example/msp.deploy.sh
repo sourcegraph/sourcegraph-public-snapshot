@@ -28,7 +28,7 @@ push=$2
 
 1>&2 "${push}" --tag "${TAG}" --repository "${REPOSITORY}"
 
-1>&2 echo "${gcloud}" deploy releases create "${RELEASE_NAME}" \
+1>&2 "${gcloud}" deploy releases create "${RELEASE_NAME}" \
     --project="${GCP_PROJECT}" \
     --region="${GCP_REGION}" \
     --delivery-pipeline=${GCP_DELIVERY_PIPELINE} \
