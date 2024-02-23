@@ -70,10 +70,8 @@ sh_binary(
     ],
     data = [
         ":candidate_push",
+        ":image",
         "//dev/tools:gcloud",
     ],
     tags = ["msp-deliverable"],
-    deps = [
-        ":image_tarball",
-    ],
 )
