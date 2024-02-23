@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+	println("unrelated change")
 	sanitycheck.Pass()
 	liblog := log.Init(log.Resource{
 		Name:    env.MyName,
