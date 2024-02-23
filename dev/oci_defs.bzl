@@ -18,6 +18,9 @@ def oci_tarball(name, **kwargs):
         **kwargs
     )
 
+# Passthrough the @rules_oci oci_push, so users only have to import this file and not @rules_oci//oci:defs.bzl
+oci_push = _oci_push
+
 # Apply a transition on oci_image targets and their deps to apply a transition on platforms
 # to build binaries for Linux when building on MacOS.
 def oci_image(name, **kwargs):
@@ -26,38 +29,26 @@ def oci_image(name, **kwargs):
         **kwargs
     )
 
-    multi_arch(
+    oci_image_cross(
         name = name,
         image = ":" + name + "_base",
-        platforms = select({
-            "@platforms//os:macos": [Label("@zig_sdk//platform:linux_amd64")],
-            "//conditions:default": [],
+        platform = select({
+            "@platforms//os:macos": Label("@zig_sdk//platform:linux_amd64"),
+            "//conditions:default": None,
         }),
         visibility = kwargs.pop("visibility", ["//visibility:public"]),
     )
 
-oci_push = _oci_push
-
-def _multiarch_transition(settings, attr):
-    return [
-        {"//command_line_option:platforms": str(platform)}
-        for platform in attr.platforms
-    ]
-
-multiarch_transition = transition(
-    implementation = _multiarch_transition,
-    inputs = [],
-    outputs = ["//command_line_option:platforms"],
-)
-
-def _impl(ctx):
-    return DefaultInfo(files = depset(ctx.files.image))
-
-multi_arch = rule(
-    implementation = _impl,
+# rule that allows transitioning in order to transition an oci_image target and its deps
+oci_image_cross = rule(
+    implementation = lambda ctx: DefaultInfo(files = depset(ctx.files.image)),
     attrs = {
-        "image": attr.label(cfg = multiarch_transition),
-        "platforms": attr.label_list(),
+        "image": attr.label(cfg = transition(
+            implementation = lambda settings, attr: {"//command_line_option:platforms": str(attr.platform)},
+            inputs = [],
+            outputs = ["//command_line_option:platforms"],
+        )),
+        "platform": attr.label(),
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
