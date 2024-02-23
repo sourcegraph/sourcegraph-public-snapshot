@@ -1600,6 +1600,7 @@ func (l *eventLogStore) aggregatedSearchEvents(ctx context.Context, queryString 
 
 var codyEventPatterns = []string{
 	"cody.%%",
+	"completion.%%",
 	"web:cody%%",
 	"CodyJetBrainsPlugin:%%",
 	"CodyVSCodeExtension:%%",
@@ -1609,16 +1610,11 @@ var codyEventPatterns = []string{
 }
 
 // Definition: https://handbook.sourcegraph.com/departments/data-analytics/cody_analytics/#cody-product-dau
-// Source: https://console.cloud.google.com/bigquery?project=telligentsourcegraph&ws=!1m5!1m4!4m3!1stelligentsourcegraph!2sdotcom_events!3scody_dau_lookup
-// Last updated: 2024-01-12
+// Sources:
+//  - https://console.cloud.google.com/bigquery?project=telligentsourcegraph&ws=!1m5!1m4!4m3!1stelligentsourcegraph!2sdotcom_events!3scody_dau_lookup
+//	- https://docs.google.com/spreadsheets/d/1rNdsk4mRojLwEIcGIDezKzKSnltZOLFFiFN4QcbrPnQ/edit#gid=1567985033
+// Last updated: 2024-02-22
 var codyProductUserEvents = []string{
-	"cody.recipe.explain-code-high-level.executed",
-	"cody.recipe.find-code-smells.executed",
-	"cody.recipe.explain-code-detailed.executed",
-	"cody.recipe.chat-question.executed",
-	"cody.recipe.generate-docstring.executed",
-	"cody.recipe.generate-unit-test.executed",
-	"cody.recipe.improve-variable-names.executed",
 	"CodyJetBrainsPlugin:completion:partiallyAccepted",
 	"CodyAgent:completion:accepted",
 	"CodyVSCodeExtension:command:reset:filtering",
@@ -1887,6 +1883,56 @@ var codyProductUserEvents = []string{
 	"CodyNeovimPlugin:completion:accepted",
 	"CodyEmacsPlugin:completion:accepted",
 	"CodyVSCodeExtension:chat-question:recipe-used",
+	"cody.fixup.codeLens.accept",
+	"completion.accepted",
+	"cody.completion.accepted",
+	"cody.fixup.applied",
+	"cody.insertButton.clicked",
+	"cody.walkthrough.clicked",
+	"cody.menu:command:default.clicked",
+	"cody.command.codelens.clicked",
+	"cody.keyDown:Copy.clicked",
+	"cody.copyButton.clicked",
+	"cody.exportChatHistoryButton.clicked",
+	"cody.menu:command:custom.clicked",
+	"cody.saveButton.clicked",
+	"cody.command.ask.clicked",
+	"cody.messageProvider.restoreChatHistoryButton.clicked",
+	"cody.fixup.codeLens.diff",
+	"cody.command.generateCommitMessage.executed",
+	"cody.command.custom.build.executed",
+	"cody.recipe.inline-chat.executed",
+	"cody.recipe.improve-variable-names.executed",
+	"cody.recipe.explain-code-high-level.executed",
+	"cody.recipe.explain-code-detailed.executed",
+	"cody.command.edit.executed",
+	"cody.at-mention.symbol.executed",
+	"cody.recipe.chat-question.executed",
+	"cody.recipe.local-indexed-keyword-search.executed",
+	"cody.command.smell.executed",
+	"cody.at-mention.file.executed",
+	"cody.command.openFile.executed",
+	"cody.recipe.generate-docstring.executed",
+	"cody.command.terminal.executed",
+	"cody.command.custom.executed",
+	"cody.recipe.find-code-smells.executed",
+	"cody.recipe.generate-unit-test.executed",
+	"cody.recipe.custom-prompt.executed",
+	"cody.command.explain.executed",
+	"cody.recipe.fixup.executed",
+	"cody.at-mention.executed",
+	"cody.guardrails.annotate.executed",
+	"cody.chat-question.executed",
+	"cody.command.test.executed",
+	"cody.command.doc.executed",
+	"cody.recipe.code-question.executed",
+	"cody.recipe.inline-touch.executed",
+	"cody.recipe.context-search.executed",
+	"cody.completion.partiallyAccepted",
+	"cody.keyDown.paste",
+	"cody.recipe.chat-question.recipe-used",
+	"cody.recipe.fixup.recipe-used",
+	"cody.fixup.apply.succeeded",
 }
 
 var aggregatedCodyUsageEventsQuery = `
