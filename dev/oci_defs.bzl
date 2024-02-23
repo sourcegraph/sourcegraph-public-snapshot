@@ -33,6 +33,7 @@ def oci_image(name, **kwargs):
             "@platforms//os:macos": [Label("@zig_sdk//platform:linux_amd64")],
             "//conditions:default": [],
         }),
+        visibility = kwargs.pop("visibility", ["//visibility:public"]),
     )
 
 oci_push = _oci_push
