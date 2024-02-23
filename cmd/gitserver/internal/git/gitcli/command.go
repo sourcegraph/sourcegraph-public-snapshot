@@ -425,13 +425,18 @@ func mapToLoggerField(m map[string]any) []log.Field {
 // internally. So we update our sampling to heavily downsample internal
 // rev-parse, while upping our sampling for non-internal.
 // https://ui.honeycomb.io/sourcegraph/datasets/gitserver-exec/result/67e4bLvUddg
+//
+// 2024-02-23 we are now capturing all execs done in honeycomb, including
+// internal stuff like config and janitor jobs. In particular "config" is now
+// running as often as rev-parse. rev-list is also higher than most so we
+// include it in the big sample rate.
 func HoneySampleRate(cmd string, actor *actor.Actor) uint {
 	// HACK(keegan) 2022-11-02 IsInternal on sourcegraph.com is always
 	// returning false. For now I am also marking it internal if UID is not
 	// set to work around us hammering honeycomb.
 	internal := actor.IsInternal() || actor.UID == 0
 	switch {
-	case cmd == "rev-parse" && internal:
+	case (cmd == "rev-parse" || cmd == "rev-list" || cmd == "config") && internal:
 		return 1 << 14 // 16384
 
 	case internal:
