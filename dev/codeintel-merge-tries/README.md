@@ -1,10 +1,7 @@
 A little program to check how many rows we could save by merging tries inside our
 `codeintel_scip_symbol_names` table.
 
-After uploading an index to your local sourcegraph instance, run like so:
-`psql -d sourcegraph -c "COPY (select * from codeintel_scip_symbol_names where upload_id = (select max(upload_id) from codeintel_scip_symbol_names)) TO STDOUT DELIMITER ',' CSV HEADER;" | cargo run --release`
-
-For example when running after uploading an index for sourcegraph/sourcegraph:
+Upload an index to your local Sourcegraph instance and run:
 
 ```
 $ psql --no-psqlrc --csv --dbname=sourcegraph --command="select * from codeintel_scip_symbol_names where upload_id = (select max(upload_id) from codeintel_scip_symbol_names)" | cargo run --release
