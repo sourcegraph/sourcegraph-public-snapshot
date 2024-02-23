@@ -63,12 +63,12 @@ func (w *prefixSuffixSaver) fill(dst *[]byte, p []byte) (pRemain []byte) {
 // Read is destructive and will consume the prefixSuffixSaver buffer.
 func (w *prefixSuffixSaver) Read(p []byte) (n int, err error) {
 	if w.reader == nil {
-		*w = prefixSuffixSaver{N: w.N, reader: w.Bytes()}
+		*w = prefixSuffixSaver{N: w.N, reader: w.bytes()}
 	}
 	return w.reader.Read(p)
 }
 
-func (w *prefixSuffixSaver) Bytes() *bytes.Buffer {
+func (w *prefixSuffixSaver) bytes() *bytes.Buffer {
 	if w.suffix == nil {
 		return bytes.NewBuffer(w.prefix)
 	}
