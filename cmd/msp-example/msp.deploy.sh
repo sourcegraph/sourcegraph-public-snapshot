@@ -10,9 +10,9 @@ GCP_CLOUDRUN_SKAFFOLD_SOURCE="gs://msp-testbed-robert-7be9-cloudrun-skaffold/sou
 REPOSITORY="us.gcr.io/sourcegraph-dev/msp-example"
 
 # -=Env Variable Defaults=-
-BUILDKITE_BUILD_NUMBER="${BUILDKITE_BUILD_NUMBER:-263017}"
-BUILDKITE_COMMIT="${BUILDKITE_COMMIT:-fff4b48497cfda0d1ce99c531ecd314793846d6e}"
-BUILDKITE_BUILD_AUTHOR_EMAIL="${BUILDKITE_BUILD_AUTHOR_EMAIL:-foobar@example.com}"
+BUILDKITE_BUILD_NUMBER="${BUILDKITE_BUILD_NUMBER:-9425}"
+BUILDKITE_COMMIT="${BUILDKITE_COMMIT:-f8a6c059c1b0}"
+BUILDKITE_BUILD_AUTHOR="${BUILDKITE_BUILD_AUTHOR:-foo.bar@example.com}"
 
 # -=Computed Variables=-
 SHORT_SHA="${BUILDKITE_COMMIT:0:12}"
@@ -33,5 +33,5 @@ push=$2
     --region="${GCP_REGION}" \
     --delivery-pipeline=${GCP_DELIVERY_PIPELINE} \
     --source="${GCP_CLOUDRUN_SKAFFOLD_SOURCE}" \
-    --labels="commit=${BUILDKITE_COMMIT},author=${BUILDKITE_BUILD_AUTHOR_EMAIL}" \
+    --labels="commit=${BUILDKITE_COMMIT},author=${BUILDKITE_BUILD_AUTHOR%@*}" \
     --deploy-parameters="customTarget/tag=${TAG}"
