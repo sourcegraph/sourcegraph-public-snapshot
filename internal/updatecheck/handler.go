@@ -236,9 +236,11 @@ type pingRequest struct {
 	EverFindRefs                  bool            `json:"refs,omitempty"`
 	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Cody App
 	HasCodyEnabled                bool            `json:"hasCodyEnabled,omitempty"`
-	CodyUsage                     json.RawMessage `json:"codyUsage,omitempty"`
-	CodyProviders                 json.RawMessage `json:"codyProviders,omitempty"`
-	RepoMetadataUsage             json.RawMessage `json:"repoMetadataUsage,omitempty"`
+	// CodyUsage is deprecated, but here so we can receive pings from older instances
+	CodyUsage         json.RawMessage `json:"codyUsage,omitempty"`
+	CodyUsage2        json.RawMessage `json:"codyUsage2,omitempty"`
+	CodyProviders     json.RawMessage `json:"codyProviders,omitempty"`
+	RepoMetadataUsage json.RawMessage `json:"repoMetadataUsage,omitempty"`
 }
 
 type dependencyVersions struct {
@@ -366,7 +368,7 @@ type pingPayload struct {
 	ActiveToday                   string          `json:"active_today"`
 	Timestamp                     string          `json:"timestamp"`
 	HasCodyEnabled                string          `json:"has_cody_enabled"`
-	CodyUsage                     json.RawMessage `json:"cody_usage"`
+	CodyUsage2                    json.RawMessage `json:"cody_usage_2"`
 	CodyProviders                 json.RawMessage `json:"cody_providers"`
 	RepoMetadataUsage             json.RawMessage `json:"repo_metadata_usage"`
 }
@@ -422,11 +424,6 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		return nil, errors.Wrap(err, "malformed search usage")
 	}
 
-	codyUsage, err := reserializeCodyUsage(pr.CodyUsage)
-	if err != nil {
-		return nil, errors.Wrap(err, "malformed cody usage")
-	}
-
 	return json.Marshal(&pingPayload{
 		RemoteIP:                      clientAddr,
 		RemoteSiteVersion:             pr.ClientVersionString,
@@ -473,7 +470,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		ActiveToday:                   strconv.FormatBool(pr.ActiveToday),
 		Timestamp:                     now.UTC().Format(time.RFC3339),
 		HasCodyEnabled:                strconv.FormatBool(pr.HasCodyEnabled),
-		CodyUsage:                     codyUsage,
+		CodyUsage2:                    pr.CodyUsage2,
 		CodyProviders:                 pr.CodyProviders,
 		RepoMetadataUsage:             pr.RepoMetadataUsage,
 	})
@@ -729,42 +726,6 @@ func reserializeSearchUsage(payload json.RawMessage) (json.RawMessage, error) {
 	}
 	if len(searchUsage.Monthly) > 0 {
 		singlePeriodUsage.Monthly = searchUsage.Monthly[0]
-	}
-
-	return json.Marshal(singlePeriodUsage)
-}
-
-// reserializeCodyUsage will reserialize a cody usage statistics
-// struct with only the first period in each period type. This reduces the
-// complexity required in the BigQuery schema and downstream ETL transform
-// logic.
-func reserializeCodyUsage(payload json.RawMessage) (json.RawMessage, error) {
-	if len(payload) == 0 {
-		return nil, nil
-	}
-
-	var codyUsage *types.CodyUsageStatistics
-	if err := json.Unmarshal(payload, &codyUsage); err != nil {
-		return nil, err
-	}
-	if codyUsage == nil {
-		return nil, nil
-	}
-
-	singlePeriodUsage := struct {
-		Daily   *types.CodyUsagePeriod
-		Weekly  *types.CodyUsagePeriod
-		Monthly *types.CodyUsagePeriod
-	}{}
-
-	if len(codyUsage.Daily) > 0 {
-		singlePeriodUsage.Daily = codyUsage.Daily[0]
-	}
-	if len(codyUsage.Weekly) > 0 {
-		singlePeriodUsage.Weekly = codyUsage.Weekly[0]
-	}
-	if len(codyUsage.Monthly) > 0 {
-		singlePeriodUsage.Monthly = codyUsage.Monthly[0]
 	}
 
 	return json.Marshal(singlePeriodUsage)
