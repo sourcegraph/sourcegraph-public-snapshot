@@ -13,15 +13,7 @@ import (
 )
 
 func Run(cmd *cli.Context, prNumber int64, version string) error {
-	// Fetch latest change from remote
-	p := std.Out.Pending(output.Styled(output.StylePending, "Fetching latest changes from remote..."))
-	if err := gitExec(cmd.Context, "fetch"); err != nil {
-		p.Destroy()
-		return err
-	}
-	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Fetched latest changes from remote"))
-
-	p = std.Out.Pending(output.Styled(output.StylePending, "Checking for GitHub CLI..."))
+	p := std.Out.Pending(output.Styled(output.StylePending, "Checking for GitHub CLI..."))
 	ghPath, err := exec.LookPath("gh")
 	if err != nil {
 		p.Destroy()
@@ -44,6 +36,14 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 		return errors.Wrapf(err, "%q does not exist in sourcegraph/sourcegraph", version)
 	}
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Found %q in remote", version))
+
+	// Fetch latest change from remote
+	p = std.Out.Pending(output.Styled(output.StylePending, "Fetching latest changes from remote..."))
+	if err := gitExec(cmd.Context, "fetch", "-a"); err != nil {
+		p.Destroy()
+		return err
+	}
+	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Fetched latest changes from remote"))
 
 	p = std.Out.Pending(output.Styled(output.StylePending, "Getting PR info ...."))
 	rawPrInfo, err := ghExec(cmd.Context, "pr", "view", fmt.Sprintf("%d", prNumber), "--json", "mergeCommit,state,body,title")
