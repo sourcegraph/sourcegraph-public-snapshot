@@ -4,13 +4,13 @@ import { mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
-import type { AuthProvider, SourcegraphContext } from '../jscontext'
-import { EventName } from '../util/constants'
+import type { SourcegraphContext } from '../jscontext'
 
 import { ExternalsAuth } from './components/ExternalsAuth'
 import { type SignUpArguments, SignUpForm } from './SignUpForm'
@@ -19,7 +19,7 @@ import styles from './VsCodeSignUpPage.module.scss'
 
 export const ShowEmailFormQueryParameter = 'showEmail'
 
-export interface VsCodeSignUpPageProps extends TelemetryProps {
+export interface VsCodeSignUpPageProps extends TelemetryProps, TelemetryV2Props {
     source: string | null
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
@@ -44,6 +44,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<V
     onSignUp,
     context,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const isLightTheme = useIsLightTheme()
     const location = useLocation()
@@ -57,21 +58,9 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<V
 
     const assetsRoot = window.context?.assetsRoot || ''
 
-    const logEvent = (type: AuthProvider['serviceType']): void => {
-        const eventType = type === 'builtin' ? 'form' : type
-        telemetryService.log(
-            EventName.AUTH_INITIATED,
-            { type: eventType, source: 'vs-code' },
-            { type: eventType, source: 'vs-code' }
-        )
-    }
-
     const signUpForm = (
         <SignUpForm
-            onSignUp={args => {
-                logEvent('builtin')
-                return onSignUp(args)
-            }}
+            onSignUp={args => onSignUp(args)}
             context={{
                 authProviders: [],
                 sourcegraphDotComMode: true,
@@ -80,17 +69,21 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<V
             buttonLabel="Sign up"
             experimental={true}
             className="my-3"
+            telemetryRecorder={telemetryRecorder}
         />
     )
 
     const renderCodeHostAuth = (): JSX.Element => (
         <>
             <ExternalsAuth
+                page="vscode-signup-page"
                 context={context}
                 githubLabel="Continue with GitHub"
                 gitlabLabel="Continue with GitLab"
                 googleLabel="Continue with Google"
-                onClick={logEvent}
+                onClick={() => {}}
+                telemetryRecorder={telemetryRecorder}
+                telemetryService={telemetryService}
             />
         </>
     )

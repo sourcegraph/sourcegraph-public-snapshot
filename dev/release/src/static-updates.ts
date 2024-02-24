@@ -12,6 +12,13 @@ import {
 export async function bakeSrcCliSteps(config: ReleaseConfig): Promise<Edit[]> {
     const client = await getAuthenticatedGitHubClient()
 
+    // NOTE(keegan): 2024-02-13 I am running the 5.3 release but this is all
+    // borked. We used to run a src-cli reference doc generator, but we now
+    // have a docs repo which uses mdx files. So the reference generator needs
+    // to be updated. So for now I am just skipping this and will follow up
+    // later. Leaving the original comment below since we still need the next
+    // var to be calculated. Additionally just commenting out the broken code.
+    //
     // ok, this seems weird that we're cloning src-cli here, so read on -
     // We have docs that live in the main src/src repo about src-cli. Each version we update these docs for any changes
     // from the most recent version of src-cli. Cool, makes sense.
@@ -29,8 +36,9 @@ export async function bakeSrcCliSteps(config: ReleaseConfig): Promise<Edit[]> {
 
     return [
         combyReplace('const MinimumVersion = ":[1]"', next.version, 'internal/src-cli/consts.go'),
-        `cd ${workdir}/cmd/src && go build`,
-        `cd doc/cli/references && go run ./doc.go --binaryPath="${workdir}/cmd/src/src"`,
+        // Broken since docs migration
+        //`cd ${workdir}/cmd/src && go build`,
+        //`cd doc/cli/references && go run ./doc.go --binaryPath="${workdir}/cmd/src/src"`,
     ]
 }
 export async function bakeAWSExecutorsSteps(config: ReleaseConfig): Promise<void> {
@@ -49,16 +57,25 @@ export async function bakeAWSExecutorsSteps(config: ReleaseConfig): Promise<void
         title: `executor: v${next.version}`,
         commitMessage: `executor: v${next.version}`,
     }
+    /*
+      TODO prepare-release.sh commits and pushes the change, but
+      createChangesets expects to do this. This needs to be fixed before the
+      next minor release. I propose making prepare-release not commit and
+      push. Or even better just get rid of it since its an overengineered
+      wrapper around a single sed call. Then you can also remove the unshallow
+      call.
+    */
     const sets = await createChangesets({
         requiredCommands: [],
         changes: [
             {
                 ...prDetails,
-                repo: 'sourcegraph',
-                owner: 'terraform-aws-executors',
+                owner: 'sourcegraph',
+                repo: 'terraform-aws-executors',
                 base: 'master',
                 head: `release/prepare-${next.version}`,
-                edits: [`./prepare-release.sh ${next.version}`],
+                // prepare-release.sh needs full history to read tags
+                edits: ['git fetch --unshallow', `./prepare-release.sh ${next.version}`],
                 labels: [releaseBlockerLabel],
                 draft: true,
             },
@@ -87,6 +104,14 @@ export async function bakeGoogleExecutorsSteps(config: ReleaseConfig): Promise<v
         title: `executor: v${next.version}`,
         commitMessage: `executor: v${next.version}`,
     }
+    /*
+      TODO prepare-release.sh commits and pushes the change, but
+      createChangesets expects to do this. This needs to be fixed before the
+      next minor release. I propose making prepare-release not commit and
+      push. Or even better just get rid of it since its an overengineered
+      wrapper around a single sed call. Then you can also remove the unshallow
+      call.
+    */
     const sets = await createChangesets({
         requiredCommands: [],
         changes: [
@@ -96,7 +121,8 @@ export async function bakeGoogleExecutorsSteps(config: ReleaseConfig): Promise<v
                 owner: 'sourcegraph',
                 base: 'master',
                 head: `release/prepare-${next.version}`,
-                edits: [`./prepare-release.sh ${next.version}`],
+                // prepare-release.sh needs full history to read tags
+                edits: ['git fetch --unshallow', `./prepare-release.sh ${next.version}`],
                 labels: [releaseBlockerLabel],
                 draft: true,
             },
@@ -123,9 +149,4 @@ export function combyReplace(pattern: string, replace: string, path: string): Ed
     pattern = pattern.replaceAll('"', '\\"')
     const sub = pattern.replace(':[1]', replace)
     return `comby -in-place "${pattern}" "${sub}" ${path}`
-}
-
-export function indexerUpdate(): Edit {
-    // eslint-disable-next-line no-template-curly-in-string
-    return 'cd internal/codeintel/autoindexing/internal/inference/libs/ && DOCKER_USER=${CR_USERNAME} DOCKER_PASS=${CR_PASSWORD} ./update-shas.sh'
 }

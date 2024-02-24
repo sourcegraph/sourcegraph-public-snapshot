@@ -6525,7 +6525,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		CountMonitorsFunc: &CodeMonitorStoreCountMonitorsFunc{
-			defaultHook: func(context.Context, *int32) (r0 int32, r1 error) {
+			defaultHook: func(context.Context, database.ListMonitorsOpts) (r0 int32, r1 error) {
 				return
 			},
 		},
@@ -6797,7 +6797,7 @@ func NewStrictMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		CountMonitorsFunc: &CodeMonitorStoreCountMonitorsFunc{
-			defaultHook: func(context.Context, *int32) (int32, error) {
+			defaultHook: func(context.Context, database.ListMonitorsOpts) (int32, error) {
 				panic("unexpected invocation of MockCodeMonitorStore.CountMonitors")
 			},
 		},
@@ -7435,15 +7435,15 @@ func (c CodeMonitorStoreCountActionJobsFuncCall) Results() []interface{} {
 // CountMonitors method of the parent MockCodeMonitorStore instance is
 // invoked.
 type CodeMonitorStoreCountMonitorsFunc struct {
-	defaultHook func(context.Context, *int32) (int32, error)
-	hooks       []func(context.Context, *int32) (int32, error)
+	defaultHook func(context.Context, database.ListMonitorsOpts) (int32, error)
+	hooks       []func(context.Context, database.ListMonitorsOpts) (int32, error)
 	history     []CodeMonitorStoreCountMonitorsFuncCall
 	mutex       sync.Mutex
 }
 
 // CountMonitors delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) CountMonitors(v0 context.Context, v1 *int32) (int32, error) {
+func (m *MockCodeMonitorStore) CountMonitors(v0 context.Context, v1 database.ListMonitorsOpts) (int32, error) {
 	r0, r1 := m.CountMonitorsFunc.nextHook()(v0, v1)
 	m.CountMonitorsFunc.appendCall(CodeMonitorStoreCountMonitorsFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -7452,7 +7452,7 @@ func (m *MockCodeMonitorStore) CountMonitors(v0 context.Context, v1 *int32) (int
 // SetDefaultHook sets function that is called when the CountMonitors method
 // of the parent MockCodeMonitorStore instance is invoked and the hook queue
 // is empty.
-func (f *CodeMonitorStoreCountMonitorsFunc) SetDefaultHook(hook func(context.Context, *int32) (int32, error)) {
+func (f *CodeMonitorStoreCountMonitorsFunc) SetDefaultHook(hook func(context.Context, database.ListMonitorsOpts) (int32, error)) {
 	f.defaultHook = hook
 }
 
@@ -7460,7 +7460,7 @@ func (f *CodeMonitorStoreCountMonitorsFunc) SetDefaultHook(hook func(context.Con
 // CountMonitors method of the parent MockCodeMonitorStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *CodeMonitorStoreCountMonitorsFunc) PushHook(hook func(context.Context, *int32) (int32, error)) {
+func (f *CodeMonitorStoreCountMonitorsFunc) PushHook(hook func(context.Context, database.ListMonitorsOpts) (int32, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -7469,19 +7469,19 @@ func (f *CodeMonitorStoreCountMonitorsFunc) PushHook(hook func(context.Context, 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *CodeMonitorStoreCountMonitorsFunc) SetDefaultReturn(r0 int32, r1 error) {
-	f.SetDefaultHook(func(context.Context, *int32) (int32, error) {
+	f.SetDefaultHook(func(context.Context, database.ListMonitorsOpts) (int32, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *CodeMonitorStoreCountMonitorsFunc) PushReturn(r0 int32, r1 error) {
-	f.PushHook(func(context.Context, *int32) (int32, error) {
+	f.PushHook(func(context.Context, database.ListMonitorsOpts) (int32, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeMonitorStoreCountMonitorsFunc) nextHook() func(context.Context, *int32) (int32, error) {
+func (f *CodeMonitorStoreCountMonitorsFunc) nextHook() func(context.Context, database.ListMonitorsOpts) (int32, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -7520,7 +7520,7 @@ type CodeMonitorStoreCountMonitorsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *int32
+	Arg1 database.ListMonitorsOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int32

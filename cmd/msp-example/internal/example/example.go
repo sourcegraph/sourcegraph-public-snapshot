@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/background"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
@@ -28,13 +29,13 @@ type Service struct{}
 var _ runtime.Service[Config] = Service{}
 
 func (s Service) Name() string    { return "example" }
-func (s Service) Version() string { return "dev" }
+func (s Service) Version() string { return version.Version() }
 func (s Service) Initialize(
 	ctx context.Context,
 	logger log.Logger,
 	contract runtime.Contract,
 	config Config,
-) (background.CombinedRoutine, error) {
+) (background.Routine, error) {
 	logger.Info("starting service")
 
 	if !config.StatelessMode {

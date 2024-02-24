@@ -1,0 +1,39 @@
+---
+source: crates/syntax-analysis/src/lib.rs
+expression: dumped
+---
+  package memo
+//        ^^^^ definition(Package) scip-ctags memo/
+  
+  import "sync"
+  
+  // MemoizedConstructorWithArg wraps a function returning taking a
+  // single argument value and returning a value and an error, memoizing
+  // its result. Multiple calls to Init will result in the underlying
+  // constructor being called once. The arguments to the call will be the
+  // first call to occur. All callers will receive the same return values.
+  type MemoizedConstructorWithArg[A, T any] struct {
+//     ^^^^^^^^^^^^^^^^^^^^^^^^^^ definition(Struct) scip-ctags memo/MemoizedConstructorWithArg#
+   ctor  func(A) (T, error)
+// ^^^^ definition(Field) scip-ctags memo/MemoizedConstructorWithArg#ctor.
+   value T
+// ^^^^^ definition(Field) scip-ctags memo/MemoizedConstructorWithArg#value.
+   err   error
+// ^^^ definition(Field) scip-ctags memo/MemoizedConstructorWithArg#err.
+   once  sync.Once
+// ^^^^ definition(Field) scip-ctags memo/MemoizedConstructorWithArg#once.
+  }
+  
+  // NewMemoizedConstructor memoizes the given constructor
+  func NewMemoizedConstructorWithArg[A, T any](ctor func(A) (T, error)) *MemoizedConstructorWithArg[A, T] {
+//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition(Function) scip-ctags memo/NewMemoizedConstructorWithArg().
+   return &MemoizedConstructorWithArg[A, T]{ctor: ctor}
+  }
+  
+  // Init ensures that the given constructor has been called exactly
+  // once, then returns the constructor's result value and error.
+  func (m *MemoizedConstructorWithArg[A, T]) Init(arg A) (T, error) {
+   m.once.Do(func() { m.value, m.err = m.ctor(arg) })
+   return m.value, m.err
+  }
+

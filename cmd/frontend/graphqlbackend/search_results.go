@@ -224,7 +224,7 @@ func (sf *searchFilterResolver) LimitHit() bool {
 }
 
 func (sf *searchFilterResolver) Kind() string {
-	return sf.filter.Kind
+	return string(sf.filter.Kind)
 }
 
 // blameFileMatch blames the specified file match to produce the time at which
@@ -242,8 +242,10 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 	hm := fm.ChunkMatches[0]
 	hr, err := gitserver.NewClient("graphql.search.results.blame").StreamBlameFile(ctx, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
 		NewestCommit: fm.CommitID,
-		StartLine:    hm.Ranges[0].Start.Line,
-		EndLine:      hm.Ranges[0].Start.Line,
+		Range: &gitserver.BlameRange{
+			StartLine: hm.Ranges[0].Start.Line,
+			EndLine:   hm.Ranges[0].Start.Line,
+		},
 	})
 	if err != nil {
 		return time.Time{}, err

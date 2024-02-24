@@ -37,7 +37,7 @@ func (e *eventWriter) Filters(fs []*streaming.Filter, exhaustive bool) error {
 				Value:      f.Value,
 				Label:      f.Label,
 				Count:      f.Count,
-				Kind:       f.Kind,
+				Kind:       string(f.Kind),
 				Exhaustive: exhaustive,
 			})
 		}

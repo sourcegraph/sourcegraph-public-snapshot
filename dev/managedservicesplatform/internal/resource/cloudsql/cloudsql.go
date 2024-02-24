@@ -64,6 +64,17 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		pointers.Deref(config.Spec.CPU, 1),
 		pointers.Deref(config.Spec.MemoryGB, 4)*1024)
 
+	databaseFlags := []sqldatabaseinstance.SqlDatabaseInstanceSettingsDatabaseFlags{{
+		Name:  pointers.Ptr("cloudsql.iam_authentication"),
+		Value: pointers.Ptr("on"),
+	}}
+	if config.Spec.MaxConnections != nil {
+		databaseFlags = append(databaseFlags, sqldatabaseinstance.SqlDatabaseInstanceSettingsDatabaseFlags{
+			Name:  pointers.Ptr("max_connections"),
+			Value: pointers.Stringf("%d", *config.Spec.MaxConnections),
+		})
+	}
+
 	instance := sqldatabaseinstance.NewSqlDatabaseInstance(scope, id.TerraformID("instance"), &sqldatabaseinstance.SqlDatabaseInstanceConfig{
 		Project: &config.ProjectID,
 		Region:  &config.Region,
@@ -89,10 +100,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			DiskAutoresize:      pointers.Ptr(true),
 			DiskAutoresizeLimit: pointers.Float64(0),
 
-			DatabaseFlags: []sqldatabaseinstance.SqlDatabaseInstanceSettingsDatabaseFlags{{
-				Name:  pointers.Ptr("cloudsql.iam_authentication"),
-				Value: pointers.Ptr("on"),
-			}},
+			DatabaseFlags: databaseFlags,
 
 			// 🚨SECURITY🚨 SOC2/CI-79
 			// Production disks for MSP are configured with daily snapshots and retention set at ninety days,

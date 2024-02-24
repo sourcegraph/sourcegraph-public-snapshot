@@ -18,8 +18,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	githubapp "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/githubappauth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/githubapp"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
@@ -207,11 +207,11 @@ func mockRepoComparison(t *testing.T, gitserverClient *gitserver.MockClient, bas
 		return api.CommitID(spec), nil
 	})
 
-	gitserverClientWithExecReader.MergeBaseFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, a api.CommitID, b api.CommitID) (api.CommitID, error) {
-		if string(a) != baseRev && string(b) != headRev {
+	gitserverClientWithExecReader.MergeBaseFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, a, b string) (api.CommitID, error) {
+		if a != baseRev && b != headRev {
 			t.Fatalf("git.Mocks.MergeBase received unknown commit ids: %s %s", a, b)
 		}
-		return a, nil
+		return api.CommitID(a), nil
 	})
 	*gitserverClient = *gitserverClientWithExecReader
 }

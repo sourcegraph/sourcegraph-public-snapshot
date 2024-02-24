@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/dustin/go-humanize"
@@ -34,8 +33,10 @@ func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWri
 			attribute.Bool("isRegExp", args.IsRegExp),
 			attribute.Bool("isCaseSensitive", args.IsCaseSensitive),
 			attribute.Int("numIncludePatterns", len(args.IncludePatterns)),
-			attribute.String("includePatterns", strings.Join(args.IncludePatterns, ":")),
+			attribute.StringSlice("includePatterns", args.IncludePatterns),
 			attribute.String("excludePattern", args.ExcludePattern),
+			attribute.StringSlice("includeLangs", args.IncludeLangs),
+			attribute.StringSlice("excludeLangs", args.ExcludeLangs),
 			attribute.Int("first", args.First),
 			attribute.Float64("timeoutSeconds", args.Timeout.Seconds()),
 		}})
@@ -62,16 +63,16 @@ func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWri
 			defer cancel()
 			info, err2 := db.GitserverRepos().GetByName(ctx, args.Repo)
 			if err2 != nil {
-				err = errors.New("Processing symbols using the SQLite backend is taking a while. If this repository is ~1GB+, enable [Rockskip](https://docs.sourcegraph.com/code_navigation/explanations/rockskip).")
+				err = errors.New("Processing symbols using the SQLite backend is taking a while. If this repository is ~1GB+, enable [Rockskip](https://sourcegraph.com/docs/code_navigation/explanations/rockskip).")
 				return
 			}
 			size := info.RepoSizeBytes
 
 			help := ""
 			if size > 1_000_000_000 {
-				help = "Enable [Rockskip](https://docs.sourcegraph.com/code_navigation/explanations/rockskip)."
+				help = "Enable [Rockskip](https://sourcegraph.com/docs/code_navigation/explanations/rockskip)."
 			} else if size > 100_000_000 {
-				help = "If this persists, enable [Rockskip](https://docs.sourcegraph.com/code_navigation/explanations/rockskip)."
+				help = "If this persists, enable [Rockskip](https://sourcegraph.com/docs/code_navigation/explanations/rockskip)."
 			} else {
 				help = "If this persists, make sure the symbols service has an SSD, a few GHz of CPU, and a few GB of RAM."
 			}

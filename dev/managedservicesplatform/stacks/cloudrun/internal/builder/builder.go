@@ -7,6 +7,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun/cloudrunresource"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Variables struct {
@@ -30,6 +32,17 @@ type Variables struct {
 	PrivateNetwork *privatenetwork.Output
 	// ResourceLimits is a map of resource limits for the Cloud Run resource.
 	ResourceLimits map[string]*string
+}
+
+// Name returns the name to use for the Cloud Run resource.
+func (v *Variables) Name() (string, error) {
+	name := cloudrunresource.NewName(v.Service.ID, v.Environment.ID, v.GCPRegion)
+	// Extra guard against long names, just in case - an apply to change the
+	// name that fails during apply could cause extended downtime.
+	if len(name) > 63 {
+		return name, errors.Newf("evaluated Cloud Run name %q is too long, maximum length is 63 characters")
+	}
+	return name, nil
 }
 
 type SecretRef struct {

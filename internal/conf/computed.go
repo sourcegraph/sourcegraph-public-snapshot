@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -71,13 +72,22 @@ func AccessTokensAllow() AccessTokenAllow {
 	}
 }
 
+func AccessTokensMaxPerUser() int {
+	defaultValue := 25
+	cfg := Get().AuthAccessTokens
+	if cfg == nil || cfg.MaxTokensPerUser == nil {
+		return defaultValue
+	}
+	return *cfg.MaxTokensPerUser
+}
+
 // AccessTokensAllowNoExpiration returns whether access tokens can be created without expiration.
 func AccessTokensAllowNoExpiration() bool {
 	cfg := Get().AuthAccessTokens
-	if cfg == nil {
-		return false
+	if cfg == nil || cfg.AllowNoExpiration == nil {
+		return true
 	}
-	return cfg.AllowNoExpiration
+	return *cfg.AllowNoExpiration
 }
 
 // AccessTokensExpirationOptions returns the default access token expiration days
@@ -397,14 +407,6 @@ func EventLoggingEnabled() bool {
 	val := ExperimentalFeatures().EventLogging
 	if val == "" {
 		return true
-	}
-	return val == "enabled"
-}
-
-func StructuralSearchEnabled() bool {
-	val := ExperimentalFeatures().StructuralSearch
-	if val == "" {
-		return false
 	}
 	return val == "enabled"
 }
@@ -886,6 +888,23 @@ func GetConfigFeatures(siteConfig schema.SiteConfiguration) (c *conftypes.Config
 	return computedConfig
 }
 
+func GetAttributionGateway(siteConfig schema.SiteConfiguration) (string, string) {
+	if !codyEnabled(siteConfig) {
+		return "", ""
+	}
+	// Explicit attribution gateway config overrides autocomplete config (if used).
+	if g := siteConfig.AttributionGateway; g != nil {
+		return g.Endpoint, getSourcegraphProviderAccessToken(g.AccessToken, siteConfig)
+	}
+	// Fall back to autocomplete config if no explicit gateway config.
+	cc := GetCompletionsConfig(siteConfig)
+	ccUsingGateway := cc != nil && cc.Provider == conftypes.CompletionsProviderNameSourcegraph
+	if ccUsingGateway {
+		return cc.Endpoint, getSourcegraphProviderAccessToken(cc.AccessToken, siteConfig)
+	}
+	return "", ""
+}
+
 const embeddingsMaxFileSizeBytes = 1000000
 
 // GetEmbeddingsConfig evaluates a complete embeddings configuration based on
@@ -893,6 +912,11 @@ const embeddingsMaxFileSizeBytes = 1000000
 func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.EmbeddingsConfig {
 	// If cody is disabled, don't use embeddings.
 	if !codyEnabled(siteConfig) {
+		return nil
+	}
+
+	// Only allow embeddings on dotcom
+	if !envvar.SourcegraphDotComMode() {
 		return nil
 	}
 
@@ -1171,7 +1195,7 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 	case conftypes.CompletionsProviderNameAzureOpenAI:
 		// We cannot know based on the model name what model is actually used,
 		// this is a sane default for GPT in general.
-		return 7_500
+		return 7_000
 	case conftypes.CompletionsProviderNameAWSBedrock:
 		if strings.HasPrefix(model, "anthropic.") {
 			return anthropicDefaultMaxPromptTokens(strings.TrimPrefix(model, "anthropic."))
@@ -1201,7 +1225,7 @@ func anthropicDefaultMaxPromptTokens(model string) int {
 func openaiDefaultMaxPromptTokens(model string) int {
 	switch model {
 	case "gpt-4":
-		return 7_500
+		return 7_000
 	case "gpt-4-32k":
 		return 32_000
 	case "gpt-3.5-turbo", "gpt-3.5-turbo-instruct", "gpt-4-1106-preview":
@@ -1225,4 +1249,26 @@ func fireworksDefaultMaxPromptTokens(model string) int {
 	}
 
 	return 4_000
+}
+
+// RepoListUpdateInterval returns the repository list update interval.
+//
+// If the RepoListUpdateInterval site configuration setting is 0, it defaults to 1 minute.
+func RepoListUpdateInterval() time.Duration {
+	v := Get().RepoListUpdateInterval
+	if v == 0 { //  default to 1 minute
+		v = 1
+	}
+	return time.Duration(v) * time.Minute
+}
+
+// RepoConcurrentExternalServiceSyncers returns the number of concurrent external service syncers.
+//
+// If the RepoConcurrentExternalServiceSyncers site configuration setting is 0, it defaults to 3.
+func RepoConcurrentExternalServiceSyncers() int {
+	v := Get().RepoConcurrentExternalServiceSyncers
+	if v <= 0 {
+		return 3
+	}
+	return v
 }

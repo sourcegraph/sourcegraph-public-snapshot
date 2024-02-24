@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"syscall"
 
 	"github.com/sourcegraph/log"
@@ -43,15 +42,6 @@ type GitCommand interface {
 	// ExitStatus returns exit status of the command
 	ExitStatus() int
 
-	// SetEnsureRevision sets the revision which should be ensured when the command is ran
-	SetEnsureRevision(r string)
-
-	// EnsureRevision returns ensureRevision parameter of the command
-	EnsureRevision() string
-
-	// SetStdin will write b to stdin when running the command.
-	SetStdin(b []byte)
-
 	// String returns string representation of the command (in fact prints args parameter of the command)
 	String() string
 
@@ -71,12 +61,10 @@ type LocalGitCommand struct {
 	// ReposDir is needed in order to LocalGitCommand be used like RemoteGitCommand (providing only repo name without its full path)
 	// Unlike RemoteGitCommand, which is run against server who knows the directory where repos are located, LocalGitCommand is
 	// run locally, therefore the knowledge about repos location should be provided explicitly by setting this field
-	ReposDir       string
-	repo           api.RepoName
-	ensureRevision string
-	args           []string
-	stdin          []byte
-	exitStatus     int
+	ReposDir   string
+	repo       api.RepoName
+	args       []string
+	exitStatus int
 }
 
 func NewLocalGitCommand(repo api.RepoName, arg ...string) *LocalGitCommand {
@@ -100,7 +88,6 @@ func (l *LocalGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, er
 	var stdoutBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
-	cmd.Stdin = bytes.NewReader(l.stdin)
 
 	dir := protocol.NormalizeRepo(l.Repo())
 	repoPath := filepath.Join(l.ReposDir, filepath.FromSlash(string(dir)))
@@ -118,11 +105,6 @@ func (l *LocalGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, er
 		exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	}
 	l.exitStatus = exitStatus
-
-	// We want to treat actions on files that don't exist as an os.ErrNotExist
-	if err != nil && strings.Contains(stderrBuf.String(), "does not exist in") {
-		err = os.ErrNotExist
-	}
 
 	return stdoutBuf.Bytes(), bytes.TrimSpace(stderrBuf.Bytes()), err
 }
@@ -147,12 +129,6 @@ func (l *LocalGitCommand) Args() []string { return l.args }
 
 func (l *LocalGitCommand) ExitStatus() int { return l.exitStatus }
 
-func (l *LocalGitCommand) SetEnsureRevision(r string) { l.ensureRevision = r }
-
-func (l *LocalGitCommand) EnsureRevision() string { return l.ensureRevision }
-
-func (l *LocalGitCommand) SetStdin(b []byte) { l.stdin = b }
-
 func (l *LocalGitCommand) StdoutReader(ctx context.Context) (io.ReadCloser, error) {
 	output, err := l.Output(ctx)
 	return io.NopCloser(bytes.NewReader(output)), err
@@ -162,15 +138,13 @@ func (l *LocalGitCommand) String() string { return fmt.Sprintf("%q", l.Args()) }
 
 // RemoteGitCommand represents a command to be executed remotely.
 type RemoteGitCommand struct {
-	repo           api.RepoName // the repository to execute the command in
-	ensureRevision string
-	args           []string
-	stdin          []byte
-	noTimeout      bool
-	exitStatus     int
-	execer         execer
-	execOp         *observation.Operation
-	scope          string
+	repo       api.RepoName // the repository to execute the command in
+	args       []string
+	noTimeout  bool
+	exitStatus int
+	execer     execer
+	execOp     *observation.Operation
+	scope      string
 }
 
 type execer interface {
@@ -232,12 +206,6 @@ func (c *RemoteGitCommand) Repo() api.RepoName { return c.repo }
 func (c *RemoteGitCommand) Args() []string { return c.args }
 
 func (c *RemoteGitCommand) ExitStatus() int { return c.exitStatus }
-
-func (c *RemoteGitCommand) SetEnsureRevision(r string) { c.ensureRevision = r }
-
-func (c *RemoteGitCommand) EnsureRevision() string { return c.ensureRevision }
-
-func (c *RemoteGitCommand) SetStdin(b []byte) { c.stdin = b }
 
 func (c *RemoteGitCommand) String() string { return fmt.Sprintf("%q", c.args) }
 

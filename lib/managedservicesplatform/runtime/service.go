@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/background"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/internal/opentelemetry"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type ServiceMetadata interface {
@@ -20,13 +19,14 @@ type ServiceMetadata interface {
 type Service[ConfigT any] interface {
 	ServiceMetadata
 	// Initialize should use given configuration to build a combined background
-	// routine that implements starting and stopping the service.
+	// routine (such as background.CombinedRoutine or background.LIFOStopRoutine)
+	// that implements starting and stopping the service.
 	Initialize(
 		ctx context.Context,
 		logger log.Logger,
 		contract Contract,
 		config ConfigT,
-	) (background.CombinedRoutine, error)
+	) (background.Routine, error)
 }
 
 // Start handles the entire lifecycle of the program running Service, and should
@@ -79,7 +79,7 @@ func Start[
 				Sentry: &log.SentrySink{
 					ClientOptions: sentry.ClientOptions{
 						Dsn:         *contract.internal.sentryDSN,
-						Environment: pointers.Deref(contract.internal.environmentID, "unspecified"),
+						Environment: contract.EnvironmentID,
 					},
 				},
 			}

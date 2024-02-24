@@ -12,6 +12,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/guardrails"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -34,8 +36,8 @@ import (
 )
 
 // maxRequestDuration is the maximum amount of time a request can take before
-// being cancelled.
-const maxRequestDuration = time.Minute
+// being cancelled as DeadlineExceeded.
+const maxRequestDuration = 2 * time.Minute
 
 var timeToFirstEventMetrics = metrics.NewREDMetrics(
 	prometheus.DefaultRegisterer,
@@ -50,12 +52,13 @@ func newCompletionsHandler(
 	userStore database.UserStore,
 	accessTokenStore database.AccessTokenStore,
 	events *telemetry.EventRecorder,
+	test guardrails.AttributionTest,
 	feature types.CompletionsFeature,
 	rl RateLimiter,
 	traceFamily string,
 	getModel func(context.Context, types.CodyCompletionRequestParameters, *conftypes.CompletionsConfig) (string, error),
 ) http.Handler {
-	responseHandler := newSwitchingResponseHandler(logger, feature)
+	responseHandler := newSwitchingResponseHandler(logger, db, feature)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
@@ -66,14 +69,15 @@ func newCompletionsHandler(
 		ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
 		defer cancel()
 
-		if isEnabled := cody.IsCodyEnabled(ctx, db); !isEnabled {
-			http.Error(w, "cody experimental feature flag is not enabled for current user", http.StatusUnauthorized)
+		if isEnabled, reason := cody.IsCodyEnabled(ctx, db); !isEnabled {
+			http.Error(w, fmt.Sprintf("cody is not enabled: %s", reason), http.StatusUnauthorized)
 			return
 		}
 
 		completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 		if completionsConfig == nil {
 			http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
+			return
 		}
 
 		var requestParams types.CodyCompletionRequestParameters
@@ -159,8 +163,14 @@ func newCompletionsHandler(
 						http.Error(w, "Internal server error", http.StatusInternalServerError)
 						return
 					}
-					isProUser := user.CodyProEnabledAt != nil
-					respondRateLimited(w, unwrap, isDotcom, isProUser)
+					subscription, err := cody.SubscriptionForUser(ctx, db, *user)
+					if err != nil {
+						l.Error("Error while fetching user's cody subscription", log.Error(err))
+						http.Error(w, "Internal server error", http.StatusInternalServerError)
+						return
+					}
+
+					respondRateLimited(w, unwrap, isDotcom, subscription.ApplyProRateLimits)
 					return
 				}
 				l.Warn("Rate limit error", log.Error(err))
@@ -169,7 +179,7 @@ func newCompletionsHandler(
 			}
 		}
 
-		responseHandler(ctx, requestParams.CompletionRequestParameters, completionClient, w, userStore)
+		responseHandler(ctx, requestParams.CompletionRequestParameters, completionClient, w, userStore, test)
 	})
 }
 
@@ -190,14 +200,14 @@ func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError, isDot
 
 // newSwitchingResponseHandler handles requests to an LLM provider, and wraps the correct
 // handler based on the requestParams.Stream flag.
-func newSwitchingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
-	nonStreamer := newNonStreamingResponseHandler(logger, feature)
-	streamer := newStreamingResponseHandler(logger, feature)
-	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore,
-	) {
+func newSwitchingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
+	nonStreamer := newNonStreamingResponseHandler(logger, db, feature)
+	streamer := newStreamingResponseHandler(logger, db, feature)
+	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
 		if requestParams.IsStream(feature) {
-			streamer(ctx, requestParams, cc, w, userStore)
+			streamer(ctx, requestParams, cc, w, userStore, test)
 		} else {
+			// TODO(#59832): Add attribution to non-streaming endpoint.
 			nonStreamer(ctx, requestParams, cc, w, userStore)
 		}
 	}
@@ -205,8 +215,8 @@ func newSwitchingResponseHandler(logger log.Logger, feature types.CompletionsFea
 
 // newStreamingResponseHandler handles streaming requests to an LLM provider,
 // It writes events to an SSE stream as they come in.
-func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
-	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
+func newStreamingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
+	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
 		var eventWriter = sync.OnceValue[*streamhttp.Writer](func() *streamhttp.Writer {
 			eventWriter, err := streamhttp.NewWriter(w)
 			if err != nil {
@@ -216,26 +226,58 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 			return eventWriter
 		})
 
+		// Isolate writing events.
+		var mu sync.Mutex
+		writeEvent := func(name string, data any) error {
+			mu.Lock()
+			defer mu.Unlock()
+			if ev := eventWriter(); ev != nil {
+				return ev.Event(name, data)
+			}
+			return nil
+		}
+
 		// Always send a final done event so clients know the stream is shutting down.
 		firstEventObserved := false
 		defer func() {
 			if firstEventObserved {
-				if ev := eventWriter(); ev != nil {
-					_ = ev.Event("done", map[string]any{})
-				}
+				_ = writeEvent("done", map[string]any{})
 			}
 		}()
 		start := time.Now()
+		eventSink := func(e types.CompletionResponse) error {
+			return writeEvent("completion", e)
+		}
+		attributionErrorLog := func(err error) {
+			l := trace.Logger(ctx, logger)
+			if err := writeEvent("attribution-error", map[string]string{"error": err.Error()}); err != nil {
+				l.Error("error reporting attribution error", log.Error(err))
+			} else {
+				return
+			}
+			l.Error("attribution error", log.Error(err))
+		}
+		f := guardrails.NoopCompletionsFilter(eventSink)
+		if cf := conf.GetConfigFeatures(conf.SiteConfig()); cf != nil && cf.Attribution &&
+			featureflag.FromContext(ctx).GetBoolOr("autocomplete-attribution", true) {
+			ff, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
+				Sink:             eventSink,
+				Test:             test,
+				AttributionError: attributionErrorLog,
+			})
+			if err != nil {
+				attributionErrorLog(err)
+			} else {
+				f = ff
+			}
+		}
 		err := cc.Stream(ctx, feature, requestParams,
 			func(event types.CompletionResponse) error {
 				if !firstEventObserved {
 					firstEventObserved = true
 					timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, nil, requestParams.Model)
 				}
-				if ev := eventWriter(); ev != nil {
-					return ev.Event("completion", event)
-				}
-				return nil
+				return f.Send(ctx, event)
 			})
 		if err != nil {
 			l := trace.Logger(ctx, logger)
@@ -250,10 +292,17 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 						http.Error(w, "Internal server error", http.StatusInternalServerError)
 						return
 					}
-					isProUser := user.CodyProEnabledAt != nil
+
+					subscription, err := cody.SubscriptionForUser(ctx, db, *user)
+					if err != nil {
+						l.Error("Error while fetching user's cody subscription", log.Error(err))
+						http.Error(w, "Internal server error", http.StatusInternalServerError)
+						return
+					}
+
 					isDotcom := envvar.SourcegraphDotComMode()
 					if isDotcom {
-						if isProUser {
+						if subscription.ApplyProRateLimits {
 							w.Header().Set("x-is-cody-pro-user", "true")
 						} else {
 							w.Header().Set("x-is-cody-pro-user", "false")
@@ -279,12 +328,18 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 				firstEventObserved = true
 				timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, nil, requestParams.Model)
 			}
-			if ev := eventWriter(); ev != nil {
-				if err := ev.Event("error", map[string]string{"error": err.Error()}); err != nil {
+			if err := writeEvent("error", map[string]string{"error": err.Error()}); err != nil {
+				l.Error("error reporting streaming completion error", log.Error(err))
+			}
+			return
+		}
+		if f != nil { // if autocomplete-attribution enabled
+			if err := f.WaitDone(ctx); err != nil {
+				l := trace.Logger(ctx, logger)
+				if err := writeEvent("error", map[string]string{"error": err.Error()}); err != nil {
 					l.Error("error reporting streaming completion error", log.Error(err))
 				}
 			}
-			return
 		}
 	}
 }
@@ -292,7 +347,7 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 // newNonStreamingResponseHandler handles non-streaming requests to an LLM provider,
 // awaiting the complete response before writing it back in a structured JSON response
 // to the client.
-func newNonStreamingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
+func newNonStreamingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
 	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
 		completion, err := cc.Complete(ctx, feature, requestParams)
 		if err != nil {
@@ -310,10 +365,16 @@ func newNonStreamingResponseHandler(logger log.Logger, feature types.Completions
 						http.Error(w, "Internal server error", http.StatusInternalServerError)
 						return
 					}
-					isProUser := user.CodyProEnabledAt != nil
+					subscription, err := cody.SubscriptionForUser(ctx, db, *user)
+					if err != nil {
+						logger.Error("Error while fetching user's cody subscription", log.Error(err))
+						http.Error(w, "Internal server error", http.StatusInternalServerError)
+						return
+					}
+
 					isDotcom := envvar.SourcegraphDotComMode()
 					if isDotcom {
-						if isProUser {
+						if subscription.ApplyProRateLimits {
 							w.Header().Set("x-is-cody-pro-user", "true")
 						} else {
 							w.Header().Set("x-is-cody-pro-user", "false")

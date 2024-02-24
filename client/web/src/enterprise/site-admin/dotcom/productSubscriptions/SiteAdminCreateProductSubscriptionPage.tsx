@@ -7,7 +7,7 @@ import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
 
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Button, useEventObservable, Link, Alert, Icon, H2, Form } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, Link, Alert, Icon, Form, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../../auth'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
@@ -27,6 +27,7 @@ interface UserCreateSubscriptionNodeProps {
      * The user to display in this list item.
      */
     node: ProductSubscriptionAccountFields
+    authenticatedUser: AuthenticatedUser
 }
 
 const createProductSubscription = (
@@ -38,6 +39,7 @@ const createProductSubscription = (
                 dotcom {
                     createProductSubscription(accountID: $accountID) {
                         urlForSiteAdmin
+                        uuid
                     }
                 }
             }
@@ -85,10 +87,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildre
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
-                        <Link to={`/users/${props.node.username}`}>{props.node.username}</Link>{' '}
-                        <span className="text-muted">
-                            ({props.node.emails.filter(({ isPrimary }) => isPrimary).map(({ email }) => email)})
-                        </span>
+                        <Link to={`/users/${props.node.username}`}>{props.node.username}</Link>
                     </div>
                     <div>
                         <Form onSubmit={onSubmit}>
@@ -133,16 +132,18 @@ export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<
     return (
         <div className="site-admin-create-product-subscription-page">
             <PageTitle title="Create product subscription" />
-            <H2>Create product subscription</H2>
-            <FilteredConnection<ProductSubscriptionAccountFields, {}>
-                {...props}
-                className="list-group list-group-flush mt-3"
-                noun="user"
-                pluralNoun="users"
-                queryConnection={queryAccounts}
-                nodeComponent={UserCreateSubscriptionNode}
-                nodeComponentProps={props}
-            />
+            <PageHeader headingElement="h2" path={[{ text: 'Create product subscription' }]} className="mb-2" />
+            <Container className="mb-3">
+                <FilteredConnection<ProductSubscriptionAccountFields, Props>
+                    {...props}
+                    className="list-group list-group-flush"
+                    noun="user"
+                    pluralNoun="users"
+                    queryConnection={queryAccounts}
+                    nodeComponent={UserCreateSubscriptionNode}
+                    nodeComponentProps={props}
+                />
+            </Container>
         </div>
     )
 }
@@ -166,11 +167,6 @@ function queryAccounts(
             fragment ProductSubscriptionAccountFields on User {
                 id
                 username
-                emails {
-                    email
-                    verified
-                    isPrimary
-                }
             }
         `,
         args

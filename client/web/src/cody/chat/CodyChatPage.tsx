@@ -156,6 +156,8 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
         )
     }
 
+    const codyDashboardLink = isSourcegraphDotCom ? '/cody/manage' : '/cody'
+
     return (
         <Page className={classNames('d-flex flex-column', styles.page)}>
             <PageTitle title="Cody chat" />
@@ -216,7 +218,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                             <Badge variant="info" className="ml-2">
                                 Experimental
                             </Badge>
-                            <Link to="/cody/manage">
+                            <Link to={codyDashboardLink}>
                                 <Text className="mb-0 ml-2" size="small">
                                     Manage
                                 </Text>
@@ -281,7 +283,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                             </Text>
                             <div className="mb-2">
                                 <Link
-                                    to="/get-cody"
+                                    to="/cody/manage"
                                     className={classNames(
                                         'd-inline-flex align-items-center text-merged',
                                         styles.ctaLink

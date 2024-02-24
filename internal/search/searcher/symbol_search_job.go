@@ -97,7 +97,7 @@ func searchInRepo(ctx context.Context, gitserverClient gitserver.Client, repoRev
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commitID, err := gitserverClient.ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, gitserver.ResolveRevisionOptions{})
+	commitID, err := gitserverClient.ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		return nil, err
 	}
@@ -111,6 +111,8 @@ func searchInRepo(ctx context.Context, gitserverClient gitserver.Client, repoRev
 		IsRegExp:        true,
 		IncludePatterns: request.IncludePatterns,
 		ExcludePattern:  request.ExcludePattern,
+		IncludeLangs:    request.IncludeLangs,
+		ExcludeLangs:    request.ExcludeLangs,
 		// Ask for limit + 1 so we can detect whether there are more results than the limit.
 		First: limit + 1,
 	})
@@ -175,6 +177,8 @@ type SymbolSearchRequest struct {
 	IsCaseSensitive bool
 	IncludePatterns []string
 	ExcludePattern  string
+	IncludeLangs    []string
+	ExcludeLangs    []string
 }
 
 func (r *SymbolSearchRequest) Fields() []attribute.KeyValue {
@@ -193,6 +197,12 @@ func (r *SymbolSearchRequest) Fields() []attribute.KeyValue {
 	}
 	if r.ExcludePattern != "" {
 		add(attribute.String("excludePattern", r.ExcludePattern))
+	}
+	if len(r.IncludeLangs) > 0 {
+		add(attribute.StringSlice("includeLangs", r.IncludeLangs))
+	}
+	if len(r.ExcludeLangs) > 0 {
+		add(attribute.StringSlice("excludeLangs", r.ExcludeLangs))
 	}
 	return res
 }

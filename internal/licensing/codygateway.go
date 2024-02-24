@@ -1,7 +1,7 @@
 package licensing
 
 import (
-	"golang.org/x/exp/slices"
+	"slices"
 )
 
 // CodyGatewayRateLimit indicates rate limits for Sourcegraph's managed Cody Gateway service.
@@ -91,7 +91,7 @@ func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string
 	default:
 		return CodyGatewayRateLimit{
 			AllowedModels:   models,
-			Limit:           int64(100 * uc),
+			Limit:           int64(1000 * uc),
 			IntervalSeconds: 60 * 60 * 24, // day
 		}
 	}

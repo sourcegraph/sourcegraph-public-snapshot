@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 
 	"github.com/sourcegraph/log"
 
@@ -17,6 +18,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 )
+
+// chatAttributionTest always returns true, as chat attribution
+// is performed on the client side (as opposed to code completions)
+// which works on the server side.
+func chatAttributionTest(context.Context, string) (bool, error) {
+	return true, nil
+}
 
 // NewChatCompletionsStreamHandler is an http handler which streams back completions results.
 func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Handler {
@@ -29,6 +37,7 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 		db.Users(),
 		db.AccessTokens(),
 		telemetryrecorder.New(db),
+		chatAttributionTest,
 		types.CompletionsFeatureChat,
 		rl,
 		"chat",
@@ -40,8 +49,13 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 				if err != nil {
 					return "", err
 				}
-				isProUser := user.CodyProEnabledAt != nil
-				if isAllowedCustomChatModel(requestParams.Model, isProUser) {
+
+				subscription, err := cody.SubscriptionForUser(ctx, db, *user)
+				if err != nil {
+					return "", err
+				}
+
+				if isAllowedCustomChatModel(requestParams.Model, subscription.ApplyProRateLimits) {
 					return requestParams.Model, nil
 				}
 			}

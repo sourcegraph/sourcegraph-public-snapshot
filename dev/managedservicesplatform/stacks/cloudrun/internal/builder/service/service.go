@@ -98,13 +98,55 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 		vars.Environment.Instances.Scaling = &spec.EnvironmentInstancesScalingSpec{}
 	}
 
+	var executionEnvironment *string
+	if generation := vars.Environment.Instances.Resources.CloudRunGeneration; generation != nil {
+		switch *generation {
+		case 1:
+			executionEnvironment = pointers.Ptr("EXECUTION_ENVIRONMENT_GEN1")
+		case 2:
+			executionEnvironment = pointers.Ptr("EXECUTION_ENVIRONMENT_GEN2")
+		}
+	}
+
+	var lifecycle *cdktf.TerraformResourceLifecycle
+	if vars.Environment.Deploy.Type == spec.EnvironmentDeployTypeRollout {
+		lifecycle = &cdktf.TerraformResourceLifecycle{
+			IgnoreChanges: &[]*string{
+				// This will be managed by Cloud Deploy releases issued by
+				// the service owner, e.g. via their CI.
+				pointers.Ptr("template[0].containers[0].image"),
+				// These will be set when a revision is created via our Cloud
+				// Deploy custom target when a release is deployed.
+				pointers.Ptr("client"),
+				pointers.Ptr("client_version"),
+			},
+		}
+	}
+
+	name, err := vars.Name()
+	if err != nil {
+		return nil, err
+	}
 	svc := cloudrunv2service.NewCloudRunV2Service(stack, pointers.Ptr("cloudrun"), &cloudrunv2service.CloudRunV2ServiceConfig{
-		Name:      pointers.Ptr(vars.Service.ID),
+		Name:      pointers.Ptr(name),
 		Location:  pointers.Ptr(vars.GCPRegion),
 		DependsOn: &b.dependencies,
+		Lifecycle: lifecycle,
 
 		//  Disallows direct traffic from public internet, we have a LB set up for that.
 		Ingress: pointers.Ptr("INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"),
+
+		// Send all traffic to the latest revison.
+		// This is needed to override changes to traffic configuration from the UI. Otherwise,
+		// it's possible that traffic will always be routed to a stale revision after new deployment.
+		//
+		// https://cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration#send-to-latest
+		Traffic: []*cloudrunv2service.CloudRunV2ServiceTraffic{
+			{
+				Percent: pointers.Float64(100),
+				Type:    pointers.Ptr("TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"),
+			},
+		},
 
 		Template: &cloudrunv2service.CloudRunV2ServiceTemplate{
 			// Act under our provisioned service account
@@ -140,6 +182,7 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 				MaxInstanceCount: pointers.Float64(
 					pointers.Deref(vars.Environment.Instances.Scaling.MaxCount, builder.DefaultMaxInstances)),
 			},
+			ExecutionEnvironment: executionEnvironment,
 
 			// Configuration for the single service container.
 			Containers: []*cloudrunv2service.CloudRunV2ServiceTemplateContainers{{
@@ -260,10 +303,13 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 
 		// Create load-balancer pointing to Cloud Run service
 		lb, err := loadbalancer.New(stack, resourceid.New("loadbalancer"), loadbalancer.Config{
-			ProjectID:      vars.GCPProjectID,
-			Region:         vars.GCPRegion,
-			TargetService:  svc,
-			SSLCertificate: sslCertificate,
+			ProjectID:         vars.GCPProjectID,
+			Region:            vars.GCPRegion,
+			TargetService:     svc,
+			SSLCertificate:    sslCertificate,
+			CloudflareProxied: domain.Cloudflare.ShouldProxy(),
+			Production:        vars.Environment.Category.IsProduction(),
+			EnableLogging:     pointers.DerefZero(pointers.DerefZero(domain.Networking).LoadBalancerLogging),
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "loadbalancer.New")

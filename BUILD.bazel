@@ -23,7 +23,7 @@ load("@buildifier_prebuilt//:rules.bzl", "buildifier")
 # gazelle:js_npm_package_target_name {dirname}_pkg
 
 # Enable: Aspect javascript, standard go
-# gazelle:lang js,go,proto
+# gazelle:lang js,go,proto,gomockgen
 
 # Enable race detection for all go_test rules.
 # gazelle:map_kind go_test go_test //dev:go_defs.bzl
@@ -205,29 +205,30 @@ buildifier(
 # Go
 
 gazelle_binary(
-    name = "gazelle-buf",
+    name = "gazelle-bin",
     languages = [
         # Loads the native proto extension
         "@bazel_gazelle//language/proto:go_default_library",
         # Gazelle-buf does not include the Go plugin by default, so we have to add it
         # ourselves.
         "@bazel_gazelle//language/go:go_default_library",
+        "//dev/go-mockgen-gazelle:go-mockgen-gazelle",
+        # Bundled with aspect-cli, but we're missing out on buf that way
+        "@aspect_cli//gazelle/js:js",
         # Loads the Buf extension
-        "@rules_buf//gazelle/buf:buf",
         # NOTE: This needs to be loaded after the proto language
+        "@rules_buf//gazelle/buf:buf",
     ],
 )
 
 gazelle(
     name = "gazelle",
-    gazelle = ":gazelle-buf",
+    gazelle = ":gazelle-bin",
 )
 
 sh_binary(
     name = "configure",
     srcs = ["//dev/ci:bazel-configure.sh"],
-    data = ["@go_sdk//:bin/go"],
-    env = {"GO": "$(rootpath @go_sdk//:bin/go)"},
 )
 
 go_library(
@@ -265,24 +266,6 @@ go_proto_compiler(
         "@org_golang_google_grpc//codes:go_default_library",
         "@org_golang_google_grpc//status:go_default_library",
     ],
-)
-
-# darwin_docker config
-#
-# To be able to run e2e tests locally, we need to simultaneously be able to build linux/amd64 container images
-# and to build go test runners targeting the local machine architecture and OS. Unless you're working on a linux machine
-# these two won't be the same. So we use this flag to indicate that this particular runner should target darwin/arm64 if we see
-# that we have this build setting enabled.
-#
-# This is part of the `--config darwin-docker` configuration alias, that you can find in .bazelrc.
-bool_flag(
-    name = "darwin_docker",
-    build_setting_default = False,
-)
-
-config_setting(
-    name = "darwin_docker_e2e_go",
-    flag_values = {":darwin_docker": "true"},
 )
 
 # nogo config
@@ -333,7 +316,7 @@ exports_files([
     # under certain conditions. See //ui/assets/...
     "CONTRIBUTING.md",
     ".swcrc",
-])
+] + glob(["mockgen*.yaml"]))
 
 # sg msp settings
 

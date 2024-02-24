@@ -1,25 +1,29 @@
-import type { PageLoad } from './$types'
-import { GitBranchesQuery } from './page.gql'
+import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
+import { parseRepoRevision } from '$lib/shared'
 
-export const load: PageLoad = async ({ parent }) => {
-    const { resolvedRevision, graphqlClient } = await parent()
+import type { PageLoad } from './$types'
+import { AllBranchesPage_BranchesQuery } from './page.gql'
+
+export const load: PageLoad = ({ params }) => {
+    const client = getGraphQLClient()
+    const { repoName } = parseRepoRevision(params.repo)
+
     return {
-        deferred: {
-            branches: graphqlClient
-                .query({
-                    query: GitBranchesQuery,
-                    variables: {
-                        repo: resolvedRevision.repo.id,
-                        first: 20,
-                        withBehindAhead: true,
-                    },
-                })
-                .then(result => {
-                    if (result.data.node?.__typename !== 'Repository') {
+        branches: client
+            .query(AllBranchesPage_BranchesQuery, {
+                repoName,
+                first: 20,
+                withBehindAhead: true,
+            })
+            .then(
+                mapOrThrow(result => {
+                    if (!result.data?.repository) {
+                        // This page will never render when the repository is not found.
+                        // The (validrev) data loader will render an error page instead.
                         throw new Error('Expected Repository')
                     }
-                    return result.data.node.branches
-                }),
-        },
+                    return result.data.repository.branches
+                })
+            ),
     }
 }

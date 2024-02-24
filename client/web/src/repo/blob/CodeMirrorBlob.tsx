@@ -28,7 +28,7 @@ import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     parseQueryAndHash,
     toPrettyBlobURL,
@@ -62,6 +62,7 @@ import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-
 import { scipSnapshot } from './codemirror/scip-snapshot'
 import { search, type SearchPanelConfig } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
+import { staticHighlights, type Range } from './codemirror/static-highlights'
 import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
 import { HovercardView } from './codemirror/tooltips/HovercardView'
 import { showTemporaryTooltip, temporaryTooltip } from './codemirror/tooltips/TemporaryTooltip'
@@ -95,6 +96,7 @@ export interface BlobProps
         ExtensionsControllerProps,
         CodeMirrorBlobProps {
     className: string
+
     wrapCode: boolean
     /** The current text document to be rendered and provided to extensions */
     blobInfo: BlobInfo
@@ -119,6 +121,7 @@ export interface BlobProps
 
     activeURL?: string
     searchPanelConfig?: SearchPanelConfig
+    staticHighlightRanges?: Range[]
 }
 
 export interface BlobPropsFacet extends BlobProps {
@@ -219,11 +222,13 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 
         overrideBrowserSearchKeybinding,
         searchPanelConfig,
+        staticHighlightRanges,
         'data-testid': dataTestId,
     } = props
 
     const navigate = useNavigate()
     const location = useLocation()
+    const isLightTheme = useIsLightTheme()
 
     const [enableBlobPageSwitchAreasShortcuts] = useFeatureFlag('blob-page-switch-areas-shortcuts')
     const focusCodeEditorShortcut = useKeyboardShortcut('focusCodeEditor')
@@ -332,6 +337,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             repoName: blobInfo.repoName,
             filePath: blobInfo.filePath,
             commitID: blobInfo.commitID,
+            revision: blobInfo.revision,
             languages: blobInfo.languages,
         },
         blobInfo.mode
@@ -347,11 +353,15 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         Boolean(ocgVisibility)
     )
 
-    const { theme } = useTheme()
+    const themeExtension = useCompartment(
+        editorRef,
+        useMemo(() => EditorView.darkTheme.of(!isLightTheme), [isLightTheme])
+    )
 
     const extensions = useMemo(
         () => [
             staticExtensions,
+            staticHighlights(navigate, staticHighlightRanges ?? []),
             selectableLineNumbers({
                 onSelection,
                 initialSelection: position.line !== undefined ? position : null,
@@ -395,7 +405,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 initialState: searchPanelConfig,
                 navigate,
             }),
-            EditorView.theme({}, { dark: theme === Theme.Dark }),
+            themeExtension,
         ],
         // A couple of values are not dependencies (hasPin and position) because those are updated in effects
         // further below. However, they are still needed here because we need to
@@ -403,6 +413,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [
             onSelection,
+            staticHighlightRanges,
             navigate,
             blobInfo,
             extensionsController,
@@ -414,6 +425,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             wrapCodeSettings,
             blobProps,
             pinnedTooltip,
+            themeExtension,
         ]
     )
 
@@ -549,7 +561,7 @@ function useCodeIntelExtension(
         commitID,
         revision,
         languages,
-    }: { repoName: string; filePath: string; commitID: string; revision?: string; languages: string[] },
+    }: { repoName: string; filePath: string; commitID: string; revision: string; languages: string[] },
     mode: string
 ): Extension {
     const navigate = useNavigate()

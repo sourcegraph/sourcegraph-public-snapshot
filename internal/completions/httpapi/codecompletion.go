@@ -10,13 +10,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/guardrails"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewCodeCompletionsHandler is an http handler which sends back code completion results.
-func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
+func NewCodeCompletionsHandler(logger log.Logger, db database.DB, test guardrails.AttributionTest) http.Handler {
 	logger = logger.Scoped("code")
 	rl := NewRateLimiter(db, redispool.Store, types.CompletionsFeatureCode)
 	return newCompletionsHandler(
@@ -25,6 +26,7 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 		db.Users(),
 		db.AccessTokens(),
 		telemetryrecorder.New(db),
+		test,
 		types.CompletionsFeatureCode,
 		rl,
 		"code",
@@ -43,13 +45,9 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 
 func allowedCustomModel(model string) string {
 	switch model {
-	// These virtual model strings allow the server to choose the model.
-	// TODO: Remove the specific model identifiers below when Cody Gateway for PLG was updated.
-	case "fireworks/starcoder-16b":
-		return "fireworks/" + fireworks.Starcoder16b
-	case "fireworks/starcoder-7b":
-		return "fireworks/" + fireworks.Starcoder7b
 	case "fireworks/starcoder",
+		"fireworks/starcoder-16b",
+		"fireworks/starcoder-7b",
 		"fireworks/" + fireworks.Starcoder16b,
 		"fireworks/" + fireworks.Starcoder7b,
 		"fireworks/" + fireworks.Llama27bCode,

@@ -19,6 +19,7 @@ import { Page } from '../components/Page'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useUserExternalAccounts } from '../hooks/useUserExternalAccounts'
 import type { RouteV6Descriptor } from '../util/contributions'
+import { getLicenseFeatures } from '../util/license'
 
 import {
     maintenanceGroupHeaderLabel,
@@ -59,6 +60,11 @@ export interface SiteAdminAreaRouteContext
     codeInsightsEnabled: boolean
 
     endUserOnboardingEnabled: boolean
+
+    license: {
+        isCodeSearchEnabled: boolean
+        isCodyEnabled: boolean
+    }
 }
 
 export interface SiteAdminAreaRoute extends RouteV6Descriptor<SiteAdminAreaRouteContext> {}
@@ -135,6 +141,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         telemetryService: props.telemetryService,
         codeInsightsEnabled: props.codeInsightsEnabled,
         endUserOnboardingEnabled,
+        license: getLicenseFeatures(),
     }
 
     return (
@@ -146,6 +153,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
             </PageHeader>
             <div className="d-flex my-3 flex-column flex-sm-row" ref={reference}>
                 <SiteAdminSidebar
+                    license={context.license}
                     className={classNames('flex-0 mr-3 mb-4', styles.sidebar)}
                     groups={adminSideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}

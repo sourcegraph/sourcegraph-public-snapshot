@@ -85,6 +85,54 @@ func TestNewExhaustive(t *testing.T) {
 `),
 		},
 		{
+			Name:  "keyword search",
+			Query: "type:file index:no foo bar baz patterntype:keyword",
+			WantPager: autogold.Expect(`
+(REPOPAGER
+  (containsRefGlobs . false)
+  (repoOpts.useIndex . no)
+  (PARTIALREPOS
+    (SEARCHERTEXTSEARCH
+      (useFullDeadline . true)
+      (patternInfo . TextPatternInfo{"foo bar baz",nopath,filematchlimit:1000000})
+      (numRepos . 0)
+      (pathRegexps . [])
+      (indexed . false))))
+`),
+			WantJob: autogold.Expect(`
+(SEARCHERTEXTSEARCH
+  (useFullDeadline . true)
+  (patternInfo . TextPatternInfo{"foo bar baz",nopath,filematchlimit:1000000})
+  (numRepos . 1)
+  (pathRegexps . [])
+  (indexed . false))
+`),
+		},
+		{
+			Name:  "boolean query",
+			Query: "type:file index:no (foo OR bar) AND baz patterntype:keyword",
+			WantPager: autogold.Expect(`
+(REPOPAGER
+  (containsRefGlobs . false)
+  (repoOpts.useIndex . no)
+  (PARTIALREPOS
+    (SEARCHERTEXTSEARCH
+      (useFullDeadline . true)
+      (patternInfo . TextPatternInfo{(("foo" OR "bar") AND "baz"),nopath,filematchlimit:1000000})
+      (numRepos . 0)
+      (pathRegexps . [])
+      (indexed . false))))
+`),
+			WantJob: autogold.Expect(`
+(SEARCHERTEXTSEARCH
+  (useFullDeadline . true)
+  (patternInfo . TextPatternInfo{(("foo" OR "bar") AND "baz"),nopath,filematchlimit:1000000})
+  (numRepos . 1)
+  (pathRegexps . [])
+  (indexed . false))
+`),
+		},
+		{
 			Name:  "regexp",
 			Query: "type:file index:no foo.*bar patterntype:regexp",
 			WantPager: autogold.Expect(`
@@ -201,9 +249,7 @@ func TestNewExhaustive_negative(t *testing.T) {
 		// >1 type filter.
 		{query: `type:file index:no type:diff content`},
 		{query: `type:file index:no type:path content`},
-		// AND, OR
-		{query: `type:file index:no repo:repo1 rev:branch1 content1 OR content2`},
-		{query: `type:file index:no repo:repo1 rev:branch1 content1 AND content2`},
+		// multiple jobs needed
 		{query: `type:file index:no (repo:repo1 or repo:repo2) content`},
 		// catch-all regex
 		{query: `type:file index:no r:.* .*`, isPatterntypeRegex: true},

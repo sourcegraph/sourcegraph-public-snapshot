@@ -9,13 +9,11 @@ go_library(
     deps = [
         "//cmd/gitserver/internal/cacert",
         "//internal/conf",
-        "//internal/trace",
         "//internal/wrexec",
         "//lib/errors",
         "//lib/process",
         "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
-        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 

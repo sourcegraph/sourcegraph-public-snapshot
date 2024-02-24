@@ -8,6 +8,7 @@ import { from as fromPromise, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime } from 'rxjs/operators'
 
 import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
@@ -33,7 +34,9 @@ query {
 }
 `
 
-interface Props {
+interface Props extends TelemetryV2Props {}
+
+interface InnerProps extends TelemetryV2Props {
     location: H.Location
     navigate: NavigateFunction
 }
@@ -58,17 +61,17 @@ interface Parameters {
     operationName?: string
 }
 
-export const ApiConsole: React.FC<{}> = () => {
+export const ApiConsole: React.FC<Props> = ({ telemetryRecorder }) => {
     const navigate = useNavigate()
     const location = useLocation()
 
-    return <ApiConsoleInner location={location} navigate={navigate} />
+    return <ApiConsoleInner location={location} navigate={navigate} telemetryRecorder={telemetryRecorder} />
 }
 
 /**
  * Component to show the GraphQL API console.
  */
-class ApiConsoleInner extends React.PureComponent<Props, State> {
+class ApiConsoleInner extends React.PureComponent<InnerProps, State> {
     public state: State = { parameters: {} }
 
     private updates = new Subject<Parameters>()
@@ -77,7 +80,7 @@ class ApiConsoleInner extends React.PureComponent<Props, State> {
     /** This is used to programmatically set the initial editor state. */
     private initialParameters: Parameters
 
-    constructor(props: Props) {
+    constructor(props: InnerProps) {
         super(props)
 
         // Parse the location.hash JSON to get URL parameters.
@@ -102,6 +105,7 @@ class ApiConsoleInner extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('ApiConsole')
+        this.props.telemetryRecorder.recordEvent('api-console', 'view')
 
         // Update the browser URL bar when query/variables/operation name are
         // changed so that the page can be easily shared.

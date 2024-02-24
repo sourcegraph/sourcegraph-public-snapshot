@@ -4,34 +4,51 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"os/exec"
 
-	"github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// P4Users returns all of users known to the Perforce server.
-func P4Users(ctx context.Context, p4home, p4port, p4user, p4passwd string) ([]perforce.User, error) {
-	cmd := exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "users")
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+p4port,
-		"P4USER="+p4user,
-		"P4PASSWD="+p4passwd,
-		"HOME="+p4home,
-	)
+type P4UsersArguments struct {
+	// ReposDir is the directory where the repositories are stored.
+	ReposDir string
+	// P4Home is the path to the directory that 'p4' will use as $HOME
+	// and where it will store cache data.
+	P4Home string
 
-	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
+	// P4PORT is the address of the Perforce server.
+	P4Port string
+	// P4User is the Perforce username to authenticate with.
+	P4User string
+	// P4Passwd is the Perforce password to authenticate with.
+	P4Passwd string
+}
+
+// P4Users returns all of users known to the Perforce server.
+func P4Users(ctx context.Context, args P4UsersArguments) ([]perforce.User, error) {
+	options := []P4OptionFunc{
+		WithAuthentication(args.P4User, args.P4Passwd),
+		WithHost(args.P4Port),
+	}
+
+	options = append(options, WithArguments("-Mj", "-ztag", "users"))
+
+	scratchDir, err := gitserverfs.TempDir(args.ReposDir, "p4-users-")
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 users'")
+	}
+	defer os.Remove(scratchDir)
+
+	cmd := NewBaseCommand(ctx, args.P4Home, scratchDir, options...)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = errors.Wrap(ctxerr, "p4 users context error")
 		}
 		if len(out) > 0 {
-			err = errors.Wrapf(err, `failed to run command "p4 users" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd))
+			err = errors.Wrapf(err, `failed to run command "p4 users" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd.Unwrap()))
 		}
 		return nil, err
 	}

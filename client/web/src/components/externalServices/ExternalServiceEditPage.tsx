@@ -111,7 +111,9 @@ export const ExternalServiceEditPage: FC<Props> = ({
                         <CreatedByAndUpdatedByInfoByline
                             createdAt={externalService.createdAt}
                             updatedAt={externalService.updatedAt}
-                            noAuthor={true}
+                            createdBy={externalService.creator}
+                            updatedBy={externalService.lastUpdater}
+                            type={externalService.__typename}
                         />
                     }
                     className="mb-3"

@@ -8,14 +8,9 @@ import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { type FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import type {
-    BuildSearchQueryURLParameters,
-    QueryState,
-    SearchContextProps,
-    SearchMode,
-    SubmitSearchParameters,
-} from '@sourcegraph/shared/src/search'
+import type { BuildSearchQueryURLParameters, QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
 import {
     type AggregateStreamingSearchResults,
     getMatchUrl,
@@ -39,7 +34,6 @@ import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 import { useItemsToShow } from './use-items-to-show'
 import { useSearchResultsKeyboardNavigation } from './useSearchResultsKeyboardNavigation'
 
-import resultContainerStyles from '../components/ResultContainer.module.scss'
 import styles from './StreamingSearchResultsList.module.scss'
 
 export interface StreamingSearchResultsListProps
@@ -71,7 +65,12 @@ export interface StreamingSearchResultsListProps
     enableKeyboardNavigation?: boolean
 
     showQueryExamplesOnNoResultsPage?: boolean
-
+    /**
+     *  Determines the type of search pattern for the query examples.
+     *  For now, we only want to show the query examples in the style
+     *  of keyword search on the homepage and the search results page.
+     */
+    queryExamplesPatternType?: SearchPatternType
     /**
      * The query state to be used for the query examples and owner search.
      * If not provided, the query examples and owner search will not
@@ -79,12 +78,6 @@ export interface StreamingSearchResultsListProps
      */
     queryState?: QueryState
     buildSearchURLQueryFromQueryState?: (queryParameters: BuildSearchQueryURLParameters) => string
-
-    searchMode?: SearchMode
-    setSearchMode?: (mode: SearchMode) => void
-    submitSearch?: (parameters: SubmitSearchParameters) => void
-    searchQueryFromURL?: string
-    caseSensitive?: boolean
 
     selectedSearchContextSpec?: string
 
@@ -95,6 +88,7 @@ export interface StreamingSearchResultsListProps
     logSearchResultClicked?: (index: number, type: string, resultsLength: number) => void
 
     enableRepositoryMetadata?: boolean
+    className?: string
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -117,13 +111,10 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     showQueryExamplesOnNoResultsPage,
     queryState,
     buildSearchURLQueryFromQueryState,
-    searchMode,
-    setSearchMode,
-    submitSearch,
-    caseSensitive,
-    searchQueryFromURL,
     logSearchResultClicked,
     enableRepositoryMetadata,
+    queryExamplesPatternType = SearchPatternType.standard,
+    className,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -143,10 +134,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 filePath={result.path}
                                 revision={getRevision(result.branches, result.commit)}
                                 repoName={result.repository}
-                                // PrefetchableFile adds an extra wrapper, so we lift the <li> up and match the ResultContainer styles.
-                                // Better approach would be to use `as` to avoid wrapping, but that requires a larger refactor of the
-                                // child components than is worth doing right now for this experimental feature
-                                className={resultContainerStyles.resultContainer}
                                 as="li"
                             >
                                 {result.type === 'content' && (
@@ -277,7 +264,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             <VirtualList<SearchMatch>
                 as="ol"
                 aria-label="Search results"
-                className={classNames('mt-2 mb-0', styles.list)}
+                className={classNames(styles.list, className)}
                 itemsToShow={itemsToShow}
                 onShowMoreItems={handleBottomHit}
                 items={results?.results || []}
@@ -295,7 +282,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             </div>
 
             {itemsToShow >= resultsNumber && (
-                <StreamingSearchResultFooter results={results}>
+                <StreamingSearchResultFooter results={results} className="m-3">
                     <>
                         {results?.state === 'complete' && resultsNumber === 0 && (
                             <NoResultsPage
@@ -304,11 +291,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 telemetryService={telemetryService}
                                 showSearchContext={searchContextsEnabled}
                                 showQueryExamples={showQueryExamplesOnNoResultsPage}
-                                searchMode={searchMode}
-                                setSearchMode={setSearchMode}
-                                submitSearch={submitSearch}
-                                caseSensitive={caseSensitive}
-                                searchQueryFromURL={searchQueryFromURL}
+                                queryExamplesPatternType={queryExamplesPatternType}
                             />
                         )}
                     </>

@@ -15,6 +15,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-ctags"
+
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -118,7 +119,11 @@ func TestIndex(t *testing.T) {
 	verifyBlobs := func() {
 		repo := "somerepo"
 		commit := getHead()
-		args := search.SymbolsParameters{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
+		args := search.SymbolsParameters{
+			Repo:         api.RepoName(repo),
+			CommitID:     api.CommitID(commit),
+			Query:        "",
+			IncludeLangs: []string{"Text"}}
 		symbols, err := service.Search(context.Background(), args)
 		fatalIfError(err, "Search")
 
@@ -133,7 +138,10 @@ func TestIndex(t *testing.T) {
 		}
 		wantPaths := []string{}
 		for wantPath := range state {
-			wantPaths = append(wantPaths, wantPath)
+			// We only want .txt files since we're filtering by lang: text
+			if strings.Contains(wantPath, ".txt") {
+				wantPaths = append(wantPaths, wantPath)
+			}
 		}
 		sort.Strings(gotPaths)
 		sort.Strings(wantPaths)
@@ -178,6 +186,9 @@ func TestIndex(t *testing.T) {
 
 	add("c.txt", "sym1\nsym2")
 	commit("add another file with 2 symbols")
+
+	add("a.java", "sym1\nsym2")
+	commit("System.out.println(\"hello, world!\"")
 
 	add("a.txt", "sym1\nsym2")
 	commit("add a symbol to a.txt")

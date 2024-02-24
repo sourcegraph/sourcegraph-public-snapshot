@@ -1,3 +1,4 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -12,4 +13,15 @@ go_library(
         "//internal/workerutil/dbworker/store",
         "@com_github_keegancsmith_sqlf//:sqlf",
     ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_temp.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = ["//internal/workerutil/dbworker/store"],
 )

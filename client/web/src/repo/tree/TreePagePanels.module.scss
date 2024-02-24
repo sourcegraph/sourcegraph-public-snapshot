@@ -73,8 +73,15 @@ table.files {
     }
 
     .commit-date-column {
-        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
-        width: 120px;
+        // Width of the column that fits the text "Last commit date" without overflow
+        width: 7rem;
+
+        // When showing absolute dates by default we have to give the column
+        // more space to show the full date + time. This width fits absolute
+        // timestamps without overflow.
+        &.absolute {
+            width: 10rem;
+        }
     }
 
     th,

@@ -104,7 +104,7 @@ func assertGitHubRepoPermissions(t *testing.T, ctx context.Context, repoID api.R
 // for GITHUB_TOKEN, which can be found in 1Password.
 //
 // We also recommend setting up a new token for "sourcegraph-vcr" using the auth scope
-// guidelines https://docs.sourcegraph.com/admin/external_service/github#github-api-token-and-access
+// guidelines https://sourcegraph.com/docs/admin/external_service/github#github-api-access
 // to ensure everything works, in case of new scopes being required.
 func TestIntegration_GitHubPermissions(t *testing.T) {
 	if testing.Short() {

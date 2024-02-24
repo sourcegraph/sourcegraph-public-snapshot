@@ -412,7 +412,7 @@ func repoPermsSyncerGroup(owner monitoring.ObservableOwner) monitoring.Group {
 					Owner:       owner,
 					NextSteps: `
 						- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-						- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
+						- **Otherwise:** Increase the API rate limit to [GitHub](https://sourcegraph.com/docs/admin/external_service/github#github-com-rate-limits), [GitLab](https://sourcegraph.com/docs/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://sourcegraph.com/docs/admin/external_service/bitbucket_server#internal-rate-limits).
 					`,
 				},
 			},
@@ -449,7 +449,7 @@ func repoPermsSyncerGroup(owner monitoring.ObservableOwner) monitoring.Group {
 					Owner:       owner,
 					Interpretation: `
 						Indicates how many repositories have been scheduled for a permissions sync.
-						More about repository permissions synchronization [here](https://docs.sourcegraph.com/admin/permissions/syncing#scheduling)
+						More about repository permissions synchronization [here](https://sourcegraph.com/docs/admin/permissions/syncing#scheduling)
 					`,
 				},
 			},

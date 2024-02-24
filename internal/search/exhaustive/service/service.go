@@ -480,5 +480,5 @@ func isEnabled() bool {
 	if experimentalFeatures := conf.SiteConfig().ExperimentalFeatures; experimentalFeatures != nil {
 		return experimentalFeatures.SearchJobs != nil && *experimentalFeatures.SearchJobs
 	}
-	return false
+	return true
 }

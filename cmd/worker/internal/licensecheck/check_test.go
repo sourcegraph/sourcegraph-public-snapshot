@@ -120,92 +120,64 @@ func Test_licenseChecker(t *testing.T) {
 	siteID := "some-site-id"
 	token := "test-token"
 
-	t.Run("skips check if license is air-gapped", func(t *testing.T) {
-		cleanupStore()
-		var featureChecked licensing.Feature
-		defaultMock := licensing.MockCheckFeature
-		licensing.MockCheckFeature = func(feature licensing.Feature) error {
-			featureChecked = feature
-			return nil
-		}
-
-		t.Cleanup(func() {
-			licensing.MockCheckFeature = defaultMock
-		})
-
-		doer := &mockDoer{
-			status:   '1',
-			response: []byte(``),
-		}
-		handler := licenseChecker{
-			siteID: siteID,
-			token:  token,
-			doer:   doer,
-			logger: logtest.NoOp(t),
-		}
-
-		err := handler.Handle(context.Background())
-		require.NoError(t, err)
-
-		// check feature was checked
-		require.Equal(t, licensing.FeatureAllowAirGapped, featureChecked)
-
-		// check doer NOT called
-		require.False(t, doer.DoCalled)
-
-		// check result was set to true
-		valid, err := store.Get(licensing.LicenseValidityStoreKey).Bool()
-		require.NoError(t, err)
-		require.True(t, valid)
-
-		// check last called at was set
-		lastCalledAt, err := store.Get(lastCalledAtStoreKey).String()
-		require.NoError(t, err)
-		require.NotEmpty(t, lastCalledAt)
-	})
-
-	t.Run("skips check if license has dev tag", func(t *testing.T) {
-		defaultMockGetLicense := licensing.MockGetConfiguredProductLicenseInfo
-		licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-			return &license.Info{
+	skipTests := map[string]struct {
+		license *license.Info
+	}{
+		"skips check if license is air gapped": {
+			license: &license.Info{
+				Tags: []string{string(licensing.FeatureAllowAirGapped)},
+			},
+		},
+		"skips check on dev license": {
+			license: &license.Info{
 				Tags: []string{"dev"},
-			}, "", nil
-		}
+			},
+		},
+		"skips check on free license": {
+			license: &licensing.GetFreeLicenseInfo().Info,
+		},
+	}
 
-		t.Cleanup(func() {
-			licensing.MockGetConfiguredProductLicenseInfo = defaultMockGetLicense
+	for name, test := range skipTests {
+		t.Run(name, func(t *testing.T) {
+			cleanupStore()
+			defaultMockGetLicense := licensing.MockGetConfiguredProductLicenseInfo
+			licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
+				return test.license, "", nil
+			}
+
+			t.Cleanup(func() {
+				licensing.MockGetConfiguredProductLicenseInfo = defaultMockGetLicense
+			})
+
+			doer := &mockDoer{
+				status:   '1',
+				response: []byte(``),
+			}
+			handler := licenseChecker{
+				siteID: siteID,
+				token:  token,
+				doer:   doer,
+				logger: logtest.NoOp(t),
+			}
+
+			err := handler.Handle(context.Background())
+			require.NoError(t, err)
+
+			// check doer NOT called
+			require.False(t, doer.DoCalled)
+
+			// check result was set to true
+			valid, err := store.Get(licensing.LicenseValidityStoreKey).Bool()
+			require.NoError(t, err)
+			require.True(t, valid)
+
+			// check last called at was set
+			lastCalledAt, err := store.Get(lastCalledAtStoreKey).String()
+			require.NoError(t, err)
+			require.NotEmpty(t, lastCalledAt)
 		})
-
-		_ = store.Del(licensing.LicenseValidityStoreKey)
-		_ = store.Del(lastCalledAtStoreKey)
-
-		doer := &mockDoer{
-			status:   '1',
-			response: []byte(``),
-		}
-		handler := licenseChecker{
-			siteID: siteID,
-			token:  token,
-			doer:   doer,
-			logger: logtest.NoOp(t),
-		}
-
-		err := handler.Handle(context.Background())
-		require.NoError(t, err)
-
-		// check doer NOT called
-		require.False(t, doer.DoCalled)
-
-		// check result was set to true
-		valid, err := store.Get(licensing.LicenseValidityStoreKey).Bool()
-		require.NoError(t, err)
-		require.True(t, valid)
-
-		// check last called at was set
-		lastCalledAt, err := store.Get(lastCalledAtStoreKey).String()
-		require.NoError(t, err)
-		require.NotEmpty(t, lastCalledAt)
-	})
+	}
 
 	tests := map[string]struct {
 		response []byte
@@ -247,6 +219,13 @@ func Test_licenseChecker(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			cleanupStore()
+			defaultMockGetLicense := licensing.MockGetConfiguredProductLicenseInfo
+			licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
+				return &license.Info{Tags: []string{"plan:enterprise-0"}}, "", nil
+			}
+			t.Cleanup(func() {
+				licensing.MockGetConfiguredProductLicenseInfo = defaultMockGetLicense
+			})
 
 			mockDotcomURL(t, test.baseUrl)
 

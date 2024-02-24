@@ -110,6 +110,7 @@ describe('StreamingSearchResults', () => {
             searchMode: SearchMode.SmartSearch,
             trace: undefined,
             chunkMatches: true,
+            maxLineLen: 5 * 1024,
             featureOverrides: [],
             zoektSearchOptions: '',
         })
@@ -292,9 +293,13 @@ describe('StreamingSearchResults', () => {
                 userEvent.click(check, undefined, { skipPointerEventsCheck: true })
             }
 
-            userEvent.click(await screen.findByText(/search again/i, { selector: 'button[type=submit]' }), undefined, {
-                skipPointerEventsCheck: true,
-            })
+            userEvent.click(
+                await screen.findByText(/modify and re-run/i, { selector: 'button[type=submit]' }),
+                undefined,
+                {
+                    skipPointerEventsCheck: true,
+                }
+            )
 
             expect(helpers.submitSearch).toBeCalledTimes(index + 1)
             const args = submitSearchMock.mock.calls[index][0]

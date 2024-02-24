@@ -73,6 +73,10 @@ type Options struct {
 	// DockerRegistryNodeExporterEndpoint is the URL of the intermediary caching docker registry,
 	// for scraping and forwarding metrics.
 	DockerRegistryNodeExporterEndpoint string
+
+	// EnableJobAuditLogging enables logging of the job payload to the executor logs.
+	// Note that this mode might contain secret information and logs very verbosely.
+	EnableJobAuditLogging bool
 }
 
 // NewWorker creates a worker that polls a remote job queue API for work.

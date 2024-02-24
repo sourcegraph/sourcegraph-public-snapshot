@@ -61,7 +61,7 @@ func Test_RecentContributorIndexFromGitserver(t *testing.T) {
 
 	client := gitserver.NewMockClient()
 	client.CommitLogFunc.SetDefaultReturn(fakeCommitsToLog(commits), nil)
-	indexer := newRecentContributorsIndexer(client, db, logger, rcache.New("testing_own_signals"))
+	indexer := newRecentContributorsIndexer(client, db, logger)
 	checker := authz.NewMockSubRepoPermissionChecker()
 	checker.EnabledFunc.SetDefaultReturn(true)
 	checker.EnabledForRepoIDFunc.SetDefaultReturn(false, nil)
@@ -137,7 +137,7 @@ func Test_RecentContributorIndex_CanSeePrivateRepos(t *testing.T) {
 	require.NoError(t, err)
 
 	client := gitserver.NewMockClient()
-	indexer := newRecentContributorsIndexer(client, db, logger, rcache.New("testing_own_signals"))
+	indexer := newRecentContributorsIndexer(client, db, logger)
 
 	t.Run("non-internal user", func(t *testing.T) {
 		// this is kind of an unrelated test just to provide a baseline that there is actually a difference when
@@ -198,7 +198,7 @@ func Test_RecentContributorIndexSkipsSubrepoPermsRepos(t *testing.T) {
 
 	client := gitserver.NewMockClient()
 	client.CommitLogFunc.SetDefaultReturn(fakeCommitsToLog(commits), nil)
-	indexer := newRecentContributorsIndexer(client, db, logger, rcache.New("testing_own_signals"))
+	indexer := newRecentContributorsIndexer(client, db, logger)
 	checker := authz.NewMockSubRepoPermissionChecker()
 	checker.EnabledFunc.SetDefaultReturn(true)
 	checker.EnabledForRepoIDFunc.SetDefaultReturn(true, nil)
