@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
@@ -123,10 +124,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		})
 	}
 
-	var (
-		code  = "200" // final code to record
-		first sync.Once
-	)
+	var first sync.Once
 
 	mu := sync.Mutex{}
 	statsAgg := &zoekt.Stats{}
@@ -168,14 +166,13 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		}
 	}))
 
-	if err != nil {
-		code = "error"
-	}
+	code, maybeErrorStr := codeAndErrorStr(err)
 
 	fields := []attribute.KeyValue{
 		attribute.Int("filematches", nFilesMatches),
 		attribute.Int("events", nEvents),
 		attribute.Int64("stream.total_send_time_ms", totalSendTimeMs),
+		attribute.String("code", code),
 	}
 
 	// Zoekt stats, filter out default values to aid readability.
@@ -202,8 +199,8 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	)...)
 	tr.AddEvent("done", fields...)
 	event.AddField("duration_ms", time.Since(start).Milliseconds())
-	if err != nil {
-		event.AddField("error", err.Error())
+	if maybeErrorStr != "" {
+		event.AddField("error", maybeErrorStr)
 	}
 	event.AddAttributes(fields)
 	event.Send()
@@ -259,12 +256,12 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 
 	zsl, err := m.Streamer.List(ctx, q, opts)
 
-	code := "200"
-	if err != nil {
-		code = "error"
+	code, maybeErrorStr := codeAndErrorStr(err)
+
+	fields := []attribute.KeyValue{
+		attribute.String("code", code),
 	}
 
-	var fields []attribute.KeyValue
 	if zsl != nil {
 		fields = []attribute.KeyValue{
 			// the fields are mutually exclusive so we can just add them
@@ -277,8 +274,8 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 
 	event.AddAttributes(fields)
 	event.AddField("duration_ms", time.Since(start).Milliseconds())
-	if err != nil {
-		event.AddField("error", err.Error())
+	if maybeErrorStr != "" {
+		event.AddField("error", maybeErrorStr)
 	}
 	event.Send()
 
@@ -341,4 +338,21 @@ func filterDefaultValue(attrs ...attribute.KeyValue) []attribute.KeyValue {
 	}
 
 	return filtered
+}
+
+func codeAndErrorStr(err error) (code, maybeErrStr string) {
+	if err == nil {
+		return "200", ""
+	}
+	// Canceled is a not an error due to reaching limits.
+	if errors.Is(err, context.Canceled) {
+		return "canceled", ""
+	}
+	// DeadlineExceeded is not an error either, but rather us hitting a
+	// timeout.
+	if errors.Is(err, context.DeadlineExceeded) {
+		return "timeout", ""
+	}
+
+	return "error", err.Error()
 }
