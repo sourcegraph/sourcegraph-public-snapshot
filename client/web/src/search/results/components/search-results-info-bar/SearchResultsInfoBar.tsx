@@ -220,6 +220,9 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
         textPrefix: '[Source: keyword search] ',
     })
 
+    const feedbackPromptInitialValue =
+        props.isSourcegraphDotCom && query !== undefined ? '<Feedback here>\n\nQuery: ' + query : undefined
+
     return (
         <aside
             role="region"
@@ -241,6 +244,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                             : null
                     }
                     onClose={() => setFeedbackModalOpen(false)}
+                    initialValue={feedbackPromptInitialValue}
                 />
             ) : null}
             {refFromCodySearch && codySearchInput.input && codySearchInput.translatedQuery === props.query ? (

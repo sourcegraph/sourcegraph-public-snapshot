@@ -4,7 +4,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
@@ -155,4 +158,67 @@ func TestGetSubscriptionAccountName(t *testing.T) {
 			assert.Equal(t, test.wantName, got)
 		})
 	}
+}
+func TestRemoveUnseenTokens(t *testing.T) {
+	t.Run("removes unseen tokens", func(t *testing.T) {
+		seen := collections.NewSet("slk_token1")
+
+		cache := &fakeListingCache{
+			state: map[string][]byte{"v2:product-subscription:v1:slk_token1": nil, "v2:product-subscription:v2:slk_token3": nil},
+		}
+
+		removeUnseenTokens(seen, cache, log.Scoped("test"))
+		assert.Equal(t, cache.calls, []struct{ call, key string }{{"ListAllKeys", ""}, {"Delete", "slk_token3"}})
+	})
+
+	t.Run("ignores malformed keys ", func(t *testing.T) {
+		seen := collections.NewSet[string]()
+
+		cache := &fakeListingCache{
+			state: map[string][]byte{"v2:product-subscription:": nil},
+		}
+
+		removeUnseenTokens(seen, cache, log.Scoped("test"))
+		assert.Equal(t, cache.calls, []struct{ call, key string }{{"ListAllKeys", ""}})
+	})
+	t.Run("ignores malformed keys ", func(t *testing.T) {
+		seen := collections.NewSet[string]()
+
+		cache := &fakeListingCache{
+			state: map[string][]byte{"v2:product-subscription:v2:sgp_dotcom": nil},
+		}
+
+		removeUnseenTokens(seen, cache, log.Scoped("test"))
+		assert.Equal(t, cache.calls, []struct{ call, key string }{{"ListAllKeys", ""}})
+	})
+}
+
+type fakeListingCache struct {
+	state map[string][]byte
+	calls []struct{ call, key string }
+}
+
+var _ ListingCache = &fakeListingCache{}
+
+func (m *fakeListingCache) Set(key string, responseBytes []byte) {
+	m.state[key] = responseBytes
+	m.calls = append(m.calls, struct{ call, key string }{"Set", key})
+}
+
+func (m *fakeListingCache) ListAllKeys() []string {
+	m.calls = append(m.calls, struct{ call, key string }{"ListAllKeys", ""})
+	return maps.Keys(m.state)
+}
+
+func (m *fakeListingCache) Get(key string) ([]byte, bool) {
+	m.calls = append(m.calls, struct{ call, key string }{"Get", key})
+	if v, ok := m.state[key]; ok {
+		return v, ok
+	}
+	return nil, false
+}
+
+func (m *fakeListingCache) Delete(key string) {
+	m.calls = append(m.calls, struct{ call, key string }{"Delete", key})
+	delete(m.state, key)
 }

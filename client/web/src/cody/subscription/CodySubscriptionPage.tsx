@@ -401,7 +401,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 <Text weight="bold" className="mb-3">
                                     Support
                                 </Text>
-                                <Text className="d-inline text-muted">Community support through Discord</Text>
+                                <Text className="d-inline text-muted">Email support with limited SLAs</Text>
                             </div>
                         </div>
                     </div>
@@ -414,7 +414,8 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                         </div>
                         <div className="d-flex flex-column border-bottom py-4">
                             <div className="mb-1">
-                                <Text className="mb-0 text-muted d-inline">Coming soon</Text>
+                                <H2 className="text-muted d-inline mb-0">$19</H2>
+                                <Text className="mb-0 text-muted d-inline">/user/month</Text>
                             </div>
                             <ButtonLink
                                 className="flex-1 mt-3"
@@ -469,7 +470,14 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 </Tooltip>
                             </Text>
                             <Text className="mb-1 text-muted">
-                                Bring your own LLM key <Badge variant="secondary">experimental</Badge>
+                                Bring your own LLM key
+                                <Tooltip content="Bring your own LLM key with Azure OpenAI or Amazon Bedrock">
+                                    <Icon
+                                        className="ml-1 text-muted"
+                                        svgPath={mdiInformationOutline}
+                                        aria-hidden={true}
+                                    />
+                                </Tooltip>
                             </Text>
                             <Text className="mb-0 text-muted">
                                 Bring your own LLM <Badge variant="secondary">coming soon</Badge>
@@ -486,7 +494,14 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 Enterprise admin and security features (SSO, SAML, SCIM, audit logs, etc.)
                             </Text>
                             <Text className="mb-1 text-muted">
-                                Guardrails <Badge variant="secondary">coming soon</Badge>
+                                Guardrails
+                                <Tooltip content="We scan Cody's output for OSS code, reducing the risk of copyrighted code in suggestions">
+                                    <Icon
+                                        className="ml-1 text-muted"
+                                        svgPath={mdiInformationOutline}
+                                        aria-hidden={true}
+                                    />
+                                </Tooltip>
                             </Text>
                         </div>
                     </div>

@@ -137,7 +137,7 @@ func (h *UploadHandler[T]) handleEnqueue(w http.ResponseWriter, r *http.Request)
 type uploadHandlerFunc[T any] func(context.Context, uploadState[T], io.Reader) (any, int, error)
 
 func (h *UploadHandler[T]) selectUploadHandlerFunc(uploadState uploadState[T]) uploadHandlerFunc[T] {
-	if uploadState.uploadID == 0 {
+	if !uploadState.suppliedUploadID {
 		if uploadState.multipart {
 			return h.handleEnqueueMultipartSetup
 		}

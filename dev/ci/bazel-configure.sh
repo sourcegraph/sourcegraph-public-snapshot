@@ -2,9 +2,6 @@
 
 set -o errexit -o nounset -o pipefail
 
-# Add go to PATH
-readonly runfiles_dir="${PWD}"
-PATH="$(dirname "${runfiles_dir}/${GO}"):${PATH}"
 # Remove bazelisk from path
 PATH=$(echo "${PATH}" | awk -v RS=: -v ORS=: '/bazelisk/ {next} {print}')
 export PATH

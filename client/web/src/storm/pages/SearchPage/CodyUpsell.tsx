@@ -16,7 +16,7 @@ interface CodyUpsellProps {
 export const CodyUpsell: FC<CodyUpsellProps> = ({ isSourcegraphDotCom }) => {
     const isLightTheme = useIsLightTheme()
     // On DotCom, we want to redirect to the PLG page. On Enterprise instances, we redirect to their Cody dashboard page.
-    const exploreCodyLink = isSourcegraphDotCom ? 'https://sourcegraph.com/cody?utm_source=server' : '/cody'
+    const exploreCodyLink = isSourcegraphDotCom ? 'https://sourcegraph.com/cody' : '/cody'
     return (
         <section className={styles.upsell}>
             <section className={styles.upsellMeta}>

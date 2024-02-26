@@ -373,7 +373,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 		if resultTypes.Has(result.TypeSymbol) {
 			// Create Symbol Search jobs over repo set.
 			if !skipRepoSubsetSearch {
-				request, err := toSymbolSearchRequest(f)
+				request, err := toSymbolSearchRequest(f, searchInputs.Features)
 				if err != nil {
 					return nil, err
 				}
@@ -629,7 +629,7 @@ func mapSlice(values []string, f func(string) string) []string {
 	return res
 }
 
-func toSymbolSearchRequest(f query.Flat) (*searcher.SymbolSearchRequest, error) {
+func toSymbolSearchRequest(f query.Flat, feat *search.Features) (*searcher.SymbolSearchRequest, error) {
 	if f.Pattern != nil && f.Pattern.Negated {
 		return nil, &query.UnsupportedError{
 			Msg: "symbol search does not support negation.",
@@ -640,17 +640,29 @@ func toSymbolSearchRequest(f query.Flat) (*searcher.SymbolSearchRequest, error) 
 	// assumes that a literal pattern is an escaped regular expression.
 	regexpPattern := f.ToBasic().PatternString()
 
+	// Handle file: and -file: filters.
 	filesInclude, filesExclude := f.IncludeExcludeValues(query.FieldFile)
-	langInclude, langExclude := f.IncludeExcludeValues(query.FieldLang)
 
-	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
-	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
+	// Handle lang: and -lang: filters.
+	langAliasInclude, langAliasExclude := f.IncludeExcludeValues(query.FieldLang)
+	var langInclude, langExclude []string
+	if feat.ContentBasedLangFilters {
+		langInclude = toLangFilters(langAliasInclude)
+		langExclude = toLangFilters(langAliasExclude)
+	} else {
+		// If the 'search-content-based-lang-detection' feature is disabled, then we convert the filters
+		// to file path regexes and do not pass any explicit language filters to the backend.
+		filesInclude = append(filesInclude, mapSlice(langAliasInclude, query.LangToFileRegexp)...)
+		filesExclude = append(filesExclude, mapSlice(langAliasExclude, query.LangToFileRegexp)...)
+	}
 
 	return &searcher.SymbolSearchRequest{
 		RegexpPattern:   regexpPattern,
 		IsCaseSensitive: f.IsCaseSensitive(),
 		IncludePatterns: filesInclude,
 		ExcludePattern:  query.UnionRegExps(filesExclude),
+		IncludeLangs:    langInclude,
+		ExcludeLangs:    langExclude,
 	}, nil
 }
 

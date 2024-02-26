@@ -10,6 +10,7 @@ go_library(
         "//cmd/cody-gateway/internal/actor",
         "//cmd/cody-gateway/internal/dotcom",
         "//internal/codygateway",
+        "//internal/collections",
         "//internal/license",
         "//internal/licensing",
         "//internal/productsubscription",
@@ -31,6 +32,9 @@ go_test(
     deps = [
         "//cmd/cody-gateway/internal/dotcom",
         "//internal/codygateway",
+        "//internal/collections",
+        "@com_github_sourcegraph_log//:log",
         "@com_github_stretchr_testify//assert",
+        "@org_golang_x_exp//maps",
     ],
 )

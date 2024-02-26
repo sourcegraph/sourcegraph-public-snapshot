@@ -131,22 +131,7 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 		body.N = 1
 	}
 
-	// Enterprise virtual model string
-	if body.Model == "starcoder" {
-		body.Model = pickModelBasedOnTrafficSplit(f.config.StarcoderEnterpriseSingleTenantPercent, fireworks.Starcoder16bSingleTenant, fireworks.Starcoder16b)
-	}
-
-	// PLG virtual model strings
-	//
-	// TODO: Remove the support for the full 7b MT model names here as soon as we can remove the
-	//       virtual model resolution on the SG instance in codecompletion.go
-	if body.Model == "starcoder-16b" || body.Model == "starcoder-7b" || body.Model == fireworks.Starcoder7b || body.Model == fireworks.Starcoder16b {
-		multiTenantModel := fireworks.Starcoder16b
-		if body.Model == "starcoder-7b" || body.Model == fireworks.Starcoder7b {
-			multiTenantModel = fireworks.Starcoder7b
-		}
-		body.Model = pickModelBasedOnTrafficSplit(f.config.StarcoderCommunitySingleTenantPercent, fireworks.Starcoder16bSingleTenant, multiTenantModel)
-	}
+	body.Model = pickStarCoderModel(body.Model, f.config)
 }
 func (f *FireworksHandlerMethods) getRequestMetadata(body fireworksRequest) (model string, additionalMetadata map[string]any) {
 	return body.Model, map[string]any{"stream": body.Stream}
@@ -221,6 +206,30 @@ func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 	}
 
 	return promptUsage, completionUsage
+}
+
+func pickStarCoderModel(model string, config config.FireworksConfig) string {
+	if model == "starcoder" {
+		// Enterprise virtual model string
+		model = pickModelBasedOnTrafficSplit(config.StarcoderEnterpriseSingleTenantPercent, fireworks.Starcoder16bSingleTenant, fireworks.Starcoder16b)
+	} else if model == "starcoder-16b" || model == "starcoder-7b" {
+		// PLG virtual model strings
+		multiTenantModel := fireworks.Starcoder16b
+		if model == "starcoder-7b" {
+			multiTenantModel = fireworks.Starcoder7b
+		}
+		model = pickModelBasedOnTrafficSplit(config.StarcoderCommunitySingleTenantPercent, fireworks.Starcoder16bSingleTenant, multiTenantModel)
+	}
+
+	// Resolve to the legacy quantized versions if necessary.
+	// TODO: Remove this as soon as the migration to the unquantized models is complete.
+	if model == fireworks.Starcoder16b {
+		model = pickModelBasedOnTrafficSplit(config.StarcoderQuantizedPercent, fireworks.Starcoder16b8bit, fireworks.Starcoder16b)
+	} else if model == fireworks.Starcoder7b {
+		model = pickModelBasedOnTrafficSplit(config.StarcoderQuantizedPercent, fireworks.Starcoder7b8bit, fireworks.Starcoder7b)
+	}
+
+	return model
 }
 
 // Picks a model based on a specific percentage split. If the percent value is 0, the

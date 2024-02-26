@@ -75,6 +75,13 @@ func makeSearchConditions(args search.SymbolsParameters) []*sqlf.Query {
 		conditions = append(conditions, makeSearchCondition("path", includePattern, args.IsCaseSensitive))
 	}
 
+	for _, includeLang := range args.IncludeLangs {
+		conditions = append(conditions, makeLangCondition(includeLang))
+	}
+	for _, excludeLang := range args.ExcludeLangs {
+		conditions = append(conditions, negate(makeLangCondition(excludeLang)))
+	}
+
 	filtered := conditions[:0]
 	for _, condition := range conditions {
 		if condition != nil {
@@ -118,6 +125,36 @@ func makeSearchCondition(column string, regex string, isCaseSensitive bool) *sql
 		regex = "(?i:" + regex + ")"
 	}
 	return sqlf.Sprintf(column+" REGEXP %s", regex)
+}
+
+func makeLangCondition(lang string) *sqlf.Query {
+	// We need to convert the lang since language filters use normalized enry names, but
+	// the database stores ctags languages.
+	ctagsLangs := convertEnryToCTagsLangs(lang)
+	var queries []*sqlf.Query
+	for _, ctagsLang := range ctagsLangs {
+		queries = append(queries, sqlf.Sprintf("%s", ctagsLang))
+	}
+	return sqlf.Sprintf("lower(language) IN (%s) ", sqlf.Join(queries, ", "))
+}
+
+// convertEnryToCTagsLangs performs a best-effort mapping from normalized go-enry
+// language names to ctags names. This list is currently not exhaustive.
+func convertEnryToCTagsLangs(enryLang string) []string {
+	lower := strings.ToLower(enryLang)
+	switch lower {
+	case "protocol buffer":
+		return []string{"protobuf"}
+	case "objective-c":
+		return []string{"objectivec"}
+	case "assembly":
+		return []string{"asm"}
+	case "raku":
+		return []string{"perl6"}
+	case "shell":
+		return []string{"sh", "zsh"}
+	}
+	return []string{lower}
 }
 
 // isLiteralEquality returns true if the given regex matches literal strings exactly.
