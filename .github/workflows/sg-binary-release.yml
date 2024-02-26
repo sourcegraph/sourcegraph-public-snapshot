@@ -70,7 +70,7 @@ jobs:
           gh release delete -R="${repo}" ${release_name} || true
           gh release create -R="${repo}" ${release_name} --notes-file /tmp/release-notes.md
 
-          echo "::set-output name=release_name::${release_name}"
+          echo "release_name=${release_name}" >> "$GITHUB_OUTPUT"
         env:
           repo: sourcegraph/sg
           GITHUB_TOKEN: ${{ secrets.SG_RELEASE_TOKEN }}
