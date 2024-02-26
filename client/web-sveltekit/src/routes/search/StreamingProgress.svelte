@@ -1,15 +1,22 @@
 <script lang="ts">
     import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 
+    import { capitalizeFirstLetter } from '@sourcegraph/branded'
+
     import { getProgressText, limitHit, sortBySeverity } from '$lib/branded'
     import { renderMarkdown, pluralize } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
+    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Popover from '$lib/Popover.svelte'
     import SyntaxHighlightedQuery from '$lib/search/SyntaxHighlightedQuery.svelte'
     import type { Progress, Skipped } from '$lib/shared'
     import { Button } from '$lib/wildcard'
 
+    import SecondCounter from './SecondCounter.svelte'
+
+    const CENTER_DOT = '\u00B7' // interpunct
     export let progress: Progress
+    export let loading: boolean
 
     const icons: Record<string, string> = {
         info: mdiInformationOutline,
@@ -30,6 +37,7 @@
         : 'info'
     $: hasSkippedItems = progress.skipped.length > 0
     $: sortedItems = sortBySeverity(progress.skipped)
+    $: mostSevere = sortedItems[0]
     $: openItems = sortedItems.map((_, index) => index === 0)
     $: suggestedItems = sortedItems.filter((skipped): skipped is Required<Skipped> => !!skipped.suggested)
     $: hasSuggestedItems = suggestedItems.length > 0
@@ -39,8 +47,46 @@
     <Button variant="secondary" size="sm" outline>
         <svelte:fragment slot="custom" let:buttonClass>
             <button use:registerTrigger class="{buttonClass} progress-button" on:click={() => toggle()}>
-                <Icon svgPath={icons[severity]} inline />
-                {getProgressText(progress).visibleText}
+                {#if loading}
+                    <div class="loading">
+                        <LoadingSpinner inline />
+                        <div class="messages">
+                            <div class="progress-info-message">
+                                Fetching results...
+                                <SecondCounter />
+                            </div>
+                            <div class="loading-action">500+ results</div>
+                        </div>
+                    </div>
+                {/if}
+                {#if progress}
+                    <div class="progress">
+                        <Icon svgPath={icons[severity]} inline />
+                        <div class="messages">
+                            <div class="progress-info-message">
+                                {getProgressText(progress).visibleText}
+                            </div>
+                            <div class="progress-action-message">
+                                {#if hasSkippedItems}
+                                    <div class={`info-badge ${mostSevere.severity === 'error' && 'error'}`}>
+                                        {capitalizeFirstLetter(mostSevere.title)}
+                                    </div>
+                                {/if}
+                                {#if hasSkippedItems && hasSuggestedItems}
+                                    <div class="separator">{CENTER_DOT}</div>
+                                {/if}
+                                {#if hasSuggestedItems}
+                                    <div class="action-badge">
+                                        {capitalizeFirstLetter(mostSevere.suggested ? mostSevere.suggested.title : '')}
+                                        <span class="code-font">
+                                            {mostSevere.suggested?.queryExpression}
+                                        </span>
+                                    </div>
+                                {/if}
+                            </div>
+                        </div>
+                    </div>
+                {/if}
                 <Icon svgPath={mdiChevronDown} inline />
             </button>
         </svelte:fragment>
@@ -139,7 +185,90 @@
         display: block;
     }
 
+    .error {
+        background-color: var(--danger);
+    }
+
     .progress-button {
-        border: none;
+        align-items: center;
+        display: flex;
+        flex-flow: row nowrap;
+        justify-items: flex-start;
+        margin-bottom: 1rem;
+        margin-top: 1rem;
+    }
+
+    div.progress {
+        align-items: center;
+        display: flex;
+        flex-flow: row nowrap;
+        line-height: 1.2;
+        margin-right: 1rem;
+    }
+
+    div.messages {
+        align-content: center;
+        align-items: flex-start;
+        display: flex;
+        flex-flow: column nowrap;
+        margin-left: 0.5rem;
+    }
+
+    div.progress-info-message {
+        font-size: 0.9rem;
+    }
+
+    div.separator {
+        margin-left: 0.4rem;
+        margin-right: 0.4rem;
+        padding-top: 0.1rem;
+    }
+
+    div.progress-action-message {
+        display: flex;
+        flex-flow: row nowrap;
+        font-family: var(--base-font-family);
+        font-size: 0.7rem;
+        justify-content: space-around;
+        margin-top: 0.3rem;
+    }
+
+    .loading-action {
+        color: var(--text-muted);
+        display: flex;
+        flex-flow: row nowrap;
+        font-family: var(--base-font-family);
+        font-size: 0.7rem;
+        justify-content: space-around;
+    }
+
+    div.info-badge {
+        background: var(--primary);
+        border-radius: 3px;
+        padding-left: 0.2rem;
+        padding-right: 0.2rem;
+        padding-top: 0.1rem;
+    }
+
+    div.info-badge.error {
+        background: var(--danger);
+    }
+
+    div.action-badge {
+        padding-top: 0.1rem;
+    }
+
+    .code-font {
+        font-family: var(--code-font-family);
+        background-color: var(--gray-08);
+        border-radius: 3px;
+        padding-left: 0.1rem;
+        padding-right: 0.1rem;
+    }
+
+    .loading {
+        display: flex;
+        flex-flow: row nowrap;
+        margin-right: 1rem;
     }
 </style>

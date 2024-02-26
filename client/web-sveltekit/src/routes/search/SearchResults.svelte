@@ -20,7 +20,6 @@
     import { beforeNavigate } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
-    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { submitSearch, type QueryStateStore } from '$lib/search/state'
@@ -119,13 +118,8 @@
     <Separator currentPosition={sidebarSize} />
     <div class="results" bind:this={resultContainer}>
         <aside class="actions">
-            {#if loading}
-                <div>
-                    <LoadingSpinner inline />
-                </div>
-            {/if}
             {#if progress}
-                <StreamingProgress {progress} on:submit={onResubmitQuery} />
+                <StreamingProgress {progress} loading={false} on:submit={onResubmitQuery} />
             {/if}
         </aside>
         {#if resultsToShow}
@@ -178,7 +172,7 @@
             align-items: center;
             // Explictly set height to avoid jumping when loading spinner is
             // shown/hidden.
-            height: 3rem;
+            height: 4rem;
             flex-shrink: 0;
         }
 

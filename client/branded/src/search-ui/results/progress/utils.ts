@@ -14,14 +14,15 @@ export const abbreviateNumber = (number: number): string => {
     return (number / 1e9).toFixed(1) + 'b'
 }
 
-export const getProgressText = (progress: Progress): { visibleText: string; readText: string } => {
+export const getProgressText = (progress: Progress): { visibleText: string; readText: string, dur: number } => {
     const contentWithoutTimeUnit =
         `${abbreviateNumber(progress.matchCount)}` +
         `${limitHit(progress) ? '+' : ''} ${pluralize('result', progress.matchCount)} in ` +
         `${(progress.durationMs / 1000).toFixed(2)}`
     const visibleText = `${contentWithoutTimeUnit}s`
     const readText = `${contentWithoutTimeUnit} seconds`
-    return { visibleText, readText }
+    const dur = progress.durationMs
+    return { visibleText, readText, dur }
 }
 
 export const limitHit = (progress: Progress): boolean =>
@@ -46,6 +47,10 @@ const severityComparer = (a: Skipped, b: Skipped): number => {
     const bSev = severityToNumber(b.severity)
 
     return aSev - bSev
+}
+
+export const capitalizeFirstLetter = (str: string): string => {
+    return str.charAt(0).toUpperCase() + str.slice(1)
 }
 
 export const sortBySeverity = (skipped: Skipped[]): Skipped[] => skipped.slice().sort(severityComparer)

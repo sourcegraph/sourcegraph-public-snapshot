@@ -14,7 +14,7 @@
     overflow: hidden; // force rounded corners by cropping it
     line-height: 0;
     font-size: var(--progress-font-size);
-    background-color: var(--progress-background-color);
+    // background-color: var(--progress-background-color);
     border-radius: var(--border-radius);
     box-shadow: var(--progress-box-shadow);
 }
