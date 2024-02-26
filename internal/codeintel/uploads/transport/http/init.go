@@ -45,6 +45,7 @@ func GetHandler(svc *uploads.Service, db database.DB, gitserverClient gitserver.
 		handlerWithAuth = auth.AuthMiddleware(
 			handler,
 			userStore,
+			repoStore,
 			auth.DefaultValidatorByCodeHost,
 			operations.authMiddleware,
 		)
