@@ -37,14 +37,6 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 	}
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Found %q in remote", version))
 
-	// Fetch latest change from remote
-	// p = std.Out.Pending(output.Styled(output.StylePending, "Fetching latest changes from remote..."))
-	// if err := gitExec(cmd.Context, "fetch", "-a"); err != nil {
-	// 	p.Destroy()
-	// 	return err
-	// }
-	// p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Fetched latest changes from remote"))
-
 	p = std.Out.Pending(output.Styled(output.StylePending, "Getting PR info ...."))
 	rawPrInfo, err := ghExec(cmd.Context, "pr", "view", fmt.Sprintf("%d", prNumber), "--json", "mergeCommit,state,body,title")
 	if err != nil {
@@ -57,11 +49,9 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 	if err := json.Unmarshal(rawPrInfo, &pr); err != nil {
 		return errors.Wrap(err, "Unable to parse PR info")
 	}
-
 	if pr.State != "MERGED" {
 		return errors.Newf("PR is not merged: %s. Only merged PRs can be backported", pr.State)
 	}
-
 	mergeCommit := pr.MergeCommit.Oid
 
 	backportBranch := fmt.Sprintf("backport-%d-to-%s", prNumber, version)
@@ -72,12 +62,26 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 	}
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Backport branch %q created", backportBranch))
 
+	// Fetch latest change from remote
+	p = std.Out.Pending(output.Styled(output.StylePending, "Fetching latest changes from remote..."))
+	if err := gitExec(cmd.Context, "fetch", "-a"); err != nil {
+		p.Destroy()
+		return err
+	}
+	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Fetched latest changes from remote"))
+
 	p = std.Out.Pending(output.Styledf(output.StylePending, "Cherry-picking merge commit for PR %d into backport branch...", prNumber))
 	if err := gitExec(cmd.Context, "cherry-pick", fmt.Sprintf("origin/%s", mergeCommit)); err != nil {
 		p.Destroy()
+
 		// If this fails looool, nothing we much we can do here lol.
 		_ = gitExec(cmd.Context, "cherry-pick", "--abort")
-		return errors.Wrapf(err, "Unable to cherry-pick merge commit: %s. This might be the result of a merge conflict. Manually run `git cherry-pick %s` and fix on your machine.", mergeCommit, mergeCommit)
+		// checkout the last branch you were on before we tried to cherry-pick
+		_ = gitExec(cmd.Context, "checkout", "-")
+		// delete the branch we created
+		_ = gitExec(cmd.Context, "branch", "-D", backportBranch)
+
+		return errors.Wrapf(err, "Unable to cherry-pick merge commit: %q. This might be the result of a merge conflict. Manually run `git cherry-pick %s` and fix on your machine.", mergeCommit, mergeCommit)
 	}
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Cherry-picked merge commit for PR %d into backport branch", prNumber))
 
