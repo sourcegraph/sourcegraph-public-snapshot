@@ -95,12 +95,17 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 	prBody := generatePRBody(pr.Body, mergeCommit, prNumber)
 	prTitle := generatePRTitle(pr.Title, version)
 	p = std.Out.Pending(output.Styledf(output.StylePending, "Creating pull request for backport branch %q...", backportBranch))
-	out, err := ghExec(cmd.Context, "pr", "create", "--fill", "--base", version, "--head", backportBranch, "--title", prTitle, "--body", prBody)
+	out, err := ghExec(cmd.Context, "pr", "create", "--fill", "--base", version, "--head", backportBranch, "--title", prTitle, "--body", prBody, "--assignee", "@me", "--reviewer", "sourcegraph/release")
 	if err != nil {
 		p.Destroy()
 		return errors.Wrapf(err, "Unable to create pull request for backport branch: %q", backportBranch)
 	}
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Pull request for backport branch %q created.\n%s", backportBranch, string(out)))
+
+	// checkout the last branch you were on before we tried to cherry-pick
+	if err = gitExec(cmd.Context, "checkout", "-"); err != nil {
+		std.Out.WriteWarningf("Unable to checkout last branch: %q", backportBranch)
+	}
 
 	return nil
 }
