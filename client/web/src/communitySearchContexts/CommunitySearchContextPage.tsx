@@ -69,7 +69,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
 
     useEffect(() => {
         props.telemetryService.logViewEvent(`CommunitySearchContext:${props.communitySearchContextMetadata.spec}`)
-        telemetryRecorder.recordEvent('community-search-context', 'view', {
+        telemetryRecorder.recordEvent('communitySearchContext', 'view', {
             metadata: { spec: specTypes[props.communitySearchContextMetadata.spec] },
         })
     }, [(props.communitySearchContextMetadata.spec, props.telemetryService, telemetryRecorder)])
@@ -93,7 +93,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
         (query: string, patternType: SearchPatternType) =>
             (event?: React.MouseEvent<HTMLButtonElement>): void => {
                 eventLogger.log('CommunitySearchContextSuggestionClicked')
-                telemetryRecorder.recordEvent('community-search-context.suggestion', 'click')
+                telemetryRecorder.recordEvent('communitySearchContext.suggestion', 'click')
                 event?.preventDefault()
                 const { selectedSearchContextSpec } = props
                 submitSearch({
@@ -116,7 +116,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                 { repo_name: repoName },
                 { repo_name: repoName }
             )
-            telemetryRecorder.recordEvent('community-search-context.repo-link', 'click')
+            telemetryRecorder.recordEvent('communitySearchContext.repo-link', 'click')
         },
         [telemetryRecorder]
     )
