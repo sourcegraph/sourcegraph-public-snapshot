@@ -41,7 +41,6 @@ func (s *loggedOtelTracerProvider) concreteTracer(instrumentationName string, op
 		logger = s.logger.With(
 			log.String("tracerName", instrumentationName),
 			log.String("provider", fmt.Sprintf("%T", s.provider)))
-		logger.Info("Tracer")
 	}
 	return &loggedOtelTracer{
 		logger: logger,
