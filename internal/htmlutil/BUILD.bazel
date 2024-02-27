@@ -18,9 +18,11 @@ go_library(
 
 go_test(
     name = "htmlutil_test",
-    srcs = ["policy_test.go"],
+    srcs = ["htmlutil_test.go"],
     deps = [
         ":htmlutil",
+        "@com_github_alecthomas_chroma_v2//:chroma",
         "@com_github_google_go_cmp//cmp",
+        "@com_github_stretchr_testify//require",
     ],
 )

@@ -4,7 +4,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/alecthomas/chroma/v2"
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/htmlutil"
 )
@@ -130,5 +132,29 @@ func TestSanitizationPolicy(t *testing.T) {
 				cmp(t, htmlutil.SanitizeReader(r).String(), tt.want)
 			})
 		})
+	}
+}
+
+func TestPatchChromaTypes(t *testing.T) {
+	_ = htmlutil.SyntaxHighlightingOptions()
+	checkChromaTypes(t)
+
+	// Types are patched once, even if called multiple times.
+	_ = htmlutil.SyntaxHighlightingOptions()
+	checkChromaTypes(t)
+}
+
+// checkChromaTypes checks that all chroma types except chroma.PreWrapper
+// have "chroma-" prefix.
+func checkChromaTypes(tb testing.TB) {
+	tb.Helper()
+	prefix := "chroma-"
+	for t, cls := range chroma.StandardTypes {
+		has := strings.HasPrefix(cls, prefix)
+		if t == chroma.PreWrapper {
+			require.False(tb, has, "chroma.PreWrapper should not have a custom prefix, got %s", cls)
+		} else {
+			require.True(tb, has, "type %s should have %q prefix, got %q", t, prefix, cls)
+		}
 	}
 }
