@@ -72,7 +72,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
         telemetryRecorder.recordEvent('communitySearchContext', 'view', {
             metadata: { spec: specTypes[props.communitySearchContextMetadata.spec] },
         })
-    }, [(props.communitySearchContextMetadata.spec, props.telemetryService, telemetryRecorder)])
+    }, [props.communitySearchContextMetadata.spec, props.telemetryService, telemetryRecorder])
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
 
     const contextQuery = `context:${props.communitySearchContextMetadata.spec}`
@@ -89,13 +89,13 @@ export const CommunitySearchContextPage: React.FunctionComponent<
         )
     )
 
+    const { selectedSearchContextSpec } = props
     const onSubmitExample = useCallback(
         (query: string, patternType: SearchPatternType) =>
             (event?: React.MouseEvent<HTMLButtonElement>): void => {
                 eventLogger.log('CommunitySearchContextSuggestionClicked')
                 telemetryRecorder.recordEvent('communitySearchContext.suggestion', 'click')
                 event?.preventDefault()
-                const { selectedSearchContextSpec } = props
                 submitSearch({
                     historyOrNavigate: navigate,
                     location,
@@ -106,7 +106,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                     source: 'communitySearchContextPage',
                 })
             },
-        [telemetryRecorder]
+        [telemetryRecorder, caseSensitive, location, navigate, selectedSearchContextSpec]
     )
 
     const onRepoLinkClicked = useCallback(
