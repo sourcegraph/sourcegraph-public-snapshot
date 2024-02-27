@@ -7,7 +7,7 @@ import { catchError, startWith, switchMap, tap } from 'rxjs/operators'
 import { asError, isErrorLike, isMobile, pluralize } from '@sourcegraph/common'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Text, ErrorAlert, Card, H1, H2, useEventObservable } from '@sourcegraph/wildcard'
+import { Button, Card, ErrorAlert, H1, H2, Link, Text, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { BrandLogo } from '../../../components/branding/BrandLogo'
@@ -48,7 +48,8 @@ interface TokenRequester {
     /**
      * If true, will attempt to POST the newly created auth token to the URL supplied via the
      * tokenReceiverUrl param. This enables the clients to continue the authentication process
-     * even if the redirect is not working as expected. */
+     * even if the redirect is not working as expected.
+     */
     postTokenToReceiverUrl?: boolean
 }
 
@@ -147,7 +148,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     /** Get the requester, port, and destination from the url parameters */
     const urlSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search])
     let requestFrom = useMemo(() => urlSearchParams.get('requestFrom'), [urlSearchParams])
-    let tokenReceiverUrl = useMemo(() => urlSearchParams.get('tokenReceiverUrl'), [urlSearchParams])
+    const tokenReceiverUrl = useMemo(() => urlSearchParams.get('tokenReceiverUrl'), [urlSearchParams])
     let port = useMemo(() => urlSearchParams.get('port'), [urlSearchParams])
 
     // Allow a single query parameter `requestFrom=JETBRAIN-PORT_NUMBER`. The motivation for this parameter encoding is that
@@ -274,6 +275,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                 onDidCreateAccessToken,
                 requestFrom,
                 port,
+                tokenReceiverUrl,
             ]
         )
     )
