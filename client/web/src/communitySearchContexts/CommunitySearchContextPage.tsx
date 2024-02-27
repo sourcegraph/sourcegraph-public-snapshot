@@ -34,7 +34,7 @@ const specTypes: { [k in CommunitySearchContextSpecs]: number } = {
     cncf: 2,
     temporalio: 3,
     o3de: 4,
-    stackStorm: 5,
+    stackstorm: 5,
     kubernetes: 6,
     stanford: 7,
     julia: 8,
