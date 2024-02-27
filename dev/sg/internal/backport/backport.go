@@ -54,7 +54,8 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 	}
 	mergeCommit := pr.MergeCommit.Oid
 
-	backportBranch := fmt.Sprintf("backport-%d-to-%s", prNumber, version)
+	// prefixed with "sg/backport-" to avoid conflicts with other branches
+	backportBranch := fmt.Sprintf("sg/backport-%d-to-%s", prNumber, version)
 	p = std.Out.Pending(output.Styledf(output.StylePending, "Creating backport branch %q...", backportBranch))
 	if err := gitExec(cmd.Context, "checkout", "-b", backportBranch, fmt.Sprintf("origin/%s", version)); err != nil {
 		p.Destroy()
