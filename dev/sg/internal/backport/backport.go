@@ -71,7 +71,7 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Fetched latest changes from remote"))
 
 	p = std.Out.Pending(output.Styledf(output.StylePending, "Cherry-picking merge commit for PR %d into backport branch...", prNumber))
-	if err := gitExec(cmd.Context, "cherry-pick", fmt.Sprintf("origin/%s", mergeCommit)); err != nil {
+	if err := gitExec(cmd.Context, "cherry-pick", mergeCommit); err != nil {
 		p.Destroy()
 
 		// If this fails looool, nothing we much we can do here lol.
@@ -95,11 +95,12 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 	prBody := generatePRBody(pr.Body, mergeCommit, prNumber)
 	prTitle := generatePRTitle(pr.Title, version)
 	p = std.Out.Pending(output.Styledf(output.StylePending, "Creating pull request for backport branch %q...", backportBranch))
-	if _, err := ghExec(cmd.Context, "pr", "create", "--fill", "--base", version, "--head", backportBranch, "--title", prTitle, "--body", prBody); err != nil {
+	out, err := ghExec(cmd.Context, "pr", "create", "--fill", "--base", version, "--head", backportBranch, "--title", prTitle, "--body", prBody)
+	if err != nil {
 		p.Destroy()
 		return errors.Wrapf(err, "Unable to create pull request for backport branch: %q", backportBranch)
 	}
-	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Pull request for backport branch %q created", backportBranch))
+	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Pull request for backport branch %q created.\n%s", backportBranch, string(out)))
 
 	return nil
 }
