@@ -161,13 +161,9 @@ export function UpgradeToProModal({
                                                 tier: 'pro',
                                             }
                                         )
-                                        telemetryRecorder.recordEvent(
-                                            'cody.plan-selection.upgrade-to-pro-modal',
-                                            'click',
-                                            {
-                                                metadata: { tier: 1 },
-                                            }
-                                        )
+                                        telemetryRecorder.recordEvent('cody.planSelection.upgradeToProModal', 'click', {
+                                            metadata: { tier: 1 },
+                                        })
 
                                         changeCodyPlan({ variables: { pro: true, id: authenticatedUser.id } })
                                     }}

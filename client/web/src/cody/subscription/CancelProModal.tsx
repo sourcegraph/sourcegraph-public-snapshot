@@ -65,7 +65,7 @@ export function CancelProModal({
                                         tier: 'free',
                                     }
                                 )
-                                telemetryRecorder.recordEvent('cody.plan-selection.cancel-pro-modal', 'confirm', {
+                                telemetryRecorder.recordEvent('cody.planSelection.cancelProModal', 'confirm', {
                                     metadata: { tier: 0 }, // 1 is used for Pro tier
                                 })
 

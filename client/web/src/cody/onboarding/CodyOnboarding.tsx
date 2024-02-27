@@ -347,7 +347,7 @@ function EditorStep({
             { tier: pro ? 'pro' : 'free' },
             { tier: pro ? 'pro' : 'free' }
         )
-        telemetryRecorder.recordEvent('cody.onboarding.choose-editor', 'view', { metadata: { tier: pro ? 1 : 0 } })
+        telemetryRecorder.recordEvent('cody.onboarding.chooseEditor', 'view', { metadata: { tier: pro ? 1 : 0 } })
     }, [pro])
 
     const [editor, setEditor] = useState<null | IEditor>(null)
@@ -398,7 +398,7 @@ function EditorStep({
                                             editor,
                                         }
                                     )
-                                    telemetryRecorder.recordEvent('cody.onboarding.choose-editor', 'select', {
+                                    telemetryRecorder.recordEvent('cody.onboarding.chooseEditor', 'select', {
                                         metadata: { tier: pro ? 1 : 0, editor: editor.id },
                                     })
                                 }}
@@ -414,7 +414,7 @@ function EditorStep({
                                             editor,
                                         }
                                     )
-                                    telemetryRecorder.recordEvent('cody.onboarding.choose-editor', 'select', {
+                                    telemetryRecorder.recordEvent('cody.onboarding.chooseEditor', 'select', {
                                         metadata: { tier: pro ? 1 : 0, editor: editor.id },
                                     })
                                     setEditor(editor)
@@ -458,7 +458,7 @@ function EditorStep({
                             { tier: pro ? 'pro' : 'free' },
                             { tier: pro ? 'pro' : 'free' }
                         )
-                        telemetryRecorder.recordEvent('cody.onboarding.choose-editor', 'skip', {
+                        telemetryRecorder.recordEvent('cody.onboarding.chooseEditor', 'skip', {
                             metadata: { tier: pro ? 1 : 0 },
                         })
                     }}

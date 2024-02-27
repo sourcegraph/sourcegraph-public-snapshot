@@ -58,9 +58,9 @@ export const ChatUI: React.FC<IChatUIProps> = ({
         // TODO (dadlerj): update @sourcegraph/cody-ui/dist/Chat package to enforce a limited set of feedback strings.
         // Until then, this is a hack to avoid arbitrary event features.
         if (feedback == 'positive' || feedback == 'negative') {
-            telemetryRecorder.recordEvent(`cody-web.feedback.${feedback}`, 'submit')
+            telemetryRecorder.recordEvent(`cody.feedback.${feedback}`, 'submit')
         } else {
-            telemetryRecorder.recordEvent(`cody-web.feedback.other`, 'submit')
+            telemetryRecorder.recordEvent(`cody.feedback.other`, 'submit')
         }
     }
 

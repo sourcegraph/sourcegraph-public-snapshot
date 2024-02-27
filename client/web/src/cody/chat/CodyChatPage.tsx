@@ -124,7 +124,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     const onCTADismiss = (): void => setIsCTADismissed(true)
 
     useEffect(() => {
-        logTranscriptEvent(EventName.CODY_CHAT_PAGE_VIEWED, 'cody-chat', 'view')
+        logTranscriptEvent(EventName.CODY_CHAT_PAGE_VIEWED, 'cody.chat', 'view')
     }, [logTranscriptEvent])
 
     const transcriptId = transcript?.id
@@ -297,7 +297,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                     onClick={() =>
                                         logTranscriptEvent(
                                             EventName.CODY_CHAT_GET_EDITOR_EXTENSION,
-                                            'cody-chat.get-editor-extension-cta',
+                                            'cody.chat.getEditorExtensionCta',
                                             'click'
                                         )
                                     }

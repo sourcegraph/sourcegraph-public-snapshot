@@ -109,7 +109,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     const addRepository = useCallback(
         (repoName: string) => {
             if (!scope.repositories.includes(repoName)) {
-                logTranscriptEvent(EventName.CODY_CHAT_SCOPE_REPO_ADDED, 'cody-chat.scope.repo', 'add')
+                logTranscriptEvent(EventName.CODY_CHAT_SCOPE_REPO_ADDED, 'cody.chat.scope.repo', 'add')
                 setScope({ ...scope, repositories: [...scope.repositories, repoName] })
             }
         },
@@ -118,14 +118,14 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
 
     const removeRepository = useCallback(
         (repoName: string) => {
-            logTranscriptEvent(EventName.CODY_CHAT_SCOPE_REPO_REMOVED, 'cody-chat.scope.repo', 'remove')
+            logTranscriptEvent(EventName.CODY_CHAT_SCOPE_REPO_REMOVED, 'cody.chat.scope.repo', 'remove')
             setScope({ ...scope, repositories: scope.repositories.filter(repo => repo !== repoName) })
         },
         [scope, setScope, logTranscriptEvent]
     )
 
     const resetScope = useCallback((): void => {
-        logTranscriptEvent(EventName.CODY_CHAT_SCOPE_RESET, 'cody-chat.scope.repo', 'reset')
+        logTranscriptEvent(EventName.CODY_CHAT_SCOPE_RESET, 'cody.chat.scope.repo', 'reset')
         setScope({ ...scope, repositories: [], includeInferredRepository: true, includeInferredFile: true })
     }, [scope, setScope, logTranscriptEvent])
 

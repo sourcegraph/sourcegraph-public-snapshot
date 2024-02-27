@@ -247,7 +247,7 @@ export const useCodyChat = ({
                 return
             }
 
-            logTranscriptEvent(EventName.CODY_CHAT_HISTORY_ITEM_DELETED, 'cody-chat.item', 'delete')
+            logTranscriptEvent(EventName.CODY_CHAT_HISTORY_ITEM_DELETED, 'cody.chat.item', 'delete')
 
             setTranscriptHistoryState((history: TranscriptJSON[]) => {
                 const updatedHistory = [...history.filter(transcript => transcript.id !== id)]
@@ -293,7 +293,7 @@ export const useCodyChat = ({
                 await updateTranscriptInHistory(transcript)
             }
 
-            logTranscriptEvent(EventName.CODY_CHAT_SUBMIT, 'cody-chat', 'submit')
+            logTranscriptEvent(EventName.CODY_CHAT_SUBMIT, 'cody.chat', 'submit')
             return transcript
         },
         [submitMessageInternal, updateTranscriptInHistory, logTranscriptEvent]
@@ -307,7 +307,7 @@ export const useCodyChat = ({
                 await updateTranscriptInHistory(transcript)
             }
 
-            logTranscriptEvent(EventName.CODY_CHAT_EDIT, 'cody-chat', 'edit')
+            logTranscriptEvent(EventName.CODY_CHAT_EDIT, 'cody.chat', 'edit')
             return transcript
         },
         [editMessageInternal, updateTranscriptInHistory, logTranscriptEvent]
@@ -328,7 +328,7 @@ export const useCodyChat = ({
 
         pushTranscriptToHistory(newTranscript).catch(noop)
 
-        logTranscriptEvent(EventName.CODY_CHAT_INITIALIZED, 'cody-chat', 'initialize')
+        logTranscriptEvent(EventName.CODY_CHAT_INITIALIZED, 'cody.chat', 'initialize')
         return newTranscript
     }, [initializeNewChatInternal, pushTranscriptToHistory, scope, transcript, logTranscriptEvent])
 
@@ -420,7 +420,7 @@ export const useCodyChat = ({
             scope.includeInferredRepository
                 ? EventName.CODY_CHAT_SCOPE_INFERRED_REPO_DISABLED
                 : EventName.CODY_CHAT_SCOPE_INFERRED_REPO_ENABLED,
-            'cody-chat.inferred-repo',
+            'cody.chat.inferredRepo',
             action
         )
 
@@ -440,7 +440,7 @@ export const useCodyChat = ({
             scope.includeInferredFile
                 ? EventName.CODY_CHAT_SCOPE_INFERRED_FILE_DISABLED
                 : EventName.CODY_CHAT_SCOPE_INFERRED_FILE_ENABLED,
-            'cody-chat.inferred-file',
+            'cody.chat.inferredFile',
             action
         )
 
