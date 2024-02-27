@@ -221,7 +221,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
             id,
             run: editor => {
                 telemetryService.log('SiteConfigurationActionExecuted')
-                telemetryRecorder.recordEvent('settings-editor.action', 'execute')
+                telemetryRecorder.recordEvent('settingsEditor.action', 'execute')
                 editor.focus()
                 editor.pushUndoStop()
                 const { edits, selectText, cursorOffset } = run(editor.getValue())

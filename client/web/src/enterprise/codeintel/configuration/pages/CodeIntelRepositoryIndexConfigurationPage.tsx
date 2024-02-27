@@ -22,7 +22,7 @@ export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<
 > = ({ repo, authenticatedUser, telemetryService, telemetryRecorder, ...props }) => {
     useEffect(() => {
         telemetryService.logViewEvent('CodeIntelRepositoryIndexConfiguration')
-        telemetryRecorder.recordEvent('repo.codeintel-index-config', 'view')
+        telemetryRecorder.recordEvent('repo.codeintelIndexConfig', 'view')
     }, [telemetryService, telemetryRecorder])
     const location = useLocation()
 

@@ -61,7 +61,7 @@ export const CodeHostCreation: FC<CodeHostCreationProps> = props => {
         }
 
         telemetryService.log('SetupWizardCodeHostCreation', { kind: codeHostKind }, { kind: codeHostKind })
-        telemetryRecorder.recordEvent('setup-wizard.code-host-creation', 'view', {
+        telemetryRecorder.recordEvent('setupWizard.codeHost.creation', 'view', {
             metadata: { kind: v2CodeHostKind[codeHostKind] },
         })
     }, [telemetryService, codeHostKind, telemetryRecorder])
@@ -192,7 +192,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
             }
 
             telemetryService.log('SetupWizardConnectRemoteCodeHost', eventProperties, eventProperties)
-            telemetryRecorder.recordEvent('setup-wizard.code-host', 'connect', {
+            telemetryRecorder.recordEvent('setupWizard.codeHost.creation', 'connect', {
                 metadata: {
                     kind: v2CodeHostKind[codeHostKind],
                     isAffiliatedRepositories: isAffiliatedRepositories ? 1 : 0,
@@ -206,7 +206,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
                 { code_host: codeHostKind },
                 { code_host: codeHostKind }
             )
-            telemetryRecorder.recordEvent('setup-wizard.code-host-creation', 'connect', {
+            telemetryRecorder.recordEvent('setupWizard.codeHost.creation', 'connect', {
                 metadata: {
                     kind: v2CodeHostKind[codeHostKind],
                 },

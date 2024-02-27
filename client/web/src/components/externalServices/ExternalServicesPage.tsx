@@ -39,7 +39,7 @@ export const ExternalServicesPage: FC<Props> = ({
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalServices')
-        telemetryRecorder.recordEvent('admin.external-services', 'view')
+        telemetryRecorder.recordEvent('admin.externalServices', 'view')
     }, [telemetryService, telemetryRecorder])
 
     const location = useLocation()

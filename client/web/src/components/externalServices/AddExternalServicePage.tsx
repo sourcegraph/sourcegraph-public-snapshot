@@ -44,7 +44,7 @@ export const AddExternalServicePage: FC<Props> = ({
 
     useEffect(() => {
         telemetryService.logPageView('AddExternalService')
-        telemetryRecorder.recordEvent('admin.external-services.add', 'view')
+        telemetryRecorder.recordEvent('admin.externalServices.add', 'view')
     }, [telemetryService, telemetryRecorder])
 
     useEffect(() => {
@@ -82,13 +82,13 @@ export const AddExternalServicePage: FC<Props> = ({
                 },
                 onCompleted: data => {
                     telemetryService.log('AddExternalServiceSucceeded')
-                    telemetryRecorder.recordEvent('admin.external-services.add', 'success')
+                    telemetryRecorder.recordEvent('admin.externalServices.add', 'success')
                     refreshSiteFlags(client).catch((error: Error) => logger.error(error))
                     navigate(`/site-admin/external-services/${data.addExternalService.id}`)
                 },
                 onError: () => {
                     telemetryService.log('AddExternalServiceFailed')
-                    telemetryRecorder.recordEvent('admin.external-services.add', 'fail')
+                    telemetryRecorder.recordEvent('admin.externalServices.add', 'fail')
                 },
             })
         },
