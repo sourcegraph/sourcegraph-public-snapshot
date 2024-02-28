@@ -5,3 +5,4 @@
 common --credential_helper="dl-cdn.alpinelinux.org=%workspace%/.apko/range.sh"
 common --credential_helper="packages.wolfi.dev=%workspace%/.apko/range.sh"
 common --credential_helper="packages.sgdev.org=%workspace%/.apko/range.sh"
+common --credential_helper="storage.googleapis.com=%workspace%/.apko/range.sh"
