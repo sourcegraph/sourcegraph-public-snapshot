@@ -652,20 +652,20 @@ load("@postgres-exporter_lock//:repositories.bzl", "apko_repositories")
 apko_repositories()
 
 translate_apko_lock(
-    name = "postgres-12-codeinsights_lock",
+    name = "postgresql-12-codeinsights_lock",
     lock = "@//wolfi-images:postgresql-12-codeinsights.lock.json",
 )
 
-load("@postgres-12-codeinsights_lock//:repositories.bzl", "apko_repositories")
+load("@postgresql-12-codeinsights_lock//:repositories.bzl", "apko_repositories")
 
 apko_repositories()
 
 translate_apko_lock(
-    name = "postgres-12_lock",
+    name = "postgresql-12_lock",
     lock = "@//wolfi-images:postgresql-12.lock.json",
 )
 
-load("@postgres-12_lock//:repositories.bzl", "apko_repositories")
+load("@postgresql-12_lock//:repositories.bzl", "apko_repositories")
 
 apko_repositories()
 

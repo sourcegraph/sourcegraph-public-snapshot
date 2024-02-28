@@ -28,6 +28,7 @@ def wolfi_base(name = "wolfi", target = None):
     oci_image(
         name = "wolfi_base_image",
         base = ":wolfi_base_apko",
+        visibility = ["//visibility:public"],
     )
 
     oci_tarball(
