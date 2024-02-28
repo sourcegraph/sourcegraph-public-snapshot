@@ -174,6 +174,13 @@ http_archive(
     url = "https://github.com/fmeum/with_cfg.bzl/releases/download/v0.2.1/with_cfg.bzl-v0.2.1.tar.gz",
 )
 
+http_archive(
+    name = "rules_apko",
+    sha256 = "f176171f95ee2b6eef1572c6da796d627940a1e898a32d476a2d7a9a99332960",
+    strip_prefix = "rules_apko-1.2.2",
+    url = "https://github.com/chainguard-dev/rules_apko/releases/download/v1.2.2/rules_apko-v1.2.2.tar.gz",
+)
+
 # hermetic_cc_toolchain setup ================================
 HERMETIC_CC_TOOLCHAIN_VERSION = "v2.2.1"
 
@@ -503,3 +510,20 @@ load("//dev:schema_migrations.bzl", "schema_migrations")
 schema_migrations(
     name = "schemas_migrations",
 )
+
+load("@rules_apko//apko:repositories.bzl", "apko_register_toolchains", "rules_apko_dependencies")
+
+rules_apko_dependencies()
+
+apko_register_toolchains(name = "apko")
+
+load("@rules_apko//apko:translate_lock.bzl", "translate_apko_lock")
+
+translate_apko_lock(
+    name = "gitserver_lock",
+    lock = "@//wolfi-images:gitserver.lock.json",
+)
+
+load("@gitserver_lock//:repositories.bzl", "apko_repositories")
+
+apko_repositories()

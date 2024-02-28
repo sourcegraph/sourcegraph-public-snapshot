@@ -332,3 +332,14 @@ config_setting(
         "//:sg_msp": "True",
     },
 )
+
+load("@rules_apko//apko:defs.bzl", "apko_bazelrc")
+
+apko_bazelrc(
+    name = "apko_bazelrc",
+    repositories = [
+        "dl-cdn.alpinelinux.org",
+        "packages.wolfi.dev",
+        "packages.sgdev.org",
+    ],
+)

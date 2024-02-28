@@ -2,6 +2,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("@rules_apko//apko:defs.bzl", "apko_image")
 
 go_library(
     name = "gitserver_lib",
@@ -81,4 +82,23 @@ oci_push(
     name = "candidate_push",
     image = ":image",
     repository = image_repository("gitserver"),
+)
+
+apko_image(
+    name = "wolfi-base",
+    architecture = "amd64",
+    config = "//wolfi-images:gitserver.yaml",
+    contents = "@gitserver_lock//:contents",
+    tag = "gitserver-base:latest",
+)
+
+oci_image(
+    name = "base",
+    base = ":wolfi-base",
+)
+
+oci_tarball(
+    name = "base_tarball",
+    image = ":base",
+    repo_tags = ["gitserver-base:latest"],
 )
