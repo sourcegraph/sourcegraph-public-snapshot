@@ -6,6 +6,8 @@ source "$HOME/.profile"
 # Fetch the latest origin/main to accurately determine the set of changed
 # files on this branch.
 echo "Running git fetch..."
+# need to tell fetch to fetch tags as well otherwise on agents that have a limited depth checkout like aspect, we won't have the tags available
+# so after we've done the checkout we'll fetch the tags
 git fetch --tags
 echo "Running git fetch... done"
 
