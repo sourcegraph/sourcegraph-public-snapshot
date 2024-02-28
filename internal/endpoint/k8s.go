@@ -178,7 +178,7 @@ func parseURL(rawurl string) (*k8sURL, error) {
 	case 2:
 		svc, ns = parts[0], parts[1]
 	default:
-		return nil, errors.Errorf("invalid k8s url. expected k8s+http://service.Namespace:port/path?kind=$kind, got %s", rawurl)
+		return nil, errors.Errorf("invalid k8s url. expected k8s+http://service.namespace:port/path?kind=$kind, got %s", rawurl)
 	}
 
 	return &k8sURL{
@@ -193,17 +193,17 @@ func parseURL(rawurl string) (*k8sURL, error) {
 // this is done because the k8s client we previously used set the Namespace
 // when the client was created, the official k8s client does not
 func Namespace(logger log.Logger) string {
-	logger = logger.Scoped("Namespace")
-	const filename = "/var/run/secrets/kubernetes.io/serviceaccount/Namespace"
+	logger = logger.Scoped("namespace")
+	const filename = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		logger.Warn("falling back to kubernetes default Namespace", log.String("error", filename+" is empty"))
+		logger.Warn("falling back to kubernetes default namespace", log.String("error", filename+" is empty"))
 		return "default"
 	}
 
 	ns := strings.TrimSpace(string(data))
 	if ns == "" {
-		logger.Warn("empty Namespace in file", log.String("filename", filename), log.String("namespaceInFile", ""), log.String("Namespace", "default"))
+		logger.Warn("empty namespace in file", log.String("filename", filename), log.String("namespaceInFile", ""), log.String("namespace", "default"))
 		return "default"
 	}
 	return ns
