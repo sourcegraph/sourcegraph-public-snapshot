@@ -25,7 +25,6 @@ import {
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { CodySubscriptionStatus, CodySubscriptionPlan } from '../../graphql-operations'
 import type {
     ChangeCodyPlanResult,
     ChangeCodyPlanVariables,
@@ -34,6 +33,7 @@ import type {
     UserCodyUsageResult,
     UserCodyUsageVariables,
 } from '../../graphql-operations'
+import { CodySubscriptionStatus, CodySubscriptionPlan } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import {
@@ -93,9 +93,12 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const subscription = data?.currentUser?.codySubscription
 
+    const codyPaymentsUrl = useCodyPaymentsUrl()
+    const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
+
     useEffect(() => {
         if (!arePaymentsEnabled && enrollPro && data?.currentUser && subscription?.plan !== CodySubscriptionPlan.PRO) {
-            changeCodyPlan({ variables: { pro: true, id: data?.currentUser?.id } })
+            void changeCodyPlan({ variables: { pro: true, id: data?.currentUser?.id } })
         }
     }, [arePaymentsEnabled, data?.currentUser, changeCodyPlan, enrollPro, subscription])
 
@@ -194,7 +197,14 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         </div>
                         {userIsOnProTier && (
                             <div>
-                                <ButtonLink to="/cody/subscription" variant="primary" size="sm">
+                                <ButtonLink
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={() => {
+                                        eventLogger.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
+                                        window.location.href = manageSubscriptionRedirectURL
+                                    }}
+                                >
                                     <Icon svgPath={mdiCreditCardOutline} className="mr-1" aria-hidden={true} />
                                     Manage subscription
                                 </ButtonLink>
@@ -349,14 +359,14 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </div>
                     {editorGroups.map((group, index) => (
                         <div
-                            key={index}
+                            key={group.map(editor => editor.name).join('-')}
                             className={classNames('d-flex mt-3', styles.responsiveContainer, {
                                 'border-bottom pb-3': index < group.length - 1,
                             })}
                         >
                             {group.map((editor, index) => (
                                 <div
-                                    key={index}
+                                    key={editor.name}
                                     className={classNames('d-flex flex-column flex-1 pt-3 px-3', {
                                         'border-left': index !== 0,
                                     })}
@@ -421,7 +431,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                         selectedEditorStep !== null &&
                                         editor.instructions && (
                                             <Modal
-                                                key={index + '-modal'}
+                                                key={editor.name + '-modal'}
                                                 isOpen={true}
                                                 aria-label={`${editor.name} Info`}
                                                 className={styles.modal}
@@ -440,6 +450,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             ))}
                             {group.length < 4
                                 ? [...new Array(4 - group.length)].map((_, index) => (
+                                      // eslint-disable-next-line react/no-array-index-key
                                       <div key={index} className="flex-1 p-3" />
                                   ))
                                 : null}

@@ -57,11 +57,8 @@ func newOtelSpanProcessor(logger log.Logger, opts options, debug bool) (oteltrac
 		return nil, err
 	}
 
-	// If in debug mode, we use a synchronous span processor to force spans to get pushed
-	// immediately, otherwise we batch
-	if debug {
-		logger.Warn("using synchronous span processor - disable 'observability.debug' to use something more suitable for production")
-		return oteltracesdk.NewSimpleSpanProcessor(exporter), nil
-	}
+	// Always use batch span processor - to get more immediate exports in e.g.
+	// local dev, toggle the OTEL_BSP_* configurations instead:
+	// https://sourcegraph.com/github.com/open-telemetry/opentelemetry-go@1d1ecbc5f936208a91521ede9d0b2f557170425e/-/blob/sdk/internal/env/env.go?L26-37
 	return oteltracesdk.NewBatchSpanProcessor(exporter), nil
 }
