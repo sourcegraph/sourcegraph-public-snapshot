@@ -85,7 +85,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
     const updateMonitorRequest = React.useCallback(
         (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> => {
             eventLogger.log('ManageCodeMonitorFormSubmitted')
-            telemetryRecorder.recordEvent('codeMonitor.manage.form', 'submit')
+            telemetryRecorder.recordEvent('codeMonitor.manage.update', 'submit')
             return updateCodeMonitor(
                 {
                     id: id!,
