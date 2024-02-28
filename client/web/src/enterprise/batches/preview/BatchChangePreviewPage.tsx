@@ -47,7 +47,7 @@ export const BatchChangePreviewPage: FC<BatchChangePreviewPageProps> = props => 
 
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeApplyPage')
-        telemetryRecorder.recordEvent('batchChange.apply', 'view')
+        telemetryRecorder.recordEvent('batchChange.preview', 'view')
     }, [telemetryService, telemetryRecorder])
 
     if (loading) {

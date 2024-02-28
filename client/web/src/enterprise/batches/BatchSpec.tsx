@@ -69,7 +69,7 @@ export const BatchSpecDownloadLink: React.FunctionComponent<React.PropsWithChild
     }) {
         const onClick: () => void = () => {
             eventLogger.log('batch_change_editor:download_for_src_cli:clicked')
-            telemetryRecorder.recordEvent('batchChangeEditor.downloadForCLI', 'click')
+            telemetryRecorder.recordEvent('batchChange.editor.downloadForCLI', 'click')
         }
         const component = asButton ? (
             <Button

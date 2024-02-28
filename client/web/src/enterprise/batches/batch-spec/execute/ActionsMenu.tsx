@@ -173,7 +173,7 @@ const MemoizedActionsMenu: React.FunctionComponent<
                     style={{ width: menuWidth }}
                     onClick={() => {
                         eventLogger.log('batch_change_execution:preview:clicked')
-                        telemetryRecorder.recordEvent('batchChange.execution.preview', 'click')
+                        telemetryRecorder.recordEvent('batchChange.execution', 'preview')
                     }}
                 >
                     Preview
@@ -233,12 +233,12 @@ const MemoizedActionsMenu: React.FunctionComponent<
                     cancelModalType === 'cancel'
                         ? () => {
                               eventLogger.log('batch_change_execution:actions_execution_cancel:clicked')
-                              telemetryRecorder.recordEvent('batchChange.execution.cancel', 'click')
+                              telemetryRecorder.recordEvent('batchChange.execution', 'cancel')
                               return cancelBatchSpecExecution()
                           }
                         : () => {
                               eventLogger.log('batch_change_execution:actions_execution_cancel_and_edit:clicked')
-                              telemetryRecorder.recordEvent('batchChange.execution.cancelAndEdit', 'click')
+                              telemetryRecorder.recordEvent('batchChange.execution', 'edit')
                               return cancelAndEdit()
                           }
                 }

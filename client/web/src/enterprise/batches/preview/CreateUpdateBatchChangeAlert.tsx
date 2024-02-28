@@ -74,7 +74,11 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
                 navigate(batchChange.url)
             }
             telemetryService.logViewEvent(`BatchChangeDetailsPageAfter${batchChangeID ? 'Create' : 'Update'}`)
-            telemetryRecorder.recordEvent('batchChange.details', batchChangeID ? 'update' : 'create')
+            if (batchChangeID) {
+                telemetryRecorder.recordEvent('batchChange.detailsAfterUpdate', 'view')
+            } else {
+                telemetryRecorder.recordEvent('batchChange.detailsAfterCreate', 'view')
+            }
         } catch (error) {
             setIsLoading(error)
         }
@@ -118,10 +122,10 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
                             onClick={() => {
                                 if (batchChange) {
                                     eventLogger.log('batch_change_execution_preview:apply_update:clicked')
-                                    telemetryRecorder.recordEvent('batchChange.execution', 'update')
+                                    telemetryRecorder.recordEvent('batchChange.execution.updateAndApply', 'click')
                                 } else {
                                     eventLogger.log('batch_change_execution_preview:apply:clicked')
-                                    telemetryRecorder.recordEvent('batchChange.execution', 'apply')
+                                    telemetryRecorder.recordEvent('batchChange.execution.createAndApply', 'click')
                                 }
                                 return onApply()
                             }}
