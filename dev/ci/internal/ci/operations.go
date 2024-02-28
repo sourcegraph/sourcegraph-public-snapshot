@@ -33,8 +33,6 @@ type CoreTestOperationsOptions struct {
 func CoreTestOperations(buildOpts bk.BuildOptions, diff changed.Diff, opts CoreTestOperationsOptions) *operations.Set {
 	// Base set
 	ops := operations.NewSet()
-
-	// Simple, fast-ish linter checks
 	ops.Append(
 		bazelPrechecks(),
 		triggerBackCompatTest(buildOpts),

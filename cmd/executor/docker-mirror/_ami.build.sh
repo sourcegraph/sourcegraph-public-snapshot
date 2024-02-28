@@ -15,6 +15,8 @@ cp "${base}/docker-mirror.pkr.hcl" workdir/
 cp "${base}/aws_regions.json" workdir/
 cp "${base}/install.sh" workdir/
 
+# The Aspect agents are in a different GCP project so we need to switch the GCP project used by this script
+# depending on which agent this script is executing
 if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" =~ "aspect-" ]]; then
   GCP_PROJECT="aspect-dev"
 else

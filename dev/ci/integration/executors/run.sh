@@ -14,6 +14,8 @@ mkdir "${DATA}"
 mkdir "${DATA}/data"
 mkdir "${DATA}/config"
 
+# we get the ID / GID here that the container should map *it's ID/GID* for root, so that when it writes files as root to a mapped in volume
+# the file permissions will have the correct ID/GID set so that the current running user still have permissions to alter the files
 EXECUTOR_UID="$(id -u)"
 EXECUTOR_GID="$(id -g)"
 export EXECUTOR_UID
@@ -42,6 +44,10 @@ if [ -n "${DOCKER_GATEWAY_HOST}" ]; then
   DOCKER_HOST="tcp://${DOCKER_GATEWAY_HOST:-host.docker.internal}:2375"
   export DOCKER_HOST
 fi
+# Executor docker compose maps this explicitly because Non-aspect agents use Docker in Docker (DIND) and have this env var explicitly set.
+#
+# On Aspect this var is NOT set because we use "normal" docker (aka non DND) which uses a unix socket, but this var still needs to be mapped in
+# so we explicitly set it here.
 if [ -z "${DOCKER_HOST}" ]; then
   DOCKER_HOST="unix:///var/run/docker.sock"
   export DOCKER_HOST
@@ -67,7 +73,6 @@ docker-compose up -d
 
 echo "--- :terminal: Wait for server to be up"
 URL="http://localhost:7080"
-sleep 10
 timeout 120s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
     echo Waiting 5s for $URL...
     sleep 5
