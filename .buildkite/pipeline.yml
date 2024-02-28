@@ -9,7 +9,6 @@
 
 steps:
   - group: ":aspect: Aspect Workflows "
-    if: pipeline.slug == "aspect-experimental"
     steps:
       - key: aspect-workflows-upload
         label: ":aspect: Setup Aspect Workflows"

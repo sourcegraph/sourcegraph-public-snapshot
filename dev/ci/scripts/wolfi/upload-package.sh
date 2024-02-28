@@ -4,12 +4,7 @@ set -eu -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
-# TODO: Manage these variables properly
-if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" =~ "aspect-" ]]; then
-  GCP_PROJECT="aspect-dev"
-else
-  GCP_PROJECT="sourcegraph-ci"
-fi
+GCP_PROJECT="aspect-dev"
 GCS_BUCKET="package-repository"
 TARGET_ARCH="x86_64"
 MAIN_BRANCH="main"

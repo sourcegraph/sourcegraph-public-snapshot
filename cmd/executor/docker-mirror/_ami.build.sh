@@ -15,14 +15,7 @@ cp "${base}/docker-mirror.pkr.hcl" workdir/
 cp "${base}/aws_regions.json" workdir/
 cp "${base}/install.sh" workdir/
 
-# The Aspect agents are in a different GCP project so we need to switch the GCP project used by this script
-# depending on which agent this script is executing
-if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" =~ "aspect-" ]]; then
-  GCP_PROJECT="aspect-dev"
-else
-  GCP_PROJECT="sourcegraph-ci"
-fi
-
+GCP_PROJECT="aspect-dev"
 "$gcloud" secrets versions access latest --secret=e2e-builder-sa-key --quiet --project="$GCP_PROJECT" >"workdir/builder-sa-key.json"
 
 ## Setting up packer

@@ -4,18 +4,8 @@ set -eux -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
-# TODO: Manage these variables properly
-if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" =~ "aspect-" ]]; then
-  GCP_PROJECT="aspect-dev"
-  KEY_DIR="$(pwd)/keys"
-  # TODO(burmudar): fix this in aspect image
-  mkdir -p "$KEY_DIR"
-  echo "$BUILDKITE_MELANGE_PACKAGE_SIGNING_KEY_DEV" > "$KEY_DIR/sourcegraph-melange-dev.rsa"
-  echo "$BUILDKITE_MELANGE_PACKAGE_SIGNING_KEY_PROD" > "$KEY_DIR/sourcegraph-melange-prod.rsa"
-else
-  GCP_PROJECT="sourcegraph-ci"
-  KEY_DIR="/keys"
-fi
+GCP_PROJECT="aspect-dev"
+KEYS_DIR="/etc/sourcegraph/keys/"
 GCS_BUCKET="package-repository"
 TARGET_ARCH="x86_64"
 MAIN_BRANCH="main"
