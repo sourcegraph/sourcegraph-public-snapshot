@@ -46,6 +46,7 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
     queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
     spec,
+    telemetryRecorder,
 }) => {
     // We track the current tab in a URL parameter so that tabs are easy to navigate to
     // and share.
