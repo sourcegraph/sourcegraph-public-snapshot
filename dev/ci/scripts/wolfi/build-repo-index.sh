@@ -53,9 +53,9 @@ tar zcf APKINDEX.tar.gz APKINDEX DESCRIPTION
 
 # Sign index, using separate keys from GCS for staging and prod repos
 if [[ "$IS_MAIN" == "true" ]]; then
-  key_path="$KEY_DIR/sourcegraph-melange-prod.rsa"
+  key_path="$KEYS_DIR/sourcegraph-melange-prod.rsa"
 else
-  key_path="$KEY_DIR/sourcegraph-melange-dev.rsa"
+  key_path="$KEYS_DIR/sourcegraph-melange-dev.rsa"
 fi
 melange sign-index --signing-key "$key_path" APKINDEX.tar.gz
 

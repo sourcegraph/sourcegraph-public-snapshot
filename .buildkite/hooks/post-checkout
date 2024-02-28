@@ -5,10 +5,12 @@ source "$HOME/.profile"
 
 # Fetch the latest origin/main to accurately determine the set of changed
 # files on this branch.
-echo "Running git fetch..."
+echo "Running git fetch --depth 200 --tags"
 # need to tell fetch to fetch tags as well otherwise on agents that have a limited depth checkout like aspect, we won't have the tags available
 # so after we've done the checkout we'll fetch the tags
-git fetch --tags
+#
+# depth 200, is 2x of the depth aspect agents checkout by default, so we make sure we get a little more incase a tag is behind the depth boundary
+git fetch --depth 200 --tags
 echo "Running git fetch... done"
 
 # Link command wrapper scripts so we can have more readable steps in the buildkite UI
