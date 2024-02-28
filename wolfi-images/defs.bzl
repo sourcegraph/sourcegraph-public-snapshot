@@ -2,8 +2,9 @@ load("@aspect_bazel_lib//lib:yq.bzl", "yq")
 load("@rules_apko//apko:defs.bzl", "apko_image")
 load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 
-def wolfi_base(name = "wolfi"):
-    target = native.package_name().split("/")[-1]
+def wolfi_base(name = "wolfi", target = None):
+    if target == None:
+        target = native.package_name().split("/")[-1]
 
     yq(
         name = "wolfi_config",

@@ -22,8 +22,13 @@
         "architecture": "x86_64"
       },
       {
-        "name": "packages.sgdev.org/main/x86_64",
-        "url": "https://packages.sgdev.org/main/x86_64/APKINDEX.tar.gz",
+        "name": "@sourcegraph https://packages.sgdev.org/main/x86_64",
+        "url": "@sourcegraph https://packages.sgdev.org/main/x86_64/APKINDEX.tar.gz",
+        "architecture": "x86_64"
+      },
+      {
+        "name": "@chainguard https://packages.sgdev.org/chainguard/x86_64",
+        "url": "@chainguard https://packages.sgdev.org/chainguard/x86_64/APKINDEX.tar.gz",
         "architecture": "x86_64"
       }
     ],
@@ -657,22 +662,22 @@
       },
       {
         "name": "coursier",
-        "url": "https://packages.sgdev.org/main/x86_64/coursier-2.0.13-r1.apk",
-        "version": "2.0.13-r1",
+        "url": "https://packages.sgdev.org/main/x86_64/coursier-2.0.13-r2.apk",
+        "version": "2.0.13-r2",
         "architecture": "x86_64",
         "signature": {
-          "range": "",
-          "checksum": ""
+          "range": "bytes=0-656",
+          "checksum": "sha1-OvNg0xO/vjOWr45Urdbfa7ExS+U="
         },
         "control": {
-          "range": "bytes=0-334",
-          "checksum": "sha1-Wa7tZdQI9NLdHH6bFKKow/avepQ="
+          "range": "bytes=657-1007",
+          "checksum": "sha1-8DXOCGQccaBV9A5r/surTzWqW/o="
         },
         "data": {
-          "range": "bytes=335-0",
-          "checksum": "sha256-"
+          "range": "bytes=1008-59687101",
+          "checksum": "sha256-e1xbeh3L6Li3xcK1EO3/rWIFrGyxqNG9G651Qi/oiUk="
         },
-        "checksum": "Q1Wa7tZdQI9NLdHH6bFKKow/avepQ="
+        "checksum": "Q18DXOCGQccaBV9A5r/surTzWqW/o="
       },
       {
         "name": "libbrotlicommon1",
@@ -980,41 +985,41 @@
       },
       {
         "name": "p4-fusion-sg",
-        "url": "https://packages.sgdev.org/main/x86_64/p4-fusion-sg-1.13.2-r0.apk",
-        "version": "1.13.2-r0",
+        "url": "https://packages.sgdev.org/main/x86_64/p4-fusion-sg-1.13.2-r1.apk",
+        "version": "1.13.2-r1",
         "architecture": "x86_64",
         "signature": {
-          "range": "",
-          "checksum": ""
+          "range": "bytes=0-660",
+          "checksum": "sha1-t0Vfob/ydtJvgB9zYPUZnJ2rhWI="
         },
         "control": {
-          "range": "bytes=0-376",
-          "checksum": "sha1-2niolu8no/nVIHjNVRKjvwx/Y7c="
+          "range": "bytes=661-1037",
+          "checksum": "sha1-dgRzviF9324RuPxwFlOBkCRFBdw="
         },
         "data": {
-          "range": "bytes=377-0",
-          "checksum": "sha256-"
+          "range": "bytes=1038-20498302",
+          "checksum": "sha256-3sOY34ejYhWtVX35wDAMxRMezHnQgjkBigBGH9PvAFo="
         },
-        "checksum": "Q12niolu8no/nVIHjNVRKjvwx/Y7c="
+        "checksum": "Q1dgRzviF9324RuPxwFlOBkCRFBdw="
       },
       {
         "name": "p4cli",
-        "url": "https://packages.sgdev.org/main/x86_64/p4cli-23.1-r0.apk",
-        "version": "23.1-r0",
+        "url": "https://packages.sgdev.org/main/x86_64/p4cli-23.1-r1.apk",
+        "version": "23.1-r1",
         "architecture": "x86_64",
         "signature": {
-          "range": "",
-          "checksum": ""
+          "range": "bytes=0-662",
+          "checksum": "sha1-+FihibUbxHmWUm+PRhTsTt9lg7c="
         },
         "control": {
-          "range": "bytes=0-342",
-          "checksum": "sha1-CM/y2tASwnVx7mhZS7c2kwODCQM="
+          "range": "bytes=663-1008",
+          "checksum": "sha1-p1l6sh7qVDdF1r2gZkYSkf/nvwk="
         },
         "data": {
-          "range": "bytes=343-0",
-          "checksum": "sha256-"
+          "range": "bytes=1009-10358500",
+          "checksum": "sha256-YDx7gj8+ftD4CWnIIUrv3gkxLOSI7SOA92vtJRoViLg="
         },
-        "checksum": "Q1CM/y2tASwnVx7mhZS7c2kwODCQM="
+        "checksum": "Q1p1l6sh7qVDdF1r2gZkYSkf/nvwk="
       },
       {
         "name": "libbz2-1",

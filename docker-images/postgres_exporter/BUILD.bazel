@@ -17,7 +17,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi_postgres_exporter_base",
+    base = ":wolfi_base",
     entrypoint = ["/usr/bin/postgres_exporter"],
     env = {
         "PG_EXPORTER_EXTEND_QUERY_PATH": "/config/queries.yaml",
