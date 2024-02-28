@@ -51,10 +51,6 @@ import { CHANGE_CODY_PLAN, USER_CODY_PLAN, USER_CODY_USAGE } from '../subscripti
 
 import styles from './CodyManagementPage.module.scss'
 
-
-
-
-
 interface CodyManagementPageProps {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
@@ -205,8 +201,8 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     variant="primary"
                                     size="sm"
                                     href={manageSubscriptionRedirectURL}
-                                    onClick={e => {
-                                        e.preventDefault()
+                                    onClick={event => {
+                                        event.preventDefault()
                                         eventLogger.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
                                         window.location.href = manageSubscriptionRedirectURL
                                     }}
