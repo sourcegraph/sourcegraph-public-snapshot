@@ -1138,19 +1138,23 @@ func Test_computeResultTypes(t *testing.T) {
 	}
 
 	t.Run("standard, only search file content when type not set", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("path:foo content:bar", query.SearchTypeStandard)))
+		autogold.Expect("file").Equal(t, test("path:foo content:bar", query.SearchTypeStandard))
 	})
 
 	t.Run("standard, plain pattern searches repo path file content", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("path:foo bar", query.SearchTypeStandard)))
+		autogold.Expect("file|path|repo").Equal(t, test("path:foo bar", query.SearchTypeStandard))
 	})
 
 	t.Run("keyword, only search file content when type not set", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("path:foo content:bar", query.SearchTypeKeyword)))
+		autogold.Expect("file").Equal(t, test("path:foo content:bar", query.SearchTypeKeyword))
 	})
 
 	t.Run("keyword, plain pattern searches repo path file content", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("path:foo bar", query.SearchTypeKeyword)))
+		autogold.Expect("file|path|repo").Equal(t, test("path:foo bar", query.SearchTypeKeyword))
+	})
+
+	t.Run("keyword, only search file content with negation", func(t *testing.T) {
+		autogold.Expect("file").Equal(t, test("path:foo content:bar -content:baz", query.SearchTypeKeyword))
 	})
 }
 

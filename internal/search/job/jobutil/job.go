@@ -727,13 +727,17 @@ func computeResultTypes(b query.Basic, searchType query.SearchType) result.Types
 	types, _ := b.IncludeExcludeValues(query.FieldType)
 
 	if len(types) == 0 && b.Pattern != nil {
-		if p, ok := b.Pattern.(query.Pattern); ok {
-			annot := p.Annotation
-			if annot.Labels.IsSet(query.IsAlias) {
-				// This query set the pattern via `content:`, so we
-				// imply that only content should be searched.
-				return result.TypeFile
-			}
+		// When the pattern is set via `content:`, we set the annotation on
+		// the pattern to IsAlias. So if all Patterns are from content: we
+		// should only search TypeFile.
+		hasPattern := false
+		allIsAlias := true
+		query.VisitPattern([]query.Node{b.Pattern}, func(value string, negated bool, annotation query.Annotation) {
+			hasPattern = true
+			allIsAlias = allIsAlias && annotation.Labels.IsSet(query.IsAlias)
+		})
+		if hasPattern && allIsAlias {
+			return result.TypeFile
 		}
 	}
 
