@@ -130,6 +130,7 @@ func (c *Config) Load() {
 			"claude-instant-v1.2",
 			"claude-instant-1.2",
 			"claude-instant-1.2-cyan",
+			"claude-2.1-bamboo",
 		}, ","),
 		"Anthropic models that can be used."))
 	if c.Anthropic.AccessToken != "" && len(c.Anthropic.AllowedModels) == 0 {

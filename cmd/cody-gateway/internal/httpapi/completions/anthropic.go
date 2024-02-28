@@ -9,6 +9,7 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 

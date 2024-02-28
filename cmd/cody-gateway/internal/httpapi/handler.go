@@ -7,11 +7,12 @@ import (
 	"github.com/Khan/genqlient/graphql"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 
@@ -100,6 +101,38 @@ func NewHandler(
 							requestlogger.Middleware(
 								logger,
 								anthropicHandler,
+							),
+						),
+					),
+					otelhttp.WithPublicEndpoint(),
+				),
+			))
+
+		unifiedHandler, err := completions.NewUnifiedHandler(
+			logger,
+			eventLogger,
+			rs,
+			config.RateLimitNotifier,
+			httpClient,
+			config.Anthropic,
+			promptRecorder,
+
+			config.AutoFlushStreamingResponses,
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "init unified handler")
+		}
+
+		v1router.Path("/completions/unified").Methods(http.MethodPost).Handler(
+			overhead.HTTPMiddleware(latencyHistogram,
+				instrumentation.HTTPMiddleware("v1.completions.anthropic",
+					gaugeHandler(
+						counter,
+						attributesAnthropicCompletions,
+						authr.Middleware(
+							requestlogger.Middleware(
+								logger,
+								unifiedHandler,
 							),
 						),
 					),
