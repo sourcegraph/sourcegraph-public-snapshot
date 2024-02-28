@@ -99,7 +99,7 @@ func TestK8sURL(t *testing.T) {
 	cases := map[string]string{
 		"k8s+http://searcher:3181":          "http://endpoint.service:3181",
 		"k8s+http://searcher":               "http://endpoint.service",
-		"k8s+http://searcher.namespace:123": "http://endpoint.service:123",
+		"k8s+http://searcher.Namespace:123": "http://endpoint.service:123",
 		"k8s+rpc://indexed-search:6070":     "endpoint.service:6070",
 	}
 	for rawurl, want := range cases {
