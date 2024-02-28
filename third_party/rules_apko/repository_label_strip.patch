@@ -1,5 +1,5 @@
 diff --git a/apko/private/apk.bzl b/apko/private/apk.bzl
-index ebd9780..0592e25 100644
+index ebd9780..6204cfb 100644
 --- a/apko/private/apk.bzl
 +++ b/apko/private/apk.bzl
 @@ -16,8 +16,13 @@ def _range(url, range):
@@ -71,7 +71,19 @@ index ebd9780..0592e25 100644
          output = "{}/{}/APKINDEX/latest.tar.gz".format(repo_escaped, rctx.attr.architecture),
      )
      rctx.file("BUILD.bazel", APK_REPOSITORY_TMPL)
-@@ -151,8 +165,11 @@ def _cachePathFromURL(url):
+@@ -142,6 +156,11 @@ def _cachePathFromURL(url):
+       https://packages.wolfi.dev/os/wolfi-signing.rsa.pub              -> https%3A%2F%2Fpackages.wolfi.dev%2F/os/wolfi-signing.rsa.pub
+       https://packages.wolfi.dev/os/aarch64/sqlite-libs-3.44.0-r0.apk  -> https%3A%2F%2Fpackages.wolfi.dev%2Fos/arch64/sqlite-libs-3.44.0-r0.apk
+     """
++    if url.count("/") <= 3:
++        url_split = url.rsplit("/", 1)
++        repo = url_split[0] + "/"
++        return "{}/{}".format(util.url_escape(repo), url_split[1])
++
+     url_split = url.rsplit("/", 2)
+     repo = url_split[0]
+     if len(repo.split("/")) <= 3:
+@@ -151,8 +170,11 @@ def _cachePathFromURL(url):
      return "{}/{}/{}".format(repo_escaped, url_split[1], url_split[2])
 
  def _apk_keyring_impl(rctx):

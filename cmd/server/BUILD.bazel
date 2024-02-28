@@ -159,7 +159,7 @@ pkg_tar(
 #   bazel cquery '//cmd/server:image' --output build
 oci_image(
     name = "image",
-    base = ":wolfi_base",
+    base = ":wolfi_base_image",
     entrypoint = [
         "/sbin/tini",
         "--",

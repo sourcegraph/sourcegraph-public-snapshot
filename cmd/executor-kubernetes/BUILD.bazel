@@ -18,7 +18,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = ":wolfi_base",
+    base = ":wolfi_base_image",
     entrypoint = [
         "/sbin/tini",
         "--",

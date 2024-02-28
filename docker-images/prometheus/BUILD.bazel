@@ -32,7 +32,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = ":wolfi_base",
+    base = ":wolfi_base_image",
     entrypoint = ["/bin/prom-wrapper"],
     tars = [":config_tar"],
     user = "sourcegraph",

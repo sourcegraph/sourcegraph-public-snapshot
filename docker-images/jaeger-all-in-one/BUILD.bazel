@@ -16,7 +16,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = ":wolfi_base",
+    base = ":wolfi_base_image",
     cmd = ["--sampling.strategies-file=/etc/jaeger/sampling_strategies.json"],
     entrypoint = ["/usr/local/bin/jaeger-all-in-one"],
     env = {

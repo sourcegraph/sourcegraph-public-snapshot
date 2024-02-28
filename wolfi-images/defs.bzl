@@ -19,14 +19,14 @@ def wolfi_base(name = "wolfi", target = None):
     apko_image(
         name = "wolfi_base_apko",
         architecture = "amd64",
-        config = ":wolfi_config".format(target),
+        config = ":wolfi_config",
         contents = "@{}_lock//:contents".format(target),
         tag = "{}-base:latest".format(target),
         visibility = ["//visibility:private"],
     )
 
     oci_image(
-        name = "wolfi_base",
+        name = "wolfi_base_image",
         base = ":wolfi_base_apko",
     )
 
