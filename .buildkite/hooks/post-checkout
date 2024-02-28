@@ -6,7 +6,7 @@ source "$HOME/.profile"
 # Fetch the latest origin/main to accurately determine the set of changed
 # files on this branch.
 echo "Running git fetch..."
-git fetch
+git fetch --tags
 echo "Running git fetch... done"
 
 # Link command wrapper scripts so we can have more readable steps in the buildkite UI
