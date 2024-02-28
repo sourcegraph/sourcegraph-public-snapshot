@@ -3,16 +3,16 @@
 # shellcheck disable=SC1090,SC1091
 source "$HOME/.profile"
 
-# Fetch the latest origin/main to accurately determine the set of changed
-# files on this branch.
+# due to how the repostiory is cloned with --depth=100 (see aspect terraform docs), we need to fetch the tags manually
+# we don't want to fetch all the tags, so here:
+# 1. Get a list of tags from the remote
+# 2. Srt them
+# 3. Get the last 20 tags
+# 4. Parse them so that we only get the tag
+# 5. Then loop through every tag and fetch it
 echo "--- :git: Fetching last 20 tags"
-# need to tell fetch to fetch tags as well otherwise on agents that have a limited depth checkout like aspect, we won't have the tags available
-# so after we've done the checkout we'll fetch the tags
-#
-# depth 200, is 2x of the depth aspect agents checkout by default, so we make sure we get a little more incase a tag is behind the depth boundary
-git ls-remote --tags origin | sort -t '/' -k 3 -V | tail -n 20 | awk -F'/' '{gsub(/\^\{\}$/, "", $3); print $3}' | while read tag; do
-  echo "Fetching $tag"
-  git -v fetch origin tag $tag
+git ls-remote --tags origin | sort -t '/' -k 3 -V | tail -n 20 | awk -F'/' '{gsub(/\^\{\}$/, "", $3); print $3}' | while read -r tag; do
+  git -v fetch origin tag "$tag"
 done
 
 # Link command wrapper scripts so we can have more readable steps in the buildkite UI
