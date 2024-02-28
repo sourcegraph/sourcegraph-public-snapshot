@@ -531,7 +531,6 @@ translate_apko_lock(
 )
 
 load("@batcheshelper_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -541,7 +540,6 @@ translate_apko_lock(
 )
 
 load("@blobstore_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -551,7 +549,15 @@ translate_apko_lock(
 )
 
 load("@bundled-executor_lock//:repositories.bzl", "apko_repositories")
+
 apko_repositories()
+
+translate_apko_lock(
+    name = "executor_lock",
+    lock = "@//wolfi-images:executor.lock.json",
+)
+
+load("@executor_lock//:repositories.bzl", "apko_repositories")
 
 apko_repositories()
 
@@ -561,7 +567,6 @@ translate_apko_lock(
 )
 
 load("@cadvisor_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -571,7 +576,6 @@ translate_apko_lock(
 )
 
 load("@cloud-mi2_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -581,7 +585,6 @@ translate_apko_lock(
 )
 
 load("@executor-kubernetes_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -591,7 +594,6 @@ translate_apko_lock(
 )
 
 load("@gitserver_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -601,7 +603,6 @@ translate_apko_lock(
 )
 
 load("@grafana_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -611,7 +612,6 @@ translate_apko_lock(
 )
 
 load("@jaeger-agent_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -621,7 +621,6 @@ translate_apko_lock(
 )
 
 load("@jaeger-all-in-one_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -631,7 +630,6 @@ translate_apko_lock(
 )
 
 load("@node-exporter_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -641,7 +639,6 @@ translate_apko_lock(
 )
 
 load("@opentelemetry-collector_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -651,7 +648,24 @@ translate_apko_lock(
 )
 
 load("@postgres-exporter_lock//:repositories.bzl", "apko_repositories")
+
 apko_repositories()
+
+translate_apko_lock(
+    name = "postgres-12-codeinsights_lock",
+    lock = "@//wolfi-images:postgresql-12-codeinsights.lock.json",
+)
+
+load("@postgres-12-codeinsights_lock//:repositories.bzl", "apko_repositories")
+
+apko_repositories()
+
+translate_apko_lock(
+    name = "postgres-12_lock",
+    lock = "@//wolfi-images:postgresql-12.lock.json",
+)
+
+load("@postgres-12_lock//:repositories.bzl", "apko_repositories")
 
 apko_repositories()
 
@@ -661,7 +675,6 @@ translate_apko_lock(
 )
 
 load("@prometheus-gcp_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -671,7 +684,6 @@ translate_apko_lock(
 )
 
 load("@prometheus_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -681,7 +693,6 @@ translate_apko_lock(
 )
 
 load("@qdrant_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -691,7 +702,6 @@ translate_apko_lock(
 )
 
 load("@redis-exporter_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -701,7 +711,6 @@ translate_apko_lock(
 )
 
 load("@redis_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -711,7 +720,6 @@ translate_apko_lock(
 )
 
 load("@repo-updater_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -721,7 +729,6 @@ translate_apko_lock(
 )
 
 load("@search-indexer_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -731,7 +738,6 @@ translate_apko_lock(
 )
 
 load("@searcher_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -741,7 +747,6 @@ translate_apko_lock(
 )
 
 load("@server_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -751,7 +756,15 @@ translate_apko_lock(
 )
 
 load("@sourcegraph-base_lock//:repositories.bzl", "apko_repositories")
+
 apko_repositories()
+
+translate_apko_lock(
+    name = "sourcegraph_lock",
+    lock = "@//wolfi-images:sourcegraph.lock.json",
+)
+
+load("@sourcegraph_lock//:repositories.bzl", "apko_repositories")
 
 apko_repositories()
 
@@ -761,7 +774,6 @@ translate_apko_lock(
 )
 
 load("@sourcegraph-dev_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -771,7 +783,6 @@ translate_apko_lock(
 )
 
 load("@symbols_lock//:repositories.bzl", "apko_repositories")
-apko_repositories()
 
 apko_repositories()
 
@@ -781,4 +792,5 @@ translate_apko_lock(
 )
 
 load("@syntax-highlighter_lock//:repositories.bzl", "apko_repositories")
+
 apko_repositories()
