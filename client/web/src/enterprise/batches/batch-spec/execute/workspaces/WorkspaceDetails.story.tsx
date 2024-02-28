@@ -4,6 +4,7 @@ import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { CardBody, Card } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
@@ -114,7 +115,13 @@ const BaseStory: React.FunctionComponent<BaseStoryProps> = ({ node, queries = {}
         <BrandedStory>
             {props => (
                 <MockedTestProvider link={mocks}>
-                    <WorkspaceDetails {...props} {...queries} deselectWorkspace={noop} id="random" />
+                    <WorkspaceDetails
+                        {...props}
+                        {...queries}
+                        deselectWorkspace={noop}
+                        id="random"
+                        telemetryRecorder={noOpTelemetryRecorder}
+                    />
                 </MockedTestProvider>
             )}
         </BrandedStory>

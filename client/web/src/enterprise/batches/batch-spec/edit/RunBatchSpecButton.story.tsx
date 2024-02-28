@@ -27,6 +27,7 @@ export const Disabled: StoryFn = () => {
                     isExecutionDisabled="There's a problem with your batch spec."
                     options={options}
                     onChangeOptions={setOptions}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             )}
         </WebStory>
@@ -43,6 +44,7 @@ export const Enabled: StoryFn = () => {
                     execute={() => alert('executing!')}
                     options={options}
                     onChangeOptions={setOptions}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             )}
         </WebStory>
