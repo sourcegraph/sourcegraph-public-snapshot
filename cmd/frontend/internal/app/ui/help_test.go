@@ -31,7 +31,7 @@ func TestServeHelp(t *testing.T) {
 		if want := http.StatusTemporaryRedirect; rw.Code != want {
 			t.Errorf("got %d, want %d", rw.Code, want)
 		}
-		if got, want := rw.Header().Get("Location"), "http://localhost:5080/foo/bar"; got != want {
+		if got, want := rw.Header().Get("Location"), "http://localhost:3000/foo/bar"; got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
 	})
