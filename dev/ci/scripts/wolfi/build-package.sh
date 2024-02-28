@@ -4,6 +4,8 @@ set -euf -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
+MAIN_BRANCH="main"
+BRANCH="${BUILDKITE_BRANCH:-'default-branch'}"
 IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
 
 tmpdir=$(mktemp -d -t melange-bin.XXXXXXXX)
