@@ -302,6 +302,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                     originalInput={editor.code}
                     setDownloadSpecModalDismissed={setDownloadSpecModalDismissed}
                     setIsDownloadSpecModalOpen={setIsDownloadSpecModalOpen}
+                    telemetryRecorder={telemetryRecorder}
                 />
             ) : null}
             {isRunServerSideModalOpen ? (

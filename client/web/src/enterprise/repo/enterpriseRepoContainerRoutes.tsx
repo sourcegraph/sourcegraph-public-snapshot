@@ -41,7 +41,9 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/batch-changes',
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
-        render: context => <RepositoryBatchChangesArea {...context} />,
+        render: context => (
+            <RepositoryBatchChangesArea {...context} telemetryRecorder={context.platformContext.telemetryRecorder} />
+        ),
     },
     {
         path: '/-/own/*',

@@ -100,7 +100,12 @@ export const BatchChangePreviewPage: FC<BatchChangePreviewPageProps> = props => 
                         telemetryRecorder={telemetryRecorder}
                     />
                     <Description description={spec.description.description} />
-                    <BatchChangePreviewTabs spec={spec} {...props} batchSpecID={spec.id} />
+                    <BatchChangePreviewTabs
+                        spec={spec}
+                        {...props}
+                        batchSpecID={spec.id}
+                        telemetryRecorder={telemetryRecorder}
+                    />
                 </div>
             </BatchChangePreviewContextProvider>
         </MultiSelectContextProvider>

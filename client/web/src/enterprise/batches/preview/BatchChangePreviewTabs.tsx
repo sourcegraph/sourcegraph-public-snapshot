@@ -105,13 +105,18 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
                 </TabPanel>
                 <TabPanel>
                     <div className="d-flex mb-2 justify-content-end">
-                        <BatchSpecDownloadButton name={spec.description.name} originalInput={spec.originalInput} />
+                        <BatchSpecDownloadButton
+                            name={spec.description.name}
+                            originalInput={spec.originalInput}
+                            telemetryRecorder={telemetryRecorder}
+                        />
                     </div>
                     <Container>
                         <BatchSpec
                             name={spec.description.name}
                             originalInput={spec.originalInput}
                             className={styles.batchSpec}
+                            telemetryRecorder={telemetryRecorder}
                         />
                     </Container>
                 </TabPanel>

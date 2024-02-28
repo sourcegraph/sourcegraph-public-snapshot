@@ -127,6 +127,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                             batchChangeNamespaceURL={batchChange.namespace.url}
                             batchChangeURL={batchChange.url}
                             settingsCascade={props.settingsCascade}
+                            telemetryRecorder={telemetryRecorder}
                         />
                     ) : null
                 }
