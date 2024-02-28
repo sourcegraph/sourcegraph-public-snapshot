@@ -73,6 +73,7 @@ docker-compose up -d
 
 echo "--- :terminal: Wait for server to be up"
 URL="http://localhost:7080"
+sleep 10
 timeout 120s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
     echo Waiting 5s for $URL...
     sleep 5
