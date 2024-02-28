@@ -530,155 +530,179 @@ translate_apko_lock(
     lock = "@//wolfi-images:batcheshelper.lock.json",
 )
 load("@batcheshelper_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "blobstore_lock",
     lock = "@//wolfi-images:blobstore.lock.json",
 )
 load("@blobstore_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "bundled-executor_lock",
     lock = "@//wolfi-images:bundled-executor.lock.json",
 )
 load("@bundled-executor_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "cadvisor_lock",
     lock = "@//wolfi-images:cadvisor.lock.json",
 )
 load("@cadvisor_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "cloud-mi2_lock",
     lock = "@//wolfi-images:cloud-mi2.lock.json",
 )
 load("@cloud-mi2_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "executor-kubernetes_lock",
     lock = "@//wolfi-images:executor-kubernetes.lock.json",
 )
 load("@executor-kubernetes_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "gitserver_lock",
     lock = "@//wolfi-images:gitserver.lock.json",
 )
 load("@gitserver_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "grafana_lock",
     lock = "@//wolfi-images:grafana.lock.json",
 )
 load("@grafana_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "jaeger-agent_lock",
     lock = "@//wolfi-images:jaeger-agent.lock.json",
 )
 load("@jaeger-agent_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "jaeger-all-in-one_lock",
     lock = "@//wolfi-images:jaeger-all-in-one.lock.json",
 )
 load("@jaeger-all-in-one_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "node-exporter_lock",
     lock = "@//wolfi-images:node-exporter.lock.json",
 )
 load("@node-exporter_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "opentelemetry-collector_lock",
     lock = "@//wolfi-images:opentelemetry-collector.lock.json",
 )
 load("@opentelemetry-collector_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "postgres-exporter_lock",
     lock = "@//wolfi-images:postgres-exporter.lock.json",
 )
 load("@postgres-exporter_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "prometheus-gcp_lock",
     lock = "@//wolfi-images:prometheus-gcp.lock.json",
 )
 load("@prometheus-gcp_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "prometheus_lock",
     lock = "@//wolfi-images:prometheus.lock.json",
 )
 load("@prometheus_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "qdrant_lock",
     lock = "@//wolfi-images:qdrant.lock.json",
 )
 load("@qdrant_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "redis-exporter_lock",
     lock = "@//wolfi-images:redis-exporter.lock.json",
 )
 load("@redis-exporter_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "redis_lock",
     lock = "@//wolfi-images:redis.lock.json",
 )
 load("@redis_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "repo-updater_lock",
     lock = "@//wolfi-images:repo-updater.lock.json",
 )
 load("@repo-updater_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "search-indexer_lock",
     lock = "@//wolfi-images:search-indexer.lock.json",
 )
 load("@search-indexer_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "searcher_lock",
     lock = "@//wolfi-images:searcher.lock.json",
 )
 load("@searcher_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "server_lock",
     lock = "@//wolfi-images:server.lock.json",
 )
 load("@server_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "sourcegraph-base_lock",
     lock = "@//wolfi-images:sourcegraph-base.lock.json",
 )
 load("@sourcegraph-base_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "sourcegraph-dev_lock",
     lock = "@//wolfi-images:sourcegraph-dev.lock.json",
 )
 load("@sourcegraph-dev_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "symbols_lock",
     lock = "@//wolfi-images:symbols.lock.json",
 )
 load("@symbols_lock//:repositories.bzl", "apko_repositories")
+apko_repositories()
 
 translate_apko_lock(
     name = "syntax-highlighter_lock",
     lock = "@//wolfi-images:syntax-highlighter.lock.json",
 )
 load("@syntax-highlighter_lock//:repositories.bzl", "apko_repositories")
-
 apko_repositories()
