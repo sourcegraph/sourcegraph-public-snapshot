@@ -4,6 +4,7 @@ import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Link, Button, CardBody, Card, Icon, H2, H3, H4, Text } from '@sourcegraph/wildcard'
 
@@ -12,7 +13,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
 
-interface CodeMonitoringGettingStartedProps {
+interface CodeMonitoringGettingStartedProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -65,14 +66,15 @@ const createCodeMonitorUrl = (example: ExampleCodeMonitor): string => {
 
 export const CodeMonitoringGettingStarted: React.FunctionComponent<
     React.PropsWithChildren<CodeMonitoringGettingStartedProps>
-> = ({ authenticatedUser }) => {
+> = ({ authenticatedUser, telemetryRecorder }) => {
     const isLightTheme = useIsLightTheme()
     const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
     const assetsRoot = window.context?.assetsRoot || ''
 
     const logExampleMonitorClicked = useCallback(() => {
         eventLogger.log('CodeMonitoringExampleMonitorClicked')
-    }, [])
+        telemetryRecorder.recordEvent('codeMonitor.example', 'click')
+    }, [telemetryRecorder])
 
     const ctaBannerUrl = 'https://sourcegraph.com/get-started?t=enterprise'
 
@@ -110,9 +112,12 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                     To monitor changes across your team's private repositories,{' '}
                     <Link
                         to={ctaBannerUrl}
-                        onClick={() =>
+                        onClick={() => {
                             eventLogger.log('ClickedOnEnterpriseCTA', { location: 'MonitoringGettingStarted' })
-                        }
+                            telemetryRecorder.recordEvent('codeMonitor.enterpriseCTA', 'click', {
+                                metadata: { location: 0 },
+                            })
+                        }}
                     >
                         get Sourcegraph Enterprise
                     </Link>
