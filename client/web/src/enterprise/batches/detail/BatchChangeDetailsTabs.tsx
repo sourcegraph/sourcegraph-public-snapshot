@@ -4,6 +4,7 @@ import { mdiSourceBranch, mdiChartLineVariant, mdiFileDocument, mdiArchive, mdiM
 import { useNavigate, useLocation } from 'react-router-dom'
 
 import type { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Container, Icon, Link, Tab, TabPanel, TabPanels, Text } from '@sourcegraph/wildcard'
 
@@ -55,7 +56,7 @@ const getTabName = (tabIndex: number, shouldDisplayExecutionsTab: boolean): TabN
     ][tabIndex]
 
 /** `BatchChangeDetailsPage` and `BatchChangeDetailsTabs` share all these props */
-export interface BatchChangeDetailsProps extends TelemetryProps {
+export interface BatchChangeDetailsProps extends TelemetryProps, TelemetryV2Props {
     /** The name of the tab that should be initially open */
     initialTab?: TabName
 
