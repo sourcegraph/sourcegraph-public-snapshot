@@ -70,6 +70,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 	bk.FeatureFlags.ApplyEnv(env)
 
+	c.RunType = runtype.MainDryRun
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
 	if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) {
 		env["PERCY_TARGET_BRANCH"] = c.Branch
