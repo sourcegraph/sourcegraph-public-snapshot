@@ -20,7 +20,7 @@ export default defineConfig(() => {
             rollupOptions: {
                 input: ENVIRONMENT_CONFIG.CODY_APP
                     ? ['src/enterprise/app/main.tsx']
-                    : ['src/enterprise/main.tsx', 'src/enterprise/embed/embedMain.tsx']
+                    : ['src/enterprise/main.tsx']
                           .map(BAZEL ? toJSExtension : String)
                           .map(p => path.join(clientWebRoot, p)),
             },
@@ -31,6 +31,7 @@ export default defineConfig(() => {
             modulePreload: { polyfill: false },
 
             emptyOutDir: false, // client/web/dist has static assets checked in
+            cssCodeSplit: false,
         },
         base: '/.assets',
         root: clientWebRoot,
