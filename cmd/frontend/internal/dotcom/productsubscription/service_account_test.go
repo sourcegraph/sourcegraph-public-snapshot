@@ -2,22 +2,25 @@ package productsubscription
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/rbac"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 	var actorID, anotherID int32 = 1, 2
 	for _, tc := range []struct {
 		name           string
-		featureFlags   map[string]bool
+		rbacRoles      map[string]bool
 		actorSiteAdmin bool
 
 		ownerUserID            *int32
@@ -27,20 +30,20 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 		wantErr         autogold.Value
 	}{
 		{
-			name: "reader service account",
-			featureFlags: map[string]bool{
-				featureFlagProductSubscriptionsReaderServiceAccount: true,
+			name: "subscriptions reader account",
+			rbacRoles: map[string]bool{
+				rbac.ProductsubscriptionsReadPermission: true,
 			},
 			wantErr:         nil,
-			wantGrantReason: "reader_service_account",
+			wantGrantReason: rbac.ProductsubscriptionsReadPermission,
 		},
 		{
-			name: "service account",
-			featureFlags: map[string]bool{
-				featureFlagProductSubscriptionsServiceAccount: true,
+			name: "subscriptions writer account",
+			rbacRoles: map[string]bool{
+				rbac.ProductsubscriptionsWritePermission: true,
 			},
 			wantErr:         nil,
-			wantGrantReason: "writer_service_account",
+			wantGrantReason: rbac.ProductsubscriptionsWritePermission,
 		},
 		{
 			name:            "same user",
@@ -71,21 +74,21 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 			wantErr: autogold.Expect("must be site admin"),
 		},
 		{
-			name: "service account needs writer flag",
-			featureFlags: map[string]bool{
-				featureFlagProductSubscriptionsReaderServiceAccount: true,
+			name: "account needs writer",
+			rbacRoles: map[string]bool{
+				rbac.ProductsubscriptionsReadPermission: true,
 			},
 			serviceAccountCanWrite: true,
 			wantErr:                autogold.Expect("must be site admin"),
 		},
 		{
-			name: "service account fulfills writer flag",
-			featureFlags: map[string]bool{
-				featureFlagProductSubscriptionsServiceAccount: true,
+			name: "account fulfills writer",
+			rbacRoles: map[string]bool{
+				rbac.ProductsubscriptionsWritePermission: true,
 			},
 			serviceAccountCanWrite: true,
 			wantErr:                nil,
-			wantGrantReason:        "writer_service_account",
+			wantGrantReason:        rbac.ProductsubscriptionsWritePermission,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -98,23 +101,29 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 			user := &types.User{ID: actorID, SiteAdmin: tc.actorSiteAdmin}
 			mockUsers.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
 			mockUsers.GetByIDFunc.SetDefaultReturn(user, nil)
-
 			db.UsersFunc.SetDefaultReturn(mockUsers)
 
-			ffStore := dbmocks.NewMockFeatureFlagStore()
-			ffStore.GetUserFlagsFunc.SetDefaultReturn(tc.featureFlags, nil)
-			db.FeatureFlagsFunc.SetDefaultReturn(ffStore)
-
-			// Test that a feature flag store with potential overrides on the context
-			// is NOT used. We don't want to allow ovverriding service account checks.
-			ctx := featureflag.WithFlags(context.Background(),
-				featureflag.NewMemoryStore(map[string]bool{
-					featureFlagProductSubscriptionsReaderServiceAccount: true,
-					featureFlagProductSubscriptionsServiceAccount:       true,
-				}, nil, nil))
+			permsStore := dbmocks.NewMockPermissionStore()
+			permsStore.GetPermissionForUserFunc.SetDefaultHook(func(_ context.Context, opts database.GetPermissionForUserOpts) (*types.Permission, error) {
+				if opts.UserID != actorID {
+					return nil, errors.Newf("unexpected user ID %d", opts.UserID)
+				}
+				if len(tc.rbacRoles) == 0 {
+					return nil, errors.New("user has no roles")
+				}
+				roleName := fmt.Sprintf("%s#%s", opts.Namespace, opts.Action)
+				ok := tc.rbacRoles[roleName]
+				if !ok {
+					return nil, errors.Newf("%s not allowed", roleName)
+				}
+				// Value of types.Permission doesn't really matter, just needs
+				// to be non-nil
+				return &types.Permission{Namespace: opts.Namespace, Action: opts.Action}, nil
+			})
+			db.PermissionsFunc.SetDefaultReturn(permsStore)
 
 			grantReason, err := serviceAccountOrOwnerOrSiteAdmin(
-				actor.WithActor(ctx, &actor.Actor{UID: actorID}),
+				actor.WithActor(context.Background(), &actor.Actor{UID: actorID}),
 				db,
 				tc.ownerUserID,
 				tc.serviceAccountCanWrite,

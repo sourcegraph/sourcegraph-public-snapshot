@@ -3,19 +3,9 @@ package productsubscription
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-)
-
-const (
-	// featureFlagProductSubscriptionsServiceAccount is a feature flag that should be
-	// set on service accounts that can read AND write product subscriptions.
-	featureFlagProductSubscriptionsServiceAccount = "product-subscriptions-service-account"
-
-	// featureFlagProductSubscriptionsReaderServiceAccount is a feature flag that should be
-	// set on service accounts that can only read product subscriptions.
-	featureFlagProductSubscriptionsReaderServiceAccount = "product-subscriptions-reader-service-account"
+	"github.com/sourcegraph/sourcegraph/internal/rbac"
 )
 
 // 🚨 SECURITY: Use this to check if access to a subscription query or mutation
@@ -37,27 +27,27 @@ func serviceAccountOrOwnerOrSiteAdmin(
 	ctx context.Context,
 	db database.DB,
 	ownerUserID *int32,
-	// requiresWriterServiceAccount, if true, requires "product-subscriptions-service-account",
-	// otherwise just "product-subscriptions-reader-service-account" is sufficient.
-	requiresWriterServiceAccount bool,
+	requiresWriter bool,
 ) (string, error) {
 	// Check if the user is has the prerequisite service account.
-	serviceAccountIsWriter := readFeatureFlagFromDB(ctx, db, featureFlagProductSubscriptionsServiceAccount, false)
-	if requiresWriterServiceAccount {
+	subscriptionsWriter := rbac.CheckCurrentUserHasPermission(ctx, db,
+		rbac.ProductsubscriptionsWritePermission) == nil
+	if requiresWriter {
 		// 🚨 SECURITY: Require the more strict featureFlagProductSubscriptionsServiceAccount
 		// if requiresWriterServiceAccount=true
-		if serviceAccountIsWriter {
-			return "writer_service_account", nil
+		if subscriptionsWriter {
+			return rbac.ProductsubscriptionsWritePermission, nil
 		}
 		// Otherwise, fall through to check if actor is owner or site admin.
 	} else {
-		// If requiresWriterServiceAccount==false, then just
-		// featureFlagProductSubscriptionsReaderServiceAccount is sufficient.
-		if serviceAccountIsWriter {
-			return "writer_service_account", nil
+		// If requiresWriterServiceAccount==false, then just reader account is
+		// sufficient.
+		if subscriptionsWriter {
+			return rbac.ProductsubscriptionsWritePermission, nil
 		}
-		if readFeatureFlagFromDB(ctx, db, featureFlagProductSubscriptionsReaderServiceAccount, false) {
-			return "reader_service_account", nil
+		if rbac.CheckCurrentUserHasPermission(ctx, db,
+			rbac.ProductsubscriptionsReadPermission) == nil {
+			return rbac.ProductsubscriptionsReadPermission, nil
 		}
 	}
 
@@ -68,25 +58,4 @@ func serviceAccountOrOwnerOrSiteAdmin(
 
 	// Otherwise, the user must be a site admin.
 	return "site_admin", auth.CheckCurrentUserIsSiteAdmin(ctx, db)
-}
-
-// readFeatureFlagFromDB explicitly reads the feature flag values from the database,
-// instead of from the feature flag store in the context.
-//
-// 🚨 SECURITY: This makes it so that we solely look at the database as authority here,
-// and not allow HTTP headers to override the feature flags for service accounts.
-func readFeatureFlagFromDB(ctx context.Context, db database.DB, flag string, defaultValue bool) bool {
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return defaultValue
-	}
-	ffs, err := db.FeatureFlags().GetUserFlags(ctx, a.UID)
-	if err != nil {
-		return defaultValue
-	}
-	v, ok := ffs[flag]
-	if !ok {
-		return defaultValue
-	}
-	return v
 }

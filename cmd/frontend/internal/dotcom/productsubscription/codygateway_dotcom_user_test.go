@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/rbac"
 	"github.com/sourcegraph/sourcegraph/internal/ssc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -187,11 +188,18 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	adminUser, err := db.Users().Create(ctx, database.NewUser{Username: "admin", EmailIsVerified: true, Email: "admin@test.com"})
 	require.NoError(t, err)
 
-	// Not Admin with feature flag
+	// Not Admin with RBAC
 	notAdminUser, err := db.Users().Create(ctx, database.NewUser{Username: "verified", EmailIsVerified: true, Email: "verified@test.com"})
 	require.NoError(t, err)
+	role, err := db.Roles().Create(ctx, rbac.ProductSubscriptionsReadPermission, false)
+	require.NoError(t, err)
+	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
+		UserID: notAdminUser.ID,
+		RoleID: role.ID,
+	})
+	require.NoError(t, err)
 
-	// No admin, no feature flag
+	// No admin, no RBAC
 	noAccessUser, err := db.Users().Create(ctx, database.NewUser{Username: "nottheone", EmailIsVerified: true, Email: "nottheone@test.com"})
 	require.NoError(t, err)
 
@@ -202,12 +210,6 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	_, codyUserApiToken, err := db.AccessTokens().Create(context.Background(), codyUser.ID, []string{authz.ScopeUserAll}, "cody", codyUser.ID, time.Time{})
 	require.NoError(t, err)
 	codyUserGatewayToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(codyUserApiToken)
-	require.NoError(t, err)
-
-	// Create a feature flag override entry for the notAdminUser.
-	_, err = db.FeatureFlags().CreateBool(context.Background(), "product-subscriptions-reader-service-account", false)
-	require.NoError(t, err)
-	_, err = db.FeatureFlags().CreateOverride(context.Background(), &featureflag.Override{FlagName: "product-subscriptions-reader-service-account", Value: true, UserID: &notAdminUser.ID})
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -221,12 +223,12 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name:    "service account",
+			name:    "RBAC reader role",
 			user:    notAdminUser,
 			wantErr: nil,
 		},
 		{
-			name:    "not admin or service account user",
+			name:    "not admin or RBAC reader role user",
 			user:    noAccessUser,
 			wantErr: auth.ErrMustBeSiteAdmin,
 		},
