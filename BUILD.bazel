@@ -341,5 +341,6 @@ apko_bazelrc(
         "dl-cdn.alpinelinux.org",
         "packages.wolfi.dev",
         "packages.sgdev.org",
+        "storage.googleapis.com",
     ],
 )
