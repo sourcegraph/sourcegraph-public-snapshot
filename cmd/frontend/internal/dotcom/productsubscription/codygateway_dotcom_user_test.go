@@ -191,7 +191,19 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	// Not Admin with RBAC
 	notAdminUser, err := db.Users().Create(ctx, database.NewUser{Username: "verified", EmailIsVerified: true, Email: "verified@test.com"})
 	require.NoError(t, err)
-	role, err := db.Roles().Create(ctx, rbac.ProductSubscriptionsReadPermission, false)
+	ns, action, err := rbac.ParsePermissionDisplayName(rbac.ProductSubscriptionsReadPermission)
+	require.NoError(t, err)
+	perm, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
+		Namespace: ns,
+		Action:    action,
+	})
+	require.NoError(t, err)
+	role, err := db.Roles().Create(ctx, "SUBSCRIPTIONS_READER", false)
+	require.NoError(t, err)
+	err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
+		PermissionID: perm.ID,
+		RoleID:       role.ID,
+	})
 	require.NoError(t, err)
 	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
 		UserID: notAdminUser.ID,

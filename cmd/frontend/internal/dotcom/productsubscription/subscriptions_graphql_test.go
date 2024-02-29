@@ -58,10 +58,22 @@ func TestProductSubscriptionActiveLicense(t *testing.T) {
 	_, err = licensesDB.Create(ctx, sub, "license-key", 1, license.Info{})
 	require.NoError(t, err)
 
-	// Service account user
+	// Subscriptions writer user
 	serviceAccountUser, err := db.Users().Create(ctx, database.NewUser{Username: "serviceaccount"})
 	require.NoError(t, err)
-	role, err := db.Roles().Create(ctx, rbac.ProductsubscriptionsWritePermission, false)
+	ns, action, err := rbac.ParsePermissionDisplayName(rbac.ProductsubscriptionsWritePermission)
+	require.NoError(t, err)
+	perm, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
+		Namespace: ns,
+		Action:    action,
+	})
+	require.NoError(t, err)
+	role, err := db.Roles().Create(ctx, "SUBSCRIPTIONS_WRITER", false)
+	require.NoError(t, err)
+	err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
+		PermissionID: perm.ID,
+		RoleID:       role.ID,
+	})
 	require.NoError(t, err)
 	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
 		UserID: serviceAccountUser.ID,
