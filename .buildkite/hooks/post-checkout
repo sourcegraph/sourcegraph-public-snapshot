@@ -11,7 +11,7 @@ source "$HOME/.profile"
 # 4. Parse them so that we only get the tag
 # 5. Then loop through every tag and fetch it
 echo "--- :git: Fetching last 20 tags"
-git ls-remote --tags origin | sort -t '/' -k 3 -V | tail -n 20 | awk -F'/' '{gsub(/\^\{\}$/, "", $3); print $3}' | while read -r tag; do
+git ls-remote --tags origin | sort -t '/' -k 3 -V | tail -n 20 | awk -F'/' '{gsub(/\^\{\}$/, "", $3); print $3}' | uniq | while read -r tag; do
   git fetch -v origin tag "$tag"
 done
 
