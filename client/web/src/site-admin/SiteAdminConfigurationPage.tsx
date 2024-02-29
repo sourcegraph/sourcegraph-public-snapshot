@@ -21,12 +21,18 @@ import {
     PageHeader,
     Container,
     ErrorAlert,
+    TabList,
+    Tab,
+    TabPanel,
+    TabPanels,
+    Tabs,
 } from '@sourcegraph/wildcard'
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
 import type { SiteResult } from '../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
+import { GeneratedSettingsForm, SettingsNode } from '../settings/GeneratedSettingsForm'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -420,36 +426,53 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
                     }
                     className="mb-3"
                 />
-                <Container className="mb-3">
-                    <div>{alerts}</div>
-                    {this.state.loading && <LoadingSpinner />}
-                    {this.state.site?.configuration && (
-                        <div>
-                            <DynamicallyImportedMonacoSettingsEditor
-                                value={contents || ''}
-                                jsonSchema={siteSchemaJSON}
-                                canEdit={true}
-                                saving={this.state.saving}
-                                loading={isReloading || this.state.saving}
-                                height={600}
-                                isLightTheme={this.props.isLightTheme}
-                                onSave={this.onSave}
-                                actions={quickConfigureActions}
-                                telemetryService={this.props.telemetryService}
-                                explanation={
-                                    <Text className="form-text text-muted">
-                                        <small>
-                                            Use Ctrl+Space for completion, and hover over JSON properties for
-                                            documentation. For more information, see the{' '}
-                                            <Link to="/help/admin/config/site_config">documentation</Link>.
-                                        </small>
-                                    </Text>
-                                }
+                <Tabs>
+                    <TabList>
+                        <Tab>Settings</Tab>
+                        <Tab>JSON Editor</Tab>
+                    </TabList>
+                    <TabPanels>
+                        <TabPanel>
+                            <GeneratedSettingsForm
+                                jsonSchema={siteSchemaJSON as unknown as SettingsNode}
+                                currentSettings={window.context.site}
+                                reportDirtiness={dirty => { /* TODO */ }}
                             />
-                        </div>
-                    )}
-                </Container>
-                <SiteConfigurationChangeList />
+                        </TabPanel>
+                        <TabPanel>
+                            <Container className="mb-3">
+                                <div>{alerts}</div>
+                                {this.state.loading && <LoadingSpinner />}
+                                {this.state.site?.configuration && (
+                                    <div>
+                                        <DynamicallyImportedMonacoSettingsEditor
+                                            value={contents || ''}
+                                            jsonSchema={siteSchemaJSON}
+                                            canEdit={true}
+                                            saving={this.state.saving}
+                                            loading={isReloading || this.state.saving}
+                                            height={600}
+                                            isLightTheme={this.props.isLightTheme}
+                                            onSave={this.onSave}
+                                            actions={quickConfigureActions}
+                                            telemetryService={this.props.telemetryService}
+                                            explanation={
+                                                <Text className="form-text text-muted">
+                                                    <small>
+                                                        Use Ctrl+Space for completion, and hover over JSON properties
+                                                        for documentation. For more information, see the{' '}
+                                                        <Link to="/help/admin/config/site_config">documentation</Link>.
+                                                    </small>
+                                                </Text>
+                                            }
+                                        />
+                                    </div>
+                                )}
+                            </Container>
+                            <SiteConfigurationChangeList />
+                        </TabPanel>
+                    </TabPanels>
+                </Tabs>
             </div>
         )
     }

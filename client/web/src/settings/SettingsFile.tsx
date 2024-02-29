@@ -1,51 +1,34 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import { Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
+import { unstable_useBlocker as useBlocker } from 'react-router-dom'
 
+import { ErrorLike } from '@sourcegraph/common'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
+import { BeforeUnloadPrompt, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { SaveToolbar } from '../components/SaveToolbar'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import type { SiteAdminSettingsCascadeFields } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
+
+import { GeneratedSettingsForm, SettingsNode } from './GeneratedSettingsForm'
 
 import styles from './SettingsFile.module.scss'
 
 interface Props extends TelemetryProps {
     settings: SiteAdminSettingsCascadeFields['subjects'][number]['latestSettings'] | null
-
-    /**
-     * Called when the user saves changes to the settings file's contents.
-     */
+    settingsCascadeFinal: Settings | ErrorLike | null
+    // Called when the user saves changes to the settings file's contents.
     onDidCommit: (lastID: number | null, contents: string) => void
-
-    /**
-     * Called when the user discards changes to the settings file's contents.
-     */
+    // Called when the user discards changes to the settings file's contents.
     onDidDiscard: () => void
-
-    /**
-     * The error that occurred on the last call to the onDidCommit callback,
-     * if any.
-     */
+    // The error that occurred on the last call to the onDidCommit callback, if any.
     commitError?: Error
 
     isLightTheme: boolean
-}
-
-interface State {
-    contents?: string
-    saving: boolean
-
-    /**
-     * The lastID that we started editing from. If null, then no
-     * previous versions of the settings exist, and we're creating them from
-     * scratch.
-     */
-    editingLastID?: number | null
 }
 
 const emptySettings = '{\n  // add settings here (Ctrl+Space to see hints)\n}'
@@ -54,154 +37,147 @@ const MonacoSettingsEditor = React.lazy(async () => ({
     default: (await import('./MonacoSettingsEditor')).MonacoSettingsEditor,
 }))
 
-export class SettingsFile extends React.PureComponent<Props, State> {
-    private componentUpdates = new Subject<Props>()
-    private subscriptions = new Subscription()
+export const SettingsFile = ({
+    settings,
+    settingsCascadeFinal,
+    onDidCommit,
+    onDidDiscard,
+    commitError,
+    isLightTheme,
+}: Props): JSX.Element => {
+    const [contents, setContents] = React.useState<string | undefined>(settings ? settings.contents : emptySettings)
+    const [saving, setSaving] = React.useState(false)
+    const [isFormDirty, setIsFormDirty] = React.useState(false)
+    // The lastID that we started editing from. If null, then no previous versions of the settings exist, and we're creating them from scratch.
+    const [editingLastID, setEditingLastID] = React.useState<number | null | undefined>(undefined)
 
-    constructor(props: Props) {
-        super(props)
+    const enableVisualSettingsEditor = useFeatureFlag('visual-settings-editor')
 
-        this.state = { saving: false }
+    // Reset state upon navigation to a different subject.
+    React.useEffect(() => {
+        if (contents !== undefined) {
+            setContents(undefined)
+        }
+        // We only want to reset the state when the settings props change, not when the current settings content changes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [settings])
 
-        // Reset state upon navigation to a different subject.
-        this.subscriptions.add(
-            this.componentUpdates
-                .pipe(
-                    startWith(props),
-                    map(({ settings }) => settings),
-                    distinctUntilChanged()
-                )
-                .subscribe(() => {
-                    if (this.state.contents !== undefined) {
-                        this.setState({ contents: undefined })
-                    }
-                })
-        )
+    // Saving ended (in failure) if we get a commitError.
+    React.useEffect(() => {
+        if (commitError) {
+            setSaving(false)
+        }
+    }, [commitError])
 
-        // Saving ended (in failure) if we get a commitError.
-        this.subscriptions.add(
-            this.componentUpdates
-                .pipe(
-                    map(({ commitError }) => commitError),
-                    distinctUntilChanged(),
-                    filter(commitError => !!commitError)
-                )
-                .subscribe(() => this.setState({ saving: false }))
-        )
+    // We are finished saving when we receive the new settings ID, and it's higher than the one we saved on top of.
+    React.useEffect(() => {
+        if (settings && (!editingLastID || settings.id > editingLastID) && !commitError) {
+            setSaving(false)
+            setEditingLastID(undefined)
+            setContents(settings.contents)
+        }
+    }, [settings, commitError, editingLastID])
 
-        // We are finished saving when we receive the new settings ID and it's
-        // higher than the one we saved on top of.
-        const refreshedAfterSave = this.componentUpdates.pipe(
-            filter(({ settings }) => !!settings),
-            distinctUntilChanged(
-                (a, b) =>
-                    (!a.settings && !!b.settings) ||
-                    (!!a.settings && !b.settings) ||
-                    (!!a.settings &&
-                        !!b.settings &&
-                        a.settings.contents === b.settings.contents &&
-                        a.settings.id === b.settings.id)
-            ),
-            filter(
-                ({ settings, commitError }) =>
-                    !!settings &&
-                    !commitError &&
-                    ((typeof this.state.editingLastID === 'number' && settings.id > this.state.editingLastID) ||
-                        (typeof settings.id === 'number' && this.state.editingLastID === null))
-            )
-        )
-        this.subscriptions.add(
-            refreshedAfterSave.subscribe(({ settings }) =>
-                this.setState({
-                    saving: false,
-                    editingLastID: undefined,
-                    contents: settings ? settings.contents : undefined,
-                })
-            )
-        )
-    }
+    useBlocker(({historyAction}) => {
+        if (historyAction === 'REPLACE') {
+            return false
+        }
+        if (saving || isFormDirty) {
+            return confirm('Discard settings changes?')
+        }
+        return false
+    })
 
-    public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    private get dirty(): boolean {
-        return this.state.contents !== undefined && this.state.contents !== this.getPropsSettingsContentsOrEmpty()
-    }
-
-    public render(): JSX.Element | null {
-        const dirty = this.dirty
-        const contents =
-            this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
-
-        return (
-            <div
-                className={classNames(
-                    'test-settings-file percy-hide d-flex flex-grow-1 flex-column',
-                    styles.settingsFile
-                )}
-            >
-                <BeforeUnloadPrompt when={this.state.saving || this.dirty} message="Discard settings changes?" />
-                <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
-                    <MonacoSettingsEditor
-                        value={contents}
-                        jsonSchema={settingsSchemaJSON}
-                        onChange={this.onEditorChange}
-                        readOnly={this.state.saving}
-                        isLightTheme={this.props.isLightTheme}
-                        onDidSave={this.save}
-                    />
-                </React.Suspense>
-                <SaveToolbar
-                    dirty={dirty}
-                    error={this.props.commitError}
-                    saving={this.state.saving}
-                    onSave={this.save}
-                    onDiscard={this.discard}
+    const jsonEditor = (
+        <>
+            <BeforeUnloadPrompt when={saving || isFormDirty || isJSONEditorDirty()} message="Discard settings changes?" />
+            <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
+                <MonacoSettingsEditor
+                    value={contents}
+                    jsonSchema={settingsSchemaJSON}
+                    onChange={onJSONEditorChange}
+                    readOnly={saving}
+                    isLightTheme={isLightTheme}
+                    onDidSave={saveJSON}
                 />
+            </React.Suspense>
+            <SaveToolbar
+                dirty={isJSONEditorDirty()}
+                error={commitError}
+                saving={saving}
+                onSave={saveJSON}
+                onDiscard={discardJSON}
+            />
+        </>
+    )
+
+    if (enableVisualSettingsEditor) {
+        return (
+            <div className={classNames('test-settings-file percy-hide d-flex flex-grow-1 flex-column', styles.settingsFile)}>
+                <Tabs>
+                    <TabList>
+                        <Tab disabled={false /* TODO: Make this dynamic */}>Settings</Tab>
+                        <Tab disabled={isFormDirty}>JSON Editor</Tab>
+                    </TabList>
+                    <TabPanels>
+                        <TabPanel>
+                            <GeneratedSettingsForm
+                                jsonSchema={settingsSchemaJSON as unknown as SettingsNode}
+                                currentSettings={settingsCascadeFinal}
+                                reportDirtiness={onFormChange}
+                            />
+                        </TabPanel>
+                        <TabPanel>{jsonEditor}</TabPanel>
+                    </TabPanels>
+                </Tabs>
             </div>
         )
     }
+    return (
+        <div className={classNames('test-settings-file d-flex flex-grow-1 flex-column', styles.settingsFile)}>
+            {jsonEditor}
+        </div>
+    )
 
-    private getPropsSettingsContentsOrEmpty(settings = this.props.settings): string {
+    function isJSONEditorDirty(): boolean {
+        return contents !== undefined && contents !== getPropsSettingsContentsOrEmpty()
+    }
+
+    function getPropsSettingsContentsOrEmpty(): string {
         return settings ? settings.contents : emptySettings
     }
 
-    private getPropsSettingsID(): number | null {
-        return this.props.settings ? this.props.settings.id : null
+    function getPropsSettingsID(): number | null {
+        return settings ? settings.id : null
     }
 
-    private discard = (): void => {
-        if (
-            this.getPropsSettingsContentsOrEmpty() === this.state.contents ||
-            window.confirm('Discard settings edits?')
-        ) {
+    function onFormChange(isDirty: boolean): void {
+        setIsFormDirty(isDirty)
+    }
+
+    function discardJSON(): void {
+        if (getPropsSettingsContentsOrEmpty() === contents || window.confirm('Discard settings edits?')) {
             eventLogger.log('SettingsFileDiscard')
-            this.setState({
-                contents: undefined,
-                editingLastID: undefined,
-            })
-            this.props.onDidDiscard()
+            setContents(undefined)
+            setEditingLastID(undefined)
+            onDidDiscard()
         } else {
             eventLogger.log('SettingsFileDiscardCanceled')
         }
     }
 
-    private onEditorChange = (newValue: string): void => {
-        if (newValue !== this.getPropsSettingsContentsOrEmpty()) {
-            this.setState({ editingLastID: this.getPropsSettingsID() })
+    function onJSONEditorChange(newValue: string): void {
+        if (newValue !== getPropsSettingsContentsOrEmpty()) {
+            setEditingLastID(getPropsSettingsID())
         }
-        this.setState({ contents: newValue })
+        setContents(newValue)
     }
 
-    private save = (): void => {
+    function saveJSON(): void {
         eventLogger.log('SettingsFileSaved')
-        this.setState({ saving: true }, () => {
-            this.props.onDidCommit(this.getPropsSettingsID(), this.state.contents!)
-        })
+        setSaving(true)
+        if (contents) {
+            onDidCommit(getPropsSettingsID(), contents)
+        }
     }
 }
