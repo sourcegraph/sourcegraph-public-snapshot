@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/processrestart"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -28,8 +28,7 @@ func (r *schemaResolver) ReloadSite(ctx context.Context) (*EmptyResponse, error)
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-
-	if deploy.IsDeployTypeKubernetes(deploy.Type()) {
+	if cloud.SiteConfig().SourcegraphOperatorAuthProviderEnabled() {
 		// use k8s client to restart the frontend deployment rollout
 		client, err := endpoint.LoadClient()
 		if err != nil {
