@@ -32,10 +32,12 @@ export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<
         const tab = new URLSearchParams(location.search).get('tab')
         if (tab === 'form') {
             setActiveTabIndex(0)
+            telemetryRecorder.recordEvent('codeIntel.repoIndexConfig.tab', 'click', { metadata: { tab: 0 } })
         } else if (tab === 'raw') {
             setActiveTabIndex(1)
+            telemetryRecorder.recordEvent('codeIntel.repoIndexConfig.tab', 'click', { metadata: { tab: 1 } })
         }
-    }, [location.search])
+    }, [location.search, telemetryRecorder])
 
     return (
         <>
