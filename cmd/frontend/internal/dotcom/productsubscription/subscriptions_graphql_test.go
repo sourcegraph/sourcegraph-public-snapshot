@@ -61,7 +61,7 @@ func TestProductSubscriptionActiveLicense(t *testing.T) {
 	// Subscriptions writer user
 	serviceAccountUser, err := db.Users().Create(ctx, database.NewUser{Username: "serviceaccount"})
 	require.NoError(t, err)
-	ns, action, err := rbac.ParsePermissionDisplayName(rbac.ProductsubscriptionsWritePermission)
+	ns, action, err := rbac.ParsePermissionDisplayName(rbac.ProductSubscriptionsWritePermission)
 	require.NoError(t, err)
 	perm, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
 		Namespace: ns,

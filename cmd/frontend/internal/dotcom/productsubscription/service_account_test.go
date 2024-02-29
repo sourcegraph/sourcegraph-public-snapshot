@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
+func TestHasRBACPermsOrOwnerOrSiteAdmin(t *testing.T) {
 	var actorID, anotherID int32 = 1, 2
 	for _, tc := range []struct {
 		name           string
@@ -32,18 +32,18 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 		{
 			name: "subscriptions reader account",
 			rbacRoles: map[string]bool{
-				rbac.ProductsubscriptionsReadPermission: true,
+				rbac.ProductSubscriptionsReadPermission: true,
 			},
 			wantErr:         nil,
-			wantGrantReason: rbac.ProductsubscriptionsReadPermission,
+			wantGrantReason: rbac.ProductSubscriptionsReadPermission,
 		},
 		{
 			name: "subscriptions writer account",
 			rbacRoles: map[string]bool{
-				rbac.ProductsubscriptionsWritePermission: true,
+				rbac.ProductSubscriptionsWritePermission: true,
 			},
 			wantErr:         nil,
-			wantGrantReason: rbac.ProductsubscriptionsWritePermission,
+			wantGrantReason: rbac.ProductSubscriptionsWritePermission,
 		},
 		{
 			name:            "same user",
@@ -76,7 +76,7 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 		{
 			name: "account needs writer",
 			rbacRoles: map[string]bool{
-				rbac.ProductsubscriptionsReadPermission: true,
+				rbac.ProductSubscriptionsReadPermission: true,
 			},
 			serviceAccountCanWrite: true,
 			wantErr:                autogold.Expect("must be site admin"),
@@ -84,11 +84,11 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 		{
 			name: "account fulfills writer",
 			rbacRoles: map[string]bool{
-				rbac.ProductsubscriptionsWritePermission: true,
+				rbac.ProductSubscriptionsWritePermission: true,
 			},
 			serviceAccountCanWrite: true,
 			wantErr:                nil,
-			wantGrantReason:        rbac.ProductsubscriptionsWritePermission,
+			wantGrantReason:        rbac.ProductSubscriptionsWritePermission,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -122,7 +122,7 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 			})
 			db.PermissionsFunc.SetDefaultReturn(permsStore)
 
-			grantReason, err := serviceAccountOrOwnerOrSiteAdmin(
+			grantReason, err := hasRBACPermsOrOwnerOrSiteAdmin(
 				actor.WithActor(context.Background(), &actor.Actor{UID: actorID}),
 				db,
 				tc.ownerUserID,
