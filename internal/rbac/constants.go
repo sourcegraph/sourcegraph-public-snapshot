@@ -10,3 +10,7 @@ const OwnershipAssignPermission string = "OWNERSHIP#ASSIGN"
 const RepoMetadataWritePermission string = "REPO_METADATA#WRITE"
 
 const CodyAccessPermission string = "CODY#ACCESS"
+
+const ProductsubscriptionsReadPermission string = "PRODUCTSUBSCRIPTIONS#READ"
+
+const ProductsubscriptionsWritePermission string = "PRODUCTSUBSCRIPTIONS#WRITE"

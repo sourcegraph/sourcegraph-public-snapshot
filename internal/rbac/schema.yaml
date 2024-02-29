@@ -12,5 +12,10 @@ namespaces:
   - name: CODY
     actions:
       - ACCESS
+  - name: PRODUCTSUBSCRIPTIONS
+    dotcom: true
+    actions:
+      - READ
+      - WRITE
 excludeFromUserRole:
   - OWNERSHIP

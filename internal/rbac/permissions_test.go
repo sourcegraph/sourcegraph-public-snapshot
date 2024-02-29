@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -22,11 +23,15 @@ func TestComparePermissions(t *testing.T) {
 	}
 
 	t.Run("no changes to permissions", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(false)
+
 		schemaPerms := Schema{
 			Namespaces: []Namespace{
 				{Name: "TEST-NAMESPACE", Actions: []rtypes.NamespaceAction{"READ", "WRITE"}},
 				{Name: "TEST-NAMESPACE-2", Actions: []rtypes.NamespaceAction{"READ", "WRITE"}},
 				{Name: "TEST-NAMESPACE-3", Actions: []rtypes.NamespaceAction{"READ"}},
+				{Name: "DOTCOM-NAMESPACE", Actions: []rtypes.NamespaceAction{"READ"},
+					DotCom: true}, // not included by default
 			},
 		}
 
@@ -121,6 +126,26 @@ func TestComparePermissions(t *testing.T) {
 		if diff := cmp.Diff(wantDeleted, deleted, cmpopts.SortSlices(less)); diff != "" {
 			t.Error(diff)
 		}
+	})
+
+	t.Run("dotcom permission added", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+		t.Cleanup(func() { envvar.MockSourcegraphDotComMode(false) })
+
+		schemaPerms := Schema{
+			Namespaces: []Namespace{
+				{Name: "TEST-NAMESPACE", Actions: []rtypes.NamespaceAction{"READ", "WRITE"}},
+				{Name: "TEST-NAMESPACE-2", Actions: []rtypes.NamespaceAction{"READ", "WRITE"}},
+				{Name: "TEST-NAMESPACE-3", Actions: []rtypes.NamespaceAction{"READ"}},
+				{Name: "DOTCOM-NAMESPACE", Actions: []rtypes.NamespaceAction{"READ"},
+					DotCom: true}, // now should be included
+			},
+		}
+
+		added, deleted := ComparePermissions(dbPerms, schemaPerms)
+
+		require.Len(t, added, 1)
+		require.Len(t, deleted, 0)
 	})
 }
 

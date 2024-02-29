@@ -13,11 +13,12 @@ const BatchChangesNamespace PermissionNamespace = "BATCH_CHANGES"
 const OwnershipNamespace PermissionNamespace = "OWNERSHIP"
 const RepoMetadataNamespace PermissionNamespace = "REPO_METADATA"
 const CodyNamespace PermissionNamespace = "CODY"
+const ProductsubscriptionsNamespace PermissionNamespace = "PRODUCTSUBSCRIPTIONS"
 
 // Valid checks if a namespace is valid and supported by Sourcegraph's RBAC system.
 func (n PermissionNamespace) Valid() bool {
 	switch n {
-	case BatchChangesNamespace, OwnershipNamespace, RepoMetadataNamespace, CodyNamespace:
+	case BatchChangesNamespace, OwnershipNamespace, RepoMetadataNamespace, CodyNamespace, ProductsubscriptionsNamespace:
 		return true
 	default:
 		return false
