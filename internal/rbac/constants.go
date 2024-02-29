@@ -11,6 +11,6 @@ const RepoMetadataWritePermission string = "REPO_METADATA#WRITE"
 
 const CodyAccessPermission string = "CODY#ACCESS"
 
-const ProductsubscriptionsReadPermission string = "PRODUCTSUBSCRIPTIONS#READ"
+const ProductSubscriptionsReadPermission string = "PRODUCT_SUBSCRIPTIONS#READ"
 
-const ProductsubscriptionsWritePermission string = "PRODUCTSUBSCRIPTIONS#WRITE"
+const ProductSubscriptionsWritePermission string = "PRODUCT_SUBSCRIPTIONS#WRITE"

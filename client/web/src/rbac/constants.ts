@@ -10,9 +10,9 @@ export const RepoMetadataWritePermission: RbacPermission = 'REPO_METADATA#WRITE'
 
 export const CodyAccessPermission: RbacPermission = 'CODY#ACCESS'
 
-export const ProductsubscriptionsReadPermission: RbacPermission = 'PRODUCTSUBSCRIPTIONS#READ'
+export const ProductsubscriptionsReadPermission: RbacPermission = 'PRODUCT_SUBSCRIPTIONS#READ'
 
-export const ProductsubscriptionsWritePermission: RbacPermission = 'PRODUCTSUBSCRIPTIONS#WRITE'
+export const ProductsubscriptionsWritePermission: RbacPermission = 'PRODUCT_SUBSCRIPTIONS#WRITE'
 
 export type RbacPermission =
     | 'BATCH_CHANGES#READ'
@@ -20,5 +20,5 @@ export type RbacPermission =
     | 'OWNERSHIP#ASSIGN'
     | 'REPO_METADATA#WRITE'
     | 'CODY#ACCESS'
-    | 'PRODUCTSUBSCRIPTIONS#READ'
-    | 'PRODUCTSUBSCRIPTIONS#WRITE'
+    | 'PRODUCT_SUBSCRIPTIONS#READ'
+    | 'PRODUCT_SUBSCRIPTIONS#WRITE'

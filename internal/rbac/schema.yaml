@@ -12,7 +12,7 @@ namespaces:
   - name: CODY
     actions:
       - ACCESS
-  - name: PRODUCTSUBSCRIPTIONS
+  - name: PRODUCT_SUBSCRIPTIONS
     dotcom: true
     actions:
       - READ
