@@ -245,7 +245,7 @@ func TestExcludeRepoFromExternalServices_ExternalServiceDoesntSupportRepoExclusi
 	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		return []*types.ExternalService{{
 			ID:     options.IDs[0],
-			Kind:   extsvc.KindGerrit,
+			Kind:   extsvc.KindPhabricator,
 			Config: extsvc.NewEmptyConfig(),
 		}}, nil
 	})
@@ -1009,7 +1009,7 @@ func TestExternalServices(t *testing.T) {
 						},
 						{
 							"id": "RXh0ZXJuYWxTZXJ2aWNlOjU=",
-							"supportsRepoExclusion": false
+							"supportsRepoExclusion": true
 						}
 					]
 				}

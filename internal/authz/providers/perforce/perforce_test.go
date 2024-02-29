@@ -32,7 +32,7 @@ func TestProvider_FetchAccount(t *testing.T) {
 
 	gitserverClient := gitserver.NewStrictMockClient()
 	gitserverClient.PerforceUsersFunc.SetDefaultReturn([]*p4types.User{
-		{Username: "alice", Email: "alice@example.com"},
+		{Username: "alice", Email: "Alice@Example.com"},
 		{Username: "cindy", Email: "cindy@example.com"},
 	}, nil)
 
@@ -51,6 +51,39 @@ func TestProvider_FetchAccount(t *testing.T) {
 	t.Run("found matching account", func(t *testing.T) {
 		p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		got, err := p.FetchAccount(ctx, user, nil, []string{"alice@example.com"})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		accountData, err := jsoniter.Marshal(
+			perforce.AccountData{
+				Username: "alice",
+				Email:    "alice@example.com",
+			},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := &extsvc.Account{
+			UserID: user.ID,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: p.codeHost.ServiceType,
+				ServiceID:   p.codeHost.ServiceID,
+				AccountID:   "alice@example.com",
+			},
+			AccountData: extsvc.AccountData{
+				Data: extsvc.NewUnencryptedData(accountData),
+			},
+		}
+		if diff := cmp.Diff(want, got, et.CompareEncryptable); diff != "" {
+			t.Fatalf("Mismatch (-want got):\n%s", diff)
+		}
+	})
+
+	t.Run("found matching account case insensitive", func(t *testing.T) {
+		p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+		got, err := p.FetchAccount(ctx, user, nil, []string{"Alice@Example.com"})
 		if err != nil {
 			t.Fatal(err)
 		}

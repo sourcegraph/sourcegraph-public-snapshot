@@ -282,7 +282,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             </div>
 
             {itemsToShow >= resultsNumber && (
-                <StreamingSearchResultFooter results={results}>
+                <StreamingSearchResultFooter results={results} className="m-3">
                     <>
                         {results?.state === 'complete' && resultsNumber === 0 && (
                             <NoResultsPage

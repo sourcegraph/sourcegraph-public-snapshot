@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go-mockgen-gazelle",
+    srcs = ["go-mockgen.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/go-mockgen-gazelle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/go-mockgen-transformer/config",
+        "@bazel_gazelle//config:go_default_library",
+        "@bazel_gazelle//label:go_default_library",
+        "@bazel_gazelle//language:go_default_library",
+        "@bazel_gazelle//language/go:go_default_library",
+        "@bazel_gazelle//repo:go_default_library",
+        "@bazel_gazelle//resolve:go_default_library",
+        "@bazel_gazelle//rule:go_default_library",
+        "@org_golang_x_exp//maps",
+    ],
+)

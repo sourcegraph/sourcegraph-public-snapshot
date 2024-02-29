@@ -118,9 +118,20 @@ const (
 	NOT    keyword = "not"
 )
 
+// isSpace returns true if the buffer only contains UTF-8 encoded whitespace as
+// defined by unicode.IsSpace.
 func isSpace(buf []byte) bool {
-	r, _ := utf8.DecodeRune(buf)
-	return unicode.IsSpace(r)
+	if len(buf) == 0 {
+		return false
+	}
+	for len(buf) > 0 {
+		r, n := utf8.DecodeRune(buf)
+		if !unicode.IsSpace(r) {
+			return false
+		}
+		buf = buf[n:]
+	}
+	return true
 }
 
 // skipSpace returns the number of whitespace bytes skipped from the beginning of a buffer buf.
@@ -167,6 +178,9 @@ type parser struct {
 	pos        int
 	balanced   int
 	leafParser SearchType
+
+	seenRightParen bool
+	seenOr         bool
 }
 
 func (p *parser) done() bool {
@@ -220,12 +234,16 @@ func (p *parser) expect(keyword keyword) bool {
 	return true
 }
 
-// matchKeyword is like match but expects the keyword to be preceded and followed by whitespace.
+// matchKeyword is like match but checks whether the keyword has a valid prefix
+// and suffix.
 func (p *parser) matchKeyword(keyword keyword) bool {
 	if p.pos == 0 {
 		return false
 	}
-	if !isSpace(p.buf[p.pos-1 : p.pos]) {
+	if isSpace(p.buf[:p.pos]) {
+		return false
+	}
+	if !(isSpace(p.buf[p.pos-1:p.pos]) || p.buf[p.pos-1] == ')') {
 		return false
 	}
 	v, err := p.peek(len(string(keyword)))
@@ -233,7 +251,7 @@ func (p *parser) matchKeyword(keyword keyword) bool {
 		return false
 	}
 	after := p.pos + len(string(keyword))
-	if after >= len(p.buf) || !isSpace(p.buf[after:after+1]) {
+	if after >= len(p.buf) || !(isSpace(p.buf[after:after+1]) || p.buf[after] == '(') {
 		return false
 	}
 	return strings.EqualFold(v, string(keyword))
@@ -241,8 +259,7 @@ func (p *parser) matchKeyword(keyword keyword) bool {
 
 // matchUnaryKeyword is like match but expects the keyword to be followed by whitespace.
 func (p *parser) matchUnaryKeyword(keyword keyword) bool {
-	if p.pos != 0 && !(isSpace(p.buf[p.pos-1:p.pos]) || p.buf[p.pos-1] == '(') {
-		// "not" must be preceded by a space or ( anywhere except the beginning of the string
+	if p.pos != 0 && !(isSpace(p.buf[p.pos-1:p.pos]) || p.buf[p.pos-1] == ')' || p.buf[p.pos-1] == '(') {
 		return false
 	}
 	v, err := p.peek(len(string(keyword)))
@@ -954,13 +971,16 @@ loop:
 			// group as part of an and/or expression.
 			_ = p.expect(LPAREN) // Guaranteed to succeed.
 			p.balanced++
-			p.heuristics |= disambiguated
+			if p.seenOr {
+				p.heuristics |= disambiguated
+			}
 			result, err := p.parseOr()
 			if err != nil {
 				return nil, err
 			}
 			nodes = append(nodes, result...)
-		case p.expect(RPAREN) && !isSet(p.heuristics, allowDanglingParens):
+		case p.match(RPAREN) && !isSet(p.heuristics, allowDanglingParens):
+			// Caller advances.
 			if p.balanced <= 0 {
 				if label.IsSet(QuotesAsLiterals) {
 					return nil, errors.New("unsupported expression. The combination of parentheses in the query has an unclear meaning. Use \"...\" to quote patterns that contain parentheses")
@@ -968,7 +988,7 @@ loop:
 				return nil, errors.New("unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses")
 			}
 			p.balanced--
-			p.heuristics |= disambiguated
+			p.seenRightParen = true
 			if len(nodes) == 0 {
 				// We parsed "()".
 				if isSet(p.heuristics, emptyParens) {
@@ -980,8 +1000,15 @@ loop:
 				}
 			}
 			break loop
-		case p.matchKeyword(AND), p.matchKeyword(OR):
+		case p.matchKeyword(AND):
 			// Caller advances.
+			break loop
+		case p.matchKeyword(OR):
+			// Caller advances.
+			p.seenOr = true
+			if p.seenRightParen {
+				p.heuristics |= disambiguated
+			}
 			break loop
 		case p.matchUnaryKeyword(NOT):
 			start := p.pos
@@ -1136,6 +1163,11 @@ func (p *parser) parseOr() ([]Node, error) {
 	if left == nil {
 		return nil, &ExpectedOperand{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
 	}
+
+	// parseAnd might have parsed an expression, in which case parser.pos is
+	// currently pointing to a RPAREN.
+	_ = p.expect(RPAREN)
+
 	if !p.expect(OR) {
 		return left, nil
 	}

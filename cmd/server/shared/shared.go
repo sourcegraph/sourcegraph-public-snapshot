@@ -164,7 +164,7 @@ func Main() {
 		`worker: worker`,
 		`repo-updater: repo-updater`,
 		`precise-code-intel-worker: precise-code-intel-worker`,
-		`syntax_highlighter: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntax_highlighter | grep -v "Rocket has launched" | grep -v "Warning: environment is"' | grep -v 'Configured for production'`,
+		`syntect-server: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"' | grep -v 'Configured for production'`,
 		postgresExporterLine,
 	}
 	procfile = append(procfile, ProcfileAdditions...)
@@ -323,7 +323,7 @@ func runPostgresReindex() {
 		fmt.Printf("Upgrading to Sourcegraph 5.1 or later from an earlier release requires a database reindex.\n\n")
 		fmt.Printf("This process may take several hours, depending on the size of your database.\n\n")
 		fmt.Printf("If you do not wish to perform the reindex process now, you should switch back to a release before Sourcegraph 5.1.\n\n")
-		fmt.Printf("To perform the reindexing process now, please review the instructions at https://docs.sourcegraph.com/admin/migration/5_1 and restart the container with the environment variable `SOURCEGRAPH_5_1_DB_MIGRATION=true` set.\n")
+		fmt.Printf("To perform the reindexing process now, please review the instructions at https://sourcegraph.com/docs/admin/migration/5_1 and restart the container with the environment variable `SOURCEGRAPH_5_1_DB_MIGRATION=true` set.\n")
 		fmt.Printf("\n**************** MIGRATION REQUIRED **************\n\n")
 
 		os.Exit(101)

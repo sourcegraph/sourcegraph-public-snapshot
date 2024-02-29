@@ -1,61 +1,48 @@
+import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
+import { resolveRevision } from '$lib/repo/utils'
+import { parseRepoRevision } from '$lib/shared'
+
 import type { PageLoad } from './$types'
 import { BlobDiffQuery, BlobPageQuery, BlobSyntaxHighlightQuery } from './page.gql'
 
-export const load: PageLoad = async ({ parent, params, url }) => {
+export const load: PageLoad = ({ parent, params, url }) => {
     const revisionToCompare = url.searchParams.get('rev')
-    const { resolvedRevision, graphqlClient } = await parent()
+    const client = getGraphQLClient()
+    const { repoName, revision = '' } = parseRepoRevision(params.repo)
+    const resolvedRevision = resolveRevision(parent, revision)
 
     return {
+        graphQLClient: client,
         filePath: params.path,
-        blob: graphqlClient
-            .query({
-                query: BlobPageQuery,
-                variables: {
-                    repoID: resolvedRevision.repo.id,
-                    revspec: resolvedRevision.commitID,
+        blob: resolvedRevision
+            .then(resolvedRevision =>
+                client.query(BlobPageQuery, {
+                    repoName,
+                    revspec: resolvedRevision,
                     path: params.path,
-                },
-            })
-            .then(result => {
-                if (result.data.node?.__typename !== 'Repository' || !result.data.node.commit?.blob) {
-                    throw new Error('Commit or file not found')
-                }
-                return result.data.node.commit.blob
-            }),
-        highlights: graphqlClient
-            .query({
-                query: BlobSyntaxHighlightQuery,
-                variables: {
-                    repoID: resolvedRevision.repo.id,
-                    revspec: resolvedRevision.commitID,
+                })
+            )
+            .then(mapOrThrow(result => result.data?.repository?.commit?.blob ?? null)),
+        highlights: resolvedRevision
+            .then(resolvedRevision =>
+                client.query(BlobSyntaxHighlightQuery, {
+                    repoName,
+                    revspec: resolvedRevision,
                     path: params.path,
                     disableTimeout: false,
-                },
-            })
-            .then(result => {
-                if (result.data.node?.__typename !== 'Repository') {
-                    throw new Error('Expected Repository')
-                }
-                return result.data.node.commit?.blob?.highlight.lsif
-            }),
+                })
+            )
+            .then(mapOrThrow(result => result.data?.repository?.commit?.blob?.highlight.lsif ?? '')),
         compare: revisionToCompare
             ? {
                   revisionToCompare,
-                  diff: graphqlClient
-                      .query({
-                          query: BlobDiffQuery,
-                          variables: {
-                              repoID: resolvedRevision.repo.id,
-                              revspec: revisionToCompare,
-                              paths: [params.path],
-                          },
+                  diff: client
+                      .query(BlobDiffQuery, {
+                          repoName,
+                          revspec: revisionToCompare,
+                          paths: [params.path],
                       })
-                      .then(result => {
-                          if (result.data.node?.__typename !== 'Repository') {
-                              throw new Error('Expected Repository')
-                          }
-                          return result.data.node.commit?.diff.fileDiffs.nodes[0]
-                      }),
+                      .then(mapOrThrow(result => result.data?.repository?.commit?.diff.fileDiffs.nodes[0] ?? null)),
               }
             : null,
     }

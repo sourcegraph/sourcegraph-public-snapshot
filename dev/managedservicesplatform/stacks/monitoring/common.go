@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func createCommonAlerts(
@@ -34,10 +35,12 @@ func createCommonAlerts(
 			Name:        "High Container CPU Utilization",
 			Description: "High CPU Usage - it may be neccessary to reduce load or increase CPU allocation",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
-				Filters:   map[string]string{"metric.type": "run.googleapis.com/container/cpu/utilizations"},
-				Aligner:   alertpolicy.MonitoringAlignPercentile99,
-				Reducer:   alertpolicy.MonitoringReduceMax,
-				Period:    "60s",
+				ConditionBuilder: alertpolicy.ConditionBuilder{
+					Filters: map[string]string{"metric.type": "run.googleapis.com/container/cpu/utilizations"},
+					Aligner: alertpolicy.MonitoringAlignPercentile99,
+					Reducer: alertpolicy.MonitoringReduceMax,
+					Period:  "60s",
+				},
 				Duration:  "600s",
 				Threshold: 0.9,
 			},
@@ -47,10 +50,12 @@ func createCommonAlerts(
 			Name:        "High Container Memory Utilization",
 			Description: "High Memory Usage - it may be neccessary to reduce load or increase memory allocation",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
-				Filters:   map[string]string{"metric.type": "run.googleapis.com/container/memory/utilizations"},
-				Aligner:   alertpolicy.MonitoringAlignPercentile99,
-				Reducer:   alertpolicy.MonitoringReduceMax,
-				Period:    "300s",
+				ConditionBuilder: alertpolicy.ConditionBuilder{
+					Filters: map[string]string{"metric.type": "run.googleapis.com/container/memory/utilizations"},
+					Aligner: alertpolicy.MonitoringAlignPercentile99,
+					Reducer: alertpolicy.MonitoringReduceMax,
+					Period:  "300s",
+				},
 				Threshold: 0.8,
 			},
 		},
@@ -59,10 +64,12 @@ func createCommonAlerts(
 			Name:        "Container Startup Latency",
 			Description: "Service containers are taking longer than configured timeouts to start up.",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
-				Filters: map[string]string{"metric.type": "run.googleapis.com/container/startup_latencies"},
-				Aligner: alertpolicy.MonitoringAlignPercentile99,
-				Reducer: alertpolicy.MonitoringReduceMax,
-				Period:  "60s",
+				ConditionBuilder: alertpolicy.ConditionBuilder{
+					Filters: map[string]string{"metric.type": "run.googleapis.com/container/startup_latencies"},
+					Aligner: alertpolicy.MonitoringAlignPercentile99,
+					Reducer: alertpolicy.MonitoringReduceMax,
+					Period:  "60s",
+				},
 				Threshold: func() float64 {
 					if serviceKind == alertpolicy.CloudRunJob {
 						// jobs measure container startup, not service startup,
@@ -76,11 +83,11 @@ func createCommonAlerts(
 			},
 		},
 	} {
-		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
-			// Resource we are targetting in this helper
-			ResourceKind: serviceKind,
-			ResourceName: vars.Service.ID,
+		// Resource we are targeting in this helper
+		config.ThresholdAggregation.ResourceKind = serviceKind
+		config.ThresholdAggregation.ResourceName = vars.Service.ID
 
+		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			// Alert policy
 			ID:                   config.ID,
 			Name:                 config.Name,
@@ -93,7 +100,7 @@ func createCommonAlerts(
 			ProjectID:            vars.ProjectID,
 			NotificationChannels: channels,
 		}); err != nil {
-			return err
+			return errors.Wrap(err, config.ID)
 		}
 	}
 

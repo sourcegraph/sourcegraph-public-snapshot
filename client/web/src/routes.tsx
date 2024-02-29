@@ -104,15 +104,39 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.SignIn,
-        element: <LegacyRoute render={props => <SignInPage {...props} context={window.context} />} />,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <SignInPage
+                        {...props}
+                        context={window.context}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
+                    />
+                )}
+            />
+        ),
     },
     {
         path: PageRoutes.RequestAccess,
-        element: <RequestAccessPage />,
+        element: (
+            <LegacyRoute
+                render={props => <RequestAccessPage telemetryRecorder={props.platformContext.telemetryRecorder} />}
+            />
+        ),
     },
     {
         path: PageRoutes.SignUp,
-        element: <LegacyRoute render={props => <SignUpPage {...props} context={window.context} />} />,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <SignUpPage
+                        {...props}
+                        context={window.context}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
+                    />
+                )}
+            />
+        ),
     },
     {
         path: PageRoutes.UnlockAccount,
@@ -274,7 +298,17 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.PasswordReset,
-        element: <LegacyRoute render={props => <ResetPasswordPage {...props} context={window.context} />} />,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <ResetPasswordPage
+                        {...props}
+                        context={window.context}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
+                    />
+                )}
+            />
+        ),
     },
     {
         path: PageRoutes.ApiConsole,

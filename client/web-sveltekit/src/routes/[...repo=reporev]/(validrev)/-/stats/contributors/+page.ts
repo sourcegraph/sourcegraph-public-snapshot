@@ -1,35 +1,30 @@
+import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
 import { getPaginationParams } from '$lib/Paginator'
+import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
-import { PagedRepositoryContributors } from './page.gql'
+import { ContributorsPage_ContributorsQuery } from './page.gql'
 
 const pageSize = 20
 
-export const load: PageLoad = async ({ url, parent }) => {
+export const load: PageLoad = ({ url, params }) => {
     const afterDate = url.searchParams.get('after') ?? ''
     const { first, last, before, after } = getPaginationParams(url.searchParams, pageSize)
-    const { resolvedRevision, graphqlClient } = await parent()
+    const client = getGraphQLClient()
+    const { repoName } = parseRepoRevision(params.repo)
 
-    const contributors = graphqlClient
-        .query({
-            query: PagedRepositoryContributors,
-            variables: {
-                afterDate,
-                repo: resolvedRevision.repo.id,
-                revisionRange: '',
-                path: '',
-                first,
-                last,
-                after,
-                before,
-            },
+    const contributors = client
+        .query(ContributorsPage_ContributorsQuery, {
+            afterDate,
+            repoName,
+            revisionRange: '',
+            path: '',
+            first,
+            last,
+            after,
+            before,
         })
-        .then(result => {
-            if (result.data.node?.__typename !== 'Repository') {
-                return null
-            }
-            return result.data.node.contributors
-        })
+        .then(mapOrThrow(result => result.data?.repository?.contributors ?? null))
     return {
         after: afterDate,
         contributors,

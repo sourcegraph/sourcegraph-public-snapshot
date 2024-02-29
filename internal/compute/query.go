@@ -108,7 +108,7 @@ var ComputePredicateRegistry = query.PredicateRegistry{
 }
 
 func parseContentPredicate(pattern *query.Pattern) (string, string, bool) {
-	if !pattern.Annotation.Labels.IsSet(query.IsAlias) {
+	if !pattern.Annotation.Labels.IsSet(query.IsContent) {
 		// pattern is not set via `content:`, so it cannot be a replace command.
 		return "", "", false
 	}

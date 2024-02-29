@@ -351,6 +351,9 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 }
 
 func (s *SubRepoPermsClient) Enabled() bool {
+	if s == nil {
+		return false
+	}
 	return s.enabled.Load()
 }
 
@@ -371,6 +374,9 @@ func (s *SubRepoPermsClient) EnabledForRepoID(ctx context.Context, id api.RepoID
 }
 
 func (s *SubRepoPermsClient) EnabledForRepo(ctx context.Context, repo api.RepoName) (bool, error) {
+	if !s.Enabled() {
+		return false, nil
+	}
 	return s.permissionsGetter.RepoSupported(ctx, repo)
 }
 

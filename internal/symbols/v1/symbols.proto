@@ -58,6 +58,10 @@ message SearchRequest {
   //
   // If timeout isn't specified, a default timeout of 60 seconds is used.
   google.protobuf.Duration timeout = 9;
+
+  // include_langs and exclude_langs represent the language filters to apply.
+  repeated string include_langs = 10;
+  repeated string exclude_langs = 11;
 }
 
 message SearchResponse {

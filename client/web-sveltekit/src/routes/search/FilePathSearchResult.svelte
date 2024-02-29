@@ -1,11 +1,11 @@
 <svelte:options immutable />
 
 <script lang="ts">
+    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import type { PathMatch } from '$lib/shared'
-    import CodeHostIcon from './CodeHostIcon.svelte'
+
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
     import RepoStars from './RepoStars.svelte'
-
     import SearchResult from './SearchResult.svelte'
 
     export let result: PathMatch

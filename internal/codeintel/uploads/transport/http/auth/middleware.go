@@ -10,6 +10,9 @@ import (
 	sglog "github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -38,22 +41,41 @@ var errVerificationNotSupported = errors.New(strings.Join([]string{
 // request contains sufficient evidence of authorship for the target repository.
 //
 // When LSIF auth is not enforced on the instance, this middleware no-ops.
-func AuthMiddleware(next http.Handler, userStore UserStore, authValidators AuthValidatorMap, operation *observation.Operation) http.Handler {
+func AuthMiddleware(
+	next http.Handler,
+	userStore UserStore,
+	repoStore backend.ReposService,
+	authValidators AuthValidatorMap,
+	operation *observation.Operation,
+) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		statusCode, err := func() (_ int, err error) {
 			ctx, trace, endObservation := operation.With(r.Context(), &err, observation.Args{})
 			defer endObservation(1, observation.Args{})
 
-			// Skip auth check if it's not enabled in the instance's site configuration, if this
-			// user is a site admin (who can upload LSIF to any repository on the instance), or
-			// if the request a subsequent request of a multi-part upload.
-			if !conf.Get().LsifEnforceAuth || isSiteAdmin(ctx, userStore, operation.Logger) || hasQuery(r, "uploadId") {
-				trace.AddEvent("bypassing code host auth check")
+			query := r.URL.Query()
+			repositoryName := getQuery(r, "repository")
+
+			if isSiteAdmin(ctx, userStore, operation.Logger) {
+				// If `AuthzEnforceForSiteAdmins` is set we should still check repo permissions for site admins
+				if conf.Get().AuthzEnforceForSiteAdmins {
+					statusCode, err := userCanAccessRepository(ctx, repoStore, repositoryName, trace)
+					if err != nil {
+						return statusCode, err
+					}
+				}
 				return 0, nil
 			}
 
-			query := r.URL.Query()
-			repositoryName := getQuery(r, "repository")
+			// Non site-admin users can upload indices if auth is not enabled in the instance's site configuration
+			if !conf.Get().LsifEnforceAuth {
+				statusCode, err := userCanAccessRepository(ctx, repoStore, repositoryName, trace)
+				if err != nil {
+					return statusCode, err
+				}
+				trace.AddEvent("bypassing code host auth check")
+				return 0, nil
+			}
 
 			for codeHost, validator := range authValidators {
 				if !strings.HasPrefix(repositoryName, codeHost) {
@@ -75,8 +97,21 @@ func AuthMiddleware(next http.Handler, userStore UserStore, authValidators AuthV
 			return
 		}
 
-		next.ServeHTTP(w, r)
+		// 🚨 SECURITY: Bypass authz here; we've already determined that the current request is
+		// authorized to view the target repository; they are either a site admin or the code
+		// host has explicit listed them with some level of access (depending on the code host).
+		internalReq := r.WithContext(actor.WithInternalActor(r.Context()))
+		next.ServeHTTP(w, internalReq)
 	})
+}
+
+func userCanAccessRepository(ctx context.Context, repoStore backend.ReposService, repositoryName string, trace observation.TraceLogger) (int, error) {
+	_, err := repoStore.GetByName(ctx, api.RepoName(repositoryName))
+	if err != nil {
+		trace.AddEvent("siteadmin failed auth check")
+		return errcode.HTTP(err), err
+	}
+	return 0, nil
 }
 
 func isSiteAdmin(ctx context.Context, userStore UserStore, logger sglog.Logger) bool {

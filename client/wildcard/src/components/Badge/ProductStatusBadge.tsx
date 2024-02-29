@@ -30,9 +30,9 @@ export type ProductStatusLinked = Extends<ProductStatusType, 'beta' | 'experimen
  * Map badge status to a relevant docs page describing that product status
  */
 const STATUS_LINK_MAPPING: Record<ProductStatusLinked, string> = {
-    experimental: 'https://docs.sourcegraph.com/admin/beta_and_experimental_features#experimental-features',
-    beta: 'https://docs.sourcegraph.com/admin/beta_and_experimental_features#beta-features',
-    'private-beta': 'https://docs.sourcegraph.com/admin/beta_and_experimental_features#beta-features',
+    experimental: 'https://sourcegraph.com/docs/admin/beta_and_experimental_features#experimental-features',
+    beta: 'https://sourcegraph.com/docs/admin/beta_and_experimental_features#beta-features',
+    'private-beta': 'https://sourcegraph.com/docs/admin/beta_and_experimental_features#beta-features',
 } as const
 
 /**

@@ -97,10 +97,6 @@ env:
   # Required for upload of search job results
   SEARCH_JOBS_UPLOAD_AWS_ENDPOINT: http://localhost:9000
 
-  # Disable auto-indexing the CNCF repo group (this only works in Cloud)
-  # This setting will be going away soon
-  DISABLE_CNCF: notonmybox
-
   # Point code insights to the `frontend` database in development
   CODEINSIGHTS_PGPORT: $PGPORT
   CODEINSIGHTS_PGHOST: $PGHOST
@@ -305,7 +301,7 @@ commands:
     checkBinary: .bin/cody-gateway
     env:
       CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN: foobar
-      # Set in override if you want to test local Cody Gateway: https://docs.sourcegraph.com/dev/how-to/cody_gateway
+      # Set in override if you want to test local Cody Gateway: https://sourcegraph.com/docs/dev/how-to/cody_gateway
       CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: ''
       CODY_GATEWAY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
       CODY_GATEWAY_ALLOW_ANONYMOUS: true
@@ -410,6 +406,8 @@ commands:
       pnpm run generate
     env:
       ENABLE_OPEN_TELEMETRY: true
+      # Needed so that node can ping the caddy server
+      NODE_TLS_REJECT_UNAUTHORIZED: 0
 
   vite-assets:
     description: Runs vite simply as a static file server
@@ -645,13 +643,8 @@ commands:
         sleep 1
       done
     install: |
-      if [[ $(uname) == "Linux" ]]; then
-        bazel build //cmd/executor-kubernetes:image_tarball
-        docker load --input $(bazel cquery //cmd/executor-kubernetes:image_tarball --output=files)
-      else
-        bazel build //cmd/executor-kubernetes:image_tarball --config darwin-docker
-        docker load --input $(bazel cquery //cmd/executor-kubernetes:image_tarball --config darwin-docker --output=files)
-      fi
+      bazel build //cmd/executor-kubernetes:image_tarball
+      docker load --input $(bazel cquery //cmd/executor-kubernetes:image_tarball --output=files)
 
     env:
       IMAGE: executor-kubernetes:candidate
@@ -716,13 +709,8 @@ commands:
     # Nothing to run for this, we just want to re-run the install script every time.
     cmd: exit 0
     install: |
-      if [[ $(uname) == "Linux" ]]; then
-        bazel build //cmd/batcheshelper:image_tarball
-        docker load --input $(bazel cquery //cmd/batcheshelper:image_tarball --output=files)
-      else
-        bazel build //cmd/batcheshelper:image_tarball --config darwin-docker
-        docker load --input $(bazel cquery //cmd/batcheshelper:image_tarball --config darwin-docker --output=files)
-      fi
+      bazel build //cmd/batcheshelper:image_tarball
+      docker load --input $(bazel cquery //cmd/batcheshelper:image_tarball --output=files)
     env:
       IMAGE: batcheshelper:candidate
       # TODO: This is required but should only be set on M1 Macs.
@@ -871,13 +859,8 @@ commands:
 
       cp ${PROM_TARGETS} "${CONFIG_DIR}"/prometheus_targets.yml
 
-      if [[ $(uname) == "Linux" ]]; then
-        bazel build //docker-images/prometheus:image_tarball
-        docker load --input $(bazel cquery //docker-images/prometheus:image_tarball --output=files)
-      else
-        bazel build //docker-images/prometheus:image_tarball --config darwin-docker
-        docker load --input $(bazel cquery //docker-images/prometheus:image_tarball --config darwin-docker --output=files)
-      fi
+      bazel build //docker-images/prometheus:image_tarball
+      docker load --input $(bazel cquery //docker-images/prometheus:image_tarball --output=files)
     env:
       PROMETHEUS_DISK: $HOME/.sourcegraph-dev/data/prometheus
       # See comment above for `grafana`
@@ -964,13 +947,8 @@ commands:
 
   otel-collector:
     install: |
-      if [[ $(uname) == "Linux" ]]; then
-        bazel build //docker-images/opentelemetry-collector:image_tarball
-        docker load --input $(bazel cquery //docker-images/opentelemetry-collector:image_tarball --output=files)
-      else
-        bazel build //docker-images/opentelemetry-collector:image_tarball --config darwin-docker
-        docker load --input $(bazel cquery //docker-images/opentelemetry-collector:image_tarball --config darwin-docker --output=files)
-      fi
+      bazel build //docker-images/opentelemetry-collector:image_tarball
+      docker load --input $(bazel cquery //docker-images/opentelemetry-collector:image_tarball --output=files)
     description: OpenTelemetry collector
     cmd: |
       JAEGER_HOST='host.docker.internal'
@@ -1014,9 +992,7 @@ commands:
 
 bazelCommands:
   blobstore:
-    target: //cmd/blobstore
-  docsite:
-    runTarget: //doc:serve
+    target: //cmd/blobstore:blobstore
   searcher:
     target: //cmd/searcher
   syntax-highlighter:
@@ -1123,7 +1099,6 @@ commandsets:
       - ibazel
     bazelCommands:
       - blobstore
-      - docsite
       - frontend
       - worker
       - repo-updater
@@ -1131,15 +1106,16 @@ commandsets:
       - gitserver-1
       - searcher
       - symbols
-      # - syntax-highlighter
+      - syntax-highlighter
     commands:
       - web
+      # TODO https://github.com/sourcegraph/devx-support/issues/537
+      # - docsite
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
       - zoekt-web-1
       - caddy
-
   # If you modify this command set, please consider also updating the dotcom runset.
   enterprise: &enterprise_set
     requiresDevPrivate: true
@@ -1634,12 +1610,7 @@ tests:
       export SOURCEGRAPH_LICENSE_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_KEY --quiet --project=sourcegraph-ci)
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_GENERATION_KEY --quiet --project=sourcegraph-ci)
 
-      if [[ $(uname) == "Darwin" ]]; then
-        BAZEL_FLAGS=("--config darwin-docker")
-      else
-        BAZEL_FLAGS=()
-      fi
-      bazel test //testing:backend_integration_test ${BAZEL_FLAGS[*]} --verbose_failures --sandbox_debug
+      bazel test //testing:backend_integration_test --verbose_failures --sandbox_debug
 
   bazel-e2e:
     cmd: |
@@ -1648,12 +1619,7 @@ tests:
       export SOURCEGRAPH_LICENSE_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_KEY --quiet --project=sourcegraph-ci)
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_GENERATION_KEY --quiet --project=sourcegraph-ci)
 
-      if [[ $(uname) == "Darwin" ]]; then
-        BAZEL_FLAGS="--config darwin-docker"
-      else
-        BAZEL_FLAGS=""
-      fi
-      bazel test //testing:e2e_test $BAZEL_FLAGS --action_env=HEADLESS=false --action_env=SOURCEGRAPH_BASE_URL="http://localhost:7080" --action_env=GHE_GITHUB_TOKEN=$GHE_GITHUB_TOKEN --action_env=GH_TOKEN=$GH_TOKEN --action_env=DISPLAY=$DISPLAY
+      bazel test //testing:e2e_test --action_env=HEADLESS=false --action_env=SOURCEGRAPH_BASE_URL="http://localhost:7080" --action_env=GHE_GITHUB_TOKEN=$GHE_GITHUB_TOKEN --action_env=GH_TOKEN=$GH_TOKEN --action_env=DISPLAY=$DISPLAY
 
   bazel-web-integration:
     cmd: |
@@ -1697,7 +1663,7 @@ tests:
       A Sourcegraph instance must be already running for these tests to work, most
       commonly with: `sg start enterprise-e2e`
 
-      See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-end-to-end-tests
+      See more details: https://sourcegraph.com/docs/dev/how-to/testing#running-end-to-end-tests
     cmd: pnpm test-e2e
     env:
       TEST_USER_EMAIL: test@sourcegraph.com
@@ -1714,7 +1680,7 @@ tests:
       A Sourcegraph instance must be already running for these tests to work, most
       commonly with: `sg start enterprise-e2e`
 
-      See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-regression-tests
+      See more details: https://sourcegraph.com/docs/dev/how-to/testing#running-regression-tests
 
     cmd: pnpm test-regression
     env:
@@ -1728,7 +1694,7 @@ tests:
       A web application should be built for these tests to work, most
       commonly with: `sg run web-integration-build` or `sg run web-integration-build-prod` for production build.
 
-      See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-integration-tests
+      See more details: https://sourcegraph.com/docs/dev/how-to/testing#running-integration-tests
 
     cmd: pnpm test-integration
 
@@ -1737,6 +1703,6 @@ tests:
       A Sourcegraph instance must be already running for these tests to work, most
       commonly with: `sg start web-standalone`
 
-      See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-integration-tests
+      See more details: https://sourcegraph.com/docs/dev/how-to/testing#running-integration-tests
 
     cmd: pnpm test-integration:debug

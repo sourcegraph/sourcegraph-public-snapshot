@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/attribution"
@@ -34,17 +36,13 @@ func Init(
 	var resolver *resolvers.GuardrailsResolver
 	if envvar.SourcegraphDotComMode() {
 		// On DotCom guardrails endpoint runs search, and is initialized at startup.
-		searchClient := client.New(observationCtx.Logger, db, gitserver.NewClient("http.guardrails.search"))
+		searchClient := client.New(log.NoOp(), db, gitserver.NewClient("http.guardrails.search"))
 		service := attribution.NewLocalSearch(observationCtx, searchClient)
 		resolver = resolvers.NewGuardrailsResolver(service)
 	} else {
 		// On an Enterprise instance endpoint proxies to gateway, and is re-initialized
 		// in case site-config changes.
-		client := httpcli.ExternalDoer
-		if MockHttpClient != nil {
-			client = MockHttpClient
-		}
-		initLogic := &enterpriseInitialization{observationCtx: observationCtx, httpClient: client}
+		initLogic := &enterpriseInitialization{observationCtx: observationCtx}
 		resolver = resolvers.NewGuardrailsResolver(initLogic.Service())
 		go conf.Watch(func() {
 			resolver.UpdateService(initLogic.Service())
@@ -62,7 +60,6 @@ type enterpriseInitialization struct {
 	client         codygateway.Client
 	endpoint       string
 	token          string
-	httpClient     httpcli.Doer
 }
 
 // Service creates an attribution.Service. It tries to get gateway endpoint from site config
@@ -76,7 +73,14 @@ func (e *enterpriseInitialization) Service() attribution.Service {
 	if e.endpoint != endpoint || e.token != token {
 		e.endpoint = endpoint
 		e.token = token
-		e.client = codygateway.NewClient(e.httpClient, endpoint, token)
+
+		// We communicate out of the cluster so we need to use ExternalDoer.
+		httpClient := httpcli.ExternalDoer
+		if MockHttpClient != nil {
+			httpClient = MockHttpClient
+		}
+
+		e.client = codygateway.NewClient(httpClient, endpoint, token)
 	}
 	if e.endpoint == "" || e.token == "" {
 		return attribution.Uninitialized{}

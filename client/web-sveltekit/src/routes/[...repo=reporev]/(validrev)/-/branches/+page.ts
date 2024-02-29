@@ -1,23 +1,29 @@
-import type { PageLoad } from './$types'
-import { GitBranchesOverviewQuery } from './page.gql'
+import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
+import { parseRepoRevision } from '$lib/shared'
 
-export const load: PageLoad = async ({ parent }) => {
-    const { resolvedRevision, graphqlClient } = await parent()
+import type { PageLoad } from './$types'
+import { BranchesPage_OverviewQuery } from './page.gql'
+
+export const load: PageLoad = ({ params }) => {
+    const client = getGraphQLClient()
+    const { repoName } = parseRepoRevision(params.repo)
+
     return {
-        overview: graphqlClient
-            .query({
-                query: GitBranchesOverviewQuery,
-                variables: {
-                    first: 20,
-                    repo: resolvedRevision.repo.id,
-                    withBehindAhead: true,
-                },
+        overview: client
+            .query(BranchesPage_OverviewQuery, {
+                first: 20,
+                repoName,
+                withBehindAhead: true,
             })
-            .then(result => {
-                if (result.data.node?.__typename !== 'Repository') {
-                    throw new Error('Expected Repository')
-                }
-                return result.data.node
-            }),
+            .then(
+                mapOrThrow(result => {
+                    if (!result.data?.repository) {
+                        // This page will never render when the repository is not found.
+                        // The (validrev) data loader will render an error page instead.
+                        throw new Error('Unable to load repository data.')
+                    }
+                    return result.data.repository
+                })
+            ),
     }
 }

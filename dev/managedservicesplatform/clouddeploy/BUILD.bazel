@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "clouddeploy",
+    srcs = ["clouddeploy.go"],
+    embedsrcs = [
+        "customtarget.yaml",
+        "skaffold.yaml",
+        "target.template.yaml",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/clouddeploy",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/managedservicesplatform/spec",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "clouddeploy_test",
+    srcs = ["clouddeploy_test.go"],
+    embed = [":clouddeploy"],
+    deps = ["@com_github_stretchr_testify//require"],
+)

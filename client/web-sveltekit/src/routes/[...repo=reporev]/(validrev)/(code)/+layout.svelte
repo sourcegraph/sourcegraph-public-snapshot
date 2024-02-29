@@ -4,7 +4,6 @@
     import { afterNavigate, disableScrollHandling, goto } from '$app/navigation'
     import { page } from '$app/stores'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import { fetchSidebarFileTree, FileTreeProvider, type FileTreeLoader } from '$lib/repo/api/tree'
     import HistoryPanel, { type Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
@@ -13,77 +12,46 @@
 
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
-    import type { Scalars } from '$lib/graphql-operations'
     import type { GitHistory_HistoryConnection } from './layout.gql'
     import Tabs from '$lib/Tabs.svelte'
     import TabPanel from '$lib/TabPanel.svelte'
+    import { createFileTreeStore } from './fileTreeStore'
+    import { isErrorLike } from '$lib/common'
+    import { Alert } from '$lib/wildcard'
+    import { fetchSidebarFileTree } from '$lib/repo/api/tree'
+
+    interface Capture {
+        selectedTab: number | null
+        historyPanel: HistoryCapture
+        scrollTop: number
+    }
 
     export let data: LayoutData
 
-    export const snapshot: Snapshot<{ selectedTab: number | null; historyPanel: HistoryCapture }> = {
+    export const snapshot: Snapshot<Capture> = {
         capture() {
             return {
                 selectedTab,
                 historyPanel: historyPanel?.capture(),
+                // This works because this specific page is fully scrollable
+                scrollTop: window.scrollY,
             }
         },
         async restore(data) {
             selectedTab = data.selectedTab
-            // Wait until DOM was updated to possibly show the history panel
+            // Wait until DOM was updated
             await tick()
+            // `restore` is called before `afterNavigate`, which resets the scroll position
+            // Restore the scroll position after the componentent was updated
+            window.scrollTo(0, data.scrollTop)
+
+            // Restore history panel state if it is open
             if (data.historyPanel) {
                 historyPanel?.restore(data.historyPanel)
             }
         },
     }
 
-    const fileTreeLoader: FileTreeLoader = args =>
-        fetchSidebarFileTree(args).then(
-            ({ root, values }) =>
-                new FileTreeProvider({
-                    root,
-                    values,
-                    loader: fileTreeLoader,
-                    ...args,
-                })
-        )
-
-    async function updateFileTreeProvider(repoID: Scalars['ID']['input'], commitID: string, parentPath: string) {
-        const result = await data.fileTree
-        if (!result) {
-            treeProvider = null
-            return
-        }
-        const { root, values } = result
-
-        // Do nothing if update was called with new arguments in the meantime
-        if (
-            repoID !== data.resolvedRevision.repo.id ||
-            commitID !== data.resolvedRevision.commitID ||
-            parentPath !== data.parentPath
-        ) {
-            return
-        }
-        treeProvider = new FileTreeProvider({
-            root,
-            values,
-            repoID,
-            commitID,
-            loader: fileTreeLoader,
-        })
-    }
-
-    function fetchCommitHistory(afterCursor: string | null) {
-        // Only fetch more commits if there are more commits and if we are not already
-        // fetching more commits.
-        if ($commitHistoryQuery && !$commitHistoryQuery.loading && commitHistory?.pageInfo?.hasNextPage) {
-            data.commitHistory.fetchMore({
-                variables: {
-                    afterCursor: afterCursor,
-                },
-            })
-        }
-    }
     async function selectTab(event: { detail: number | null }) {
         if (event.detail === null) {
             const url = new URL($page.url)
@@ -93,28 +61,22 @@
         selectedTab = event.detail
     }
 
-    let treeProvider: FileTreeProvider | null = null
+    const fileTreeStore = createFileTreeStore({ fetchFileTreeData: fetchSidebarFileTree })
     let selectedTab: number | null = null
     let historyPanel: HistoryPanel
-
-    $: ({ revision, parentPath, resolvedRevision } = data)
-    $: commitID = resolvedRevision.commitID
-    $: repoID = resolvedRevision.repo.id
-    // Only update the file tree provider (which causes the tree to rerender) when repo, revision/commit or file path
-    // update
-    $: updateFileTreeProvider(repoID, commitID, parentPath)
-    $: commitHistoryQuery = data.commitHistory
+    let rootElement: HTMLElement | null = null
     let commitHistory: GitHistory_HistoryConnection | null
-    $: if (commitHistoryQuery) {
+
+    $: ({ revision = '', parentPath, repoName, resolvedRevision } = data)
+    $: fileTreeStore.set({ repoName, revision: resolvedRevision.commitID, path: parentPath })
+    $: commitHistoryQuery = data.commitHistory
+    $: if (!!commitHistoryQuery) {
         // Reset commit history when the query observable changes. Without
         // this we are showing the commit history of the previously selected
         // file/folder until the new commit history is loaded.
         commitHistory = null
     }
-    $: commitHistory =
-        $commitHistoryQuery?.data.node?.__typename === 'Repository'
-            ? $commitHistoryQuery.data.node.commit?.ancestors ?? null
-            : null
+    $: commitHistory = $commitHistoryQuery?.data?.repository?.commit?.ancestors ?? null
 
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
     $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
@@ -126,18 +88,42 @@
     })
 
     afterNavigate(() => {
-        // Prevents SvelteKit from resetting the scroll position to the top
+        // When navigating to a new page we want to ensure two things:
+        // - The file sidebar doesn't move. It feels bad when you clicked on a file entry
+        //   and the click target moves away because the page is scrolled all the way to the top.
+        // - The beginning of the content should be visible (e.g. the top of the file or the
+        //   top of the file table).
+        // In other words, we want to scroll to the top but not all the way
+
+        // Prevents SvelteKit from resetting the scroll position to the very top of the page
         disableScrollHandling()
+
+        if (rootElement) {
+            // Because the whole page is scrollable we can get the current scroll position from
+            // the window object
+            const top = rootElement.offsetTop
+            if (window.scrollY > top) {
+                // Reset scroll to top of the content
+                window.scrollTo(0, top)
+            }
+        }
     })
 </script>
 
-<section>
+<section bind:this={rootElement}>
     <div class="sidebar" class:open={$sidebarOpen} style:min-width={sidebarWidth} style:max-width={sidebarWidth}>
         <h3>
             <SidebarToggleButton />&nbsp; Files
         </h3>
-        {#if treeProvider}
-            <FileTree revision={revision ?? ''} {treeProvider} selectedPath={$page.params.path ?? ''} />
+        {#if $fileTreeStore}
+            {#if isErrorLike($fileTreeStore)}
+                <Alert variant="danger">
+                    Unable to fetch file tree data:
+                    {$fileTreeStore.message}
+                </Alert>
+            {:else}
+                <FileTree {repoName} {revision} treeProvider={$fileTreeStore} selectedPath={$page.params.path ?? ''} />
+            {/if}
         {:else}
             <LoadingSpinner center={false} />
         {/if}
@@ -154,8 +140,8 @@
                         <HistoryPanel
                             bind:this={historyPanel}
                             history={commitHistory}
-                            loading={$commitHistoryQuery?.loading ?? true}
-                            fetchMore={fetchCommitHistory}
+                            loading={$commitHistoryQuery?.fetching ?? true}
+                            fetchMore={commitHistoryQuery.fetchMore}
                             enableInlineDiffs={$page.route.id?.includes('/blob/') ?? false}
                         />
                     {/key}

@@ -36,7 +36,7 @@ const dashboardsHeader = `# Dashboards reference
 
 This document contains a complete reference on Sourcegraph's available dashboards, as well as details on how to interpret the panels and metrics.
 
-To learn more about Sourcegraph's metrics and how to view these dashboards, see [our metrics guide](https://docs.sourcegraph.com/admin/observability/metrics).
+To learn more about Sourcegraph's metrics and how to view these dashboards, see [our metrics guide](https://sourcegraph.com/docs/admin/observability/metrics).
 
 `
 

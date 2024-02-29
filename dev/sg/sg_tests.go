@@ -1,10 +1,8 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
-	"os/exec"
 	"sort"
 	"strings"
 
@@ -73,7 +71,7 @@ func testExec(ctx *cli.Context) error {
 		return flag.ErrHelp
 	}
 
-	return run.Test(ctx.Context, newSGTestCommand(cmd, args[1:]), config.Env)
+	return run.Test(ctx.Context, cmd, args[1:], config.Env)
 }
 
 func constructTestCmdLongHelp() string {
@@ -103,29 +101,4 @@ func constructTestCmdLongHelp() string {
 	fmt.Fprint(&out, "* "+strings.Join(names, "\n* "))
 
 	return out.String()
-}
-
-type sgTestCommand struct {
-	run.Command
-	args []string
-}
-
-// Ovrrides the GetExecCmd method with a custom implementation to construct the command
-// using CLI-passed arguments
-func (test sgTestCommand) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
-	cmdArgs := []string{test.Command.Cmd}
-	if len(test.args) != 0 {
-		cmdArgs = append(cmdArgs, test.args...)
-	} else {
-		cmdArgs = append(cmdArgs, test.Command.DefaultArgs)
-	}
-
-	return exec.CommandContext(ctx, "bash", "-c", strings.Join(cmdArgs, " ")), nil
-}
-
-func newSGTestCommand(cmd run.Command, args []string) sgTestCommand {
-	return sgTestCommand{
-		Command: cmd,
-		args:    args,
-	}
 }

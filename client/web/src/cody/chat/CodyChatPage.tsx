@@ -283,7 +283,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                             </Text>
                             <div className="mb-2">
                                 <Link
-                                    to="/get-cody"
+                                    to="/cody/manage"
                                     className={classNames(
                                         'd-inline-flex align-items-center text-merged',
                                         styles.ctaLink

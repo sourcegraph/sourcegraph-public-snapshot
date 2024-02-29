@@ -189,7 +189,7 @@ func SourcegraphDatabase(getConfig func() (*sgconf.Config, error)) CheckFunc {
 		dsn := postgresdsn.New("", "", getEnv)
 
 		if err := pingPG(ctx, dsn); err != nil {
-			return errors.Wrapf(err, "failed to connect to Sourcegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
+			return errors.Wrapf(err, "failed to connect to Sourcegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://sourcegraph.com/docs/dev/background-information/sg#changing-database-configuration)", dsn)
 		}
 		return nil
 	}
@@ -316,7 +316,13 @@ var Python = Combine(
 	CompareSemanticVersionWithASDF("python", "python --version"),
 )
 
-var Bazelisk = WrapErrMessage(Combine(InPath("bazel"), CommandOutputContains("bazel version", "Bazelisk version")), "sg setup --fix")
+var Bazelisk = WrapErrMessage(Combine(
+	InPath("bazel"),
+	SkipOnNix(
+		"nix ensures we are on the correct version",
+		CommandOutputContains("bazel version", "Bazelisk version"),
+	),
+), "sg setup --fix")
 
 func Caddy(_ context.Context) error {
 	certPath, err := caddySourcegraphCertificatePath()

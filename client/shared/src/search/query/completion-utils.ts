@@ -4,8 +4,6 @@
 
 import { escapeRegExp } from 'lodash'
 
-import type { RepositoryMatch } from '../stream'
-
 import { escapeSpaces, FILTERS, type FilterType, isNegatableFilter } from './filters'
 
 export const PREDICATE_REGEX = /^([.A-Za-z]+)\((.*?)\)?$/
@@ -23,7 +21,7 @@ export const regexInsertText = (value: string): string => {
  * repositoryInsertText escapes the provides value so that it can be used as a
  * value for the `repo:` filter.
  */
-export const repositoryInsertText = ({ repository }: RepositoryMatch): string => regexInsertText(repository)
+export const repositoryInsertText = ({ repository }: { repository: string }): string => regexInsertText(repository)
 
 /**
  * Given a list of filter types, this function returns a list of objects which

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -43,7 +44,7 @@ func (s *Server) SearchWithObservability(ctx context.Context, tr trace.Trace, ar
 		if honey.Enabled() || traceLogs {
 			act := actor.FromContext(ctx)
 			ev := honey.NewEvent("gitserver-search")
-			ev.SetSampleRate(honeySampleRate("", act))
+			ev.SetSampleRate(gitcli.HoneySampleRate("", act))
 			ev.AddField("repo", args.Repo)
 			ev.AddField("revisions", args.Revisions)
 			ev.AddField("include_diff", args.IncludeDiff)
@@ -63,7 +64,7 @@ func (s *Server) SearchWithObservability(ctx context.Context, tr trace.Trace, ar
 				_ = ev.Send()
 			}
 			if traceLogs {
-				s.Logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+				s.logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 			}
 		}
 	}()
@@ -119,9 +120,9 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 	}
 
 	searcher := &search.CommitSearcher{
-		Logger:               s.Logger,
+		Logger:               s.logger,
 		RepoName:             args.Repo,
-		RepoDir:              gitserverfs.RepoDirFromName(s.ReposDir, args.Repo).Path(),
+		RepoDir:              gitserverfs.RepoDirFromName(s.reposDir, args.Repo).Path(),
 		Revisions:            args.Revisions,
 		Query:                mt,
 		IncludeDiff:          args.IncludeDiff,

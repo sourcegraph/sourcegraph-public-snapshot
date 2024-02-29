@@ -3,9 +3,7 @@ package gitcli
 import (
 	"context"
 	"io"
-	"os/exec"
 	"strings"
-	"syscall"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -16,23 +14,18 @@ func (g *gitCLIBackend) Config() git.GitConfigBackend {
 }
 
 func (g *gitCLIBackend) Get(ctx context.Context, key string) (string, error) {
-	cmd, cancel, err := g.gitCommand(ctx, "config", "--get", key)
-	defer cancel()
+	r, err := g.NewCommand(ctx, WithArguments("config", "--get", key))
 	if err != nil {
 		return "", err
 	}
 
-	r, err := g.runGitCommand(ctx, cmd)
-	if err != nil {
-		return "", err
-	}
 	defer r.Close()
 
 	out, err := io.ReadAll(r)
 	if err != nil {
 		// Exit code 1 means the key is not set.
-		var e *exec.ExitError
-		if errors.As(err, &e) && e.Sys().(syscall.WaitStatus).ExitStatus() == 1 {
+		var e *CommandFailedError
+		if errors.As(err, &e) && e.ExitStatus == 1 {
 			return "", nil
 		}
 		return "", err
@@ -42,16 +35,11 @@ func (g *gitCLIBackend) Get(ctx context.Context, key string) (string, error) {
 }
 
 func (g *gitCLIBackend) Set(ctx context.Context, key, value string) error {
-	cmd, cancel, err := g.gitCommand(ctx, "config", key, value)
-	defer cancel()
+	r, err := g.NewCommand(ctx, WithArguments("config", key, value))
 	if err != nil {
 		return err
 	}
 
-	r, err := g.runGitCommand(ctx, cmd)
-	if err != nil {
-		return err
-	}
 	defer r.Close()
 
 	// Drain reader so process can exit.
@@ -64,24 +52,19 @@ func (g *gitCLIBackend) Set(ctx context.Context, key, value string) error {
 }
 
 func (g *gitCLIBackend) Unset(ctx context.Context, key string) error {
-	cmd, cancel, err := g.gitCommand(ctx, "config", "--unset-all", key)
-	defer cancel()
+	r, err := g.NewCommand(ctx, WithArguments("config", "--unset-all", key))
 	if err != nil {
 		return err
 	}
 
-	r, err := g.runGitCommand(ctx, cmd)
-	if err != nil {
-		return err
-	}
 	defer r.Close()
 
 	// Drain reader so process can exit.
 	_, err = io.Copy(io.Discard, r)
 	if err != nil {
 		// Exit code 5 means the key is not set.
-		var e *exec.ExitError
-		if errors.As(err, &e) && e.Sys().(syscall.WaitStatus).ExitStatus() == 5 {
+		var e *CommandFailedError
+		if errors.As(err, &e) && e.ExitStatus == 5 {
 			return nil
 		}
 

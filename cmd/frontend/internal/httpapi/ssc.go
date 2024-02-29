@@ -44,9 +44,10 @@ func newSSCRefreshCodyRateLimitHandler(logger log.Logger, db database.DB) http.H
 
 		userID := oidcAccounts[0].UserID
 
-		if err := cody.RefreshGatewayRateLimits(ctx, userID, db); err != nil {
-			logger.Error("error refreshing gateway rate limits", log.Error(err))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err, statusCode := cody.RefreshGatewayRateLimits(ctx, userID, db); err != nil {
+			logger.Error(fmt.Sprintf("error refreshing gateway rate limits: %d", statusCode), log.Error(err))
+			http.Error(w, err.Error(), statusCode)
+			return
 		}
 
 		w.WriteHeader(http.StatusOK)

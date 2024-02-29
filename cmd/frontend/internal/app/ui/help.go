@@ -48,7 +48,7 @@ func serveHelp(w http.ResponseWriter, r *http.Request) {
 	if version.IsDev(versionStr) && !envvar.SourcegraphDotComMode() {
 		dest = &url.URL{
 			Scheme: "http",
-			Host:   "localhost:5080", // local documentation server (defined in Procfile) -- CI:LOCALHOST_OK
+			Host:   "localhost:3000", // local documentation server (defined in Procfile) -- CI:LOCALHOST_OK
 			Path:   path.Join("/", docRevPrefix, page),
 		}
 	} else {

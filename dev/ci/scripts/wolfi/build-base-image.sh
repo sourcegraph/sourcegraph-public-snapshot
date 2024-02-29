@@ -93,7 +93,7 @@ if [[ "$IS_MAIN" != "true" && "$branch_repo_exists" == "true" ]]; then
   modified_packages=()
   while IFS= read -r line; do
     modified_packages+=("$line")
-  done < <(gsutil ls gs://package-repository/"$BRANCH_PATH"/x86_64/\*.apk | sed -E 's/.*\/x86_64\/([a-zA-Z0-9-]+)-[0-9]+\..*/\1/')
+  done < <(gsutil ls gs://package-repository/"$BRANCH_PATH"/x86_64/\*.apk | sed -E 's/.*\/x86_64\/([a-zA-Z0-9_-]+)-[0-9]+\..*/\1/')
 
   echo "List of modified packages to include in branch image: ${modified_packages[*]}"
 

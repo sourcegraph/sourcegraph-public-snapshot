@@ -5,6 +5,8 @@ import (
 	"os"
 	"syscall"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // Make the exiter a no-op in tests
@@ -64,4 +66,20 @@ func TestMonitorBackgroundRoutinesContextCancel(t *testing.T) {
 			t.Errorf("unexpected number of calls to stop. want=%d have=%d", 1, calls)
 		}
 	}
+}
+
+func TestLIFOStopRoutine(t *testing.T) {
+	// use an unguarded slice because LIFOStopRoutine should only stop in sequence
+	var stopped []string
+	r1 := NewMockRoutine()
+	r1.StopFunc.PushHook(func() { stopped = append(stopped, "r1") })
+	r2 := NewMockRoutine()
+	r2.StopFunc.PushHook(func() { stopped = append(stopped, "r2") })
+	r3 := NewMockRoutine()
+	r3.StopFunc.PushHook(func() { stopped = append(stopped, "r3") })
+
+	r := LIFOStopRoutine{r1, r2, r3}
+	r.Stop()
+	// stops in reverse
+	assert.Equal(t, []string{"r3", "r2", "r1"}, stopped)
 }
