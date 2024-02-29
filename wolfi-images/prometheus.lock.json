@@ -9,10 +9,6 @@
       {
         "name": "packages.sgdev.org/sourcegraph-melange-prod.rsa.pub",
         "url": "https://packages.sgdev.org/sourcegraph-melange-prod.rsa.pub"
-      },
-      {
-        "name": "packages.sgdev.org/chainguard/chainguard-enterprise.rsa.pub",
-        "url": "https://packages.sgdev.org/chainguard/chainguard-enterprise.rsa.pub"
       }
     ],
     "repositories": [
@@ -24,11 +20,6 @@
       {
         "name": "@sourcegraph https://packages.sgdev.org/main/x86_64",
         "url": "@sourcegraph https://packages.sgdev.org/main/x86_64/APKINDEX.tar.gz",
-        "architecture": "x86_64"
-      },
-      {
-        "name": "@chainguard https://packages.sgdev.org/chainguard/x86_64",
-        "url": "@chainguard https://packages.sgdev.org/chainguard/x86_64/APKINDEX.tar.gz",
         "architecture": "x86_64"
       }
     ],
@@ -776,22 +767,22 @@
       },
       {
         "name": "prometheus-alertmanager",
-        "url": "https://packages.wolfi.dev/os/x86_64/prometheus-alertmanager-0.26.0-r6.apk",
-        "version": "0.26.0-r6",
+        "url": "https://packages.wolfi.dev/os/x86_64/prometheus-alertmanager-0.27.0-r0.apk",
+        "version": "0.27.0-r0",
         "architecture": "x86_64",
         "signature": {
-          "range": "bytes=0-700",
-          "checksum": "sha1-Zhxp4Fqjx9G4i4FuAGxiU1tCf2k="
+          "range": "bytes=0-697",
+          "checksum": "sha1-E6NwEPqoKqcMqvHXgk8qZMHoIx8="
         },
         "control": {
-          "range": "bytes=701-1060",
-          "checksum": "sha1-Zirn7PwSlK4ixXTbKKXeQ7u6Zcc="
+          "range": "bytes=698-1060",
+          "checksum": "sha1-4P6bRYkYJ8kqoFy+b1vBKmQvvgw="
         },
         "data": {
-          "range": "bytes=1061-51708024",
-          "checksum": "sha256-diU3X1zp1K7+1RlzUK3BNFqZYixt4kx3Zq3G64Kg6wI="
+          "range": "bytes=1061-57244388",
+          "checksum": "sha256-305YDFWl3q+bH3TprkbqZxPeZ3YQ+nS69ofiyHjLu38="
         },
-        "checksum": "Q1Zirn7PwSlK4ixXTbKKXeQ7u6Zcc="
+        "checksum": "Q14P6bRYkYJ8kqoFy+b1vBKmQvvgw="
       },
       {
         "name": "tini",

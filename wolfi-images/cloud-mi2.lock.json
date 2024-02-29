@@ -9,10 +9,6 @@
       {
         "name": "packages.sgdev.org/sourcegraph-melange-prod.rsa.pub",
         "url": "https://packages.sgdev.org/sourcegraph-melange-prod.rsa.pub"
-      },
-      {
-        "name": "packages.sgdev.org/chainguard/chainguard-enterprise.rsa.pub",
-        "url": "https://packages.sgdev.org/chainguard/chainguard-enterprise.rsa.pub"
       }
     ],
     "repositories": [
@@ -24,11 +20,6 @@
       {
         "name": "@sourcegraph https://packages.sgdev.org/main/x86_64",
         "url": "@sourcegraph https://packages.sgdev.org/main/x86_64/APKINDEX.tar.gz",
-        "architecture": "x86_64"
-      },
-      {
-        "name": "@chainguard https://packages.sgdev.org/chainguard/x86_64",
-        "url": "@chainguard https://packages.sgdev.org/chainguard/x86_64/APKINDEX.tar.gz",
         "architecture": "x86_64"
       }
     ],
@@ -928,22 +919,22 @@
       },
       {
         "name": "npm",
-        "url": "https://packages.wolfi.dev/os/x86_64/npm-10.4.0-r2.apk",
-        "version": "10.4.0-r2",
+        "url": "https://packages.wolfi.dev/os/x86_64/npm-10.5.0-r0.apk",
+        "version": "10.5.0-r0",
         "architecture": "x86_64",
         "signature": {
-          "range": "bytes=0-696",
-          "checksum": "sha1-S5GpJdzpGi5TqlwoFk74I09eLbk="
+          "range": "bytes=0-706",
+          "checksum": "sha1-ScQ/wTuDYGXsbv1T+dh5ODWXgWc="
         },
         "control": {
-          "range": "bytes=697-1047",
-          "checksum": "sha1-hz96dyi/X79JSCtqNC9ofHof3IQ="
+          "range": "bytes=707-1057",
+          "checksum": "sha1-UyaBra2W3NLgIGtDxVFFct3nuuI="
         },
         "data": {
-          "range": "bytes=1048-10450462",
-          "checksum": "sha256-HIyovVe9uFdW2JRsyAqO5u4Hq9BCKWqLpv8K6v8sYE8="
+          "range": "bytes=1058-10639438",
+          "checksum": "sha256-svWPXLIG66H6Qhc+FEbzA908sKTzYLSqqBLoNYWR0X0="
         },
-        "checksum": "Q1hz96dyi/X79JSCtqNC9ofHof3IQ="
+        "checksum": "Q1UyaBra2W3NLgIGtDxVFFct3nuuI="
       },
       {
         "name": "libbrotlienc1",
