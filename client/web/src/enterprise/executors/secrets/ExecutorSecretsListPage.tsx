@@ -1,5 +1,6 @@
-import React, { type FC, useCallback, useState } from 'react'
+import React, { type FC, useCallback, useState, useEffect } from 'react'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Container, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import type { UseShowMorePaginationResult } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
@@ -30,9 +31,13 @@ import {
 import { ExecutorSecretNode } from './ExecutorSecretNode'
 import { ExecutorSecretScopeSelector } from './ExecutorSecretScopeSelector'
 
-export interface GlobalExecutorSecretsListPageProps {}
+export interface GlobalExecutorSecretsListPageProps extends TelemetryV2Props {}
 
 export const GlobalExecutorSecretsListPage: FC<GlobalExecutorSecretsListPageProps> = props => {
+    useEffect(
+        () => props.telemetryRecorder.recordEvent('admin.executors.globalSecretsList', 'view'),
+        [props.telemetryRecorder]
+    )
     const connectionLoader = useCallback(
         (scope: ExecutorSecretScope) => globalExecutorSecretsConnectionFactory(scope),
         []
@@ -52,6 +57,10 @@ export interface UserExecutorSecretsListPageProps extends GlobalExecutorSecretsL
 }
 
 export const UserExecutorSecretsListPage: FC<UserExecutorSecretsListPageProps> = props => {
+    useEffect(
+        () => props.telemetryRecorder.recordEvent('admin.executors.userSecretsList', 'view'),
+        [props.telemetryRecorder]
+    )
     const connectionLoader = useCallback(
         (scope: ExecutorSecretScope) => userExecutorSecretsConnectionFactory(props.userID, scope),
         [props.userID]
@@ -79,6 +88,10 @@ export interface OrgExecutorSecretsListPageProps extends GlobalExecutorSecretsLi
 }
 
 export const OrgExecutorSecretsListPage: FC<OrgExecutorSecretsListPageProps> = props => {
+    useEffect(
+        () => props.telemetryRecorder.recordEvent('admin.executors.orgSecretsList', 'view'),
+        [props.telemetryRecorder]
+    )
     const connectionLoader = useCallback(
         (scope: ExecutorSecretScope) => orgExecutorSecretsConnectionFactory(props.orgID, scope),
         [props.orgID]
@@ -112,20 +125,31 @@ export interface ExecutorSecretsListPageProps extends GlobalExecutorSecretsListP
     >
 }
 
-const ExecutorSecretsListPage: FC<ExecutorSecretsListPageProps> = ({ namespaceID, headerLine, connectionLoader }) => {
+const ExecutorSecretsListPage: FC<ExecutorSecretsListPageProps> = ({
+    namespaceID,
+    headerLine,
+    connectionLoader,
+    telemetryRecorder,
+}) => {
     const [selectedScope, setSelectedScope] = useState<ExecutorSecretScope>(ExecutorSecretScope.BATCHES)
     const { loading, hasNextPage, fetchMore, connection, error, refetchAll } = connectionLoader(selectedScope)
 
     const [showAddModal, setShowAddModal] = useState<boolean>(false)
-    const onClickAdd = useCallback<React.MouseEventHandler>(event => {
-        event.preventDefault()
-        setShowAddModal(true)
-    }, [])
+    const onClickAdd = useCallback<React.MouseEventHandler>(
+        event => {
+            event.preventDefault()
+            telemetryRecorder.recordEvent('admin.executors.addSecret', 'click')
+            setShowAddModal(true)
+        },
+        [telemetryRecorder]
+    )
 
     const closeModal = useCallback(() => {
+        telemetryRecorder.recordEvent('admin.executors.addSecret', 'cancel')
         setShowAddModal(false)
     }, [])
     const afterAction = useCallback(() => {
+        telemetryRecorder.recordEvent('admin.executors.addSecret', 'submit')
         setShowAddModal(false)
         refetchAll()
     }, [refetchAll])
