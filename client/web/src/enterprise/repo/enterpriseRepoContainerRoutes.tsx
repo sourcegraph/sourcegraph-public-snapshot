@@ -38,7 +38,7 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
     },
     {
         path: '/-/embeddings/*',
-        render: context => <CodyRepoArea {...context} />,
+        render: context => <CodyRepoArea {...context} telemetryRecorder={context.platformContext.telemetryRecorder} />,
     },
     {
         path: '/-/batch-changes',
@@ -48,7 +48,9 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/own/*',
         condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom,
-        render: context => <RepositoryOwnPage {...context} />,
+        render: context => (
+            <RepositoryOwnPage {...context} telemetryRecorder={context.platformContext.telemetryRecorder} />
+        ),
     },
     {
         path: '/-/own/edit',

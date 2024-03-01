@@ -5,6 +5,7 @@ import sinon from 'sinon'
 import { describe, expect, test } from 'vitest'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 
 import type { AuthenticatedUser } from '../../auth'
 import type { ListCodeMonitors, ListUserCodeMonitorsVariables } from '../../graphql-operations'
@@ -50,7 +51,11 @@ describe('CodeMonitoringListPage', () => {
     test('Clicking enabled toggle calls toggleCodeMonitorEnabled', () => {
         const component = render(
             <MemoryRouter initialEntries={['/code-monitoring?tab=list']}>
-                <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(1)} />
+                <CodeMonitoringPage
+                    {...additionalProps}
+                    fetchUserCodeMonitors={generateMockFetchMonitors(1)}
+                    telemetryRecorder={noOpTelemetryRecorder}
+                />
             </MemoryRouter>
         )
         const toggle = component.getByTestId('toggle-monitor-enabled')
@@ -61,7 +66,11 @@ describe('CodeMonitoringListPage', () => {
     test('Switching tabs from getting started to empty list works', () => {
         const component = render(
             <MemoryRouter initialEntries={['/code-monitoring?tab=getting-started']}>
-                <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(0)} />
+                <CodeMonitoringPage
+                    {...additionalProps}
+                    fetchUserCodeMonitors={generateMockFetchMonitors(0)}
+                    telemetryRecorder={noOpTelemetryRecorder}
+                />
             </MemoryRouter>
         )
         const codeMonitorsButton = component.getByRole('button', { name: 'Code monitors' })
@@ -74,7 +83,11 @@ describe('CodeMonitoringListPage', () => {
     test('Switching tabs from list to getting started works', () => {
         const component = render(
             <MemoryRouter initialEntries={['/code-monitoring?tab=list']}>
-                <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(0)} />
+                <CodeMonitoringPage
+                    {...additionalProps}
+                    fetchUserCodeMonitors={generateMockFetchMonitors(0)}
+                    telemetryRecorder={noOpTelemetryRecorder}
+                />
             </MemoryRouter>
         )
         const gettingStartedButton = component.getByRole('button', { name: 'Getting started' })
