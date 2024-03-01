@@ -38,7 +38,7 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
     },
     {
         path: '/-/embeddings/*',
-        render: context => <CodyRepoArea {...context} />,
+        render: context => <CodyRepoArea {...context} telemetryRecorder={context.platformContext.telemetryRecorder} />,
     },
     {
         path: '/-/batch-changes',
