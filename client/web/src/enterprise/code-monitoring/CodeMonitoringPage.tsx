@@ -34,8 +34,6 @@ import { CodeMonitoringGettingStarted } from './CodeMonitoringGettingStarted'
 import { CodeMonitoringLogs } from './CodeMonitoringLogs'
 import { CodeMonitorList } from './CodeMonitorList'
 
-import styles from './CodeMonitoringPage.module.scss'
-
 type MonitorsTab = 'list' | 'getting-started' | 'logs'
 
 type Tabs = { tab: MonitorsTab; title: string; isActive: boolean }[]
@@ -201,7 +199,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                                             event.preventDefault()
                                             onSelectTab(tab)
                                         }}
-                                        className={classNames('nav-link', styles.navLink, isActive && 'active')}
+                                        className={classNames('nav-link', isActive && 'active')}
                                     >
                                         <span>
                                             {title}
