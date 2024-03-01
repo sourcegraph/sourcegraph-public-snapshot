@@ -306,8 +306,8 @@ go_repository(
     name = "com_github_aws_aws_sdk_go_v2_service_ssooidc",
     build_file_proto_mode = "disable_global",
     importpath = "github.com/aws/aws-sdk-go-v2/service/ssooidc",
-    sum = "h1:xLPZMyuZ4GuqRCIec/zWuIhRFPXh2UOJdLXBSi64ZWQ=",
-    version = "v1.14.5",
+    sum = "h1:HFiiRkf1SdaAmV3/BHOFZ9DjFynPHj8G/UIO1lQS+fk=",
+    version = "v1.17.3",
 )
 
 # Overrides the default provided protobuf dep from rules_go by a more
@@ -520,7 +520,16 @@ load("@rules_apko//apko:repositories.bzl", "apko_register_toolchains", "rules_ap
 
 rules_apko_dependencies()
 
-apko_register_toolchains(name = "apko")
+apko_register_toolchains(
+    name = "apko",
+    register = False,
+)
+
+register_toolchains("//:apko_linux_toolchain")
+
+register_toolchains("//:apko_darwin_arm64_toolchain")
+
+register_toolchains("//:apko_darwin_amd64_toolchain")
 
 load("@rules_apko//apko:translate_lock.bzl", "translate_apko_lock")
 
