@@ -1,5 +1,6 @@
 import { type FunctionComponent, useState } from 'react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorAlert, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
@@ -60,6 +61,7 @@ export const CodeIntelInferenceConfigurationPage: FunctionComponent<CodeIntelInf
                 script={inferenceScript}
                 authenticatedUser={authenticatedUser}
                 setPreviewScript={setPreviewScript}
+                telemetryRecorder={noOpTelemetryRecorder}
                 {...props}
             />
 
