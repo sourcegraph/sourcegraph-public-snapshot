@@ -5,6 +5,7 @@ import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { assertAriaDisabled } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
@@ -57,7 +58,10 @@ describe.skip('CreateCodeMonitorPage', () => {
         renderWithBrandedContext(
             <MockedTestProvider>
                 <Routes>
-                    <Route path="/code-monitoring/new" element={<CreateCodeMonitorPage {...props} />} />
+                    <Route
+                        path="/code-monitoring/new"
+                        element={<CreateCodeMonitorPage {...props} telemetryRecorder={noOpTelemetryRecorder} />}
+                    />
                 </Routes>
             </MockedTestProvider>,
             {
@@ -87,7 +91,10 @@ describe.skip('CreateCodeMonitorPage', () => {
         renderWithBrandedContext(
             <MockedTestProvider>
                 <Routes>
-                    <Route path="/code-monitoring/new" element={<CreateCodeMonitorPage {...props} />} />
+                    <Route
+                        path="/code-monitoring/new"
+                        element={<CreateCodeMonitorPage {...props} telemetryRecorder={noOpTelemetryRecorder} />}
+                    />
                 </Routes>
             </MockedTestProvider>,
             {
@@ -114,7 +121,10 @@ describe.skip('CreateCodeMonitorPage', () => {
         renderWithBrandedContext(
             <MockedTestProvider>
                 <Routes>
-                    <Route path="/code-monitoring/new" element={<CreateCodeMonitorPage {...props} />} />
+                    <Route
+                        path="/code-monitoring/new"
+                        element={<CreateCodeMonitorPage {...props} telemetryRecorder={noOpTelemetryRecorder} />}
+                    />
                 </Routes>
             </MockedTestProvider>,
             { route: '/code-monitoring/new' }
