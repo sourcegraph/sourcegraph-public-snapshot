@@ -356,8 +356,8 @@ func getAndMarshalCodeHostVersionsJSON(_ context.Context, _ database.DB) (_ json
 	return json.Marshal(v)
 }
 
-func getAndMarshalCodyUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalCodyUsageJSON")(&err)
+func getAndMarshalCodyUsage2JSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCodyUsage2JSON")(&err)
 
 	codyUsage, err := usagestats.GetAggregatedCodyStats(ctx, db)
 	if err != nil {
@@ -497,7 +497,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		CodeHostIntegrationUsage:      []byte("{}"),
 		IDEExtensionsUsage:            []byte("{}"),
 		MigratedExtensionsUsage:       []byte("{}"),
-		CodyUsage:                     []byte("{}"),
+		CodyUsage2:                    []byte("{}"),
 		CodyProviders:                 []byte("{}"),
 		RepoMetadataUsage:             []byte("{}"),
 	}
@@ -654,7 +654,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		logFunc("ownUsage failed", log.Error(err))
 	}
 
-	r.CodyUsage, err = getAndMarshalCodyUsageJSON(ctx, db)
+	r.CodyUsage2, err = getAndMarshalCodyUsage2JSON(ctx, db)
 	if err != nil {
 		logFunc("codyUsage failed", log.Error(err))
 	}
