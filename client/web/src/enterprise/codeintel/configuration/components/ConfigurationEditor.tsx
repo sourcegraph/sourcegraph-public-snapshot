@@ -2,6 +2,7 @@ import { type FunctionComponent, useCallback, useMemo, useState } from 'react'
 
 import type { editor } from 'monaco-editor'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, screenReaderAnnounce, ErrorAlert, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
@@ -16,7 +17,7 @@ import allConfigSchema from '../schema.json'
 
 import { IndexConfigurationSaveToolbar, type IndexConfigurationSaveToolbarProps } from './IndexConfigurationSaveToolbar'
 
-export interface ConfigurationEditorProps extends TelemetryProps {
+export interface ConfigurationEditorProps extends TelemetryProps, TelemetryV2Props {
     repoId: string
     authenticatedUser: AuthenticatedUser | null
 }
@@ -25,6 +26,7 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
     repoId,
     authenticatedUser,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const isLightTheme = useIsLightTheme()
     const { inferredConfiguration, loadingInferred, inferredError } = useInferredConfig(repoId)
@@ -103,6 +105,7 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
                         height={600}
                         isLightTheme={isLightTheme}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         customSaveToolbar={authenticatedUser?.siteAdmin ? customToolbar : undefined}
                         onDirtyChange={setDirty}
                         onEditor={setEditor}
