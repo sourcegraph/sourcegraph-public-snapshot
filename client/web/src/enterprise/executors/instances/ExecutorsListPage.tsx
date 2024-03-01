@@ -50,7 +50,7 @@ export const ExecutorsListPage: React.FC<ExecutorsListPageProps> = ({
 }) => {
     useEffect(() => {
         eventLogger.logViewEvent('ExecutorsList')
-        telemetryRecorder.recordEvent('admin.executors.list', 'view')
+        telemetryRecorder.recordEvent('executors.list', 'view')
     }, [telemetryRecorder])
 
     const apolloClient = useApolloClient()

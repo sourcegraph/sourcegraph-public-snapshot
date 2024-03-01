@@ -35,7 +35,7 @@ export interface GlobalExecutorSecretsListPageProps extends TelemetryV2Props {}
 
 export const GlobalExecutorSecretsListPage: FC<GlobalExecutorSecretsListPageProps> = props => {
     useEffect(
-        () => props.telemetryRecorder.recordEvent('admin.executors.globalSecretsList', 'view'),
+        () => props.telemetryRecorder.recordEvent('executors.globalSecretsList', 'view'),
         [props.telemetryRecorder]
     )
     const connectionLoader = useCallback(
@@ -57,10 +57,7 @@ export interface UserExecutorSecretsListPageProps extends GlobalExecutorSecretsL
 }
 
 export const UserExecutorSecretsListPage: FC<UserExecutorSecretsListPageProps> = props => {
-    useEffect(
-        () => props.telemetryRecorder.recordEvent('admin.executors.userSecretsList', 'view'),
-        [props.telemetryRecorder]
-    )
+    useEffect(() => props.telemetryRecorder.recordEvent('executors.userSecretsList', 'view'), [props.telemetryRecorder])
     const connectionLoader = useCallback(
         (scope: ExecutorSecretScope) => userExecutorSecretsConnectionFactory(props.userID, scope),
         [props.userID]
@@ -88,10 +85,7 @@ export interface OrgExecutorSecretsListPageProps extends GlobalExecutorSecretsLi
 }
 
 export const OrgExecutorSecretsListPage: FC<OrgExecutorSecretsListPageProps> = props => {
-    useEffect(
-        () => props.telemetryRecorder.recordEvent('admin.executors.orgSecretsList', 'view'),
-        [props.telemetryRecorder]
-    )
+    useEffect(() => props.telemetryRecorder.recordEvent('executors.orgSecretsList', 'view'), [props.telemetryRecorder])
     const connectionLoader = useCallback(
         (scope: ExecutorSecretScope) => orgExecutorSecretsConnectionFactory(props.orgID, scope),
         [props.orgID]
@@ -138,18 +132,18 @@ const ExecutorSecretsListPage: FC<ExecutorSecretsListPageProps> = ({
     const onClickAdd = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
-            telemetryRecorder.recordEvent('admin.executors.addSecret', 'click')
+            telemetryRecorder.recordEvent('executors.addSecret', 'click')
             setShowAddModal(true)
         },
         [telemetryRecorder]
     )
 
     const closeModal = useCallback(() => {
-        telemetryRecorder.recordEvent('admin.executors.addSecret', 'cancel')
+        telemetryRecorder.recordEvent('executors.addSecret', 'cancel')
         setShowAddModal(false)
     }, [])
     const afterAction = useCallback(() => {
-        telemetryRecorder.recordEvent('admin.executors.addSecret', 'submit')
+        telemetryRecorder.recordEvent('executors.addSecret', 'submit')
         setShowAddModal(false)
         refetchAll()
     }, [refetchAll])
