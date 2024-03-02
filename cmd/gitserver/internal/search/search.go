@@ -454,13 +454,11 @@ func filterRawDiff(rawDiff []*godiff.FileDiff, filterFunc func(string) (bool, er
 	}
 	filtered := make([]*godiff.FileDiff, 0, len(rawDiff))
 	for _, fileDiff := range rawDiff {
-		if filterFunc != nil {
-			if isAllowed, err := filterFunc(fileDiff.NewName); err != nil {
-				logger.Error("error filtering files in raw diff", log.Error(err))
-				continue
-			} else if !isAllowed {
-				continue
-			}
+		if isAllowed, err := filterFunc(fileDiff.NewName); err != nil {
+			logger.Error("error filtering files in raw diff", log.Error(err))
+			continue
+		} else if !isAllowed {
+			continue
 		}
 		filtered = append(filtered, fileDiff)
 	}
