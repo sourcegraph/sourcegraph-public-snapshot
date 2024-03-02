@@ -169,7 +169,9 @@ export const routes: RouteObject[] = [
         path: PageRoutes.Insights,
         element: (
             <LegacyRoute
-                render={props => <CodeInsightsRouter {...props} />}
+                render={props => (
+                    <CodeInsightsRouter {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+                )}
                 condition={({ codeInsightsEnabled }) => !!codeInsightsEnabled}
             />
         ),
