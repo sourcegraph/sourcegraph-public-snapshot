@@ -11,11 +11,11 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/repos",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//cmd/searcher/protocol",
         "//internal/api",
         "//internal/conf",
         "//internal/database",
+        "//internal/dotcom",
         "//internal/endpoint",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",

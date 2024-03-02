@@ -12,7 +12,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared",
     visibility = ["//visibility:public"],
     deps = [
-        "//cmd/frontend/envvar",
         "//cmd/frontend/globals",
         "//cmd/repo-updater/internal/phabricator",
         "//cmd/repo-updater/internal/purge",
@@ -30,6 +29,7 @@ go_library(
         "//internal/database/connections/live",
         "//internal/database/dbutil",
         "//internal/debugserver",
+        "//internal/dotcom",
         "//internal/encryption/keyring",
         "//internal/env",
         "//internal/gitserver",

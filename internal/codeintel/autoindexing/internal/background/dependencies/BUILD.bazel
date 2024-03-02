@@ -17,7 +17,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background/dependencies",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/actor",
         "//internal/api",
         "//internal/codeintel/autoindexing/internal/inference",
@@ -28,6 +27,7 @@ go_library(
         "//internal/conf/reposource",
         "//internal/database",
         "//internal/database/dbutil",
+        "//internal/dotcom",
         "//internal/env",
         "//internal/errcode",
         "//internal/executor",
@@ -59,7 +59,6 @@ go_test(
     embed = [":dependencies"],
     tags = ["requires-network"],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/api",
         "//internal/codeintel/autoindexing/internal/store",
         "//internal/codeintel/autoindexing/shared",
@@ -70,6 +69,7 @@ go_test(
         "//internal/database/basestore",
         "//internal/database/dbtest",
         "//internal/database/dbutil",
+        "//internal/dotcom",
         "//internal/executor",
         "//internal/extsvc",
         "//internal/observation",

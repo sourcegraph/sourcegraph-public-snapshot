@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -45,7 +45,7 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 
 		// The license check handler uses a Bearer token and request body which
 		// is checked in `productsubscription/license_check_handler.go`
-		if envvar.SourcegraphDotComMode() && strings.HasPrefix(r.URL.Path, "/.api/license/check") {
+		if dotcom.SourcegraphDotComMode() && strings.HasPrefix(r.URL.Path, "/.api/license/check") {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -70,7 +70,7 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 			var err error
 			token, sudoUser, err = authz.ParseAuthorizationHeader(headerValue)
 			if err != nil {
-				if !envvar.SourcegraphDotComMode() && authz.IsUnrecognizedScheme(err) {
+				if !dotcom.SourcegraphDotComMode() && authz.IsUnrecognizedScheme(err) {
 					// Ignore Authorization headers that we don't handle.
 					// 🚨 SECURITY: sha256 the authorization header value so we redact it
 					// while still retaining the ability to link it back to a token, assuming

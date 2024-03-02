@@ -19,7 +19,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/phabricator"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/purge"
@@ -37,6 +36,7 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -85,7 +85,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// bit more to do in this method, though, and the process will be marked ready
 	// further down this function.
 
-	mustRegisterMetrics(log.Scoped("MustRegisterMetrics"), db, envvar.SourcegraphDotComMode())
+	mustRegisterMetrics(log.Scoped("MustRegisterMetrics"), db, dotcom.SourcegraphDotComMode())
 
 	store := repos.NewStore(logger.Scoped("store"), db)
 	{
@@ -120,7 +120,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// No Batch Changes on dotcom, so we don't need to spawn the
 	// background jobs for this feature.
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		syncRegistry := batches.InitBackgroundJobs(ctx, db, keyring.Default().BatchChangesCredentialKey, cf)
 		server.ChangesetSyncRegistry = syncRegistry
 	}
@@ -131,7 +131,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	routines := []goroutine.BackgroundRoutine{
 		makeGRPCServer(logger, server),
-		newUnclonedReposManager(ctx, logger, envvar.SourcegraphDotComMode(), updateScheduler, store),
+		newUnclonedReposManager(ctx, logger, dotcom.SourcegraphDotComMode(), updateScheduler, store),
 		phabricator.NewRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker"), store),
 		// Run git fetches scheduler
 		updateScheduler,
@@ -140,7 +140,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	routines = append(routines,
 		syncer.Routines(ctx, store, repos.RunOptions{
 			EnqueueInterval: conf.RepoListUpdateInterval,
-			IsDotCom:        envvar.SourcegraphDotComMode(),
+			IsDotCom:        dotcom.SourcegraphDotComMode(),
 			MinSyncInterval: conf.RepoListUpdateInterval,
 		})...,
 	)
