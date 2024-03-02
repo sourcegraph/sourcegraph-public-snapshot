@@ -46,7 +46,6 @@ export const CaptureGroupCreationPage: FC<CaptureGroupCreationPageProps> = props
 
     const handleSubmit = useCallback(
         async (values: CaptureGroupFormFields): Promise<SubmissionErrors> => {
-            // const handleSubmit = async (values: CaptureGroupFormFields): Promise<SubmissionErrors | void> => {
             const insight = getSanitizedCaptureGroupInsight(values)
 
             await onInsightCreateRequest({ insight })

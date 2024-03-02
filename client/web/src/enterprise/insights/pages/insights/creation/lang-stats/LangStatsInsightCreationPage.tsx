@@ -74,7 +74,7 @@ export const LangStatsInsightCreationPage: FC<LangStatsInsightCreationPageProps>
 
             // Clear initial values if user successfully created search insight
             setInitialFormValues(undefined)
-            telemetryRecorder.recordEvent('insights.create.codeStats', 'create', {
+            telemetryRecorder.recordEvent('insights.create.codeStats', 'submit', {
                 metadata: { type: V2InsightType[CodeInsightTrackType.LangStatsInsight] },
             })
             telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')

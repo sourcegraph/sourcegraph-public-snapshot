@@ -166,7 +166,7 @@ const TemplateCard: React.FunctionComponent<React.PropsWithChildren<TemplateCard
 
     const handleUseTemplateLinkClick = (): void => {
         telemetryService.log('InsightGetStartedTemplateClick')
-        telemetryRecorder.recordEvent('insights.getSTarted.template', 'click')
+        telemetryRecorder.recordEvent('insights.getStarted.template', 'click')
     }
 
     return (

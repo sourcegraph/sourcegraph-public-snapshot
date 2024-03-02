@@ -30,7 +30,7 @@ export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependen
 
     useEffect(() => {
         telemetryService.logPageView('StandaloneInsightPage')
-        telemetryRecorder.recordEvent('insights.standalone', 'view')
+        telemetryRecorder.recordEvent('insight', 'view')
     }, [telemetryService])
 
     if (insight === undefined) {

@@ -24,7 +24,7 @@ export const StandaloneInsightDashboardPills: FunctionComponent<StandaloneInsigh
 
     const handleDashboardClick = (): void => {
         telemetryService.log('StandaloneInsightDashboardClick')
-        telemetryRecorder.recordEvent('insights.standalone.dashboard', 'click')
+        telemetryRecorder.recordEvent('insight.dashboardsButton', 'click')
     }
 
     return (

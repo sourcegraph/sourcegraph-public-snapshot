@@ -45,7 +45,7 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
 
     const handleEditClick = (): void => {
         telemetryService.log('StandaloneInsightPageEditClick')
-        telemetryRecorder.recordEvent('insights.standalone', 'edit')
+        telemetryRecorder.recordEvent('insight', 'edit')
     }
 
     return (

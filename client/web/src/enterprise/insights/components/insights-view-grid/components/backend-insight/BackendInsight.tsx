@@ -123,7 +123,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
         await updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }).toPromise()
 
         telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
-        telemetryRecorder.recordEvent('insights.searchBasedfilter', 'update')
+        telemetryRecorder.recordEvent('insights.searchBasedfilter', 'update', { metadata: { location: 0 } })
         setOriginalInsightFilters(filters)
         setIsFiltersOpen(false)
     }
@@ -139,7 +139,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
         })
 
         telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
-        telemetryRecorder.recordEvent('insights.searchBasedfilter', 'create') // TODO RENAME?
+        telemetryRecorder.recordEvent('insights.createFromFilter.searchBased', 'submit', { metadata: { location: 0 } })
         setOriginalInsightFilters(filters)
         setIsFiltersOpen(false)
     }

@@ -1,7 +1,7 @@
 import { useCallback, useContext, useState } from 'react'
 
 import { type ErrorLike, logger } from '@sourcegraph/common'
-import { BillingCategory } from '@sourcegraph/shared/src/telemetry'
+import { BillingCategory, BillingProduct } from '@sourcegraph/shared/src/telemetry'
 import { TelemetryRecorder } from '@sourcegraph/telemetry'
 
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -49,7 +49,7 @@ export function useRemoveInsightFromDashboard(
                 const insightType = getTrackingTypeByInsightType(insight.type)
 
                 eventLogger.log('InsightRemovalFromDashboard', { insightType }, { insightType })
-                telemetryRecorder.recordEvent('insight', 'remove', {
+                telemetryRecorder.recordEvent('insight', 'removeFromDashboard', {
                     metadata: { insightType: V2InsightType[insightType] },
                 })
             } catch (error) {

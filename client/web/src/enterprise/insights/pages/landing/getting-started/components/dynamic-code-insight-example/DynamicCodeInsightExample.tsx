@@ -92,7 +92,7 @@ export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = pro
     useEffect(() => {
         if (debouncedRepositories !== INITIAL_INSIGHT_VALUES.repositories) {
             telemetryService.log('InsightsGetStartedPageRepositoriesModification')
-            telemetryRecorder.recordEvent('insights.getStarted.reposistories', 'modify')
+            telemetryRecorder.recordEvent('insights.getStarted.repositories', 'modify')
         }
     }, [debouncedRepositories, telemetryService, telemetryRecorder])
 

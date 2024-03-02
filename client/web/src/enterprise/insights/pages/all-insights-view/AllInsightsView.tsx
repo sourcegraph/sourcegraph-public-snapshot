@@ -1,4 +1,4 @@
-import type { FC } from 'react'
+import { useEffect, type FC } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 
@@ -38,6 +38,8 @@ export const AllInsightsView: FC<AllInsightsViewProps> = props => {
         },
         options: { fetchPolicy: 'cache-and-network' },
     })
+
+    useEffect(() => props.telemetryRecorder.recordEvent('insights.allInsights', 'view'), [props.telemetryRecorder])
 
     if (connection === undefined) {
         return <LoadingSpinner aria-hidden={true} inline={false} />
