@@ -141,12 +141,12 @@ const ExecutorSecretsListPage: FC<ExecutorSecretsListPageProps> = ({
     const closeModal = useCallback(() => {
         telemetryRecorder.recordEvent('executors.addSecret', 'cancel')
         setShowAddModal(false)
-    }, [])
+    }, [telemetryRecorder])
     const afterAction = useCallback(() => {
         telemetryRecorder.recordEvent('executors.addSecret', 'submit')
         setShowAddModal(false)
         refetchAll()
-    }, [refetchAll])
+    }, [refetchAll, telemetryRecorder])
 
     return (
         <>
