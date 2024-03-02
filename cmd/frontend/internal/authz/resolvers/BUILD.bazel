@@ -15,7 +15,6 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
-        "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/actor",
@@ -24,6 +23,7 @@ go_library(
         "//internal/authz",
         "//internal/authz/permssync",
         "//internal/collections",
+        "//internal/conf",
         "//internal/database",
         "//internal/errcode",
         "//internal/extsvc",
@@ -51,7 +51,6 @@ go_test(
     embed = [":resolvers"],
     deps = [
         "//cmd/frontend/envvar",
-        "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/actor",
@@ -60,6 +59,7 @@ go_test(
         "//internal/authz",
         "//internal/authz/permssync",
         "//internal/authz/providers/github",
+        "//internal/conf",
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/executor",

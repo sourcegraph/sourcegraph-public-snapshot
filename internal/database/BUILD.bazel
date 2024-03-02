@@ -92,7 +92,6 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
-        "//cmd/frontend/globals",
         "//internal/accesstoken",
         "//internal/actor",
         "//internal/api",
@@ -270,7 +269,6 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/envvar",
-        "//cmd/frontend/globals",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",

@@ -9,8 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -75,9 +75,15 @@ func TestRepoIDsByGlobPatterns(t *testing.T) {
 		// Turning on explicit permissions forces checking repository permissions
 		// against permissions tables in the database, which should effectively block
 		// all access because permissions tables are empty and repos are private.
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-		defer globals.SetPermissionsUserMapping(before)
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				PermissionsUserMapping: &schema.PermissionsUserMapping{
+					Enabled: true,
+					BindID:  "email",
+				},
+			},
+		})
+		t.Cleanup(func() { conf.Mock(nil) })
 
 		repoIDs, _, err := store.GetRepoIDsByGlobPatterns(ctx, []string{"*"}, 10, 0)
 		if err != nil {

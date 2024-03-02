@@ -14,9 +14,9 @@ import (
 	"github.com/lib/pq"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -218,9 +218,15 @@ func TestGetUploads(t *testing.T) {
 		// Enable permissions user mapping forces checking repository permissions
 		// against permissions tables in the database, which should effectively block
 		// all access because permissions tables are empty.
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-		defer globals.SetPermissionsUserMapping(before)
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				PermissionsUserMapping: &schema.PermissionsUserMapping{
+					Enabled: true,
+					BindID:  "email",
+				},
+			},
+		})
+		t.Cleanup(func() { conf.Mock(nil) })
 
 		uploads, totalCount, err := store.GetUploads(ctx,
 			shared.GetUploadsOptions{
@@ -285,9 +291,15 @@ func TestGetUploadByID(t *testing.T) {
 		// Enable permissions user mapping forces checking repository permissions
 		// against permissions tables in the database, which should effectively block
 		// all access because permissions tables are empty.
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-		defer globals.SetPermissionsUserMapping(before)
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				PermissionsUserMapping: &schema.PermissionsUserMapping{
+					Enabled: true,
+					BindID:  "email",
+				},
+			},
+		})
+		t.Cleanup(func() { conf.Mock(nil) })
 
 		_, exists, err := store.GetUploadByID(ctx, 1)
 		if err != nil {
@@ -452,9 +464,15 @@ func TestGetUploadsByIDs(t *testing.T) {
 		// Enable permissions user mapping forces checking repository permissions
 		// against permissions tables in the database, which should effectively block
 		// all access because permissions tables are empty.
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-		defer globals.SetPermissionsUserMapping(before)
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				PermissionsUserMapping: &schema.PermissionsUserMapping{
+					Enabled: true,
+					BindID:  "email",
+				},
+			},
+		})
+		t.Cleanup(func() { conf.Mock(nil) })
 
 		indexes, err := store.GetUploadsByIDs(ctx, 1, 2, 3, 4)
 		if err != nil {
@@ -573,9 +591,15 @@ func TestGetVisibleUploadsMatchingMonikers(t *testing.T) {
 		// Enable permissions user mapping forces checking repository permissions
 		// against permissions tables in the database, which should effectively block
 		// all access because permissions tables are empty.
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-		defer globals.SetPermissionsUserMapping(before)
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				PermissionsUserMapping: &schema.PermissionsUserMapping{
+					Enabled: true,
+					BindID:  "email",
+				},
+			},
+		})
+		t.Cleanup(func() { conf.Mock(nil) })
 
 		_, totalCount, err := store.GetVisibleUploadsMatchingMonikers(context.Background(), 50, makeCommit(1), []precise.QualifiedMonikerData{moniker}, 50, 0)
 		if err != nil {
@@ -714,9 +738,15 @@ func TestDefinitionDumps(t *testing.T) {
 		// against permissions tables in the database, which should effectively block
 		// all access because permissions tables are empty and repo that dumps belong
 		// to are private.
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-		defer globals.SetPermissionsUserMapping(before)
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				PermissionsUserMapping: &schema.PermissionsUserMapping{
+					Enabled: true,
+					BindID:  "email",
+				},
+			},
+		})
+		t.Cleanup(func() { conf.Mock(nil) })
 
 		if dumps, err := store.GetDumpsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1, moniker2}); err != nil {
 			t.Fatalf("unexpected error getting package: %s", err)

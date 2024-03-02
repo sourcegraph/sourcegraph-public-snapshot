@@ -18,7 +18,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -58,12 +57,15 @@ func (p *fakeProvider) FetchRepoPerms(context.Context, *extsvc.Repository, authz
 }
 
 func mockExplicitPermsConfig(enabled bool) func() {
-	before := globals.PermissionsUserMapping()
-	globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: enabled})
-
-	return func() {
-		globals.SetPermissionsUserMapping(before)
-	}
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			PermissionsUserMapping: &schema.PermissionsUserMapping{
+				Enabled: enabled,
+				BindID:  "email",
+			},
+		},
+	})
+	return func() { conf.Mock(nil) }
 }
 
 // 🚨 SECURITY: Tests are necessary to ensure security.
@@ -748,9 +750,15 @@ VALUES
 		t.Fatal(err)
 	}
 
-	before := globals.PermissionsUserMapping()
-	globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-	defer globals.SetPermissionsUserMapping(before)
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			PermissionsUserMapping: &schema.PermissionsUserMapping{
+				Enabled: true,
+				BindID:  "email",
+			},
+		},
+	})
+	t.Cleanup(func() { conf.Mock(nil) })
 
 	// Alice should see "alice_private_repo" and public repos, but not "bob_private_repo"
 	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
