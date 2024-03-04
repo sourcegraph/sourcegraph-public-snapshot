@@ -10,12 +10,12 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -56,9 +56,9 @@ func TestUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		t.Run("allowed on Sourcegraph.com", func(t *testing.T) {
-			orig := envvar.SourcegraphDotComMode()
-			envvar.MockSourcegraphDotComMode(true)
-			defer envvar.MockSourcegraphDotComMode(orig)
+			orig := dotcom.SourcegraphDotComMode()
+			dotcom.MockSourcegraphDotComMode(true)
+			defer dotcom.MockSourcegraphDotComMode(orig)
 
 			checkUserByUsername(t)
 		})
@@ -101,9 +101,9 @@ func TestUser(t *testing.T) {
 				})
 			}
 
-			orig := envvar.SourcegraphDotComMode()
-			envvar.MockSourcegraphDotComMode(true)
-			defer envvar.MockSourcegraphDotComMode(orig)
+			orig := dotcom.SourcegraphDotComMode()
+			dotcom.MockSourcegraphDotComMode(true)
+			defer dotcom.MockSourcegraphDotComMode(orig)
 
 			t.Run("for anonymous viewer", func(t *testing.T) {
 				users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, database.ErrNoCurrentUser)
@@ -181,9 +181,9 @@ func TestUser_LatestSettings(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+		orig := dotcom.SourcegraphDotComMode()
+		dotcom.MockSourcegraphDotComMode(true)
+		defer dotcom.MockSourcegraphDotComMode(orig)
 
 		tests := []struct {
 			name  string
@@ -235,10 +235,10 @@ func TestUser_ViewerCanAdminister(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
+		orig := dotcom.SourcegraphDotComMode()
+		dotcom.MockSourcegraphDotComMode(true)
 		t.Cleanup(func() {
-			envvar.MockSourcegraphDotComMode(orig)
+			dotcom.MockSourcegraphDotComMode(orig)
 		})
 
 		tests := []struct {
@@ -354,9 +354,9 @@ func TestUpdateUser(t *testing.T) {
 	})
 
 	t.Run("disallow suspicious names", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+		orig := dotcom.SourcegraphDotComMode()
+		dotcom.MockSourcegraphDotComMode(true)
+		defer dotcom.MockSourcegraphDotComMode(orig)
 
 		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
@@ -454,9 +454,9 @@ func TestUpdateUser(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+		orig := dotcom.SourcegraphDotComMode()
+		dotcom.MockSourcegraphDotComMode(true)
+		defer dotcom.MockSourcegraphDotComMode(orig)
 
 		tests := []struct {
 			name  string
@@ -725,9 +725,9 @@ func TestUser_Organizations(t *testing.T) {
 	}
 
 	t.Run("on Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		t.Cleanup(func() { envvar.MockSourcegraphDotComMode(orig) })
+		orig := dotcom.SourcegraphDotComMode()
+		dotcom.MockSourcegraphDotComMode(true)
+		t.Cleanup(func() { dotcom.MockSourcegraphDotComMode(orig) })
 
 		t.Run("same user", func(t *testing.T) {
 			expectOrgSuccess(t, 1)

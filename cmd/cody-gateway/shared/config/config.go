@@ -68,12 +68,16 @@ type OpenTelemetryConfig struct {
 }
 
 type AnthropicConfig struct {
-	AllowedModels          []string
-	AccessToken            string
-	MaxTokensToSample      int
-	AllowedPromptPatterns  []string
-	DetectedPromptPatterns []string
-	RequestBlockingEnabled bool
+	AllowedModels                  []string
+	AccessToken                    string
+	MaxTokensToSample              int
+	AllowedPromptPatterns          []string
+	DetectedPromptPatterns         []string
+	RequestBlockingEnabled         bool
+	PromptTokenFlaggingLimit       int
+	PromptTokenBlockingLimit       int
+	MaxTokensToSampleFlaggingLimit int
+	ResponseTokenBlockingLimit     int
 }
 
 type FireworksConfig struct {
@@ -139,6 +143,11 @@ func (c *Config) Load() {
 	c.Anthropic.AllowedPromptPatterns = splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_ALLOWED_PROMPT_PATTERNS", "Prompt patterns to allow."))
 	c.Anthropic.DetectedPromptPatterns = splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_DETECTED_PROMPT_PATTERNS", "Patterns to detect in prompt."))
 	c.Anthropic.RequestBlockingEnabled = c.GetBool("CODY_GATEWAY_ANTHROPIC_REQUEST_BLOCKING_ENABLED", "false", "Whether we should block requests that match our blocking criteria.")
+
+	c.Anthropic.PromptTokenBlockingLimit = c.GetInt("CODY_GATEWAY_ANTHROPIC_PROMPT_TOKEN_BLOCKING_LIMIT", "20000", "Maximum number of prompt tokens to allow without blocking.")
+	c.Anthropic.PromptTokenFlaggingLimit = c.GetInt("CODY_GATEWAY_ANTHROPIC_PROMPT_TOKEN_FLAGGING_LIMIT", "18000", "Maximum number of prompt tokens to allow without flagging.")
+	c.Anthropic.MaxTokensToSampleFlaggingLimit = c.GetInt("CODY_GATEWAY_ANTHROPIC_MAX_TOKENS_TO_SAMPLE_FLAGGING_LIMIT", "1000", "Maximum value of max_tokens_to_sample to allow without flagging.")
+	c.Anthropic.ResponseTokenBlockingLimit = c.GetInt("CODY_GATEWAY_ANTHROPIC_RESPONSE_TOKEN_BLOCKING_LIMIT", "1000", "Maximum number of completion tokens to allow without blocking.")
 
 	c.OpenAI.AccessToken = c.GetOptional("CODY_GATEWAY_OPENAI_ACCESS_TOKEN", "The OpenAI access token to be used.")
 	c.OpenAI.OrgID = c.GetOptional("CODY_GATEWAY_OPENAI_ORG_ID", "The OpenAI organization to count billing towards. Setting this ensures we always use the correct negotiated terms.")

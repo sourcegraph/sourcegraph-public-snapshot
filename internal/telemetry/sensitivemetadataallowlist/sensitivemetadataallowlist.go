@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
@@ -54,7 +54,7 @@ func eventTypes(types ...EventType) EventTypes {
 // what data we export from customer Sourcegraph instances.
 func (e EventTypes) Redact(event *telemetrygatewayv1.Event) {
 	rm := redactAllSensitive
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		rm = redactNothing
 	} else if e.IsAllowed(event) {
 		rm = redactMarketing

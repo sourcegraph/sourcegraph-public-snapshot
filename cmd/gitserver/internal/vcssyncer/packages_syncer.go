@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
@@ -252,6 +253,15 @@ func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.P
 
 	// Return error if at least one version failed to download.
 	if errs != nil {
+		// TEMP: For dotcom, we don't want to hard fail for missing versions.
+		// Currently, our DB does not contain valid versions only, and attempting
+		// to download versions over and over again clogs out large clone queue.
+		// TODO(eseliger): Remove this branch! Also make sure to remove all the
+		// existing packages from gitserver disks.
+		if envvar.SourcegraphDotComMode() {
+			s.logger.Error("failed to fetch some dependency versions", log.Error(errs))
+			return nil
+		}
 		return errs
 	}
 

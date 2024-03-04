@@ -16,8 +16,8 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -202,9 +202,9 @@ func TestOther_DotComConfig(t *testing.T) {
 	require.True(t, repo.Private)
 
 	// Enable Dotcom mode. Then repo should be public.
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
+	orig := dotcom.SourcegraphDotComMode()
+	dotcom.MockSourcegraphDotComMode(true)
+	defer dotcom.MockSourcegraphDotComMode(orig)
 	source = makeSource(t)
 
 	repo, err = source.otherRepoFromCloneURL("other:source", cloneURL)

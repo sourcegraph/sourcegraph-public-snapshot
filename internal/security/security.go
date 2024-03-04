@@ -13,9 +13,9 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -31,7 +31,7 @@ var (
 
 func ensureBannedEmailDomainsLoaded() error {
 	bannedEmailDomainsOnce.Do(func() {
-		if !envvar.SourcegraphDotComMode() {
+		if !dotcom.SourcegraphDotComMode() {
 			return
 		}
 

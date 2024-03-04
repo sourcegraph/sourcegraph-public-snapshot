@@ -3,6 +3,7 @@ package conf
 
 import (
 	"context"
+	"encoding/json"
 	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"os"
 	"path/filepath"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -134,7 +136,43 @@ func initDefaultClient() *client {
 
 	prometheus.DefaultRegisterer.MustRegister(m)
 
+	if mode == modeClient {
+		// HACK: We allow a file locally to be used as a configuration source so
+		// we can start services independently of the frontend server.
+		// We use os.Getenv here instead of env.Get to make sure we don't advertise
+		// this as a configuration option to the user.
+		// DO NOT USE THIS ANYWHERE BUT FOR STANDALONE SERVICES IN LOCAL DEV.
+		// STRANGE ERRORS MAY OCCUR WHEN CONFIGS DIVERGE ACROSS SERVICES.
+		e := os.Getenv("SRC_CONFIGURATION_STUB_FROM_FILE")
+		if e != "" {
+			defaultClient.passthrough = &filebasedConfigurationSource{filename: e}
+		}
+	}
+
 	return defaultClient
+}
+
+type filebasedConfigurationSource struct {
+	filename string
+}
+
+var _ ConfigurationSource = &filebasedConfigurationSource{}
+
+func (c *filebasedConfigurationSource) Write(ctx context.Context, data conftypes.RawUnified, lastID int32, authorUserID int32) error {
+	return errors.New("tried to write to file based configuration source")
+}
+
+func (c *filebasedConfigurationSource) Read(ctx context.Context) (ru conftypes.RawUnified, err error) {
+	// We read the file every time Read is called, to interactively react to changes
+	// on disk without a watcher.
+	content, err := os.ReadFile(c.filename)
+	if err != nil {
+		return conftypes.RawUnified{}, err
+	}
+	if err := json.Unmarshal(content, &ru); err != nil {
+		return conftypes.RawUnified{}, err
+	}
+	return ru, nil
 }
 
 // cachedConfigurationSource caches reads for a specified duration to reduce

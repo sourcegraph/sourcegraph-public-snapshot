@@ -54,7 +54,6 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/auth",
-        "//cmd/frontend/envvar",
         "//cmd/frontend/external/session",
         "//cmd/frontend/internal/auth/oauth",
         "//internal/actor",
@@ -63,6 +62,7 @@ go_test(
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/database/dbtest",
+        "//internal/dotcom",
         "//internal/extsvc",
         "//internal/extsvc/bitbucketcloud",
         "//internal/httpcli",

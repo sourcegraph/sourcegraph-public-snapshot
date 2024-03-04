@@ -11,10 +11,10 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -95,7 +95,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 		return nil, err
 	}
 
-	if errcode.IsNotFound(err) && !envvar.SourcegraphDotComMode() {
+	if errcode.IsNotFound(err) && !dotcom.SourcegraphDotComMode() {
 		// The repo doesn't exist and we're not on sourcegraph.com, we should not lazy
 		// clone it.
 		return nil, err
@@ -241,7 +241,7 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 		done()
 	}()
 
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		return s.cache.List(ctx)
 	}
 

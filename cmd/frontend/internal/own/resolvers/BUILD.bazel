@@ -14,7 +14,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/own/resolvers",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/actor",
@@ -22,6 +21,7 @@ go_library(
         "//internal/auth",
         "//internal/database",
         "//internal/deviceid",
+        "//internal/dotcom",
         "//internal/errcode",
         "//internal/featureflag",
         "//internal/gitserver",
@@ -55,7 +55,6 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/backend",
-        "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
         "//internal/actor",
         "//internal/api",
@@ -64,6 +63,7 @@ go_test(
         "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/database/fakedb",
+        "//internal/dotcom",
         "//internal/gitserver",
         "//internal/own",
         "//internal/own/codeowners",
