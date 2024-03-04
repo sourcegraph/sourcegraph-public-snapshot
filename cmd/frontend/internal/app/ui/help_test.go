@@ -6,16 +6,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 func TestServeHelp(t *testing.T) {
 	t.Run("unreleased dev version", func(t *testing.T) {
 		{
-			orig := envvar.SourcegraphDotComMode()
-			envvar.MockSourcegraphDotComMode(false)
-			defer envvar.MockSourcegraphDotComMode(orig) // reset
+			orig := dotcom.SourcegraphDotComMode()
+			dotcom.MockSourcegraphDotComMode(false)
+			defer dotcom.MockSourcegraphDotComMode(orig) // reset
 		}
 		{
 			orig := version.Version()
@@ -38,9 +38,9 @@ func TestServeHelp(t *testing.T) {
 
 	t.Run("released version", func(t *testing.T) {
 		{
-			orig := envvar.SourcegraphDotComMode()
-			envvar.MockSourcegraphDotComMode(false)
-			defer envvar.MockSourcegraphDotComMode(orig) // reset
+			orig := dotcom.SourcegraphDotComMode()
+			dotcom.MockSourcegraphDotComMode(false)
+			defer dotcom.MockSourcegraphDotComMode(orig) // reset
 		}
 		{
 			orig := version.Version()
@@ -61,9 +61,9 @@ func TestServeHelp(t *testing.T) {
 	})
 
 	t.Run("Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
+		orig := dotcom.SourcegraphDotComMode()
+		dotcom.MockSourcegraphDotComMode(true)
+		defer dotcom.MockSourcegraphDotComMode(orig) // reset
 
 		rw := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/help/foo/bar", nil)

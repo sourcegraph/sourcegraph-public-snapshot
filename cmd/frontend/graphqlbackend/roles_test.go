@@ -9,11 +9,11 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -163,9 +163,9 @@ func TestUserRoleListing(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("on sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+		orig := dotcom.SourcegraphDotComMode()
+		dotcom.MockSourcegraphDotComMode(true)
+		defer dotcom.MockSourcegraphDotComMode(orig)
 
 		userAPIID := string(MarshalUserID(userID))
 		input := map[string]any{"node": userAPIID}
