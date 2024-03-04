@@ -20,7 +20,7 @@ def wolfi_base(name = "wolfi", target = None):
         name = "wolfi_base_apko",
         architecture = "amd64",
         config = ":wolfi_config",
-        contents = "@{}_lock//:contents".format(target),
+        contents = "@{}_apko_lock//:contents".format(target),
         tag = "{}-base:latest".format(target),
         visibility = ["//visibility:private"],
     )
