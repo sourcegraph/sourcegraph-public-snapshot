@@ -461,5 +461,5 @@ function CodyDashboardOrUpsellPage(props: LegacyLayoutRouteContext): JSX.Element
     if (!isCodyEnabled) {
         return <CodyUpsellPage />
     }
-    return <CodyDashboardPage {...props} />
+    return <CodyDashboardPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
 }

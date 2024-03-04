@@ -155,6 +155,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                 isSourcegraphDotCom={isSourcegraphDotCom}
                 authenticatedUser={authenticatedUser}
                 context={context}
+                telemetryRecorder={telemetryRecorder}
             />
         )
     }

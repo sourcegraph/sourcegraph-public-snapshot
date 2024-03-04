@@ -75,7 +75,6 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
             !isPrivateInstance ? { input: sanitizedInput } : null,
             !isPrivateInstance ? { input: sanitizedInput } : null
         )
-        // TODO VERIFY WE DONT WANT THE INPUT?
         telemetryRecorder.recordEvent('cody.search', 'submit')
         setLoading(true)
         translateToQuery(sanitizedInput, authenticatedUser).then(
@@ -88,7 +87,6 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
                         !isPrivateInstance ? { input: sanitizedInput, translatedQuery: query } : null,
                         !isPrivateInstance ? { input: sanitizedInput, translatedQuery: query } : null
                     )
-                    // TODO VERIFY WE DONT WANT THE INPUT?
                     telemetryRecorder.recordEvent('cody.search', 'success')
                     setCodySearchInput(JSON.stringify({ input: sanitizedInput, translatedQuery: query }))
                     navigate({
@@ -101,7 +99,6 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
                         !isPrivateInstance ? { input: sanitizedInput, reason: 'untranslatable' } : null,
                         !isPrivateInstance ? { input: sanitizedInput, reason: 'untranslatable' } : null
                     )
-                    // TODO VERIFY WE DONT WANT THE INPUT?
                     telemetryRecorder.recordEvent('cody.search', 'fail', {
                         metadata: { reason: failureReasons.untranslateable },
                     })

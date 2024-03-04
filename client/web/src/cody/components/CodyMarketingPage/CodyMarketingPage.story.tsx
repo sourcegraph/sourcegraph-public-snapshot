@@ -1,5 +1,7 @@
 import type { Meta, StoryFn } from '@storybook/react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import type { AuthenticatedUser } from '../../../auth'
 import { WebStory } from '../../../components/WebStory'
 import type { SourcegraphContext } from '../../../jscontext'
@@ -35,12 +37,26 @@ const context: Pick<SourcegraphContext, 'authProviders'> = {
 
 export const SourcegraphDotCom: StoryFn = () => (
     <WebStory>
-        {() => <CodyMarketingPage context={context} isSourcegraphDotCom={true} authenticatedUser={null} />}
+        {() => (
+            <CodyMarketingPage
+                context={context}
+                isSourcegraphDotCom={true}
+                authenticatedUser={null}
+                telemetryRecorder={noOpTelemetryRecorder}
+            />
+        )}
     </WebStory>
 )
 export const Enterprise: StoryFn = () => (
     <WebStory>
-        {() => <CodyMarketingPage context={context} isSourcegraphDotCom={false} authenticatedUser={null} />}
+        {() => (
+            <CodyMarketingPage
+                context={context}
+                isSourcegraphDotCom={false}
+                authenticatedUser={null}
+                telemetryRecorder={noOpTelemetryRecorder}
+            />
+        )}
     </WebStory>
 )
 
@@ -51,6 +67,7 @@ export const EnterpriseSiteAdmin: StoryFn = () => (
                 context={context}
                 isSourcegraphDotCom={false}
                 authenticatedUser={{ siteAdmin: true } as AuthenticatedUser}
+                telemetryRecorder={noOpTelemetryRecorder}
             />
         )}
     </WebStory>
