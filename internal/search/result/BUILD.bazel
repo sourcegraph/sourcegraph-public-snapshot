@@ -31,6 +31,7 @@ go_library(
         "@com_github_bits_and_blooms_bitset//:bitset",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_sourcegraph_go_lsp//:go-lsp",
+        "@com_github_sourcegraph_log//:log",
         "@com_github_xeonx_timeago//:timeago",
     ],
 )
