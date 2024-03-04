@@ -10,6 +10,7 @@ import { Text } from '@sourcegraph/wildcard'
 
 import type { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
 import { EventName } from '../../../util/constants'
+import { CodyTranscriptEventActions, CodyTranscriptEventFeatures } from '../../useCodyChat'
 
 import { ReposStatusQuery } from './backend'
 import { RepositoriesSelectorPopover, getFileName, type IRepo } from './RepositoriesSelectorPopover'
@@ -23,8 +24,8 @@ export interface ScopeSelectorProps {
     toggleIncludeInferredFile: () => void
     logTranscriptEvent: (
         v1EventLabel: string,
-        feature: string,
-        action: string,
+        feature: CodyTranscriptEventFeatures,
+        action: CodyTranscriptEventActions,
         eventProperties?: { [key: string]: any }
     ) => void
     transcriptHistory: TranscriptJSON[]

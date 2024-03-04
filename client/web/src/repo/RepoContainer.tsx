@@ -496,7 +496,10 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                     {() => (
                         <AskCodyButton
                             onClick={() => {
-                                logTranscriptEvent(EventName.CODY_SIDEBAR_CHAT_OPENED, { repo, path: filePath })
+                                logTranscriptEvent(EventName.CODY_SIDEBAR_CHAT_OPENED, 'repo.askCody', 'click', {
+                                    repo,
+                                    path: filePath,
+                                })
                                 setIsCodySidebarOpen(true)
                             }}
                         />
@@ -606,6 +609,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                         <CodySidebar
                             onClose={() => setIsCodySidebarOpen(false)}
                             authenticatedUser={props.authenticatedUser}
+                            telemetryRecorder={props.platformContext.telemetryRecorder}
                         />
                     </Panel>
                 </RepoContainerRootPortal>

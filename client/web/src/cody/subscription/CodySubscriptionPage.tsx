@@ -537,6 +537,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                         setShowUpgradeToPro(false)
                     }}
                     authenticatedUser={authenticatedUser}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
             {showCancelPro && (

@@ -51,8 +51,8 @@ export interface CodyChatStore
     loadTranscriptFromHistory: (id: string) => Promise<void>
     logTranscriptEvent: (
         v1EventLabel: string,
-        feature: codyTranscriptEventFeatures,
-        action: codyTranscriptEventActions,
+        feature: CodyTranscriptEventFeatures,
+        action: CodyTranscriptEventActions,
         eventProperties?: { [key: string]: any }
     ) => void
     initializeNewChat: () => void
@@ -103,15 +103,16 @@ interface CodyChatProps extends TelemetryV2Props {
 const CODY_TRANSCRIPT_HISTORY_KEY = 'cody.chat.history'
 const SAVE_MAX_TRANSCRIPT_HISTORY = 20
 
-type codyTranscriptEventFeatures =
+export type CodyTranscriptEventFeatures =
     | 'cody.chat'
     | 'cody.chat.item'
     | 'cody.chat.inferredRepo'
     | 'cody.chat.inferredFile'
     | 'cody.chat.getEditorExtensionCTA'
     | 'cody.chat.scope.repo'
+    | 'repo.askCody'
 
-type codyTranscriptEventActions =
+export type CodyTranscriptEventActions =
     | 'view'
     | 'submit'
     | 'edit'
@@ -122,6 +123,7 @@ type codyTranscriptEventActions =
     | 'click'
     | 'disable'
     | 'enable'
+    | 'add'
 
 export const useCodyChat = ({
     userID = 'anonymous',
@@ -193,8 +195,8 @@ export const useCodyChat = ({
     const logTranscriptEvent = useCallback(
         (
             v1EventLabel: string,
-            feature: codyTranscriptEventFeatures,
-            action: codyTranscriptEventActions,
+            feature: CodyTranscriptEventFeatures,
+            action: CodyTranscriptEventActions,
             eventProperties?: { [key: string]: any }
         ) => {
             if (!transcript) {
