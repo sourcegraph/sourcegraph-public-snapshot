@@ -3,6 +3,7 @@ import type { Decorator, StoryFn, Meta } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
@@ -163,7 +164,7 @@ export const List: StoryFn = () => (
     <WebStory>
         {webProps => (
             <MockedTestProvider mocks={[EXECUTOR_SECRET_LIST_MOCK]}>
-                <UserExecutorSecretsListPage {...webProps} userID="user1" />
+                <UserExecutorSecretsListPage {...webProps} userID="user1" telemetryRecorder={noOpTelemetryRecorder} />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -200,7 +201,7 @@ export const EmptyList: StoryFn = () => (
     <WebStory>
         {webProps => (
             <MockedTestProvider mocks={[EMPTY_EXECUTOR_SECRET_LIST_MOCK]}>
-                <GlobalExecutorSecretsListPage {...webProps} />
+                <GlobalExecutorSecretsListPage {...webProps} telemetryRecorder={noOpTelemetryRecorder} />
             </MockedTestProvider>
         )}
     </WebStory>
