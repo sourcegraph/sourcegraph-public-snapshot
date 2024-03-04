@@ -17,7 +17,6 @@ import { CodyLogo } from '@sourcegraph/cody-ui/dist/icons/CodyLogo'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Badge,
     Button,
@@ -297,7 +296,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                     onClick={() =>
                                         logTranscriptEvent(
                                             EventName.CODY_CHAT_GET_EDITOR_EXTENSION,
-                                            'cody.chat.getEditorExtensionCta',
+                                            'cody.chat.getEditorExtensionCTA',
                                             'click'
                                         )
                                     }

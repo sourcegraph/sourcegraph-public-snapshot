@@ -51,8 +51,8 @@ export interface CodyChatStore
     loadTranscriptFromHistory: (id: string) => Promise<void>
     logTranscriptEvent: (
         v1EventLabel: string,
-        feature: string,
-        action: string,
+        feature: codyTranscriptEventFeatures,
+        action: codyTranscriptEventActions,
         eventProperties?: { [key: string]: any }
     ) => void
     initializeNewChat: () => void
@@ -102,6 +102,26 @@ interface CodyChatProps extends TelemetryV2Props {
 
 const CODY_TRANSCRIPT_HISTORY_KEY = 'cody.chat.history'
 const SAVE_MAX_TRANSCRIPT_HISTORY = 20
+
+type codyTranscriptEventFeatures =
+    | 'cody.chat'
+    | 'cody.chat.item'
+    | 'cody.chat.inferredRepo'
+    | 'cody.chat.inferredFile'
+    | 'cody.chat.getEditorExtensionCTA'
+    | 'cody.chat.scope.repo'
+
+type codyTranscriptEventActions =
+    | 'view'
+    | 'submit'
+    | 'edit'
+    | 'initialize'
+    | 'remove'
+    | 'reset'
+    | 'delete'
+    | 'click'
+    | 'disable'
+    | 'enable'
 
 export const useCodyChat = ({
     userID = 'anonymous',
@@ -171,12 +191,22 @@ export const useCodyChat = ({
 
     /** Event logger for transcript specific events to capture the transcriptId */
     const logTranscriptEvent = useCallback(
-        (v1EventLabel: string, feature: string, action: string, eventProperties?: { [key: string]: any }) => {
+        (
+            v1EventLabel: string,
+            feature: codyTranscriptEventFeatures,
+            action: codyTranscriptEventActions,
+            eventProperties?: { [key: string]: any }
+        ) => {
             if (!transcript) {
                 return
             }
             eventLogger.log(v1EventLabel, { transcriptId: transcript.id, ...eventProperties })
-            telemetryRecorder.recordEvent(feature, action, { metadata: { transcriptId: transcript.id } })
+
+            var numericID = new Date(transcript.id).getTime()
+            if (isNaN(numericID)) {
+                numericID = 0
+            }
+            telemetryRecorder.recordEvent(feature, action, { metadata: { transcriptId: numericID / 1000 } })
         },
         [transcript]
     )
@@ -415,7 +445,7 @@ export const useCodyChat = ({
     )
 
     const toggleIncludeInferredRepository = useCallback<CodyClient['toggleIncludeInferredRepository']>(() => {
-        const action = scope.includeInferredRepository ? 'disabled' : 'enabled'
+        const action = scope.includeInferredRepository ? 'disable' : 'enable'
         logTranscriptEvent(
             scope.includeInferredRepository
                 ? EventName.CODY_CHAT_SCOPE_INFERRED_REPO_DISABLED
@@ -435,7 +465,7 @@ export const useCodyChat = ({
     }, [transcript, updateTranscriptInHistory, scope, toggleIncludeInferredRepositoryInternal, logTranscriptEvent])
 
     const toggleIncludeInferredFile = useCallback<CodyClient['toggleIncludeInferredFile']>(() => {
-        const action = scope.includeInferredFile ? 'disabled' : 'enabled'
+        const action = scope.includeInferredFile ? 'disable' : 'enable'
         logTranscriptEvent(
             scope.includeInferredFile
                 ? EventName.CODY_CHAT_SCOPE_INFERRED_FILE_DISABLED
