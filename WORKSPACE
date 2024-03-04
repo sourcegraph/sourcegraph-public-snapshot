@@ -516,10 +516,15 @@ schema_migrations(
     name = "schemas_migrations",
 )
 
+# wolfi images setup ================================
+
 load("@rules_apko//apko:repositories.bzl", "apko_register_toolchains", "rules_apko_dependencies")
 
 rules_apko_dependencies()
 
+# We don't register the default toolchains, and regsiter our own from a patched go_repository sourced
+# go_binary target that contains some fixes that are not yet merged upstream.
+# https://github.com/chainguard-dev/go-apk/pull/216
 apko_register_toolchains(
     name = "apko",
     register = False,

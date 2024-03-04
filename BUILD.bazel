@@ -337,6 +337,18 @@ load("@rules_apko//apko:defs.bzl", "apko_bazelrc")
 load("@rules_apko//apko:repositories.bzl", "apko_register_toolchains", "rules_apko_dependencies")
 load("@rules_apko//apko:toolchain.bzl", "apko_toolchain")
 
+apko_bazelrc(
+    name = "apko_bazelrc",
+    repositories = [
+        "dl-cdn.alpinelinux.org",
+        "packages.wolfi.dev",
+        "packages.sgdev.org",
+        "storage.googleapis.com",
+    ],
+)
+
+# All the below toolchain creation can be removed (and their registration in WORKSPACE)
+# on the following PR is merged and released https://github.com/chainguard-dev/go-apk/pull/216
 apko_toolchain(
     name = "apko",
     apko = "@dev_chainguard_apko//:apko",
@@ -371,14 +383,4 @@ toolchain(
     ],
     toolchain = "//:apko",
     toolchain_type = "@rules_apko//apko:toolchain_type",
-)
-
-apko_bazelrc(
-    name = "apko_bazelrc",
-    repositories = [
-        "dl-cdn.alpinelinux.org",
-        "packages.wolfi.dev",
-        "packages.sgdev.org",
-        "storage.googleapis.com",
-    ],
 )
