@@ -10,7 +10,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/telemetry/sensitivemetadataallowlist",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
+        "//internal/dotcom",
         "//internal/env",
         "//internal/telemetry",
         "//internal/telemetrygateway/v1:telemetrygateway",

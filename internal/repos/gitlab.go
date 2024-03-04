@@ -12,8 +12,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -129,7 +129,7 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 		client = provider.GetPATClient(c.Token, "")
 	}
 
-	if !envvar.SourcegraphDotComMode() || svc.CloudDefault {
+	if !dotcom.SourcegraphDotComMode() || svc.CloudDefault {
 		client.ExternalRateLimiter().SetCollector(&ratelimit.MetricsCollector{
 			Remaining: func(n float64) {
 				gitlabRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(n)
