@@ -7,12 +7,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 )
 
 func TestHandleRegistry(t *testing.T) {
-	defer dotcom.MockSourcegraphDotComMode(dotcom.SourcegraphDotComMode())
-	dotcom.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(envvar.SourcegraphDotComMode())
+	envvar.MockSourcegraphDotComMode(true)
 
 	t.Run("list", func(t *testing.T) {
 		rr := httptest.NewRecorder()

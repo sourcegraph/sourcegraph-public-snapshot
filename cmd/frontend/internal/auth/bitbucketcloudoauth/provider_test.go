@@ -6,12 +6,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestRequestedScopes(t *testing.T) {
-	defer dotcom.MockSourcegraphDotComMode(false)
+	defer envvar.MockSourcegraphDotComMode(false)
 
 	tests := []struct {
 		schema    *schema.BitbucketCloudAuthProvider

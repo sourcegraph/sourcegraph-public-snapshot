@@ -8,11 +8,11 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -142,10 +142,10 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 		{
 			name: "dotcom mode should always do nothing",
 			setup: func(t *testing.T) {
-				orig := dotcom.SourcegraphDotComMode()
-				dotcom.MockSourcegraphDotComMode(true)
+				orig := envvar.SourcegraphDotComMode()
+				envvar.MockSourcegraphDotComMode(true)
 				t.Cleanup(func() {
-					dotcom.MockSourcegraphDotComMode(orig)
+					envvar.MockSourcegraphDotComMode(orig)
 				})
 			},
 			setSiteAdmin: false,

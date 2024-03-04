@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -13,7 +12,7 @@ import (
 )
 
 func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, error) {
-	if dotcom.SourcegraphDotComMode() {
+	if envvar.SourcegraphDotComMode() {
 		return false, nil
 	}
 
@@ -47,7 +46,7 @@ func needsRepositoryConfiguration(ctx context.Context, db database.DB) (bool, er
 func (*siteResolver) SendsEmailVerificationEmails() bool { return conf.EmailVerificationRequired() }
 
 func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
-	if dotcom.SourcegraphDotComMode() {
+	if envvar.SourcegraphDotComMode() {
 		return false, nil
 	}
 

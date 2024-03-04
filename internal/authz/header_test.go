@@ -8,7 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 )
 
 func TestParseAuthorizationHeader(t *testing.T) {
@@ -48,8 +48,8 @@ func TestParseAuthorizationHeader(t *testing.T) {
 	}
 
 	t.Run("disable sudo token for dotcom", func(t *testing.T) {
-		dotcom.MockSourcegraphDotComMode(true)
-		defer dotcom.MockSourcegraphDotComMode(false)
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(false)
 
 		_, _, err := ParseAuthorizationHeader(`token-sudo token="tok==", user="alice"`)
 		got := fmt.Sprintf("%v", err)
@@ -60,8 +60,8 @@ func TestParseAuthorizationHeader(t *testing.T) {
 	})
 
 	t.Run("empty token does not raise sudo error on dotcom", func(t *testing.T) {
-		dotcom.MockSourcegraphDotComMode(true)
-		defer dotcom.MockSourcegraphDotComMode(false)
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(false)
 
 		_, _, err := ParseAuthorizationHeader(`token`)
 		got := fmt.Sprintf("%v", err)

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/security"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
@@ -13,6 +12,7 @@ import (
 
 	sglog "github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
@@ -178,7 +178,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 			SourcegraphOperator: acct.AccountSpec.ServiceType == auth.SourcegraphOperatorProviderType,
 		}
 
-		if dotcom.SourcegraphDotComMode() {
+		if envvar.SourcegraphDotComMode() {
 			reason, err := checkIfEmailDomainIsBanned(ctx, recorder, op, acct)
 			if err != nil {
 				return 0, false, false, reason, err
