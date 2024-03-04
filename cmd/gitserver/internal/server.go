@@ -162,7 +162,7 @@ type ServerOpts struct {
 }
 
 func NewServer(opt *ServerOpts) *Server {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancelCause(context.Background())
 
 	// GitMaxConcurrentClones controls the maximum number of clones that
 	// can happen at once on a single gitserver.
@@ -247,8 +247,8 @@ type Server struct {
 	// server is stopped. Do not directly call this, rather call
 	// Server.context()
 	ctx      context.Context
-	cancel   context.CancelFunc // used to shutdown background jobs
-	cancelMu sync.Mutex         // protects canceled
+	cancel   context.CancelCauseFunc // used to shutdown background jobs
+	cancelMu sync.Mutex              // protects canceled
 	canceled bool
 	wg       sync.WaitGroup // tracks running background jobs
 
@@ -321,11 +321,12 @@ type clonePipelineRoutine struct {
 	// TODO: Get rid of this dependency.
 	s      *Server
 	queue  *common.Queue[*cloneJob]
-	cancel context.CancelFunc
+	cancel context.CancelCauseFunc
 }
 
 func (p *clonePipelineRoutine) Start() {
-	ctx, cancel := context.WithCancel(context.Background())
+	// TODO: This should probably use serverContext.
+	ctx, cancel := context.WithCancelCause(context.Background())
 	p.cancel = cancel
 	// Start a go routine for each the producer and the consumer.
 	go p.cloneJobConsumer(ctx, p.tasks)
@@ -334,7 +335,7 @@ func (p *clonePipelineRoutine) Start() {
 
 func (p *clonePipelineRoutine) Stop() {
 	if p.cancel != nil {
-		p.cancel()
+		p.cancel(errors.New("clone pipeline routine stopped"))
 	}
 }
 
@@ -416,7 +417,9 @@ var repoCloned = func(dir common.GitDir) bool {
 // Stop cancels the running background jobs and returns when done.
 func (s *Server) Stop() {
 	// idempotent so we can just always set and cancel
-	s.cancel()
+	// Provide a little bit of context of where this context cancellation
+	// is coming from.
+	s.cancel(errors.New("gitserver is shutting down"))
 	s.cancelMu.Lock()
 	s.canceled = true
 	s.cancelMu.Unlock()
@@ -495,18 +498,17 @@ func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protoc
 	return resp, nil
 }
 
-func (s *Server) RepoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
+// RepoUpdate triggers an update for the given repo in the background, if it hasn't
+// been updated recently.
+// If the repo is not cloned, a blocking clone will be triggered instead.
+// This function will not return until the update is complete.
+// Canceling the context will not cancel the update, but it will let the caller
+// escape the function early.
+func (s *Server) RepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) (resp protocol.RepoUpdateResponse) {
 	logger := s.logger.Scoped("handleRepoUpdate")
-	var resp protocol.RepoUpdateResponse
+
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 	dir := gitserverfs.RepoDirFromName(s.reposDir, req.Repo)
-
-	// despite the existence of a context on the request, we don't want to
-	// cancel the git commands partway through if the request terminates.
-	ctx, cancel1 := s.serverContext()
-	defer cancel1()
-	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
-	defer cancel2()
 
 	if !repoCloned(dir) && !s.skipCloneForTests {
 		_, err := s.CloneRepo(ctx, req.Repo, CloneOptions{Block: true})
@@ -612,6 +614,9 @@ type CloneOptions struct {
 
 // CloneRepo performs a clone operation for the given repository. It is
 // non-blocking by default.
+// Canceling the context will not cancel the clone if blocking, but it will let
+// the caller escape the function early.
+// Canceling the context may result in no clone being scheduled.
 func (s *Server) CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
 	if isAlwaysCloningTest(repo) {
 		return "This will never finish cloning", nil
@@ -625,32 +630,45 @@ func (s *Server) CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOpt
 		return progress, nil
 	}
 
-	// We always want to store whether there was an error cloning the repo, but only
-	// after we checked if a clone is already in progress, otherwise we would race with
-	// the actual running clone for the DB state of last_error.
-	defer func() {
-		// Use a different context in case we failed because the original context failed.
-		s.setLastErrorNonFatal(s.ctx, repo, err)
-	}()
-
-	syncer, err := s.getVCSSyncer(ctx, repo)
-	if err != nil {
-		return "", errors.Wrap(err, "get VCS syncer")
-	}
-
 	// We may be attempting to clone a private repo so we need an internal actor.
-	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(ctx), repo)
+	ctx = actor.WithInternalActor(ctx)
+
+	syncer, remoteURL, err := func() (_ vcssyncer.VCSSyncer, _ *vcs.URL, err error) {
+		defer func() {
+			if err != nil {
+				serverCtx, cancel := s.serverContext()
+				defer cancel()
+
+				s.setLastErrorNonFatal(serverCtx, repo, err)
+			}
+		}()
+
+		syncer, err := s.getVCSSyncer(ctx, repo)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "get VCS syncer")
+		}
+
+		remoteURL, err := s.getRemoteURL(ctx, repo)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if err = s.rpsLimiter.Wait(ctx); err != nil {
+			return nil, nil, err
+		}
+
+		if err := syncer.IsCloneable(ctx, repo, remoteURL); err != nil {
+			redactedErr := urlredactor.New(remoteURL).Redact(err.Error())
+			return nil, nil, errors.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactedErr)
+		}
+
+		return syncer, remoteURL, nil
+	}()
 	if err != nil {
+		if ctx.Err() != nil {
+			return "", ctx.Err()
+		}
 		return "", err
-	}
-
-	if err = s.rpsLimiter.Wait(ctx); err != nil {
-		return "", err
-	}
-
-	if err := syncer.IsCloneable(ctx, repo, remoteURL); err != nil {
-		redactedErr := urlredactor.New(remoteURL).Redact(err.Error())
-		return "", errors.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactedErr)
 	}
 
 	// Mark this repo as currently being cloned. We have to check again if someone else isn't already
@@ -669,16 +687,37 @@ func (s *Server) CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOpt
 	}
 
 	if opts.Block {
-		ctx, cancel, err := s.acquireCloneLimiter(ctx)
+		// Use serverCtx here since we want to let the clone proceed, even if
+		// the requestor has cancelled the outer context.
+		serverCtx, cancel := s.serverContext()
+		defer cancel()
+
+		// Use caller context, if the caller is not interested anymore before we
+		// start cloning, we can skip the clone altogether.
+		_, cancel, err := s.acquireCloneLimiter(ctx)
 		if err != nil {
+			lock.Release()
 			return "", err
 		}
 		defer cancel()
 
-		// We are blocking, so use the passed in context.
-		err = s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
-		err = errors.Wrapf(err, "failed to clone %s", repo)
-		return "", err
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+
+			err = errors.Wrapf(s.doClone(serverCtx, repo, dir, syncer, lock, remoteURL, opts), "failed to clone %s", repo)
+
+			s.setLastErrorNonFatal(serverCtx, repo, err)
+		}()
+
+		select {
+		case <-done:
+			return "", err
+		case <-ctx.Done():
+			// If the caller is not interested anymore, we finish the clone anyways,
+			// but let the caller live on.
+			return "", ctx.Err()
+		}
 	}
 
 	// We push the cloneJob to a queue and let the producer-consumer pipeline take over from this
@@ -716,8 +755,6 @@ func (s *Server) doClone(
 	if err := s.rpsLimiter.Wait(ctx); err != nil {
 		return err
 	}
-	ctx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
-	defer cancel()
 
 	dstPath := string(dir)
 	if !opts.Overwrite {
@@ -766,7 +803,11 @@ func (s *Server) doClone(
 	output := &linebasedBufferedWriter{}
 	eg := readCloneProgress(s.db, logger, lock, io.TeeReader(progressReader, output), repo)
 
-	cloneErr := syncer.Clone(ctx, repo, remoteURL, dir, tmpPath, progressWriter)
+	cloneTimeout := conf.GitLongCommandTimeout()
+	cloneCtx, cancel := context.WithTimeout(ctx, cloneTimeout)
+	defer cancel()
+
+	cloneErr := syncer.Clone(cloneCtx, repo, remoteURL, dir, tmpPath, progressWriter)
 	progressWriter.Close()
 
 	if err := eg.Wait(); err != nil {
@@ -779,6 +820,9 @@ func (s *Server) doClone(
 	}
 
 	if cloneErr != nil {
+		if errors.Is(cloneCtx.Err(), context.DeadlineExceeded) {
+			return errors.Newf("failed to clone repo within deadline of %s", cloneTimeout)
+		}
 		// TODO: Should we really return the entire output here in an error?
 		// It could be a super big error string.
 		return errors.Wrapf(cloneErr, "clone failed. Output: %s", output.String())
@@ -1047,8 +1091,6 @@ var (
 	})
 )
 
-var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
-
 func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec string) (err error) {
 	tr, ctx := trace.New(ctx, "doRepoUpdate", repo.Attr())
 	defer tr.EndWithErr(&err)
@@ -1081,27 +1123,33 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 			l.once = new(sync.Once) // Make new requests wait for next update.
 			s.repoUpdateLocksMu.Unlock()
 
+			// Note: We do not pass a ctx down here, because we don't want the update
+			// to stall when the request is cancelled, and subsequently fail the
+			// background update for potential other callers that wait for the
+			// same sync group.
 			err = s.doBackgroundRepoUpdate(repo, revspec)
+			// Use a background context for reporting, the caller might have given
+			// up at this point, but we still want to make the updates.
+			serverCtx, cancel := s.serverContext()
+			defer cancel()
 			if err != nil {
 				// We don't want to spam our logs when the rate limiter has been set to block all
 				// updates
 				if !errors.Is(err, ratelimit.ErrBlockAll) {
-					s.logger.Error("performing background repo update", log.Error(err))
+					s.logger.Error("performing background repo update", log.Error(err), log.String("repo", string(repo)))
 				}
 
 				// The repo update might have failed due to the repo being corrupt
-				var corruptErr common.ErrRepoCorrupted
-				if errors.As(err, &corruptErr) {
-					s.LogIfCorrupt(ctx, repo, corruptErr)
-				}
+				s.LogIfCorrupt(serverCtx, repo, err)
 			}
-			s.setLastErrorNonFatal(s.ctx, repo, err)
+			s.setLastErrorNonFatal(serverCtx, repo, err)
 		})
 	}()
 
 	select {
 	case <-done:
-		return errors.Wrapf(err, "repo %s:", repo)
+		return errors.Wrapf(err, "repo %s", repo)
+	// In case the caller is no longer interested in the result, let them live on.
 	case <-ctx.Done():
 		return ctx.Err()
 	}
@@ -1115,66 +1163,83 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	if doBackgroundRepoUpdateMock != nil {
 		return doBackgroundRepoUpdateMock(repo)
 	}
-	// background context.
-	ctx, cancel1 := s.serverContext()
-	defer cancel1()
+
+	// We use a server context here, because we don't want the caller to abort a fetch
+	// mid-way just because they're not interested in the result anymore. Gitserver
+	// is always interested in finishing fetches where possible.
+	serverCtx, cancel := s.serverContext()
+	defer cancel()
 
 	// ensure the background update doesn't hang forever
-	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
-	defer cancel2()
+	fetchTimeout := conf.GitLongCommandTimeout()
+	ctx, cancelTimeout := context.WithTimeout(serverCtx, fetchTimeout)
+	defer cancelTimeout()
 
 	// This background process should use our internal actor
 	ctx = actor.WithInternalActor(ctx)
 
-	ctx, cancel2, err := s.acquireCloneLimiter(ctx)
-	if err != nil {
-		return err
-	}
-	defer cancel2()
-
-	if err = s.rpsLimiter.Wait(ctx); err != nil {
-		return err
-	}
-
-	repo = protocol.NormalizeRepo(repo)
-	dir := gitserverfs.RepoDirFromName(s.reposDir, repo)
-
-	remoteURL, err := s.getRemoteURL(ctx, repo)
-	if err != nil {
-		return errors.Wrap(err, "failed to determine Git remote URL")
-	}
-
-	syncer, err := s.getVCSSyncer(ctx, repo)
-	if err != nil {
-		return errors.Wrap(err, "get VCS syncer")
-	}
-
-	// drop temporary pack files after a fetch. this function won't
-	// return until this fetch has completed or definitely-failed,
-	// either way they can't still be in use. we don't care exactly
-	// when the cleanup happens, just that it does.
-	// TODO: Should be done in janitor.
-	defer git.CleanTmpPackFiles(s.logger, dir)
-
-	output, err := syncer.Fetch(ctx, remoteURL, repo, dir, revspec)
-	// TODO: Move the redaction also into the VCSSyncer layer here, to be in line
-	// with what clone does.
-	redactedOutput := urlredactor.New(remoteURL).Redact(string(output))
-	// best-effort update the output of the fetch
-	if err := s.db.GitserverRepos().SetLastOutput(context.Background(), repo, redactedOutput); err != nil {
-		s.logger.Warn("Setting last output in DB", log.Error(err))
-	}
-
-	if err != nil {
-		if output != nil {
-			return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, redactedOutput)
-		} else {
-			return errors.Wrapf(err, "failed to fetch repo %q", repo)
+	err := func(ctx context.Context) error {
+		ctx, cancelLimiter, err := s.acquireCloneLimiter(ctx)
+		if err != nil {
+			return err
 		}
+		defer cancelLimiter()
+
+		if err = s.rpsLimiter.Wait(ctx); err != nil {
+			return err
+		}
+
+		repo = protocol.NormalizeRepo(repo)
+		dir := gitserverfs.RepoDirFromName(s.reposDir, repo)
+
+		remoteURL, err := s.getRemoteURL(ctx, repo)
+		if err != nil {
+			return errors.Wrap(err, "failed to determine Git remote URL")
+		}
+
+		syncer, err := s.getVCSSyncer(ctx, repo)
+		if err != nil {
+			return errors.Wrap(err, "get VCS syncer")
+		}
+
+		// drop temporary pack files after a fetch. this function won't
+		// return until this fetch has completed or definitely-failed,
+		// either way they can't still be in use. we don't care exactly
+		// when the cleanup happens, just that it does.
+		// TODO: Should be done in janitor.
+		defer git.CleanTmpPackFiles(s.logger, dir)
+
+		output, err := syncer.Fetch(ctx, remoteURL, repo, dir, revspec)
+		// TODO: Move the redaction also into the VCSSyncer layer here, to be in line
+		// with what clone does.
+		redactedOutput := urlredactor.New(remoteURL).Redact(string(output))
+		// best-effort update the output of the fetch
+		if err := s.db.GitserverRepos().SetLastOutput(serverCtx, repo, redactedOutput); err != nil {
+			s.logger.Warn("Setting last output in DB", log.Error(err))
+		}
+
+		if err != nil {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			if output != nil {
+				return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, redactedOutput)
+			} else {
+				return errors.Wrapf(err, "failed to fetch repo %q", repo)
+			}
+		}
+
+		return postRepoFetchActions(ctx, logger, s.db, s.getBackendFunc(dir, repo), s.hostname, s.recordingCommandFactory, repo, dir, remoteURL, syncer)
+	}(ctx)
+
+	if errors.Is(err, context.DeadlineExceeded) {
+		return errors.Newf("failed to update repo within deadline of %s", fetchTimeout)
 	}
 
-	return postRepoFetchActions(ctx, logger, s.db, s.getBackendFunc(dir, repo), s.hostname, s.recordingCommandFactory, repo, dir, remoteURL, syncer)
+	return err
 }
+
+var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
 // setHEAD configures git repo defaults (such as what HEAD is) which are
 // needed for git commands to work.
