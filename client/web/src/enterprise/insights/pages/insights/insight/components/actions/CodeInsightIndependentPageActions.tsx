@@ -84,6 +84,7 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
                 showModal={showDeleteConfirm}
                 onConfirm={() => navigate('/insights/all')}
                 onCancel={() => setShowDeleteConfirm(false)}
+                telemetryRecorder={telemetryRecorder}
             />
         </div>
     )

@@ -78,6 +78,7 @@ export const LangStatsInsightCard = forwardRef<HTMLElement, BuiltInInsightProps>
                         currentDashboard={currentDashboard}
                         zeroYAxisMin={zeroYAxisMin}
                         onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 )}
             </InsightCardHeader>

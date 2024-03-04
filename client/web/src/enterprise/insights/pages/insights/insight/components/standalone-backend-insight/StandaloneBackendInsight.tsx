@@ -124,7 +124,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         await updateInsight({ insightId: insight.id, nextInsightData: { ...insight, filters } }).toPromise()
         setOriginalInsightFilters(filters)
         telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
-        telemetryRecorder.recordEvent('insights.searchBasedFilter', 'save')
+        telemetryRecorder.recordEvent('insights.searchBasedFilter', 'update', { metadata: { location: 1 } })
     }
 
     const handleInsightFilterCreation = async (values: DrillDownInsightCreationFormValues): Promise<void> => {

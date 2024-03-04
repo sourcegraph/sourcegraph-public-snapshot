@@ -208,6 +208,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                             currentDashboard={currentDashboard}
                             zeroYAxisMin={zeroYAxisMin}
                             onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
+                            telemetryRecorder={telemetryRecorder}
                         />
                     </>
                 )}
