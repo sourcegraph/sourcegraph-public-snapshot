@@ -6659,6 +6659,11 @@ type User implements Node & SettingsSubject & Namespace {
     The limit of Cody code completions for the current billing period.
     """
     codyCurrentPeriodCodeLimit: Int!
+    """
+    Retrieve all feature flag overrides for the current user
+    """
+    featureFlagOverrides: [FeatureFlagOverride!]!
+#    featureFlagOverrides: EvaluatedFeatureFlag!
 }
 
 """

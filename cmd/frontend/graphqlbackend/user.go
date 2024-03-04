@@ -946,3 +946,25 @@ func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args S
 	}
 	return UserByIDInt32(ctx, r.db, user.ID)
 }
+
+func (r *UserResolver) FeatureFlagOverrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
+	//if !envvar.SourcegraphDotComMode() {
+	//	return nil, errors.New("this feature is only available on sourcegraph.com")
+	//}
+
+	flags, err := r.db.FeatureFlags().GetUserOverrides(ctx, r.user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return overridesToResolvers2(r.db, flags), nil
+}
+
+// temporarily duplicated this function from another file because of package issues
+func overridesToResolvers2(db database.DB, input []*featureflag.Override) []*FeatureFlagOverrideResolver {
+	res := make([]*FeatureFlagOverrideResolver, 0, len(input))
+	for _, flag := range input {
+		res = append(res, &FeatureFlagOverrideResolver{db, flag})
+	}
+	return res
+}
