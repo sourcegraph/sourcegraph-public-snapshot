@@ -26,7 +26,6 @@ go_library(
     # visibility = ["//cmd/gitserver:__subpackages__"],
     visibility = ["//visibility:public"],
     deps = [
-        "//cmd/frontend/envvar",
         "//cmd/gitserver/internal/accesslog",
         "//cmd/gitserver/internal/common",
         "//cmd/gitserver/internal/executil",
@@ -44,6 +43,7 @@ go_library(
         "//internal/database",
         "//internal/database/dbutil",
         "//internal/diskusage",
+        "//internal/dotcom",
         "//internal/env",
         "//internal/errcode",
         "//internal/extsvc/gitolite",

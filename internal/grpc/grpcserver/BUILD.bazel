@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "grpcserver",
+    srcs = ["grpcserver.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/grpcserver",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/goroutine",
+        "//internal/httpserver",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_google_grpc//:go_default_library",
+    ],
+)

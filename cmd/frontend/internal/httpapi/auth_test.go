@@ -12,11 +12,11 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -79,10 +79,10 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 	}
 
 	t.Run("license check bypasses handler in dotcom mode", func(t *testing.T) {
-		currMode := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
+		currMode := dotcom.SourcegraphDotComMode()
+		dotcom.MockSourcegraphDotComMode(true)
 		t.Cleanup(func() {
-			envvar.MockSourcegraphDotComMode(currMode)
+			dotcom.MockSourcegraphDotComMode(currMode)
 		})
 
 		req, _ := http.NewRequest("GET", "/.api/license/check", nil)

@@ -23,6 +23,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer",
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
+        "//cmd/frontend/envvar",
         "//cmd/gitserver/internal/common",
         "//cmd/gitserver/internal/executil",
         "//cmd/gitserver/internal/git",

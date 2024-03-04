@@ -22,7 +22,6 @@ go_library(
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/backend",
-        "//cmd/frontend/envvar",
         "//cmd/frontend/globals",
         "//cmd/frontend/internal/app/assetsutil",
         "//cmd/frontend/internal/app/debugproxies",
@@ -45,6 +44,7 @@ go_library(
         "//internal/cookie",
         "//internal/database",
         "//internal/debugserver",
+        "//internal/dotcom",
         "//internal/env",
         "//internal/gitserver",
         "//internal/httpcli",

@@ -1,6 +1,7 @@
 import type { FC } from 'react'
 
 import { CopyPathAction } from '@sourcegraph/branded'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { type RepoRevision, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { Breadcrumbs } from '@sourcegraph/wildcard'
@@ -9,7 +10,7 @@ import { toTreeURL } from '../util/url'
 
 import styles from './FilePathBreadcrumbs.module.scss'
 
-interface FilePathBreadcrumbsProps extends RepoRevision, TelemetryProps {
+interface FilePathBreadcrumbsProps extends RepoRevision, TelemetryProps, TelemetryV2Props {
     isDir: boolean
     filePath: string
 }
@@ -19,7 +20,7 @@ interface FilePathBreadcrumbsProps extends RepoRevision, TelemetryProps {
  * links.
  */
 export const FilePathBreadcrumbs: FC<FilePathBreadcrumbsProps> = props => {
-    const { repoName, revision, filePath, isDir, telemetryService } = props
+    const { repoName, revision, filePath, isDir, telemetryService, telemetryRecorder } = props
 
     const partToUrl = (segment: string, index: number, segments: string[]): string => {
         const partPath = segments.slice(0, index + 1).join('/')
@@ -31,7 +32,11 @@ export const FilePathBreadcrumbs: FC<FilePathBreadcrumbsProps> = props => {
 
     return (
         <Breadcrumbs filename={filePath} getSegmentLink={partToUrl} className={styles.filePathBreadcrumbs}>
-            <CopyPathAction filePath={filePath} telemetryService={telemetryService} />
+            <CopyPathAction
+                filePath={filePath}
+                telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
+            />
         </Breadcrumbs>
     )
 }

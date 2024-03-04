@@ -26,28 +26,22 @@ const anthropicAPIURL = "https://api.anthropic.com/v1/complete"
 
 const (
 	logPromptPrefixLength = 250
-
-	promptTokenFlaggingLimit   = 18000
-	responseTokenFlaggingLimit = 1000
-
-	promptTokenBlockingLimit   = 20000
-	responseTokenBlockingLimit = 1000
 )
 
-func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, promptRegexps []*regexp.Regexp) (*flaggingResult, error) {
+func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, promptRegexps []*regexp.Regexp, cfg config.AnthropicConfig) (*flaggingResult, error) {
 	// Only usage of chat models us currently flagged, so if the request
 	// is using another model, we skip other checks.
 	if ar.Model != "claude-2" && ar.Model != "claude-2.0" && ar.Model != "claude-2.1" && ar.Model != "claude-v1" {
 		return nil, nil
 	}
-	reasons := []string{}
+	var reasons []string
 
 	if len(promptRegexps) > 0 && !matchesAny(ar.Prompt, promptRegexps) {
 		reasons = append(reasons, "unknown_prompt")
 	}
 
 	// If this request has a very high token count for responses, then flag it.
-	if ar.MaxTokensToSample > responseTokenFlaggingLimit {
+	if ar.MaxTokensToSample > int32(cfg.MaxTokensToSampleFlaggingLimit) {
 		reasons = append(reasons, "high_max_tokens_to_sample")
 	}
 
@@ -56,13 +50,13 @@ func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, pro
 	if err != nil {
 		return &flaggingResult{}, errors.Wrap(err, "tokenize prompt")
 	}
-	if tokenCount > promptTokenFlaggingLimit {
+	if tokenCount > cfg.PromptTokenFlaggingLimit {
 		reasons = append(reasons, "high_prompt_token_count")
 	}
 
 	if len(reasons) > 0 {
 		blocked := false
-		if tokenCount > promptTokenBlockingLimit || ar.MaxTokensToSample > responseTokenBlockingLimit {
+		if tokenCount > cfg.PromptTokenBlockingLimit || ar.MaxTokensToSample > int32(cfg.ResponseTokenBlockingLimit) {
 			blocked = true
 		}
 
@@ -207,7 +201,7 @@ func (a *AnthropicHandlerMethods) validateRequest(ctx context.Context, logger lo
 		return http.StatusBadRequest, nil, errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", a.config.MaxTokensToSample, ar.MaxTokensToSample)
 	}
 
-	if result, err := isFlaggedAnthropicRequest(a.anthropicTokenizer, ar, a.promptRegexps); err != nil {
+	if result, err := isFlaggedAnthropicRequest(a.anthropicTokenizer, ar, a.promptRegexps, a.config); err != nil {
 		logger.Error("error checking anthropic request - treating as non-flagged",
 			log.Error(err))
 	} else if result.IsFlagged() {

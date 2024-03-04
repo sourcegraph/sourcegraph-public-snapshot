@@ -6,8 +6,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil",
     visibility = ["//visibility:public"],
     deps = [
-        "//cmd/frontend/envvar",
         "//cmd/frontend/hubspot",
+        "//internal/dotcom",
         "//internal/env",
         "//lib/errors",
         "@com_github_inconshreveable_log15//:log15",
