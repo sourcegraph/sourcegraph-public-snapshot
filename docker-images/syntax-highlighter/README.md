@@ -50,6 +50,7 @@ By default on startup, `syntect_server` will list all file types it supports. Th
 ### Testing syntect -> SCIP grammar mappings
 
 <!-- NOTE(id: only-flag) -->
+
 You can run a subset of tests for `syntect_scip` using the `ONLY` environment variable.
 Example:
 
