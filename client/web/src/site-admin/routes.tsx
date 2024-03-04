@@ -434,7 +434,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/batch-changes/specs',
-        render: () => <BatchSpecsPage />,
+        render: props => <BatchSpecsPage telemetryRecorder={props.platformContext.telemetryRecorder} />,
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
             batchChangesEnabled && batchChangesExecutionEnabled,
     },

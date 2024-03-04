@@ -1,5 +1,7 @@
 import type { Meta, StoryFn, Decorator } from '@storybook/react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import { WebStory } from '../../../components/WebStory'
 
 import { GettingStarted } from './GettingStarted'
@@ -32,6 +34,12 @@ export default config
 
 export const Overview: StoryFn = args => (
     <WebStory>
-        {() => <GettingStarted isSourcegraphDotCom={args.isSourcegraphDotCom} canCreate={args.canCreateBatchChanges} />}
+        {() => (
+            <GettingStarted
+                isSourcegraphDotCom={args.isSourcegraphDotCom}
+                canCreate={args.canCreateBatchChanges}
+                telemetryRecorder={noOpTelemetryRecorder}
+            />
+        )}
     </WebStory>
 )
