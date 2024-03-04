@@ -13,7 +13,7 @@ import (
 func bazelBuild(targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Key("bazel_build"),
-		bk.Agent("queue", "aspect-default"),
+		bk.Agent("queue", AspectWorkflows.QueueDefault),
 	}
 	cmd := bazelStampedCmd(fmt.Sprintf("build %s", strings.Join(targets, " ")))
 	cmds = append(
