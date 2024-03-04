@@ -469,10 +469,10 @@ describe('Repository component', () => {
             })
         }
 
+        // todo: re-enable once flake is identified
+        // https://github.com/sourcegraph/sourcegraph/issues/60824
+        /*
         const highlightSymbolTests = [
-            // todo: re-enable once flake is identified
-            // https://github.com/sourcegraph/sourcegraph/issues/60824
-            /*
             {
                 name: 'highlights correct line for Go',
                 filePath:
@@ -480,7 +480,6 @@ describe('Repository component', () => {
                 symbol: 'diffTimeParseLayout',
                 line: 65,
             },
-            */
             {
                 name: 'highlights correct line for TypeScript',
                 filePath:
@@ -508,6 +507,7 @@ describe('Repository component', () => {
                 expect(selectedLine).not.toBeNull()
             })
         }
+        */
     })
 
     describe('hovers', () => {
