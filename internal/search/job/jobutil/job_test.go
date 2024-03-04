@@ -1058,7 +1058,7 @@ func TestToTextPatternInfo(t *testing.T) {
 			return "Empty"
 		}
 		b := plan[0]
-		resultTypes := computeResultTypes(b, query.SearchTypeLiteral)
+		resultTypes := computeResultTypes(b, query.SearchTypeLiteral, defaultResultTypes)
 		p := toTextPatternInfo(b, resultTypes, &search.Features{}, limits.DefaultMaxSearchResults)
 		v, _ := json.Marshal(p)
 		return string(v)
@@ -1149,7 +1149,7 @@ func Test_computeResultTypes(t *testing.T) {
 	test := func(input string, searchType query.SearchType) string {
 		plan, _ := query.Pipeline(query.Init(input, searchType))
 		b := plan[0]
-		resultTypes := computeResultTypes(b, searchType)
+		resultTypes := computeResultTypes(b, searchType, defaultResultTypes)
 		return resultTypes.String()
 	}
 
@@ -1158,7 +1158,7 @@ func Test_computeResultTypes(t *testing.T) {
 	})
 
 	t.Run("standard, plain pattern searches repo path file content", func(t *testing.T) {
-		autogold.Expect("file|path|repo").Equal(t, test("path:foo bar", query.SearchTypeStandard))
+		autogold.Expect("file, path, repo").Equal(t, test("path:foo bar", query.SearchTypeStandard))
 	})
 
 	t.Run("keyword, only search file content when type not set", func(t *testing.T) {
@@ -1166,7 +1166,7 @@ func Test_computeResultTypes(t *testing.T) {
 	})
 
 	t.Run("keyword, plain pattern searches repo path file content", func(t *testing.T) {
-		autogold.Expect("file|path|repo").Equal(t, test("path:foo bar", query.SearchTypeKeyword))
+		autogold.Expect("file, path, repo").Equal(t, test("path:foo bar", query.SearchTypeKeyword))
 	})
 
 	t.Run("keyword, only search file content with negation", func(t *testing.T) {
