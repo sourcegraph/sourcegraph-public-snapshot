@@ -72,6 +72,7 @@ type AnthropicConfig struct {
 	AccessToken                    string
 	MaxTokensToSample              int
 	AllowedPromptPatterns          []string
+	BlockedPromptPatterns          []string
 	DetectedPromptPatterns         []string
 	RequestBlockingEnabled         bool
 	PromptTokenFlaggingLimit       int
@@ -141,6 +142,7 @@ func (c *Config) Load() {
 	}
 	c.Anthropic.MaxTokensToSample = c.GetInt("CODY_GATEWAY_ANTHROPIC_MAX_TOKENS_TO_SAMPLE", "10000", "Maximum permitted value of maxTokensToSample")
 	c.Anthropic.AllowedPromptPatterns = splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_ALLOWED_PROMPT_PATTERNS", "Prompt patterns to allow."))
+	c.Anthropic.BlockedPromptPatterns = splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_BLOCKED_PROMPT_PATTERNS", "Patterns to block in prompt."))
 	c.Anthropic.DetectedPromptPatterns = splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_DETECTED_PROMPT_PATTERNS", "Patterns to detect in prompt."))
 	c.Anthropic.RequestBlockingEnabled = c.GetBool("CODY_GATEWAY_ANTHROPIC_REQUEST_BLOCKING_ENABLED", "false", "Whether we should block requests that match our blocking criteria.")
 

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log"
@@ -54,9 +55,9 @@ func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, pro
 		reasons = append(reasons, "high_prompt_token_count")
 	}
 
-	if len(reasons) > 0 {
+	if len(reasons) > 0 { // request is flagged
 		blocked := false
-		if tokenCount > cfg.PromptTokenBlockingLimit || ar.MaxTokensToSample > int32(cfg.ResponseTokenBlockingLimit) {
+		if tokenCount > cfg.PromptTokenBlockingLimit || ar.MaxTokensToSample > int32(cfg.ResponseTokenBlockingLimit) || containsAny(strings.ToLower(ar.Prompt), cfg.BlockedPromptPatterns) {
 			blocked = true
 		}
 
@@ -74,6 +75,15 @@ func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, pro
 	}
 
 	return nil, nil
+}
+
+func containsAny(prompt string, patterns []string) bool {
+	for _, pattern := range patterns {
+		if strings.Contains(prompt, pattern) {
+			return true
+		}
+	}
+	return false
 }
 
 func matchesAny(prompt string, promptRegexps []*regexp.Regexp) bool {
@@ -106,10 +116,15 @@ func NewAnthropicHandler(
 	if err != nil {
 		return nil, err
 	}
-	promptRegexps := []*regexp.Regexp{}
+	var promptRegexps []*regexp.Regexp
+	var blockedPhrases []string
 	for _, pattern := range config.AllowedPromptPatterns {
 		promptRegexps = append(promptRegexps, regexp.MustCompile(pattern))
 	}
+	for i, pattern := range config.BlockedPromptPatterns {
+		config.BlockedPromptPatterns[i] = strings.ToLower(pattern)
+	}
+
 	return makeUpstreamHandler[anthropicRequest](
 		baseLogger,
 		eventLogger,
@@ -119,7 +134,7 @@ func NewAnthropicHandler(
 		string(conftypes.CompletionsProviderNameAnthropic),
 		func(_ codygateway.Feature) string { return anthropicAPIURL },
 		config.AllowedModels,
-		&AnthropicHandlerMethods{config: config, anthropicTokenizer: anthropicTokenizer, promptRegexps: promptRegexps, promptRecorder: promptRecorder},
+		&AnthropicHandlerMethods{config: config, anthropicTokenizer: anthropicTokenizer, promptRegexps: promptRegexps, promptRecorder: promptRecorder, blockedPhrases: blockedPhrases},
 
 		// Anthropic primarily uses concurrent requests to rate-limit spikes
 		// in requests, so set a default retry-after that is likely to be
@@ -194,6 +209,7 @@ type AnthropicHandlerMethods struct {
 	promptRegexps      []*regexp.Regexp
 	promptRecorder     PromptRecorder
 	config             config.AnthropicConfig
+	blockedPhrases     []string
 }
 
 func (a *AnthropicHandlerMethods) validateRequest(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicRequest) (int, *flaggingResult, error) {

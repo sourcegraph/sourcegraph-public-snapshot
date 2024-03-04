@@ -67,7 +67,29 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 		require.Equal(t, result.promptTokenCount, validPreambleTokens+1+cfg.PromptTokenFlaggingLimit+1, cfg)
 	})
 
-	t.Run("high prompt token count (below block limit)", func(t *testing.T) {
+	t.Run("high prompt token count and bad phrase", func(t *testing.T) {
+		cfgWithBadPhrase := &cfg
+		cfgWithBadPhrase.BlockedPromptPatterns = []string{"bad phrase"}
+		longPrompt := strings.Repeat("word ", cfg.PromptTokenFlaggingLimit+1)
+		ar := anthropicRequest{Model: "claude-2", Prompt: validPreamble + " " + longPrompt + "bad phrase"}
+		result, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{regexp.MustCompile(validPreamble)}, *cfgWithBadPhrase)
+		require.NoError(t, err)
+		require.True(t, result.IsFlagged())
+		require.True(t, result.shouldBlock)
+	})
+
+	t.Run("low prompt token count and bad phrase", func(t *testing.T) {
+		cfgWithBadPhrase := &cfg
+		cfgWithBadPhrase.BlockedPromptPatterns = []string{"bad phrase"}
+		longPrompt := strings.Repeat("word ", 5)
+		ar := anthropicRequest{Model: "claude-2", Prompt: validPreamble + " " + longPrompt + "bad phrase"}
+		result, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{regexp.MustCompile(validPreamble)}, *cfgWithBadPhrase)
+		require.NoError(t, err)
+		// for now, we should not flag requests purely because of bad phrases
+		require.False(t, result.IsFlagged())
+	})
+
+	t.Run("high prompt token count (above block limit)", func(t *testing.T) {
 		tokenLengths, err := tk.Tokenize(validPreamble)
 		require.NoError(t, err)
 
