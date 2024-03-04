@@ -262,6 +262,10 @@ func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 			OmitConnPrepare:      true,
 			OmitRows:             true,
 			OmitConnectorConnect: true,
+			// Do not include the otesql-generated 'db.statement' attribute so
+			// that we can add our own processed, truncated version of it in
+			// instrumentQuery(...).
+			DisableQuery: true,
 		}),
 		otelsql.WithAttributesGetter(argsAsAttributes),
 	)
@@ -303,15 +307,28 @@ func isDatabaseLikelyStartingUp(err error) bool {
 	return false
 }
 
-const argsAttributesValueLimit = 100
+var (
+	// argsAttributesCountLimit defaults to 24 because the GCP Cloud Trace limit
+	// on number of attributes per span is 30: https://cloud.google.com/trace/docs/quotas
+	argsAttributesCountLimit = env.MustGetInt("SRC_OTELSQL_ARGUMENT_COUNT_LIMIT", 32,
+		"Number of SQL arguments allowed to enable argument instrumentation")
+	// argsAttributesValueLimit defaults to 240 because the GCP Cloud Trace limit
+	// on values is 256 bytes: https://cloud.google.com/trace/docs/quotas
+	argsAttributesValueLimit = env.MustGetInt("SRC_OTELSQL_ARGUMENT_VALUE_LIMIT", 240,
+		"Maximum size to use in heuristics of SQL arguments size in argument instrumentation before they are truncated. This is NOT a hard cap on bytes size of values.")
+)
 
 // argsAsAttributes generates a set of OpenTelemetry trace attributes that represent the
-// argument values used in a query.
+// argument values used in a query. The query statement itself is instrumented in
+// instrumentQuery(...)
 func argsAsAttributes(ctx context.Context, _ otelsql.Method, _ string, args []driver.NamedValue) []attribute.KeyValue {
 	// Do not decorate span with args as attributes if that's a bulk insertion
 	// or if we have too many args (it's unreadable anyway).
-	if isBulkInsertion(ctx) || len(args) > 24 {
-		return []attribute.KeyValue{attribute.Bool("db.args.skipped", true)}
+	if isBulkInsertion(ctx) || len(args) > argsAttributesCountLimit {
+		return []attribute.KeyValue{
+			attribute.Bool("db.args.skipped", true),
+			attribute.Int("db.args.count", len(args)),
+		}
 	}
 
 	attrs := make([]attribute.KeyValue, len(args))
@@ -322,8 +339,8 @@ func argsAsAttributes(ctx context.Context, _ otelsql.Method, _ string, args []dr
 		// It is either nil, a type handled by a database driver's NamedValueChecker
 		// interface, or an instance of one of these types:
 		//
-		//	int64
-		//	float64
+		//	int/int32/int64
+		//	float32/float64
 		//	bool
 		//	[]byte
 		//	string
@@ -331,8 +348,14 @@ func argsAsAttributes(ctx context.Context, _ otelsql.Method, _ string, args []dr
 		switch v := arg.Value.(type) {
 		case nil:
 			attrs[i] = attribute.String(key, "nil")
+		case int:
+			attrs[i] = attribute.Int(key, v)
+		case int32:
+			attrs[i] = attribute.Int(key, int(v))
 		case int64:
 			attrs[i] = attribute.Int64(key, v)
+		case float32:
+			attrs[i] = attribute.Float64(key, float64(v))
 		case float64:
 			attrs[i] = attribute.Float64(key, v)
 		case bool:
@@ -366,29 +389,48 @@ func argsAsAttributes(ctx context.Context, _ otelsql.Method, _ string, args []dr
 			}
 			attrs[i] = attribute.IntSlice(key, ints)
 		case *pq.StringArray:
-			attrs[i] = attribute.StringSlice(key, truncateSliceValue([]string(*v)))
+			attrs[i] = attribute.StringSlice(key,
+				truncateStringElements(truncateSliceValue([]string(*v))))
 		case *pq.ByteaArray:
 			vals := truncateSliceValue([][]byte(*v))
-			strings := make([]string, len(vals))
+			ss := make([]string, len(vals))
 			for i, v := range vals {
-				strings[i] = string(v)
+				ss[i] = truncateStringValue(string(v))
 			}
-			attrs[i] = attribute.StringSlice(key, strings)
+			attrs[i] = attribute.StringSlice(key, ss) // already truncated
 
 		default: // in case we miss anything
-			attrs[i] = attribute.String(key, fmt.Sprintf("%T", v))
+			attrs[i] = attribute.String(key, fmt.Sprintf("unhandled type %T", v))
 		}
 	}
 	return attrs
 }
 
+// utf8Replace is the same value as used in other strings.ToValidUTF8 callsites
+// in sourcegraph/sourcegraph.
+const utf8Replace = "�"
+
+// truncateStringValue should be used on all string attributes in the otelsql
+// instrumentation. It ensures the length of v is within argsAttributesValueLimit,
+// and ensures v is valid UTF8.
 func truncateStringValue(v string) string {
 	if len(v) > argsAttributesValueLimit {
-		return v[:argsAttributesValueLimit]
+		return strings.ToValidUTF8(v[:argsAttributesValueLimit], utf8Replace)
 	}
-	return v
+	return strings.ToValidUTF8(v, utf8Replace)
 }
 
+// truncateStringElements calls truncateStringValue on each element in s.
+func truncateStringElements(s []string) []string {
+	for i, v := range s {
+		s[i] = truncateStringValue(v)
+	}
+	return s
+}
+
+// truncateSliceValue truncates the number of elements in s to
+// argsAttributesValueLimit only - it does not attempt to manipulate individual
+// elements of s.
 func truncateSliceValue[T any](s []T) []T {
 	if len(s) > argsAttributesValueLimit {
 		return s[:argsAttributesValueLimit]
