@@ -6,6 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@sourcegraph/http-client'
 import type { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Icon, LoadingSpinner, H3, H4, Alert } from '@sourcegraph/wildcard'
 
@@ -42,7 +43,7 @@ import { WorkspacesPreviewPanel } from './workspaces-preview/WorkspacesPreviewPa
 import layoutStyles from '../Layout.module.scss'
 import styles from './EditBatchSpecPage.module.scss'
 
-export interface EditBatchSpecPageProps extends NamespaceProps, SettingsCascadeProps<Settings> {
+export interface EditBatchSpecPageProps extends NamespaceProps, SettingsCascadeProps<Settings>, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -97,7 +98,7 @@ export const EditBatchSpecPage: FC<EditBatchSpecPageProps> = props => {
     )
 }
 
-interface EditBatchSpecPageContentProps extends SettingsCascadeProps<Settings> {
+interface EditBatchSpecPageContentProps extends SettingsCascadeProps<Settings>, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -129,6 +130,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
     editor,
     errors,
     authenticatedUser,
+    telemetryRecorder,
 }) {
     const navigate = useNavigate()
     const isLightTheme = useIsLightTheme()
@@ -175,9 +177,15 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 isExecutionDisabled={editor.isExecutionDisabled}
                 options={editor.executionOptions}
                 onChangeOptions={editor.setExecutionOptions}
+                telemetryRecorder={telemetryRecorder}
             />
             {downloadSpecModalDismissed ? (
-                <BatchSpecDownloadLink name={batchChange.name} originalInput={editor.code} asButton={false}>
+                <BatchSpecDownloadLink
+                    name={batchChange.name}
+                    originalInput={editor.code}
+                    asButton={false}
+                    telemetryRecorder={telemetryRecorder}
+                >
                     or download for src-cli
                 </BatchSpecDownloadLink>
             ) : (
@@ -196,6 +204,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                     originalInput={editor.code}
                     asButton={true}
                     className="mb-2"
+                    telemetryRecorder={telemetryRecorder}
                 >
                     Download for src-cli
                 </BatchSpecDownloadLink>
@@ -247,7 +256,10 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 />
                 {activeTabKey === 'configuration' ? (
                     <ActionButtons>
-                        <ActionsMenu defaultMode={ActionsMenuMode.ActionsOnlyClose} />
+                        <ActionsMenu
+                            defaultMode={ActionsMenuMode.ActionsOnlyClose}
+                            telemetryRecorder={telemetryRecorder}
+                        />
                     </ActionButtons>
                 ) : (
                     <ActionButtons>{actionButtons}</ActionButtons>
@@ -259,7 +271,11 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 <ConfigurationForm isReadOnly={true} batchChange={batchChange} authenticatedUser={authenticatedUser} />
             ) : (
                 <div className={styles.form}>
-                    <LibraryPane name={batchChange.name} onReplaceItem={editor.handleCodeChange} />
+                    <LibraryPane
+                        name={batchChange.name}
+                        onReplaceItem={editor.handleCodeChange}
+                        telemetryRecorder={telemetryRecorder}
+                    />
                     <div className={styles.editorContainer} role="region" aria-label="batch spec editor">
                         <H4 as={H3} className={styles.header}>
                             Batch spec
@@ -276,7 +292,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                         />
                         <EditorFeedbackPanel errors={errors} />
                     </div>
-                    <WorkspacesPreviewPanel />
+                    <WorkspacesPreviewPanel telemetryRecorder={telemetryRecorder} />
                 </div>
             )}
 
@@ -286,6 +302,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                     originalInput={editor.code}
                     setDownloadSpecModalDismissed={setDownloadSpecModalDismissed}
                     setIsDownloadSpecModalOpen={setIsDownloadSpecModalOpen}
+                    telemetryRecorder={telemetryRecorder}
                 />
             ) : null}
             {isRunServerSideModalOpen ? (

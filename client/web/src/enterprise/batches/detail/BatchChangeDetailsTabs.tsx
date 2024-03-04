@@ -4,6 +4,7 @@ import { mdiSourceBranch, mdiChartLineVariant, mdiFileDocument, mdiArchive, mdiM
 import { useNavigate, useLocation } from 'react-router-dom'
 
 import type { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Container, Icon, Link, Tab, TabPanel, TabPanels, Text } from '@sourcegraph/wildcard'
 
@@ -55,7 +56,7 @@ const getTabName = (tabIndex: number, shouldDisplayExecutionsTab: boolean): TabN
     ][tabIndex]
 
 /** `BatchChangeDetailsPage` and `BatchChangeDetailsTabs` share all these props */
-export interface BatchChangeDetailsProps extends TelemetryProps {
+export interface BatchChangeDetailsProps extends TelemetryProps, TelemetryV2Props {
     /** The name of the tab that should be initially open */
     initialTab?: TabName
 
@@ -65,7 +66,10 @@ export interface BatchChangeDetailsProps extends TelemetryProps {
     queryAllChangesetIDs?: typeof _queryAllChangesetIDs
 }
 
-interface BatchChangeDetailsTabsProps extends BatchChangeDetailsProps, SettingsCascadeProps<Settings> {
+interface BatchChangeDetailsTabsProps
+    extends BatchChangeDetailsProps,
+        SettingsCascadeProps<Settings>,
+        TelemetryV2Props {
     batchChange: BatchChangeFields
     refetchBatchChange: () => void
 }
@@ -77,6 +81,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
     queryExternalChangesetWithFileDiffs,
     queryAllChangesetIDs,
     refetchBatchChange,
+    telemetryRecorder,
 }) => {
     const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
 
@@ -227,6 +232,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         queryAllChangesetIDs={queryAllChangesetIDs}
                         onlyArchived={false}
                         isExecutionEnabled={isExecutionEnabled}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 </TabPanel>
                 <TabPanel>
@@ -238,6 +244,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                             <BatchChangeBatchSpecList
                                 batchChangeID={batchChange.id}
                                 currentSpecID={batchChange.currentSpec.id}
+                                telemetryRecorder={telemetryRecorder}
                             />
                         </Container>
                     ) : (
@@ -251,9 +258,10 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                                 <BatchSpecDownloadButton
                                     name={batchChange.name}
                                     originalInput={batchChange.currentSpec.originalInput}
+                                    telemetryRecorder={telemetryRecorder}
                                 />
                             </div>
-                            <BatchSpecInfo spec={batchChange.currentSpec} />
+                            <BatchSpecInfo spec={batchChange.currentSpec} telemetryRecorder={telemetryRecorder} />
                         </>
                     )}
                 </TabPanel>
@@ -276,6 +284,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         onlyArchived={true}
                         refetchBatchChange={refetchBatchChange}
                         isExecutionEnabled={isExecutionEnabled}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 </TabPanel>
                 <TabPanel>
