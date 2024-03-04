@@ -53,7 +53,7 @@ export function useDeleteInsight(
                 setError(error)
             }
         },
-        [loading, deleteInsight]
+        [loading, deleteInsight, telemetryRecorder]
     )
 
     return { delete: handleDelete, loading, error }

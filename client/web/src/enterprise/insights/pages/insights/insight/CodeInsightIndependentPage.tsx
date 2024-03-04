@@ -31,7 +31,7 @@ export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependen
     useEffect(() => {
         telemetryService.logPageView('StandaloneInsightPage')
         telemetryRecorder.recordEvent('insight', 'view')
-    }, [telemetryService])
+    }, [telemetryService, telemetryRecorder])
 
     if (insight === undefined) {
         return <LoadingSpinner inline={false} />

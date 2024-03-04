@@ -58,7 +58,7 @@ export function useRemoveInsightFromDashboard(
                 setError(error)
             }
         },
-        [loading, removeInsightFromDashboard]
+        [loading, removeInsightFromDashboard, telemetryRecorder]
     )
 
     return { remove: handleRemove, loading, error }

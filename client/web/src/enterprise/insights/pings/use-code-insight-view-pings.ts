@@ -50,7 +50,7 @@ export function useCodeInsightViewPings(props: UseCodeInsightViewPingsInput): Pi
         telemetryRecorder.recordEvent('insight.dataPoint', 'click', {
             metadata: { insightType: V2InsightType[insightType] },
         })
-    }, [insightType, telemetryService])
+    }, [insightType, telemetryService, telemetryRecorder])
 
     const trackFilterChanges = useDebouncedCallback(() => {
         telemetryService.log('InsightFiltersChange', { insightType }, { insightType })
