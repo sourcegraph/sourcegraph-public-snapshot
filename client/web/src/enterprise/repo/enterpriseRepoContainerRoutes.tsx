@@ -32,7 +32,9 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
     },
     {
         path: '/-/code-graph/*',
-        render: context => <RepositoryCodeIntelArea {...context} />,
+        render: context => (
+            <RepositoryCodeIntelArea {...context} telemetryRecorder={context.platformContext.telemetryRecorder} />
+        ),
     },
     {
         path: '/-/embeddings/*',

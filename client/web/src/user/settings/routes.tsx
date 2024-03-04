@@ -31,6 +31,11 @@ const UserSettingsSecurityPage = lazyComponent(
     'UserSettingsSecurityPage'
 )
 
+const AboutOrganizationPage = lazyComponent(
+    () => import('./aboutOrganization/AboutOrganizationPage'),
+    'AboutOrganizationPage'
+)
+
 const shouldRenderBatchChangesPage = ({
     batchChangesEnabled,
     user: { viewerCanAdminister },
@@ -77,7 +82,9 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     },
     {
         path: 'about-organizations',
-        render: lazyComponent(() => import('./aboutOrganization/AboutOrganizationPage'), 'AboutOrganizationPage'),
+        render: props => (
+            <AboutOrganizationPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+        ),
     },
     {
         path: 'permissions',
