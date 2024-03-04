@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -82,40 +81,6 @@ func IsEmailBanned(email string) (bool, error) {
 	_, banned := bannedEmailDomains[domain]
 
 	return banned, nil
-}
-
-var (
-	redisStore    = redispool.Store
-	redisScopeKey = "auth:emails:"
-)
-
-func IsEmailBlockedDueToTooManySignups(email string) (bool, error) {
-	limit := conf.Get().SiteConfig().AuthDailyEmailDomainSignupLimit
-
-	if limit == 0 {
-		return false, nil
-	}
-
-	domain, err := ParseEmailDomain(email)
-	if err != nil {
-		return false, err
-	}
-
-	key := redisScopeKey + domain
-	value := redisStore.Get(key)
-
-	if value.IsNil() {
-		err := redisStore.SetEx(key, 24*60*60, 1)
-		return false, err
-	}
-
-	if emailsRegisteredInLast24Hours, _ := value.Int(); emailsRegisteredInLast24Hours > limit {
-		return true, nil
-	}
-
-	_, err = redisStore.Incr(key)
-
-	return false, err
 }
 
 // ValidateRemoteAddr validates if the input is a valid IP or a valid hostname.
