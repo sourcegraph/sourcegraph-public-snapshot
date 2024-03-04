@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useCallback, useEffect } from 'react'
 
 import { mdiHelpCircleOutline, mdiInformationOutline, mdiOpenInNew, mdiCreditCardOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -113,6 +113,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         }
     }, [data, navigate])
 
+    const onClickUpgradeToProCTA = useCallback(() => {
+        telemetryRecorder.recordEvent('cody.management.upgradeToProCTA', 'click')
+    }, [telemetryRecorder])
+
     if (dataError || usageDateError) {
         throw dataError || usageDateError
     }
@@ -171,7 +175,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </PageHeader.Heading>
                 </PageHeader>
 
-                <UpgradeToProBanner userIsOnProTier={userIsOnProTier} />
+                <UpgradeToProBanner userIsOnProTier={userIsOnProTier} onClick={onClickUpgradeToProCTA} />
                 <DoNotLoseCodyProBanner
                     userIsOnProTier={userIsOnProTier}
                     arePaymentsEnabled={arePaymentsEnabled}
@@ -207,6 +211,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     onClick={event => {
                                         event.preventDefault()
                                         eventLogger.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
+                                        telemetryRecorder.recordEvent('cody.manageSubscription', 'click')
                                         window.location.href = manageSubscriptionRedirectURL
                                     }}
                                 >
@@ -470,7 +475,8 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
 const UpgradeToProBanner: React.FunctionComponent<{
     userIsOnProTier: boolean
-}> = ({ userIsOnProTier }) =>
+    onClick: () => void
+}> = ({ userIsOnProTier, onClick }) =>
     userIsOnProTier ? null : (
         <div className={classNames('d-flex justify-content-between align-items-center p-4', styles.upgradeToProBanner)}>
             <div>
@@ -484,7 +490,7 @@ const UpgradeToProBanner: React.FunctionComponent<{
                 </ul>
             </div>
             <div>
-                <ButtonLink to="/cody/subscription" variant="primary" size="sm">
+                <ButtonLink to="/cody/subscription" variant="primary" size="sm" onClick={onClick}>
                     Upgrade
                 </ButtonLink>
             </div>
