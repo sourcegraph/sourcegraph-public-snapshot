@@ -482,7 +482,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     // Executor routes
     {
         path: '/executors/*',
-        render: () => <ExecutorsSiteAdminArea />,
+        render: props => <ExecutorsSiteAdminArea telemetryRecorder={props.platformContext.telemetryRecorder} />,
         condition: () => Boolean(window.context?.executorsEnabled),
     },
 
