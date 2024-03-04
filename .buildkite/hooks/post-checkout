@@ -7,7 +7,7 @@ source "$HOME/.profile"
 # we don't want to fetch all the tags, so here:
 # 1. Get a list of tags from the remote
 # 2. Sort them
-# 3. Get the last 20 tags
+# 3. Get the last $COUNT tags
 # 4. Parse them so that we only get the tag
 # 5. Then loop through every tag and fetch it
 COUNT=10

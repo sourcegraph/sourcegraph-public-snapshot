@@ -23,7 +23,7 @@ func triggerBackCompatTest(buildOpts bk.BuildOptions) func(*bk.Pipeline) {
 
 func bazelGoModTidy() func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
-		bk.Agent("queue", "aspect-small"),
+		bk.Agent("queue", AspectWorkflows.QueueSmall),
 		bk.Key("bazel-go-mod"),
 		bk.Cmd("./dev/ci/bazel-gomodtidy.sh"),
 	}

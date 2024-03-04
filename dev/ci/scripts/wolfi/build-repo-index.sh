@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 
-set -eux -o pipefail
+set -eu -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
-GCP_PROJECT="aspect-dev"
 KEYS_DIR="/etc/sourcegraph/keys/"
 GCS_BUCKET="package-repository"
 TARGET_ARCH="x86_64"
