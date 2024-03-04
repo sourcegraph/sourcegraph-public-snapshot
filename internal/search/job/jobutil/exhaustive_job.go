@@ -3,10 +3,13 @@ package jobutil
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
@@ -27,21 +30,11 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 		return Exhaustive{}, errors.New("only works for exhaustive search inputs")
 	}
 
-	// This doesn't lead to an error, but we will drop result types other than
-	// "file" which might be surprising to users.
-	types, _ := inputs.Query.StringValues(query.FieldType)
-	if len(types) != 1 || types[0] != "file" {
-		return Exhaustive{}, errors.Errorf("expected \"type:file\" only. Got %v", types)
-	}
-
 	if len(inputs.Plan) != 1 {
 		return Exhaustive{}, errors.Errorf("expected a simple expression (no and/or/etc). Got multiple jobs to run %v", inputs.Plan)
 	}
 
 	b := inputs.Plan[0]
-	if b.Pattern == nil {
-		return Exhaustive{}, errors.Errorf("missing pattern")
-	}
 
 	// We don't support file predicates, such as file:has.content(), because the
 	// search breaks in unexpected ways. For example, for interactive search
@@ -59,8 +52,46 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 	}
 
 	repoOptions := toRepoOptions(b, inputs.UserSettings)
-	resultTypes := computeResultTypes(b, inputs.PatternType)
-	planJob := NewTextSearchJob(b, inputs, resultTypes, repoOptions)
+	resultTypes := computeResultTypes(b, inputs.PatternType, result.TypePath|result.TypeFile)
+
+	supportedTypes := result.TypeCommit | result.TypeDiff | result.TypeFile | result.TypePath
+	if resultTypes.Without(supportedTypes) != 0 {
+		return Exhaustive{}, errors.Errorf("your query contains the following type filters: %v. However Search Jobs only supports: %v.", resultTypes, supportedTypes)
+	}
+
+	var planJob job.Job
+
+	if resultTypes.Has(result.TypeCommit | result.TypeDiff) {
+		_, _, own := isOwnershipSearch(b)
+		diff := resultTypes.Has(result.TypeDiff)
+		// Follows the logic of interactive search, see
+		// https://github.com/sourcegraph/sourcegraph/pull/35741
+		repoOptionsCopy := repoOptions
+		repoOptionsCopy.OnlyCloned = true
+
+		// We can probably support higher limits here if we need to. This is the same
+		// limit we use for interactive search. The assumption is that the limiting
+		// factor for diff/commit search is usually time and not the number of results.
+		// We should revisit this if we see that we are hitting the limit often.
+		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.DefaultLimit()))
+
+		commitSearchJob := &commit.SearchJob{
+			Query:                commit.QueryToGitQuery(b, diff),
+			Diff:                 diff,
+			Limit:                int(fileMatchLimit),
+			IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker) || own,
+		}
+
+		planJob =
+			&repoPagerJob{
+				child:            &reposPartialJob{commitSearchJob},
+				repoOpts:         repoOptionsCopy,
+				containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
+				skipPartitioning: true,
+			}
+	} else if resultTypes.Has(result.TypeFile | result.TypePath) {
+		planJob = NewTextSearchJob(b, inputs, resultTypes, repoOptions)
+	}
 
 	repoPagerJob, ok := planJob.(*repoPagerJob)
 	if !ok {
