@@ -96,7 +96,20 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 	prBody := generatePRBody(pr.Body, mergeCommit, prNumber)
 	prTitle := generatePRTitle(pr.Title, version)
 	p = std.Out.Pending(output.Styledf(output.StylePending, "Creating pull request for backport branch %q...", backportBranch))
-	out, err := ghExec(cmd.Context, "pr", "create", "--fill", "--base", version, "--head", backportBranch, "--title", prTitle, "--body", prBody, "--assignee", "@me", "--reviewer", "sourcegraph/release")
+	out, err := ghExec(
+		cmd.Context,
+		"pr",
+		"create",
+		"--fill",
+		"--base", version,
+		"--head", backportBranch,
+		"--title", prTitle,
+		"--body", prBody,
+		"--assignee", "@me",
+		"--reviewer", "sourcegraph/release",
+		"-l", "backports",
+		"-l", fmt.Sprintf("backported-to-%s", version),
+	)
 	if err != nil {
 		p.Destroy()
 		return errors.Wrapf(err, "Unable to create pull request for backport branch: %q", backportBranch)
