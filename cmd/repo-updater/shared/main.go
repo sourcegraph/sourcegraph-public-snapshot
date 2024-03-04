@@ -42,16 +42,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -133,7 +130,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	go watchSyncer(ctx, logger, syncer, updateScheduler, server.ChangesetSyncRegistry)
 
 	routines := []goroutine.BackgroundRoutine{
-		makeHTTPServer(logger, server),
+		makeGRPCServer(logger, server),
 		newUnclonedReposManager(ctx, logger, envvar.SourcegraphDotComMode(), updateScheduler, store),
 		phabricator.NewRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker"), store),
 		// Run git fetches scheduler
@@ -200,7 +197,7 @@ func getDB(observationCtx *observation.Context) (database.DB, error) {
 	return database.NewDB(observationCtx.Logger, sqlDB), nil
 }
 
-func makeHTTPServer(logger log.Logger, server *repoupdater.Server) goroutine.BackgroundRoutine {
+func makeGRPCServer(logger log.Logger, server *repoupdater.Server) goroutine.BackgroundRoutine {
 	host := ""
 	if env.InsecureDev {
 		host = "127.0.0.1"
@@ -209,30 +206,11 @@ func makeHTTPServer(logger log.Logger, server *repoupdater.Server) goroutine.Bac
 	addr := net.JoinHostPort(host, port)
 	logger.Info("listening", log.String("addr", addr))
 
-	m := repoupdater.NewHandlerMetrics()
-	m.MustRegister(prometheus.DefaultRegisterer)
 	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
 	proto.RegisterRepoUpdaterServiceServer(grpcServer, server)
 	reflection.Register(grpcServer)
-	handler := internalgrpc.MultiplexHandlers(grpcServer, healthServer())
 
-	// NOTE: Internal actor is required to have full visibility of the repo table
-	// 	(i.e. bypass repository authorization).
-	authzBypass := func(f http.Handler) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			r = r.WithContext(actor.WithInternalActor(r.Context()))
-			f.ServeHTTP(w, r)
-		}
-	}
-
-	return httpserver.NewFromAddr(addr, &http.Server{
-		ReadTimeout:  75 * time.Second,
-		WriteTimeout: 10 * time.Minute,
-		Handler: instrumentation.HTTPMiddleware(
-			"",
-			trace.HTTPMiddleware(logger, authzBypass(handler), conf.DefaultClient()),
-		),
-	})
+	return grpcserver.NewFromAddr(logger.Scoped("repo-updater.grpcserver"), addr, grpcServer)
 }
 
 func manualPurgeHandler(db database.DB) http.HandlerFunc {
@@ -585,12 +563,4 @@ FROM
 		}
 		return count
 	})
-}
-
-func healthServer() http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", trace.WithRouteName("healthz", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-	return mux
 }
