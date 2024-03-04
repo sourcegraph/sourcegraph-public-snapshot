@@ -6,8 +6,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -56,7 +56,7 @@ func ComparePermissions(dbPerms []*types.Permission, schemaPerms Schema) (added 
 	for _, n := range schemaPerms.Namespaces {
 		// If this is a dotcom-specific namespace, and we are NOT in dotcom mode,
 		// do NOT track anything in this namespace.
-		if n.DotCom && !envvar.SourcegraphDotComMode() {
+		if n.DotCom && !dotcom.SourcegraphDotComMode() {
 			continue
 		}
 

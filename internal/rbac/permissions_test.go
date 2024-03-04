@@ -5,10 +5,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -23,7 +24,7 @@ func TestComparePermissions(t *testing.T) {
 	}
 
 	t.Run("no changes to permissions", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(false)
+		dotcom.MockSourcegraphDotComMode(false)
 
 		schemaPerms := Schema{
 			Namespaces: []Namespace{
@@ -129,8 +130,8 @@ func TestComparePermissions(t *testing.T) {
 	})
 
 	t.Run("dotcom permission added", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(true)
-		t.Cleanup(func() { envvar.MockSourcegraphDotComMode(false) })
+		dotcom.MockSourcegraphDotComMode(true)
+		t.Cleanup(func() { dotcom.MockSourcegraphDotComMode(false) })
 
 		schemaPerms := Schema{
 			Namespaces: []Namespace{
@@ -144,8 +145,14 @@ func TestComparePermissions(t *testing.T) {
 
 		added, deleted := ComparePermissions(dbPerms, schemaPerms)
 
-		require.Len(t, added, 1)
-		require.Len(t, deleted, 0)
+		assert.Len(t, added, 1)
+		assert.Len(t, deleted, 0)
+
+		if diff := cmp.Diff([]database.CreatePermissionOpts{
+			{Namespace: "DOTCOM-NAMESPACE", Action: "READ"},
+		}, added); diff != "" {
+			t.Error(diff)
+		}
 	})
 }
 
