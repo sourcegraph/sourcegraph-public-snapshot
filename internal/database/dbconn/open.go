@@ -315,7 +315,7 @@ var (
 	// argsAttributesValueLimit defaults to 240 because the GCP Cloud Trace limit
 	// on values is 256 bytes: https://cloud.google.com/trace/docs/quotas
 	argsAttributesValueLimit = env.MustGetInt("SRC_OTELSQL_ARGUMENT_VALUE_LIMIT", 240,
-		"Maximum size of SQL arguments in argument instrumentation before they are truncated")
+		"Maximum size to use in heuristics of SQL arguments size in argument instrumentation before they are truncated. This is NOT a hard cap on bytes size of values.")
 )
 
 // argsAsAttributes generates a set of OpenTelemetry trace attributes that represent the
