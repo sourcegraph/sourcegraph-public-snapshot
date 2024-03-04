@@ -68,7 +68,7 @@ func (i indexingHandler) Handle(ctx context.Context, logger log.Logger, record *
 
 	location := path.Join(os.TempDir(), "index.scip")
 
-	// defer os.Remove(location)
+	defer os.Remove(location)
 
 	cliCmd := exec.Command(cliPath, "index", "--tar", "-", "--language", "java", "--out", location)
 
