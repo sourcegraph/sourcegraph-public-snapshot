@@ -115,6 +115,10 @@ export function manifestPlugin(pluginConfig: ManifestPluginConfig): Plugin {
                             css: css.length === 1 ? css[0] : undefined,
                         }
                     }
+                } else if (chunk.type === 'asset' && chunk.fileName.endsWith('.css')) {
+                    for (const entry of Object.values(manifest.assets)) {
+                        entry.css = chunk.fileName
+                    }
                 }
             }
             this.emitFile({ fileName: pluginConfig.fileName, type: 'asset', source: JSON.stringify(manifest, null, 2) })

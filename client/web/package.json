@@ -20,7 +20,7 @@
     "_vite": "ts-node -T ../../node_modules/vite/bin/vite.js",
     "serve:dev": "pnpm _vite dev --config vite.config.ts",
     "serve:prod": "pnpm _vite preview --config vite.config.ts --port 5173 --strictPort --host 127.0.0.1",
-    "build": "pnpm _vite build --config vite.config.ts",
+    "build": "NODE_OPTIONS=\"--max_old_space_size=8192\" pnpm _vite build --config vite.config.ts",
     "clean": "rm -r dist/chunks dist/main-* dist/embedMain-*",
     "watch": "WATCH=1 pnpm run --silent build",
     "lint": "pnpm lint:js && pnpm:lint:css",
