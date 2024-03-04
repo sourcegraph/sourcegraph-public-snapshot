@@ -23,7 +23,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer",
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//cmd/gitserver/internal/common",
         "//cmd/gitserver/internal/executil",
         "//cmd/gitserver/internal/git",
@@ -36,6 +35,7 @@ go_library(
         "//internal/conf",
         "//internal/conf/reposource",
         "//internal/database",
+        "//internal/dotcom",
         "//internal/env",
         "//internal/errcode",
         "//internal/extsvc",
