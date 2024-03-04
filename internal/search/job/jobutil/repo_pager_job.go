@@ -20,8 +20,8 @@ type repoPagerJob struct {
 	containsRefGlobs bool                          // whether to include repositories with refs
 	child            job.PartialJob[resolvedRepos] // child job tree that need populating a repos field to run
 	// If true, skip partitioning the repos into indexed and unindexed sets. All
-	// repos are treated as unindexed. This is useful for job types that only work
-	// on unindexed repo such as diff and commit search.
+	// repos are treated as unindexed. This is useful for job types that don't work
+	// on the index, such as diff and commit search.
 	skipPartitioning bool
 }
 
