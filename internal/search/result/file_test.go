@@ -291,6 +291,26 @@ func TestChunkMatches_MatchedContent(t *testing.T) {
 			}},
 		},
 		output: []string{"ab", "c\nd", "ef"},
+	}, {
+		input: ChunkMatch{
+			Content:      "abc\ndef",
+			ContentStart: Location{0, 0, 0},
+			// Out of bounds ranges
+			Ranges: Ranges{{
+				// Starts at beginning, ends past end
+				Start: Location{0, 0, 0},
+				End:   Location{30, 3, 2},
+			}, {
+				// Starts in middle, ends past end
+				Start: Location{4, 1, 0},
+				End:   Location{1000, 1, 996},
+			}, {
+				// Starts past end, ends past end
+				Start: Location{1000, 1000, 1000},
+				End:   Location{2000, 2000, 2000},
+			}},
+		},
+		output: []string{"abc\ndef", "def", ""},
 	}}
 
 	for _, tc := range cases {
