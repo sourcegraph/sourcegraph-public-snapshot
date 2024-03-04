@@ -509,7 +509,7 @@ describe('Repository component', () => {
                 const link = await retry(
                     async () => {
                         await driver.page.waitForSelector('[data-testid="symbol-name"]', { visible: true })
-                        let [link] = await driver.page.$x(
+                        const [link] = await driver.page.$x(
                             `//*[@data-testid='symbol-name' and contains(text(), '${symbol}')]`
                         )
                         if (!link) {
