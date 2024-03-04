@@ -308,8 +308,12 @@ func isDatabaseLikelyStartingUp(err error) bool {
 }
 
 var (
-	argsAttributesCountLimit = env.MustGetInt("SRC_OTELSQL_ARGUMENT_COUNT_LIMIT", 24,
+	// argsAttributesCountLimit defaults to 24 because the GCP Cloud Trace limit
+	// on number of attributes per span is 30: https://cloud.google.com/trace/docs/quotas
+	argsAttributesCountLimit = env.MustGetInt("SRC_OTELSQL_ARGUMENT_COUNT_LIMIT", 32,
 		"Number of SQL arguments allowed to enable argument instrumentation")
+	// argsAttributesValueLimit defaults to 240 because the GCP Cloud Trace limit
+	// on values is 256 bytes: https://cloud.google.com/trace/docs/quotas
 	argsAttributesValueLimit = env.MustGetInt("SRC_OTELSQL_ARGUMENT_VALUE_LIMIT", 240,
 		"Maximum size of SQL arguments in argument instrumentation before they are truncated")
 )
