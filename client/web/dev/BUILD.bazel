@@ -75,6 +75,7 @@ js_library(
 esbuild(
     name = "esbuild-config-production_bundle",
     srcs = [
+        ":dev",
         ":esbuild-config-production",
     ],
     entry_point = "esbuild/bazel/esbuild.bazel.production.js",
