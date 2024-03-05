@@ -12,6 +12,7 @@ import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operati
 import { getFileMatchUrl, getRepositoryUrl, getRevision, type SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 
@@ -68,6 +69,8 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                 filePath={result.path}
                 className={resultStyles.copyButton}
                 telemetryService={telemetryService}
+                // TODO (dadlerj): update to use a real telemetry recorder
+                telemetryRecorder={noOpTelemetryRecorder}
             />
         </span>
     )

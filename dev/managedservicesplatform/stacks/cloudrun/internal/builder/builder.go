@@ -1,14 +1,13 @@
 package builder
 
 import (
-	"fmt"
-
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/privatenetwork"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun/cloudrunresource"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -37,10 +36,9 @@ type Variables struct {
 
 // Name returns the name to use for the Cloud Run resource.
 func (v *Variables) Name() (string, error) {
+	name := cloudrunresource.NewName(v.Service.ID, v.Environment.ID, v.GCPRegion)
 	// Extra guard against long names, just in case - an apply to change the
 	// name that fails during apply could cause extended downtime.
-	name := fmt.Sprintf("%s-%s-%s",
-		v.Service.ID, v.Environment.ID, v.GCPRegion)
 	if len(name) > 63 {
 		return name, errors.Newf("evaluated Cloud Run name %q is too long, maximum length is 63 characters")
 	}

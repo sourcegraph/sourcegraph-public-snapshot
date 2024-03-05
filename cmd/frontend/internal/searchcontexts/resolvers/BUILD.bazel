@@ -29,12 +29,12 @@ go_test(
     srcs = ["resolvers_test.go"],
     embed = [":resolvers"],
     deps = [
-        "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
         "//internal/actor",
         "//internal/auth",
         "//internal/database",
         "//internal/database/dbmocks",
+        "//internal/dotcom",
         "//internal/types",
         "@com_github_derision_test_go_mockgen//testutil/require",
         "@com_github_google_go_cmp//cmp",

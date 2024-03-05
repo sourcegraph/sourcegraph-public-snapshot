@@ -526,6 +526,10 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:  "boolean query with unindexed search",
 				query: "index:no func OR NOT default",
 			},
+			{
+				name:  "lang filters with unindexed search",
+				query: "index:no func OR NOT default lang:Go",
+			},
 			// Failing test: https://github.com/sourcegraph/sourcegraph/issues/48109
 			// {
 			//	name:  "fork:only",

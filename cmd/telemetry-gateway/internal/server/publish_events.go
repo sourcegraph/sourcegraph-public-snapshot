@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
@@ -53,8 +52,8 @@ func handlePublishEvents(
 		log.Int("failed", len(summary.failedEvents)),
 	}
 	if len(summary.failedEvents) > 0 {
-		tr.RecordError(errors.New(summary.message),
-			trace.WithAttributes(attribute.Int("failed", len(summary.failedEvents))))
+		tr.SetError(errors.New(summary.message)) // mark span as failed
+		tr.SetAttributes(attribute.Int("failed", len(summary.failedEvents)))
 		logger.Error(summary.message, append(summaryFields, summary.errorFields...)...)
 	} else {
 		logger.Info(summary.message, summaryFields...)

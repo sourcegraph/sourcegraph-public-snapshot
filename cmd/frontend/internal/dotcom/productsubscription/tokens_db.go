@@ -89,6 +89,7 @@ func (e dotcomUserNotFoundError) NotFound() bool {
 
 // LookupDotcomUserIDByAccessToken returns the userID corresponding to the given token.
 // Requires the token has the DotcomUserGatewayAccessTokenPrefix, otherwise fails.
+// Note: this depends on `access_tokens_lookup_double_hash` index to run efficiently, if you are modifying this function, consider changing/dropping the index.
 func (t dbTokens) LookupDotcomUserIDByAccessToken(ctx context.Context, token string) (int, error) {
 	if !strings.HasPrefix(token, accesstoken.DotcomUserGatewayAccessTokenPrefix) {
 		return 0, dotcomUserNotFoundError{reason: "invalid token with unknown prefix"}
@@ -108,7 +109,7 @@ func (t dbTokens) LookupDotcomUserIDByAccessToken(ctx context.Context, token str
 		FROM access_tokens t2
 		JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
 		JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
-		WHERE 
+		WHERE
 		    digest(value_sha256, 'sha256')=%s
 		    AND
 		    t2.deleted_at IS NULL

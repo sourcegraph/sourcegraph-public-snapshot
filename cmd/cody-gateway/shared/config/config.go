@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -22,9 +23,10 @@ type Config struct {
 	DiagnosticsSecret string
 
 	Dotcom struct {
-		URL          string
-		AccessToken  string
-		InternalMode bool
+		URL                          string
+		AccessToken                  string
+		InternalMode                 bool
+		ActorRefreshCoolDownInterval time.Duration
 	}
 
 	Anthropic AnthropicConfig
@@ -66,19 +68,24 @@ type OpenTelemetryConfig struct {
 }
 
 type AnthropicConfig struct {
-	AllowedModels          []string
-	AccessToken            string
-	MaxTokensToSample      int
-	AllowedPromptPatterns  []string
-	RequestBlockingEnabled bool
+	AllowedModels                  []string
+	AccessToken                    string
+	MaxTokensToSample              int
+	AllowedPromptPatterns          []string
+	DetectedPromptPatterns         []string
+	RequestBlockingEnabled         bool
+	PromptTokenFlaggingLimit       int
+	PromptTokenBlockingLimit       int
+	MaxTokensToSampleFlaggingLimit int
+	ResponseTokenBlockingLimit     int
 }
 
 type FireworksConfig struct {
 	AllowedModels                          []string
 	AccessToken                            string
-	LogSelfServeCodeCompletionRequests     bool
 	StarcoderCommunitySingleTenantPercent  int
 	StarcoderEnterpriseSingleTenantPercent int
+	StarcoderQuantizedPercent              int
 }
 
 type OpenAIConfig struct {
@@ -102,6 +109,8 @@ func (c *Config) Load() {
 	}
 	c.Dotcom.InternalMode = c.GetBool("CODY_GATEWAY_DOTCOM_INTERNAL_MODE", "false", "Only allow tokens associated with active internal and dev licenses to be used.") ||
 		c.GetBool("CODY_GATEWAY_DOTCOM_DEV_LICENSES_ONLY", "false", "DEPRECATED, use CODY_GATEWAY_DOTCOM_INTERNAL_MODE")
+	c.Dotcom.ActorRefreshCoolDownInterval = c.GetInterval("CODY_GATEWAY_DOTCOM_ACTOR_COOLDOWN_INTERVAL", "300s",
+		"Cooldown period for refreshing the actor info from dotcom.")
 
 	c.Anthropic.AccessToken = c.Get("CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN", "", "The Anthropic access token to be used.")
 	c.Anthropic.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_ANTHROPIC_ALLOWED_MODELS",
@@ -132,7 +141,13 @@ func (c *Config) Load() {
 	}
 	c.Anthropic.MaxTokensToSample = c.GetInt("CODY_GATEWAY_ANTHROPIC_MAX_TOKENS_TO_SAMPLE", "10000", "Maximum permitted value of maxTokensToSample")
 	c.Anthropic.AllowedPromptPatterns = splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_ALLOWED_PROMPT_PATTERNS", "Prompt patterns to allow."))
+	c.Anthropic.DetectedPromptPatterns = splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_DETECTED_PROMPT_PATTERNS", "Patterns to detect in prompt."))
 	c.Anthropic.RequestBlockingEnabled = c.GetBool("CODY_GATEWAY_ANTHROPIC_REQUEST_BLOCKING_ENABLED", "false", "Whether we should block requests that match our blocking criteria.")
+
+	c.Anthropic.PromptTokenBlockingLimit = c.GetInt("CODY_GATEWAY_ANTHROPIC_PROMPT_TOKEN_BLOCKING_LIMIT", "20000", "Maximum number of prompt tokens to allow without blocking.")
+	c.Anthropic.PromptTokenFlaggingLimit = c.GetInt("CODY_GATEWAY_ANTHROPIC_PROMPT_TOKEN_FLAGGING_LIMIT", "18000", "Maximum number of prompt tokens to allow without flagging.")
+	c.Anthropic.MaxTokensToSampleFlaggingLimit = c.GetInt("CODY_GATEWAY_ANTHROPIC_MAX_TOKENS_TO_SAMPLE_FLAGGING_LIMIT", "1000", "Maximum value of max_tokens_to_sample to allow without flagging.")
+	c.Anthropic.ResponseTokenBlockingLimit = c.GetInt("CODY_GATEWAY_ANTHROPIC_RESPONSE_TOKEN_BLOCKING_LIMIT", "1000", "Maximum number of completion tokens to allow without blocking.")
 
 	c.OpenAI.AccessToken = c.GetOptional("CODY_GATEWAY_OPENAI_ACCESS_TOKEN", "The OpenAI access token to be used.")
 	c.OpenAI.OrgID = c.GetOptional("CODY_GATEWAY_OPENAI_ORG_ID", "The OpenAI organization to count billing towards. Setting this ensures we always use the correct negotiated terms.")
@@ -147,26 +162,32 @@ func (c *Config) Load() {
 	c.Fireworks.AccessToken = c.GetOptional("CODY_GATEWAY_FIREWORKS_ACCESS_TOKEN", "The Fireworks access token to be used.")
 	c.Fireworks.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_FIREWORKS_ALLOWED_MODELS",
 		strings.Join([]string{
-			"accounts/fireworks/models/starcoder-16b-w8a16",
-			"accounts/fireworks/models/starcoder-7b-w8a16",
-			"accounts/fireworks/models/starcoder-3b-w8a16",
-			"accounts/fireworks/models/starcoder-1b-w8a16",
-			"accounts/sourcegraph/models/starcoder-7b",
-			"accounts/sourcegraph/models/starcoder-16b",
+			// Virtual model strings. Setting these will allow one or more of the specific models
+			// and allows Cody Gateway to decide which specific model to route the request to.
+			"starcoder",
+			// Fireworks multi-tenant models:
+			fireworks.Starcoder16b,
+			fireworks.Starcoder7b,
+			fireworks.Starcoder16b8bit,
+			fireworks.Starcoder7b8bit,
+			fireworks.Starcoder16bSingleTenant,
 			"accounts/fireworks/models/llama-v2-7b-code",
 			"accounts/fireworks/models/llama-v2-13b-code",
 			"accounts/fireworks/models/llama-v2-13b-code-instruct",
 			"accounts/fireworks/models/llama-v2-34b-code-instruct",
 			"accounts/fireworks/models/mistral-7b-instruct-4k",
 			"accounts/fireworks/models/mixtral-8x7b-instruct",
+			// Deprecated model strings
+			"accounts/fireworks/models/starcoder-3b-w8a16",
+			"accounts/fireworks/models/starcoder-1b-w8a16",
 		}, ","),
 		"Fireworks models that can be used."))
-	c.Fireworks.LogSelfServeCodeCompletionRequests = c.GetBool("CODY_GATEWAY_FIREWORKS_LOG_SELF_SERVE_COMPLETION_REQUESTS", "false", "Whether we should log self-serve code completion requests.")
 	if c.Fireworks.AccessToken != "" && len(c.Fireworks.AllowedModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for Fireworks"))
 	}
 	c.Fireworks.StarcoderCommunitySingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_COMMUNITY_SINGLE_TENANT_PERCENT", "0", "The percentage of community traffic for Starcoder to be redirected to the single-tenant deployment.")
 	c.Fireworks.StarcoderEnterpriseSingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_ENTERPRISE_SINGLE_TENANT_PERCENT", "100", "The percentage of Enterprise traffic for Starcoder to be redirected to the single-tenant deployment.")
+	c.Fireworks.StarcoderQuantizedPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_QUANTIZED_PERCENT", "100", "The percentage of multi-tenant traffic to be redirected to the quantized model.")
 
 	c.AllowedEmbeddingsModels = splitMaybe(c.Get("CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS", strings.Join([]string{"openai/text-embedding-ada-002"}, ","), "The models allowed for embeddings generation."))
 	if len(c.AllowedEmbeddingsModels) == 0 {

@@ -21,7 +21,7 @@ export const SearchPageFooter: FC = () => {
                 ? [
                       {
                           name: 'Docs',
-                          href: 'https://docs.sourcegraph.com/',
+                          href: 'https://sourcegraph.com/docs',
                       },
                       { name: 'About', href: 'https://sourcegraph.com' },
                       {

@@ -664,7 +664,7 @@ func TestRepoHasFileContent(t *testing.T) {
 
 		if r, ok := unindexedCorpus[string(repo)]; ok {
 			for path, lines := range r {
-				if len(p.IncludePatterns) == 0 || p.IncludePatterns[0] == path {
+				if len(p.IncludePaths) == 0 || p.IncludePaths[0] == path {
 					for line := range lines {
 						if pattern == line || pattern == "" {
 							onMatch(&protocol.FileMatch{})

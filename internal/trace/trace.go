@@ -70,6 +70,16 @@ func (t Trace) SetErrorIfNotContext(err error) {
 	t.SetError(err)
 }
 
+// EndWithErrIfNotContext finishes the span and sets its error value unless it
+// is context.Canceled or context.DeadlineExceeded.
+//
+// It takes a pointer to an error so it can be used directly
+// in a defer statement.
+func (t Trace) EndWithErrIfNotContext(err *error) {
+	t.SetErrorIfNotContext(*err)
+	t.End()
+}
+
 // EndWithErr finishes the span and sets its error value.
 // It takes a pointer to an error so it can be used directly
 // in a defer statement.

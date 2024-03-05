@@ -44,5 +44,5 @@ type GitHubAppInstallation struct {
 }
 
 type GitHubAppClient interface {
-	GetAppInstallations(context.Context) ([]*gogithub.Installation, error)
+	GetAppInstallations(ctx context.Context, page int) (_ []*gogithub.Installation, hasNextPage bool, _ error)
 }

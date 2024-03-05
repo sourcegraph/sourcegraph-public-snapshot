@@ -1003,21 +1003,23 @@ type UserDates struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type CodyUsageStatistics struct {
-	Daily   []*CodyUsagePeriod
-	Weekly  []*CodyUsagePeriod
-	Monthly []*CodyUsagePeriod
+	Daily   *CodyUsagePeriod
+	Weekly  *CodyUsagePeriod
+	Monthly *CodyUsagePeriod
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type CodyUsagePeriod struct {
-	StartTime              time.Time
-	TotalUsers             *CodyCountStatistics
-	TotalRequests          *CodyCountStatistics
-	CodeGenerationRequests *CodyCountStatistics
-	ExplanationRequests    *CodyCountStatistics
-	InvalidRequests        *CodyCountStatistics
+	StartTime                  time.Time
+	TotalCodyUsers             *CodyCountStatistics
+	TotalProductUsers          *CodyCountStatistics
+	TotalVSCodeProductUsers    *CodyCountStatistics
+	TotalJetBrainsProductUsers *CodyCountStatistics
+	TotalNeovimProductUsers    *CodyCountStatistics
+	TotalEmacsProductUsers     *CodyCountStatistics
+	TotalWebProductUsers       *CodyCountStatistics
 }
 
 type CodyCountStatistics struct {
@@ -1025,29 +1027,27 @@ type CodyCountStatistics struct {
 	EventsCount *int32
 }
 
-// CodyAggregatedEvent represents the total requests, unique users, code
-// generation requests, explanation requests, and invalid requests over
-// the current month, week, and day for a single search event.
-type CodyAggregatedEvent struct {
-	Name                string
-	Month               time.Time
-	Week                time.Time
-	Day                 time.Time
-	TotalMonth          int32
-	TotalWeek           int32
-	TotalDay            int32
-	UniquesMonth        int32
-	UniquesWeek         int32
-	UniquesDay          int32
-	CodeGenerationMonth int32
-	CodeGenerationWeek  int32
-	CodeGenerationDay   int32
-	ExplanationMonth    int32
-	ExplanationWeek     int32
-	ExplanationDay      int32
-	InvalidMonth        int32
-	InvalidWeek         int32
-	InvalidDay          int32
+// CodyAggregatedUsage represents the total Cody-related event count and
+// unique users for the current day, week, and month, as well as the
+// count of total unique users by client for the current month.
+type CodyAggregatedUsage struct {
+	Month                      time.Time
+	Week                       time.Time
+	Day                        time.Time
+	TotalMonth                 int32
+	TotalWeek                  int32
+	TotalDay                   int32
+	UniquesMonth               int32
+	UniquesWeek                int32
+	UniquesDay                 int32
+	ProductUsersMonth          int32
+	ProductUsersWeek           int32
+	ProductUsersDay            int32
+	VSCodeProductUsersMonth    int32
+	JetBrainsProductUsersMonth int32
+	NeovimProductUsersMonth    int32
+	EmacsProductUsersMonth     int32
+	WebProductUsersMonth       int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change

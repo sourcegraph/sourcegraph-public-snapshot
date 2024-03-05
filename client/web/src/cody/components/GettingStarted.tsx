@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import classNames from 'classnames'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { H4, H5, RadioButton, Text, Button, Grid, Icon, Link } from '@sourcegraph/wildcard'
+import { H4, H5, RadioButton, Text, Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import { CodyColorIcon, CodySpeechBubbleIcon } from '../chat/CodyPageIcon'
 
@@ -15,8 +15,6 @@ import styles from './GettingStarted.module.scss'
 type ConversationScope = 'general' | 'repo'
 
 const DEFAULT_VERTICAL_OFFSET = '1rem'
-
-/* eslint-disable  @sourcegraph/sourcegraph/check-help-links */
 
 export const GettingStarted: React.FC<
     ScopeSelectorProps & {
@@ -113,19 +111,15 @@ export const GettingStarted: React.FC<
             {/* eslint-disable-next-line react/forbid-dom-props */}
             <div ref={contentRef} style={{ margin: `${contentVerticalOffset} 20%` }}>
                 {isCodyChatPage ? null : (
-                    <Grid templateColumns="1fr 1fr" spacing={0} className={styles.iconSection}>
-                        <Grid templateColumns="1fr" spacing={0} className={styles.greetingContainer}>
-                            <div className={styles.greetingIcon}>
-                                <Icon as={CodySpeechBubbleIcon} className="h-auto w-auto" aria-hidden="true" />
-                            </div>
+                    <div className={styles.iconSection}>
+                        <Icon as={CodyColorIcon} aria-hidden="true" className={styles.codyIcon} />
+                        <div className={styles.greetingContainer}>
+                            <Icon as={CodySpeechBubbleIcon} className="h-auto w-auto" aria-hidden="true" />
                             <Text as="span" className={styles.greetingText}>
                                 Hi! I'm Cody
                             </Text>
-                        </Grid>
-                        <div className={styles.codyIconContainer}>
-                            <Icon as={CodyColorIcon} aria-hidden="true" className={styles.codyIcon} />
                         </div>
-                    </Grid>
+                    </div>
                 )}
 
                 {isCodyChatPage ? (

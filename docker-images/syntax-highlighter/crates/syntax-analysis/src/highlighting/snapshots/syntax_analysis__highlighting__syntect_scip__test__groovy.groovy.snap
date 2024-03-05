@@ -1,0 +1,250 @@
+---
+source: crates/syntax-analysis/src/highlighting/syntect_scip.rs
+expression: "snapshot_sciptect_documents(&document, &contents)"
+---
+  def name = "John"
+//^^^ IdentifierType storage.type.def.groovy
+//         ^ IdentifierOperator keyword.operator.assignment.groovy
+//           ^^^^^^ StringLiteral string.quoted.double.groovy
+  String greeting = "Hello"
+//^^^^^^ IdentifierType storage.type.class.groovy
+//                ^ IdentifierOperator keyword.operator.assignment.groovy
+//                  ^^^^^^^ StringLiteral string.quoted.double.groovy
+  int age = 30
+//^^^ IdentifierType storage.type.primitive.groovy
+//        ^ IdentifierOperator keyword.operator.assignment.groovy
+//          ^^ NumericLiteral constant.numeric.groovy
+  
+  def list = [1, 2, 3]
+//^^^ IdentifierType storage.type.def.groovy
+//         ^ IdentifierOperator keyword.operator.assignment.groovy
+//           ^ PunctuationBracket punctuation.definition.structure.begin.groovy
+//            ^ NumericLiteral constant.numeric.groovy
+//             ^ PunctuationBracket punctuation.definition.separator.groovy
+//               ^ NumericLiteral constant.numeric.groovy
+//                ^ PunctuationBracket punctuation.definition.separator.groovy
+//                  ^ NumericLiteral constant.numeric.groovy
+//                   ^ PunctuationBracket punctuation.definition.structure.end.groovy
+  def map = [name: "John", age: 30]
+//^^^ IdentifierType storage.type.def.groovy
+//        ^ IdentifierOperator keyword.operator.assignment.groovy
+//          ^ PunctuationBracket punctuation.definition.structure.begin.groovy
+//               ^ PunctuationBracket punctuation.definition.separator.key-value.groovy
+//                 ^^^^^^ StringLiteral string.quoted.double.groovy
+//                       ^ PunctuationBracket punctuation.definition.separator.groovy
+//                            ^ PunctuationBracket punctuation.definition.separator.key-value.groovy
+//                              ^^ NumericLiteral constant.numeric.groovy
+//                                ^ PunctuationBracket punctuation.definition.structure.end.groovy
+  
+  def code = { "Inside closure" }
+//^^^ IdentifierType storage.type.def.groovy
+//         ^ IdentifierOperator keyword.operator.assignment.groovy
+//           ^ PunctuationBracket punctuation.section.block.begin.groovy
+//             ^^^^^^^^^^^^^^^^ StringLiteral string.quoted.double.groovy
+//                              ^ PunctuationBracket punctuation.section.block.end.groovy
+  
+  def message = name ?: "Default"
+//^^^ IdentifierType storage.type.def.groovy
+//            ^ IdentifierOperator keyword.operator.assignment.groovy
+//                   ^^ IdentifierOperator keyword.operator.elvis.groovy
+//                      ^^^^^^^^^ StringLiteral string.quoted.double.groovy
+  
+  def str = "hello 123 world"
+//^^^ IdentifierType storage.type.def.groovy
+//        ^ IdentifierOperator keyword.operator.assignment.groovy
+//          ^^^^^^^^^^^^^^^^^ StringLiteral string.quoted.double.groovy
+  def regex = /\d+/
+//^^^ IdentifierType storage.type.def.groovy
+//          ^ IdentifierOperator keyword.operator.assignment.groovy
+//            ^ PunctuationBracket punctuation.definition.string.regexp.begin.groovy
+//             ^^^ StringLiteral punctuation.definition.string.regexp.end.groovy
+//                ^ PunctuationBracket punctuation.definition.string.regexp.end.groovy
+  
+  def transformed = [1, 2, 3, 4, 5].collect{ it * 2 }
+//^^^ IdentifierType storage.type.def.groovy
+//                ^ IdentifierOperator keyword.operator.assignment.groovy
+//                  ^ PunctuationBracket punctuation.definition.structure.begin.groovy
+//                   ^ NumericLiteral constant.numeric.groovy
+//                    ^ PunctuationBracket punctuation.definition.separator.groovy
+//                      ^ NumericLiteral constant.numeric.groovy
+//                       ^ PunctuationBracket punctuation.definition.separator.groovy
+//                         ^ NumericLiteral constant.numeric.groovy
+//                          ^ PunctuationBracket punctuation.definition.separator.groovy
+//                            ^ NumericLiteral constant.numeric.groovy
+//                             ^ PunctuationBracket punctuation.definition.separator.groovy
+//                               ^ NumericLiteral constant.numeric.groovy
+//                                ^ PunctuationBracket punctuation.definition.structure.end.groovy
+//                                 ^ PunctuationBracket punctuation.accessor.dot.groovy
+//                                         ^ PunctuationBracket punctuation.section.block.begin.groovy
+//                                              ^ IdentifierOperator keyword.operator.arithmetic.groovy
+//                                                ^ NumericLiteral constant.numeric.groovy
+//                                                  ^ PunctuationBracket punctuation.section.block.end.groovy
+  
+  assert name instanceof String
+//^^^^^^ Keyword keyword.control.assert.groovy
+//            ^^^^^^^^^^ IdentifierOperator keyword.operator.instanceof.groovy
+//                       ^^^^^^ IdentifierType storage.type.class.groovy
+  
+  new File("data.txt")
+//^^^ Keyword keyword.other.new.groovy
+//    ^^^^ IdentifierType storage.type.class.groovy
+//         ^^^^^^^^^^ StringLiteral string.quoted.double.groovy
+  
+  name.reverse()
+//    ^ PunctuationBracket punctuation.accessor.dot.groovy
+//            ^ PunctuationBracket punctuation.definition.method-parameters.begin.groovy
+//             ^ PunctuationBracket punctuation.definition.method-parameters.end.groovy
+  
+  for(i in 1..5) {
+//^^^ Keyword keyword.control.groovy
+//         ^ NumericLiteral constant.numeric.groovy
+//          ^^ IdentifierOperator keyword.operator.range.groovy
+//            ^ NumericLiteral constant.numeric.groovy
+//               ^ PunctuationBracket punctuation.section.block.begin.groovy
+    println i
+//  ^^^^^^^ IdentifierFunction support.function.print.groovy
+  }
+//^ PunctuationBracket punctuation.section.block.end.groovy
+  
+  class Person {
+//^^^^^ IdentifierType storage.type.class.groovy
+//      ^^^^^^ IdentifierType entity.name.type.class.groovy
+    String name
+//  ^^^^^^ IdentifierType storage.type.class.groovy
+    int age
+//  ^^^ IdentifierType storage.type.primitive.groovy
+  
+    String greeting() {
+//  ^^^^^^ IdentifierType storage.type.return-type.class.groovy
+//         ^^^^^^^^ IdentifierFunction entity.name.function.groovy
+//                 ^ PunctuationBracket punctuation.definition.parameters.begin.groovy
+//                  ^ PunctuationBracket punctuation.definition.parameters.end.groovy
+      "Hello, $name!"
+//    ^^^^^^^^ StringLiteral variable.other.interpolated.groovy
+//            ^^^^^ Identifier variable.other.interpolated.groovy
+//                 ^^ StringLiteral string.quoted.double.groovy
+    }
+  }
+  
+  def person = new Person(name: "John", age: 30)
+//^^^ IdentifierType storage.type.def.groovy
+//           ^ IdentifierOperator keyword.operator.assignment.groovy
+//             ^^^ Keyword keyword.other.new.groovy
+//                 ^^^^^^ IdentifierType storage.type.class.groovy
+//                            ^ PunctuationBracket punctuation.definition.separator.key-value.groovy
+//                              ^^^^^^ StringLiteral string.quoted.double.groovy
+//                                         ^ PunctuationBracket punctuation.definition.separator.key-value.groovy
+//                                           ^^ NumericLiteral constant.numeric.groovy
+  
+  class Employee extends Person {
+//^^^^^ IdentifierType storage.type.class.groovy
+//      ^^^^^^^^ IdentifierType entity.name.type.class.groovy
+//               ^^^^^^^ Keyword storage.modifier.extends.groovy
+//                       ^^^^^^ Identifier entity.other.inherited-class.groovy
+    double salary
+//  ^^^^^^ IdentifierType storage.type.primitive.groovy
+  
+    String greeting() {
+//  ^^^^^^ IdentifierType storage.type.return-type.class.groovy
+//         ^^^^^^^^ IdentifierFunction entity.name.function.groovy
+//                 ^ PunctuationBracket punctuation.definition.parameters.begin.groovy
+//                  ^ PunctuationBracket punctuation.definition.parameters.end.groovy
+      "${super.greeting()} My salary is $salary."
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral variable.other.interpolated.groovy
+//     ^^ PunctuationBracket punctuation.section.embedded.groovy
+//       ^^^^^ Identifier variable.language.groovy
+//            ^ PunctuationBracket punctuation.accessor.dot.groovy
+//                     ^ PunctuationBracket punctuation.definition.method-parameters.begin.groovy
+//                      ^ PunctuationBracket punctuation.definition.method-parameters.end.groovy
+//                       ^ PunctuationBracket punctuation.section.embedded.groovy
+//                                      ^^^^^^^ Identifier variable.other.interpolated.groovy
+//                                             ^^ StringLiteral string.quoted.double.groovy
+    }
+  }
+  
+  def employee = new Employee(name: "Jane", age: 28, salary: 60000)
+//^^^ IdentifierType storage.type.def.groovy
+//             ^ IdentifierOperator keyword.operator.assignment.groovy
+//               ^^^ Keyword keyword.other.new.groovy
+//                   ^^^^^^^^ IdentifierType storage.type.class.groovy
+//                                ^ PunctuationBracket punctuation.definition.separator.key-value.groovy
+//                                  ^^^^^^ StringLiteral string.quoted.double.groovy
+//                                             ^ PunctuationBracket punctuation.definition.separator.key-value.groovy
+//                                               ^^ NumericLiteral constant.numeric.groovy
+//                                                         ^ PunctuationBracket punctuation.definition.separator.key-value.groovy
+//                                                           ^^^^^ NumericLiteral constant.numeric.groovy
+  
+  interface Singer {
+//          ^^^^^^ IdentifierType storage.type.class.groovy
+//                 ^ PunctuationBracket punctuation.section.block.begin.groovy
+    void sing()
+//           ^ PunctuationBracket punctuation.definition.method-parameters.begin.groovy
+//            ^ PunctuationBracket punctuation.definition.method-parameters.end.groovy
+  }
+//^ PunctuationBracket punctuation.section.block.end.groovy
+  
+  class LeadSinger implements Singer {
+//^^^^^ IdentifierType storage.type.class.groovy
+//      ^^^^^^^^^^ IdentifierType entity.name.type.class.groovy
+//                 ^^^^^^^^^^ Keyword storage.modifier.implements.groovy
+//                            ^^^^^^ Identifier entity.other.inherited-class.interface.groovy
+    @Override
+//  ^^^^^^^^^ IdentifierType storage.type.annotation.groovy
+    void sing() {
+//  ^^^^ IdentifierType storage.type.return-type.void.groovy
+//       ^^^^ IdentifierFunction entity.name.function.groovy
+//           ^ PunctuationBracket punctuation.definition.parameters.begin.groovy
+//            ^ PunctuationBracket punctuation.definition.parameters.end.groovy
+      println "Singing a song!"
+//    ^^^^^^^ IdentifierFunction support.function.print.groovy
+//            ^^^^^^^^^^^^^^^^^ StringLiteral string.quoted.double.groovy
+    }
+  
+  }
+  
+  trait Guitarist {
+//      ^^^^^^^^^ IdentifierType storage.type.class.groovy
+//                ^ PunctuationBracket punctuation.section.block.begin.groovy
+    void playGuitar() {
+//                 ^ PunctuationBracket punctuation.definition.method-parameters.begin.groovy
+//                  ^ PunctuationBracket punctuation.definition.method-parameters.end.groovy
+//                    ^ PunctuationBracket punctuation.section.block.begin.groovy
+      println "Playing guitar riff"
+//    ^^^^^^^ IdentifierFunction support.function.print.groovy
+//            ^^^^^^^^^^^^^^^^^^^^^ StringLiteral string.quoted.double.groovy
+    }
+//  ^ PunctuationBracket punctuation.section.block.end.groovy
+  }
+//^ PunctuationBracket punctuation.section.block.end.groovy
+  
+  class RockSinger extends Person implements Singer, Guitarist { }
+//^^^^^ IdentifierType storage.type.class.groovy
+//      ^^^^^^^^^^ IdentifierType entity.name.type.class.groovy
+//                 ^^^^^^^ Keyword storage.modifier.extends.groovy
+//                         ^^^^^^ Identifier entity.other.inherited-class.groovy
+//                                ^^^^^^^^^^ Keyword storage.modifier.implements.groovy
+//                                           ^^^^^^ Identifier entity.other.inherited-class.interface.groovy
+//                                                 ^ PunctuationBracket punctuation.definition.implemented.interfaces.separator.groovy
+//                                                   ^^^^^^^^^ Identifier entity.other.inherited-class.interface.groovy
+  
+  def singer = new RockSinger(name: "Ross", age: 25).with {
+//^^^ IdentifierType storage.type.def.groovy
+//           ^ IdentifierOperator keyword.operator.assignment.groovy
+//             ^^^ Keyword keyword.other.new.groovy
+//                 ^^^^^^^^^^ IdentifierType storage.type.class.groovy
+//                                ^ PunctuationBracket punctuation.definition.separator.key-value.groovy
+//                                  ^^^^^^ StringLiteral string.quoted.double.groovy
+//                                             ^ PunctuationBracket punctuation.definition.separator.key-value.groovy
+//                                               ^^ NumericLiteral constant.numeric.groovy
+//                                                  ^ PunctuationBracket punctuation.accessor.dot.groovy
+//                                                   ^^^^ IdentifierFunction support.function.other.groovy
+//                                                        ^ PunctuationBracket punctuation.section.block.begin.groovy
+    sing()
+//      ^ PunctuationBracket punctuation.definition.method-parameters.begin.groovy
+//       ^ PunctuationBracket punctuation.definition.method-parameters.end.groovy
+    playGuitar()
+//            ^ PunctuationBracket punctuation.definition.method-parameters.begin.groovy
+//             ^ PunctuationBracket punctuation.definition.method-parameters.end.groovy
+  }
+//^ PunctuationBracket punctuation.section.block.end.groovy
+

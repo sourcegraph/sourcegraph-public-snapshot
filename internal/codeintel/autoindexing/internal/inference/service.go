@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/luatypes"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -315,14 +314,10 @@ func (s *Service) resolveFileContents(
 		return nil, err
 	}
 
-	pathspecs := make([]gitdomain.Pathspec, 0, len(relevantPaths))
-	for _, p := range relevantPaths {
-		pathspecs = append(pathspecs, gitdomain.PathspecLiteral(p))
-	}
 	opts := gitserver.ArchiveOptions{
-		Treeish:   invocationContext.commit,
-		Format:    gitserver.ArchiveFormatTar,
-		Pathspecs: pathspecs,
+		Treeish: invocationContext.commit,
+		Format:  gitserver.ArchiveFormatTar,
+		Paths:   relevantPaths,
 	}
 	rc, err := invocationContext.gitService.Archive(ctx, invocationContext.repo, opts)
 	if err != nil {

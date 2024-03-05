@@ -4,6 +4,7 @@ import { of } from 'rxjs'
 import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'
@@ -87,6 +88,7 @@ export const ListOfChangesets: StoryFn = args => (
                     viewerCanAdminister={args.viewerCanAdminister}
                     batchChangeState={BatchChangeState.OPEN}
                     isExecutionEnabled={false}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             </MockedTestProvider>
         )}
@@ -108,6 +110,7 @@ export const ListOfExpandedChangesets: StoryFn = args => (
                     expandByDefault={true}
                     batchChangeState={BatchChangeState.OPEN}
                     isExecutionEnabled={false}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             </MockedTestProvider>
         )}
@@ -132,6 +135,7 @@ export const DraftWithoutChangesets: StoryFn = args => {
                         expandByDefault={true}
                         batchChangeState={batchChangeState as BatchChangeState}
                         isExecutionEnabled={args.isExecutionEnabled}
+                        telemetryRecorder={noOpTelemetryRecorder}
                     />
                 </MockedTestProvider>
             )}

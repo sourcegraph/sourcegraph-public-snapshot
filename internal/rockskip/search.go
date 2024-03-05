@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -43,10 +44,10 @@ func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ 
 				return
 			}
 
-			err = errors.Newf("Processing symbols is taking a while, try again later ([more details](https://docs.sourcegraph.com/code_navigation/explanations/rockskip)).")
+			err = errors.Newf("Processing symbols is taking a while, try again later ([more details](https://sourcegraph.com/docs/code_navigation/explanations/rockskip)).")
 			for _, status := range s.status.threadIdToThreadStatus {
 				if strings.HasPrefix(status.Name, fmt.Sprintf("indexing %s", args.Repo)) {
-					err = errors.Newf("Still processing symbols ([more details](https://docs.sourcegraph.com/code_navigation/explanations/rockskip)). Estimated completion: %s.", status.Remaining())
+					err = errors.Newf("Still processing symbols ([more details](https://sourcegraph.com/docs/code_navigation/explanations/rockskip)). Estimated completion: %s.", status.Remaining())
 				}
 			}
 		}()
@@ -429,13 +430,23 @@ func convertSearchArgsToSqlQuery(args search.SymbolsParameters) *sqlf.Query {
 	// Query
 	conjunctOrNils = append(conjunctOrNils, regexMatch(nameConditions, args.Query, args.IsCaseSensitive))
 
-	// IncludePatterns
+	// IncludePaths
 	for _, includePattern := range args.IncludePatterns {
 		conjunctOrNils = append(conjunctOrNils, regexMatch(pathConditions, includePattern, args.IsCaseSensitive))
 	}
 
-	// ExcludePattern
+	// ExcludePaths
 	conjunctOrNils = append(conjunctOrNils, negate(regexMatch(pathConditions, args.ExcludePattern, args.IsCaseSensitive)))
+
+	// Rockskip doesn't store the file's language, so we convert the language filters into path filters as a
+	// best effort approximation. We ignore the search's case-sensitivity, since it doesn't apply to these filters.
+	for _, includeLang := range args.IncludeLangs {
+		conjunctOrNils = append(conjunctOrNils, regexMatch(pathConditions, query.LangToFileRegexp(includeLang), false))
+	}
+
+	for _, excludeLang := range args.ExcludeLangs {
+		conjunctOrNils = append(conjunctOrNils, negate(regexMatch(pathConditions, query.LangToFileRegexp(excludeLang), false)))
+	}
 
 	// Drop nils
 	conjuncts := []*sqlf.Query{}

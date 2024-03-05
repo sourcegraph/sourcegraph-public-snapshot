@@ -27,6 +27,7 @@ import type { PlatformContext, PlatformContextProps } from '@sourcegraph/shared/
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
@@ -92,6 +93,7 @@ export interface BlobProps
     extends SettingsCascadeProps,
         PlatformContextProps,
         TelemetryProps,
+        TelemetryV2Props,
         HoverThresholdProps,
         ExtensionsControllerProps,
         CodeMirrorBlobProps {
@@ -337,6 +339,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             repoName: blobInfo.repoName,
             filePath: blobInfo.filePath,
             commitID: blobInfo.commitID,
+            revision: blobInfo.revision,
             languages: blobInfo.languages,
         },
         blobInfo.mode
@@ -560,7 +563,7 @@ function useCodeIntelExtension(
         commitID,
         revision,
         languages,
-    }: { repoName: string; filePath: string; commitID: string; revision?: string; languages: string[] },
+    }: { repoName: string; filePath: string; commitID: string; revision: string; languages: string[] },
     mode: string
 ): Extension {
     const navigate = useNavigate()

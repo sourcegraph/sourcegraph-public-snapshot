@@ -12,11 +12,11 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/guardrails"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -102,7 +102,7 @@ func newCompletionsHandler(
 
 		// Use the user's access token for Cody Gateway on dotcom if PLG is enabled.
 		accessToken := completionsConfig.AccessToken
-		isDotcom := envvar.SourcegraphDotComMode()
+		isDotcom := dotcom.SourcegraphDotComMode()
 		isProviderCodyGateway := completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
 		if isDotcom && isProviderCodyGateway {
 			// Note: if we have no Authorization header, that's fine too, this will return an error
@@ -226,31 +226,34 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 			return eventWriter
 		})
 
+		// Isolate writing events.
+		var mu sync.Mutex
+		writeEvent := func(name string, data any) error {
+			mu.Lock()
+			defer mu.Unlock()
+			if ev := eventWriter(); ev != nil {
+				return ev.Event(name, data)
+			}
+			return nil
+		}
+
 		// Always send a final done event so clients know the stream is shutting down.
 		firstEventObserved := false
 		defer func() {
 			if firstEventObserved {
-				if ev := eventWriter(); ev != nil {
-					_ = ev.Event("done", map[string]any{})
-				}
+				_ = writeEvent("done", map[string]any{})
 			}
 		}()
 		start := time.Now()
 		eventSink := func(e types.CompletionResponse) error {
-			if w := eventWriter(); w != nil {
-				return w.Event("completion", e)
-			}
-			return nil
+			return writeEvent("completion", e)
 		}
 		attributionErrorLog := func(err error) {
 			l := trace.Logger(ctx, logger)
-			ev := eventWriter()
-			if ev != nil {
-				if err := ev.Event("attribution-error", map[string]string{"error": err.Error()}); err != nil {
-					l.Error("error reporting attribution error", log.Error(err))
-				} else {
-					return
-				}
+			if err := writeEvent("attribution-error", map[string]string{"error": err.Error()}); err != nil {
+				l.Error("error reporting attribution error", log.Error(err))
+			} else {
+				return
 			}
 			l.Error("attribution error", log.Error(err))
 		}
@@ -297,7 +300,7 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 						return
 					}
 
-					isDotcom := envvar.SourcegraphDotComMode()
+					isDotcom := dotcom.SourcegraphDotComMode()
 					if isDotcom {
 						if subscription.ApplyProRateLimits {
 							w.Header().Set("x-is-cody-pro-user", "true")
@@ -325,20 +328,16 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 				firstEventObserved = true
 				timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, nil, requestParams.Model)
 			}
-			if ev := eventWriter(); ev != nil {
-				if err := ev.Event("error", map[string]string{"error": err.Error()}); err != nil {
-					l.Error("error reporting streaming completion error", log.Error(err))
-				}
+			if err := writeEvent("error", map[string]string{"error": err.Error()}); err != nil {
+				l.Error("error reporting streaming completion error", log.Error(err))
 			}
 			return
 		}
 		if f != nil { // if autocomplete-attribution enabled
 			if err := f.WaitDone(ctx); err != nil {
 				l := trace.Logger(ctx, logger)
-				if ev := eventWriter(); ev != nil {
-					if err := ev.Event("error", map[string]string{"error": err.Error()}); err != nil {
-						l.Error("error reporting streaming completion error", log.Error(err))
-					}
+				if err := writeEvent("error", map[string]string{"error": err.Error()}); err != nil {
+					l.Error("error reporting streaming completion error", log.Error(err))
 				}
 			}
 		}
@@ -373,7 +372,7 @@ func newNonStreamingResponseHandler(logger log.Logger, db database.DB, feature t
 						return
 					}
 
-					isDotcom := envvar.SourcegraphDotComMode()
+					isDotcom := dotcom.SourcegraphDotComMode()
 					if isDotcom {
 						if subscription.ApplyProRateLimits {
 							w.Header().Set("x-is-cody-pro-user", "true")

@@ -27,19 +27,12 @@ func (g *gitCLIBackend) Blame(ctx context.Context, startCommit api.CommitID, pat
 		return nil, err
 	}
 
-	cmd, cancel, err := g.gitCommand(ctx, buildBlameArgs(startCommit, path, opt)...)
+	r, err := g.NewCommand(ctx, WithArguments(buildBlameArgs(startCommit, path, opt)...))
 	if err != nil {
-		cancel()
 		return nil, err
 	}
 
-	r, err := g.runGitCommand(ctx, cmd)
-	if err != nil {
-		cancel()
-		return nil, err
-	}
-
-	return newBlameHunkReader(r, cancel), nil
+	return newBlameHunkReader(r), nil
 }
 
 func buildBlameArgs(startCommit api.CommitID, path string, opt git.BlameOptions) []string {
@@ -56,9 +49,8 @@ func buildBlameArgs(startCommit api.CommitID, path string, opt git.BlameOptions)
 
 // blameHunkReader enables to read hunks from an io.Reader.
 type blameHunkReader struct {
-	rc      io.ReadCloser
-	sc      *bufio.Scanner
-	onClose func()
+	rc io.ReadCloser
+	sc *bufio.Scanner
 
 	cur *gitdomain.Hunk
 
@@ -69,12 +61,11 @@ type blameHunkReader struct {
 	commits map[api.CommitID]*gitdomain.Hunk
 }
 
-func newBlameHunkReader(rc io.ReadCloser, onClose func()) git.BlameHunkReader {
+func newBlameHunkReader(rc io.ReadCloser) git.BlameHunkReader {
 	return &blameHunkReader{
 		rc:      rc,
 		sc:      bufio.NewScanner(rc),
 		commits: make(map[api.CommitID]*gitdomain.Hunk),
-		onClose: onClose,
 	}
 }
 
@@ -146,9 +137,7 @@ func (br *blameHunkReader) Read() (_ *gitdomain.Hunk, err error) {
 }
 
 func (br *blameHunkReader) Close() error {
-	err := br.rc.Close()
-	br.onClose()
-	return err
+	return br.rc.Close()
 }
 
 // parseEntry turns a `67b7b725a7ff913da520b997d71c840230351e30 10 20 1` line from

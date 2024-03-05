@@ -59,8 +59,8 @@ var _ sync.Locker = &Output{}
 type OutputOpts struct {
 	// ForceColor ignores all terminal detection and enabled coloured output.
 	ForceColor bool
-	// ForceTTY ignores all terminal detection and enables TTY output.
-	ForceTTY bool
+	// ForceTTY ignores all terminal detection if non-nil and sets TTY output.
+	ForceTTY *bool
 
 	// ForceHeight ignores all terminal detection and sets the height to this value.
 	ForceHeight int

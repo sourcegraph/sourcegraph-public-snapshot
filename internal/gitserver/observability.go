@@ -48,7 +48,6 @@ type operations struct {
 	perforceGetChangelist    *observation.Operation
 	createCommitFromPatch    *observation.Operation
 	getObject                *observation.Operation
-	resolveRevisions         *observation.Operation
 	commitGraph              *observation.Operation
 	refDescriptions          *observation.Operation
 	branchesContaining       *observation.Operation
@@ -144,7 +143,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		perforceGetChangelist:    op("PerforceGetChangelist"),
 		createCommitFromPatch:    op("CreateCommitFromPatch"),
 		getObject:                op("GetObject"),
-		resolveRevisions:         op("ResolveRevisions"),
 		commitGraph:              op("CommitGraph"),
 		refDescriptions:          op("RefDescriptions"),
 		branchesContaining:       op("BranchesContaining"),

@@ -27,6 +27,7 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import {
@@ -163,6 +164,8 @@ export const TreePage: FC<Props> = ({
                         filePath={filePath}
                         isDir={true}
                         telemetryService={props.telemetryService}
+                        // TODO (dadlerj): update to use a real telemetry recorder
+                        telemetryRecorder={noOpTelemetryRecorder}
                     />
                 ),
             }
@@ -405,6 +408,8 @@ export const TreePage: FC<Props> = ({
                 <TryCodyWidget
                     className="mb-2"
                     telemetryService={props.telemetryService}
+                    // TODO (dadlerj): update to use a real telemetry recorder
+                    telemetryRecorder={noOpTelemetryRecorder}
                     type="repo"
                     authenticatedUser={authenticatedUser}
                     context={context}

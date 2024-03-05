@@ -8,9 +8,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -467,7 +467,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "gpt-4",
-				ChatModelMaxTokens:       7500,
+				ChatModelMaxTokens:       7000,
 				FastChatModel:            "gpt-3.5-turbo",
 				FastChatModelMaxTokens:   4000,
 				CompletionModel:          "gpt-3.5-turbo-instruct",
@@ -493,11 +493,11 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "gpt4-deployment",
-				ChatModelMaxTokens:       7500,
+				ChatModelMaxTokens:       7000,
 				FastChatModel:            "gpt35-turbo-deployment",
-				FastChatModelMaxTokens:   7500,
+				FastChatModelMaxTokens:   7000,
 				CompletionModel:          "gpt35-turbo-deployment",
-				CompletionModelMaxTokens: 7500,
+				CompletionModelMaxTokens: 7000,
 				AccessToken:              "asdf",
 				Provider:                 "azure-openai",
 				Endpoint:                 "https://acmecorp.openai.azure.com",
@@ -1135,12 +1135,12 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			defaultDeploy := deploy.Type()
-			envvar.MockSourcegraphDotComMode(tc.dotcom)
+			dotcom.MockSourcegraphDotComMode(tc.dotcom)
 			if tc.deployType != "" {
 				deploy.Mock(tc.deployType)
 			}
 			t.Cleanup(func() {
-				envvar.MockSourcegraphDotComMode(false)
+				dotcom.MockSourcegraphDotComMode(false)
 				deploy.Mock(defaultDeploy)
 			})
 			conf := GetEmbeddingsConfig(tc.siteConfig)

@@ -13,12 +13,12 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
@@ -253,6 +253,15 @@ func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.P
 
 	// Return error if at least one version failed to download.
 	if errs != nil {
+		// TEMP: For dotcom, we don't want to hard fail for missing versions.
+		// Currently, our DB does not contain valid versions only, and attempting
+		// to download versions over and over again clogs out large clone queue.
+		// TODO(eseliger): Remove this branch! Also make sure to remove all the
+		// existing packages from gitserver disks.
+		if dotcom.SourcegraphDotComMode() {
+			s.logger.Error("failed to fetch some dependency versions", log.Error(errs))
+			return nil
+		}
 		return errs
 	}
 
@@ -395,7 +404,8 @@ func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory 
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_NAME="+gitName)
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_EMAIL="+gitEmail)
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_DATE="+stableGitCommitDate)
-	output, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, nil, cmd))
+	wrCmd := wrexec.Wrap(ctx, nil, cmd)
+	output, err := wrCmd.CombinedOutput()
 	if err != nil {
 		return "", errors.Wrapf(err, "command %s failed with output %s", cmd.Args, string(output))
 	}

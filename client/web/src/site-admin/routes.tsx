@@ -26,6 +26,7 @@ const AnalyticsExtensionsPage = lazyComponent(
     'AnalyticsExtensionsPage'
 )
 const AnalyticsUsersPage = lazyComponent(() => import('./analytics/AnalyticsUsersPage'), 'AnalyticsUsersPage')
+const AnalyticsCodyPage = lazyComponent(() => import('./analytics/AnalyticsCodyPage'), 'AnalyticsCodyPage')
 const AnalyticsCodeInsightsPage = lazyComponent(
     () => import('./analytics/AnalyticsCodeInsightsPage'),
     'AnalyticsCodeInsightsPage'
@@ -216,6 +217,11 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/users',
         render: () => <AnalyticsUsersPage />,
+    },
+    {
+        path: '/analytics/cody',
+        render: () => <AnalyticsCodyPage />,
+        condition: ({ license }) => license.isCodyEnabled,
     },
     {
         path: '/analytics/code-insights',
@@ -421,13 +427,14 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
                 headerParentBreadcrumb={{ to: '/site-admin/batch-changes', text: 'Batch Changes settings' }}
                 headerAnnotation={<FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                 telemetryService={props.telemetryService}
+                telemetryRecorder={props.platformContext.telemetryRecorder}
             />
         ),
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
     {
         path: '/batch-changes/specs',
-        render: () => <BatchSpecsPage />,
+        render: props => <BatchSpecsPage telemetryRecorder={props.platformContext.telemetryRecorder} />,
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
             batchChangesEnabled && batchChangesExecutionEnabled,
     },
@@ -475,7 +482,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     // Executor routes
     {
         path: '/executors/*',
-        render: () => <ExecutorsSiteAdminArea />,
+        render: props => <ExecutorsSiteAdminArea telemetryRecorder={props.platformContext.telemetryRecorder} />,
         condition: () => Boolean(window.context?.executorsEnabled),
     },
 

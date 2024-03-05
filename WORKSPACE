@@ -1,6 +1,15 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
+    name = "platforms",
+    sha256 = "8150406605389ececb6da07cbcb509d5637a3ab9a24bc69b1101531367d89d74",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
+        "https://github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
+    ],
+)
+
+http_archive(
     name = "bazel_skylib",
     sha256 = "66ffd9315665bfaafc96b52278f57c7e2dd09f5ede279ea6d39b2be471e7e3aa",
     urls = [
@@ -106,8 +115,8 @@ http_archive(
 
 http_archive(
     name = "rules_rust",
-    sha256 = "75177226380b771be36d7efc538da842c433f14cd6c36d7660976efb53defe86",
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.34.1/rules_rust-v0.34.1.tar.gz"],
+    integrity = "sha256-ZQGWDD5NoySV0eEAfe0HaaU0yxlcMN6jaqVPnYo/A2E=",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.38.0/rules_rust-v0.38.0.tar.gz"],
 )
 
 # Container rules
@@ -149,6 +158,20 @@ http_archive(
     sha256 = "045f0186edb25706dfe77d9c4916eec630a2b2736f9abb59e37eaac122d4b771",
     strip_prefix = "aspect-cli-5.8.20",
     url = "https://github.com/aspect-build/aspect-cli/archive/5.8.20.tar.gz",
+)
+
+http_archive(
+    name = "rules_multirun",
+    sha256 = "9cd384e42b2da00104f0e18f25e66285aa21f64b573c667638a7a213206885ab",
+    strip_prefix = "rules_multirun-0.6.1",
+    url = "https://github.com/keith/rules_multirun/archive/refs/tags/0.6.1.tar.gz",
+)
+
+http_archive(
+    name = "with_cfg.bzl",
+    sha256 = "c6b80cad298afa8a46bc01cd96df4f4d8660651101f6bf5af58f2724e349017d",
+    strip_prefix = "with_cfg.bzl-0.2.1",
+    url = "https://github.com/fmeum/with_cfg.bzl/releases/download/v0.2.1/with_cfg.bzl-v0.2.1.tar.gz",
 )
 
 # hermetic_cc_toolchain setup ================================
@@ -468,10 +491,15 @@ exports_files(["bundle"])
 filegroup(
     name = "srcs",
     srcs = glob(["**"]),
-    visibility = ["//visibility:public"]
 )
     """,
     integrity = "sha256-Spx8LyM7k+dsGOlZ4TdAq+CNk5EzvYB/oxnY4zGpqPg=",
     strip_prefix = "sourcegraph-extensions-bundles-5.0.1",
     url = "https://github.com/sourcegraph/sourcegraph-extensions-bundles/archive/v5.0.1.zip",
+)
+
+load("//dev:schema_migrations.bzl", "schema_migrations")
+
+schema_migrations(
+    name = "schemas_migrations",
 )
