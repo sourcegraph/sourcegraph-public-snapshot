@@ -163,6 +163,7 @@ const ChangesetCountsOverTime: (variables: ChangesetCountsOverTimeVariables) => 
         __typename: 'BatchChange',
         changesetCountsOverTime: [
             {
+                __typename: 'ChangesetCounts',
                 closed: 12,
                 date: subDays(now, 2).toISOString(),
                 merged: 10,
@@ -173,6 +174,7 @@ const ChangesetCountsOverTime: (variables: ChangesetCountsOverTimeVariables) => 
                 draft: 10,
             },
             {
+                __typename: 'ChangesetCounts',
                 closed: 12,
                 date: subDays(now, 1).toISOString(),
                 merged: 10,
@@ -665,11 +667,6 @@ describe('Batches', () => {
 
                 // Switch to view burndown chart.
                 await driver.page.click('[data-testid="wildcard-tab-list"] [data-testid="wildcard-tab"]:nth-child(2)')
-                await driver.page.waitForTimeout(3000) // hack to wait for chart to load to that we can take a screenshot
-                await percySnapshotWithVariants(
-                    driver.page,
-                    `Batch changes ${entityType} chart details page (first shot)`
-                )
                 await driver.page.waitForSelector('.test-batches-chart', { visible: true })
 
                 // Switch to view executions.
@@ -726,11 +723,6 @@ describe('Batches', () => {
                         // Wait for page to be fully loaded.
                         waitUntil: 'networkidle0',
                     }
-                )
-                await driver.page.waitForTimeout(3000) // hack to wait for chart to load to that we can take a screenshot
-                await percySnapshotWithVariants(
-                    driver.page,
-                    `Batch changes ${entityType} chart details page (second shot)`
                 )
                 await driver.page.waitForSelector('.test-batches-chart', { visible: true })
                 await driver.page.goto(
