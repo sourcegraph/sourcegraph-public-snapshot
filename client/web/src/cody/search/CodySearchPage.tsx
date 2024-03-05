@@ -29,6 +29,12 @@ interface CodeSearchPageProps extends TelemetryV2Props {
     telemetryService: TelemetryService
 }
 
+// Mapping for telemetry
+const failureReasons = {
+    untranslateable: 0,
+    unreachable: 1,
+}
+
 export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
     authenticatedUser,
     telemetryRecorder,
@@ -54,12 +60,6 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
     }
 
     const [loading, setLoading] = useState(false)
-
-    // Mapping for telemetry
-    const failureReasons = {
-        untranslateable: 0,
-        unreachable: 1,
-    }
 
     const onSubmit = useCallback(() => {
         const sanitizedInput = input.trim()

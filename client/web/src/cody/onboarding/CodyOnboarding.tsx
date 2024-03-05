@@ -348,7 +348,7 @@ function EditorStep({
             { tier: pro ? 'pro' : 'free' }
         )
         telemetryRecorder.recordEvent('cody.onboarding.chooseEditor', 'view', { metadata: { tier: pro ? 1 : 0 } })
-    }, [pro])
+    }, [pro, telemetryRecorder])
 
     const [editor, setEditor] = useState<null | IEditor>(null)
 

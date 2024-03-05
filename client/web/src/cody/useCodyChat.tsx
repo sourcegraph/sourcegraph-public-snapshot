@@ -204,13 +204,13 @@ export const useCodyChat = ({
             }
             eventLogger.log(v1EventLabel, { transcriptId: transcript.id, ...eventProperties })
 
-            var numericID = new Date(transcript.id).getTime()
+            let numericID = new Date(transcript.id).getTime()
             if (isNaN(numericID)) {
                 numericID = 0
             }
             telemetryRecorder.recordEvent(feature, action, { metadata: { transcriptId: numericID / 1000 } })
         },
-        [transcript]
+        [transcript, telemetryRecorder]
     )
 
     const loadTranscriptFromHistory = useCallback(
