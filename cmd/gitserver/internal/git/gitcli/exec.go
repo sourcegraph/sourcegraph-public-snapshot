@@ -170,10 +170,6 @@ func isAllowedDiffPathArg(arg string, repoDir common.GitDir) bool {
 // TODO: This should be unexported and solely be a concern of the CLI package,
 // as other backends should do their own validation passes.
 func IsAllowedGitCmd(logger log.Logger, args []string, dir common.GitDir) bool {
-	if 1 == 1 {
-		return true
-	}
-
 	if len(args) == 0 || len(gitCmdAllowlist) == 0 {
 		return false
 	}

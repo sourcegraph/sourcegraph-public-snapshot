@@ -348,10 +348,6 @@ type Client interface {
 	// ListRefs returns a list of all refs in the repository.
 	ListRefs(ctx context.Context, repo api.RepoName, opt ListRefsOpts) ([]gitdomain.Ref, error)
 
-	// // TagsContainingCommit returns all the tags that contain the given commit in their
-	// // history.
-	// TagsContainingCommit(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]*gitdomain.Ref, error)
-
 	// MergeBase returns the merge base commit sha for the specified revspecs.
 	MergeBase(ctx context.Context, repo api.RepoName, base, head string) (api.CommitID, error)
 

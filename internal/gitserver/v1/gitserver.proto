@@ -4,7 +4,6 @@ package gitserver.v1;
 
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
-import "google/protobuf/field_mask.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 
@@ -176,11 +175,6 @@ message ListRefsRequest {
   bool tags_only = 4;
   // If set, only return refs that point at the given commit sha.
   optional string points_at_commit = 5;
-  // If set, the response will contain BehindAhead information for the ref against
-  // the given commit.
-  optional string behind_ahead = 6;
-  // mask can be used to hide away certain fields.
-  optional google.protobuf.FieldMask mask = 7;
 }
 
 message ListRefsResponse {
