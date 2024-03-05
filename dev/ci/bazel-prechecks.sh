@@ -3,9 +3,7 @@
 set -eu
 EXIT_CODE=0
 
-aspectRC="/tmp/aspect-generated.bazelrc"
-rosetta bazelrc > "$aspectRC"
-bazelrc=(--bazelrc="$aspectRC")
+bazelrc=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
 
 #shellcheck disable=SC2317
 # generates and uploads all bazel diffs checked by this script
