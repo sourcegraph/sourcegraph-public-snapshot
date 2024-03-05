@@ -7,7 +7,7 @@ import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
-import { isSvelteKitSupportedURL, reload } from './util'
+import { reload, isSupportedRoute } from './util'
 
 function useIsSvelteKitToggleEnabled(): boolean {
     const [isSvelteKitToggleEnabled] = useFeatureFlag('enable-sveltekit-toggle')
@@ -19,7 +19,7 @@ export const SvelteKitNavItem: FC = () => {
     const location = useLocation()
     const isEnabled = useIsSvelteKitToggleEnabled()
 
-    if (!isEnabled || !isSvelteKitSupportedURL(location.pathname)) {
+    if (!isEnabled || !isSupportedRoute(location.pathname)) {
         return null
     }
 
