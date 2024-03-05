@@ -4,14 +4,14 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/sourcegraph/conc/pool"
 	sgrun "github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
@@ -89,6 +89,10 @@ sg start -describe single-program
 			&cli.BoolFlag{
 				Name:  "sgtail",
 				Usage: "Connects to running sgtail instance",
+			},
+			&cli.BoolFlag{
+				Name:  "profile",
+				Usage: "Starts up pprof on port 6060",
 			},
 
 			&cli.StringSliceFlag{
@@ -177,8 +181,6 @@ func constructStartCmdLongHelp() string {
 
 	return out.String()
 }
-
-var sgOnce sync.Once
 
 func startExec(ctx *cli.Context) error {
 	config, err := getConfig()
@@ -282,6 +284,27 @@ func startExec(ctx *cli.Context) error {
 			update.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done checking dev-private changes"))
 		}
 	}
+	if ctx.Bool("profile") {
+		// start a pprof server
+		go func() {
+			err := http.ListenAndServe("127.0.0.1:6060", nil)
+			if err != nil {
+				std.Out.WriteAlertf("Failed to start pprof server: %s", err)
+			}
+		}()
+		std.Out.WriteAlertf(`pprof profiling started at 6060. Try some of the following to profile:
+# Start a web UI on port 6061 to view the current heap profile
+go tool pprof -http 127.0.0.1:6061 http://127.0.0.1:6060/debug/pprof/heap
+
+# Start a web UI on port 6061 to view a CPU profile of the next 30 seconds
+go tool pprof -http 127.0.0.1:6061 http://127.0.0.1:6060/debug/pprof/profile?seconds=30
+
+Find more here: https://pkg.go.dev/net/http/pprof
+or run
+
+go tool pprof -help
+`)
+	}
 
 	return startCommandSet(ctx.Context, set, config)
 }
@@ -305,52 +328,21 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		return err
 	}
 
-	exceptList := exceptServices.Value()
-	exceptSet := make(map[string]interface{}, len(exceptList))
-	for _, svc := range exceptList {
-		exceptSet[svc] = struct{}{}
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		return err
 	}
 
-	onlyList := onlyServices.Value()
-	onlySet := make(map[string]interface{}, len(onlyList))
-	for _, svc := range onlyList {
-		onlySet[svc] = struct{}{}
+	cmds, err := getCommands(set.Commands, set, conf.Commands)
+	if err != nil {
+		return err
 	}
 
-	cmds := make([]run.Command, 0, len(set.Commands))
-	for _, name := range set.Commands {
-		cmd, ok := conf.Commands[name]
-		if !ok {
-			return errors.Errorf("command %q not found in commandset %q", name, set.Name)
-		}
-
-		if _, excluded := exceptSet[name]; excluded {
-			std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's in --except.", cmd.Name))
-			continue
-		}
-
-		// No --only specified, just add command
-		if len(onlySet) == 0 {
-			cmds = append(cmds, cmd)
-		} else {
-			if _, inSet := onlySet[name]; inSet {
-				cmds = append(cmds, cmd)
-			} else {
-				std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's not included in --only.", cmd.Name))
-			}
-		}
-
+	bcmds, err := getCommands(set.BazelCommands, set, conf.BazelCommands)
+	if err != nil {
+		return err
 	}
 
-	bcmds := make([]run.BazelCommand, 0, len(set.BazelCommands))
-	for _, name := range set.BazelCommands {
-		bcmd, ok := conf.BazelCommands[name]
-		if !ok {
-			return errors.Errorf("command %q not found in commandset %q", name, set.Name)
-		}
-
-		bcmds = append(bcmds, bcmd)
-	}
 	if len(cmds) == 0 && len(bcmds) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "WARNING: no commands to run"))
 		return nil
@@ -366,20 +358,77 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		env[k] = v
 	}
 
-	// First we build everything once, to ensure all binaries are present.
-	if err := run.BazelBuild(ctx, bcmds...); err != nil {
+	installers := make([]run.Installer, 0, len(cmds)+1)
+	for _, cmd := range cmds {
+		installers = append(installers, cmd)
+	}
+
+	var ibazel *run.IBazel
+	if len(bcmds) > 0 {
+		ibazel, err = run.NewIBazel(bcmds, repoRoot)
+		if err != nil {
+			return err
+		}
+		defer ibazel.Close()
+		installers = append(installers, ibazel)
+	}
+	if err := run.Install(ctx, env, verbose, installers...); err != nil {
 		return err
 	}
 
-	p := pool.New().WithContext(ctx).WithCancelOnError()
-	p.Go(func(ctx context.Context) error {
-		return run.Commands(ctx, env, verbose, cmds...)
-	})
-	p.Go(func(ctx context.Context) error {
-		return run.BazelCommands(ctx, env, verbose, bcmds...)
-	})
+	if ibazel != nil {
+		ibazel.StartOutput()
+	}
 
-	return p.Wait()
+	configCmds := make([]run.SGConfigCommand, 0, len(bcmds)+len(cmds))
+	for _, cmd := range bcmds {
+		configCmds = append(configCmds, cmd)
+	}
+
+	for _, cmd := range cmds {
+		configCmds = append(configCmds, cmd)
+	}
+	return run.Commands(ctx, env, verbose, configCmds...)
+}
+
+func getCommands[T run.SGConfigCommand](commands []string, set *sgconf.Commandset, conf map[string]T) ([]T, error) {
+	exceptList := exceptServices.Value()
+	exceptSet := make(map[string]interface{}, len(exceptList))
+	for _, svc := range exceptList {
+		exceptSet[svc] = struct{}{}
+	}
+
+	onlyList := onlyServices.Value()
+	onlySet := make(map[string]interface{}, len(onlyList))
+	for _, svc := range onlyList {
+		onlySet[svc] = struct{}{}
+	}
+
+	cmds := make([]T, 0, len(commands))
+	for _, name := range commands {
+		cmd, ok := conf[name]
+		if !ok {
+			return nil, errors.Errorf("command %q not found in commandset %q", name, set.Name)
+		}
+
+		if _, excluded := exceptSet[name]; excluded {
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's in --except.", cmd.GetName()))
+			continue
+		}
+
+		// No --only specified, just add command
+		if len(onlySet) == 0 {
+			cmds = append(cmds, cmd)
+		} else {
+			if _, inSet := onlySet[name]; inSet {
+				cmds = append(cmds, cmd)
+			} else {
+				std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's not included in --only.", cmd.GetName()))
+			}
+		}
+
+	}
+	return cmds, nil
 }
 
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.
