@@ -23,6 +23,15 @@ import (
 
 const anthropicMessagesAPIURL = "https://api.anthropic.com/v1/messages"
 
+// The unified API endpoint is a new general-purpose AI inference API inspired
+// by the OpenAI API. The idea is is that regardless of which model you want to
+// use, there's one _unified_ API to use for all Sourcegraph products.
+//
+// Sharing the same API interface between the SG instance and Cody Gateway also
+// allows clients to implement RFC888 and connect to Cody Gateway directly.
+//
+// Right now, unified API is only available for the Claude 3 model family and
+// only implemented on the Cody Gateway side for PLG users connecting directly.
 func NewUnifiedHandler(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
@@ -67,8 +76,8 @@ type unifiedRequest struct {
 	Stream        bool             `json:"stream,omitempty"`
 	StopSequences []string         `json:"stop_sequences,omitempty"`
 
-	// TODO: These should not be accepted from the client an instead are only
-	// used to talk to the upstream LLM APIs.
+	// TODO: These are not accepted from the client an instead are only used to
+	// talk to the upstream LLM APIs.
 	Metadata *unifiedRequestMetadata `json:"metadata,omitempty"`
 	System   string                  `json:"system,omitempty"`
 }
@@ -129,7 +138,11 @@ func (a *UnifiedHandlerMethods) transformBody(body *unifiedRequest, identifier s
 		UserID: identifier,
 	}
 
+	// Remove the `anthropic/` prefix from the model string
+	body.Model = strings.TrimPrefix(body.Model, "anthropic/")
+
 	// Convert the eventual first message from `system` to a top-level system prompt
+	body.System = "" // prevent the upstream API from setting this
 	if len(body.Messages) > 0 && body.Messages[0].Role == "system" {
 		body.System = body.Messages[0].Content[0].Text
 		body.Messages = body.Messages[1:]
