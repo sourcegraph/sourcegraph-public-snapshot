@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { format, addMinutes, parseISO } from 'date-fns'
-import formatDistance from 'date-fns/formatDistance'
-import formatDistanceStrict from 'date-fns/formatDistanceStrict'
+import { format, addMinutes, parseISO, formatDistance, formatDistanceStrict } from 'date-fns'
 
 import { Tooltip } from '@sourcegraph/wildcard'
 

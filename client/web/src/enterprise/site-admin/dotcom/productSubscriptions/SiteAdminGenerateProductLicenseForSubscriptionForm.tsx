@@ -2,8 +2,7 @@ import React, { useState, useCallback } from 'react'
 
 import { mdiChatQuestionOutline } from '@mdi/js'
 import classNames from 'classnames'
-import addDays from 'date-fns/addDays'
-import endOfDay from 'date-fns/endOfDay'
+import { addDays, endOfDay } from 'date-fns'
 import { noop } from 'lodash'
 
 import { useMutation } from '@sourcegraph/http-client'
