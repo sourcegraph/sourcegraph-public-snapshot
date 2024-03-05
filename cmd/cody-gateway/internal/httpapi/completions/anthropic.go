@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
@@ -50,14 +49,6 @@ func NewAnthropicHandler(
 	if err != nil {
 		return nil, err
 	}
-	var promptRegexps []*regexp.Regexp
-	var blockedPhrases []string
-	for _, pattern := range config.AllowedPromptPatterns {
-		promptRegexps = append(promptRegexps, regexp.MustCompile(pattern))
-	}
-	for i, pattern := range config.BlockedPromptPatterns {
-		config.BlockedPromptPatterns[i] = strings.ToLower(pattern)
-	}
 
 	return makeUpstreamHandler[anthropicRequest](
 		baseLogger,
@@ -68,7 +59,7 @@ func NewAnthropicHandler(
 		string(conftypes.CompletionsProviderNameAnthropic),
 		func(_ codygateway.Feature) string { return anthropicAPIURL },
 		config.AllowedModels,
-		&AnthropicHandlerMethods{config: config, anthropicTokenizer: anthropicTokenizer, promptRegexps: promptRegexps, promptRecorder: promptRecorder, blockedPhrases: blockedPhrases},
+		&AnthropicHandlerMethods{config: config, anthropicTokenizer: anthropicTokenizer, promptRecorder: promptRecorder},
 
 		// Anthropic primarily uses concurrent requests to rate-limit spikes
 		// in requests, so set a default retry-after that is likely to be
@@ -140,10 +131,8 @@ type anthropicResponse struct {
 
 type AnthropicHandlerMethods struct {
 	anthropicTokenizer *tokenizer.Tokenizer
-	promptRegexps      []*regexp.Regexp
 	promptRecorder     PromptRecorder
 	config             config.AnthropicConfig
-	blockedPhrases     []string
 }
 
 func (a *AnthropicHandlerMethods) validateRequest(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicRequest) (int, *flaggingResult, error) {
@@ -151,7 +140,7 @@ func (a *AnthropicHandlerMethods) validateRequest(ctx context.Context, logger lo
 		return http.StatusBadRequest, nil, errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", a.config.MaxTokensToSample, ar.MaxTokensToSample)
 	}
 
-	if result, err := isFlaggedAnthropicRequest(a.anthropicTokenizer, ar, a.promptRegexps, a.config); err != nil {
+	if result, err := isFlaggedAnthropicRequest(a.anthropicTokenizer, ar, a.config); err != nil {
 		logger.Error("error checking anthropic request - treating as non-flagged",
 			log.Error(err))
 	} else if result.IsFlagged() {
@@ -253,7 +242,7 @@ func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 	return promptUsage, completionUsage
 }
 
-func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, promptRegexps []*regexp.Regexp, cfg config.AnthropicConfig) (*flaggingResult, error) {
+func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, cfg config.AnthropicConfig) (*flaggingResult, error) {
 	// Only usage of chat models us currently flagged, so if the request
 	// is using another model, we skip other checks.
 	if ar.Model != "claude-2" && ar.Model != "claude-2.0" && ar.Model != "claude-2.1" && ar.Model != "claude-v1" {
@@ -261,7 +250,9 @@ func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, pro
 	}
 	var reasons []string
 
-	if len(promptRegexps) > 0 && !matchesAny(ar.Prompt, promptRegexps) {
+	prompt := strings.ToLower(ar.Prompt)
+
+	if len(cfg.AllowedPromptPatterns) > 0 && !containsAny(prompt, cfg.AllowedPromptPatterns) {
 		reasons = append(reasons, "unknown_prompt")
 	}
 
@@ -281,7 +272,7 @@ func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, pro
 
 	if len(reasons) > 0 { // request is flagged
 		blocked := false
-		if tokenCount > cfg.PromptTokenBlockingLimit || ar.MaxTokensToSample > int32(cfg.ResponseTokenBlockingLimit) || containsAny(strings.ToLower(ar.Prompt), cfg.BlockedPromptPatterns) {
+		if tokenCount > cfg.PromptTokenBlockingLimit || ar.MaxTokensToSample > int32(cfg.ResponseTokenBlockingLimit) || containsAny(prompt, cfg.BlockedPromptPatterns) {
 			blocked = true
 		}
 
@@ -302,17 +293,9 @@ func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, pro
 }
 
 func containsAny(prompt string, patterns []string) bool {
+	prompt = strings.ToLower(prompt)
 	for _, pattern := range patterns {
 		if strings.Contains(prompt, pattern) {
-			return true
-		}
-	}
-	return false
-}
-
-func matchesAny(prompt string, promptRegexps []*regexp.Regexp) bool {
-	for _, promptRegexp := range promptRegexps {
-		if promptRegexp.MatchString(prompt) {
 			return true
 		}
 	}

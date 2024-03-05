@@ -107,8 +107,8 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	rateLimitNotifier notify.RateLimitNotifier,
 	httpClient httpcli.Doer,
 
-	// upstreamName is the name of the upstream provider. It MUST match the
-	// provider names defined clientside, i.e. "anthropic" or "openai".
+// upstreamName is the name of the upstream provider. It MUST match the
+// provider names defined clientside, i.e. "anthropic" or "openai".
 	upstreamName string,
 
 	upstreamAPIURL func(feature codygateway.Feature) string,
@@ -116,9 +116,9 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 
 	methods upstreamHandlerMethods[ReqT],
 
-	// defaultRetryAfterSeconds sets the retry-after policy on upstream rate
-	// limit events in case a retry-after is not provided by the upstream
-	// response.
+// defaultRetryAfterSeconds sets the retry-after policy on upstream rate
+// limit events in case a retry-after is not provided by the upstream
+// response.
 	defaultRetryAfterSeconds int,
 	autoFlushStreamingResponses bool,
 	patternsToDetect []string,
@@ -137,9 +137,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	// turn off sanitization for profanity detection
 	d := goaway.NewProfanityDetector().WithSanitizeAccents(false).WithSanitizeLeetSpeak(false).WithSanitizeSpaces(false).WithSanitizeSpecialCharacters(false)
 
-	for i := range patternsToDetect {
-		patternsToDetect[i] = strings.ToLower(patternsToDetect[i])
-	}
 	if len(patternsToDetect) > 0 {
 		baseLogger.Debug("initializing pattern detector", log.Strings("patterns", patternsToDetect))
 	}
