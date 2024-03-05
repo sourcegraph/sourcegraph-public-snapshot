@@ -152,7 +152,6 @@
     .root {
         flex: 1;
         box-sizing: border-box;
-        background-color: var(--color-bg-1);
         min-width: 0;
         padding-left: 1px;
 
