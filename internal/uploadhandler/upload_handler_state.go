@@ -10,6 +10,7 @@ import (
 
 type uploadState[T any] struct {
 	uploadID         int
+	suppliedUploadID bool
 	numParts         int
 	uploadedParts    []int
 	multipart        bool
@@ -25,13 +26,14 @@ type uploadState[T any] struct {
 // backfilled/denormalized from the database, depending on the type of request.
 func (h *UploadHandler[T]) constructUploadState(ctx context.Context, r *http.Request) (uploadState[T], int, error) {
 	uploadState := uploadState[T]{
-		uploadID:      getQueryInt(r, "uploadId"),
-		suppliedIndex: hasQuery(r, "index"),
-		index:         getQueryInt(r, "index"),
-		done:          hasQuery(r, "done"),
+		suppliedUploadID: hasQuery(r, "uploadId"),
+		uploadID:         getQueryInt(r, "uploadId"),
+		suppliedIndex:    hasQuery(r, "index"),
+		index:            getQueryInt(r, "index"),
+		done:             hasQuery(r, "done"),
 	}
 
-	if uploadState.uploadID == 0 {
+	if !uploadState.suppliedUploadID {
 		return h.hydrateUploadStateFromRequest(ctx, r, uploadState)
 	}
 

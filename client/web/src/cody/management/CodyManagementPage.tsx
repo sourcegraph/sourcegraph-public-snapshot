@@ -25,7 +25,6 @@ import {
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { CodySubscriptionStatus, CodySubscriptionPlan } from '../../graphql-operations'
 import type {
     ChangeCodyPlanResult,
     ChangeCodyPlanVariables,
@@ -34,6 +33,7 @@ import type {
     UserCodyUsageResult,
     UserCodyUsageVariables,
 } from '../../graphql-operations'
+import { CodySubscriptionStatus, CodySubscriptionPlan } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import {
@@ -93,9 +93,12 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const subscription = data?.currentUser?.codySubscription
 
+    const codyPaymentsUrl = useCodyPaymentsUrl()
+    const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
+
     useEffect(() => {
         if (!arePaymentsEnabled && enrollPro && data?.currentUser && subscription?.plan !== CodySubscriptionPlan.PRO) {
-            changeCodyPlan({ variables: { pro: true, id: data?.currentUser?.id } })
+            void changeCodyPlan({ variables: { pro: true, id: data?.currentUser?.id } })
         }
     }, [arePaymentsEnabled, data?.currentUser, changeCodyPlan, enrollPro, subscription])
 
@@ -179,7 +182,11 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             <H2>My subscription</H2>
                             <Text className="text-muted mb-0">
                                 {userIsOnProTier ? (
-                                    'You are on the Pro tier.'
+                                    hasTrialEnded && hasNotAddedCreditCard ? (
+                                        'Your Cody Pro trial has ended.'
+                                    ) : (
+                                        'You are on the Pro tier.'
+                                    )
                                 ) : (
                                     <span>
                                         You are on the Free tier.{' '}
@@ -190,7 +197,16 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         </div>
                         {userIsOnProTier && (
                             <div>
-                                <ButtonLink to="/cody/subscription" variant="primary" size="sm">
+                                <ButtonLink
+                                    variant="primary"
+                                    size="sm"
+                                    href={manageSubscriptionRedirectURL}
+                                    onClick={event => {
+                                        event.preventDefault()
+                                        eventLogger.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
+                                        window.location.href = manageSubscriptionRedirectURL
+                                    }}
+                                >
                                     <Icon svgPath={mdiCreditCardOutline} className="mr-1" aria-hidden={true} />
                                     Manage subscription
                                 </ButtonLink>
@@ -199,7 +215,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </div>
                     <div className={classNames('d-flex align-items-center mt-3', styles.responsiveContainer)}>
                         <div className="d-flex flex-column align-items-center flex-grow-1 p-3">
-                            {userIsOnProTier ? (
+                            {userIsOnProTier && !(hasTrialEnded && hasNotAddedCreditCard) ? (
                                 <ProTierIcon />
                             ) : (
                                 <Text className={classNames(styles.planName, 'mb-0')}>Free</Text>
@@ -345,14 +361,14 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </div>
                     {editorGroups.map((group, index) => (
                         <div
-                            key={index}
+                            key={group.map(editor => editor.name).join('-')}
                             className={classNames('d-flex mt-3', styles.responsiveContainer, {
                                 'border-bottom pb-3': index < group.length - 1,
                             })}
                         >
                             {group.map((editor, index) => (
                                 <div
-                                    key={index}
+                                    key={editor.name}
                                     className={classNames('d-flex flex-column flex-1 pt-3 px-3', {
                                         'border-left': index !== 0,
                                     })}
@@ -417,7 +433,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                         selectedEditorStep !== null &&
                                         editor.instructions && (
                                             <Modal
-                                                key={index + '-modal'}
+                                                key={editor.name + '-modal'}
                                                 isOpen={true}
                                                 aria-label={`${editor.name} Info`}
                                                 className={styles.modal}
@@ -436,6 +452,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             ))}
                             {group.length < 4
                                 ? [...new Array(4 - group.length)].map((_, index) => (
+                                      // eslint-disable-next-line react/no-array-index-key
                                       <div key={index} className="flex-1 p-3" />
                                   ))
                                 : null}
@@ -491,7 +508,7 @@ const DoNotLoseCodyProBanner: React.FunctionComponent<{
                 <div className="d-flex align-items-center text-dark">
                     <div className={styles.creditCardEmoji}>💳</div>
                     <div className="ml-3">
-                        <H3>Don't lose Cody Pro</H3>
+                        <H3>Keep using Cody Pro</H3>
                         <Text className="mb-0">
                             {hasTrialEnded ? (
                                 <span>Enter your credit card details now and keep your Pro subscription.</span>

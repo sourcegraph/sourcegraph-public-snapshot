@@ -6,6 +6,7 @@ import classNames from 'classnames'
 import { animated, useSpring } from 'react-spring'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, Button, H4, Icon, Tooltip, useAccordion, useStopwatch, ErrorAlert } from '@sourcegraph/wildcard'
 
 import type { Connection } from '../../../../../components/FilteredConnection'
@@ -53,12 +54,13 @@ const WAITING_MESSAGE_INTERVAL = 10
  * about Batch Changes performance. */
 const WORKSPACE_WARNING_MIN_TOTAL_COUNT = 2000
 
-interface WorkspacesPreviewProps {
+interface WorkspacesPreviewProps extends TelemetryV2Props {
     isReadOnly?: boolean
 }
 
 export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<WorkspacesPreviewProps>> = ({
     isReadOnly = false,
+    telemetryRecorder,
 }) => {
     const { batchSpec, editor, workspacesPreview } = useBatchSpecContext()
 
@@ -68,6 +70,7 @@ export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<
             editor={editor}
             workspacesPreview={workspacesPreview}
             isReadOnly={isReadOnly}
+            telemetryRecorder={telemetryRecorder}
         />
     )
 }
@@ -76,7 +79,13 @@ type MemoizedWorkspacesPreviewProps = WorkspacesPreviewProps &
     Pick<BatchSpecContextState, 'batchSpec' | 'editor' | 'workspacesPreview'>
 
 const MemoizedWorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<MemoizedWorkspacesPreviewProps>> =
-    React.memo(function MemoizedWorkspacesPreview({ isReadOnly, batchSpec, editor, workspacesPreview }) {
+    React.memo(function MemoizedWorkspacesPreview({
+        isReadOnly,
+        batchSpec,
+        editor,
+        workspacesPreview,
+        telemetryRecorder,
+    }) {
         const { debouncedCode, excludeRepo, isServerStale } = editor
         const {
             resolutionState,
@@ -158,6 +167,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<React.PropsWithChildren
                                 ? cancel
                                 : () => {
                                       eventLogger.log('batch_change_editor:preview_workspaces:clicked')
+                                      telemetryRecorder.recordEvent('batchChange.editor.previewWorkspaces', 'click')
                                       return preview(debouncedCode)
                                   }
                         }
@@ -171,7 +181,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<React.PropsWithChildren
                     </Button>
                 </Tooltip>
             ),
-            [isWorkspacesPreviewInProgress, isPreviewDisabled, cancel, preview, debouncedCode, error]
+            [isWorkspacesPreviewInProgress, isPreviewDisabled, cancel, preview, debouncedCode, error, telemetryRecorder]
         )
 
         const [exampleReference, exampleOpen, setExampleOpen, exampleStyle] = useAccordion()

@@ -6,10 +6,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/attribution"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 )
 
 type fakeAttributionService struct {
@@ -116,8 +116,8 @@ func TestSuccessfulAttribution(t *testing.T) {
 	})
 
 	t.Run("search bounds are zero on dotcom", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(true)
-		t.Cleanup(func() { envvar.MockSourcegraphDotComMode(false) })
+		dotcom.MockSourcegraphDotComMode(true)
+		t.Cleanup(func() { dotcom.MockSourcegraphDotComMode(false) })
 		// even if there would have been search results for short snippet.
 		attributionService.searchResult = []string{"repo1", "repo2"}
 		graphqlbackend.RunTest(t, &graphqlbackend.Test{

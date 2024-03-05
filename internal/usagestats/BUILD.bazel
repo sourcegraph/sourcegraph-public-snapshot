@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "aggregated.go",
         "aggregated_codeintel.go",
+        "aggregated_cody.go",
         "aggregated_repo_metadata.go",
         "aggregated_search.go",
         "all_time_stats.go",
@@ -36,11 +37,11 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/usagestats",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/database/basestore",
+        "//internal/dotcom",
         "//internal/env",
         "//internal/eventlogger",
         "//internal/featureflag",

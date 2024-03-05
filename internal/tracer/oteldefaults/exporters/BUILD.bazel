@@ -10,6 +10,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/tracer/oteldefaults/exporters",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/grpc/internalerrs",
         "//internal/otlpenv",
         "//lib/errors",
         "@com_github_grafana_regexp//:regexp",
@@ -23,5 +24,6 @@ go_library(
         "@io_opentelemetry_go_otel_exporters_prometheus//:prometheus",
         "@io_opentelemetry_go_otel_sdk//trace",
         "@io_opentelemetry_go_otel_sdk_metric//:metric",
+        "@org_golang_google_grpc//:go_default_library",
     ],
 )

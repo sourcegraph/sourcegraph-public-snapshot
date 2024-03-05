@@ -1,5 +1,7 @@
 import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import { WebStory } from '../../../../components/WebStory'
 import { EXECUTING_BATCH_SPEC, mockBatchChange } from '../batch-spec.mock'
 import { BatchSpecContextProvider } from '../BatchSpecContext'
@@ -19,7 +21,7 @@ export const Preview: StoryFn = () => (
     <WebStory>
         {() => (
             <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={EXECUTING_BATCH_SPEC}>
-                <ActionsMenu defaultMode={ActionsMenuMode.Preview} />
+                <ActionsMenu defaultMode={ActionsMenuMode.Preview} telemetryRecorder={noOpTelemetryRecorder} />
             </BatchSpecContextProvider>
         )}
     </WebStory>
@@ -29,7 +31,7 @@ export const Actions: StoryFn = () => (
     <WebStory>
         {() => (
             <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={EXECUTING_BATCH_SPEC}>
-                <ActionsMenu defaultMode={ActionsMenuMode.Actions} />
+                <ActionsMenu defaultMode={ActionsMenuMode.Actions} telemetryRecorder={noOpTelemetryRecorder} />
             </BatchSpecContextProvider>
         )}
     </WebStory>
@@ -39,7 +41,7 @@ export const ActionsOnlyClose: StoryFn = () => (
     <WebStory>
         {() => (
             <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={EXECUTING_BATCH_SPEC}>
-                <ActionsMenu defaultMode={ActionsMenuMode.ActionsOnlyClose} />
+                <ActionsMenu defaultMode={ActionsMenuMode.ActionsOnlyClose} telemetryRecorder={noOpTelemetryRecorder} />
             </BatchSpecContextProvider>
         )}
     </WebStory>
@@ -49,7 +51,10 @@ export const ActionsWithPreview: StoryFn = () => (
     <WebStory>
         {() => (
             <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={EXECUTING_BATCH_SPEC}>
-                <ActionsMenu defaultMode={ActionsMenuMode.ActionsWithPreview} />
+                <ActionsMenu
+                    defaultMode={ActionsMenuMode.ActionsWithPreview}
+                    telemetryRecorder={noOpTelemetryRecorder}
+                />
             </BatchSpecContextProvider>
         )}
     </WebStory>

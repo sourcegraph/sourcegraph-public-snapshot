@@ -35,7 +35,7 @@ export interface BatchChangePreviewPageProps extends Omit<BatchChangePreviewProp
 export const BatchChangePreviewPage: FC<BatchChangePreviewPageProps> = props => {
     const { batchSpecID } = useParams()
 
-    const { authenticatedUser, telemetryService, queryApplyPreviewStats } = props
+    const { authenticatedUser, telemetryService, telemetryRecorder, queryApplyPreviewStats } = props
 
     const { data, loading } = useQuery<BatchSpecByIDResult, BatchSpecByIDVariables>(BATCH_SPEC_BY_ID, {
         variables: {
@@ -47,7 +47,8 @@ export const BatchChangePreviewPage: FC<BatchChangePreviewPageProps> = props => 
 
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeApplyPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('batchChange.preview', 'view')
+    }, [telemetryService, telemetryRecorder])
 
     if (loading) {
         return (
@@ -96,9 +97,15 @@ export const BatchChangePreviewPage: FC<BatchChangePreviewPageProps> = props => 
                         batchChange={spec.appliesToBatchChange}
                         viewerCanAdminister={spec.viewerCanAdminister}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                     />
                     <Description description={spec.description.description} />
-                    <BatchChangePreviewTabs spec={spec} {...props} batchSpecID={spec.id} />
+                    <BatchChangePreviewTabs
+                        spec={spec}
+                        {...props}
+                        batchSpecID={spec.id}
+                        telemetryRecorder={telemetryRecorder}
+                    />
                 </div>
             </BatchChangePreviewContextProvider>
         </MultiSelectContextProvider>
@@ -119,6 +126,7 @@ export const NewBatchChangePreviewPage: FC<BatchChangePreviewPageProps> = props 
         queryChangesetSpecFileDiffs,
         authenticatedUser,
         telemetryService,
+        telemetryRecorder,
         queryApplyPreviewStats,
     } = props
 
@@ -132,7 +140,8 @@ export const NewBatchChangePreviewPage: FC<BatchChangePreviewPageProps> = props 
 
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeApplyPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('batchChange.newPreview', 'view')
+    }, [telemetryService, telemetryRecorder])
 
     const { maxUnlicensedChangesets, exceedsLicense } = useBatchChangesLicense()
 
@@ -175,6 +184,7 @@ export const NewBatchChangePreviewPage: FC<BatchChangePreviewPageProps> = props 
                             batchChange={spec.appliesToBatchChange}
                             viewerCanAdminister={spec.viewerCanAdminister}
                             telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                         />
                     )}
                     {exceedsLicense(spec.applyPreview.totalCount) && (

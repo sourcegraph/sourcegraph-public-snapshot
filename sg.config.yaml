@@ -986,7 +986,9 @@ commands:
 
 bazelCommands:
   blobstore:
-    target: //cmd/blobstore:blobstore
+    target: //cmd/blobstore
+  docsite:
+    runTarget: //doc:serve
   searcher:
     target: //cmd/searcher
   syntax-highlighter:
@@ -1093,6 +1095,7 @@ commandsets:
       - ibazel
     bazelCommands:
       - blobstore
+      - docsite
       - frontend
       - worker
       - repo-updater
@@ -1100,16 +1103,15 @@ commandsets:
       - gitserver-1
       - searcher
       - symbols
-      - syntax-highlighter
+      # - syntax-highlighter
     commands:
       - web
-      # TODO https://github.com/sourcegraph/devx-support/issues/537
-      # - docsite
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
       - zoekt-web-1
       - caddy
+
   # If you modify this command set, please consider also updating the dotcom runset.
   enterprise: &enterprise_set
     requiresDevPrivate: true

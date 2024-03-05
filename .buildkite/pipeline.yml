@@ -21,27 +21,13 @@ steps:
   - group: ":aspect: Aspect Workflows "
     if: pipeline.slug == "aspect-experimental"
     steps:
-      - key: "after-commit-check"
-        label: ":oncoming_police_car: commit check"
-        agents: { queue: aspect-small }
-        command: |
-          echo "--- :git: check we're after commit"
-          if git merge-base --is-ancestor 20a3c0836eaa300beecf88e21f78dcd708b047d3 HEAD; then
-            echo "✅ We are after the commit."
-          else
-            echo "❌ HEAD commit should be after 20a3c0836eaa300beecf88e21f78dcd708b047d3"
-            exit 1
-          fi
-
       - key: aspect-workflows-upload
-        depends_on: "after-commit-check"
         label: ":aspect: Setup Aspect Workflows"
         commands:
           - "rosetta steps | buildkite-agent pipeline upload"
         agents:
           queue: aspect-small
       - label: ":pipeline: Generate pipeline"
-        depends_on: "after-commit-check"
         if: build.branch !~ /^main(-dry-run\/)?.*/
         commands:
           - "./dev/ci/gen-pipeline.sh"

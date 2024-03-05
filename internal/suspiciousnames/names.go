@@ -4,7 +4,7 @@ package suspiciousnames
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -18,7 +18,7 @@ import (
 // 🚨 SECURITY: This is not foolproof; users may choose a name like `secur1ty` that might be
 // confused with a name like "security", or they might find another synonym that we didn't think of.
 func CheckNameAllowedForUserOrOrganization(desiredName string) error {
-	if envvar.SourcegraphDotComMode() && isSuspicious(desiredName) {
+	if dotcom.SourcegraphDotComMode() && isSuspicious(desiredName) {
 		return errors.Errorf("rejected suspicious name %q", desiredName)
 	}
 	return nil

@@ -4,7 +4,7 @@
 package:
   name: ctags
   version: 6.0.0
-  epoch: 3
+  epoch: 4
   description: "A maintained ctags implementation"
   target-architecture:
     - x86_64

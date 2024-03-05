@@ -5,9 +5,9 @@ import (
 
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 
 	"github.com/sourcegraph/log"
 
@@ -43,7 +43,7 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 		"chat",
 		func(ctx context.Context, requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
 			// Allow a number of additional models on Dotcom
-			if envvar.SourcegraphDotComMode() {
+			if dotcom.SourcegraphDotComMode() {
 				actor := sgactor.FromContext(ctx)
 				user, err := actor.User(ctx, db.Users())
 				if err != nil {

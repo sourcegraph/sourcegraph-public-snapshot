@@ -11136,6 +11136,23 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
+			},
+			{
+				"ID": 1708596613,
+				"Name": "access_tokens_double_hash_index",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS access_tokens_lookup_double_hash ON access_tokens USING HASH (digest(value_sha256, 'sha256'))\n    WHERE\n    deleted_at IS NULL;",
+				"DownQuery": "DROP INDEX IF EXISTS access_tokens_lookup_double_hash;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1695911128,
+					1707759188
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "access_tokens",
+					"IndexName": "access_tokens_lookup_double_hash"
+				}
 			}
 		],
 		"BoundsByRev": {
@@ -11387,8 +11404,7 @@
 			"v5.3.0": {
 				"RootID": 1648051770,
 				"LeafIDs": [
-					1695911128,
-					1707759188
+					1708596613
 				],
 				"PreCreation": false
 			}

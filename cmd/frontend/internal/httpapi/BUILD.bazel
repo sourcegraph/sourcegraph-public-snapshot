@@ -24,7 +24,6 @@ go_library(
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/enterprise",
-        "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/internal/handlerutil",
         "//cmd/frontend/internal/httpapi/releasecache",
@@ -44,6 +43,7 @@ go_library(
         "//internal/conf",
         "//internal/cookie",
         "//internal/database",
+        "//internal/dotcom",
         "//internal/encryption/keyring",
         "//internal/env",
         "//internal/errcode",
@@ -104,7 +104,6 @@ go_test(
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/enterprise",
-        "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
         "//internal/actor",
         "//internal/api",
@@ -114,6 +113,7 @@ go_test(
         "//internal/ctags_config",
         "//internal/database",
         "//internal/database/dbmocks",
+        "//internal/dotcom",
         "//internal/errcode",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
