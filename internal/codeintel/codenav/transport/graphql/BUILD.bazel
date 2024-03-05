@@ -53,6 +53,7 @@ go_test(
         "root_resolver_test.go",
     ],
     embed = [":graphql"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/api",
         "//internal/codeintel/codenav",

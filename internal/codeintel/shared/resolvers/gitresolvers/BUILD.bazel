@@ -35,6 +35,7 @@ go_test(
         "commit_test.go",
     ],
     embed = [":gitresolvers"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/api",
         "//internal/codeintel/resolvers",

@@ -30,6 +30,7 @@ go_test(
     name = "janitor_test",
     srcs = ["job_cleanup_test.go"],
     embed = [":janitor"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/api",
         "//internal/gitserver",

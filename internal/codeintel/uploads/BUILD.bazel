@@ -46,6 +46,7 @@ go_test(
     timeout = "short",
     srcs = ["mocks_test.go"],
     embed = [":uploads"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/api",
         "//internal/codeintel/policies/shared",

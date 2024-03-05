@@ -49,6 +49,7 @@ go_test(
         "util_test.go",
     ],
     embed = [":perforce"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//cmd/gitserver/internal/common",
         "//internal/api",

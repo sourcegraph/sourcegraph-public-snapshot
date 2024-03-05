@@ -44,6 +44,7 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":auth"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//cmd/frontend/backend",
         "//internal/actor",

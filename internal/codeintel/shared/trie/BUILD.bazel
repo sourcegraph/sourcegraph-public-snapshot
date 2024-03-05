@@ -19,5 +19,6 @@ go_test(
     srcs = ["trie_test.go"],
     data = glob(["testdata/**"]),
     embed = [":trie"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = ["//lib/errors"],
 )

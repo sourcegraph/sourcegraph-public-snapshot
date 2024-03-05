@@ -61,6 +61,7 @@ go_test(
         "service_test.go",
     ],
     embed = [":codenav"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/actor",
         "//internal/api",

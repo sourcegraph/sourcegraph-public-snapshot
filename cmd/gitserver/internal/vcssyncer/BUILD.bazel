@@ -83,6 +83,7 @@ go_test(
     # path is sandboxed properly.
     env = {"COURSIER_CACHE_DIR": "/tmp"},
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],

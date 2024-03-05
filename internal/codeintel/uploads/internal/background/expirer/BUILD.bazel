@@ -38,6 +38,7 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":expirer"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/api",
         "//internal/codeintel/policies",

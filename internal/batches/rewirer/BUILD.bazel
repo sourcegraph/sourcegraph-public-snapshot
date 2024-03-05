@@ -19,6 +19,7 @@ go_test(
     timeout = "short",
     srcs = ["rewirer_test.go"],
     embed = [":rewirer"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/api",
         "//internal/batches/global",

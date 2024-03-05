@@ -75,6 +75,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":sources"],
     tags = [
+        TAG_SEARCHSUITE,
         "requires-network",
     ],
     deps = [

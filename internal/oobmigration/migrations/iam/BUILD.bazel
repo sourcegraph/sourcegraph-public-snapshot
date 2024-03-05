@@ -30,6 +30,7 @@ go_test(
     ],
     embed = [":iam"],
     tags = [
+        TAG_INFRA_RELEASE,
         # Test requires localhost database
         "requires-network",
     ],

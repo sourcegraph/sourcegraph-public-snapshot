@@ -22,4 +22,5 @@ go_test(
     name = "store_test",
     srcs = ["store_test.go"],
     embed = [":store"],
+    tags = [TAG_PLATFORM_GRAPH],
 )

@@ -30,6 +30,7 @@ go_test(
     srcs = ["bulk_processor_test.go"],
     embed = [":processor"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost database
         "requires-network",
     ],

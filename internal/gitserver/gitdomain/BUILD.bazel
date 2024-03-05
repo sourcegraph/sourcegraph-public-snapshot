@@ -29,6 +29,7 @@ go_test(
         "log_test.go",
     ],
     embed = [":gitdomain"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/api",
         "//internal/fileutil",

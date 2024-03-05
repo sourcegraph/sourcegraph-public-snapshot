@@ -42,6 +42,7 @@ go_test(
         "testdata/large_diff.txt",
         "testdata/small_diff.txt",
     ],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/actor",
         "//internal/authz",

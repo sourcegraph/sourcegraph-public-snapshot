@@ -53,6 +53,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":processor"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//cmd/frontend/backend",
         "//internal/api",

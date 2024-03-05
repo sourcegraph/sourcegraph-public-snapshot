@@ -46,6 +46,7 @@ go_test(
     ],
     embed = [":reconciler"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost for database
         "requires-network",
     ],

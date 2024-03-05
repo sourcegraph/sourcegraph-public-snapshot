@@ -54,6 +54,7 @@ go_test(
     name = "graphql_test",
     srcs = ["mocks_test.go"],
     embed = [":graphql"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = ["//internal/codeintel/uploads/shared"],
 )
 

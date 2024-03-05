@@ -57,7 +57,10 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":dependencies"],
-    tags = ["requires-network"],
+    tags = [
+        TAG_PLATFORM_GRAPH,
+        "requires-network",
+    ],
     deps = [
         "//internal/api",
         "//internal/codeintel/autoindexing/internal/store",

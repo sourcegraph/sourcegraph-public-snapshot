@@ -61,6 +61,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":inference"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/api",
         "//internal/codeintel/dependencies",

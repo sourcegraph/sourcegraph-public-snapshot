@@ -44,6 +44,7 @@ go_test(
         "service_test.go",
     ],
     embed = [":ranking"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/api",
         "//internal/codeintel/ranking/internal/store",

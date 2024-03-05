@@ -58,6 +58,7 @@ go_test(
     ],
     embed = [":oobmigration"],
     tags = [
+        TAG_INFRA_RELEASE,
         # Test requires localhost database
         "requires-network",
     ],

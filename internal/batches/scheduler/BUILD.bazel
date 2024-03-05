@@ -24,6 +24,7 @@ go_test(
     timeout = "short",
     srcs = ["ticker_test.go"],
     embed = [":scheduler"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/batches/types/scheduler/window",
         "//schema",

@@ -20,6 +20,7 @@ go_test(
     srcs = ["author_test.go"],
     embed = [":author"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost for database
         "requires-network",
     ],

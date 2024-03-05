@@ -34,6 +34,7 @@ go_test(
     name = "scheduler_test",
     srcs = ["scheduler_test.go"],
     embed = [":scheduler"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//cmd/repo-updater/internal/gitserver",
         "//internal/api",

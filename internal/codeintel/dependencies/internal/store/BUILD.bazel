@@ -33,6 +33,7 @@ go_test(
     srcs = ["store_test.go"],
     embed = [":store"],
     tags = [
+        TAG_PLATFORM_GRAPH,
         # Test requires localhost database
         "requires-network",
     ],

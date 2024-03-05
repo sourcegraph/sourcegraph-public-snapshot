@@ -39,6 +39,7 @@ go_test(
         "published_test.go",
     ],
     embed = [":batches"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//lib/batches/execution",
         "//lib/batches/git",

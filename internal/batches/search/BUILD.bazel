@@ -20,6 +20,7 @@ go_test(
     timeout = "short",
     srcs = ["text_test.go"],
     embed = [":search"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/batches/search/syntax",
         "//lib/errors",

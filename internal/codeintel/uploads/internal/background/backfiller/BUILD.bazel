@@ -29,6 +29,7 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":backfiller"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/api",
         "//internal/codeintel/uploads/internal/commitgraph",

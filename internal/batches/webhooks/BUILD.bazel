@@ -36,6 +36,7 @@ go_test(
     ],
     embed = [":webhooks"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost for database
         "requires-network",
     ],
