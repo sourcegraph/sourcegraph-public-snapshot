@@ -37,7 +37,7 @@ export class QueryState {
     private defaultQuery = ''
     private defaultSearchContext = 'global'
 
-    private constructor(public readonly options: Partial<Options>, public settings: QuerySettings) {}
+    private constructor(public readonly options: Partial<Options>, public settings: QuerySettings) { }
 
     public static init(options: Partial<Options>, settings: QuerySettings): QueryState {
         return new QueryState(options, settings)
@@ -151,18 +151,17 @@ export function queryStateStore(initial: Partial<Options> = {}, settings: QueryS
 export function getQueryURL(
     queryState: Pick<QueryState, 'searchMode' | 'query' | 'caseSensitive' | 'patternType' | 'searchContext'>,
     enforceCache = false
-): string {
-    const searchQueryParameter = buildSearchURLQuery(
+): URL {
+    let url = new URL('/search')
+    url.search = buildSearchURLQuery(
         queryState.query,
         queryState.patternType,
         queryState.caseSensitive,
         queryState.searchContext,
         queryState.searchMode
     )
-
-    let url = '/search?' + searchQueryParameter
     if (enforceCache) {
-        url += `&${USE_CLIENT_CACHE_QUERY_PARAMETER}`
+        url.searchParams.append(USE_CLIENT_CACHE_QUERY_PARAMETER, '1')
     }
     return url
 }

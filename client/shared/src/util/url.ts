@@ -523,7 +523,6 @@ export function buildSearchURLQuery(
     query: string,
     patternType: SearchPatternType,
     caseSensitive: boolean,
-
     searchContextSpec?: string,
     searchMode?: SearchMode
 ): string {
