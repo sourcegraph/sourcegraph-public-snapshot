@@ -15,12 +15,13 @@ import {
     FilterType,
     getGlobalSearchContextFilter,
     omitFilter,
+    emptyAggregateResults,
 } from '$lib/shared'
 
 import type { PageLoad } from './$types'
 
 interface SearchStreamCacheEntry {
-    searchStream: Observable<AggregateStreamingSearchResults | undefined>
+    searchStream: Observable<AggregateStreamingSearchResults>
     complete: boolean
 }
 
@@ -36,7 +37,7 @@ class CachingStreamManager {
         parsedQuery: ExtendedParsedSearchURL,
         searchOptions: StreamSearchOptions,
         bypassCache: boolean
-    ): Observable<AggregateStreamingSearchResults | undefined> {
+    ): Observable<AggregateStreamingSearchResults> {
         const key = createCacheKey(parsedQuery, searchOptions)
 
         // Cancel any active query to reduce load on the server
@@ -56,7 +57,7 @@ class CachingStreamManager {
 
         if (bypassCache || !searchStream) {
             const stream = this.streamManager.search(parsedQuery, searchOptions)
-            const searchStream = new BehaviorSubject<AggregateStreamingSearchResults | undefined>(undefined)
+            const searchStream = new BehaviorSubject<AggregateStreamingSearchResults>(emptyAggregateResults)
             const cacheEntry: SearchStreamCacheEntry = { searchStream, complete: false }
             this.cache.set(key, cacheEntry)
             // Primes the stream
@@ -83,7 +84,7 @@ class NonCachingStreamManager {
     search(
         parsedQuery: ExtendedParsedSearchURL,
         searchOptions: StreamSearchOptions
-    ): Observable<AggregateStreamingSearchResults | undefined> {
+    ): Observable<AggregateStreamingSearchResults> {
         return aggregateStreamingSearch(of(parsedQuery.filteredQuery ?? ''), searchOptions)
     }
 }

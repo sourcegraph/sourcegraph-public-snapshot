@@ -26,13 +26,13 @@
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { submitSearch, type QueryStateStore } from '$lib/search/state'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
-    import { type AggregateStreamingSearchResults, type SearchMatch, type Progress } from '$lib/shared'
+    import { type AggregateStreamingSearchResults, type SearchMatch } from '$lib/shared'
 
     import { getSearchResultComponent } from './searchResultFactory'
     import { setSearchResultsContext } from './searchResultsContext'
     import StreamingProgress from './StreamingProgress.svelte'
 
-    export let stream: Observable<AggregateStreamingSearchResults | undefined>
+    export let stream: Observable<AggregateStreamingSearchResults>
     export let queryFromURL: string
     export let selectedFilters: URLQueryFilter[]
     export let queryState: QueryStateStore
@@ -52,17 +52,14 @@
     const sidebarSize = getSeparatorPosition('search-results-sidebar', 0.2)
     $: sidebarWidth = `clamp(14rem, ${$sidebarSize * 100}%, 50%)`
 
-    $: progress = $stream?.progress
-    // NOTE: done is present but apparently not officially exposed. However
-    // $stream.state is always "loading". Need to look into this.
-    $: loading = !(progress as Progress & { done?: boolean })?.done
-    $: results = $stream?.results
+    $: loading = $stream.state === 'loading'
+    $: results = $stream.results
 
     // Logic for maintaining list state (scroll position, rendered items, open
     // items) for backwards navigation.
     $: cacheEntry = cache.get(queryFromURL)
     $: count = cacheEntry?.count ?? DEFAULT_INITIAL_ITEMS_TO_SHOW
-    $: resultsToShow = results ? results.slice(0, count) : null
+    $: resultsToShow = results.slice(0, count)
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
 
     setSearchResultsContext({
@@ -112,12 +109,7 @@
 
 <div class="search-results">
     <div style:width={sidebarWidth}>
-        <DynamicFiltersSidebar
-            {selectedFilters}
-            streamFilters={$stream?.filters ?? []}
-            searchQuery={queryFromURL}
-            {loading}
-        />
+        <DynamicFiltersSidebar {selectedFilters} streamFilters={$stream.filters} searchQuery={queryFromURL} {loading} />
     </div>
     <Separator currentPosition={sidebarSize} />
     <div class="results" bind:this={resultContainer}>
@@ -127,29 +119,25 @@
                     <LoadingSpinner inline />
                 </div>
             {/if}
-            {#if progress}
-                <StreamingProgress {progress} on:submit={onResubmitQuery} />
-            {/if}
+            <StreamingProgress progress={$stream.progress} on:submit={onResubmitQuery} />
         </aside>
-        {#if resultsToShow}
-            <ol>
-                {#each resultsToShow as result, i}
-                    {@const component = getSearchResultComponent(result)}
-                    {#if i === resultsToShow.length - 1}
-                        <li use:observeIntersection on:intersecting={loadMore}>
-                            <svelte:component this={component} {result} />
-                        </li>
-                    {:else}
-                        <li><svelte:component this={component} {result} /></li>
-                    {/if}
-                {/each}
-            </ol>
-            {#if resultsToShow.length === 0 && !loading}
-                <div class="no-result">
-                    <Icon svgPath={mdiCloseOctagonOutline} />
-                    <p>No results found</p>
-                </div>
-            {/if}
+        <ol>
+            {#each resultsToShow as result, i}
+                {@const component = getSearchResultComponent(result)}
+                {#if i === resultsToShow.length - 1}
+                    <li use:observeIntersection on:intersecting={loadMore}>
+                        <svelte:component this={component} {result} />
+                    </li>
+                {:else}
+                    <li><svelte:component this={component} {result} /></li>
+                {/if}
+            {/each}
+        </ol>
+        {#if resultsToShow.length === 0 && !loading}
+            <div class="no-result">
+                <Icon svgPath={mdiCloseOctagonOutline} />
+                <p>No results found</p>
+            </div>
         {/if}
     </div>
 </div>
