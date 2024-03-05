@@ -338,11 +338,13 @@ func TestNewPlanJob(t *testing.T) {
       (LIMIT
         (limit . 10000)
         (PARALLEL
-          (COMMITSEARCH
-            (query . *protocol.MessageMatches(test))
-            (diff . false)
-            (limit . 10000)
-            (repoOpts.onlyCloned . true))
+          (REPOPAGER
+            (repoOpts.onlyCloned . true)
+            (PARTIALREPOS
+              (COMMITSEARCH
+                (query . *protocol.MessageMatches(test))
+                (diff . false)
+                (limit . 10000))))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
 	}, {
@@ -360,11 +362,13 @@ func TestNewPlanJob(t *testing.T) {
       (LIMIT
         (limit . 10000)
         (PARALLEL
-          (DIFFSEARCH
-            (query . *protocol.DiffMatches(test))
-            (diff . true)
-            (limit . 10000)
-            (repoOpts.onlyCloned . true))
+          (REPOPAGER
+            (repoOpts.onlyCloned . true)
+            (PARTIALREPOS
+              (DIFFSEARCH
+                (query . *protocol.DiffMatches(test))
+                (diff . true)
+                (limit . 10000))))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
 	}, {
@@ -385,11 +389,13 @@ func TestNewPlanJob(t *testing.T) {
           (ZOEKTGLOBALTEXTSEARCH
             (query . content_substr:"test")
             (type . text))
-          (COMMITSEARCH
-            (query . *protocol.MessageMatches(test))
-            (diff . false)
-            (limit . 10000)
-            (repoOpts.onlyCloned . true))
+          (REPOPAGER
+            (repoOpts.onlyCloned . true)
+            (PARTIALREPOS
+              (COMMITSEARCH
+                (query . *protocol.MessageMatches(test))
+                (diff . false)
+                (limit . 10000))))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
 	}, {
@@ -429,12 +435,14 @@ func TestNewPlanJob(t *testing.T) {
             (PARTIALREPOS
               (ZOEKTSYMBOLSEARCH
                 (query . sym:substr:"test"))))
-          (COMMITSEARCH
-            (query . *protocol.MessageMatches(test))
-            (diff . false)
-            (limit . 10000)
+          (REPOPAGER
             (repoOpts.repoFilters . [test])
-            (repoOpts.onlyCloned . true))
+            (repoOpts.onlyCloned . true)
+            (PARTIALREPOS
+              (COMMITSEARCH
+                (query . *protocol.MessageMatches(test))
+                (diff . false)
+                (limit . 10000))))
           (REPOSCOMPUTEEXCLUDED
             (repoOpts.repoFilters . [test]))
           (PARALLEL
@@ -464,11 +472,13 @@ func TestNewPlanJob(t *testing.T) {
           (ZOEKTGLOBALTEXTSEARCH
             (query . content_substr:"test")
             (type . text))
-          (COMMITSEARCH
-            (query . *protocol.MessageMatches(test))
-            (diff . false)
-            (limit . 10000)
-            (repoOpts.onlyCloned . true))
+          (REPOPAGER
+            (repoOpts.onlyCloned . true)
+            (PARTIALREPOS
+              (COMMITSEARCH
+                (query . *protocol.MessageMatches(test))
+                (diff . false)
+                (limit . 10000))))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
 	}, {
@@ -508,12 +518,14 @@ func TestNewPlanJob(t *testing.T) {
             (PARTIALREPOS
               (ZOEKTSYMBOLSEARCH
                 (query . sym:substr:"test"))))
-          (COMMITSEARCH
-            (query . *protocol.MessageMatches(test))
-            (diff . false)
-            (limit . 10000)
+          (REPOPAGER
             (repoOpts.repoFilters . [test])
-            (repoOpts.onlyCloned . true))
+            (repoOpts.onlyCloned . true)
+            (PARTIALREPOS
+              (COMMITSEARCH
+                (query . *protocol.MessageMatches(test))
+                (diff . false)
+                (limit . 10000))))
           (REPOSCOMPUTEEXCLUDED
             (repoOpts.repoFilters . [test]))
           (PARALLEL
@@ -542,11 +554,13 @@ func TestNewPlanJob(t *testing.T) {
         (LIMIT
           (limit . 10000)
           (PARALLEL
-            (COMMITSEARCH
-              (query . (*protocol.MessageMatches((?:a)|(?:b))))
-              (diff . false)
-              (limit . 10000)
-              (repoOpts.onlyCloned . true))
+            (REPOPAGER
+              (repoOpts.onlyCloned . true)
+              (PARTIALREPOS
+                (COMMITSEARCH
+                  (query . (*protocol.MessageMatches((?:a)|(?:b))))
+                  (diff . false)
+                  (limit . 10000))))
             REPOSCOMPUTEEXCLUDED
             (OR
               NOOP
@@ -556,11 +570,13 @@ func TestNewPlanJob(t *testing.T) {
         (LIMIT
           (limit . 10000)
           (PARALLEL
-            (DIFFSEARCH
-              (query . (*protocol.DiffMatches((?:a)|(?:b))))
-              (diff . true)
-              (limit . 10000)
-              (repoOpts.onlyCloned . true))
+            (REPOPAGER
+              (repoOpts.onlyCloned . true)
+              (PARTIALREPOS
+                (DIFFSEARCH
+                  (query . (*protocol.DiffMatches((?:a)|(?:b))))
+                  (diff . true)
+                  (limit . 10000))))
             REPOSCOMPUTEEXCLUDED
             (OR
               NOOP

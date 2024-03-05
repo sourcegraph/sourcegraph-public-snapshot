@@ -157,27 +157,33 @@ GROUP BY user_id
 	)
 
 	// Hard delete users with only the expired SOAP account
-	if err := h.db.Users().HardDeleteList(ctx, deleteUserIDs); err != nil && !errcode.IsNotFound(err) {
-		return errors.Wrap(err, "hard delete users")
+	if len(deleteUserIDs) > 0 {
+		if err := h.db.Users().HardDeleteList(ctx, deleteUserIDs); err != nil && !errcode.IsNotFound(err) {
+			return errors.Wrap(err, "hard delete users")
+		}
 	}
 
 	// Demote users: remove their SOAP account, and make sure they are not a
 	// site admin
-	var demoteErrs error
-	for _, userID := range demoteUserIDs {
-		if err := h.db.Users().SetIsSiteAdmin(ctx, userID, false); err != nil && !errcode.IsNotFound(err) {
-			demoteErrs = errors.Append(demoteErrs, errors.Wrap(err, "revoke site admin"))
+	if len(demoteUserIDs) > 0 {
+		var demoteErrs error
+		for _, userID := range demoteUserIDs {
+			if err := h.db.Users().SetIsSiteAdmin(ctx, userID, false); err != nil && !errcode.IsNotFound(err) {
+				demoteErrs = errors.Append(demoteErrs, errors.Wrap(err, "revoke site admin"))
+			}
+		}
+		if demoteErrs != nil {
+			return demoteErrs
 		}
 	}
-	if demoteErrs != nil {
-		return demoteErrs
-	}
-	if err := h.db.UserExternalAccounts().Delete(ctx, database.ExternalAccountsDeleteOptions{
-		IDs:         deleteExternalAccountIDs,
-		ServiceType: auth.SourcegraphOperatorProviderType,
-		HardDelete:  true,
-	}); err != nil && !errcode.IsNotFound(err) {
-		return errors.Wrap(err, "remove SOAP accounts")
+	if len(deleteExternalAccountIDs) > 0 {
+		if err := h.db.UserExternalAccounts().Delete(ctx, database.ExternalAccountsDeleteOptions{
+			IDs:         deleteExternalAccountIDs,
+			ServiceType: auth.SourcegraphOperatorProviderType,
+			HardDelete:  true,
+		}); err != nil && !errcode.IsNotFound(err) {
+			return errors.Wrap(err, "remove SOAP accounts")
+		}
 	}
 
 	return nil
