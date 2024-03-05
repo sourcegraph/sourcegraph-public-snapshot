@@ -1,6 +1,5 @@
 import type { MockedResponse } from '@apollo/client/testing'
 import { render, waitFor, screen } from '@testing-library/react'
-import { noop } from 'lodash'
 import { BrowserRouter } from 'react-router-dom'
 import { describe, expect, test } from 'vitest'
 
