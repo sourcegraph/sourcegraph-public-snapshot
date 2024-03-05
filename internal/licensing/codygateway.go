@@ -33,7 +33,6 @@ func NewCodyGatewayChatRateLimit(plan Plan, userCount *int, licenseTags []string
 		"anthropic/claude-instant-v1",
 		"anthropic/claude-instant-1",
 		"anthropic/claude-instant-1.2",
-		"anthropic/claude-2.1-bamboo",
 	}
 	// Switch on GPT models by default if the customer license has the GPT tag.
 	if slices.Contains(licenseTags, GPTLLMAccessTag) {
@@ -73,7 +72,6 @@ func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string
 		"anthropic/claude-instant-1",
 		"anthropic/claude-instant-1.2",
 		"fireworks/starcoder",
-		"anthropic/claude-2.1-bamboo",
 	}
 	// Switch on GPT models by default if the customer license has the GPT tag.
 	if slices.Contains(licenseTags, GPTLLMAccessTag) {
