@@ -4,6 +4,7 @@ import { useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import { Routes, Route, matchPath, useLocation } from 'react-router-dom'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, Text } from '@sourcegraph/wildcard'
 
@@ -81,13 +82,21 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = ({
                         <Route index={true} element={<CodeHostsPicker />} />
                         <Route
                             path=":codeHostType/create"
-                            element={<CodeHostCreation telemetryService={telemetryService} />}
+                            element={
+                                <CodeHostCreation
+                                    telemetryService={telemetryService}
+                                    // TODO (dadlerj) replace with real telemetryRecorder
+                                    telemetryRecorder={noOpTelemetryRecorder}
+                                />
+                            }
                         />
                         <Route
                             path=":codehostId/edit"
                             element={
                                 <CodeHostEdit
                                     telemetryService={telemetryService}
+                                    // TODO (dadlerj) replace with real telemetryRecorder
+                                    telemetryRecorder={noOpTelemetryRecorder}
                                     onCodeHostDelete={setCodeHostToDelete}
                                 />
                             }

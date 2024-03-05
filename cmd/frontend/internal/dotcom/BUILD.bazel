@@ -7,12 +7,12 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",
-        "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/internal/dotcom/productsubscription",
         "//internal/codeintel",
         "//internal/conf/conftypes",
         "//internal/database",
+        "//internal/dotcom",
         "//internal/observation",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
     ],

@@ -1,10 +1,11 @@
-import type { FC, ReactNode } from 'react'
+import { FC, ReactNode, useEffect } from 'react'
 
 import { useQuery } from '@apollo/client'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, ErrorAlert, H4, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -38,7 +39,7 @@ interface EditableCodeHost {
     config: string
 }
 
-interface CodeHostEditProps extends TelemetryProps {
+interface CodeHostEditProps extends TelemetryProps, TelemetryV2Props {
     onCodeHostDelete: (codeHost: EditableCodeHost) => void
 }
 
@@ -47,8 +48,12 @@ interface CodeHostEditProps extends TelemetryProps {
  * Also performs edit, delete actions over opened code host connection
  */
 export const CodeHostEdit: FC<CodeHostEditProps> = props => {
-    const { onCodeHostDelete, telemetryService } = props
+    const { onCodeHostDelete, telemetryService, telemetryRecorder } = props
     const { codehostId } = useParams()
+
+    useEffect(() => {
+        telemetryRecorder.recordEvent('setup-wizard.code-host-edit', 'view')
+    }, [telemetryRecorder])
 
     const { data, loading, error, refetch } = useQuery<GetExternalServiceByIdResult, GetExternalServiceByIdVariables>(
         GET_CODE_HOST_BY_ID,
@@ -94,6 +99,7 @@ export const CodeHostEdit: FC<CodeHostEditProps> = props => {
             displayName={data.node.displayName}
             configuration={data.node.config}
             telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
         >
             {state => (
                 <footer className={styles.footer}>
@@ -125,7 +131,7 @@ export const CodeHostEdit: FC<CodeHostEditProps> = props => {
     )
 }
 
-interface CodeHostEditViewProps extends TelemetryProps {
+interface CodeHostEditViewProps extends TelemetryProps, TelemetryV2Props {
     codeHostId: string
     codeHostKind: ExternalServiceKind
     displayName: string
@@ -134,7 +140,8 @@ interface CodeHostEditViewProps extends TelemetryProps {
 }
 
 const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
-    const { codeHostId, codeHostKind, displayName, configuration, telemetryService, children } = props
+    const { codeHostId, codeHostKind, displayName, configuration, telemetryService, telemetryRecorder, children } =
+        props
 
     const navigate = useNavigate()
     const [updateRemoteCodeHost] = useMutation<UpdateRemoteCodeHostResult, UpdateRemoteCodeHostVariables>(
@@ -174,6 +181,7 @@ const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
             initialValues={initialValues}
             externalServiceOptions={defaultExternalServices[codeHostKind]}
             onSubmit={handleSubmit}
+            telemetryRecorder={telemetryRecorder}
         >
             {children}
         </CodeHostJSONForm>

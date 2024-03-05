@@ -18,10 +18,10 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -72,7 +72,7 @@ func IsPending() bool {
 
 func logFuncFrom(logger log.Logger) func(string, ...log.Field) {
 	logFunc := logger.Debug
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		logFunc = logger.Warn
 	}
 
@@ -356,8 +356,8 @@ func getAndMarshalCodeHostVersionsJSON(_ context.Context, _ database.DB) (_ json
 	return json.Marshal(v)
 }
 
-func getAndMarshalCodyUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalCodyUsageJSON")(&err)
+func getAndMarshalCodyUsage2JSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCodyUsage2JSON")(&err)
 
 	codyUsage, err := usagestats.GetAggregatedCodyStats(ctx, db)
 	if err != nil {
@@ -466,7 +466,7 @@ func getAndMarshalOwnUsageJSON(ctx context.Context, db database.DB) (json.RawMes
 func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Reader, error) {
 	scopedLog := logger.Scoped("telemetry")
 	logFunc := scopedLog.Debug
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		logFunc = scopedLog.Warn
 	}
 	// Used for cases where large pings objects might otherwise fail silently.
@@ -497,7 +497,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		CodeHostIntegrationUsage:      []byte("{}"),
 		IDEExtensionsUsage:            []byte("{}"),
 		MigratedExtensionsUsage:       []byte("{}"),
-		CodyUsage:                     []byte("{}"),
+		CodyUsage2:                    []byte("{}"),
 		CodyProviders:                 []byte("{}"),
 		RepoMetadataUsage:             []byte("{}"),
 	}
@@ -560,7 +560,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		logFunc("getAndMarshalBatchChangesUsageJSON failed", log.Error(err))
 	}
 	// We don't bother doing this on Sourcegraph.com as it is expensive and not needed.
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
 		if err != nil {
 			logFunc("getAndMarshalGrowthStatisticsJSON failed", log.Error(err))
@@ -632,7 +632,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	}
 
 	// We don't bother doing this on Sourcegraph.com as it is expensive and not needed.
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		r.MigratedExtensionsUsage, err = getAndMarshalMigratedExtensionsUsageJSON(ctx, db)
 		if err != nil {
 			logFunc("getAndMarshalMigratedExtensionsUsageJSON failed", log.Error(err))
@@ -654,7 +654,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		logFunc("ownUsage failed", log.Error(err))
 	}
 
-	r.CodyUsage, err = getAndMarshalCodyUsageJSON(ctx, db)
+	r.CodyUsage2, err = getAndMarshalCodyUsage2JSON(ctx, db)
 	if err != nil {
 		logFunc("codyUsage failed", log.Error(err))
 	}
@@ -689,7 +689,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	}()
 
 	// We don't bother doing these on Sourcegraph.com as they are expensive and not needed.
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

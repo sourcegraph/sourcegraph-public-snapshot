@@ -2,6 +2,8 @@ import { useState } from 'react'
 
 import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import { WebStory } from '../../../../components/WebStory'
 import type { ExecutionOptions } from '../BatchSpecContext'
 
@@ -27,6 +29,7 @@ export const Disabled: StoryFn = () => {
                     isExecutionDisabled="There's a problem with your batch spec."
                     options={options}
                     onChangeOptions={setOptions}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             )}
         </WebStory>
@@ -43,6 +46,7 @@ export const Enabled: StoryFn = () => {
                     execute={() => alert('executing!')}
                     options={options}
                     onChangeOptions={setOptions}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             )}
         </WebStory>

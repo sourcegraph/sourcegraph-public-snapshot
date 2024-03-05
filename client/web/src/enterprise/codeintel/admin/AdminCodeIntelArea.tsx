@@ -3,6 +3,7 @@ import type { FC } from 'react'
 import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -16,7 +17,7 @@ import type { CodeIntelPreciseIndexesPageProps } from '../indexes/pages/CodeInte
 import type { CodeIntelPreciseIndexPageProps } from '../indexes/pages/CodeIntelPreciseIndexPage'
 import type { CodeIntelRankingPageProps } from '../ranking/pages/CodeIntelRankingPage'
 
-export interface AdminCodeIntelAreaRouteContext extends TelemetryProps {
+export interface AdminCodeIntelAreaRouteContext extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
 }
 

@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -373,7 +374,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
 		DeployType:        deploy.Type(),
 
-		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		SourcegraphDotComMode: dotcom.SourcegraphDotComMode(),
 
 		BillingPublishableKey: BillingPublishableKey,
 
@@ -640,7 +641,7 @@ func isBot(userAgent string) bool {
 }
 
 func licenseInfo() (info LicenseInfo) {
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		bcFeature := &licensing.FeatureBatchChanges{}
 		if err := licensing.Check(bcFeature); err == nil {
 			if bcFeature.Unrestricted {

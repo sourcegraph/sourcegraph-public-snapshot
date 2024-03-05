@@ -3,6 +3,7 @@ import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../../components/WebStory'
@@ -83,7 +84,11 @@ export const List: StoryFn = () => (
         {props => (
             <MockedTestProvider link={MOCKS}>
                 <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={mockFullBatchSpec()}>
-                    <ExecutionWorkspaces queryWorkspacesList={queryWorkspacesList} {...props} />
+                    <ExecutionWorkspaces
+                        queryWorkspacesList={queryWorkspacesList}
+                        {...props}
+                        telemetryRecorder={noOpTelemetryRecorder}
+                    />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}
@@ -99,6 +104,7 @@ export const WorkspaceSelected: StoryFn = () => (
                         {...props}
                         queryWorkspacesList={queryWorkspacesList}
                         queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                        telemetryRecorder={noOpTelemetryRecorder}
                     />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
@@ -117,7 +123,11 @@ export const LocallyExecutedSpec: StoryFn = () => (
                     batchSpec={mockFullBatchSpec({ source: BatchSpecSource.LOCAL })}
                 >
                     <div className="container">
-                        <ExecutionWorkspaces {...props} queryChangesetSpecFileDiffs={queryEmptyFileDiffs} />
+                        <ExecutionWorkspaces
+                            {...props}
+                            queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                            telemetryRecorder={noOpTelemetryRecorder}
+                        />
                     </div>
                 </BatchSpecContextProvider>
             </MockedTestProvider>

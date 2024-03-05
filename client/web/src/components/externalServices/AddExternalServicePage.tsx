@@ -4,6 +4,7 @@ import type { FetchResult } from '@apollo/client'
 import { useNavigate } from 'react-router-dom'
 
 import { logger, renderMarkdown } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Container, H3, H4, Markdown, PageHeader } from '@sourcegraph/wildcard'
 
@@ -16,7 +17,7 @@ import { ExternalServiceCard } from './ExternalServiceCard'
 import { ExternalServiceForm } from './ExternalServiceForm'
 import type { AddExternalServiceOptions } from './externalServices'
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     externalService: AddExternalServiceOptions
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
@@ -34,6 +35,7 @@ export const AddExternalServicePage: FC<Props> = ({
     autoFocusForm,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
+    telemetryRecorder,
 }) => {
     const [config, setConfig] = useState(externalService.defaultConfig)
     const [displayName, setDisplayName] = useState(externalService.defaultDisplayName)
@@ -42,7 +44,8 @@ export const AddExternalServicePage: FC<Props> = ({
 
     useEffect(() => {
         telemetryService.logPageView('AddExternalService')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('admin.externalServices.add', 'view')
+    }, [telemetryService, telemetryRecorder])
 
     useEffect(() => {
         setConfig(externalService.defaultConfig)
@@ -79,15 +82,17 @@ export const AddExternalServicePage: FC<Props> = ({
                 },
                 onCompleted: data => {
                     telemetryService.log('AddExternalServiceSucceeded')
+                    telemetryRecorder.recordEvent('admin.externalServices.add', 'success')
                     refreshSiteFlags(client).catch((error: Error) => logger.error(error))
                     navigate(`/site-admin/external-services/${data.addExternalService.id}`)
                 },
                 onError: () => {
                     telemetryService.log('AddExternalServiceFailed')
+                    telemetryRecorder.recordEvent('admin.externalServices.add', 'fail')
                 },
             })
         },
-        [addExternalService, telemetryService, getExternalServiceInput, client, navigate]
+        [addExternalService, telemetryService, getExternalServiceInput, client, navigate, telemetryRecorder]
     )
     const createdExternalService = addExternalServiceResult?.addExternalService
 
@@ -128,6 +133,7 @@ export const AddExternalServicePage: FC<Props> = ({
                         )}
                         <ExternalServiceForm
                             telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                             error={error}
                             input={getExternalServiceInput()}
                             editorActions={externalService.editorActions}
