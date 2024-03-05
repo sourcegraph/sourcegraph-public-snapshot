@@ -139,6 +139,8 @@ func NewHandler(
 					otelhttp.WithPublicEndpoint(),
 				),
 			))
+	} else {
+		logger.Error("Anthropic access token not set")
 	}
 	if config.OpenAI.AccessToken != "" {
 		v1router.Path("/completions/openai").Methods(http.MethodPost).Handler(
@@ -207,6 +209,8 @@ func NewHandler(
 					otelhttp.WithPublicEndpoint(),
 				),
 			))
+	} else {
+		logger.Error("OpenAI access token not set")
 	}
 	if config.Fireworks.AccessToken != "" {
 		v1router.Path("/completions/fireworks").Methods(http.MethodPost).Handler(
@@ -233,6 +237,8 @@ func NewHandler(
 					otelhttp.WithPublicEndpoint(),
 				),
 			))
+	} else {
+		logger.Error("Fireworks access token not set")
 	}
 
 	// Register a route where actors can retrieve their current rate limit state.

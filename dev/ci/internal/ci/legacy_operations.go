@@ -22,7 +22,7 @@ func legacyBuildCandidateDockerImages(apps []string, version string, tag string,
 			bk.Env("DOCKER_BAZEL", "true"),
 			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("VERSION", version),
-			bk.Agent("queue", AspectWorkflows.QueueDefault),
+			bk.Agent("queue", "bazel"),
 		)
 
 		// Allow all build scripts to emit info annotations
@@ -105,7 +105,7 @@ func legacyBuildCandidateDockerImage(app string, version string, tag string, rt 
 		cmds = append(cmds,
 			bk.Key(candidateImageStepKey(app)),
 			bk.Env("VERSION", version),
-			bk.Agent("queue", AspectWorkflows.QueueDefault),
+			bk.Agent("queue", "bazel"),
 		)
 
 		// Allow all build scripts to emit info annotations

@@ -61,8 +61,8 @@ services:
       # Note: Must match right-hand side of scratch volume mount
       - TMPDIR=/scratch
       # Run as root (required for docker daemon control)
-      - UID=${EXECUTOR_UID}
-      - GID=${EXECUTOR_GID}
+      - UID=1000
+      - GID=1000
       # Use the dind container to run docker commands within the executor
       - DOCKER_HOST=${DOCKER_HOST}
     volumes:

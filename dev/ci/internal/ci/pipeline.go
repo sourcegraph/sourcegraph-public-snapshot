@@ -89,6 +89,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		Env:     env,
 	}
 
+	// We generate the pipeline slightly differently when running as part of the Aspect Workflows pipeline.
+	// Primarily, we don't run any `bazel test` since Aspect has got that covered
+	isAspectWorkflowBuild := os.Getenv("ASPECT_WORKFLOWS_BUILD") == "1"
+
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
 	const minimumUpgradeableVersion = "5.3.0"
 
@@ -116,7 +120,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				ops.Append(func(pipeline *bk.Pipeline) {
 					pipeline.AddStep(":bazel::desktop_computer: bazel "+bzlCmd,
 						bk.Key("bazel-do"),
-						bk.Agent("queue", AspectWorkflows.QueueDefault),
+						bk.Agent("queue", "bazel"),
 						bk.Cmd(bazelCmd(bzlCmd)),
 					)
 				})
@@ -138,12 +142,15 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CreateBundleSizeDiff:      true,
+			AspectWorkflows:           isAspectWorkflowBuild,
 		}))
 
-		securityOps := operations.NewNamedSet("Security Scanning")
-		securityOps.Append(semgrepScan())
-		securityOps.Append(sonarcloudScan())
-		ops.Merge(securityOps)
+		if !isAspectWorkflowBuild {
+			securityOps := operations.NewNamedSet("Security Scanning")
+			securityOps.Append(semgrepScan())
+			securityOps.Append(sonarcloudScan())
+			ops.Merge(securityOps)
+		}
 
 		// Wolfi package and base images
 		packageOps, baseImageOps := addWolfiOps(c)
@@ -160,12 +167,16 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			))
 		}
 
+	case runtype.ReleaseNightly:
+		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
+
 	case runtype.BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
 		ops = BazelOpsSet(buildOptions,
 			CoreTestOperationsOptions{
-				IsMainBranch: buildOptions.Branch == "main",
+				IsMainBranch:    buildOptions.Branch == "main",
+				AspectWorkflows: isAspectWorkflowBuild,
 			},
 			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
 			wait,
@@ -176,7 +187,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// e2e tests.
 		ops = BazelOpsSet(buildOptions,
 			CoreTestOperationsOptions{
-				IsMainBranch: buildOptions.Branch == "main",
+				IsMainBranch:    buildOptions.Branch == "main",
+				AspectWorkflows: isAspectWorkflowBuild,
 			},
 			recordBrowserExtensionIntegrationTests,
 			wait,
@@ -226,6 +238,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Test images
 		ops.Merge(CoreTestOperations(buildOptions, changed.All, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
+			AspectWorkflows:           isAspectWorkflowBuild,
 		}))
 		// Publish images after everything is done
 		ops.Append(
@@ -249,10 +262,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.ExecutorPatchNoTest:
 		executorVMImage := "executor-vm"
 		ops = operations.NewSet(
-			bazelBuildExecutorVM(c, true),
+			// TODO(burmudar): This should use the bazel target
+			legacyBuildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), c.RunType),
 			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
+			bazelBuildExecutorVM(c, true),
 			bazelBuildExecutorDockerMirror(c),
 			wait,
+			publishFinalDockerImage(c, executorVMImage),
 			bazelPublishExecutorVM(c, true),
 			bazelPublishExecutorDockerMirror(c),
 			bazelPublishExecutorBinary(c),
@@ -279,14 +295,17 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
 			IsMainBranch:              true,
+			AspectWorkflows:           isAspectWorkflowBuild,
 		}))
 
 		// Security scanning - sonarcloud & semgrep scan
 		// Sonarcloud scan will soon be phased out after semgrep scan is fully enabled
-		securityOps := operations.NewNamedSet("Security Scanning")
-		securityOps.Append(semgrepScan())
-		securityOps.Append(sonarcloudScan())
-		ops.Merge(securityOps)
+		if isAspectWorkflowBuild {
+			securityOps := operations.NewNamedSet("Security Scanning")
+			securityOps.Append(semgrepScan())
+			securityOps.Append(sonarcloudScan())
+			ops.Merge(securityOps)
+		}
 
 		// Publish candidate images to dev registry
 		publishOpsDev := operations.NewNamedSet("Publish candidate images")
@@ -323,7 +342,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 		// Final Bazel images
-		publishOps.Append(bazelPushImagesFinal(c.Version))
+		publishOps.Append(bazelPushImagesFinal(c.Version, isAspectWorkflowBuild))
 		ops.Merge(publishOps)
 	}
 
