@@ -7,7 +7,6 @@ import { rm } from 'shelljs'
 import {
     packageResolutionPlugin,
     stylePlugin,
-    workerPlugin,
     buildTimerPlugin,
 } from '@sourcegraph/build-config/src/esbuild/plugins'
 
@@ -40,7 +39,6 @@ export async function build(): Promise<void> {
         inject: ['./scripts/react-shim.js', './scripts/process-shim.js', './scripts/buffer-shim.js'],
         plugins: [
             stylePlugin,
-            workerPlugin,
             packageResolutionPlugin({
                 process: require.resolve('process/browser'),
                 path: require.resolve('path-browserify'),
