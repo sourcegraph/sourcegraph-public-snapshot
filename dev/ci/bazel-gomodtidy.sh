@@ -3,19 +3,21 @@
 set -eu
 EXIT_CODE=0
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../.."
-
-aspectRC="/tmp/aspect-generated.bazelrc"
-rosetta bazelrc > "$aspectRC"
+# go mod tidy gets run in different subdirectories
+# so the bazelrc files are looked up relative to that,
+# but we need to check from root
+root=$(pwd)
 
 runGoModTidy() {
   local dir
   dir=$1
   cd "$dir"
-
-
   echo "--- :bazel: Running go mod tidy in $dir"
-  bazel --bazelrc="$aspectRC" run @go_sdk//:bin/go -- mod tidy
+  bazel \
+    --bazelrc="$root/.bazelrc" \
+    --bazelrc="$root/.aspect/bazelrc/ci.bazelrc" \
+    --bazelrc="$root/.aspect/bazelrc/ci.sourcegraph.bazelrc" \
+    run @go_sdk//:bin/go -- mod tidy
   cd -
 }
 

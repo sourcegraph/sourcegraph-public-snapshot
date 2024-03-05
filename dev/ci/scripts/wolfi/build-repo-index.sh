@@ -4,7 +4,8 @@ set -eu -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
-KEYS_DIR="/etc/sourcegraph/keys/"
+# TODO: Manage these variables properly
+GCP_PROJECT="sourcegraph-ci"
 GCS_BUCKET="package-repository"
 TARGET_ARCH="x86_64"
 MAIN_BRANCH="main"
@@ -42,7 +43,7 @@ apkindex_build_dir=$(mktemp -d -t apkindex-build.XXXXXXXX)
 pushd "$apkindex_build_dir"
 
 # Fetch all APKINDEX fragments from bucket
-gsutil -m cp "gs://$GCS_BUCKET/$BRANCH_PATH/$TARGET_ARCH/*.APKINDEX.fragment" ./
+gsutil -u "$GCP_PROJECT" -m cp "gs://$GCS_BUCKET/$BRANCH_PATH/$TARGET_ARCH/*.APKINDEX.fragment" ./
 
 # Concat all fragments into a single APKINDEX and tar.gz it
 touch placeholder.APKINDEX.fragment
@@ -52,9 +53,9 @@ tar zcf APKINDEX.tar.gz APKINDEX DESCRIPTION
 
 # Sign index, using separate keys from GCS for staging and prod repos
 if [[ "$IS_MAIN" == "true" ]]; then
-  key_path="$KEYS_DIR/sourcegraph-melange-prod.rsa"
+  key_path="/keys/sourcegraph-melange-prod.rsa"
 else
-  key_path="$KEYS_DIR/sourcegraph-melange-dev.rsa"
+  key_path="/keys/sourcegraph-melange-dev.rsa"
 fi
 melange sign-index --signing-key "$key_path" APKINDEX.tar.gz
 
