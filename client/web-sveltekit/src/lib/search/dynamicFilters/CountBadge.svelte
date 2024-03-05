@@ -1,6 +1,6 @@
 <script context="module" lang="ts">
+    const roundNumbers = [10000, 5000, 1000, 500, 100, 50, 10, 5, 1]
     function roundCount(count: number): number {
-        const roundNumbers = [10000, 5000, 1000, 500, 100, 50, 10, 5, 1]
         for (const roundNumber of roundNumbers) {
             if (count >= roundNumber) {
                 return roundNumber
