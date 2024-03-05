@@ -26,7 +26,7 @@
 </script>
 
 <script lang="ts">
-    import { onDestroy, onMount } from 'svelte'
+    import { onMount } from 'svelte'
 
     import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 
@@ -75,13 +75,15 @@
     $: resetModifier = inferOperatingSystem(navigator.userAgent) === 'MacOS' ? '⌥' : 'Alt'
     $: resetURL = resetFilters($page.url).toString()
     $: enableReset = selectedFilters.length > 0
-    $: handleResetKeydown = (event: KeyboardEvent) => {
+    function handleResetKeydown(event: KeyboardEvent) {
         if (enableReset && event.altKey && event.key === 'Backspace') {
             goto(resetURL)
         }
     }
-    onMount(() => window.addEventListener('keydown', handleResetKeydown))
-    onDestroy(() => window.removeEventListener('keydown', handleResetKeydown))
+    onMount(() => {
+        window.addEventListener('keydown', handleResetKeydown)
+        return () => window.removeEventListener('keydown', handleResetKeydown)
+    })
 </script>
 
 <aside class="sidebar">
