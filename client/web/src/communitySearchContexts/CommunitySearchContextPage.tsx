@@ -12,7 +12,6 @@ import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensio
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { QueryState, SearchContextInputProps, SearchContextProps } from '@sourcegraph/shared/src/search'
 import type { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
-import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, useObservable, Link, Card, Icon, Code, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -21,7 +20,6 @@ import type { SearchPatternType } from '../graphql-operations'
 import { submitSearch } from '../search/helpers'
 import { useNavbarQueryState } from '../stores'
 import { SearchPageInput } from '../storm/pages/SearchPage/SearchPageInput'
-import { eventLogger } from '../tracking/eventLogger'
 
 import { CommunitySearchContextMetadata, CommunitySearchContextSpecs } from './types'
 
@@ -42,7 +40,6 @@ const specTypes: { [k in CommunitySearchContextSpecs]: number } = {
 
 export interface CommunitySearchContextPageProps
     extends SettingsCascadeProps<Settings>,
-        TelemetryProps,
         ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL' | 'telemetryRecorder'>,
         SearchContextInputProps,
@@ -68,11 +65,10 @@ export const CommunitySearchContextPage: React.FunctionComponent<
     const telemetryRecorder = props.platformContext.telemetryRecorder
 
     useEffect(() => {
-        props.telemetryService.logViewEvent(`CommunitySearchContext:${props.communitySearchContextMetadata.spec}`)
         telemetryRecorder.recordEvent('communitySearchContext', 'view', {
             metadata: { spec: specTypes[props.communitySearchContextMetadata.spec] },
         })
-    }, [props.communitySearchContextMetadata.spec, props.telemetryService, telemetryRecorder])
+    }, [props.communitySearchContextMetadata.spec, telemetryRecorder])
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
 
     const contextQuery = `context:${props.communitySearchContextMetadata.spec}`
@@ -93,7 +89,6 @@ export const CommunitySearchContextPage: React.FunctionComponent<
     const onSubmitExample = useCallback(
         (query: string, patternType: SearchPatternType) =>
             (event?: React.MouseEvent<HTMLButtonElement>): void => {
-                eventLogger.log('CommunitySearchContextSuggestionClicked')
                 telemetryRecorder.recordEvent('communitySearchContext.suggestion', 'click')
                 event?.preventDefault()
                 submitSearch({
@@ -111,12 +106,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
 
     const onRepoLinkClicked = useCallback(
         (repoName: string) => (): void => {
-            eventLogger.log(
-                'CommunitySearchContextPageRepoLinkClicked',
-                { repo_name: repoName },
-                { repo_name: repoName }
-            )
-            telemetryRecorder.recordEvent('communitySearchContext.repo-link', 'click')
+            telemetryRecorder.recordEvent('communitySearchContext.repoLink', 'click')
         },
         [telemetryRecorder]
     )
