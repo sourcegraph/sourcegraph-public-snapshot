@@ -58,27 +58,29 @@ func NewUnifiedHandler(
 
 // unifiedRequest captures all known fields from https://console.anthropic.com/docs/api/reference.
 type unifiedRequest struct {
-	Messages      []unifiedMessage        `json:"messages,omitempty"`
-	Model         string                  `json:"model"`
-	MaxTokens     int32                   `json:"max_tokens,omitempty"`
-	Temperature   float32                 `json:"temperature,omitempty"`
-	TopP          float32                 `json:"top_p,omitempty"`
-	TopK          int32                   `json:"top_k,omitempty"`
-	Stream        bool                    `json:"stream,omitempty"`
-	StopSequences []string                `json:"stop_sequences,omitempty"`
-	Metadata      *unifiedRequestMetadata `json:"metadata,omitempty"`
+	Messages      []unifiedMessage `json:"messages,omitempty"`
+	Model         string           `json:"model"`
+	MaxTokens     int32            `json:"max_tokens,omitempty"`
+	Temperature   float32          `json:"temperature,omitempty"`
+	TopP          float32          `json:"top_p,omitempty"`
+	TopK          int32            `json:"top_k,omitempty"`
+	Stream        bool             `json:"stream,omitempty"`
+	StopSequences []string         `json:"stop_sequences,omitempty"`
+
+	// TODO: These should not be accepted from the client an instead are only
+	// used to talk to the upstream LLM APIs.
+	Metadata *unifiedRequestMetadata `json:"metadata,omitempty"`
+	System   string                  `json:"system,omitempty"`
 }
 
 type unifiedMessage struct {
-	Role    string           `json:"role"`
+	Role    string           `json:"role"` // "user", "assistant", or "system" (only allowed for the first message)
 	Content []unifiedContent `json:"content"`
 }
 
 type unifiedContent struct {
-	Type string `json:"type"` // "text" or "image_url"
-
-	Text string `json:"text",omitempty"`
-	URL  string `json:"url,omitempty"`
+	Type string `json:"type"` // "text" or "image" (not yet supported)
+	Text string `json:"text"`
 }
 
 type unifiedRequestMetadata struct {
@@ -96,11 +98,13 @@ func (ar unifiedRequest) GetModel() string {
 func (r unifiedRequest) BuildPrompt() string {
 	var sb strings.Builder
 	for _, m := range r.Messages {
+		sb.WriteString(m.Role + ": ")
 		for _, c := range m.Content {
 			if c.Type == "text" {
-				sb.WriteString(c.Text + "\n")
+				sb.WriteString(c.Text)
 			}
 		}
+		sb.WriteString("\n\n")
 	}
 	return sb.String()
 }
@@ -123,6 +127,12 @@ func (a *UnifiedHandlerMethods) transformBody(body *unifiedRequest, identifier s
 	body.Metadata = &unifiedRequestMetadata{
 		// We forward the actor ID to support tracking.
 		UserID: identifier,
+	}
+
+	// Convert the eventual first message from `system` to a top-level system prompt
+	if len(body.Messages) > 0 && body.Messages[0].Role == "system" {
+		body.System = body.Messages[0].Content[0].Text
+		body.Messages = body.Messages[1:]
 	}
 }
 func (a *UnifiedHandlerMethods) getRequestMetadata(body unifiedRequest) (model string, additionalMetadata map[string]any) {
