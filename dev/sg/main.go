@@ -275,6 +275,7 @@ var sg = &cli.App{
 		contextCommand,
 		deployCommand,
 		wolfiCommand,
+		backportCommand,
 
 		// Dev environment
 		secretCommand,
