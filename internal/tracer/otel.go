@@ -2,12 +2,15 @@ package tracer
 
 import (
 	"context"
+	"strconv"
 
 	"go.opentelemetry.io/otel/sdk/resource"
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/tracer/oteldefaults/exporters"
@@ -57,8 +60,33 @@ func newOtelSpanProcessor(logger log.Logger, opts options, debug bool) (oteltrac
 		return nil, err
 	}
 
+	// Wrap the exporter with instrumentation
+	exporter = instrumentedExporter{exporter}
+
 	// Always use batch span processor - to get more immediate exports in e.g.
 	// local dev, toggle the OTEL_BSP_* configurations instead:
 	// https://sourcegraph.com/github.com/open-telemetry/opentelemetry-go@1d1ecbc5f936208a91521ede9d0b2f557170425e/-/blob/sdk/internal/env/env.go?L26-37
 	return oteltracesdk.NewBatchSpanProcessor(exporter), nil
+}
+
+var metricExportedSpans = promauto.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "otelsdk",
+	Subsystem: "trace_exporter",
+	Name:      "exported_spans",
+}, []string{"succeeded"})
+
+type instrumentedExporter struct{ oteltracesdk.SpanExporter }
+
+func (i instrumentedExporter) ExportSpans(ctx context.Context, spans []oteltracesdk.ReadOnlySpan) error {
+	err := i.SpanExporter.ExportSpans(ctx, spans)
+
+	// Wrap the export with instrumentation, as the SDK does not provide any out
+	// of the box.
+	metricExportedSpans.
+		With(prometheus.Labels{
+			"succeeded": strconv.FormatBool(err == nil),
+		}).
+		Add(float64(len(spans)))
+
+	return err
 }

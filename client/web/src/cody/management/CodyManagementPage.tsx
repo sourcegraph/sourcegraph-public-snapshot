@@ -200,7 +200,9 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                 <ButtonLink
                                     variant="primary"
                                     size="sm"
-                                    onClick={() => {
+                                    href={manageSubscriptionRedirectURL}
+                                    onClick={event => {
+                                        event.preventDefault()
                                         eventLogger.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
                                         window.location.href = manageSubscriptionRedirectURL
                                     }}

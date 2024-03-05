@@ -10,11 +10,11 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -331,10 +331,10 @@ func TestParseConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			old := envvar.SourcegraphDotComMode()
-			envvar.MockSourcegraphDotComMode(tt.dotcom)
+			old := dotcom.SourcegraphDotComMode()
+			dotcom.MockSourcegraphDotComMode(tt.dotcom)
 			t.Cleanup(func() {
-				envvar.MockSourcegraphDotComMode(old)
+				dotcom.MockSourcegraphDotComMode(old)
 			})
 
 			gotProviders, gotProblems := parseConfig(logtest.Scoped(t), tt.args.cfg, db)

@@ -5,8 +5,8 @@ import (
 
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -38,7 +38,7 @@ func shouldEnableProfiler() bool {
 	if gcpProfilerEnabled {
 		return true
 	}
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		// SourcegraphDotComMode can be true in dev, so check we are in a k8s
 		// cluster.
 		if deploy.IsDeployTypeKubernetes(deploy.Type()) {

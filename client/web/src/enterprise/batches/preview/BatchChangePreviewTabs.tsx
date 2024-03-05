@@ -3,6 +3,7 @@ import React, { useCallback } from 'react'
 import { mdiSourceBranch, mdiFileDocument } from '@mdi/js'
 import { useNavigate, useLocation } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Container, Icon, Tab, TabPanel, TabPanels } from '@sourcegraph/wildcard'
 
@@ -20,7 +21,7 @@ import { PreviewList } from './list/PreviewList'
 
 import styles from './BatchChangePreviewTabs.module.scss'
 
-export interface BatchChangePreviewProps extends TelemetryProps {
+export interface BatchChangePreviewProps extends TelemetryProps, TelemetryV2Props {
     batchSpecID: string
     authenticatedUser: PreviewPageAuthenticatedUser
 
@@ -45,6 +46,7 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
     queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
     spec,
+    telemetryRecorder,
 }) => {
     // We track the current tab in a URL parameter so that tabs are easy to navigate to
     // and share.
@@ -104,13 +106,18 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
                 </TabPanel>
                 <TabPanel>
                     <div className="d-flex mb-2 justify-content-end">
-                        <BatchSpecDownloadButton name={spec.description.name} originalInput={spec.originalInput} />
+                        <BatchSpecDownloadButton
+                            name={spec.description.name}
+                            originalInput={spec.originalInput}
+                            telemetryRecorder={telemetryRecorder}
+                        />
                     </div>
                     <Container>
                         <BatchSpec
                             name={spec.description.name}
                             originalInput={spec.originalInput}
                             className={styles.batchSpec}
+                            telemetryRecorder={telemetryRecorder}
                         />
                     </Container>
                 </TabPanel>

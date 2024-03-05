@@ -4,13 +4,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 )
 
 func TestAuthPublic(t *testing.T) {
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(false)
-	defer envvar.MockSourcegraphDotComMode(orig) // reset
+	orig := dotcom.SourcegraphDotComMode()
+	dotcom.MockSourcegraphDotComMode(false)
+	defer dotcom.MockSourcegraphDotComMode(orig) // reset
 
 	t.Run("Default, self-hosted instance non-public auth", func(t *testing.T) {
 		got := AuthPublic()
@@ -20,7 +20,7 @@ func TestAuthPublic(t *testing.T) {
 		}
 	})
 
-	envvar.MockSourcegraphDotComMode(true)
+	dotcom.MockSourcegraphDotComMode(true)
 
 	t.Run("Sourcegraph.com public auth", func(t *testing.T) {
 		got := AuthPublic()

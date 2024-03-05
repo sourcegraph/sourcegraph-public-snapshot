@@ -4,6 +4,7 @@ import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, type MockedResponses, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import type { AuthenticatedUser } from '../../../../auth'
@@ -128,6 +129,7 @@ export const Executing: StoryFn = () => (
                     namespace={{ __typename: 'User', url: '', id: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
                     queryWorkspacesList={buildWorkspacesQuery()}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             </MockedTestProvider>
         )}
@@ -180,6 +182,7 @@ export const ExecuteWithAWorkspaceSelected: StoryFn = () => (
                     namespace={{ __typename: 'User', url: '', id: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
                     queryWorkspacesList={buildWorkspacesQuery()}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             </MockedTestProvider>
         )}
@@ -199,6 +202,7 @@ export const Completed: StoryFn = () => (
                     namespace={{ __typename: 'User', url: '', id: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
                     queryWorkspacesList={buildWorkspacesQuery({ state: BatchSpecWorkspaceState.COMPLETED })}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             </MockedTestProvider>
         )}
@@ -216,6 +220,7 @@ export const CompletedWithErrors: StoryFn = () => (
                     namespace={{ __typename: 'User', url: '', id: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
                     queryWorkspacesList={buildWorkspacesQuery({ state: BatchSpecWorkspaceState.FAILED })}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             </MockedTestProvider>
         )}
@@ -234,6 +239,7 @@ export const LocallyExecutedSpec: StoryFn = () => (
                     {...props}
                     namespace={{ __typename: 'User', url: '', id: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             </MockedTestProvider>
         )}

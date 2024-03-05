@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 
 import { useLocation } from 'react-router-dom'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { FeedbackBadge, Link } from '@sourcegraph/wildcard'
 
 import { CreateGitHubAppPage } from '../../../components/gitHubApps/CreateGitHubAppPage'
@@ -64,6 +65,7 @@ export const BatchChangesCreateGitHubAppPage: React.FunctionComponent = () => {
             defaultAppName="Sourcegraph Commit Signing"
             baseURL={baseURL?.length ? baseURL : undefined}
             validateURL={validateURL}
+            telemetryRecorder={noOpTelemetryRecorder}
         />
     )
 }

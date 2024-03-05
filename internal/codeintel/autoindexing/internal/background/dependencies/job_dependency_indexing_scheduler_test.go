@@ -9,10 +9,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -60,7 +60,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 
 	indexEnqueuer := NewMockIndexEnqueuer()
 
-	envvar.MockSourcegraphDotComMode(true)
+	dotcom.MockSourcegraphDotComMode(true)
 
 	handler := &dependencyIndexingSchedulerHandler{
 		uploadsSvc:         mockUploadsSvc,
@@ -161,7 +161,7 @@ func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
 
 	indexEnqueuer := NewMockIndexEnqueuer()
 
-	envvar.MockSourcegraphDotComMode(false)
+	dotcom.MockSourcegraphDotComMode(false)
 
 	handler := &dependencyIndexingSchedulerHandler{
 		uploadsSvc:         mockUploadsSvc,
@@ -255,7 +255,7 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 
 	indexEnqueuer := NewMockIndexEnqueuer()
 
-	envvar.MockSourcegraphDotComMode(true)
+	dotcom.MockSourcegraphDotComMode(true)
 
 	handler := &dependencyIndexingSchedulerHandler{
 		uploadsSvc:         mockUploadsSvc,
@@ -317,7 +317,7 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 
 	indexEnqueuer := NewMockIndexEnqueuer()
 
-	envvar.MockSourcegraphDotComMode(true)
+	dotcom.MockSourcegraphDotComMode(true)
 
 	handler := &dependencyIndexingSchedulerHandler{
 		uploadsSvc:         mockUploadsSvc,
@@ -364,7 +364,7 @@ func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 
 	indexEnqueuer := NewMockIndexEnqueuer()
 
-	envvar.MockSourcegraphDotComMode(true)
+	dotcom.MockSourcegraphDotComMode(true)
 
 	handler := &dependencyIndexingSchedulerHandler{
 		uploadsSvc:         mockUploadsSvc,
@@ -412,7 +412,7 @@ func TestDependencyIndexingSchedulerHandlerNoExtsvc(t *testing.T) {
 
 	indexEnqueuer := NewMockIndexEnqueuer()
 
-	envvar.MockSourcegraphDotComMode(true)
+	dotcom.MockSourcegraphDotComMode(true)
 
 	handler := &dependencyIndexingSchedulerHandler{
 		uploadsSvc:         mockUploadsSvc,
