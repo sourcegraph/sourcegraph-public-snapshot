@@ -35,5 +35,8 @@ tasks:
   - delivery:
       auto_deliver: true
       icon: 'ship'
-      branches: ['jcjh/msp-bazel-delivery']
-      deliverable: 'attr(tags, "\bmsp-deliverable\b", //cmd/...)'
+      rules:
+        - deliverable: 'attr(tags, "\bmsp-deliverable\b", //cmd/...)'
+          conditions:
+            branches:
+              - 'jcjh/msp-bazel-delivery'
