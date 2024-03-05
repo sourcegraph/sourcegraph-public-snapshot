@@ -6,6 +6,7 @@ import { parseISO } from 'date-fns'
 import { useSearchParams } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Text,
     PageHeader,
@@ -27,23 +28,22 @@ import { LogOutput } from '../../../components/LogOutput'
 import { PageTitle } from '../../../components/PageTitle'
 import type { SettingsAreaRepositoryFields, RepositoryRecordedCommandFields } from '../../../graphql-operations'
 import { LogsPageTabs } from '../../../repo/constants'
-import { eventLogger } from '../../../tracking/eventLogger'
 
 import { useFetchRecordedCommands } from './backend'
 import { formatDuration } from './utils'
 
 import styles from './RepoSettingsLogsPage.module.scss'
 
-export interface RepoSettingsLogsPageProps {
+export interface RepoSettingsLogsPageProps extends TelemetryV2Props {
     repo: SettingsAreaRepositoryFields
 }
 
 /**
  * The repository settings log page.
  */
-export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) => {
+export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo, telemetryRecorder }) => {
     const [activeTabIndex, setActiveTabIndex] = useState<number>(LogsPageTabs.COMMANDS)
-    useEffect(() => eventLogger.logPageView('RepoSettingsLogs'), [])
+    useEffect(() => telemetryRecorder.recordEvent('repo.settings.logs', 'view'), [telemetryRecorder])
     const [searchParams, setSearchParams] = useSearchParams()
     const activeTab = searchParams.get('activeTab') ?? LogsPageTabs.COMMANDS.toString()
 
