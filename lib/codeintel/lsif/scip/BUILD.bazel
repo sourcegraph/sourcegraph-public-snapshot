@@ -26,6 +26,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":scip"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//lib/codeintel/precise",
         "@com_github_google_go_cmp//cmp",

@@ -32,5 +32,6 @@ go_test(
     timeout = "short",
     srcs = ["range_differ_test.go"],
     embed = [":lsif-index-tester_lib"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

@@ -25,5 +25,6 @@ go_test(
         "paths_test.go",
     ],
     embed = [":pathexistence"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = ["@com_github_google_go_cmp//cmp"],
 )
