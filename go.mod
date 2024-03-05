@@ -254,6 +254,9 @@ require (
 	github.com/aws/constructs-go/constructs/v10 v10.2.69
 	github.com/aws/jsii-runtime-go v1.84.0
 	github.com/bazelbuild/bazel-gazelle v0.35.0
+	github.com/bevzzz/nb v0.3.0
+	github.com/bevzzz/nb-synth v0.0.0-20240128164931-35fdda0583a0
+	github.com/bevzzz/nb/extension/extra/goldmark-jupyter v0.0.0-20240131001330-e69229bd9da4
 	github.com/dghubble/gologin/v2 v2.4.0
 	github.com/edsrzf/mmap-go v1.1.0
 	github.com/go-json-experiment/json v0.0.0-20231102232822-2e55bd4e08b0
@@ -274,6 +277,7 @@ require (
 	github.com/pkoukk/tiktoken-go v0.1.6
 	github.com/prometheus/statsd_exporter v0.22.7
 	github.com/qdrant/go-client v1.4.1
+	github.com/robert-nix/ansihtml v1.0.1
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare v0.0.0-20230822024612-edb48c530722
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20231222002716-51aa712b9bcc
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20231222002716-51aa712b9bcc
@@ -315,9 +319,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.1.25 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.5 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
-	github.com/bevzzz/nb v0.2.1 // indirect
-	github.com/bevzzz/nb-synth v0.0.0-20240128164931-35fdda0583a0 // indirect
-	github.com/bevzzz/nb/extension/extra/goldmark-jupyter v0.0.0-20240131001330-e69229bd9da4 // indirect
 	github.com/bazelbuild/buildtools v0.0.0-20231115204819-d4c9dccdfbb1 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
@@ -375,7 +376,6 @@ require (
 	github.com/prometheus/prometheus v0.40.5 // indirect
 	github.com/rickb777/date v1.14.3 // indirect
 	github.com/rickb777/plural v1.2.2 // indirect
-	github.com/robert-nix/ansihtml v1.0.1 // indirect
 	github.com/shirou/gopsutil/v3 v3.23.12 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/skeema/knownhosts v1.2.1 // indirect
