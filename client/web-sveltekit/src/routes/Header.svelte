@@ -1,18 +1,16 @@
 <script lang="ts">
-    import { mdiBookOutline, mdiChartBar, mdiFlaskOutline, mdiMagnify } from '@mdi/js'
+    import { mdiFlaskOutline } from '@mdi/js'
 
     import { mark } from '$lib/images'
 
-    import HeaderNavLink from './HeaderNavLink.svelte'
     import { Button } from '$lib/wildcard'
     import UserMenu from './UserMenu.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
     import { page } from '$app/stores'
-    import CodyIcon from '$lib/icons/Cody.svelte'
-    import CodeMonitoringIcon from '$lib/icons/CodeMonitoring.svelte'
-    import BatchChangesIcon from '$lib/icons/BatchChanges.svelte'
     import type { Header_User } from './Header.gql'
     import Icon from '$lib/Icon.svelte'
+    import { mainNavigation } from './mainNavigation'
+    import MainNavigationEntry from './MainNavigationEntry.svelte'
 
     export let authenticatedUser: Header_User | null | undefined
 
@@ -35,21 +33,9 @@
     </a>
     <nav>
         <ul>
-            <HeaderNavLink href="/search" svgIconPath={mdiMagnify}>Code search</HeaderNavLink>
-            <HeaderNavLink external href="/cody/chat">
-                <CodyIcon slot="icon" />
-                Cody
-            </HeaderNavLink>
-            <HeaderNavLink external href="/notebooks" svgIconPath={mdiBookOutline}>Notebooks</HeaderNavLink>
-            <HeaderNavLink external href="/code-monitoring">
-                <CodeMonitoringIcon slot="icon" />
-                Monitoring
-            </HeaderNavLink>
-            <HeaderNavLink external href="/batch-changes">
-                <BatchChangesIcon slot="icon" />
-                Batch Changes
-            </HeaderNavLink>
-            <HeaderNavLink external href="/insights" svgIconPath={mdiChartBar}>Insights</HeaderNavLink>
+            {#each mainNavigation as entry (entry.label)}
+                <MainNavigationEntry {entry} />
+            {/each}
         </ul>
     </nav>
     <Tooltip tooltip="Leave experimental web app">

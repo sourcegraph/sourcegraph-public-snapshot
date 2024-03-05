@@ -16,3 +16,14 @@ export function isRouteEnabled(routeID: string): boolean {
     console.log(routeID, enabledRouteIDs.test(routeID))
     return enabledRouteIDs.test(routeID)
 }
+
+/**
+ * Helper function to determine whether a route is a repository route.
+ * Callers can get the current route ID from the `page` store.
+ */
+export function isRepoRoute(routeID: string | null): boolean {
+    if (!routeID) {
+        return false
+    }
+    return routeID.startsWith('/[...repo=reporev]/')
+}
