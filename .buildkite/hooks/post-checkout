@@ -3,11 +3,18 @@
 # shellcheck disable=SC1090,SC1091
 source "$HOME/.profile"
 
-# Fetch the latest origin/main to accurately determine the set of changed
-# files on this branch.
-echo "Running git fetch..."
-git fetch
-echo "Running git fetch... done"
+# due to how the repostiory is cloned with --depth=100 (see aspect terraform docs), we need to fetch the tags manually
+# we don't want to fetch all the tags, so here:
+# 1. Get a list of tags from the remote
+# 2. Sort them
+# 3. Get the last $COUNT tags
+# 4. Parse them so that we only get the tag
+# 5. Then loop through every tag and fetch it
+COUNT=10
+echo "~~~ :git: Fetching last $COUNT tags"
+git ls-remote --tags origin | sort -t '/' -k 3 -V | tail -n $COUNT | awk -F'/' '{gsub(/\^\{\}$/, "", $3); print $3}' | uniq | while read -r tag; do
+  git fetch -v origin tag "$tag"
+done
 
 # Link command wrapper scripts so we can have more readable steps in the buildkite UI
 ln -s "$(pwd)/dev/ci/scripts/annotated-command.sh" an 2>/dev/null || true
