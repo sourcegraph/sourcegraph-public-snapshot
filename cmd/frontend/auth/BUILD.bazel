@@ -26,7 +26,6 @@ go_library(
         "//internal/conf",
         "//internal/database",
         "//internal/deviceid",
-        "//internal/dotcom",
         "//internal/errcode",
         "//internal/extsvc",
         "//internal/featureflag",
