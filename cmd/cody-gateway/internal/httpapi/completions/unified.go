@@ -8,14 +8,17 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -42,6 +45,15 @@ func NewUnifiedHandler(
 	promptRecorder PromptRecorder,
 	autoFlushStreamingResponses bool,
 ) (http.Handler, error) {
+	// Tokenizer only needs to be initialized once, and can be shared globally.
+	tokenizer, err := tokenizer.NewAnthropicClaudeTokenizer()
+	if err != nil {
+		return nil, err
+	}
+	promptRegexps := []*regexp.Regexp{}
+	for _, pattern := range config.AllowedPromptPatterns {
+		promptRegexps = append(promptRegexps, regexp.MustCompile(pattern))
+	}
 	return makeUpstreamHandler[unifiedRequest](
 		baseLogger,
 		eventLogger,
@@ -51,7 +63,7 @@ func NewUnifiedHandler(
 		string(conftypes.CompletionsProviderNameAnthropic),
 		func(_ codygateway.Feature) string { return anthropicMessagesAPIURL },
 		config.AllowedModels,
-		&UnifiedHandlerMethods{config: config},
+		&UnifiedHandlerMethods{config: config, tokenizer: tokenizer, promptRegexps: promptRegexps, promptRecorder: promptRecorder},
 
 		// Anthropic primarily uses concurrent requests to rate-limit spikes
 		// in requests, so set a default retry-after that is likely to be
@@ -104,10 +116,22 @@ func (ar unifiedRequest) GetModel() string {
 	return ar.Model
 }
 
+// Note: This is not the actual prompt send to Anthropic but it's a good
+// approximation to measure tokens.
 func (r unifiedRequest) BuildPrompt() string {
 	var sb strings.Builder
 	for _, m := range r.Messages {
-		sb.WriteString(m.Role + ": ")
+		switch m.Role {
+		case "user":
+			sb.WriteString("Human: ")
+		case "assistant":
+			sb.WriteString("Assistant: ")
+		case "system":
+			sb.WriteString("System: ")
+		default:
+			return ""
+		}
+
 		for _, c := range m.Content {
 			if c.Type == "text" {
 				sb.WriteString(c.Text)
@@ -118,17 +142,63 @@ func (r unifiedRequest) BuildPrompt() string {
 	return sb.String()
 }
 
-// unifiedResponse captures all relevant-to-us fields from https://console.anthropic.com/docs/api/reference.
-type unifiedResponse struct {
-	Completion string `json:"completion,omitempty"`
-	StopReason string `json:"stop_reason,omitempty"`
+// GetPromptTokenCount computes the token count of the prompt exactly once using
+// the given tokenizer. It is not concurrency-safe.
+func (r *unifiedRequest) GetPromptTokenCount(tk *tokenizer.Tokenizer) (int, error) {
+	tokens, err := tk.Tokenize(r.BuildPrompt())
+	return len(tokens), err
+}
+
+// unifiedNonStreamingResponse captures all relevant-to-us fields from https://docs.anthropic.com/claude/reference/messages_post.
+type unifiedNonStreamingResponse struct {
+	Content    []unifiedContent     `json:"content"`
+	Usage      unifiedResponseUsage `json:"usage"`
+	StopReason string               `json:"stop_reason"`
+}
+
+// unifiedStreamingResponse captures all relevant-to-us fields from each relevant SSE event from https://docs.anthropic.com/claude/reference/messages_post.
+type unifiedStreamingResponse struct {
+	Type         string                              `json:"type"`
+	Delta        *unifiedStreamingResponseTextBucket `json:"delta"`
+	ContentBlock *unifiedStreamingResponseTextBucket `json:"content_block"`
+	Usage        *unifiedResponseUsage               `json:"usage"`
+}
+
+type unifiedStreamingResponseTextBucket struct {
+	Text string `json:"text"`
+}
+
+type unifiedResponseUsage struct {
+	InputTokens  int `json:"input_tokens"`
+	OutputTokens int `json:"output_tokens"`
 }
 
 type UnifiedHandlerMethods struct {
-	config config.AnthropicConfig
+	tokenizer      *tokenizer.Tokenizer
+	promptRegexps  []*regexp.Regexp
+	promptRecorder PromptRecorder
+	config         config.AnthropicConfig
 }
 
 func (a *UnifiedHandlerMethods) validateRequest(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar unifiedRequest) (int, *flaggingResult, error) {
+	if ar.MaxTokens > int32(a.config.MaxTokensToSample) {
+		return http.StatusBadRequest, nil, errors.Errorf("max_tokens exceeds maximum allowed value of %d: %d", a.config.MaxTokensToSample, ar.MaxTokens)
+	}
+
+	if result, err := isFlaggedUnifiedRequest(a.tokenizer, ar, a.promptRegexps, a.config); err != nil {
+		logger.Error("error checking unified request - treating as non-flagged",
+			log.Error(err))
+	} else if result.IsFlagged() {
+		// Record flagged prompts in hotpath - they usually take a long time on the backend side, so this isn't going to make things meaningfully worse
+		if err := a.promptRecorder.Record(ctx, ar.BuildPrompt()); err != nil {
+			logger.Warn("failed to record flagged prompt", log.Error(err))
+		}
+		if a.config.RequestBlockingEnabled && result.shouldBlock {
+			return http.StatusBadRequest, result, errors.Errorf("request blocked - if you think this is a mistake, please contact support@sourcegraph.com")
+		}
+		return 0, result, nil
+	}
+
 	return 0, nil, nil
 }
 func (a *UnifiedHandlerMethods) transformBody(body *unifiedRequest, identifier string) {
@@ -164,26 +234,30 @@ func (a *UnifiedHandlerMethods) parseResponseAndUsage(logger log.Logger, body un
 	for _, m := range body.Messages {
 		promptUsage.characters += len(m.Content)
 	}
+	promptUsage.characters = len(body.System)
 
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
-	if !body.Stream {
-		var res unifiedResponse
+	if !body.ShouldStream() {
+		var res unifiedNonStreamingResponse
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse Anthropic response as JSON", log.Error(err))
 			return promptUsage, completionUsage
 		}
 
-		// Extract usage data from response
-		completionUsage.characters = len(res.Completion)
+		// Extract character data from response by summing up all text
+		for _, c := range res.Content {
+			completionUsage.characters += len(c.Text)
+		}
+		// Extract prompt usage data from the response
+		completionUsage.tokens = res.Usage.OutputTokens
+		promptUsage.tokens = res.Usage.InputTokens
 
 		return promptUsage, completionUsage
 	}
 
 	// Otherwise, we have to parse the event stream from anthropic.
 	dec := anthropic.NewDecoder(r)
-	var lastCompletion string
-	// Consume all the messages, but we only care about the last completion data.
 	for dec.Scan() {
 		data := dec.Data()
 
@@ -193,18 +267,73 @@ func (a *UnifiedHandlerMethods) parseResponseAndUsage(logger log.Logger, body un
 			continue
 		}
 
-		var event unifiedResponse
+		var event unifiedStreamingResponse
 		if err := json.Unmarshal(data, &event); err != nil {
 			logger.Error("failed to decode event payload", log.Error(err), log.String("body", string(data)))
 			continue
 		}
-		lastCompletion = event.Completion
+
+		switch event.Type {
+		case "message_start":
+			if event.Usage != nil {
+				promptUsage.tokens = event.Usage.InputTokens
+			}
+		case "content_block_delta":
+			if event.Delta != nil {
+				completionUsage.characters += len(event.Delta.Text)
+			}
+		case "message_delta":
+			if event.Usage != nil {
+				completionUsage.tokens = event.Usage.InputTokens
+			}
+		}
 	}
 	if err := dec.Err(); err != nil {
 		logger.Error("failed to decode Anthropic streaming response", log.Error(err))
 	}
 
-	// Extract usage data from streamed response.
-	completionUsage.characters = len(lastCompletion)
 	return promptUsage, completionUsage
+}
+
+func isFlaggedUnifiedRequest(tk *tokenizer.Tokenizer, ar unifiedRequest, promptRegexps []*regexp.Regexp, cfg config.AnthropicConfig) (*flaggingResult, error) {
+	var reasons []string
+
+	if len(promptRegexps) > 0 && !matchesAny(ar.BuildPrompt(), promptRegexps) {
+		reasons = append(reasons, "unknown_prompt")
+	}
+
+	// If this request has a very high token count for responses, then flag it.
+	if ar.MaxTokens > int32(cfg.MaxTokensToSampleFlaggingLimit) {
+		reasons = append(reasons, "high_max_tokens_to_sample")
+	}
+
+	// If this prompt consists of a very large number of tokens, then flag it.
+	tokenCount, err := ar.GetPromptTokenCount(tk)
+	if err != nil {
+		return &flaggingResult{}, errors.Wrap(err, "tokenize prompt")
+	}
+	if tokenCount > cfg.PromptTokenFlaggingLimit {
+		reasons = append(reasons, "high_prompt_token_count")
+	}
+
+	if len(reasons) > 0 {
+		blocked := false
+		if tokenCount > cfg.PromptTokenBlockingLimit || ar.MaxTokens > int32(cfg.ResponseTokenBlockingLimit) {
+			blocked = true
+		}
+
+		promptPrefix := ar.BuildPrompt()
+		if len(promptPrefix) > logPromptPrefixLength {
+			promptPrefix = promptPrefix[0:logPromptPrefixLength]
+		}
+		return &flaggingResult{
+			reasons:           reasons,
+			maxTokensToSample: int(ar.MaxTokens),
+			promptPrefix:      promptPrefix,
+			promptTokenCount:  tokenCount,
+			shouldBlock:       blocked,
+		}, nil
+	}
+
+	return nil, nil
 }
