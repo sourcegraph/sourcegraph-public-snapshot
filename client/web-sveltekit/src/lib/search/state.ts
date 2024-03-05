@@ -152,7 +152,7 @@ export function getQueryURL(
     queryState: Pick<QueryState, 'searchMode' | 'query' | 'caseSensitive' | 'patternType' | 'searchContext'>,
     enforceCache = false
 ): URL {
-    let url = new URL('/search')
+    let url = new URL('/search', location.href)
     url.search = buildSearchURLQuery(
         queryState.query,
         queryState.patternType,
