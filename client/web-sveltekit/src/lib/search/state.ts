@@ -161,7 +161,7 @@ export function getQueryURL(
         queryState.searchMode
     )
     if (enforceCache) {
-        url.searchParams.append(USE_CLIENT_CACHE_QUERY_PARAMETER, '1')
+        url.searchParams.append(USE_CLIENT_CACHE_QUERY_PARAMETER, '')
     }
     return url
 }
