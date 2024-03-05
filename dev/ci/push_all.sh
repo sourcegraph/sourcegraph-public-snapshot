@@ -2,7 +2,9 @@
 
 set -eu
 
-bazelrc=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
+aspectRC="/tmp/aspect-generated.bazelrc"
+rosetta bazelrc > "$aspectRC"
+bazelrc=(--bazelrc="$aspectRC")
 
 function preview_tags() {
   IFS=' ' read -r -a registries <<<"$1"
