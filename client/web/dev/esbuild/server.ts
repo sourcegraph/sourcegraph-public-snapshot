@@ -88,7 +88,13 @@ function pingUntilReady({
                     throw new Error(`${url} produced ${response.status} ${response.statusText}`)
                 }
             })
-            .catch(console.error)
+            .catch(error => {
+                if (backoff === maxBackoffMillis) {
+                    // Only log errors if we have reached the maximum backoff
+                    // to avoid spamming the console with transient errors.
+                    console.log(error)
+                }
+            })
             .then(sleep(backoff))
             .then(() => ping(Math.min(backoff * factor, maxBackoffMillis))(resolve))
     }
