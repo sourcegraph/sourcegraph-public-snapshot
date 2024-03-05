@@ -284,7 +284,7 @@ func (a *UnifiedHandlerMethods) parseResponseAndUsage(logger log.Logger, body un
 			}
 		case "message_delta":
 			if event.Usage != nil {
-				completionUsage.tokens = event.Usage.InputTokens
+				completionUsage.tokens = event.Usage.OutputTokens
 			}
 		}
 	}
