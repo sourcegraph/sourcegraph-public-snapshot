@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"strconv"
 	"strings"
 	"testing"
@@ -1013,5 +1014,128 @@ func TestSchema_SetCompletedPostSignup(t *testing.T) {
 		if !called {
 			t.Errorf("updatefunc was not called, but should have been")
 		}
+	})
+}
+
+func TestNode_FeatureFlagOverrides(t *testing.T) {
+	users := dbmocks.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1, Username: "alice"}, nil)
+
+	db := dbmocks.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	featureFlags := dbmocks.NewMockFeatureFlagStore()
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+
+	// todo: with override but without feature flag -> is that a valid state?
+
+	// todo: with feature flag but with no overrides
+
+	t.Run("with default true", func(t *testing.T) {
+
+		t.Run("with override true", func(t *testing.T) {
+			RunFeatureFlagOverrideTest(t, db, featureFlags, FeatureFlagOverrideTest{
+				defaultValue:  true,
+				overrideValue: true,
+			})
+		})
+
+		t.Run("with override false", func(t *testing.T) {
+			RunFeatureFlagOverrideTest(t, db, featureFlags, FeatureFlagOverrideTest{
+				defaultValue:  true,
+				overrideValue: false,
+			})
+		})
+	})
+
+	t.Run("with default false", func(t *testing.T) {
+
+		t.Run("with override true", func(t *testing.T) {
+			RunFeatureFlagOverrideTest(t, db, featureFlags, FeatureFlagOverrideTest{
+				defaultValue:  false,
+				overrideValue: true,
+			})
+		})
+
+		t.Run("with override false", func(t *testing.T) {
+			RunFeatureFlagOverrideTest(t, db, featureFlags, FeatureFlagOverrideTest{
+				defaultValue:  false,
+				overrideValue: false,
+			})
+		})
+	})
+}
+
+type FeatureFlagOverrideTest struct {
+	defaultValue  bool
+	overrideValue bool
+}
+
+func RunFeatureFlagOverrideTest(t *testing.T, db *dbmocks.MockDB, ff *dbmocks.MockFeatureFlagStore, test FeatureFlagOverrideTest) {
+	t.Helper()
+
+	gqlQuery := `
+		{
+			node(id: "VXNlcjox") {
+				id
+				... on User {
+					username
+					featureFlagOverrides {
+						targetFlag {
+							...on FeatureFlagBoolean {
+								name
+								value
+							}
+						}
+						value
+					}
+				}
+			}
+		}
+	`
+
+	expectTemplate := `
+		{
+			"node": {
+				"id": "VXNlcjox",
+				"username": "alice",
+				"featureFlagOverrides": [
+					{
+						"targetFlag": {
+							"name": "test-flag",
+							"value": %t
+						},
+						"value": %t
+					}
+				]
+			}
+		}
+	`
+
+	ff.GetFeatureFlagFunc.SetDefaultReturn(
+		&featureflag.FeatureFlag{
+			Name: "test-flag",
+			Bool: &featureflag.FeatureFlagBool{
+				Value: test.defaultValue,
+			},
+		},
+		nil,
+	)
+
+	ff.GetUserOverridesFunc.SetDefaultReturn(
+		[]*featureflag.Override{
+			{
+				FlagName: "test-flag",
+				Value:    test.overrideValue,
+			},
+		},
+		nil,
+	)
+
+	RunTests(t, []*Test{
+		{
+			Schema:         mustParseGraphQLSchema(t, db),
+			Query:          gqlQuery,
+			ExpectedResult: fmt.Sprintf(expectTemplate, test.defaultValue, test.overrideValue),
+		},
 	})
 }
