@@ -15,19 +15,19 @@ import (
 // Should be a subset of sveltekitEnabledRoutes.
 // Keep in sync with 'client/web-sveltekit/src/lib/navigation.ts'
 var rolledOutRoutes = map[string]struct{}{
-	routeSearch:           {},
+	routeSearch: {},
 }
 
 var sveltekitEnabledRoutes = map[string]struct{}{
-	routeSearch:           {},
-	routeTree:             {},
-	routeBlob:             {},
-	routeRepo:             {},
-	routeRepoCommit:       {},
-	routeRepoBranches:     {},
-	routeRepoCommits:      {},
-	routeRepoTags:         {},
-	routeRepoStats:        {},
+	routeSearch:       {},
+	routeTree:         {},
+	routeBlob:         {},
+	routeRepo:         {},
+	routeRepoCommit:   {},
+	routeRepoBranches: {},
+	routeRepoCommits:  {},
+	routeRepoTags:     {},
+	routeRepoStats:    {},
 }
 
 // useSvelteKit returns true if the route is configured to be supported by useSvelteKit
