@@ -4,11 +4,7 @@ import path from 'path'
 import * as esbuild from 'esbuild'
 import { rm } from 'shelljs'
 
-import {
-    packageResolutionPlugin,
-    stylePlugin,
-    buildTimerPlugin,
-} from '@sourcegraph/build-config/src/esbuild/plugins'
+import { packageResolutionPlugin, stylePlugin, buildTimerPlugin } from '@sourcegraph/build-config/src/esbuild/plugins'
 
 const rootPath = path.resolve(__dirname, '../../../')
 const jetbrainsWorkspacePath = path.resolve(rootPath, 'client', 'jetbrains')
