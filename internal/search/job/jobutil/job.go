@@ -171,13 +171,21 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 			diff := resultTypes.Has(result.TypeDiff)
 			repoOptionsCopy := repoOptions
 			repoOptionsCopy.OnlyCloned = true
-			addJob(&commit.SearchJob{
+
+			commitSearchJob := &commit.SearchJob{
 				Query:                commit.QueryToGitQuery(originalQuery, diff),
-				RepoOpts:             repoOptionsCopy,
 				Diff:                 diff,
 				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker) || own,
-			})
+			}
+
+			addJob(
+				&repoPagerJob{
+					child:            &reposPartialJob{commitSearchJob},
+					repoOpts:         repoOptionsCopy,
+					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
+					skipPartitioning: true,
+				})
 		}
 
 		addJob(&searchrepos.ComputeExcludedJob{
@@ -727,13 +735,17 @@ func computeResultTypes(b query.Basic, searchType query.SearchType) result.Types
 	types, _ := b.IncludeExcludeValues(query.FieldType)
 
 	if len(types) == 0 && b.Pattern != nil {
-		if p, ok := b.Pattern.(query.Pattern); ok {
-			annot := p.Annotation
-			if annot.Labels.IsSet(query.IsAlias) {
-				// This query set the pattern via `content:`, so we
-				// imply that only content should be searched.
-				return result.TypeFile
-			}
+		// When the pattern is set via `content:`, we set the annotation on
+		// the pattern to IsContent. So if all Patterns are from content: we
+		// should only search TypeFile.
+		hasPattern := false
+		allIsContent := true
+		query.VisitPattern([]query.Node{b.Pattern}, func(value string, negated bool, annotation query.Annotation) {
+			hasPattern = true
+			allIsContent = allIsContent && annotation.Labels.IsSet(query.IsContent)
+		})
+		if hasPattern && allIsContent {
+			return result.TypeFile
 		}
 	}
 

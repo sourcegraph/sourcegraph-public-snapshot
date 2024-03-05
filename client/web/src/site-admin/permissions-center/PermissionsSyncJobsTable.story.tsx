@@ -92,6 +92,7 @@ export const SixSyncJobsFound: StoryFn = () => (
             >
                 <PermissionsSyncJobsTable
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    // TODO (dadlerj): update to use a real telemetry recorder
                     telemetryRecorder={noOpTelemetryRecorder}
                 />
             </MockedTestProvider>

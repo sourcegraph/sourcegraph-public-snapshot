@@ -8,8 +8,8 @@ import (
 	"go.uber.org/atomic"
 	"golang.org/x/crypto/ssh"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 )
@@ -75,7 +75,7 @@ func newTelemetryEventsExportMode(licenseKey string, pk ssh.PublicKey) Telemetry
 		return TelemetryEventsExportAll // without licensing
 	}
 
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		return TelemetryEventsExportAll // dotcom mode
 	}
 

@@ -9,12 +9,12 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -67,7 +67,7 @@ func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct
 	}
 
 	// 🚨 SECURITY: On dotcom, we MUST send password reset links via email.
-	if envvar.SourcegraphDotComMode() && !conf.CanSendEmail() {
+	if dotcom.SourcegraphDotComMode() && !conf.CanSendEmail() {
 		return nil, errors.New("unable to reset password because email sending is not configured")
 	}
 
@@ -112,7 +112,7 @@ func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct
 		}
 	}
 
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		// 🚨 SECURITY: Do not return reset URL on dotcom - we must have send it via an email.
 		// We already validate that email is enabled earlier in this endpoint for dotcom.
 		resetURL = nil

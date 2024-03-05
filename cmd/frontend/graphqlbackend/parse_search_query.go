@@ -5,8 +5,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -106,7 +106,7 @@ func outputJobTree(
 		PatternType:         searchType,
 		Protocol:            search.Streaming,
 		Features:            client.ToFeatures(featureflag.FromContext(ctx), logger),
-		OnSourcegraphDotCom: envvar.SourcegraphDotComMode(),
+		OnSourcegraphDotCom: dotcom.SourcegraphDotComMode(),
 	}
 	j, err := jobutil.NewPlanJob(inputs, plan)
 	if err != nil {

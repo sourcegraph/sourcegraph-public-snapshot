@@ -1,19 +1,19 @@
-load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "run",
     srcs = [
-        "bazel_build.go",
         "bazel_command.go",
         "command.go",
         "helpers.go",
         "ibazel.go",
+        "installer.go",
         "logger.go",
         "pid.go",
         "prefix_suffix_saver.go",
         "run.go",
-        "run_bazel.go",
+        "sgconfig_command.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/run",
     visibility = ["//dev/sg:__subpackages__"],
@@ -28,9 +28,9 @@ go_library(
         "//lib/output",
         "//lib/process",
         "@com_github_grafana_regexp//:regexp",
+        "@com_github_nxadm_tail//:tail",
         "@com_github_rjeczalik_notify//:notify",
         "@com_github_sourcegraph_conc//pool",
-        "@org_golang_x_sync//semaphore",
     ],
 )
 

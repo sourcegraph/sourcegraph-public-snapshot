@@ -4,7 +4,7 @@
 package:
   name: coursier
   version: 2.0.13 # IMPORTANT: Coursier uses a non-standard release model, so updating this version alone will not update the package
-  epoch: 1
+  epoch: 2
   description: "Java dependency resolver"
   target-architecture:
     - x86_64

@@ -146,7 +146,9 @@ export const routes: RouteObject[] = [
         path: PageRoutes.BatchChanges,
         element: (
             <LegacyRoute
-                render={props => <GlobalBatchChangesArea {...props} />}
+                render={props => (
+                    <GlobalBatchChangesArea {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+                )}
                 // We also render this route on sourcegraph.com as a precaution in case anyone
                 // follows an in-app link to /batch-changes from sourcegraph.com; the component
                 // will just redirect the visitor to the marketing page
@@ -291,6 +293,7 @@ export const routes: RouteObject[] = [
                         sideBarGroups={props.siteAdminSideBarGroups}
                         overviewComponents={props.siteAdminOverviewComponents}
                         codeInsightsEnabled={window.context.codeInsightsEnabled}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
                     />
                 )}
             />

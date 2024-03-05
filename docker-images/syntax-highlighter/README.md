@@ -47,6 +47,18 @@ By default on startup, `syntect_server` will list all file types it supports. Th
 2. Use `cargo run --bin syntect_server` to run the server locally.
 3. You can change the `SRC_SYNTECT_SERVER` option in your `sg.config.yaml` to point to whatever port you're running on (usually 8000) and test against that without building the docker image.
 
+### Testing syntect -> SCIP grammar mappings
+
+<!-- NOTE(id: only-flag) -->
+
+You can run a subset of tests for `syntect_scip` using the `ONLY` environment variable.
+Example:
+
+```bash
+cd crates/syntax-analysis
+ONLY=.java cargo test test_all_files -- --nocapture
+```
+
 ## Building docker image
 
 `./build.sh` will build your current repository checkout into a final Docker image. You **DO NOT** need to do this when you push to get it publish. But, you should do this to make sure that it is possible to build the image :smile:.

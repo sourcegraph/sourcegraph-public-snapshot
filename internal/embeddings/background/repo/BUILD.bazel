@@ -37,12 +37,12 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/api",
         "//internal/codeintel/policies/shared",
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbtest",
+        "//internal/dotcom",
         "//internal/types",
         "//lib/pointers",
         "//schema",

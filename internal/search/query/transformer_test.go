@@ -49,10 +49,10 @@ func TestSubstituteAliases(t *testing.T) {
 	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"field":"file","value":"file","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":13}}}]}]`).
 		Equal(t, test("r:repo f:file", SearchTypeRegex))
 
-	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"^a-regexp:tbf$","negated":false,"labels":["IsAlias","Regexp"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":29}}}]}]`).
+	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"^a-regexp:tbf$","negated":false,"labels":["IsContent","Regexp"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":29}}}]}]`).
 		Equal(t, test("r:repo content:^a-regexp:tbf$", SearchTypeRegex))
 
-	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["IsAlias","Literal"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":42}}}]}]`).
+	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["IsContent","Literal"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":42}}}]}]`).
 		Equal(t, test("r:repo content:^not-actually-a-regexp:tbf$", SearchTypeLiteral))
 
 	autogold.Expect(`[{"field":"file","value":"foo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}}]`).

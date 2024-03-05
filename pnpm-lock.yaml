@@ -49,6 +49,9 @@ importers:
       '@codemirror/view':
         specifier: ^6.23.1
         version: 6.23.1
+      '@date-fns/utc':
+        specifier: ^1.1.1
+        version: 1.1.1
       '@graphiql/react':
         specifier: ^0.10.0
         version: 0.10.0(@codemirror/language@6.2.0)(@types/node@20.8.0)(graphql-ws@5.14.1)(graphql@15.4.0)(react-dom@18.1.0)(react@18.1.0)
@@ -215,8 +218,8 @@ importers:
         specifier: ^1.1.2
         version: 1.1.4
       date-fns:
-        specifier: ^2.16.1
-        version: 2.29.3
+        specifier: ^3.3.1
+        version: 3.3.1
       delay:
         specifier: ^4.4.1
         version: 4.4.1
@@ -3264,6 +3267,10 @@ packages:
     engines: {node: '>=12'}
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
+
+  /@date-fns/utc@1.1.1:
+    resolution: {integrity: sha512-xHqw5SkB6z2OpouO/6BqLSL1nEI2jLC6WIXT01TNFfffU0Os8U/Gk2yxoKB/qbY44tfnGbqUF+nkST5QqLJpDA==}
+    dev: false
 
   /@discoveryjs/json-ext@0.5.7:
     resolution: {integrity: sha512-dBVuXR082gk3jsFp7Rd/JI4kytwGHecnCoTtXFb7DB6CNHp4rg5k1bhg0nWdLGLnOV71lmDzGQaLMy8iPLY0pw==}
@@ -14059,6 +14066,11 @@ packages:
   /date-fns@2.29.3:
     resolution: {integrity: sha512-dDCnyH2WnnKusqvZZ6+jA1O51Ibt8ZMRNkDZdyAyK4YfbDwa/cEmuztzG5pk6hqlp9aSBPYcjOlktquahGwGeA==}
     engines: {node: '>=0.11'}
+    dev: true
+
+  /date-fns@3.3.1:
+    resolution: {integrity: sha512-y8e109LYGgoQDveiEBD3DYXKba1jWf5BA8YU1FL5Tvm0BTdEfy54WLCwnuYWZNnzzvALy/QQ4Hov+Q9RVRv+Zw==}
+    dev: false
 
   /dayjs@1.11.10:
     resolution: {integrity: sha512-vjAczensTgRcqDERK0SR2XMwsF/tSvnvlv6VcF2GIhg6Sx4yOIt/irsr1RDJsKiIyBzJDpCoXiWWq28MqH2cnQ==}

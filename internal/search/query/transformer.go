@@ -21,7 +21,7 @@ func SubstituteAliases(searchType SearchType) func(nodes []Node) []Node {
 				} else {
 					annotation.Labels.Set(Literal)
 				}
-				annotation.Labels.Set(IsAlias)
+				annotation.Labels.Set(IsContent)
 				return Pattern{Value: value, Negated: negated, Annotation: annotation}
 			}
 			if canonical, ok := aliases[field]; ok {
