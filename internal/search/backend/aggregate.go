@@ -6,6 +6,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/zoekt"
 )
 
@@ -147,8 +148,10 @@ func newFlushCollectSender(opts *zoekt.SearchOptions, endpoints []string, maxSiz
 		timerCancel:  timerCancel}
 
 	// As an escape hatch, stop collecting after twice the FlushWallTime. This protects against
-	// cases where an endpoint stops being responsive so we never receive its results.
-	go func() {
+	// cases where an endpoint stops being responsive so we never receive its results. Even though
+	// it's a non-blocking goroutine, we use a WaitGroup to properly propagate panics.
+	wg := conc.NewWaitGroup()
+	wg.Go(func() {
 		timer := time.NewTimer(2 * opts.FlushWallTime)
 		select {
 		case <-timerCancel:
@@ -158,7 +161,7 @@ func newFlushCollectSender(opts *zoekt.SearchOptions, endpoints []string, maxSiz
 			flushSender.stopCollectingAndFlush(zoekt.FlushReasonTimerExpired)
 			flushSender.mu.Unlock()
 		}
-	}()
+	})
 	return flushSender
 }
 
