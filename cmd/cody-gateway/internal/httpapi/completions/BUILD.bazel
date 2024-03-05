@@ -7,6 +7,7 @@ go_library(
         "anthropic.go",
         "fireworks.go",
         "openai.go",
+        "unified.go",
         "upstream.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions",
@@ -45,6 +46,7 @@ go_test(
         "anthropic_test.go",
         "fireworks_test.go",
         "openai_test.go",
+        "unified_test.go",
     ],
     embed = [":completions"],
     deps = [
