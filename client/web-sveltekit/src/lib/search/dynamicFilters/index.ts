@@ -10,6 +10,7 @@ import {
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 
 import { parseExtendedSearchURL } from '..'
+import { USE_CLIENT_CACHE_QUERY_PARAMETER } from '../constants'
 
 export type SectionItem = Omit<Filter, 'count'> & {
     count?: Filter['count']
@@ -53,6 +54,7 @@ export function updateFilterInURL(url: URL, filter: URLQueryFilter, remove: bool
     selectedFilters
         .map(serializeURLFilter)
         .forEach(selectedFilter => newURL.searchParams.append(DYNAMIC_FILTER_URL_QUERY_KEY, selectedFilter))
+    newURL.searchParams.set(USE_CLIENT_CACHE_QUERY_PARAMETER, '')
 
     return newURL
 }
