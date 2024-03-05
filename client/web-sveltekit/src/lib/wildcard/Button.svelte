@@ -18,6 +18,7 @@
     export let display: $$Props['display'] = undefined
     export let outline: $$Props['outline'] = undefined
 
+
     $: buttonClass = getButtonClassName({ variant, outline, display, size })
 </script>
 

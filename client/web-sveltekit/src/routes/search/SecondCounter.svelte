@@ -1,28 +1,36 @@
 <script lang="ts">
-    import { onMount, onDestroy } from 'svelte'
+    import { onMount } from 'svelte'
 
-    let secondsElapsed: number = 0
-    let triggerTime: Date | null = null
-    let secondsInterval: NodeJS.Timeout | null = null
+    let displaySeconds = 0
+    let displayMilliseconds = 0
+
+    export let secondsElapsed = 0
+    let millisecondsElapsed = 0
+
+    let lastUpdate = Date.now()
 
     onMount(() => {
-        triggerTime = new Date() // Set the trigger time to the current time
-        secondsInterval = setInterval(() => {
-            // Update the seconds elapsed every second
-            if (triggerTime) {
-                secondsElapsed = Math.floor((Date.now() - triggerTime.getTime()) / 1000)
-            }
-        }, 1000)
-    })
+        const startTime = Date.now()
 
-    onDestroy(() => {
-        if (secondsInterval) {
-            clearInterval(secondsInterval)
-        }
+        setInterval(() => {
+            const now = Date.now()
+            const delta = now - startTime
+
+            secondsElapsed = Math.floor(delta / 1000)
+            millisecondsElapsed = delta % 100
+
+            if (now - lastUpdate >= 5) {
+                displaySeconds = secondsElapsed
+                displayMilliseconds = millisecondsElapsed
+                lastUpdate = now
+            }
+        }, 1300)
     })
 </script>
 
-<span>{secondsElapsed}s</span>
+<span>
+    {secondsElapsed}.{millisecondsElapsed}s
+</span>
 
 <style>
 </style>

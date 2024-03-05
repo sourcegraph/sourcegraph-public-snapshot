@@ -47,7 +47,7 @@
     <Button variant="secondary" size="sm" outline>
         <svelte:fragment slot="custom" let:buttonClass>
             <button use:registerTrigger class="{buttonClass} progress-button" on:click={() => toggle()}>
-                {#if loading}
+                {#if !loading && progress}
                     <div class="loading">
                         <LoadingSpinner inline />
                         <div class="messages">
@@ -59,9 +59,9 @@
                         </div>
                     </div>
                 {/if}
-                {#if progress}
+                {#if !progress}
                     <div class="progress">
-                        <Icon svgPath={icons[severity]} inline />
+                        <Icon svgPath={icons[severity]} size={18} />
                         <div class="messages">
                             <div class="progress-info-message">
                                 {getProgressText(progress).visibleText}
@@ -87,7 +87,7 @@
                         </div>
                     </div>
                 {/if}
-                <Icon svgPath={mdiChevronDown} inline />
+                <Icon svgPath={mdiChevronDown} size={18} />
             </button>
         </svelte:fragment>
     </Button>
@@ -113,12 +113,14 @@
                             on:click={() => (openItems[index] = !open)}
                         >
                             <h4 class="d-flex align-items-center mb-0 w-100">
-                                <span class="mr-1 flex-shrink-0"><Icon svgPath={icons[item.severity]} inline /></span>
+                                <span class="mr-1 flex-shrink-0">
+                                    <Icon svgPath={icons[item.severity]} inline />
+                                </span>
                                 <span class="flex-grow-1 text-left">{item.title}</span>
                                 {#if item.message}
-                                    <span class="chevron flex-shrink-0"
-                                        ><Icon svgPath={open ? mdiChevronDown : mdiChevronLeft} inline /></span
-                                    >
+                                    <span class="chevron flex-shrink-0">
+                                        <Icon svgPath={open ? mdiChevronDown : mdiChevronLeft} inline />
+                                    </span>
                                 {/if}
                             </h4>
                         </button>
