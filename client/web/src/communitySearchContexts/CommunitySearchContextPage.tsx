@@ -104,12 +104,13 @@ export const CommunitySearchContextPage: React.FunctionComponent<
         [telemetryRecorder, caseSensitive, location, navigate, selectedSearchContextSpec]
     )
 
-    const onRepoLinkClicked = useCallback(
-        (repoName: string) => (): void => {
-            telemetryRecorder.recordEvent('communitySearchContext.repoLink', 'click')
-        },
-        [telemetryRecorder]
-    )
+    const onRepoLinkClicked = useCallback(() => {
+        telemetryRecorder.recordEvent('communitySearchContext.repoLink', 'click')
+    }, [telemetryRecorder])
+
+    const onExternalRepoLinkClicked = useCallback(() => {
+        telemetryRecorder.recordEvent('communitySearchContext.repoLink.external', 'click')
+    }, [telemetryRecorder])
 
     return (
         <div className={styles.communitySearchContextsPage}>
@@ -209,6 +210,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                                                             key={repo.repository.name}
                                                             repo={repo.repository.name}
                                                             onRepoLinkClicked={onRepoLinkClicked}
+                                                            onExternalRepoLinkClicked={onExternalRepoLinkClicked}
                                                         />
                                                     ))}
                                             </div>
@@ -220,6 +222,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                                                             key={repo.repository.name}
                                                             repo={repo.repository.name}
                                                             onRepoLinkClicked={onRepoLinkClicked}
+                                                            onExternalRepoLinkClicked={onExternalRepoLinkClicked}
                                                         />
                                                     ))}
                                             </div>
@@ -237,9 +240,10 @@ export const CommunitySearchContextPage: React.FunctionComponent<
 const RepoLink: React.FunctionComponent<
     React.PropsWithChildren<{
         repo: string
-        onRepoLinkClicked: (repo: string) => (_: any) => void
+        onRepoLinkClicked: () => void
+        onExternalRepoLinkClicked: () => void
     }>
-> = ({ repo, onRepoLinkClicked }) => (
+> = ({ repo, onRepoLinkClicked, onExternalRepoLinkClicked }) => (
     <li className={classNames('list-unstyled mb-3', styles.repoItem)} key={repo}>
         {repo.startsWith('github.com') && (
             <>
@@ -247,11 +251,11 @@ const RepoLink: React.FunctionComponent<
                     to={`https://${repo}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={onRepoLinkClicked(repo)}
+                    onClick={onExternalRepoLinkClicked}
                 >
                     <Icon className={styles.repoListIcon} aria-hidden={true} svgPath={mdiGithub} />
                 </Link>
-                <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
+                <Link to={`/${repo}`} className="text-monospace search-filter-keyword" onClick={onRepoLinkClicked}>
                     {displayRepoName(repo)}
                 </Link>
             </>
@@ -262,11 +266,11 @@ const RepoLink: React.FunctionComponent<
                     to={`https://${repo}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={onRepoLinkClicked(repo)}
+                    onClick={onExternalRepoLinkClicked}
                 >
                     <Icon className={styles.repoListIcon} aria-hidden={true} svgPath={mdiGitlab} />
                 </Link>
-                <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
+                <Link to={`/${repo}`} className="text-monospace search-filter-keyword" onClick={onRepoLinkClicked}>
                     {displayRepoName(repo)}
                 </Link>
             </>
@@ -277,11 +281,11 @@ const RepoLink: React.FunctionComponent<
                     to={`https://${repo}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={onRepoLinkClicked(repo)}
+                    onClick={onExternalRepoLinkClicked}
                 >
                     <Icon className={styles.repoListIcon} aria-hidden={true} svgPath={mdiBitbucket} />
                 </Link>
-                <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
+                <Link to={`/${repo}`} className="text-monospace search-filter-keyword" onClick={onRepoLinkClicked}>
                     {displayRepoName(repo)}
                 </Link>
             </>
