@@ -151,18 +151,17 @@ export function queryStateStore(initial: Partial<Options> = {}, settings: QueryS
 export function getQueryURL(
     queryState: Pick<QueryState, 'searchMode' | 'query' | 'caseSensitive' | 'patternType' | 'searchContext'>,
     enforceCache = false
-): string {
-    const searchQueryParameter = buildSearchURLQuery(
+): URL {
+    let url = new URL('/search')
+    url.search = buildSearchURLQuery(
         queryState.query,
         queryState.patternType,
         queryState.caseSensitive,
         queryState.searchContext,
         queryState.searchMode
     )
-
-    let url = '/search?' + searchQueryParameter
     if (enforceCache) {
-        url += `&${USE_CLIENT_CACHE_QUERY_PARAMETER}`
+        url.searchParams.append(USE_CLIENT_CACHE_QUERY_PARAMETER, '')
     }
     return url
 }

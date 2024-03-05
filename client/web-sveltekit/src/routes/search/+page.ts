@@ -94,6 +94,7 @@ export const load: PageLoad = ({ url, depends }) => {
     const hasQuery = url.searchParams.has('q')
     const caseSensitiveURL = url.searchParams.get('case') === 'yes'
     const forceCache = url.searchParams.has(USE_CLIENT_CACHE_QUERY_PARAMETER)
+    const trace = url.searchParams.get('trace') ?? undefined
 
     if (hasQuery) {
         const parsedQuery = parseExtendedSearchURL(url)
@@ -122,7 +123,8 @@ export const load: PageLoad = ({ url, depends }) => {
             version: LATEST_VERSION,
             patternType,
             caseSensitive,
-            trace: '',
+            trace,
+            // TODO(@camdencheek): populate these from local storage
             featureOverrides: [],
             chunkMatches: true,
             searchMode,
