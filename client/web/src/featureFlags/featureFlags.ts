@@ -19,6 +19,7 @@ export const FEATURE_FLAGS = [
     // TODO(fkling): Remove this flag
     'enable-sveltekit-toggle',
     'web-next',
+    'web-next-enabled',
     'web-next-toggle',
     'end-user-onboarding',
     'insight-polling-enabled',

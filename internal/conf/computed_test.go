@@ -8,9 +8,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -1135,12 +1135,12 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			defaultDeploy := deploy.Type()
-			envvar.MockSourcegraphDotComMode(tc.dotcom)
+			dotcom.MockSourcegraphDotComMode(tc.dotcom)
 			if tc.deployType != "" {
 				deploy.Mock(tc.deployType)
 			}
 			t.Cleanup(func() {
-				envvar.MockSourcegraphDotComMode(false)
+				dotcom.MockSourcegraphDotComMode(false)
 				deploy.Mock(defaultDeploy)
 			})
 			conf := GetEmbeddingsConfig(tc.siteConfig)

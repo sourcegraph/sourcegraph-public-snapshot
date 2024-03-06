@@ -46,6 +46,7 @@ func TestStartCommandSet(t *testing.T) {
 		"",
 		"✅ Everything installed! Booting up the system!",
 		"",
+		"Starting 1 cmds",
 		"Running test-cmd-1...",
 		"[     test-cmd-1] horsegraph booted up. mount your horse.",
 		"[     test-cmd-1] quitting. not horsing around anymore.",
