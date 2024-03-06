@@ -2,6 +2,7 @@ load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@npm//:@playwright/test/package_json.bzl", playwright_bin = "bin")
 load("@npm//:bundlesize2/package_json.bzl", bundlesize_bin = "bin")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
@@ -1204,6 +1205,7 @@ ts_project(
         "src/own/OwnConfigProps.ts",
         "src/person/PersonLink.tsx",
         "src/platform/context.ts",
+        "src/playwright/example.spec.ts",
         "src/productSubscription/helpers.ts",
         "src/repo/DirectImportRepoAlert.tsx",
         "src/repo/FilePathBreadcrumbs.tsx",
@@ -1734,6 +1736,7 @@ ts_project(
         ":code_intel_schema",
         ":graphql_operations",
         ":module_style_typings",
+        ":node_modules/@playwright/test",
         ":node_modules/@sourcegraph/branded",
         ":node_modules/@sourcegraph/client-api",
         ":node_modules/@sourcegraph/codeintellify",
@@ -1746,6 +1749,7 @@ ts_project(
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/telemetry",
         ":node_modules/@sourcegraph/wildcard",
+        ":node_modules/@types/node",
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/commands",
         "//:node_modules/@codemirror/lang-json",
@@ -1785,7 +1789,6 @@ ts_project(
         "//:node_modules/@types/lru-cache",
         "//:node_modules/@types/marked",
         "//:node_modules/@types/mocha",  #keep
-        "//:node_modules/@types/node",
         "//:node_modules/@types/react",
         "//:node_modules/@types/react-calendar",
         "//:node_modules/@types/react-circular-progressbar",
@@ -2012,6 +2015,7 @@ ts_project(
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/testing",
         ":node_modules/@sourcegraph/wildcard",
+        ":node_modules/@types/node",
         ":web_lib",
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/state",
@@ -2024,7 +2028,6 @@ ts_project(
         "//:node_modules/@types/history",
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/mocha",
-        "//:node_modules/@types/node",
         "//:node_modules/@types/react",
         "//:node_modules/@types/react-dom",
         "//:node_modules/@types/semver",
@@ -2445,5 +2448,14 @@ ts_project(
         "//:node_modules/sinon",
         "//:node_modules/wildcard-mock-link",
         "//client/web/src/rbac:constants",
+    ],
+)
+
+playwright_bin.playwright_test(
+    name = "playwright_test",
+    args = ["test"],
+    data = glob(["src/playwright/*.spec.ts"]) + [
+        "playwright.config.ts",
+        "//:node_modules/@playwright/test",
     ],
 )

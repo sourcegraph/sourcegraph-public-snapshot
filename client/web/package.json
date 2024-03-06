@@ -29,10 +29,12 @@
     "bundlesize": "pnpm exec bundlesize --config=./bundlesize.config.js"
   },
   "devDependencies": {
+    "@playwright/test": "1.40.1",
     "@sourcegraph/build-config": "workspace:*",
     "@sourcegraph/extension-api-types": "workspace:*",
     "@sourcegraph/storybook": "workspace:*",
-    "@sourcegraph/testing": "workspace:*"
+    "@sourcegraph/testing": "workspace:*",
+    "@types/node": "^20.11.19"
   },
   "dependencies": {
     "@sourcegraph/branded": "workspace:*",
