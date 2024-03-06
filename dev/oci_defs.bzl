@@ -5,6 +5,9 @@ load("@rules_oci//oci:defs.bzl", _oci_image = "oci_image", _oci_push = "oci_push
 REGISTRY_REPOSITORY_PREFIX = "europe-west1-docker.pkg.dev/sourcegraph-security-logging/rules-oci-test/{}"
 # REGISTRY_REPOSITORY_PREFIX = "us.gcr.io/sourcegraph-dev/{}"
 
+# Passthrough the @rules_oci oci_push, so users only have to import this file and not @rules_oci//oci:defs.bzl
+oci_push = _oci_push
+
 def image_repository(image):
     return REGISTRY_REPOSITORY_PREFIX.format(image)
 
@@ -18,9 +21,6 @@ def oci_tarball(name, **kwargs):
         **kwargs
     )
 
-# Passthrough the @rules_oci oci_push, so users only have to import this file and not @rules_oci//oci:defs.bzl
-oci_push = _oci_push
-
 # Apply a transition on oci_image targets and their deps to apply a transition on platforms
 # to build binaries for Linux when building on MacOS.
 def oci_image(name, **kwargs):
@@ -30,18 +30,12 @@ def oci_image(name, **kwargs):
     )
 
     oci_image_cross(
-        name = name + "_transitioned",
+        name = name,
         image = ":" + name + "_underlying",
         platforms = select({
             "@platforms//os:macos": [Label("@zig_sdk//platform:linux_amd64")],
             "//conditions:default": [],
         }),
-        visibility = kwargs.pop("visibility", ["//visibility:public"]),
-    )
-
-    native.alias(
-        name = name,
-        actual = ":" + name + "_transitioned",
         visibility = kwargs.pop("visibility", ["//visibility:public"]),
     )
 
