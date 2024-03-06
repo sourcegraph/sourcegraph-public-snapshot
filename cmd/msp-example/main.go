@@ -7,5 +7,6 @@ import (
 )
 
 func main() {
+	println("Try to Deliver")
 	runtime.Start[example.Config](example.Service{})
 }
