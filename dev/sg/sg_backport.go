@@ -28,7 +28,7 @@ var releaseBranchFlag = cli.StringFlag{
 var backportCommand = &cli.Command{
 	Name:     "backport",
 	Category: category.Dev,
-	Usage:    "Backport commits from master to release branches.\nsg backport -r 5.3 -p 60932",
+	Usage:    "Backport commits from main to release branches.\nsg backport -r 5.3 -p 60932",
 	Action: func(cmd *cli.Context) error {
 		prNumber := pullRequestIDFlag.Get(cmd)
 		releaseBranch := releaseBranchFlag.Get(cmd)
