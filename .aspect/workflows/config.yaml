@@ -30,8 +30,6 @@ tasks:
         # evaluate Aspect Workflows it is ok
         # TODO(burmudar): Let this only run on main branch
         - //testing:codeintel_integration_test
-  - finalization:
-      queue: aspect-small
   - delivery:
       auto_deliver: true
       icon: 'ship'
@@ -40,3 +38,5 @@ tasks:
           conditions:
             branches:
               - 'jcjh/msp-bazel-delivery'
+  - finalization:
+      queue: aspect-small
