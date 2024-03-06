@@ -1280,13 +1280,21 @@ func (gs *grpcServer) ListRefs(ctx context.Context, req *proto.ListRefsRequest) 
 
 	backend := gs.getBackendFunc(repoDir, repoName)
 
-	opt := git.ListRefsOpts{
-		HeadsOnly: req.GetHeadsOnly(),
-		TagsOnly:  req.GetTagsOnly(),
+	pointsAtCommit := []api.CommitID{}
+	for _, c := range req.GetPointsAtCommit() {
+		pointsAtCommit = append(pointsAtCommit, api.CommitID(c))
 	}
 
-	if req.GetPointsAtCommit() != "" {
-		opt.PointsAtCommit = pointers.Ptr(api.CommitID(req.GetPointsAtCommit()))
+	contains := []api.CommitID{}
+	if c := req.GetContainsSha(); c != "" {
+		contains = append(contains, api.CommitID(c))
+	}
+
+	opt := git.ListRefsOpts{
+		HeadsOnly:      req.GetHeadsOnly(),
+		TagsOnly:       req.GetTagsOnly(),
+		PointsAtCommit: pointsAtCommit,
+		Contains:       contains,
 	}
 
 	it, err := backend.ListRefs(ctx, opt)
@@ -1306,12 +1314,7 @@ func (gs *grpcServer) ListRefs(ctx context.Context, req *proto.ListRefsRequest) 
 			}
 			return nil, err
 		}
-		res.Refs = append(res.Refs, &proto.GitRef{
-			RefName:      ref.Name,
-			ShortRefName: ref.ShortName,
-			TargetCommit: string(ref.CommitID),
-			RefOid:       string(ref.RefOID),
-		})
+		res.Refs = append(res.Refs, ref.ToProto())
 	}
 
 	return res, nil

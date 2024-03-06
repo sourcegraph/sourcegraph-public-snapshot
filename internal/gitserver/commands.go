@@ -29,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -1866,202 +1865,6 @@ func parseCommitFromLog(parts [][]byte) (*wrappedCommit, error) {
 	}, nil
 }
 
-// BranchesContaining returns a map from branch names to branch tip hashes for
-// each branch containing the given commit.
-func (c *clientImplementor) BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID) (_ []string, err error) {
-	ctx, _, endObservation := c.operations.branchesContaining.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.String("commit", string(commit)),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		// GetCommit to validate that the user has permissions to access it.
-		if _, err := c.GetCommit(ctx, repo, commit); err != nil {
-			return nil, err
-		}
-	}
-	cmd := c.gitCommand(repo, "branch", "--contains", string(commit), "--format", "%(refname)")
-
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return parseBranchesContaining(strings.Split(string(out), "\n")), nil
-}
-
-var refReplacer = strings.NewReplacer("refs/heads/", "", "refs/tags/", "")
-
-func parseBranchesContaining(lines []string) []string {
-	names := make([]string, 0, len(lines))
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		line = refReplacer.Replace(line)
-		names = append(names, line)
-	}
-	sort.Strings(names)
-
-	return names
-}
-
-// RefDescriptions returns a map from commits to descriptions of the tip of each
-// branch and tag of the given repository.
-func (c *clientImplementor) RefDescriptions(ctx context.Context, repo api.RepoName, gitObjs ...string) (_ map[string][]gitdomain.RefDescription, err error) {
-	ctx, _, endObservation := c.operations.refDescriptions.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.Int("objects", len(gitObjs)),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	f := func(refPrefix string) (map[string][]gitdomain.RefDescription, error) {
-		format := strings.Join([]string{
-			derefField("objectname"),
-			"%(refname)",
-			"%(HEAD)",
-			derefField("creatordate:unix"),
-		}, "%00")
-
-		args := make([]string, 0, len(gitObjs)+3)
-		args = append(args, "for-each-ref", "--format="+format, refPrefix)
-
-		for _, obj := range gitObjs {
-			args = append(args, "--points-at="+obj)
-		}
-
-		cmd := c.gitCommand(repo, args...)
-
-		out, err := cmd.CombinedOutput(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		return parseRefDescriptions(out)
-	}
-
-	aggregate := make(map[string][]gitdomain.RefDescription)
-	for prefix := range refPrefixes {
-		descriptions, err := f(prefix)
-		if err != nil {
-			return nil, err
-		}
-		for commit, descs := range descriptions {
-			aggregate[commit] = append(aggregate[commit], descs...)
-		}
-	}
-
-	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		return c.filterRefDescriptions(ctx, repo, aggregate), nil
-	}
-	return aggregate, nil
-}
-
-func derefField(field string) string {
-	return "%(if)%(*" + field + ")%(then)%(*" + field + ")%(else)%(" + field + ")%(end)"
-}
-
-func (c *clientImplementor) filterRefDescriptions(ctx context.Context,
-	repo api.RepoName,
-	refDescriptions map[string][]gitdomain.RefDescription,
-) map[string][]gitdomain.RefDescription {
-	filtered := make(map[string][]gitdomain.RefDescription, len(refDescriptions))
-	for commitID, descriptions := range refDescriptions {
-		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID))
-		if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			filtered[commitID] = descriptions
-		}
-	}
-	return filtered
-}
-
-var refPrefixes = map[string]gitdomain.RefType{
-	"refs/heads/": gitdomain.RefTypeBranch,
-	"refs/tags/":  gitdomain.RefTypeTag,
-}
-
-// parseRefDescriptions converts the output of the for-each-ref command in the RefDescriptions
-// method to a map from commits to RefDescription objects. The output is expected to be a series
-// of lines each conforming to  `%(objectname)%00%(refname)%00%(HEAD)%00%(creatordate)`, where
-//
-// - %(objectname) is the 40-character revhash
-// - %(refname) is the name of the tag or branch (prefixed with refs/heads/ or ref/tags/)
-// - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
-// - %(creatordate) is the unix timestamp the object was created
-func parseRefDescriptions(out []byte) (map[string][]gitdomain.RefDescription, error) {
-	refDescriptions := make(map[string][]gitdomain.RefDescription, bytes.Count(out, []byte("\n")))
-
-	lr := byteutils.NewLineReader(out)
-
-lineLoop:
-	for lr.Scan() {
-		line := bytes.TrimSpace(lr.Line())
-		if len(line) == 0 {
-			continue
-		}
-
-		parts := bytes.SplitN(line, []byte("\x00"), 4)
-		if len(parts) != 4 {
-			return nil, errors.Errorf(`unexpected output from git for-each-ref %q`, string(line))
-		}
-
-		commit := string(parts[0])
-		isDefaultBranch := string(parts[2]) == "*"
-
-		var name string
-		var refType gitdomain.RefType
-		for prefix, typ := range refPrefixes {
-			if strings.HasPrefix(string(parts[1]), prefix) {
-				name = string(parts[1])[len(prefix):]
-				refType = typ
-				break
-			}
-		}
-		if refType == gitdomain.RefTypeUnknown {
-			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
-		}
-
-		var (
-			createdDatePart = string(parts[3])
-			createdDatePtr  *time.Time
-		)
-		// Some repositories attach tags to non-commit objects, such as trees. In such a situation, one
-		// cannot deference the tag to obtain the commit it points to, and there is no associated creatordate.
-		if createdDatePart != "" {
-			parsedSeconds, err := strconv.Atoi(createdDatePart)
-			if err != nil {
-				return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
-			}
-			createdDate := time.Unix(int64(parsedSeconds), 0)
-			createdDatePtr = &createdDate
-		}
-
-		// Check for duplicates before adding it to the slice
-		for _, candidate := range refDescriptions[commit] {
-			if candidate.Name == name && candidate.Type == refType && candidate.IsDefaultBranch == isDefaultBranch {
-				continue lineLoop
-			}
-		}
-
-		refDescriptions[commit] = append(refDescriptions[commit], gitdomain.RefDescription{
-			Name:            name,
-			Type:            refType,
-			IsDefaultBranch: isDefaultBranch,
-			CreatedDate:     createdDatePtr,
-		})
-	}
-
-	return refDescriptions, nil
-}
-
 type ArchiveFormat string
 
 const (
@@ -2218,8 +2021,12 @@ func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName, opt
 		TagsOnly:  opt.TagsOnly,
 	}
 
-	if opt.PointsAtCommit != "" {
-		req.PointsAtCommit = pointers.Ptr(string(opt.PointsAtCommit))
+	for _, c := range opt.PointsAtCommit {
+		req.PointsAtCommit = append(req.PointsAtCommit, string(c))
+	}
+
+	if opt.Contains != "" {
+		req.ContainsSha = pointers.Ptr(string(opt.Contains))
 	}
 
 	resp, err := client.ListRefs(ctx, req)
@@ -2230,12 +2037,7 @@ func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName, opt
 	refs := make([]gitdomain.Ref, 0, len(resp.GetRefs()))
 
 	for _, ref := range resp.GetRefs() {
-		refs = append(refs, gitdomain.Ref{
-			Name:      ref.GetRefName(),
-			ShortName: ref.GetShortRefName(),
-			CommitID:  api.CommitID(ref.GetTargetCommit()),
-			RefOID:    api.CommitID(ref.GetRefOid()),
-		})
+		refs = append(refs, gitdomain.RefFromProto(ref))
 	}
 
 	return refs, nil

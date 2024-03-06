@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestGitCLIBackend_ListRefs(t *testing.T) {
@@ -176,7 +175,7 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 	})
 
 	t.Run("points at", func(t *testing.T) {
-		it, err := backend.ListRefs(ctx, git.ListRefsOpts{PointsAtCommit: pointers.Ptr(commit)})
+		it, err := backend.ListRefs(ctx, git.ListRefsOpts{PointsAtCommit: []api.CommitID{commit}})
 		require.NoError(t, err)
 
 		ref, err := it.Next()
@@ -227,11 +226,11 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 	// For now, we don't want to error for this case.
 	t.Run("points-at target not found", func(t *testing.T) {
 		// Ambiguous ref, could be commit, could be a ref.
-		_, err := backend.ListRefs(ctx, git.ListRefsOpts{PointsAtCommit: pointers.Ptr(api.CommitID("deadbeef"))})
+		_, err := backend.ListRefs(ctx, git.ListRefsOpts{PointsAtCommit: []api.CommitID{api.CommitID("deadbeef")}})
 		require.NoError(t, err)
 
 		// Definitely a commit (yes, those can yield different errors from git).
-		_, err = backend.ListRefs(ctx, git.ListRefsOpts{PointsAtCommit: pointers.Ptr(api.CommitID("e3889dff4263a2273459471739aafabc10269885"))})
+		_, err = backend.ListRefs(ctx, git.ListRefsOpts{PointsAtCommit: []api.CommitID{api.CommitID("e3889dff4263a2273459471739aafabc10269885")}})
 		require.NoError(t, err)
 	})
 }
@@ -315,7 +314,7 @@ func TestBuildListRefsArgs(t *testing.T) {
 
 	t.Run("points at commit", func(t *testing.T) {
 		commit := api.CommitID("f00ba4")
-		args := buildListRefsArgs(git.ListRefsOpts{PointsAtCommit: &commit})
+		args := buildListRefsArgs(git.ListRefsOpts{PointsAtCommit: []api.CommitID{commit}})
 		require.Equal(t,
 			[]string{"for-each-ref", "--sort", "-refname", "--sort", "-creatordate", "--sort", "-HEAD", "--format", "%(objecttype)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)", "--points-at=f00ba4"},
 			args,

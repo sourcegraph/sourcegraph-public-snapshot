@@ -59,7 +59,7 @@ func (r *commitResolver) Tags(ctx context.Context) ([]string, error) {
 	r.tagsOnce.Do(func() {
 		rawTags, err := r.gitserverClient.ListRefs(ctx, api.RepoName(r.repo.Name()), gitserver.ListRefsOpts{
 			TagsOnly:       true,
-			PointsAtCommit: api.CommitID(r.oid),
+			PointsAtCommit: []api.CommitID{api.CommitID(r.oid)},
 		})
 		if err != nil {
 			r.tagsErr = err

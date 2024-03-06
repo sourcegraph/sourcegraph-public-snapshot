@@ -133,8 +133,11 @@ type ListRefsOpts struct {
 	HeadsOnly bool
 	// If true, only tags are returned. Can be combined with heads_only.
 	TagsOnly bool
-	// If set, only return refs that point at the given commit sha.
-	PointsAtCommit *api.CommitID
+	// If set, only return refs that point at the given commit shas. Multiple
+	// values will be ORed together.
+	PointsAtCommit []api.CommitID
+	// If set, only return refs that contain the given commit shas.
+	Contains []api.CommitID
 }
 
 // RefIterator iterates over refs.

@@ -261,8 +261,11 @@ type ListRefsOpts struct {
 	HeadsOnly bool
 	// If true, only tags are returned. Can be combined with HeadsOnly.
 	TagsOnly bool
-	// If set, only return refs that point at the given commit sha.
-	PointsAtCommit api.CommitID
+	// If set, only return refs that point at the given commit sha. Multiple
+	// values are ORed together.
+	PointsAtCommit []api.CommitID
+	// If set, only return refs that contain the given commit sha in their history.
+	Contains api.CommitID
 }
 
 // ArchiveOptions contains options for the Archive func.
@@ -425,16 +428,6 @@ type Client interface {
 	// commits on a per-file basis. The iterator must be closed with Close when no
 	// longer required.
 	Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error)
-
-	// BranchesContaining returns a map from branch names to branch tip hashes for
-	// each branch containing the given commit.
-	// The returned branches will be in short form (e.g. "master" instead of
-	// "refs/heads/master").
-	BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]string, error)
-
-	// RefDescriptions returns a map from commits to descriptions of the tip of each
-	// branch and tag of the given repository.
-	RefDescriptions(ctx context.Context, repo api.RepoName, gitObjs ...string) (map[string][]gitdomain.RefDescription, error)
 
 	// CommitGraph returns the commit graph for the given repository as a mapping
 	// from a commit to its parents. If a commit is supplied, the returned graph will

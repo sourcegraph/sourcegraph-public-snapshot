@@ -173,8 +173,11 @@ message ListRefsRequest {
   bool heads_only = 3;
   // If true, only tags are returned. Can be combined with heads_only.
   bool tags_only = 4;
-  // If set, only return refs that point at the given commit sha.
-  optional string points_at_commit = 5;
+  // If set, only return refs that point at the given commit sha. Multiple values
+  // will be ORed together.
+  repeated string points_at_commit = 5;
+  // If set, only return refs that contain the given commit sha.
+  optional string contains_sha = 6;
 }
 
 message ListRefsResponse {
@@ -195,6 +198,17 @@ message GitRef {
   // a lightweight tag, this value is the same as target_commit. For annotated tags,
   // it is the object ID of the tag.
   string ref_oid = 4;
+  // CreatedAt is the timestamp when the ref was created or modified last.
+  google.protobuf.Timestamp created_at = 5;
+  enum RefType {
+    REF_TYPE_UNSPECIFIED = 0;
+    REF_TYPE_BRANCH = 1;
+    REF_TYPE_TAG = 2;
+  }
+  // ref_type is the type of the reference.
+  RefType ref_type = 6;
+  // is_head is true if the reference is the head reference.
+  bool is_head = 7;
 }
 
 message ResolveRevisionRequest {

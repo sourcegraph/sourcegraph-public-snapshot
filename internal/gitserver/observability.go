@@ -49,8 +49,6 @@ type operations struct {
 	createCommitFromPatch    *observation.Operation
 	getObject                *observation.Operation
 	commitGraph              *observation.Operation
-	refDescriptions          *observation.Operation
-	branchesContaining       *observation.Operation
 	commitsUniqueToBranch    *observation.Operation
 	getDefaultBranch         *observation.Operation
 	listDirectoryChildren    *observation.Operation
@@ -144,8 +142,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		createCommitFromPatch:    op("CreateCommitFromPatch"),
 		getObject:                op("GetObject"),
 		commitGraph:              op("CommitGraph"),
-		refDescriptions:          op("RefDescriptions"),
-		branchesContaining:       op("BranchesContaining"),
 		commitsUniqueToBranch:    op("CommitsUniqueToBranch"),
 		getDefaultBranch:         op("GetDefaultBranch"),
 		listDirectoryChildren:    op("ListDirectoryChildren"),

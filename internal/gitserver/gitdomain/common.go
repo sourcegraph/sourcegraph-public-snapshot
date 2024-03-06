@@ -289,22 +289,6 @@ type Signature struct {
 	Date  time.Time `json:"Date"`
 }
 
-type RefType int
-
-const (
-	RefTypeUnknown RefType = iota
-	RefTypeBranch
-	RefTypeTag
-)
-
-// RefDescription describes a commit at the head of a branch or tag.
-type RefDescription struct {
-	Name            string
-	Type            RefType
-	IsDefaultBranch bool
-	CreatedDate     *time.Time
-}
-
 // A ContributorCount is a contributor to a repository.
 type ContributorCount struct {
 	Name  string
@@ -316,12 +300,44 @@ func (p *ContributorCount) String() string {
 	return fmt.Sprintf("%d %s <%s>", p.Count, p.Name, p.Email)
 }
 
+type RefType int
+
+const (
+	RefTypeUnknown RefType = iota
+	RefTypeBranch
+	RefTypeTag
+)
+
+func RefTypeFromProto(t proto.GitRef_RefType) RefType {
+	switch t {
+	case proto.GitRef_REF_TYPE_BRANCH:
+		return RefTypeBranch
+	case proto.GitRef_REF_TYPE_TAG:
+		return RefTypeTag
+	default:
+		return RefTypeUnknown
+	}
+}
+
+func (t RefType) ToProto() proto.GitRef_RefType {
+	switch t {
+	case RefTypeBranch:
+		return proto.GitRef_REF_TYPE_BRANCH
+	case RefTypeTag:
+		return proto.GitRef_REF_TYPE_TAG
+	default:
+		return proto.GitRef_REF_TYPE_UNSPECIFIED
+	}
+}
+
 // Ref describes a Git ref.
 type Ref struct {
 	// Name the full name of the ref (e.g., "refs/heads/mybranch").
 	Name string
 	// ShortName the abbreviated name of the ref, if it wouldn't be ambiguous (e.g., "mybranch").
 	ShortName string
+	// Type is the type of this reference.
+	Type RefType
 	// CommitID is the hash of the commit the reference is currently pointing at.
 	// For a head reference, this is the commit the head is currently pointing at.
 	// For a tag, this is the commit that the tag is attached to.
@@ -330,6 +346,34 @@ type Ref struct {
 	// a lightweight tag, this value is the same as CommitID. For annotated tags,
 	// it is the object ID of the tag.
 	RefOID api.CommitID
+	// CreatedDate is the date the ref was created or modified last.
+	CreatedDate time.Time
+	// IsHead indicates whether this is the head reference.
+	IsHead bool
+}
+
+func RefFromProto(r *proto.GitRef) Ref {
+	return Ref{
+		Name:        r.GetRefName(),
+		ShortName:   r.GetShortRefName(),
+		Type:        RefTypeFromProto(r.GetRefType()),
+		CommitID:    api.CommitID(r.GetTargetCommit()),
+		RefOID:      api.CommitID(r.GetRefOid()),
+		CreatedDate: r.GetCreatedAt().AsTime(),
+		IsHead:      r.GetIsHead(),
+	}
+}
+
+func (r *Ref) ToProto() *proto.GitRef {
+	return &proto.GitRef{
+		RefName:      r.Name,
+		ShortRefName: r.ShortName,
+		TargetCommit: string(r.CommitID),
+		RefOid:       string(r.RefOID),
+		CreatedAt:    timestamppb.New(r.CreatedDate),
+		RefType:      r.Type.ToProto(),
+		IsHead:       r.IsHead,
+	}
 }
 
 // BehindAhead is a set of behind/ahead counts.
