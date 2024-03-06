@@ -5,6 +5,8 @@ bazel:
 env:
   REDIS_CACHE_ENDPOINT: ":6379"
   GIT_PAGER: ""
+# Temporary work-around to resolve a slow post task agent health check
+observability: false
 tasks:
   # Checks that BUILD files are formatted
   - buildifier:
