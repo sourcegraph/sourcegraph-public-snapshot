@@ -55,7 +55,7 @@ var hopHeaders = map[string]struct{}{
 }
 
 // Trim detected phrases to this many characters (to avoid storing too much repetitive data in BigQuery)
-const detectedPhrasePrefixLength = 5
+const phrasePrefixLength = 5
 
 // upstreamHandlerMethods declares a set of methods that are used throughout the
 // lifecycle of a request to an upstream API. All methods are required, and called
@@ -457,8 +457,8 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 
 func truncateToPrefix(p string) string {
 	pat := p
-	if len(p) > detectedPhrasePrefixLength {
-		pat = p[:detectedPhrasePrefixLength]
+	if len(p) > phrasePrefixLength {
+		pat = p[:phrasePrefixLength]
 	}
 	return pat
 }
