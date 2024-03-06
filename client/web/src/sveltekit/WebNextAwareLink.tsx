@@ -1,4 +1,4 @@
-import React from 'react'
+import { forwardRef } from 'react'
 
 import isAbsoluteUrl from 'is-absolute-url'
 
@@ -8,13 +8,19 @@ import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 import { isRolledOutRoute, isSupportedRoute } from './util'
 
-export const SvelteKitAwareLink = React.forwardRef(({ to, children, ...rest }, reference) => {
-    const [webNextEnabled] = useFeatureFlag('web-next-rollout', false)
-    const [webNext] = useFeatureFlag('web-next', false)
+/**
+ * This link causes a full page reload to load the SvelteKit app from the server if
+ * the web-next or web-next-rollout feature flags are enabled, and the link is to a
+ * supported route.
+ * Otherwise it falls back to {@link RouterLink}.
+ */
+export const WebNextAwareLink = forwardRef(({ to, children, ...rest }, reference) => {
+    const [webNext] = useFeatureFlag('web-next')
+    const [webNextRollout] = useFeatureFlag('web-next-rollout')
 
     if (to && !isAbsoluteUrl(to)) {
         const url = new URL(to, window.location.href)
-        if ((webNextEnabled && isRolledOutRoute(url.pathname)) || (webNext && isSupportedRoute(url.pathname))) {
+        if ((webNextRollout && isRolledOutRoute(url.pathname)) || (webNext && isSupportedRoute(url.pathname))) {
             // Render an AnchorLink to bypass React Router and force
             // a full page reload to fetch the SvelteKit app from the server
             return (
@@ -31,3 +37,4 @@ export const SvelteKitAwareLink = React.forwardRef(({ to, children, ...rest }, r
         </RouterLink>
     )
 }) as Link
+WebNextAwareLink.displayName = 'WebNextAwareLink'

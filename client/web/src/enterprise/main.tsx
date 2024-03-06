@@ -16,13 +16,13 @@ import { logger } from '@sourcegraph/common'
 import { setLinkComponent } from '@sourcegraph/wildcard'
 
 import { initAppShell } from '../storm/app-shell-init'
-import { SvelteKitAwareLink } from '../sveltekit/SvelteKitAwareLink'
+import { WebNextAwareLink } from '../sveltekit/WebNextAwareLink'
 
 import { EnterpriseWebApp } from './EnterpriseWebApp'
 
 const appShellPromise = initAppShell()
 
-setLinkComponent(SvelteKitAwareLink)
+setLinkComponent(WebNextAwareLink)
 
 // It's important to have a root component in a separate file to create a react-refresh boundary and avoid page reload.
 window.addEventListener('DOMContentLoaded', async () => {
