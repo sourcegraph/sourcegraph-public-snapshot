@@ -6659,6 +6659,10 @@ type User implements Node & SettingsSubject & Namespace {
     The limit of Cody code completions for the current billing period.
     """
     codyCurrentPeriodCodeLimit: Int!
+    """
+    Evaluates a feature flag for the user. Returns null if the feature flag does not exist.
+    """
+    evaluateFeatureFlag(flagName: String!): Boolean
 }
 
 """

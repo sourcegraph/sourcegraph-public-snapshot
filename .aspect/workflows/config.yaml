@@ -25,6 +25,7 @@ tasks:
         - -//testing/...
   - test:
       include_eternal_tests: true
+      name: Integration/E2E
       targets:
         - //testing/...
         # This target should only really run when on main which we aren't handling. For the time being while we
