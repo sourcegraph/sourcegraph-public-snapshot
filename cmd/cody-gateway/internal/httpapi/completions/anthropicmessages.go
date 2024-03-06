@@ -259,7 +259,6 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 			continue
 		}
 
-		fmt.Printf("%+v\n\n", event)
 
 		switch event.Type {
 		case "message_start":
