@@ -279,8 +279,6 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 		logger.Error("failed to decode Anthropic streaming response", log.Error(err))
 	}
 
-	fmt.Printf("promptUsage: %+v\n", promptUsage)
-	fmt.Printf("completionUsage: %+v\n", completionUsage)
 
 	return promptUsage, completionUsage
 }
