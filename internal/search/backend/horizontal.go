@@ -11,6 +11,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/query"
 	"github.com/sourcegraph/zoekt/stream"
@@ -60,9 +61,11 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	var mu sync.Mutex
 	dedupper := dedupper{}
 
-	ch := make(chan error, len(clients))
-	for endpoint, c := range clients {
-		go func(endpoint string, c zoekt.Streamer) {
+	pl := pool.New().WithErrors()
+	for endpoint, client := range clients {
+		e := endpoint
+		c := client
+		pl.Go(func() error {
 			err := c.StreamSearch(ctx, q, opts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
 				// This shouldn't happen, but skip event if sr is nil.
 				if sr == nil {
@@ -70,28 +73,23 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 				}
 
 				mu.Lock()
-				sr.Files = dedupper.Dedup(endpoint, sr.Files)
+				sr.Files = dedupper.Dedup(e, sr.Files)
 				mu.Unlock()
 
-				flushSender.Send(endpoint, sr)
+				flushSender.Send(e, sr)
 			}))
 
 			if isZoektRolloutError(ctx, err) {
-				flushSender.Send(endpoint, crashEvent())
-				err = nil
+				flushSender.Send(e, crashEvent())
+				return nil
 			}
 
-			flushSender.SendDone(endpoint)
-			ch <- err
-		}(endpoint, c)
+			flushSender.SendDone(e)
+			return err
+		})
 	}
 
-	var errs errors.MultiError
-	for i := 0; i < cap(ch); i++ {
-		errs = errors.Append(errs, <-ch)
-	}
-
-	return errs
+	return pl.Wait()
 }
 
 type queueSearchResult struct {
