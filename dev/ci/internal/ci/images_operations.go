@@ -74,7 +74,7 @@ func bazelPushImagesCandidates(version string) func(*bk.Pipeline) {
 
 // Used in default run type
 func bazelPushImagesFinal(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, false, bk.DependsOn(AspectWorkflows.TestStepKey))
+	return bazelPushImagesCmd(version, false, bk.DependsOn(AspectWorkflows.TestStepKey, AspectWorkflows.IntegrationTestStepKey))
 }
 
 // Used in CandidateNoTest run type

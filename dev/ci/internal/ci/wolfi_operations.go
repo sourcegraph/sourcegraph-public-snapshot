@@ -78,7 +78,7 @@ func buildPackage(target string) (func(*bk.Pipeline), string) {
 			bk.Cmd(fmt.Sprintf("./dev/ci/scripts/wolfi/build-package.sh %s", target)),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", AspectWorkflows.QueueDefault),
-			bk.DependsOn(AspectWorkflows.TestStepKey),
+			bk.DependsOn(AspectWorkflows.TestStepKey, AspectWorkflows.IntegrationTestStepKey),
 			bk.Key(stepKey),
 			bk.SoftFail(222),
 		)
@@ -114,7 +114,7 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 			}),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", AspectWorkflows.QueueDefault),
-			bk.DependsOn(AspectWorkflows.TestStepKey),
+			bk.DependsOn(AspectWorkflows.TestStepKey, AspectWorkflows.IntegrationTestStepKey),
 			bk.Key(stepKey),
 			bk.SoftFail(222),
 		}
