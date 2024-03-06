@@ -3,12 +3,11 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/stretchr/testify/assert"
 	"strconv"
 	"strings"
 	"testing"
 
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUser(t *testing.T) {
