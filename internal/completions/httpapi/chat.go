@@ -92,10 +92,7 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 		}
 	} else {
 		switch model {
-		case "anthropic/claude-3-sonnet-20240229",
-			"fireworks/" + fireworks.Mixtral8x7bInstruct,
-
-			// Remove after the Claude 3 rollout is complete
+		case // Remove after the Claude 3 rollout is complete
 			"anthropic/claude-2",
 			"anthropic/claude-2.0",
 			"anthropic/claude-instant-v1",
