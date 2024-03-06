@@ -8,5 +8,6 @@ import (
 
 func main() {
 	println("Try to Deliver")
+	println("Cloud Deploy Releaser")
 	runtime.Start[example.Config](example.Service{})
 }
