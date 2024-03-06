@@ -68,10 +68,17 @@ type OpenTelemetryConfig struct {
 }
 
 type AnthropicConfig struct {
-	AllowedModels                  []string
-	AccessToken                    string
-	MaxTokensToSample              int
-	AllowedPromptPatterns          []string
+	AllowedModels     []string
+	AccessToken       string
+	MaxTokensToSample int
+	// Phrases we look for in the prompt to consider it valid.
+	// Each phrase is lower case.
+	AllowedPromptPatterns []string
+	// Phrases we look for in a flagged request to consider blocking the response.
+	// Each phrase is lower case. Can be empty (to disable blocking).
+	BlockedPromptPatterns []string
+	// Phrases we look for in a request to collect data.
+	// Each phrase is lower case. Can be empty (to disable data collection).
 	DetectedPromptPatterns         []string
 	RequestBlockingEnabled         bool
 	PromptTokenFlaggingLimit       int
@@ -140,8 +147,9 @@ func (c *Config) Load() {
 		c.AddError(errors.New("must provide allowed models for Anthropic"))
 	}
 	c.Anthropic.MaxTokensToSample = c.GetInt("CODY_GATEWAY_ANTHROPIC_MAX_TOKENS_TO_SAMPLE", "10000", "Maximum permitted value of maxTokensToSample")
-	c.Anthropic.AllowedPromptPatterns = splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_ALLOWED_PROMPT_PATTERNS", "Prompt patterns to allow."))
-	c.Anthropic.DetectedPromptPatterns = splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_DETECTED_PROMPT_PATTERNS", "Patterns to detect in prompt."))
+	c.Anthropic.AllowedPromptPatterns = toLower(splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_ALLOWED_PROMPT_PATTERNS", "Prompt patterns to allow.")))
+	c.Anthropic.BlockedPromptPatterns = toLower(splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_BLOCKED_PROMPT_PATTERNS", "Patterns to block in prompt.")))
+	c.Anthropic.DetectedPromptPatterns = toLower(splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_DETECTED_PROMPT_PATTERNS", "Patterns to detect in prompt.")))
 	c.Anthropic.RequestBlockingEnabled = c.GetBool("CODY_GATEWAY_ANTHROPIC_REQUEST_BLOCKING_ENABLED", "false", "Whether we should block requests that match our blocking criteria.")
 
 	c.Anthropic.PromptTokenBlockingLimit = c.GetInt("CODY_GATEWAY_ANTHROPIC_PROMPT_TOKEN_BLOCKING_LIMIT", "20000", "Maximum number of prompt tokens to allow without blocking.")
@@ -231,4 +239,12 @@ func splitMaybe(input string) []string {
 		return nil
 	}
 	return strings.Split(input, ",")
+}
+
+func toLower(input []string) []string {
+	var res []string
+	for _, s := range input {
+		res = append(res, strings.ToLower(s))
+	}
+	return res
 }

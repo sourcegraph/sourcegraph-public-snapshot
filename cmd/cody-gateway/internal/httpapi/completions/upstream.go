@@ -137,9 +137,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	// turn off sanitization for profanity detection
 	d := goaway.NewProfanityDetector().WithSanitizeAccents(false).WithSanitizeLeetSpeak(false).WithSanitizeSpaces(false).WithSanitizeSpecialCharacters(false)
 
-	for i := range patternsToDetect {
-		patternsToDetect[i] = strings.ToLower(patternsToDetect[i])
-	}
 	if len(patternsToDetect) > 0 {
 		baseLogger.Debug("initializing pattern detector", log.Strings("patterns", patternsToDetect))
 	}
