@@ -1451,7 +1451,7 @@ func TestCommitsUniqueToBranch(t *testing.T) {
 	client := NewClient("test")
 	commits, err := client.CommitsUniqueToBranch(ctx, repo, "my-branch", true, &time.Time{})
 	if err != nil {
-		t.Errorf("err calling RefDescriptions: %s", err)
+		t.Errorf("err calling CommitsUniqueToBranch: %s", err)
 	}
 	expectedCommits := map[string]time.Time{
 		"2775e60f523d3151a2a34ffdc659f500d0e73022": *mustParseDate("2006-01-02T15:04:05-00:00", t),

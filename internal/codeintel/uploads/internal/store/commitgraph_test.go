@@ -284,7 +284,7 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 	t1 := time.Now().Add(-time.Minute * 90) // > 1 hr
 	t2 := time.Now().Add(-time.Minute * 30) // < 1 hr
 
-	refDescriptions := map[string][]gitdomain.Ref{
+	refs := map[string][]gitdomain.Ref{
 		// stale
 		makeCommit(2): {{Name: "v1", Type: gitdomain.RefTypeTag, CreatedDate: t1}},
 		makeCommit(9): {{Name: "feat1", Type: gitdomain.RefTypeBranch, CreatedDate: t1}},
@@ -296,7 +296,7 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 		makeCommit(12): {{Name: "feat2", Type: gitdomain.RefTypeBranch, CreatedDate: t2}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Second, time.Second, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Second, time.Second, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -359,11 +359,11 @@ func TestUpdateUploadsVisibleToCommits(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.Ref{
+	refs := map[string][]gitdomain.Ref{
 		makeCommit(8): {{IsHead: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -418,11 +418,11 @@ func TestUpdateUploadsVisibleToCommitsAlternateCommitGraph(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.Ref{
+	refs := map[string][]gitdomain.Ref{
 		makeCommit(3): {{IsHead: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -462,11 +462,11 @@ func TestUpdateUploadsVisibleToCommitsDistinctRoots(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.Ref{
+	refs := map[string][]gitdomain.Ref{
 		makeCommit(2): {{IsHead: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -532,11 +532,11 @@ func TestUpdateUploadsVisibleToCommitsOverlappingRoots(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.Ref{
+	refs := map[string][]gitdomain.Ref{
 		makeCommit(6): {{IsHead: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -589,11 +589,11 @@ func TestUpdateUploadsVisibleToCommitsIndexerName(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.Ref{
+	refs := map[string][]gitdomain.Ref{
 		makeCommit(5): {{IsHead: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -634,7 +634,7 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.Ref{
+	refs := map[string][]gitdomain.Ref{
 		makeCommit(3): {{IsHead: true}},
 	}
 
@@ -648,7 +648,7 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
 
 	// Non-latest dirty token - should not clear flag
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 2, now); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 2, now); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
@@ -660,7 +660,7 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	}
 
 	// Latest dirty token - should clear flag
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 3, now); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 3, now); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 	dirtyRepositories, err = store.GetDirtyRepositories(context.Background())
@@ -1542,7 +1542,7 @@ func BenchmarkCalculateVisibleUploads(b *testing.B) {
 		b.Fatalf("unexpected error reading benchmark commit graph: %s", err)
 	}
 
-	refDescriptions := map[string][]gitdomain.Ref{
+	refs := map[string][]gitdomain.Ref{
 		makeCommit(3): {{IsHead: true}},
 	}
 
@@ -1555,7 +1555,7 @@ func BenchmarkCalculateVisibleUploads(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		b.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 }
