@@ -273,7 +273,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     [FilterType.patterntype]: {
         discreteValues: () => {
             let patternTypes = ['keyword', 'literal', 'regexp', 'standard']
-            if (window.context?.experimentalFeatures?.structuralSearch == 'enabled') {
+            if (typeof window === 'undefined' || window.context?.experimentalFeatures?.structuralSearch == 'enabled') {
                 patternTypes.push('structural')
             }
             return patternTypes.map(value => ({ label: value }))
