@@ -84,7 +84,6 @@ func NewHandler(
 			httpClient,
 			config.Anthropic,
 			promptRecorder,
-
 			config.AutoFlushStreamingResponses,
 		)
 		if err != nil {
@@ -116,7 +115,6 @@ func NewHandler(
 			httpClient,
 			config.Anthropic,
 			promptRecorder,
-
 			config.AutoFlushStreamingResponses,
 		)
 		if err != nil {
@@ -125,7 +123,7 @@ func NewHandler(
 
 		v1router.Path("/completions/anthropic-messages").Methods(http.MethodPost).Handler(
 			overhead.HTTPMiddleware(latencyHistogram,
-				instrumentation.HTTPMiddleware("v1.completions.anthropic",
+				instrumentation.HTTPMiddleware("v1.completions.anthropicmessages",
 					gaugeHandler(
 						counter,
 						attributesAnthropicCompletions,

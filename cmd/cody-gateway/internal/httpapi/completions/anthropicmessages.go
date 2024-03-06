@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -11,7 +12,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropicmessages"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
@@ -143,6 +144,11 @@ type anthropicMessagesStreamingResponse struct {
 	Delta        *anthropicMessagesStreamingResponseTextBucket `json:"delta"`
 	ContentBlock *anthropicMessagesStreamingResponseTextBucket `json:"content_block"`
 	Usage        *anthropicMessagesResponseUsage               `json:"usage"`
+	Message      *anthropicStreamingResponseMessage            `json:"message"`
+}
+
+type anthropicStreamingResponseMessage struct {
+	Usage *anthropicMessagesResponseUsage `json:"usage"`
 }
 
 type anthropicMessagesStreamingResponseTextBucket struct {
@@ -237,7 +243,7 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 	}
 
 	// Otherwise, we have to parse the event stream from anthropic.
-	dec := anthropic.NewDecoder(r)
+	dec := anthropicmessages.NewDecoder(r)
 	for dec.Scan() {
 		data := dec.Data()
 
@@ -253,10 +259,12 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 			continue
 		}
 
+		fmt.Printf("%+v\n\n", event)
+
 		switch event.Type {
 		case "message_start":
-			if event.Usage != nil {
-				promptUsage.tokens = event.Usage.InputTokens
+			if event.Message != nil && event.Message.Usage != nil {
+				promptUsage.tokens = event.Message.Usage.InputTokens
 			}
 		case "content_block_delta":
 			if event.Delta != nil {
@@ -271,6 +279,9 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 	if err := dec.Err(); err != nil {
 		logger.Error("failed to decode Anthropic streaming response", log.Error(err))
 	}
+
+	fmt.Printf("promptUsage: %+v\n", promptUsage)
+	fmt.Printf("completionUsage: %+v\n", completionUsage)
 
 	return promptUsage, completionUsage
 }
