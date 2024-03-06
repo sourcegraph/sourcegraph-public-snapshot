@@ -24,13 +24,9 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "aspect_bazel_lib",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party/bazel_lib:use_default_shell_env.patch",
-    ],
-    sha256 = "4d6010ca5e3bb4d7045b071205afa8db06ec11eb24de3f023d74d77cca765f66",
-    strip_prefix = "bazel-lib-1.39.0",
-    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.39.0/bazel-lib-v1.39.0.tar.gz",
+    sha256 = "f2c1f91cc0a55f7a44c94b8a79974f21349b844075740c01045acaa49e731307",
+    strip_prefix = "bazel-lib-1.40.3",
+    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.40.3/bazel-lib-v1.40.3.tar.gz",
 )
 
 # rules_js defines an older rules_nodejs, so we override it here
@@ -43,10 +39,6 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_js",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party/rules_js:use_default_shell_env.patch",
-    ],
     sha256 = "76a04ef2120ee00231d85d1ff012ede23963733339ad8db81f590791a031f643",
     strip_prefix = "rules_js-1.34.1",
     url = "https://github.com/aspect-build/rules_js/releases/download/v1.34.1/rules_js-v1.34.1.tar.gz",
