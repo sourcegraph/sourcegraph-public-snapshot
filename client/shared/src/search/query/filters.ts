@@ -272,14 +272,14 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.patterntype]: {
         discreteValues: () => {
-            let patternTypes = ['keyword', 'literal', 'regexp', 'standard']
-            if (typeof window === 'undefined' || window.context?.experimentalFeatures?.structuralSearch == 'enabled') {
+            const patternTypes = ['keyword', 'literal', 'regexp', 'standard']
+            if (typeof window === 'undefined' || window.context?.experimentalFeatures?.structuralSearch === 'enabled') {
                 patternTypes.push('structural')
             }
             return patternTypes.map(value => ({ label: value }))
         },
         description: `The pattern type (keyword, literal, regexp, standard${
-            window.context?.experimentalFeatures?.structuralSearch == 'enabled' ? ', structural' : ''
+            window.context?.experimentalFeatures?.structuralSearch === 'enabled' ? ', structural' : ''
         }) in use`,
 
         singular: true,
