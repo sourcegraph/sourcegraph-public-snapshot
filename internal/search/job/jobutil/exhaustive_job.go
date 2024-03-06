@@ -31,7 +31,7 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 	}
 
 	if len(inputs.Plan) != 1 {
-		return Exhaustive{}, errors.Errorf("expected a simple expression (no and/or/etc). Got multiple jobs to run %v", inputs.Plan)
+		return Exhaustive{}, errors.Errorf("Invalid query: Search Jobs only supports simple expressions. Use AND/OR for patterns but not for filters. Consider splitting into multiple subqueries and creating separate search jobs for each.")
 	}
 
 	b := inputs.Plan[0]
