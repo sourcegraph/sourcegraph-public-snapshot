@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
 )
 
-func TestIsFlaggedUnifiedRequest(t *testing.T) {
+func TestIsFlaggedAnthropicMessagesRequest(t *testing.T) {
 	validPreamble := "You are cody-gateway."
 
 	cfg := config.AnthropicConfig{
@@ -138,7 +138,7 @@ func TestIsFlaggedUnifiedRequest(t *testing.T) {
 	})
 }
 
-func TestUnifiedRequestJSON(t *testing.T) {
+func TestAnthropicMessagesRequestJSON(t *testing.T) {
 	_, err := tokenizer.NewAnthropicClaudeTokenizer()
 	require.NoError(t, err)
 
