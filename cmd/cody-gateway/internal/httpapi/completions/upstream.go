@@ -130,8 +130,10 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	// Convert allowedModels to the Cody Gateway configuration format with the
 	// provider as a prefix. This aligns with the models returned when we query
 	// for rate limits from actor sources.
-	for i := range allowedModels {
-		allowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, allowedModels[i])
+	clonedAllowedModels := make([]string, len(allowedModels))
+	copy(clonedAllowedModels, allowedModels)
+	for i := range clonedAllowedModels {
+		clonedAllowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, clonedAllowedModels[i])
 	}
 
 	// turn off sanitization for profanity detection
@@ -284,7 +286,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			// the prefix yet when extracted - we need to add it back here. This
 			// full gatewayModel is also used in events tracking.
 			gatewayModel := fmt.Sprintf("%s/%s", upstreamName, model)
-			if allowed := intersection(allowedModels, rateLimit.AllowedModels); !isAllowedModel(allowed, gatewayModel) {
+			if allowed := intersection(clonedAllowedModels, rateLimit.AllowedModels); !isAllowedModel(allowed, gatewayModel) {
 				response.JSONError(logger, w, http.StatusBadRequest,
 					errors.Newf("model %q is not allowed, allowed: [%s]",
 						gatewayModel, strings.Join(allowed, ", ")))
@@ -507,17 +509,4 @@ func intersection(a, b []string) (c []string) {
 		}
 	}
 	return c
-}
-
-type flaggingResult struct {
-	shouldBlock       bool
-	blockedPhrase     *string
-	reasons           []string
-	promptPrefix      string
-	maxTokensToSample int
-	promptTokenCount  int
-}
-
-func (f *flaggingResult) IsFlagged() bool {
-	return f != nil
 }

@@ -6,9 +6,10 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold/v2"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
 )
@@ -58,7 +59,7 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 		require.Equal(t, int32(result.maxTokensToSample), ar.MaxTokensToSample)
 	})
 
-	t.Run("high prompt token count (below block limit)", func(t *testing.T) {
+	t.Run("high prompt token count (above block limit)", func(t *testing.T) {
 		tokenLengths, err := tk.Tokenize(validPreamble)
 		require.NoError(t, err)
 
