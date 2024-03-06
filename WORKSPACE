@@ -159,13 +159,6 @@ http_archive(
     url = "https://github.com/keith/rules_multirun/archive/refs/tags/0.6.1.tar.gz",
 )
 
-http_archive(
-    name = "with_cfg.bzl",
-    sha256 = "c6b80cad298afa8a46bc01cd96df4f4d8660651101f6bf5af58f2724e349017d",
-    strip_prefix = "with_cfg.bzl-0.2.1",
-    url = "https://github.com/fmeum/with_cfg.bzl/releases/download/v0.2.1/with_cfg.bzl-v0.2.1.tar.gz",
-)
-
 # hermetic_cc_toolchain setup ================================
 HERMETIC_CC_TOOLCHAIN_VERSION = "v2.2.1"
 
