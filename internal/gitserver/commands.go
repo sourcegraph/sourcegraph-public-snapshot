@@ -2197,19 +2197,6 @@ func (p byteSlices) Len() int           { return len(p) }
 func (p byteSlices) Less(i, j int) bool { return bytes.Compare(p[i], p[j]) < 0 }
 func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-// rel strips the leading "/" prefix from the path string, effectively turning
-// an absolute path into one relative to the root directory. A path that is just
-// "/" is treated specially, returning just ".".
-//
-// The elements in a file path are separated by slash ('/', U+002F) characters,
-// regardless of host operating system convention.
-func rel(path string) string {
-	if path == "/" {
-		return "."
-	}
-	return strings.TrimPrefix(path, "/")
-}
-
 // ListRefs returns a list of all refs in the repository.
 func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName, opt ListRefsOpts) (_ []gitdomain.Ref, err error) {
 	ctx, _, endObservation := c.operations.listRefs.With(ctx, &err, observation.Args{
@@ -2252,4 +2239,17 @@ func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName, opt
 	}
 
 	return refs, nil
+}
+
+// rel strips the leading "/" prefix from the path string, effectively turning
+// an absolute path into one relative to the root directory. A path that is just
+// "/" is treated specially, returning just ".".
+//
+// The elements in a file path are separated by slash ('/', U+002F) characters,
+// regardless of host operating system convention.
+func rel(path string) string {
+	if path == "/" {
+		return "."
+	}
+	return strings.TrimPrefix(path, "/")
 }
