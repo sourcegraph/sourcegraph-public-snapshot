@@ -1,10 +1,11 @@
 <script lang="ts">
     import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 
-    import { getProgressText, limitHit, sortBySeverity } from '$lib/branded'
+    import { limitHit, sortBySeverity } from '$lib/branded'
     import { renderMarkdown, pluralize } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
+    import ResultsIndicator from '$lib/search/ResultsIndicator.svelte'
     import SyntaxHighlightedQuery from '$lib/search/SyntaxHighlightedQuery.svelte'
     import type { Progress, Skipped } from '$lib/shared'
     import { Button } from '$lib/wildcard'
@@ -25,9 +26,6 @@
         )
     }
 
-    $: severity = progress.skipped.some(skipped => skipped.severity === 'warn' || skipped.severity === 'error')
-        ? 'error'
-        : 'info'
     $: hasSkippedItems = progress.skipped.length > 0
     $: sortedItems = sortBySeverity(progress.skipped)
     $: openItems = sortedItems.map((_, index) => index === 0)
@@ -36,15 +34,14 @@
 </script>
 
 <Popover let:registerTrigger let:toggle placement="bottom-start">
-    <Button variant="secondary" size="sm" outline>
-        <svelte:fragment slot="custom" let:buttonClass>
-            <button use:registerTrigger class="{buttonClass} progress-button" on:click={() => toggle()}>
-                <Icon svgPath={icons[severity]} inline />
-                {getProgressText(progress).visibleText}
-                <Icon svgPath={mdiChevronDown} inline />
-            </button>
-        </svelte:fragment>
-    </Button>
+    <ResultsIndicator
+        {hasSkippedItems}
+        {sortedItems}
+        {hasSuggestedItems}
+        trigger={registerTrigger}
+        togglePopover={toggle}
+        searchProgress={progress}
+    />
     <div slot="content" class="streaming-popover">
         <p>
             Found {limitHit(progress) ? 'more than ' : ''}

@@ -208,7 +208,7 @@
             align-items: center;
             // Explictly set height to avoid jumping when loading spinner is
             // shown/hidden.
-            height: 3rem;
+            // height: 4rem;
             flex-shrink: 0;
         }
 
