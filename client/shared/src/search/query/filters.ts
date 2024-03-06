@@ -279,7 +279,9 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
             return patternTypes.map(value => ({ label: value }))
         },
         description: `The pattern type (keyword, literal, regexp, standard${
-            window.context?.experimentalFeatures?.structuralSearch === 'enabled' ? ', structural' : ''
+            typeof window === 'undefined' || window.context?.experimentalFeatures?.structuralSearch === 'enabled'
+                ? ', structural'
+                : ''
         }) in use`,
 
         singular: true,
