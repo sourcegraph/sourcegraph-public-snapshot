@@ -16,7 +16,7 @@ func TestCommit(t *testing.T) {
 	ctx := context.Background()
 	gsClient := gitserver.NewMockClient()
 	gsClient.ListRefsFunc.SetDefaultReturn([]gitdomain.Ref{
-		{Name: "v1"}, {Name: "v2"}, {Name: "v3"}, {Name: "v4"}, {Name: "v5"},
+		{ShortName: "v1"}, {ShortName: "v2"}, {ShortName: "v3"}, {ShortName: "v4"}, {ShortName: "v5"},
 	}, nil)
 
 	repo := &repoResolver{repo: &types.Repo{

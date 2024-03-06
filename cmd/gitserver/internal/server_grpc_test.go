@@ -819,10 +819,11 @@ func TestGRPCServer_ListRefs(t *testing.T) {
 		if diff := cmp.Diff(&proto.ListRefsResponse{
 			Refs: []*v1.GitRef{
 				{
-					RefName: "refs/heads/master",
+					RefName:   "refs/heads/master",
+					CreatedAt: timestamppb.New(time.Time{}),
 				},
 			},
-		}, res, cmpopts.IgnoreUnexported(proto.ListRefsResponse{}, proto.GitRef{})); diff != "" {
+		}, res, cmpopts.IgnoreUnexported(proto.ListRefsResponse{}, proto.GitRef{}, timestamppb.Timestamp{})); diff != "" {
 			t.Fatalf("unexpected response (-want +got):\n%s", diff)
 		}
 	})

@@ -47,10 +47,13 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 
 		// HEAD comes first.
 		assert.Equal(t, &gitdomain.Ref{
-			Name:      "refs/heads/master",
-			ShortName: "master",
-			CommitID:  commit,
-			RefOID:    commit,
+			Name:        "refs/heads/master",
+			ShortName:   "master",
+			CommitID:    commit,
+			RefOID:      commit,
+			IsHead:      true,
+			Type:        gitdomain.RefTypeBranch,
+			CreatedDate: ref.CreatedDate,
 		}, ref)
 
 		ref, err = it.Next()
@@ -61,17 +64,23 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 			ShortName: "foo-tag",
 			CommitID:  commit,
 			// note that this is NOT the OID of the commit pointed to by the tag, but the one of the tag itself.
-			RefOID: "957e5bad2c7c68722287ef5c298bfe9e09eb8b3f",
+			RefOID:      "957e5bad2c7c68722287ef5c298bfe9e09eb8b3f",
+			IsHead:      false,
+			Type:        gitdomain.RefTypeTag,
+			CreatedDate: ref.CreatedDate,
 		}, ref)
 
 		ref, err = it.Next()
 		require.NoError(t, err)
 
 		assert.Equal(t, &gitdomain.Ref{
-			Name:      "refs/heads/foo",
-			ShortName: "foo",
-			CommitID:  "53e63d6dd6e61a58369bbc637b0ead2ee58d993c",
-			RefOID:    "53e63d6dd6e61a58369bbc637b0ead2ee58d993c",
+			Name:        "refs/heads/foo",
+			ShortName:   "foo",
+			CommitID:    "53e63d6dd6e61a58369bbc637b0ead2ee58d993c",
+			RefOID:      "53e63d6dd6e61a58369bbc637b0ead2ee58d993c",
+			IsHead:      false,
+			Type:        gitdomain.RefTypeBranch,
+			CreatedDate: ref.CreatedDate,
 		}, ref)
 
 		_, err = it.Next()
@@ -89,10 +98,13 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 
 		// HEAD comes first.
 		assert.Equal(t, &gitdomain.Ref{
-			Name:      "refs/heads/master",
-			ShortName: "master",
-			CommitID:  commit,
-			RefOID:    commit,
+			Name:        "refs/heads/master",
+			ShortName:   "master",
+			CommitID:    commit,
+			RefOID:      commit,
+			IsHead:      true,
+			Type:        gitdomain.RefTypeBranch,
+			CreatedDate: ref.CreatedDate,
 		}, ref)
 
 		ref, err = it.Next()
@@ -103,17 +115,23 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 			ShortName: "foo-tag",
 			CommitID:  commit,
 			// note that this is NOT the OID of the commit pointed to by the tag, but the one of the tag itself.
-			RefOID: "957e5bad2c7c68722287ef5c298bfe9e09eb8b3f",
+			RefOID:      "957e5bad2c7c68722287ef5c298bfe9e09eb8b3f",
+			IsHead:      false,
+			Type:        gitdomain.RefTypeTag,
+			CreatedDate: ref.CreatedDate,
 		}, ref)
 
 		ref, err = it.Next()
 		require.NoError(t, err)
 
 		assert.Equal(t, &gitdomain.Ref{
-			Name:      "refs/heads/foo",
-			ShortName: "foo",
-			CommitID:  "53e63d6dd6e61a58369bbc637b0ead2ee58d993c",
-			RefOID:    "53e63d6dd6e61a58369bbc637b0ead2ee58d993c",
+			Name:        "refs/heads/foo",
+			ShortName:   "foo",
+			CommitID:    "53e63d6dd6e61a58369bbc637b0ead2ee58d993c",
+			RefOID:      "53e63d6dd6e61a58369bbc637b0ead2ee58d993c",
+			IsHead:      false,
+			Type:        gitdomain.RefTypeBranch,
+			CreatedDate: ref.CreatedDate,
 		}, ref)
 
 		_, err = it.Next()
@@ -134,7 +152,10 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 			ShortName: "foo-tag",
 			CommitID:  commit,
 			// note that this is NOT the OID of the commit pointed to by the tag, but the one of the tag itself.
-			RefOID: "957e5bad2c7c68722287ef5c298bfe9e09eb8b3f",
+			RefOID:      "957e5bad2c7c68722287ef5c298bfe9e09eb8b3f",
+			IsHead:      false,
+			Type:        gitdomain.RefTypeTag,
+			CreatedDate: ref.CreatedDate,
 		}, ref)
 
 		_, err = it.Next()
@@ -152,20 +173,26 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 
 		// HEAD comes first.
 		assert.Equal(t, &gitdomain.Ref{
-			Name:      "refs/heads/master",
-			ShortName: "master",
-			CommitID:  commit,
-			RefOID:    commit,
+			Name:        "refs/heads/master",
+			ShortName:   "master",
+			CommitID:    commit,
+			RefOID:      commit,
+			IsHead:      true,
+			Type:        gitdomain.RefTypeBranch,
+			CreatedDate: ref.CreatedDate,
 		}, ref)
 
 		ref, err = it.Next()
 		require.NoError(t, err)
 
 		assert.Equal(t, &gitdomain.Ref{
-			Name:      "refs/heads/foo",
-			ShortName: "foo",
-			CommitID:  "53e63d6dd6e61a58369bbc637b0ead2ee58d993c",
-			RefOID:    "53e63d6dd6e61a58369bbc637b0ead2ee58d993c",
+			Name:        "refs/heads/foo",
+			ShortName:   "foo",
+			CommitID:    "53e63d6dd6e61a58369bbc637b0ead2ee58d993c",
+			RefOID:      "53e63d6dd6e61a58369bbc637b0ead2ee58d993c",
+			IsHead:      false,
+			Type:        gitdomain.RefTypeBranch,
+			CreatedDate: ref.CreatedDate,
 		}, ref)
 
 		_, err = it.Next()
@@ -183,10 +210,13 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 
 		// HEAD comes first.
 		assert.Equal(t, &gitdomain.Ref{
-			Name:      "refs/heads/master",
-			ShortName: "master",
-			CommitID:  commit,
-			RefOID:    commit,
+			Name:        "refs/heads/master",
+			ShortName:   "master",
+			CommitID:    commit,
+			RefOID:      commit,
+			IsHead:      true,
+			Type:        gitdomain.RefTypeBranch,
+			CreatedDate: ref.CreatedDate,
 		}, ref)
 
 		ref, err = it.Next()
@@ -197,7 +227,10 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 			ShortName: "foo-tag",
 			CommitID:  commit,
 			// note that this is NOT the OID of the commit pointed to by the tag, but the one of the tag itself.
-			RefOID: "957e5bad2c7c68722287ef5c298bfe9e09eb8b3f",
+			RefOID:      "957e5bad2c7c68722287ef5c298bfe9e09eb8b3f",
+			IsHead:      false,
+			Type:        gitdomain.RefTypeTag,
+			CreatedDate: ref.CreatedDate,
 		}, ref)
 
 		_, err = it.Next()
@@ -283,7 +316,7 @@ func TestBuildListRefsArgs(t *testing.T) {
 	t.Run("default options", func(t *testing.T) {
 		args := buildListRefsArgs(git.ListRefsOpts{})
 		require.Equal(t,
-			[]string{"for-each-ref", "--sort", "-refname", "--sort", "-creatordate", "--sort", "-HEAD", "--format", "%(objecttype)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)"},
+			[]string{"for-each-ref", "--sort", "-refname", "--sort", "-creatordate", "--sort", "-HEAD", "--format", "%(objecttype)%00%(HEAD)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)"},
 			args,
 		)
 	})
@@ -291,7 +324,7 @@ func TestBuildListRefsArgs(t *testing.T) {
 	t.Run("heads only", func(t *testing.T) {
 		args := buildListRefsArgs(git.ListRefsOpts{HeadsOnly: true})
 		require.Equal(t,
-			[]string{"for-each-ref", "--sort", "-refname", "--sort", "-creatordate", "--sort", "-HEAD", "--format", "%(objecttype)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)", "refs/heads/"},
+			[]string{"for-each-ref", "--sort", "-refname", "--sort", "-creatordate", "--sort", "-HEAD", "--format", "%(objecttype)%00%(HEAD)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)", "refs/heads/"},
 			args,
 		)
 	})
@@ -299,7 +332,7 @@ func TestBuildListRefsArgs(t *testing.T) {
 	t.Run("tags only", func(t *testing.T) {
 		args := buildListRefsArgs(git.ListRefsOpts{TagsOnly: true})
 		require.Equal(t,
-			[]string{"for-each-ref", "--sort", "-refname", "--sort", "-creatordate", "--sort", "-HEAD", "--format", "%(objecttype)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)", "refs/tags/"},
+			[]string{"for-each-ref", "--sort", "-refname", "--sort", "-creatordate", "--sort", "-HEAD", "--format", "%(objecttype)%00%(HEAD)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)", "refs/tags/"},
 			args,
 		)
 	})
@@ -307,7 +340,7 @@ func TestBuildListRefsArgs(t *testing.T) {
 	t.Run("heads and tags only", func(t *testing.T) {
 		args := buildListRefsArgs(git.ListRefsOpts{HeadsOnly: true, TagsOnly: true})
 		require.Equal(t,
-			[]string{"for-each-ref", "--sort", "-refname", "--sort", "-creatordate", "--sort", "-HEAD", "--format", "%(objecttype)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)", "refs/heads/", "refs/tags/"},
+			[]string{"for-each-ref", "--sort", "-refname", "--sort", "-creatordate", "--sort", "-HEAD", "--format", "%(objecttype)%00%(HEAD)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)", "refs/heads/", "refs/tags/"},
 			args,
 		)
 	})
@@ -316,7 +349,16 @@ func TestBuildListRefsArgs(t *testing.T) {
 		commit := api.CommitID("f00ba4")
 		args := buildListRefsArgs(git.ListRefsOpts{PointsAtCommit: []api.CommitID{commit}})
 		require.Equal(t,
-			[]string{"for-each-ref", "--sort", "-refname", "--sort", "-creatordate", "--sort", "-HEAD", "--format", "%(objecttype)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)", "--points-at=f00ba4"},
+			[]string{"for-each-ref", "--sort", "-refname", "--sort", "-creatordate", "--sort", "-HEAD", "--format", "%(objecttype)%00%(HEAD)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)", "--points-at=f00ba4"},
+			args,
+		)
+	})
+
+	t.Run("contains commit", func(t *testing.T) {
+		commit := api.CommitID("f00ba4")
+		args := buildListRefsArgs(git.ListRefsOpts{Contains: []api.CommitID{commit}})
+		require.Equal(t,
+			[]string{"for-each-ref", "--sort", "-refname", "--sort", "-creatordate", "--sort", "-HEAD", "--format", "%(objecttype)%00%(HEAD)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)", "--contains=f00ba4"},
 			args,
 		)
 	})
