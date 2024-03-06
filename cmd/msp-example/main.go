@@ -9,5 +9,6 @@ import (
 func main() {
 	println("Try to Deliver")
 	println("Cloud Deploy Releaser")
+	println("roles/storage.objectAdmin")
 	runtime.Start[example.Config](example.Service{})
 }
