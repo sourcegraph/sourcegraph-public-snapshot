@@ -6660,10 +6660,9 @@ type User implements Node & SettingsSubject & Namespace {
     """
     codyCurrentPeriodCodeLimit: Int!
     """
-    Retrieve all feature flag overrides for the current user
+    Evaluates a feature flag for the user. Returns null if the feature flag does not exist.
     """
-    featureFlagOverrides: [FeatureFlagOverride!]!
-#    featureFlagOverrides: EvaluatedFeatureFlag!
+    evaluateFeatureFlag(flagName: String!): Boolean
 }
 
 """

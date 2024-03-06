@@ -3,12 +3,11 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/stretchr/testify/assert"
 	"strconv"
 	"strings"
 	"testing"
-
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -16,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -1017,125 +1015,173 @@ func TestSchema_SetCompletedPostSignup(t *testing.T) {
 	})
 }
 
-func TestNode_FeatureFlagOverrides(t *testing.T) {
+func TestUser_EvaluateFeatureFlag(t *testing.T) {
+
 	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1, Username: "alice"}, nil)
 
+	// The actor running this should be different from the user that we're inspecting
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 99})
+
+	flags := dbmocks.NewMockFeatureFlagStore()
+	// The result of GetUserFlags already includes any overrides. Therefore, we don't need to test overrides additionally.
+	flags.GetUserFlagsFunc.SetDefaultHook(func(ctx context.Context, uid int32) (map[string]bool, error) {
+		return map[string]bool{"enabled-flag": true, "disabled-flag": false}, nil
+	})
+
 	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
-	featureFlags := dbmocks.NewMockFeatureFlagStore()
-	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+	db.FeatureFlagsFunc.SetDefaultReturn(flags)
 
-	// todo: with override but without feature flag -> is that a valid state?
+	t.Run("with user schema", func(t *testing.T) {
 
-	// todo: with feature flag but with no overrides
-
-	t.Run("with default true", func(t *testing.T) {
-
-		t.Run("with override true", func(t *testing.T) {
-			RunFeatureFlagOverrideTest(t, db, featureFlags, FeatureFlagOverrideTest{
-				defaultValue:  true,
-				overrideValue: true,
-			})
-		})
-
-		t.Run("with override false", func(t *testing.T) {
-			RunFeatureFlagOverrideTest(t, db, featureFlags, FeatureFlagOverrideTest{
-				defaultValue:  true,
-				overrideValue: false,
-			})
-		})
-	})
-
-	t.Run("with default false", func(t *testing.T) {
-
-		t.Run("with override true", func(t *testing.T) {
-			RunFeatureFlagOverrideTest(t, db, featureFlags, FeatureFlagOverrideTest{
-				defaultValue:  false,
-				overrideValue: true,
-			})
-		})
-
-		t.Run("with override false", func(t *testing.T) {
-			RunFeatureFlagOverrideTest(t, db, featureFlags, FeatureFlagOverrideTest{
-				defaultValue:  false,
-				overrideValue: false,
-			})
-		})
-	})
-}
-
-type FeatureFlagOverrideTest struct {
-	defaultValue  bool
-	overrideValue bool
-}
-
-func RunFeatureFlagOverrideTest(t *testing.T, db *dbmocks.MockDB, ff *dbmocks.MockFeatureFlagStore, test FeatureFlagOverrideTest) {
-	t.Helper()
-
-	gqlQuery := `
-		{
-			node(id: "VXNlcjox") {
-				id
-				... on User {
-					username
-					featureFlagOverrides {
-						targetFlag {
-							...on FeatureFlagBoolean {
-								name
-								value
+		RunTests(t, []*Test{
+			{
+				Context: ctx,
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+					{
+						node(id: "VXNlcjox") {
+							...on User {
+								evaluateFeatureFlag(flagName: "enabled-flag")
 							}
 						}
-						value
+					}
+				`,
+				ExpectedResult: `
+					{
+						"node": {
+							"evaluateFeatureFlag": true
+						}
+					}
+				`,
+			},
+			{
+				Context: ctx,
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+					{
+						node(id: "VXNlcjox") {
+							...on User {
+								evaluateFeatureFlag(flagName: "disabled-flag")
+							}
+						}
+					}
+				`,
+				ExpectedResult: `
+					{
+						"node": {
+							"evaluateFeatureFlag": false
+						}
+					}
+				`,
+			},
+			{
+				Context: ctx,
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+					{
+						node(id: "VXNlcjox") {
+							...on User {
+								evaluateFeatureFlag(flagName: "non-existent-flag")
+							}
+						}
+					}
+				`,
+				ExpectedResult: `
+					{
+						"node": {
+							"evaluateFeatureFlag": null
+						}
+					}
+				`,
+			},
+		})
+	})
+
+	t.Run("with users schema", func(t *testing.T) {
+
+		users.ListFunc.SetDefaultReturn([]*types.User{{Username: "alice"}}, nil)
+
+		RunTests(t, []*Test{
+			{
+				Context: ctx,
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+				{
+					users {
+						nodes {
+							username
+							evaluateFeatureFlag(flagName: "enabled-flag")
+						}
 					}
 				}
-			}
-		}
-	`
-
-	expectTemplate := `
-		{
-			"node": {
-				"id": "VXNlcjox",
-				"username": "alice",
-				"featureFlagOverrides": [
-					{
-						"targetFlag": {
-							"name": "test-flag",
-							"value": %t
-						},
-						"value": %t
+			`,
+				ExpectedResult: `
+				{
+					"users": {
+						"nodes": [
+							{
+								"username": "alice",
+								"evaluateFeatureFlag": true
+							}
+						]
 					}
-				]
-			}
-		}
-	`
-
-	ff.GetFeatureFlagFunc.SetDefaultReturn(
-		&featureflag.FeatureFlag{
-			Name: "test-flag",
-			Bool: &featureflag.FeatureFlagBool{
-				Value: test.defaultValue,
+				}
+			`,
 			},
-		},
-		nil,
-	)
-
-	ff.GetUserOverridesFunc.SetDefaultReturn(
-		[]*featureflag.Override{
 			{
-				FlagName: "test-flag",
-				Value:    test.overrideValue,
+				Context: ctx,
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+				{
+					users {
+						nodes {
+							username
+							evaluateFeatureFlag(flagName: "disabled-flag")
+						}
+					}
+				}
+			`,
+				ExpectedResult: `
+				{
+					"users": {
+						"nodes": [
+							{
+								"username": "alice",
+								"evaluateFeatureFlag": false
+							}
+						]
+					}
+				}
+			`,
 			},
-		},
-		nil,
-	)
-
-	RunTests(t, []*Test{
-		{
-			Schema:         mustParseGraphQLSchema(t, db),
-			Query:          gqlQuery,
-			ExpectedResult: fmt.Sprintf(expectTemplate, test.defaultValue, test.overrideValue),
-		},
+			{
+				Context: ctx,
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+				{
+					users {
+						nodes {
+							username
+							evaluateFeatureFlag(flagName: "non-existent-flag")
+						}
+					}
+				}
+			`,
+				ExpectedResult: `
+				{
+					"users": {
+						"nodes": [
+							{
+								"username": "alice",
+								"evaluateFeatureFlag": null
+							}
+						]
+					}
+				}
+			`,
+			},
+		})
 	})
 }
