@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
-	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -623,90 +622,6 @@ func TestListDirectoryChildren(t *testing.T) {
 		"dir3/": nil,
 	}
 	if diff := cmp.Diff(expected, children); diff != "" {
-		t.Fatal(diff)
-	}
-}
-
-func TestListTags(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	dateEnv := "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z"
-	gitCommands := []string{
-		dateEnv + " git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"git tag t0",
-		"git tag t1",
-		dateEnv + " git tag --annotate -m foo t2",
-		dateEnv + " git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"git tag t3",
-	}
-
-	repo := MakeGitRepository(t, gitCommands...)
-	wantTags := []*gitdomain.Tag{
-		{Name: "t0", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-		{Name: "t1", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-		{Name: "t2", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-		{Name: "t3", CommitID: "afeafc4a918c144329807df307e68899e6b65018", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-	}
-
-	client := NewClient("test")
-	tags, err := client.ListTags(context.Background(), repo)
-	require.Nil(t, err)
-
-	sort.Sort(sortedTags(tags))
-	sort.Sort(sortedTags(wantTags))
-
-	if diff := cmp.Diff(wantTags, tags); diff != "" {
-		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
-	}
-
-	tags, err = client.ListTags(context.Background(), repo, "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8")
-	require.Nil(t, err)
-	if diff := cmp.Diff(wantTags[:3], tags); diff != "" {
-		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
-	}
-
-	tags, err = client.ListTags(context.Background(), repo, "afeafc4a918c144329807df307e68899e6b65018")
-	require.Nil(t, err)
-	if diff := cmp.Diff([]*gitdomain.Tag{wantTags[3]}, tags); diff != "" {
-		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
-	}
-}
-
-type sortedTags []*gitdomain.Tag
-
-func (p sortedTags) Len() int           { return len(p) }
-func (p sortedTags) Less(i, j int) bool { return p[i].Name < p[j].Name }
-func (p sortedTags) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-
-// See https://github.com/sourcegraph/sourcegraph/issues/5453
-func TestParseTags_WithoutCreatorDate(t *testing.T) {
-	have, err := parseTags([]byte(
-		"9ee1c939d1cb936b1f98e8d81aeffab57bae46ab\x00v2.6.12\x001119037709\n" +
-			"c39ae07f393806ccf406ef966e9a15afc43cc36a\x00v2.6.11-tree\x00\n" +
-			"c39ae07f393806ccf406ef966e9a15afc43cc36a\x00v2.6.11\x00\n",
-	))
-	if err != nil {
-		t.Fatalf("parseTags: have err %v, want nil", err)
-	}
-
-	want := []*gitdomain.Tag{
-		{
-			Name:        "v2.6.12",
-			CommitID:    "9ee1c939d1cb936b1f98e8d81aeffab57bae46ab",
-			CreatorDate: time.Unix(1119037709, 0).UTC(),
-		},
-		{
-			Name:     "v2.6.11-tree",
-			CommitID: "c39ae07f393806ccf406ef966e9a15afc43cc36a",
-		},
-		{
-			Name:     "v2.6.11",
-			CommitID: "c39ae07f393806ccf406ef966e9a15afc43cc36a",
-		},
-	}
-
-	if diff := cmp.Diff(have, want); diff != "" {
 		t.Fatal(diff)
 	}
 }
@@ -1907,45 +1822,6 @@ func CommitsEqual(a, b *gitdomain.Commit) bool {
 	}
 	return reflect.DeepEqual(a, b)
 }
-
-func TestRepository_ListBranches(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	t.Cleanup(func() {
-		ResetClientMocks()
-	})
-
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
-		"git checkout -b b0",
-		"git checkout -b b1",
-	}
-
-	wantBranches := []*gitdomain.Branch{{Name: "b0", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "b1", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "master", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}}
-
-	testBranches(t, gitCommands, wantBranches)
-}
-
-func testBranches(t *testing.T, gitCommands []string, wantBranches []*gitdomain.Branch) {
-	t.Helper()
-
-	repo := MakeGitRepository(t, gitCommands...)
-	gotBranches, err := NewClient("test").ListBranches(context.Background(), repo)
-	require.Nil(t, err)
-
-	sort.Sort(branches(wantBranches))
-	sort.Sort(branches(gotBranches))
-
-	if diff := cmp.Diff(wantBranches, gotBranches); diff != "" {
-		t.Fatalf("Branch mismatch (-want +got):\n%s", diff)
-	}
-}
-
-// branches is a sortable slice of type Branch
-type branches []*gitdomain.Branch
-
-func (p branches) Len() int           { return len(p) }
-func (p branches) Less(i, j int) bool { return p[i].Name < p[j].Name }
-func (p branches) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 func usePermissionsForFilePermissionsFunc(m *authz.MockSubRepoPermissionChecker) {
 	m.FilePermissionsFuncFunc.SetDefaultHook(func(ctx context.Context, userID int32, repo api.RepoName) (authz.FilePermissionFunc, error) {

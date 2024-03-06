@@ -301,6 +301,9 @@ type MockGitBackend struct {
 	// GetObjectFunc is an instance of a mock function object controlling
 	// the behavior of the method GetObject.
 	GetObjectFunc *GitBackendGetObjectFunc
+	// ListRefsFunc is an instance of a mock function object controlling the
+	// behavior of the method ListRefs.
+	ListRefsFunc *GitBackendListRefsFunc
 	// MergeBaseFunc is an instance of a mock function object controlling
 	// the behavior of the method MergeBase.
 	MergeBaseFunc *GitBackendMergeBaseFunc
@@ -349,6 +352,11 @@ func NewMockGitBackend() *MockGitBackend {
 		},
 		GetObjectFunc: &GitBackendGetObjectFunc{
 			defaultHook: func(context.Context, string) (r0 *gitdomain.GitObject, r1 error) {
+				return
+			},
+		},
+		ListRefsFunc: &GitBackendListRefsFunc{
+			defaultHook: func(context.Context, ListRefsOpts) (r0 RefIterator, r1 error) {
 				return
 			},
 		},
@@ -414,6 +422,11 @@ func NewStrictMockGitBackend() *MockGitBackend {
 				panic("unexpected invocation of MockGitBackend.GetObject")
 			},
 		},
+		ListRefsFunc: &GitBackendListRefsFunc{
+			defaultHook: func(context.Context, ListRefsOpts) (RefIterator, error) {
+				panic("unexpected invocation of MockGitBackend.ListRefs")
+			},
+		},
 		MergeBaseFunc: &GitBackendMergeBaseFunc{
 			defaultHook: func(context.Context, string, string) (api.CommitID, error) {
 				panic("unexpected invocation of MockGitBackend.MergeBase")
@@ -463,6 +476,9 @@ func NewMockGitBackendFrom(i GitBackend) *MockGitBackend {
 		},
 		GetObjectFunc: &GitBackendGetObjectFunc{
 			defaultHook: i.GetObject,
+		},
+		ListRefsFunc: &GitBackendListRefsFunc{
+			defaultHook: i.ListRefs,
 		},
 		MergeBaseFunc: &GitBackendMergeBaseFunc{
 			defaultHook: i.MergeBase,
@@ -1137,6 +1153,114 @@ func (c GitBackendGetObjectFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitBackendGetObjectFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitBackendListRefsFunc describes the behavior when the ListRefs method of
+// the parent MockGitBackend instance is invoked.
+type GitBackendListRefsFunc struct {
+	defaultHook func(context.Context, ListRefsOpts) (RefIterator, error)
+	hooks       []func(context.Context, ListRefsOpts) (RefIterator, error)
+	history     []GitBackendListRefsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListRefs delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitBackend) ListRefs(v0 context.Context, v1 ListRefsOpts) (RefIterator, error) {
+	r0, r1 := m.ListRefsFunc.nextHook()(v0, v1)
+	m.ListRefsFunc.appendCall(GitBackendListRefsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListRefs method of
+// the parent MockGitBackend instance is invoked and the hook queue is
+// empty.
+func (f *GitBackendListRefsFunc) SetDefaultHook(hook func(context.Context, ListRefsOpts) (RefIterator, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListRefs method of the parent MockGitBackend instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *GitBackendListRefsFunc) PushHook(hook func(context.Context, ListRefsOpts) (RefIterator, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitBackendListRefsFunc) SetDefaultReturn(r0 RefIterator, r1 error) {
+	f.SetDefaultHook(func(context.Context, ListRefsOpts) (RefIterator, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitBackendListRefsFunc) PushReturn(r0 RefIterator, r1 error) {
+	f.PushHook(func(context.Context, ListRefsOpts) (RefIterator, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitBackendListRefsFunc) nextHook() func(context.Context, ListRefsOpts) (RefIterator, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitBackendListRefsFunc) appendCall(r0 GitBackendListRefsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitBackendListRefsFuncCall objects
+// describing the invocations of this function.
+func (f *GitBackendListRefsFunc) History() []GitBackendListRefsFuncCall {
+	f.mutex.Lock()
+	history := make([]GitBackendListRefsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitBackendListRefsFuncCall is an object that describes an invocation of
+// method ListRefs on an instance of MockGitBackend.
+type GitBackendListRefsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListRefsOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 RefIterator
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitBackendListRefsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitBackendListRefsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

@@ -23,7 +23,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -2226,18 +2225,31 @@ func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName, opt
 		return nil, err
 	}
 
-	mask, err := fieldmaskpb.New(&proto.BlameResponse{}, "hunk.start_line")
+	req := &proto.ListRefsRequest{
+		RepoName:  string(repo),
+		HeadsOnly: opt.HeadsOnly,
+		TagsOnly:  opt.TagsOnly,
+	}
+
+	if opt.PointsAtCommit != "" {
+		req.PointsAtCommit = pointers.Ptr(string(opt.PointsAtCommit))
+	}
+
+	resp, err := client.ListRefs(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
-	res, err := client.ListRefs(ctx, &proto.ListRefsRequest{
-		RepoName: string(repo),
-		Mask:     mask,
-	})
-	if err != nil {
-		return nil, err
+	refs := make([]gitdomain.Ref, 0, len(resp.GetRefs()))
+
+	for _, ref := range resp.GetRefs() {
+		refs = append(refs, gitdomain.Ref{
+			Name:      ref.GetRefName(),
+			ShortName: ref.GetShortRefName(),
+			CommitID:  api.CommitID(ref.GetTargetCommit()),
+			RefOID:    api.CommitID(ref.GetRefOid()),
+		})
 	}
 
-	return res.GetRefs(), nil
+	return refs, nil
 }

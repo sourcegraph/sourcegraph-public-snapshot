@@ -318,8 +318,18 @@ func (p *ContributorCount) String() string {
 
 // Ref describes a Git ref.
 type Ref struct {
-	Name     string // the full name of the ref (e.g., "refs/heads/mybranch")
+	// Name the full name of the ref (e.g., "refs/heads/mybranch").
+	Name string
+	// ShortName the abbreviated name of the ref, if it wouldn't be ambiguous (e.g., "mybranch").
+	ShortName string
+	// CommitID is the hash of the commit the reference is currently pointing at.
+	// For a head reference, this is the commit the head is currently pointing at.
+	// For a tag, this is the commit that the tag is attached to.
 	CommitID api.CommitID
+	// RefOID is the full object ID of the reference. For a head reference and
+	// a lightweight tag, this value is the same as CommitID. For annotated tags,
+	// it is the object ID of the tag.
+	RefOID api.CommitID
 }
 
 // BehindAhead is a set of behind/ahead counts.
