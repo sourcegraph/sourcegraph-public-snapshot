@@ -25,13 +25,21 @@ type flaggingRequest struct {
 	FlattenedPrompt string
 	MaxTokens       int
 }
+type flaggingResult struct {
+	shouldBlock       bool
+	blockedPhrase     *string
+	reasons           []string
+	promptPrefix      string
+	maxTokensToSample int
+	promptTokenCount  int
+}
 
 func isFlaggedRequest(tk *tokenizer.Tokenizer, r flaggingRequest, cfg flaggingConfig) (*flaggingResult, error) {
 	var reasons []string
 
 	prompt := strings.ToLower(r.FlattenedPrompt)
 
-	if len(cfg.AllowedPromptPatterns) > 0 && !containsAny(prompt, cfg.AllowedPromptPatterns) {
+	if hasValidPattern, _ := containsAny(prompt, cfg.AllowedPromptPatterns); len(cfg.AllowedPromptPatterns) > 0 && !hasValidPattern {
 		reasons = append(reasons, "unknown_prompt")
 	}
 
@@ -53,7 +61,8 @@ func isFlaggedRequest(tk *tokenizer.Tokenizer, r flaggingRequest, cfg flaggingCo
 
 	if len(reasons) > 0 { // request is flagged
 		blocked := false
-		if tokenCount > cfg.PromptTokenBlockingLimit || r.MaxTokens > cfg.ResponseTokenBlockingLimit || containsAny(prompt, cfg.BlockedPromptPatterns) {
+		hasBlockedPhrase, phrase := containsAny(prompt, cfg.BlockedPromptPatterns)
+		if tokenCount > cfg.PromptTokenBlockingLimit || r.MaxTokens > cfg.ResponseTokenBlockingLimit || hasBlockedPhrase {
 			blocked = true
 		}
 
@@ -61,36 +70,32 @@ func isFlaggedRequest(tk *tokenizer.Tokenizer, r flaggingRequest, cfg flaggingCo
 		if len(promptPrefix) > logPromptPrefixLength {
 			promptPrefix = promptPrefix[0:logPromptPrefixLength]
 		}
-		return &flaggingResult{
+		res := &flaggingResult{
 			reasons:           reasons,
 			maxTokensToSample: r.MaxTokens,
 			promptPrefix:      promptPrefix,
 			promptTokenCount:  tokenCount,
 			shouldBlock:       blocked,
-		}, nil
+		}
+		if hasBlockedPhrase {
+			res.blockedPhrase = &phrase
+		}
+		return res, nil
 	}
 
 	return nil, nil
-}
-
-type flaggingResult struct {
-	shouldBlock       bool
-	reasons           []string
-	promptPrefix      string
-	maxTokensToSample int
-	promptTokenCount  int
 }
 
 func (f *flaggingResult) IsFlagged() bool {
 	return f != nil
 }
 
-func containsAny(prompt string, patterns []string) bool {
+func containsAny(prompt string, patterns []string) (bool, string) {
 	prompt = strings.ToLower(prompt)
 	for _, pattern := range patterns {
 		if strings.Contains(prompt, pattern) {
-			return true
+			return true, pattern
 		}
 	}
-	return false
+	return false, ""
 }
