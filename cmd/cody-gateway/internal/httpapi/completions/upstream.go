@@ -55,7 +55,7 @@ var hopHeaders = map[string]struct{}{
 }
 
 // Trim detected phrases to this many characters (to avoid storing too much repetitive data in BigQuery)
-const detectedPhrasePrefixLength = 5
+const phrasePrefixLength = 5
 
 // upstreamHandlerMethods declares a set of methods that are used throughout the
 // lifecycle of a request to an upstream API. All methods are required, and called
@@ -272,11 +272,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				}
 				for _, p := range patternsToDetect {
 					if strings.Contains(prompt, p) {
-						pat := p
-						if len(p) > detectedPhrasePrefixLength {
-							pat = p[:detectedPhrasePrefixLength]
-						}
-						requestMetadata["detected_phrase"] = pat
+						requestMetadata["detected_phrase"] = truncateToPrefix(p)
 						break
 					}
 				}
@@ -459,6 +455,14 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		}))
 }
 
+func truncateToPrefix(p string) string {
+	pat := p
+	if len(p) > phrasePrefixLength {
+		pat = p[:phrasePrefixLength]
+	}
+	return pat
+}
+
 func getFlaggingMetadata(flaggingResult *flaggingResult, act *actor.Actor) map[string]any {
 	requestMetadata := map[string]any{}
 
@@ -466,6 +470,9 @@ func getFlaggingMetadata(flaggingResult *flaggingResult, act *actor.Actor) map[s
 	flaggingMetadata := map[string]any{
 		"reason":       flaggingResult.reasons,
 		"should_block": flaggingResult.shouldBlock,
+	}
+	if flaggingResult.blockedPhrase != nil {
+		flaggingMetadata["blocked_phrase"] = truncateToPrefix(*flaggingResult.blockedPhrase)
 	}
 
 	if act.IsDotComActor() {
@@ -504,6 +511,7 @@ func intersection(a, b []string) (c []string) {
 
 type flaggingResult struct {
 	shouldBlock       bool
+	blockedPhrase     *string
 	reasons           []string
 	promptPrefix      string
 	maxTokensToSample int

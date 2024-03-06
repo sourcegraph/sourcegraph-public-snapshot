@@ -252,7 +252,7 @@ func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, cfg
 
 	prompt := strings.ToLower(ar.Prompt)
 
-	if len(cfg.AllowedPromptPatterns) > 0 && !containsAny(prompt, cfg.AllowedPromptPatterns) {
+	if hasValidPattern, _ := containsAny(prompt, cfg.AllowedPromptPatterns); len(cfg.AllowedPromptPatterns) > 0 && !hasValidPattern {
 		reasons = append(reasons, "unknown_prompt")
 	}
 
@@ -272,7 +272,8 @@ func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, cfg
 
 	if len(reasons) > 0 { // request is flagged
 		blocked := false
-		if tokenCount > cfg.PromptTokenBlockingLimit || ar.MaxTokensToSample > int32(cfg.ResponseTokenBlockingLimit) || containsAny(prompt, cfg.BlockedPromptPatterns) {
+		hasBlockedPhrase, phrase := containsAny(prompt, cfg.BlockedPromptPatterns)
+		if tokenCount > cfg.PromptTokenBlockingLimit || ar.MaxTokensToSample > int32(cfg.ResponseTokenBlockingLimit) || hasBlockedPhrase {
 			blocked = true
 		}
 
@@ -280,24 +281,28 @@ func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, cfg
 		if len(promptPrefix) > logPromptPrefixLength {
 			promptPrefix = promptPrefix[0:logPromptPrefixLength]
 		}
-		return &flaggingResult{
+		res := &flaggingResult{
 			reasons:           reasons,
 			maxTokensToSample: int(ar.MaxTokensToSample),
 			promptPrefix:      promptPrefix,
 			promptTokenCount:  tokenCount,
 			shouldBlock:       blocked,
-		}, nil
+		}
+		if hasBlockedPhrase {
+			res.blockedPhrase = &phrase
+		}
+		return res, nil
 	}
 
 	return nil, nil
 }
 
-func containsAny(prompt string, patterns []string) bool {
+func containsAny(prompt string, patterns []string) (bool, string) {
 	prompt = strings.ToLower(prompt)
 	for _, pattern := range patterns {
 		if strings.Contains(prompt, pattern) {
-			return true
+			return true, pattern
 		}
 	}
-	return false
+	return false, ""
 }
