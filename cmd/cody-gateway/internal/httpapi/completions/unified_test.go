@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/grafana/regexp"
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 
@@ -23,19 +22,26 @@ func TestIsFlaggedUnifiedRequest(t *testing.T) {
 		MaxTokensToSampleFlaggingLimit: 1000,
 		ResponseTokenBlockingLimit:     1000,
 	}
+	cfgWithPreamble := config.AnthropicConfig{
+		PromptTokenFlaggingLimit:       18000,
+		PromptTokenBlockingLimit:       20000,
+		MaxTokensToSampleFlaggingLimit: 1000,
+		ResponseTokenBlockingLimit:     1000,
+		AllowedPromptPatterns:          []string{strings.ToLower(validPreamble)},
+	}
 	tk, err := tokenizer.NewAnthropicClaudeTokenizer()
 	require.NoError(t, err)
 
 	t.Run("works for known preamble", func(t *testing.T) {
 		r := unifiedRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []unifiedMessage{unifiedMessage{Role: "system", Content: []unifiedContent{unifiedContent{Type: "text", Text: validPreamble}}}}}
-		result, err := isFlaggedUnifiedRequest(tk, r, []*regexp.Regexp{regexp.MustCompile(validPreamble)}, cfg)
+		result, err := isFlaggedUnifiedRequest(tk, r, cfgWithPreamble)
 		require.NoError(t, err)
 		require.Nil(t, result)
 	})
 
 	t.Run("missing known preamble", func(t *testing.T) {
 		r := unifiedRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []unifiedMessage{unifiedMessage{Role: "system", Content: []unifiedContent{unifiedContent{Type: "text", Text: "some prompt without known preamble"}}}}}
-		result, err := isFlaggedUnifiedRequest(tk, r, []*regexp.Regexp{regexp.MustCompile(validPreamble)}, cfg)
+		result, err := isFlaggedUnifiedRequest(tk, r, cfgWithPreamble)
 		require.NoError(t, err)
 		require.True(t, result.IsFlagged())
 		require.False(t, result.shouldBlock)
@@ -44,7 +50,7 @@ func TestIsFlaggedUnifiedRequest(t *testing.T) {
 
 	t.Run("preamble not configured ", func(t *testing.T) {
 		r := unifiedRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []unifiedMessage{unifiedMessage{Role: "system", Content: []unifiedContent{unifiedContent{Type: "text", Text: "some prompt without known preamble"}}}}}
-		result, err := isFlaggedUnifiedRequest(tk, r, []*regexp.Regexp{}, cfg)
+		result, err := isFlaggedUnifiedRequest(tk, r, cfg)
 		require.NoError(t, err)
 		require.False(t, result.IsFlagged())
 	})
@@ -52,7 +58,7 @@ func TestIsFlaggedUnifiedRequest(t *testing.T) {
 	t.Run("high max tokens to sample", func(t *testing.T) {
 		r := unifiedRequest{Model: "anthropic/claude-3-sonnet-20240229", MaxTokens: 10000, Messages: []unifiedMessage{unifiedMessage{Role: "system", Content: []unifiedContent{unifiedContent{Type: "text", Text: validPreamble}}}}}
 
-		result, err := isFlaggedUnifiedRequest(tk, r, []*regexp.Regexp{}, cfg)
+		result, err := isFlaggedUnifiedRequest(tk, r, cfg)
 		require.NoError(t, err)
 		require.True(t, result.IsFlagged())
 		require.True(t, result.shouldBlock)
@@ -60,7 +66,29 @@ func TestIsFlaggedUnifiedRequest(t *testing.T) {
 		require.Equal(t, int32(result.maxTokensToSample), r.MaxTokens)
 	})
 
-	t.Run("high prompt token count (below block limit)", func(t *testing.T) {
+	t.Run("high prompt token count and bad phrase", func(t *testing.T) {
+		cfgWithBadPhrase := &cfgWithPreamble
+		cfgWithBadPhrase.BlockedPromptPatterns = []string{"bad phrase"}
+		longPrompt := strings.Repeat("word ", cfg.PromptTokenFlaggingLimit+1)
+		r := unifiedRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []unifiedMessage{unifiedMessage{Role: "system", Content: []unifiedContent{{Type: "text", Text: validPreamble + " " + longPrompt + "bad phrase"}}}}}
+		result, err := isFlaggedUnifiedRequest(tk, r, *cfgWithBadPhrase)
+		require.NoError(t, err)
+		require.True(t, result.IsFlagged())
+		require.True(t, result.shouldBlock)
+	})
+
+	t.Run("low prompt token count and bad phrase", func(t *testing.T) {
+		cfgWithBadPhrase := &cfgWithPreamble
+		cfgWithBadPhrase.BlockedPromptPatterns = []string{"bad phrase"}
+		longPrompt := strings.Repeat("word ", 5)
+		r := unifiedRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []unifiedMessage{unifiedMessage{Role: "system", Content: []unifiedContent{{Type: "text", Text: validPreamble + " " + longPrompt + "bad phrase"}}}}}
+		result, err := isFlaggedUnifiedRequest(tk, r, *cfgWithBadPhrase)
+		require.NoError(t, err)
+		// for now, we should not flag requests purely because of bad phrases
+		require.False(t, result.IsFlagged())
+	})
+
+	t.Run("high prompt token count (above block limit)", func(t *testing.T) {
 		tokenLengths, err := tk.Tokenize(validPreamble)
 		require.NoError(t, err)
 
@@ -71,7 +99,7 @@ func TestIsFlaggedUnifiedRequest(t *testing.T) {
 			{Role: "user", Content: []unifiedContent{{Type: "text", Text: longPrompt}}},
 		}}
 
-		result, err := isFlaggedUnifiedRequest(tk, r, []*regexp.Regexp{regexp.MustCompile(validPreamble)}, cfg)
+		result, err := isFlaggedUnifiedRequest(tk, r, cfgWithPreamble)
 		require.NoError(t, err)
 		require.True(t, result.IsFlagged())
 		require.False(t, result.shouldBlock)
@@ -90,7 +118,7 @@ func TestIsFlaggedUnifiedRequest(t *testing.T) {
 			{Role: "user", Content: []unifiedContent{{Type: "text", Text: longPrompt}}},
 		}}
 
-		result, err := isFlaggedUnifiedRequest(tk, r, []*regexp.Regexp{regexp.MustCompile(validPreamble)}, cfg)
+		result, err := isFlaggedUnifiedRequest(tk, r, cfgWithPreamble)
 		require.NoError(t, err)
 		require.True(t, result.IsFlagged())
 		require.True(t, result.shouldBlock)

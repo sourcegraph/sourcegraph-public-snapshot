@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
@@ -50,10 +49,6 @@ func NewUnifiedHandler(
 	if err != nil {
 		return nil, err
 	}
-	promptRegexps := []*regexp.Regexp{}
-	for _, pattern := range config.AllowedPromptPatterns {
-		promptRegexps = append(promptRegexps, regexp.MustCompile(pattern))
-	}
 	return makeUpstreamHandler[unifiedRequest](
 		baseLogger,
 		eventLogger,
@@ -63,7 +58,7 @@ func NewUnifiedHandler(
 		string(conftypes.CompletionsProviderNameAnthropic),
 		func(_ codygateway.Feature) string { return anthropicMessagesAPIURL },
 		config.AllowedModels,
-		&UnifiedHandlerMethods{config: config, tokenizer: tokenizer, promptRegexps: promptRegexps, promptRecorder: promptRecorder},
+		&UnifiedHandlerMethods{config: config, tokenizer: tokenizer, promptRecorder: promptRecorder},
 
 		// Anthropic primarily uses concurrent requests to rate-limit spikes
 		// in requests, so set a default retry-after that is likely to be
@@ -175,7 +170,6 @@ type unifiedResponseUsage struct {
 
 type UnifiedHandlerMethods struct {
 	tokenizer      *tokenizer.Tokenizer
-	promptRegexps  []*regexp.Regexp
 	promptRecorder PromptRecorder
 	config         config.AnthropicConfig
 }
@@ -185,7 +179,7 @@ func (a *UnifiedHandlerMethods) validateRequest(ctx context.Context, logger log.
 		return http.StatusBadRequest, nil, errors.Errorf("max_tokens exceeds maximum allowed value of %d: %d", a.config.MaxTokensToSample, ar.MaxTokens)
 	}
 
-	if result, err := isFlaggedUnifiedRequest(a.tokenizer, ar, a.promptRegexps, a.config); err != nil {
+	if result, err := isFlaggedUnifiedRequest(a.tokenizer, ar, a.config); err != nil {
 		logger.Error("error checking unified request - treating as non-flagged",
 			log.Error(err))
 	} else if result.IsFlagged() {
@@ -295,20 +289,20 @@ func (a *UnifiedHandlerMethods) parseResponseAndUsage(logger log.Logger, body un
 	return promptUsage, completionUsage
 }
 
-func isFlaggedUnifiedRequest(tk *tokenizer.Tokenizer, ar unifiedRequest, promptRegexps []*regexp.Regexp, cfg config.AnthropicConfig) (*flaggingResult, error) {
+func isFlaggedUnifiedRequest(tk *tokenizer.Tokenizer, r unifiedRequest, cfg config.AnthropicConfig) (*flaggingResult, error) {
 	var reasons []string
 
-	if len(promptRegexps) > 0 && !matchesAny(ar.BuildPrompt(), promptRegexps) {
+	if len(cfg.AllowedPromptPatterns) > 0 && !containsAny(r.BuildPrompt(), cfg.AllowedPromptPatterns) {
 		reasons = append(reasons, "unknown_prompt")
 	}
 
 	// If this request has a very high token count for responses, then flag it.
-	if ar.MaxTokens > int32(cfg.MaxTokensToSampleFlaggingLimit) {
+	if r.MaxTokens > int32(cfg.MaxTokensToSampleFlaggingLimit) {
 		reasons = append(reasons, "high_max_tokens_to_sample")
 	}
 
 	// If this prompt consists of a very large number of tokens, then flag it.
-	tokenCount, err := ar.GetPromptTokenCount(tk)
+	tokenCount, err := r.GetPromptTokenCount(tk)
 	if err != nil {
 		return &flaggingResult{}, errors.Wrap(err, "tokenize prompt")
 	}
@@ -318,17 +312,17 @@ func isFlaggedUnifiedRequest(tk *tokenizer.Tokenizer, ar unifiedRequest, promptR
 
 	if len(reasons) > 0 {
 		blocked := false
-		if tokenCount > cfg.PromptTokenBlockingLimit || ar.MaxTokens > int32(cfg.ResponseTokenBlockingLimit) {
+		if tokenCount > cfg.PromptTokenBlockingLimit || r.MaxTokens > int32(cfg.ResponseTokenBlockingLimit) || containsAny(r.BuildPrompt(), cfg.BlockedPromptPatterns) {
 			blocked = true
 		}
 
-		promptPrefix := ar.BuildPrompt()
+		promptPrefix := r.BuildPrompt()
 		if len(promptPrefix) > logPromptPrefixLength {
 			promptPrefix = promptPrefix[0:logPromptPrefixLength]
 		}
 		return &flaggingResult{
 			reasons:           reasons,
-			maxTokensToSample: int(ar.MaxTokens),
+			maxTokensToSample: int(r.MaxTokens),
 			promptPrefix:      promptPrefix,
 			promptTokenCount:  tokenCount,
 			shouldBlock:       blocked,
