@@ -91,6 +91,9 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 			}
 	} else if resultTypes.Has(result.TypeFile | result.TypePath) {
 		planJob = NewTextSearchJob(b, inputs, resultTypes, repoOptions)
+	} else {
+		// This should never happen because we checked for supported types above.
+		return Exhaustive{}, errors.Errorf("internal error: unsupported result types %v", resultTypes)
 	}
 
 	repoPagerJob, ok := planJob.(*repoPagerJob)
