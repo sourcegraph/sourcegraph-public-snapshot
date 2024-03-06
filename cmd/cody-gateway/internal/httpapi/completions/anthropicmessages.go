@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -259,7 +258,6 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 			continue
 		}
 
-
 		switch event.Type {
 		case "message_start":
 			if event.Message != nil && event.Message.Usage != nil {
@@ -278,7 +276,6 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 	if err := dec.Err(); err != nil {
 		logger.Error("failed to decode Anthropic streaming response", log.Error(err))
 	}
-
 
 	return promptUsage, completionUsage
 }
