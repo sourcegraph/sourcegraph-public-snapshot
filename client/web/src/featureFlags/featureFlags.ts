@@ -14,10 +14,6 @@ export const FEATURE_FLAGS = [
     'contrast-compliant-syntax-highlighting',
     'enable-ownership-panels',
     'enable-simple-search',
-    // TODO(fkling): Remove this flag
-    'enable-sveltekit',
-    // TODO(fkling): Remove this flag
-    'enable-sveltekit-toggle',
     'web-next',
     'web-next-rollout',
     'web-next-toggle',

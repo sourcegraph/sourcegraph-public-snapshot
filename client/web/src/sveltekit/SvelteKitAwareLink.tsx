@@ -1,9 +1,10 @@
 import React from 'react'
 
 import isAbsoluteUrl from 'is-absolute-url'
-import { useFeatureFlag } from 'src/featureFlags/useFeatureFlag'
 
 import { RouterLink, type Link, AnchorLink } from '@sourcegraph/wildcard'
+
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 import { isRolledOutRoute, isSupportedRoute } from './util'
 

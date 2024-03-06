@@ -1,6 +1,6 @@
 <script lang="ts">
     import { setContext } from 'svelte'
-    import { derived, writable } from 'svelte/store'
+    import { writable } from 'svelte/store'
 
     import { browser, dev } from '$app/environment'
     import { isErrorLike } from '$lib/common'
@@ -55,10 +55,7 @@
         document.documentElement.classList.toggle('theme-dark', !$isLightTheme)
     }
 
-    $: allRoutesEnabled = derived(
-        [featureFlag('web-next'), featureFlag('enable-sveltekit')],
-        ([$webNext, $svelteKit]) => $webNext || $svelteKit
-    )
+    $: allRoutesEnabled = featureFlag('web-next')
     $: rolledoutRoutesEnabled = featureFlag('web-next-rollout')
 
     // Redirect the user to the react app when they navigate to a page that is

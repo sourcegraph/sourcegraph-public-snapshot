@@ -9,15 +9,9 @@ import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 import { reload, isSupportedRoute } from './util'
 
-function useIsSvelteKitToggleEnabled(): boolean {
-    const [isSvelteKitToggleEnabled] = useFeatureFlag('enable-sveltekit-toggle')
-    const [isExperimentalWebAppToggleEnabled] = useFeatureFlag('web-next-toggle')
-    return isSvelteKitToggleEnabled || isExperimentalWebAppToggleEnabled
-}
-
 export const SvelteKitNavItem: FC = () => {
     const location = useLocation()
-    const isEnabled = useIsSvelteKitToggleEnabled()
+    const [isEnabled] = useFeatureFlag('web-next-toggle')
 
     if (!isEnabled || !isSupportedRoute(location.pathname)) {
         return null
