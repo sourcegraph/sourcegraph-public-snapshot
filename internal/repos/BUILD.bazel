@@ -42,7 +42,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/repos",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/actor",
         "//internal/api",
         "//internal/bytesize",
@@ -52,6 +51,7 @@ go_library(
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbutil",
+        "//internal/dotcom",
         "//internal/encryption/keyring",
         "//internal/errcode",
         "//internal/extsvc",
@@ -150,7 +150,6 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/api",
         "//internal/codeintel/dependencies",
         "//internal/conf",
@@ -159,6 +158,7 @@ go_test(
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/database/dbtest",
+        "//internal/dotcom",
         "//internal/encryption/keyring",
         "//internal/extsvc",
         "//internal/extsvc/auth",

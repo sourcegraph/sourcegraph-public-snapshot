@@ -21,6 +21,7 @@
     import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import type { URLQueryFilter } from '$lib/search/dynamicFilters'
     import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { submitSearch, type QueryStateStore } from '$lib/search/state'
@@ -33,7 +34,7 @@
 
     export let stream: Observable<AggregateStreamingSearchResults | undefined>
     export let queryFromURL: string
-    export let queryFilters: string
+    export let selectedFilters: URLQueryFilter[]
     export let queryState: QueryStateStore
 
     export function capture(): SearchResultsCapture {
@@ -49,6 +50,7 @@
     let resultContainer: HTMLElement | null = null
 
     const sidebarSize = getSeparatorPosition('search-results-sidebar', 0.2)
+    $: sidebarWidth = `clamp(14rem, ${$sidebarSize * 100}%, 50%)`
 
     $: progress = $stream?.progress
     // NOTE: done is present but apparently not officially exposed. However
@@ -109,13 +111,14 @@
 </div>
 
 <div class="search-results">
-    <DynamicFiltersSidebar
-        size={$sidebarSize}
-        {queryFromURL}
-        {queryFilters}
-        {queryState}
-        streamFilters={$stream?.filters ?? []}
-    />
+    <div style:width={sidebarWidth}>
+        <DynamicFiltersSidebar
+            {selectedFilters}
+            streamFilters={$stream?.filters ?? []}
+            searchQuery={queryFromURL}
+            {loading}
+        />
+    </div>
     <Separator currentPosition={sidebarSize} />
     <div class="results" bind:this={resultContainer}>
         <aside class="actions">

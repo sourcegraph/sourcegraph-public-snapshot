@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -273,7 +274,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 	}
 
 	// common.Repo and common.CommitID are populated in the above if statement
-	if blobPath, ok := mux.Vars(r)["Path"]; ok && envvar.OpenGraphPreviewServiceURL() != "" && envvar.SourcegraphDotComMode() && common.Repo != nil {
+	if blobPath, ok := mux.Vars(r)["Path"]; ok && envvar.OpenGraphPreviewServiceURL() != "" && dotcom.SourcegraphDotComMode() && common.Repo != nil {
 		lineRange := FindLineRangeInQueryParameters(r.URL.Query())
 
 		var symbolResult *result.Symbol
@@ -358,7 +359,7 @@ func serveHome(db database.DB) handlerFunc {
 		// except if the instance is on a Cody-Only license.
 		redirectURL := "/search"
 		features := common.Context.LicenseInfo.Features
-		if !features.CodeSearch && features.Cody && !envvar.SourcegraphDotComMode() {
+		if !features.CodeSearch && features.Cody && !dotcom.SourcegraphDotComMode() {
 			redirectURL = "/cody"
 		}
 

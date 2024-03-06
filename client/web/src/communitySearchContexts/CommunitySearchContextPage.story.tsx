@@ -6,6 +6,7 @@ import { EMPTY, NEVER, type Observable, of } from 'rxjs'
 import { subtypeOf } from '@sourcegraph/common'
 import type { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
 import type { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
@@ -41,6 +42,7 @@ const PLATFORM_CONTEXT: CommunitySearchContextPageProps['platformContext'] = {
     settings: NEVER,
     sourcegraphURL: '',
     requestGraphQL: () => EMPTY,
+    telemetryRecorder: noOpTelemetryRecorder,
 }
 
 const authUser: AuthenticatedUser = {

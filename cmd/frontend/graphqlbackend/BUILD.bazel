@@ -269,6 +269,7 @@ go_library(
         "//internal/database/migration/runner",
         "//internal/database/migration/schemas",
         "//internal/deviceid",
+        "//internal/dotcom",
         "//internal/embeddings/background/repo",
         "//internal/encryption",
         "//internal/encryption/keyring",
@@ -471,7 +472,6 @@ go_test(
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/enterprise",
-        "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend/apitest",
         "//cmd/frontend/graphqlbackend/externallink",
         "//cmd/frontend/graphqlbackend/graphqlutil",
@@ -492,6 +492,7 @@ go_test(
         "//internal/database/dbtest",
         "//internal/database/dbutil",
         "//internal/database/fakedb",
+        "//internal/dotcom",
         "//internal/encryption",
         "//internal/extsvc",
         "//internal/extsvc/gerrit",

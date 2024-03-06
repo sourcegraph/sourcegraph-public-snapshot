@@ -1,5 +1,7 @@
 import type { FC } from 'react'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+
 import type { AuthenticatedUser } from '../../../auth'
 import type { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import type { RepositoryFields } from '../../../graphql-operations'
@@ -9,7 +11,7 @@ import { BatchChangeRepoPage } from './BatchChangeRepoPage'
 /**
  * Properties passed to all page components in the repository batch changes area.
  */
-export interface RepositoryBatchChangesAreaPageProps extends BreadcrumbSetters {
+export interface RepositoryBatchChangesAreaPageProps extends BreadcrumbSetters, TelemetryV2Props {
     /**
      * The active repository.
      */
@@ -24,7 +26,7 @@ const BREADCRUMB = { key: 'batch-changes', element: 'Batch Changes' }
  * Renders pages related to repository batch changes.
  */
 export const RepositoryBatchChangesArea: FC<RepositoryBatchChangesAreaPageProps> = props => {
-    const { useBreadcrumb, repo, authenticatedUser, isSourcegraphDotCom } = props
+    const { useBreadcrumb, repo, authenticatedUser, isSourcegraphDotCom, telemetryRecorder } = props
 
     useBreadcrumb(BREADCRUMB)
 
@@ -34,6 +36,7 @@ export const RepositoryBatchChangesArea: FC<RepositoryBatchChangesAreaPageProps>
                 repo={repo}
                 authenticatedUser={authenticatedUser}
                 isSourcegraphDotCom={isSourcegraphDotCom}
+                telemetryRecorder={telemetryRecorder}
             />
         </div>
     )
