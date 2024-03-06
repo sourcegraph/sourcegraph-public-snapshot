@@ -78,7 +78,7 @@ export const NavGroup = forwardRef<HTMLDivElement, NavGroupProps>(({ children, c
     return (
         <MobileNavGroupContext.Provider value={isMobileSize}>
             {isMobileSize ? (
-                <Menu ref={ref} className={className}>
+                <Menu ref={ref} className={`${className} ${className}`>
                     <MenuButton aria-label="Sections Navigation">
                         <Icon aria-hidden={true} svgPath={mdiMenu} />
                     </MenuButton>
