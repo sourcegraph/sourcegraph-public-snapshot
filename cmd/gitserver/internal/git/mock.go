@@ -2205,3 +2205,263 @@ func (c GitConfigBackendUnsetFuncCall) Args() []interface{} {
 func (c GitConfigBackendUnsetFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
+
+// MockRefIterator is a mock implementation of the RefIterator interface
+// (from the package
+// github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git) used for
+// unit testing.
+type MockRefIterator struct {
+	// CloseFunc is an instance of a mock function object controlling the
+	// behavior of the method Close.
+	CloseFunc *RefIteratorCloseFunc
+	// NextFunc is an instance of a mock function object controlling the
+	// behavior of the method Next.
+	NextFunc *RefIteratorNextFunc
+}
+
+// NewMockRefIterator creates a new mock of the RefIterator interface. All
+// methods return zero values for all results, unless overwritten.
+func NewMockRefIterator() *MockRefIterator {
+	return &MockRefIterator{
+		CloseFunc: &RefIteratorCloseFunc{
+			defaultHook: func() (r0 error) {
+				return
+			},
+		},
+		NextFunc: &RefIteratorNextFunc{
+			defaultHook: func() (r0 *gitdomain.Ref, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockRefIterator creates a new mock of the RefIterator interface.
+// All methods panic on invocation, unless overwritten.
+func NewStrictMockRefIterator() *MockRefIterator {
+	return &MockRefIterator{
+		CloseFunc: &RefIteratorCloseFunc{
+			defaultHook: func() error {
+				panic("unexpected invocation of MockRefIterator.Close")
+			},
+		},
+		NextFunc: &RefIteratorNextFunc{
+			defaultHook: func() (*gitdomain.Ref, error) {
+				panic("unexpected invocation of MockRefIterator.Next")
+			},
+		},
+	}
+}
+
+// NewMockRefIteratorFrom creates a new mock of the MockRefIterator
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockRefIteratorFrom(i RefIterator) *MockRefIterator {
+	return &MockRefIterator{
+		CloseFunc: &RefIteratorCloseFunc{
+			defaultHook: i.Close,
+		},
+		NextFunc: &RefIteratorNextFunc{
+			defaultHook: i.Next,
+		},
+	}
+}
+
+// RefIteratorCloseFunc describes the behavior when the Close method of the
+// parent MockRefIterator instance is invoked.
+type RefIteratorCloseFunc struct {
+	defaultHook func() error
+	hooks       []func() error
+	history     []RefIteratorCloseFuncCall
+	mutex       sync.Mutex
+}
+
+// Close delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockRefIterator) Close() error {
+	r0 := m.CloseFunc.nextHook()()
+	m.CloseFunc.appendCall(RefIteratorCloseFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Close method of the
+// parent MockRefIterator instance is invoked and the hook queue is empty.
+func (f *RefIteratorCloseFunc) SetDefaultHook(hook func() error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Close method of the parent MockRefIterator instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *RefIteratorCloseFunc) PushHook(hook func() error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RefIteratorCloseFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func() error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RefIteratorCloseFunc) PushReturn(r0 error) {
+	f.PushHook(func() error {
+		return r0
+	})
+}
+
+func (f *RefIteratorCloseFunc) nextHook() func() error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RefIteratorCloseFunc) appendCall(r0 RefIteratorCloseFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RefIteratorCloseFuncCall objects describing
+// the invocations of this function.
+func (f *RefIteratorCloseFunc) History() []RefIteratorCloseFuncCall {
+	f.mutex.Lock()
+	history := make([]RefIteratorCloseFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RefIteratorCloseFuncCall is an object that describes an invocation of
+// method Close on an instance of MockRefIterator.
+type RefIteratorCloseFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RefIteratorCloseFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RefIteratorCloseFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// RefIteratorNextFunc describes the behavior when the Next method of the
+// parent MockRefIterator instance is invoked.
+type RefIteratorNextFunc struct {
+	defaultHook func() (*gitdomain.Ref, error)
+	hooks       []func() (*gitdomain.Ref, error)
+	history     []RefIteratorNextFuncCall
+	mutex       sync.Mutex
+}
+
+// Next delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockRefIterator) Next() (*gitdomain.Ref, error) {
+	r0, r1 := m.NextFunc.nextHook()()
+	m.NextFunc.appendCall(RefIteratorNextFuncCall{r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Next method of the
+// parent MockRefIterator instance is invoked and the hook queue is empty.
+func (f *RefIteratorNextFunc) SetDefaultHook(hook func() (*gitdomain.Ref, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Next method of the parent MockRefIterator instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *RefIteratorNextFunc) PushHook(hook func() (*gitdomain.Ref, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RefIteratorNextFunc) SetDefaultReturn(r0 *gitdomain.Ref, r1 error) {
+	f.SetDefaultHook(func() (*gitdomain.Ref, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RefIteratorNextFunc) PushReturn(r0 *gitdomain.Ref, r1 error) {
+	f.PushHook(func() (*gitdomain.Ref, error) {
+		return r0, r1
+	})
+}
+
+func (f *RefIteratorNextFunc) nextHook() func() (*gitdomain.Ref, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RefIteratorNextFunc) appendCall(r0 RefIteratorNextFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RefIteratorNextFuncCall objects describing
+// the invocations of this function.
+func (f *RefIteratorNextFunc) History() []RefIteratorNextFuncCall {
+	f.mutex.Lock()
+	history := make([]RefIteratorNextFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RefIteratorNextFuncCall is an object that describes an invocation of
+// method Next on an instance of MockRefIterator.
+type RefIteratorNextFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *gitdomain.Ref
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RefIteratorNextFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RefIteratorNextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
