@@ -5,9 +5,10 @@ go_library(
     name = "completions",
     srcs = [
         "anthropic.go",
-        "fireworks.go",
-        "openai.go",
         "anthropicmessages.go",
+        "fireworks.go",
+        "flagging.go",
+        "openai.go",
         "upstream.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions",
@@ -43,9 +44,9 @@ go_test(
     name = "completions_test",
     srcs = [
         "anthropic_test.go",
+        "anthropicmessages_test.go",
         "fireworks_test.go",
         "openai_test.go",
-        "anthropicmessages_test.go",
     ],
     embed = [":completions"],
     deps = [
