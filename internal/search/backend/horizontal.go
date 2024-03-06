@@ -61,7 +61,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	var mu sync.Mutex
 	dedupper := dedupper{}
 
-	pl := pool.NewWithResults[error]()
+	pl := pool.New().WithErrors()
 	for endpoint, client := range clients {
 		e := endpoint
 		c := client
@@ -89,12 +89,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		})
 	}
 
-	errs := pl.Wait()
-	var multiError errors.MultiError
-	for _, err := range errs {
-		multiError = errors.Append(multiError, err)
-	}
-	return multiError
+	return pl.Wait()
 }
 
 type queueSearchResult struct {
