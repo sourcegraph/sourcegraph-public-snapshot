@@ -33,15 +33,19 @@ func TestIsFlaggedUnifiedRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("works for known preamble", func(t *testing.T) {
-		r := unifiedRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []unifiedMessage{unifiedMessage{Role: "system", Content: []unifiedContent{unifiedContent{Type: "text", Text: validPreamble}}}}}
-		result, err := isFlaggedUnifiedRequest(tk, r, cfgWithPreamble)
+		r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{
+			{Role: "system", Content: []anthropicMessageContent{{Type: "text", Text: validPreamble}}},
+		}}
+		result, err := isFlaggedAnthropicMessagesRequest(tk, r, cfgWithPreamble)
 		require.NoError(t, err)
 		require.Nil(t, result)
 	})
 
 	t.Run("missing known preamble", func(t *testing.T) {
-		r := unifiedRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []unifiedMessage{unifiedMessage{Role: "system", Content: []unifiedContent{unifiedContent{Type: "text", Text: "some prompt without known preamble"}}}}}
-		result, err := isFlaggedUnifiedRequest(tk, r, cfgWithPreamble)
+		r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{
+			{Role: "system", Content: []anthropicMessageContent{{Type: "text", Text: "some prompt without known preamble"}}},
+		}}
+		result, err := isFlaggedAnthropicMessagesRequest(tk, r, cfgWithPreamble)
 		require.NoError(t, err)
 		require.True(t, result.IsFlagged())
 		require.False(t, result.shouldBlock)
@@ -49,16 +53,19 @@ func TestIsFlaggedUnifiedRequest(t *testing.T) {
 	})
 
 	t.Run("preamble not configured ", func(t *testing.T) {
-		r := unifiedRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []unifiedMessage{unifiedMessage{Role: "system", Content: []unifiedContent{unifiedContent{Type: "text", Text: "some prompt without known preamble"}}}}}
-		result, err := isFlaggedUnifiedRequest(tk, r, cfg)
+		r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{
+			{Role: "system", Content: []anthropicMessageContent{{Type: "text", Text: "some prompt without known preamble"}}},
+		}}
+		result, err := isFlaggedAnthropicMessagesRequest(tk, r, cfg)
 		require.NoError(t, err)
 		require.False(t, result.IsFlagged())
 	})
 
 	t.Run("high max tokens to sample", func(t *testing.T) {
-		r := unifiedRequest{Model: "anthropic/claude-3-sonnet-20240229", MaxTokens: 10000, Messages: []unifiedMessage{unifiedMessage{Role: "system", Content: []unifiedContent{unifiedContent{Type: "text", Text: validPreamble}}}}}
-
-		result, err := isFlaggedUnifiedRequest(tk, r, cfg)
+		r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", MaxTokens: 10000, Messages: []anthropicMessage{
+			{Role: "system", Content: []anthropicMessageContent{{Type: "text", Text: validPreamble}}},
+		}}
+		result, err := isFlaggedAnthropicMessagesRequest(tk, r, cfg)
 		require.NoError(t, err)
 		require.True(t, result.IsFlagged())
 		require.True(t, result.shouldBlock)
@@ -70,8 +77,10 @@ func TestIsFlaggedUnifiedRequest(t *testing.T) {
 		cfgWithBadPhrase := &cfgWithPreamble
 		cfgWithBadPhrase.BlockedPromptPatterns = []string{"bad phrase"}
 		longPrompt := strings.Repeat("word ", cfg.PromptTokenFlaggingLimit+1)
-		r := unifiedRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []unifiedMessage{unifiedMessage{Role: "system", Content: []unifiedContent{{Type: "text", Text: validPreamble + " " + longPrompt + "bad phrase"}}}}}
-		result, err := isFlaggedUnifiedRequest(tk, r, *cfgWithBadPhrase)
+		r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{
+			{Role: "system", Content: []anthropicMessageContent{{Type: "text", Text: validPreamble + " " + longPrompt + "bad phrase"}}},
+		}}
+		result, err := isFlaggedAnthropicMessagesRequest(tk, r, *cfgWithBadPhrase)
 		require.NoError(t, err)
 		require.True(t, result.IsFlagged())
 		require.True(t, result.shouldBlock)
@@ -81,8 +90,10 @@ func TestIsFlaggedUnifiedRequest(t *testing.T) {
 		cfgWithBadPhrase := &cfgWithPreamble
 		cfgWithBadPhrase.BlockedPromptPatterns = []string{"bad phrase"}
 		longPrompt := strings.Repeat("word ", 5)
-		r := unifiedRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []unifiedMessage{unifiedMessage{Role: "system", Content: []unifiedContent{{Type: "text", Text: validPreamble + " " + longPrompt + "bad phrase"}}}}}
-		result, err := isFlaggedUnifiedRequest(tk, r, *cfgWithBadPhrase)
+		r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{
+			{Role: "system", Content: []anthropicMessageContent{{Type: "text", Text: validPreamble + " " + longPrompt + "bad phrase"}}},
+		}}
+		result, err := isFlaggedAnthropicMessagesRequest(tk, r, *cfgWithBadPhrase)
 		require.NoError(t, err)
 		// for now, we should not flag requests purely because of bad phrases
 		require.False(t, result.IsFlagged())
@@ -94,12 +105,12 @@ func TestIsFlaggedUnifiedRequest(t *testing.T) {
 
 		validPreambleTokens := len(tokenLengths)
 		longPrompt := strings.Repeat("word ", cfg.PromptTokenFlaggingLimit+1)
-		r := unifiedRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []unifiedMessage{
-			{Role: "system", Content: []unifiedContent{{Type: "text", Text: validPreamble}}},
-			{Role: "user", Content: []unifiedContent{{Type: "text", Text: longPrompt}}},
+		r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{
+			{Role: "system", Content: []anthropicMessageContent{{Type: "text", Text: validPreamble}}},
+			{Role: "user", Content: []anthropicMessageContent{{Type: "text", Text: longPrompt}}},
 		}}
 
-		result, err := isFlaggedUnifiedRequest(tk, r, cfgWithPreamble)
+		result, err := isFlaggedAnthropicMessagesRequest(tk, r, cfgWithPreamble)
 		require.NoError(t, err)
 		require.True(t, result.IsFlagged())
 		require.False(t, result.shouldBlock)
@@ -113,12 +124,12 @@ func TestIsFlaggedUnifiedRequest(t *testing.T) {
 
 		validPreambleTokens := len(tokenLengths)
 		longPrompt := strings.Repeat("word ", cfg.PromptTokenBlockingLimit+1)
-		r := unifiedRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []unifiedMessage{
-			{Role: "system", Content: []unifiedContent{{Type: "text", Text: validPreamble}}},
-			{Role: "user", Content: []unifiedContent{{Type: "text", Text: longPrompt}}},
+		r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{
+			{Role: "system", Content: []anthropicMessageContent{{Type: "text", Text: validPreamble}}},
+			{Role: "user", Content: []anthropicMessageContent{{Type: "text", Text: longPrompt}}},
 		}}
 
-		result, err := isFlaggedUnifiedRequest(tk, r, cfgWithPreamble)
+		result, err := isFlaggedAnthropicMessagesRequest(tk, r, cfgWithPreamble)
 		require.NoError(t, err)
 		require.True(t, result.IsFlagged())
 		require.True(t, result.shouldBlock)
@@ -131,7 +142,9 @@ func TestUnifiedRequestJSON(t *testing.T) {
 	tk, err := tokenizer.NewAnthropicClaudeTokenizer()
 	require.NoError(t, err)
 
-	r := unifiedRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []unifiedMessage{{Role: "user", Content: []unifiedContent{{Type: "text", Text: "Hello world"}}}}}
+	r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{
+		{Role: "user", Content: []anthropicMessageContent{{Type: "text", Text: "Hello world"}}},
+	}}
 	_, _ = r.GetPromptTokenCount(tk) // hydrate values that should not be marshalled
 
 	b, err := json.MarshalIndent(r, "", "\t")

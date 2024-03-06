@@ -7,7 +7,7 @@ go_library(
         "anthropic.go",
         "fireworks.go",
         "openai.go",
-        "unified.go",
+        "anthropicmessages.go",
         "upstream.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions",

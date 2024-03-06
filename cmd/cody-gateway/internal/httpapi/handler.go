@@ -108,7 +108,7 @@ func NewHandler(
 				),
 			))
 
-		unifiedHandler, err := completions.NewUnifiedHandler(
+		anthropicMessagesHandler, err := completions.NewAnthropicMessagesHandler(
 			logger,
 			eventLogger,
 			rs,
@@ -120,10 +120,10 @@ func NewHandler(
 			config.AutoFlushStreamingResponses,
 		)
 		if err != nil {
-			return nil, errors.Wrap(err, "init unified handler")
+			return nil, errors.Wrap(err, "init anthropicMessages handler")
 		}
 
-		v1router.Path("/completions/unified").Methods(http.MethodPost).Handler(
+		v1router.Path("/completions/anthropic-messages").Methods(http.MethodPost).Handler(
 			overhead.HTTPMiddleware(latencyHistogram,
 				instrumentation.HTTPMiddleware("v1.completions.anthropic",
 					gaugeHandler(
@@ -132,7 +132,7 @@ func NewHandler(
 						authr.Middleware(
 							requestlogger.Middleware(
 								logger,
-								unifiedHandler,
+								anthropicMessagesHandler,
 							),
 						),
 					),

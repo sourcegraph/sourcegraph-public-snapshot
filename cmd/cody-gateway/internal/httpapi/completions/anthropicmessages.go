@@ -25,16 +25,8 @@ import (
 
 const anthropicMessagesAPIURL = "https://api.anthropic.com/v1/messages"
 
-// The unified API endpoint is a new general-purpose AI inference API inspired
-// by the OpenAI API. The idea is is that regardless of which model you want to
-// use, there's one _unified_ API to use for all Sourcegraph products.
-//
-// Sharing the same API interface between the SG instance and Cody Gateway also
-// allows clients to implement RFC888 and connect to Cody Gateway directly.
-//
-// Right now, unified API is only available for the Claude 3 model family and
-// only implemented on the Cody Gateway side for PLG users connecting directly.
-func NewUnifiedHandler(
+// This implements the newer `/messages` API by Anthropic
+func NewAnthropicMessagesHandler(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
@@ -49,7 +41,7 @@ func NewUnifiedHandler(
 	if err != nil {
 		return nil, err
 	}
-	return makeUpstreamHandler[unifiedRequest](
+	return makeUpstreamHandler[anthropicMessagesRequest](
 		baseLogger,
 		eventLogger,
 		rs,
@@ -58,7 +50,7 @@ func NewUnifiedHandler(
 		string(conftypes.CompletionsProviderNameAnthropic),
 		func(_ codygateway.Feature) string { return anthropicMessagesAPIURL },
 		config.AllowedModels,
-		&UnifiedHandlerMethods{config: config, tokenizer: tokenizer, promptRecorder: promptRecorder},
+		&AnthropicMessagesHandlerMethods{config: config, tokenizer: tokenizer, promptRecorder: promptRecorder},
 
 		// Anthropic primarily uses concurrent requests to rate-limit spikes
 		// in requests, so set a default retry-after that is likely to be
@@ -72,48 +64,48 @@ func NewUnifiedHandler(
 	), nil
 }
 
-// unifiedRequest captures all known fields from https://console.anthropic.com/docs/api/reference.
-type unifiedRequest struct {
-	Messages      []unifiedMessage `json:"messages,omitempty"`
-	Model         string           `json:"model"`
-	MaxTokens     int32            `json:"max_tokens,omitempty"`
-	Temperature   float32          `json:"temperature,omitempty"`
-	TopP          float32          `json:"top_p,omitempty"`
-	TopK          int32            `json:"top_k,omitempty"`
-	Stream        bool             `json:"stream,omitempty"`
-	StopSequences []string         `json:"stop_sequences,omitempty"`
+// AnthropicMessagesRequest captures all known fields from https://console.anthropic.com/docs/api/reference.
+type anthropicMessagesRequest struct {
+	Messages      []anthropicMessage `json:"messages,omitempty"`
+	Model         string             `json:"model"`
+	MaxTokens     int32              `json:"max_tokens,omitempty"`
+	Temperature   float32            `json:"temperature,omitempty"`
+	TopP          float32            `json:"top_p,omitempty"`
+	TopK          int32              `json:"top_k,omitempty"`
+	Stream        bool               `json:"stream,omitempty"`
+	StopSequences []string           `json:"stop_sequences,omitempty"`
 
-	// TODO: These are not accepted from the client an instead are only used to
-	// talk to the upstream LLM APIs.
-	Metadata *unifiedRequestMetadata `json:"metadata,omitempty"`
-	System   string                  `json:"system,omitempty"`
+	// These are not accepted from the client an instead are only used to talk
+	// to the upstream LLM APIs.
+	Metadata *anthropicMessagesRequestMetadata `json:"metadata,omitempty"`
+	System   string                            `json:"system,omitempty"`
 }
 
-type unifiedMessage struct {
-	Role    string           `json:"role"` // "user", "assistant", or "system" (only allowed for the first message)
-	Content []unifiedContent `json:"content"`
+type anthropicMessage struct {
+	Role    string                    `json:"role"` // "user", "assistant", or "system" (only allowed for the first message)
+	Content []anthropicMessageContent `json:"content"`
 }
 
-type unifiedContent struct {
+type anthropicMessageContent struct {
 	Type string `json:"type"` // "text" or "image" (not yet supported)
 	Text string `json:"text"`
 }
 
-type unifiedRequestMetadata struct {
+type anthropicMessagesRequestMetadata struct {
 	UserID string `json:"user_id,omitempty"`
 }
 
-func (ar unifiedRequest) ShouldStream() bool {
+func (ar anthropicMessagesRequest) ShouldStream() bool {
 	return ar.Stream
 }
 
-func (ar unifiedRequest) GetModel() string {
+func (ar anthropicMessagesRequest) GetModel() string {
 	return ar.Model
 }
 
 // Note: This is not the actual prompt send to Anthropic but it's a good
 // approximation to measure tokens.
-func (r unifiedRequest) BuildPrompt() string {
+func (r anthropicMessagesRequest) BuildPrompt() string {
 	var sb strings.Builder
 	for _, m := range r.Messages {
 		switch m.Role {
@@ -139,48 +131,48 @@ func (r unifiedRequest) BuildPrompt() string {
 
 // GetPromptTokenCount computes the token count of the prompt exactly once using
 // the given tokenizer. It is not concurrency-safe.
-func (r *unifiedRequest) GetPromptTokenCount(tk *tokenizer.Tokenizer) (int, error) {
+func (r *anthropicMessagesRequest) GetPromptTokenCount(tk *tokenizer.Tokenizer) (int, error) {
 	tokens, err := tk.Tokenize(r.BuildPrompt())
 	return len(tokens), err
 }
 
-// unifiedNonStreamingResponse captures all relevant-to-us fields from https://docs.anthropic.com/claude/reference/messages_post.
-type unifiedNonStreamingResponse struct {
-	Content    []unifiedContent     `json:"content"`
-	Usage      unifiedResponseUsage `json:"usage"`
-	StopReason string               `json:"stop_reason"`
+// AnthropicMessagesNonStreamingResponse captures all relevant-to-us fields from https://docs.anthropic.com/claude/reference/messages_post.
+type anthropicMessagesNonStreamingResponse struct {
+	Content    []anthropicMessageContent      `json:"content"`
+	Usage      anthropicMessagesResponseUsage `json:"usage"`
+	StopReason string                         `json:"stop_reason"`
 }
 
-// unifiedStreamingResponse captures all relevant-to-us fields from each relevant SSE event from https://docs.anthropic.com/claude/reference/messages_post.
-type unifiedStreamingResponse struct {
-	Type         string                              `json:"type"`
-	Delta        *unifiedStreamingResponseTextBucket `json:"delta"`
-	ContentBlock *unifiedStreamingResponseTextBucket `json:"content_block"`
-	Usage        *unifiedResponseUsage               `json:"usage"`
+// AnthropicMessagesStreamingResponse captures all relevant-to-us fields from each relevant SSE event from https://docs.anthropic.com/claude/reference/messages_post.
+type anthropicMessagesStreamingResponse struct {
+	Type         string                                        `json:"type"`
+	Delta        *anthropicMessagesStreamingResponseTextBucket `json:"delta"`
+	ContentBlock *anthropicMessagesStreamingResponseTextBucket `json:"content_block"`
+	Usage        *anthropicMessagesResponseUsage               `json:"usage"`
 }
 
-type unifiedStreamingResponseTextBucket struct {
+type anthropicMessagesStreamingResponseTextBucket struct {
 	Text string `json:"text"`
 }
 
-type unifiedResponseUsage struct {
+type anthropicMessagesResponseUsage struct {
 	InputTokens  int `json:"input_tokens"`
 	OutputTokens int `json:"output_tokens"`
 }
 
-type UnifiedHandlerMethods struct {
+type AnthropicMessagesHandlerMethods struct {
 	tokenizer      *tokenizer.Tokenizer
 	promptRecorder PromptRecorder
 	config         config.AnthropicConfig
 }
 
-func (a *UnifiedHandlerMethods) validateRequest(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar unifiedRequest) (int, *flaggingResult, error) {
+func (a *AnthropicMessagesHandlerMethods) validateRequest(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicMessagesRequest) (int, *flaggingResult, error) {
 	if ar.MaxTokens > int32(a.config.MaxTokensToSample) {
 		return http.StatusBadRequest, nil, errors.Errorf("max_tokens exceeds maximum allowed value of %d: %d", a.config.MaxTokensToSample, ar.MaxTokens)
 	}
 
-	if result, err := isFlaggedUnifiedRequest(a.tokenizer, ar, a.config); err != nil {
-		logger.Error("error checking unified request - treating as non-flagged",
+	if result, err := isFlaggedAnthropicMessagesRequest(a.tokenizer, ar, a.config); err != nil {
+		logger.Error("error checking AnthropicMessages request - treating as non-flagged",
 			log.Error(err))
 	} else if result.IsFlagged() {
 		// Record flagged prompts in hotpath - they usually take a long time on the backend side, so this isn't going to make things meaningfully worse
@@ -195,9 +187,9 @@ func (a *UnifiedHandlerMethods) validateRequest(ctx context.Context, logger log.
 
 	return 0, nil, nil
 }
-func (a *UnifiedHandlerMethods) transformBody(body *unifiedRequest, identifier string) {
+func (a *AnthropicMessagesHandlerMethods) transformBody(body *anthropicMessagesRequest, identifier string) {
 	// Overwrite the metadata field, we don't want to allow users to specify it:
-	body.Metadata = &unifiedRequestMetadata{
+	body.Metadata = &anthropicMessagesRequestMetadata{
 		// We forward the actor ID to support tracking.
 		UserID: identifier,
 	}
@@ -212,18 +204,18 @@ func (a *UnifiedHandlerMethods) transformBody(body *unifiedRequest, identifier s
 		body.Messages = body.Messages[1:]
 	}
 }
-func (a *UnifiedHandlerMethods) getRequestMetadata(body unifiedRequest) (model string, additionalMetadata map[string]any) {
+func (a *AnthropicMessagesHandlerMethods) getRequestMetadata(body anthropicMessagesRequest) (model string, additionalMetadata map[string]any) {
 	return body.Model, map[string]any{
 		"stream":     body.Stream,
 		"max_tokens": body.MaxTokens,
 	}
 }
-func (a *UnifiedHandlerMethods) transformRequest(r *http.Request) {
+func (a *AnthropicMessagesHandlerMethods) transformRequest(r *http.Request) {
 	r.Header.Set("Content-Type", "application/json")
 	r.Header.Set("X-API-Key", a.config.AccessToken)
 	r.Header.Set("anthropic-version", "2023-06-01")
 }
-func (a *UnifiedHandlerMethods) parseResponseAndUsage(logger log.Logger, body unifiedRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logger, body anthropicMessagesRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	for _, m := range body.Messages {
 		promptUsage.characters += len(m.Content)
@@ -233,7 +225,7 @@ func (a *UnifiedHandlerMethods) parseResponseAndUsage(logger log.Logger, body un
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
 	if !body.ShouldStream() {
-		var res unifiedNonStreamingResponse
+		var res anthropicMessagesNonStreamingResponse
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse Anthropic response as JSON", log.Error(err))
 			return promptUsage, completionUsage
@@ -261,7 +253,7 @@ func (a *UnifiedHandlerMethods) parseResponseAndUsage(logger log.Logger, body un
 			continue
 		}
 
-		var event unifiedStreamingResponse
+		var event anthropicMessagesStreamingResponse
 		if err := json.Unmarshal(data, &event); err != nil {
 			logger.Error("failed to decode event payload", log.Error(err), log.String("body", string(data)))
 			continue
@@ -289,7 +281,7 @@ func (a *UnifiedHandlerMethods) parseResponseAndUsage(logger log.Logger, body un
 	return promptUsage, completionUsage
 }
 
-func isFlaggedUnifiedRequest(tk *tokenizer.Tokenizer, r unifiedRequest, cfg config.AnthropicConfig) (*flaggingResult, error) {
+func isFlaggedAnthropicMessagesRequest(tk *tokenizer.Tokenizer, r anthropicMessagesRequest, cfg config.AnthropicConfig) (*flaggingResult, error) {
 	var reasons []string
 
 	if len(cfg.AllowedPromptPatterns) > 0 && !containsAny(r.BuildPrompt(), cfg.AllowedPromptPatterns) {

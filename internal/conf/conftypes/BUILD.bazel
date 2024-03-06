@@ -6,7 +6,7 @@ go_library(
     srcs = [
         "conftypes.go",
         "consts.go",
-        "unified.go",
+        "anthropicmessages.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/conf/conftypes",
     visibility = ["//:__subpackages__"],
