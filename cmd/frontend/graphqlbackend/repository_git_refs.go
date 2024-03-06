@@ -46,7 +46,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	resolvers := make([]*GitRefResolver, 0, len(refs))
 	for _, ref := range refs {
 		if query != "" {
-			if !strings.Contains(strings.ToLower(strings.TrimPrefix(ref.Name, gitRefPrefix(ref.Name))), query) {
+			if !strings.Contains(strings.ToLower(ref.ShortName), query) {
 				continue
 			}
 		}

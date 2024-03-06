@@ -68,7 +68,7 @@ func (r *commitResolver) Tags(ctx context.Context) ([]string, error) {
 
 		r.tags = make([]string, 0, len(rawTags))
 		for _, tag := range rawTags {
-			r.tags = append(r.tags, tag.Name)
+			r.tags = append(r.tags, tag.ShortName)
 		}
 	})
 
