@@ -151,15 +151,15 @@ func TestAnthropicMessagesRequestJSON(t *testing.T) {
 
 	autogold.Expect(`{
 "messages": [
-	{
-		"role": "user",
-		"content": [
-			{
-				"type": "text",
-				"text": "Hello world"
-			}
-		]
-	}
+		{
+			"role": "user",
+			"content": [
+				{
+					"type": "text",
+					"text": "Hello world"
+				}
+			]
+		}
 ],
 "model": "anthropic/claude-3-sonnet-20240229"
 }`).Equal(t, string(b))
