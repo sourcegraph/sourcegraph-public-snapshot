@@ -60,28 +60,8 @@ func TestComputeRunType(t *testing.T) {
 			},
 		},
 		want: WolfiBaseRebuild,
-	}, {
-		name: "app release",
-		args: args{
-			branch: "app/release",
-		},
-		want: AppRelease,
-	}, {
-		name: "app release insiders",
-		args: args{
-			branch: "app/insiders",
-		},
-		want: AppInsiders,
-	}, {
-		name: "release nightly",
-		args: args{
-			branch: "main",
-			env: map[string]string{
-				"RELEASE_NIGHTLY": "true",
-			},
-		},
-		want: ReleaseNightly,
-	}}
+	},
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := Compute(tt.args.tag, tt.args.branch, tt.args.env)

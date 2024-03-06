@@ -2,7 +2,9 @@
 
 set -e
 
-bazelrc=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
+aspectRC="/tmp/aspect-generated.bazelrc"
+rosetta bazelrc > "$aspectRC"
+bazelrc=(--bazelrc="$aspectRC")
 
 echo "--- :books: Annotating build with Glossary"
 buildkite-agent annotate --style info <./dev/ci/glossary.md
