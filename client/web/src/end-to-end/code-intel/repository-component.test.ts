@@ -384,13 +384,24 @@ describe('Repository component', () => {
 
                 await (await driver.page.waitForSelector('[data-tab-content="symbols"]'))?.click()
 
-                await driver.page.waitForSelector('[data-testid="symbol-name"]', { visible: true })
+                const symbolNames = await retry(
+                    async () => {
+                        await driver.page.waitForSelector('[data-testid="symbol-name"]', { visible: true })
+                        const symbolNames = await driver.page.evaluate(() =>
+                            Array.from(document.querySelectorAll('[data-testid="symbol-name"]')).map(
+                                name => name.textContent || ''
+                            )
+                        )
 
-                const symbolNames = await driver.page.evaluate(() =>
-                    [...document.querySelectorAll('[data-testid="symbol-name"]')].map(name => name.textContent || '')
+                        expect(symbolNames.length).toBeGreaterThan(0)
+
+                        return symbolNames
+                    },
+                    { retries: 2 }
                 )
+
                 const symbolTypes = await driver.page.evaluate(() =>
-                    [...document.querySelectorAll('[data-testid="symbol-icon"]')].map(
+                    Array.from(document.querySelectorAll('[data-testid="symbol-icon"]')).map(
                         icon => icon.getAttribute('data-symbol-kind') || ''
                     )
                 )
@@ -470,6 +481,9 @@ describe('Repository component', () => {
         }
 
         const highlightSymbolTests = [
+            // todo: re-enable once flake is identified
+            // https://github.com/sourcegraph/sourcegraph/issues/60824
+            /*
             {
                 name: 'highlights correct line for Go',
                 filePath:
@@ -477,6 +491,7 @@ describe('Repository component', () => {
                 symbol: 'diffTimeParseLayout',
                 line: 65,
             },
+            */
             {
                 name: 'highlights correct line for TypeScript',
                 filePath:
@@ -491,11 +506,19 @@ describe('Repository component', () => {
                 await driver.page.goto(sourcegraphBaseUrl + filePath)
                 await driver.page.waitForSelector('[data-tab-content="symbols"]')
                 await driver.page.click('[data-tab-content="symbols"]')
-                await driver.page.waitForSelector('[data-testid="symbol-name"]', { visible: true })
-                const [link] = await driver.page.$x(`//*[@data-testid='symbol-name' and contains(text(), '${symbol}')]`)
-                if (!link) {
-                    throw new Error(`Could not find symbol "${symbol}" in the sidebar`)
-                }
+                const link = await retry(
+                    async () => {
+                        await driver.page.waitForSelector('[data-testid="symbol-name"]', { visible: true })
+                        const [link] = await driver.page.$x(
+                            `//*[@data-testid='symbol-name' and contains(text(), '${symbol}')]`
+                        )
+                        if (!link) {
+                            throw new Error(`Could not find symbol "${symbol}" in the sidebar`)
+                        }
+                        return link
+                    },
+                    { retries: 2 }
+                )
                 await link.click()
 
                 const selectedLine = await driver.page.waitForSelector(

@@ -50,6 +50,7 @@ exports[`SignInPage > renders "Other login methods" if primary provider count is
         </div>
         <button
           class="btn btnSecondary btnBlock mt-2"
+          data-testid="login-more"
           type="button"
         >
           <svg
@@ -158,6 +159,7 @@ exports[`SignInPage > renders different prefix on provider buttons 1`] = `
         </div>
         <button
           class="btn btnSecondary btnBlock mt-2"
+          data-testid="login-more"
           type="button"
         >
           <svg
@@ -358,6 +360,7 @@ exports[`SignInPage > renders sign in page (dotcom) 1`] = `
         </div>
         <button
           class="btn btnSecondary btnBlock mt-2"
+          data-testid="login-more"
           type="button"
         >
           <svg
@@ -473,6 +476,7 @@ exports[`SignInPage > renders sign in page (server) 1`] = `
         </div>
         <button
           class="btn btnSecondary btnBlock mt-2"
+          data-testid="login-more"
           type="button"
         >
           <svg
@@ -840,6 +844,7 @@ exports[`SignInPage > renders sign in page (server) with request access link 1`]
         </div>
         <button
           class="btn btnSecondary btnBlock mt-2"
+          data-testid="login-more"
           type="button"
         >
           <svg
@@ -948,6 +953,7 @@ exports[`SignInPage > with Gerrit auth provider > does not render the Gerrit pro
         </div>
         <button
           class="btn btnSecondary btnBlock mt-2"
+          data-testid="login-more"
           type="button"
         >
           <svg
@@ -1056,6 +1062,7 @@ exports[`SignInPage > with Sourcegraph accounts (dev) auth provider > renders pa
         </div>
         <button
           class="btn btnSecondary btnBlock mt-2"
+          data-testid="login-more"
           type="button"
         >
           <svg
@@ -1174,6 +1181,7 @@ exports[`SignInPage > with Sourcegraph accounts (dev) auth provider > renders pa
         </div>
         <button
           class="btn btnSecondary btnBlock mt-2"
+          data-testid="login-more"
           type="button"
         >
           <svg
@@ -1282,6 +1290,7 @@ exports[`SignInPage > with Sourcegraph operator auth provider > renders page wit
         </div>
         <button
           class="btn btnSecondary btnBlock mt-2"
+          data-testid="login-more"
           type="button"
         >
           <svg
@@ -1400,6 +1409,7 @@ exports[`SignInPage > with Sourcegraph operator auth provider > renders page wit
         </div>
         <button
           class="btn btnSecondary btnBlock mt-2"
+          data-testid="login-more"
           type="button"
         >
           <svg

@@ -273,6 +273,7 @@ export class Driver {
         try {
             logger.log('Trying to use the signin form...')
             await this.page.waitForSelector('.test-signin-form', { timeout: 10000 })
+            await this.page.click('button[data-testid="login-more"]')
             await this.page.type('input', username)
             await this.page.type('input[name=password]', password)
             // TODO(uwedeportivo): see comment above, same reason
