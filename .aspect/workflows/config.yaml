@@ -33,8 +33,10 @@ tasks:
   - delivery:
       auto_deliver: true
       icon: 'ship'
-      deliverable: 'attr(tags, "\bmsp-deliverable\b", //cmd/...)'
-      branches:
-        - 'jcjh/msp-bazel-delivery'
+      rules:
+        - deliverable: 'attr(tags, "\bmsp-deliverable\b", //cmd/...)'
+          condition:
+            branches:
+              - 'jcjh/msp-bazel-delivery'
   - finalization:
       queue: aspect-small

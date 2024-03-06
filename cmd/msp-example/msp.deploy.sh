@@ -31,8 +31,6 @@ RELEASE_NAME="deploy-${SHORT_SHA}-${BUILDKITE_BUILD_NUMBER}"
 gcloud=$1
 push=$2
 
-echo "banana"
-
 1>&2 "${push}" --tag "${TAG}" --repository "${REPOSITORY}"
 
 1>&2 "${gcloud}" deploy releases create "${RELEASE_NAME}" \
