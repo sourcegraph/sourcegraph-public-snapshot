@@ -28,8 +28,8 @@ TAG="${SHORT_SHA}_${BUILDKITE_BUILD_NUMBER}"
 RELEASE_NAME="deploy-${SHORT_SHA}-${BUILDKITE_BUILD_NUMBER}"
 
 # ----- #
-gcloud=$1
-push=$2
+push=$1
+gcloud=$2
 
 1>&2 "${push}" --tag "${TAG}" --repository "${REPOSITORY}"
 
