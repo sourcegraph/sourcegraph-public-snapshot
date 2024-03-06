@@ -8,7 +8,8 @@ import (
 
 func main() {
 	println("Try to Deliver")
+	println("Service Account Token Creator")
 	println("Cloud Deploy Releaser")
-	println("roles/storage.objectAdmin")
+	println("Storage Legacy Bucket Reader")
 	runtime.Start[example.Config](example.Service{})
 }
