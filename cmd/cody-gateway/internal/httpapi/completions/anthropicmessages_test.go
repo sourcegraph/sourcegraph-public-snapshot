@@ -139,13 +139,12 @@ func TestIsFlaggedUnifiedRequest(t *testing.T) {
 }
 
 func TestUnifiedRequestJSON(t *testing.T) {
-	tk, err := tokenizer.NewAnthropicClaudeTokenizer()
+	_, err := tokenizer.NewAnthropicClaudeTokenizer()
 	require.NoError(t, err)
 
 	r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{
 		{Role: "user", Content: []anthropicMessageContent{{Type: "text", Text: "Hello world"}}},
 	}}
-	_, _ = r.GetPromptTokenCount(tk) // hydrate values that should not be marshalled
 
 	b, err := json.MarshalIndent(r, "", "\t")
 	require.NoError(t, err)

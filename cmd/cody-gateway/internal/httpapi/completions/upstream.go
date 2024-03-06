@@ -503,15 +503,3 @@ func intersection(a, b []string) (c []string) {
 	}
 	return c
 }
-
-type flaggingResult struct {
-	shouldBlock       bool
-	reasons           []string
-	promptPrefix      string
-	maxTokensToSample int
-	promptTokenCount  int
-}
-
-func (f *flaggingResult) IsFlagged() bool {
-	return f != nil
-}

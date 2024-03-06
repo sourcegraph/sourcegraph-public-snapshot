@@ -26,6 +26,7 @@ import (
 const anthropicMessagesAPIURL = "https://api.anthropic.com/v1/messages"
 
 // This implements the newer `/messages` API by Anthropic
+// https://docs.anthropic.com/claude/reference/messages_post
 func NewAnthropicMessagesHandler(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
@@ -127,13 +128,6 @@ func (r anthropicMessagesRequest) BuildPrompt() string {
 		sb.WriteString("\n\n")
 	}
 	return sb.String()
-}
-
-// GetPromptTokenCount computes the token count of the prompt exactly once using
-// the given tokenizer. It is not concurrency-safe.
-func (r *anthropicMessagesRequest) GetPromptTokenCount(tk *tokenizer.Tokenizer) (int, error) {
-	tokens, err := tk.Tokenize(r.BuildPrompt())
-	return len(tokens), err
 }
 
 // AnthropicMessagesNonStreamingResponse captures all relevant-to-us fields from https://docs.anthropic.com/claude/reference/messages_post.
@@ -282,44 +276,18 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 }
 
 func isFlaggedAnthropicMessagesRequest(tk *tokenizer.Tokenizer, r anthropicMessagesRequest, cfg config.AnthropicConfig) (*flaggingResult, error) {
-	var reasons []string
-
-	if len(cfg.AllowedPromptPatterns) > 0 && !containsAny(r.BuildPrompt(), cfg.AllowedPromptPatterns) {
-		reasons = append(reasons, "unknown_prompt")
-	}
-
-	// If this request has a very high token count for responses, then flag it.
-	if r.MaxTokens > int32(cfg.MaxTokensToSampleFlaggingLimit) {
-		reasons = append(reasons, "high_max_tokens_to_sample")
-	}
-
-	// If this prompt consists of a very large number of tokens, then flag it.
-	tokenCount, err := r.GetPromptTokenCount(tk)
-	if err != nil {
-		return &flaggingResult{}, errors.Wrap(err, "tokenize prompt")
-	}
-	if tokenCount > cfg.PromptTokenFlaggingLimit {
-		reasons = append(reasons, "high_prompt_token_count")
-	}
-
-	if len(reasons) > 0 {
-		blocked := false
-		if tokenCount > cfg.PromptTokenBlockingLimit || r.MaxTokens > int32(cfg.ResponseTokenBlockingLimit) || containsAny(r.BuildPrompt(), cfg.BlockedPromptPatterns) {
-			blocked = true
-		}
-
-		promptPrefix := r.BuildPrompt()
-		if len(promptPrefix) > logPromptPrefixLength {
-			promptPrefix = promptPrefix[0:logPromptPrefixLength]
-		}
-		return &flaggingResult{
-			reasons:           reasons,
-			maxTokensToSample: int(r.MaxTokens),
-			promptPrefix:      promptPrefix,
-			promptTokenCount:  tokenCount,
-			shouldBlock:       blocked,
-		}, nil
-	}
-
-	return nil, nil
+	return isFlaggedRequest(tk,
+		flaggingRequest{
+			FlattenedPrompt: r.BuildPrompt(),
+			MaxTokens:       int(r.MaxTokens),
+		},
+		flaggingConfig{
+			AllowedPromptPatterns:          cfg.AllowedPromptPatterns,
+			BlockedPromptPatterns:          cfg.BlockedPromptPatterns,
+			PromptTokenFlaggingLimit:       cfg.PromptTokenFlaggingLimit,
+			PromptTokenBlockingLimit:       cfg.PromptTokenBlockingLimit,
+			MaxTokensToSampleFlaggingLimit: cfg.MaxTokensToSampleFlaggingLimit,
+			ResponseTokenBlockingLimit:     cfg.ResponseTokenBlockingLimit,
+		},
+	)
 }
