@@ -423,7 +423,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			},
 			{
 				name:  `case insensitive`,
-				query: `case:no type:repo Diff`,
+				query: `case:no type:repo DHiff`,
 				want: []string{
 					"github.com/sgtest/go-diff",
 				},
