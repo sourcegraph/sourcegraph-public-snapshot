@@ -11,10 +11,10 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -61,7 +61,7 @@ func New(logger log.Logger, db database.DB, gitserverClient gitserver.Client) Se
 			Gitserver:                   gitserverClient,
 		},
 		settingsService:       settings.NewService(db),
-		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		sourcegraphDotComMode: dotcom.SourcegraphDotComMode(),
 	}
 }
 
@@ -70,7 +70,7 @@ func Mocked(runtimeClients job.RuntimeClients) SearchClient {
 	return &searchClient{
 		runtimeClients:        runtimeClients,
 		settingsService:       settings.Mock(&schema.Settings{}),
-		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		sourcegraphDotComMode: dotcom.SourcegraphDotComMode(),
 	}
 }
 

@@ -5,8 +5,8 @@ import (
 
 	"github.com/graph-gophers/graphql-go/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -53,9 +53,9 @@ func TestOrgs(t *testing.T) {
 }
 
 func TestListOrgsForCloud(t *testing.T) {
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
+	orig := dotcom.SourcegraphDotComMode()
+	dotcom.MockSourcegraphDotComMode(true)
+	defer dotcom.MockSourcegraphDotComMode(orig)
 
 	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)

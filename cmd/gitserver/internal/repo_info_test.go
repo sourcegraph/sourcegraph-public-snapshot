@@ -59,7 +59,7 @@ func testDeleteRepo(t *testing.T, deletedInDB bool) {
 	s := makeTestServer(ctx, t, reposDir, remote, db)
 
 	// This will perform an initial clone
-	s.RepoUpdate(&protocol.RepoUpdateRequest{
+	s.RepoUpdate(ctx, &protocol.RepoUpdateRequest{
 		Repo: repoName,
 	})
 

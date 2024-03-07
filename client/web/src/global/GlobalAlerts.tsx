@@ -1,8 +1,7 @@
 import React from 'react'
 
 import classNames from 'classnames'
-import { parseISO } from 'date-fns'
-import differenceInDays from 'date-fns/differenceInDays'
+import { parseISO, differenceInDays } from 'date-fns'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'

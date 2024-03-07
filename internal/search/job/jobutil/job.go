@@ -171,13 +171,21 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 			diff := resultTypes.Has(result.TypeDiff)
 			repoOptionsCopy := repoOptions
 			repoOptionsCopy.OnlyCloned = true
-			addJob(&commit.SearchJob{
+
+			commitSearchJob := &commit.SearchJob{
 				Query:                commit.QueryToGitQuery(originalQuery, diff),
-				RepoOpts:             repoOptionsCopy,
 				Diff:                 diff,
 				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker) || own,
-			})
+			}
+
+			addJob(
+				&repoPagerJob{
+					child:            &reposPartialJob{commitSearchJob},
+					repoOpts:         repoOptionsCopy,
+					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
+					skipPartitioning: true,
+				})
 		}
 
 		addJob(&searchrepos.ComputeExcludedJob{

@@ -22,6 +22,11 @@ func GetAggregatedCodyStats(ctx context.Context, db database.DB) (*types.CodyUsa
 		Monthly: newCodyEventPeriod(),
 	}
 
+	if events == nil {
+		// If there are no events, return the empty stats.
+		return stats, nil
+	}
+
 	stats.Daily.StartTime = events.Day
 	stats.Daily.TotalCodyUsers.EventsCount = &events.TotalDay
 	stats.Daily.TotalCodyUsers.UserCount = &events.UniquesDay

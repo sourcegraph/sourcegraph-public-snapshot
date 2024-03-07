@@ -7,19 +7,19 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestPreSSCReleaseCurrentPeriodDateRange(t *testing.T) {
 	db := dbmocks.NewMockDB()
 
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
+	orig := dotcom.SourcegraphDotComMode()
+	dotcom.MockSourcegraphDotComMode(true)
 	t.Cleanup(func() {
-		envvar.MockSourcegraphDotComMode(orig)
+		dotcom.MockSourcegraphDotComMode(orig)
 	})
 
 	users := dbmocks.NewMockUserStore()

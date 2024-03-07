@@ -70,7 +70,6 @@ const CodySubscriptionPage = lazyComponent(
 )
 const CodyUpsellPage = lazyComponent(() => import('./cody/upsell/CodyUpsellPage'), 'CodyUpsellPage')
 const CodyDashboardPage = lazyComponent(() => import('./cody/dashboard/CodyDashboardPage'), 'CodyDashboardPage')
-const OwnPage = lazyComponent(() => import('./enterprise/own/OwnPage'), 'OwnPage')
 const SearchJob = lazyComponent(() => import('./enterprise/search-jobs/SearchJobsPage'), 'SearchJobsPage')
 
 const Index = lazyComponent(() => import('./Index'), 'IndexPage')
@@ -146,7 +145,9 @@ export const routes: RouteObject[] = [
         path: PageRoutes.BatchChanges,
         element: (
             <LegacyRoute
-                render={props => <GlobalBatchChangesArea {...props} />}
+                render={props => (
+                    <GlobalBatchChangesArea {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+                )}
                 // We also render this route on sourcegraph.com as a precaution in case anyone
                 // follows an in-app link to /batch-changes from sourcegraph.com; the component
                 // will just redirect the visitor to the marketing page
@@ -233,15 +234,6 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <GlobalNotebooksArea {...props} />}
-                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
-            />
-        ),
-    },
-    {
-        path: PageRoutes.Own,
-        element: (
-            <LegacyRoute
-                render={() => <OwnPage />}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />
         ),

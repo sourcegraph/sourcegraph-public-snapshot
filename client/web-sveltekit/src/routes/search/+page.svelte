@@ -33,7 +33,7 @@
         stream={data.searchStream}
         queryFromURL={data.queryOptions.query}
         {queryState}
-        queryFilters={data.queryFilters}
+        selectedFilters={data.queryFilters}
     />
 {:else}
     <SearchHome {queryState} />

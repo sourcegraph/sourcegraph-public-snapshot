@@ -3,6 +3,7 @@ import React, { type FC, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, H3, H4, Link, Text } from '@sourcegraph/wildcard'
 
 import {
@@ -22,11 +23,11 @@ import { ReadOnlyBatchSpecAlert } from './ReadOnlyBatchSpecAlert'
 
 import editorStyles from '../edit/EditBatchSpecPage.module.scss'
 
-interface ReadOnlyBatchSpecFormProps {}
+interface ReadOnlyBatchSpecFormProps extends TelemetryV2Props {}
 
-export const ReadOnlyBatchSpecForm: React.FunctionComponent<
-    React.PropsWithChildren<ReadOnlyBatchSpecFormProps>
-> = () => {
+export const ReadOnlyBatchSpecForm: React.FunctionComponent<React.PropsWithChildren<ReadOnlyBatchSpecFormProps>> = ({
+    telemetryRecorder,
+}) => {
     const { batchChange, batchSpec, setActionsError } = useBatchSpecContext<BatchSpecExecutionFields>()
 
     return (
@@ -34,6 +35,7 @@ export const ReadOnlyBatchSpecForm: React.FunctionComponent<
             batchChange={batchChange}
             batchSpec={batchSpec}
             setActionsError={setActionsError}
+            telemetryRecorder={telemetryRecorder}
         />
     )
 }
@@ -42,7 +44,7 @@ type MemoizedReadOnlyBatchSpecFormProps = ReadOnlyBatchSpecFormProps &
     Pick<BatchSpecContextState, 'batchChange' | 'batchSpec' | 'setActionsError'>
 
 const MemoizedReadOnlyBatchSpecForm: FC<MemoizedReadOnlyBatchSpecFormProps> = React.memo(
-    function MemoizedReadOnlyBatchSpecForm({ batchChange, batchSpec, setActionsError }) {
+    function MemoizedReadOnlyBatchSpecForm({ batchChange, batchSpec, setActionsError, telemetryRecorder }) {
         const navigate = useNavigate()
 
         const [showCancelModal, setShowCancelModal] = useState(false)
@@ -111,7 +113,7 @@ const MemoizedReadOnlyBatchSpecForm: FC<MemoizedReadOnlyBatchSpecFormProps> = Re
 
         return (
             <div className={editorStyles.form}>
-                <LibraryPane name={batchChange.name} isReadOnly={true} />
+                <LibraryPane name={batchChange.name} isReadOnly={true} telemetryRecorder={telemetryRecorder} />
                 <div className={editorStyles.editorContainer}>
                     <H4 as={H3} className={editorStyles.header}>
                         Batch spec
@@ -121,10 +123,13 @@ const MemoizedReadOnlyBatchSpecForm: FC<MemoizedReadOnlyBatchSpecFormProps> = Re
                         name={batchChange.name}
                         className={editorStyles.editor}
                         originalInput={batchSpec.originalInput}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 </div>
                 {/* Hide the workspaces preview panel for locally-executed batch specs. */}
-                {batchSpec.source === BatchSpecSource.REMOTE && <WorkspacesPreviewPanel isReadOnly={true} />}
+                {batchSpec.source === BatchSpecSource.REMOTE && (
+                    <WorkspacesPreviewPanel telemetryRecorder={telemetryRecorder} isReadOnly={true} />
+                )}
                 <CancelExecutionModal
                     isOpen={showCancelModal}
                     onCancel={() => setShowCancelModal(false)}

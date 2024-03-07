@@ -36,7 +36,7 @@ type RepoStore interface {
 type AllReposIterator struct {
 	RepoStore             RepoStore
 	Clock                 func() time.Time
-	SourcegraphDotComMode bool // result of envvar.SourcegraphDotComMode()
+	SourcegraphDotComMode bool // result of  dotcom.SourcegraphDotComMode()
 
 	// RepositoryListCacheTime describes how long to cache repository lists for. These API calls
 	// can result in hundreds of thousands of repositories, so choose wisely as it can be expensive

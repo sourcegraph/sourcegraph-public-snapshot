@@ -348,6 +348,7 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 
 		if !isProUser {
 			return []string{
+				// Remove after the Claude 3 rollout is complete
 				"anthropic/claude-2.0",
 				"anthropic/claude-instant-v1",
 				"anthropic/claude-instant-1.2",
@@ -356,6 +357,13 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 		}
 
 		return []string{
+			"anthropic/claude-3-sonnet-20240229",
+			"anthropic/claude-3-opus-20240229",
+			"fireworks/" + fireworks.Mixtral8x7bInstruct,
+			"openai/gpt-3.5-turbo",
+			"openai/gpt-4-1106-preview",
+
+			// Remove after the Claude 3 rollout is complete
 			"anthropic/claude-2",
 			"anthropic/claude-2.0",
 			"anthropic/claude-2.1",
@@ -363,9 +371,6 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"anthropic/claude-instant-1.2",
 			"anthropic/claude-instant-v1",
 			"anthropic/claude-instant-1",
-			"openai/gpt-3.5-turbo",
-			"openai/gpt-4-1106-preview",
-			"fireworks/" + fireworks.Mixtral8x7bInstruct,
 		}
 	case types.CompletionsFeatureCode:
 		return []string{

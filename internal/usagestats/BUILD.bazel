@@ -37,11 +37,11 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/usagestats",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/database/basestore",
+        "//internal/dotcom",
         "//internal/env",
         "//internal/eventlogger",
         "//internal/featureflag",
