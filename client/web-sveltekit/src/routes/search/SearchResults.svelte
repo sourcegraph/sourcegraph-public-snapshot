@@ -112,7 +112,7 @@
         <DynamicFiltersSidebar {selectedFilters} streamFilters={$stream.filters} searchQuery={queryFromURL} {loading} />
     </div>
     <Separator currentPosition={sidebarSize} />
-    <div class="results" bind:this={resultContainer}>
+    <div class="results">
         <aside class="actions">
             {#if loading}
                 <div>
@@ -121,24 +121,26 @@
             {/if}
             <StreamingProgress progress={$stream.progress} on:submit={onResubmitQuery} />
         </aside>
-        <ol>
-            {#each resultsToShow as result, i}
-                {@const component = getSearchResultComponent(result)}
-                {#if i === resultsToShow.length - 1}
-                    <li use:observeIntersection on:intersecting={loadMore}>
-                        <svelte:component this={component} {result} />
-                    </li>
-                {:else}
-                    <li><svelte:component this={component} {result} /></li>
-                {/if}
-            {/each}
-        </ol>
-        {#if resultsToShow.length === 0 && !loading}
-            <div class="no-result">
-                <Icon svgPath={mdiCloseOctagonOutline} />
-                <p>No results found</p>
-            </div>
-        {/if}
+        <div class="result-list" bind:this={resultContainer}>
+            <ol>
+                {#each resultsToShow as result, i}
+                    {@const component = getSearchResultComponent(result)}
+                    {#if i === resultsToShow.length - 1}
+                        <li use:observeIntersection on:intersecting={loadMore}>
+                            <svelte:component this={component} {result} />
+                        </li>
+                    {:else}
+                        <li><svelte:component this={component} {result} /></li>
+                    {/if}
+                {/each}
+            </ol>
+            {#if resultsToShow.length === 0 && !loading}
+                <div class="no-result">
+                    <Icon svgPath={mdiCloseOctagonOutline} />
+                    <p>No results found</p>
+                </div>
+            {/if}
+        </div>
     </div>
 </div>
 
@@ -157,7 +159,8 @@
 
     .results {
         flex: 1;
-        overflow: auto;
+        overflow: hidden;
+        min-height: 0;
         display: flex;
         flex-direction: column;
 
@@ -173,10 +176,14 @@
             flex-shrink: 0;
         }
 
-        ol {
-            padding: 0;
-            margin: 0;
-            list-style: none;
+        .result-list {
+            overflow: auto;
+
+            ol {
+                padding: 0;
+                margin: 0;
+                list-style: none;
+            }
         }
 
         .no-result {
