@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
+	mockassert "github.com/derision-test/go-mockgen/v2/testutil/assert"
 	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/assert"
 
@@ -174,7 +174,6 @@ func TestSchemaResolver_CodeHosts(t *testing.T) {
 }
 
 func TestCodeHostByID(t *testing.T) {
-
 	tests := []struct {
 		siteAdmin      bool
 		expectedResult string

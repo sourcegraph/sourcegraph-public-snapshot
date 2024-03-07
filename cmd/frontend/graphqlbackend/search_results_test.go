@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/zoekt"
@@ -122,7 +122,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 	}
 
 	tests := []testCase{
-
 		{
 			descr:         "single repo match",
 			searchResults: []result.Match{repoMatch},

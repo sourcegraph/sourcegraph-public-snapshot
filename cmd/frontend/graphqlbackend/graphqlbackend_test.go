@@ -11,7 +11,7 @@ import (
 	"reflect"
 	"testing"
 
-	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
+	mockassert "github.com/derision-test/go-mockgen/v2/testutil/assert"
 	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
