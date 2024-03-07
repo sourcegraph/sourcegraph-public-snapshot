@@ -3,6 +3,7 @@
     // accepts any HTMLButton attributes. Note that those will only be used when
     // the default implementation is used.
     import type { HTMLButtonAttributes } from 'svelte/elements'
+    import classNames from 'classnames'
 
     import { type BUTTON_DISPLAY, type BUTTON_SIZES, type BUTTON_VARIANTS, getButtonClassName } from './Button'
 
@@ -18,12 +19,15 @@
     export let display: $$Props['display'] = undefined
     export let outline: $$Props['outline'] = undefined
 
+    let className = '';
+    export {className as class};
+
     $: buttonClass = getButtonClassName({ variant, outline, display, size })
 </script>
 
 <slot name="custom" {buttonClass}>
     <!-- $$restProps holds all the additional props that are passed to the component -->
-    <button class={buttonClass} {...$$restProps} on:click|preventDefault>
+    <button class={classNames(buttonClass, className)} {...$$restProps} on:click|preventDefault>
         <slot />
     </button>
 </slot>

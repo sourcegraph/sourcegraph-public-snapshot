@@ -5,6 +5,7 @@
     import DismissibleAlert from './DismissibleAlert.svelte'
 
     $: settingsMotd = $settings?.motd
+    $: notices = $settings?.notices
 </script>
 
 <div class="root">
@@ -16,6 +17,18 @@
                     class='alert'
             >
                 <Markdown dangerousInnerHTML={renderMarkdown(motd)}/>
+            </DismissibleAlert>
+        {/each}
+    {/if}
+
+    {#if notices && Array.isArray(notices)}
+        {#each notices as notice (notice.message)}
+            <DismissibleAlert
+                    variant="info"
+                    partialStorageKey={`notices.${notice.message}`}
+                    class='alert'
+            >
+                <Markdown dangerousInnerHTML={renderMarkdown(notice.message)}/>
             </DismissibleAlert>
         {/each}
     {/if}
@@ -63,6 +76,10 @@
     &:last-child {
       border-bottom-width: 0;
     }
+  }
+
+  .root p {
+    margin-bottom: 0;
   }
 
   /* The trailing after-paragraph/list margin looks unbalanced in MOTDs. */

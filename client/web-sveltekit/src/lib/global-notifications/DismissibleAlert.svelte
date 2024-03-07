@@ -48,6 +48,7 @@
         <Button
                 variant="icon"
                 aria-label="Dismiss alert"
+                class="close-button"
                 on:click={handleDismissClick}
         >
             <Icon aria-hidden={true} svgPath={mdiClose}/>
@@ -58,7 +59,7 @@
 <style lang="scss">
   .root {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     padding-right: 0.5rem;
   }
 
@@ -69,7 +70,8 @@
   }
 
   .root > :global(.close-button) {
-    height: 1.25rem;
+    align-self: flex-start;
     color: var(--icon-color);
   }
+
 </style>
