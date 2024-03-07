@@ -15,6 +15,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 import { CodyLogo } from '@sourcegraph/cody-ui/dist/icons/CodyLogo'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import {
     Badge,
@@ -55,6 +56,7 @@ interface CodyChatPageProps {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
     context: Pick<SourcegraphContext, 'authProviders'>
+    platformContext: PlatformContext
 }
 
 const transcriptIdFromUrl = (pathname: string): string | undefined => {
@@ -92,6 +94,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     authenticatedUser,
     context,
     isSourcegraphDotCom,
+    platformContext,
 }) => {
     const { pathname } = useLocation()
     const navigate = useNavigate()
@@ -365,6 +368,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                             codyChatStore={codyChatStore}
                             isCodyChatPage={true}
                             authenticatedUser={authenticatedUser}
+                            platformContext={platformContext}
                         />
                     )}
                 </div>

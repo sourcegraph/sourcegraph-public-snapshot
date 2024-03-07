@@ -182,3 +182,15 @@
     margin-left: auto;
     margin-right: auto;
 }
+
+.open-in-editor {
+    &-path {
+        color: var(--link-color);
+        cursor: pointer;
+        margin-bottom: 0 !important;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}
