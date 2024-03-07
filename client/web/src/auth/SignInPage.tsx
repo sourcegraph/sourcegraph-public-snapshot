@@ -190,6 +190,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                         className="mt-2"
                         variant="secondary"
                         onClick={() => toggleMoreProviders(true)}
+                        data-testid="login-more"
                     >
                         <Icon aria-hidden={true} svgPath={mdiKeyVariant} /> Other login methods
                     </Button>

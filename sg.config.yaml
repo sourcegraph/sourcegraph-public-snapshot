@@ -29,8 +29,6 @@ env:
 
   DEPLOY_TYPE: dev
 
-  SRC_HTTP_ADDR: ':3082'
-
   # I don't think we even need to set these?
   SEARCHER_URL: http://127.0.0.1:3181
   REPO_UPDATER_URL: http://127.0.0.1:3182
@@ -180,7 +178,7 @@ commands:
       fi
       go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
     checkBinary: .bin/gitserver
-    env:
+    env: &gitserverenv
       HOSTNAME: 127.0.0.1:3178
     watch:
       - lib
@@ -402,7 +400,7 @@ commands:
 
   web:
     description: Enterprise version of the web app
-    cmd: pnpm --filter @sourcegraph/web dev
+    cmd: pnpm --filter @sourcegraph/web run serve:dev --clearScreen=false
     install: |
       pnpm install
       pnpm run generate
@@ -411,24 +409,32 @@ commands:
       # Needed so that node can ping the caddy server
       NODE_TLS_REJECT_UNAUTHORIZED: 0
 
+  vite-assets:
+    description: Runs vite simply as a static file server
+    cmd: pnpm --filter @sourcegraph/web run serve:prod --clearScreen=false
+    # install: pnpm build-web
+    env:
+      ENABLE_OPEN_TELEMETRY: true
+      NODE_ENV: production
+
   web-standalone-http:
     description: Standalone web frontend (dev) with API proxy to a configurable URL
-    cmd: pnpm --filter @sourcegraph/web serve:dev --color
+    cmd: pnpm --filter @sourcegraph/web serve --color
+    preamble: |
+      Ensure that you have run `pnpm build-web` before running this target
     install: |
       pnpm install
-      pnpm run generate
+      pnpm generate
     env:
-      WEB_BUILDER_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
 
   web-standalone-http-prod:
     description: Standalone web frontend (production) with API proxy to a configurable URL
-    cmd: pnpm --filter @sourcegraph/web serve:prod
-    install: pnpm --filter @sourcegraph/web run build
+    cmd: pnpm --filter @sourcegraph/web serve
     env:
       NODE_ENV: production
       WEB_BUILDER_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+      SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
 
   web-integration-build:
     description: Build development web application for integration tests
@@ -1036,7 +1042,7 @@ bazelCommands:
       USE_ROCKSKIP: 'false'
   gitserver-template: &gitserver_bazel_template
     target: //cmd/gitserver
-    env: &gitserverenv
+    env:
       HOSTNAME: 127.0.0.1:3178
   # This is only here to stay backwards-compatible with people's custom
   # `sg.config.overwrite.yaml` files
@@ -1505,6 +1511,7 @@ commandsets:
   web-standalone:
     commands:
       - web-standalone-http
+      - web
       - caddy
 
   web-sveltekit-standalone:
@@ -1517,7 +1524,10 @@ commandsets:
   web-standalone-prod:
     commands:
       - web-standalone-http-prod
+      - vite-assets
       - caddy
+    env:
+      NODE_ENV: production
 
   # For testing our OpenTelemetry stack
   otel:
@@ -1532,8 +1542,8 @@ commandsets:
     checks:
       - git
     commands:
-      - sourcegraph
       - web
+      - web-standalone-http
       - caddy
     env:
       DISABLE_CODE_INSIGHTS: false
@@ -1652,7 +1662,7 @@ tests:
 
   web-e2e:
     preamble: |
-      A Sourcegraph isntance must be already running for these tests to work, most
+      A Sourcegraph instance must be already running for these tests to work, most
       commonly with: `sg start enterprise-e2e`
 
       See more details: https://sourcegraph.com/docs/dev/how-to/testing#running-end-to-end-tests

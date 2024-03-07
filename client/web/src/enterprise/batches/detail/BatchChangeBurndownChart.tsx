@@ -2,6 +2,10 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { getYear, parseISO } from 'date-fns'
+
+// for polyfill
+import 'events'
+
 import {
     Area,
     ComposedChart,

@@ -16,6 +16,7 @@ import puppeteer, {
     type Target,
     type BrowserLaunchArgumentOptions,
     type BrowserConnectOptions,
+    KeyInput,
 } from 'puppeteer'
 import { from, fromEvent, merge, Subscription } from 'rxjs'
 import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/operators'
@@ -272,6 +273,7 @@ export class Driver {
         try {
             logger.log('Trying to use the signin form...')
             await this.page.waitForSelector('.test-signin-form', { timeout: 10000 })
+            await this.page.click('button[data-testid="login-more"]')
             await this.page.type('input', username)
             await this.page.type('input[name=password]', password)
             // TODO(uwedeportivo): see comment above, same reason
@@ -369,13 +371,24 @@ export class Driver {
                 break
             }
             case 'keyboard': {
-                const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
+                const modifier = this.getModifier()
                 await this.page.keyboard.down(modifier)
                 await this.page.keyboard.press('a')
                 await this.page.keyboard.up(modifier)
                 break
             }
         }
+    }
+
+    public async openFindMenu(): Promise<void> {
+        const modifier = this.getModifier()
+        await this.page.keyboard.down(modifier)
+        await this.page.keyboard.press('f')
+        await this.page.keyboard.up(modifier)
+    }
+
+    private getModifier(): KeyInput {
+        return os.platform() === 'darwin' ? Key.Meta : Key.Control
     }
 
     public async enterText(method: EnterTextMethod = 'type', text: string): Promise<void> {

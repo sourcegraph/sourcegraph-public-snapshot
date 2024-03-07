@@ -1,6 +1,5 @@
 import type * as esbuild from 'esbuild'
 
-export * from './monacoPlugin'
 export * from './packageResolutionPlugin'
 export * from './stylePlugin'
 export * from './workerPlugin'

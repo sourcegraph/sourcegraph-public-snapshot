@@ -30,7 +30,6 @@ export const ENVIRONMENT_CONFIG = {
     // Enabled in the dev environment to allow debugging integration tests with the dev server.
     INTEGRATION_TESTS: getEnvironmentBoolean('INTEGRATION_TESTS') || IS_DEVELOPMENT,
 
-    WEB_BUILDER_SERVE_INDEX: getEnvironmentBoolean('WEB_BUILDER_SERVE_INDEX'),
     STATIC_ASSETS_PATH: process.env.STATIC_ASSETS_PATH || STATIC_ASSETS_PATH,
 
     // The commit SHA the client bundle was built with.

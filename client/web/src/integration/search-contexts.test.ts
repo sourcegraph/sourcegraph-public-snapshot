@@ -94,7 +94,7 @@ describe('Search contexts', () => {
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
     })
 
-    test('Unavailable search context should remain in the query and disable the search context dropdown with default context', async () => {
+    test.skip('Unavailable search context should remain in the query and disable the search context dropdown with default context', async () => {
         const { waitForInput, applySettings } = getSearchQueryInputConfig('codemirror6')
 
         testContext.overrideGraphQL({

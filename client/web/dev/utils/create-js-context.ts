@@ -15,7 +15,7 @@ export const builtinAuthProvider = {
     authenticationURL: '',
 }
 
-// Create dummy JS context that will be added to index.html when `WEB_BUILDER_SERVE_INDEX` is set to true.
+// Create dummy JS context that will be added to index.html if we are running a dev server
 export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: string }): SourcegraphContext => {
     const siteConfig = getSiteConfig()
 

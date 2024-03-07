@@ -36,6 +36,7 @@ import { CodeMonitoringLogs } from './CodeMonitoringLogs'
 import { CodeMonitorList } from './CodeMonitorList'
 
 type MonitorsTab = 'list' | 'getting-started' | 'logs'
+
 type Tabs = { tab: MonitorsTab; title: string; isActive: boolean }[]
 
 function getSelectedTabFromLocation(

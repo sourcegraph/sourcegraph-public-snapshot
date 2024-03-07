@@ -39,6 +39,7 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
             { __typename: 'QueryBlock', id: '2', queryInput: 'query' },
         ]),
     }),
+    IsCodeInsightsLicensed: () => ({ enterpriseLicenseHasFeature: true }),
     OverwriteSettings: () => ({
         settingsMutation: {
             overwriteSettings: {

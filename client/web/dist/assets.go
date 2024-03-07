@@ -17,15 +17,17 @@ import (
 //
 //go:embed all:*
 var assetsFS embed.FS
-var afs fs.FS = assetsFS
 
-var Assets http.FileSystem
+var (
+	afs          fs.FS = assetsFS
+	assetsHTTPFS http.FileSystem
+)
 
 var (
 	webBuildManifestOnce sync.Once
-	assetsOnce           sync.Once
 	webBuildManifest     *assets.WebBuildManifest
 	webBuildManifestErr  error
+	assetsOnce           sync.Once
 )
 
 func init() {
@@ -37,7 +39,7 @@ type Provider struct{}
 
 func (p Provider) LoadWebBuildManifest() (*assets.WebBuildManifest, error) {
 	webBuildManifestOnce.Do(func() {
-		f, err := afs.Open("web.manifest.json")
+		f, err := afs.Open("vite-manifest.json")
 		if err != nil {
 			webBuildManifestErr = errors.Wrap(err, "read manifest file")
 			return
@@ -64,7 +66,7 @@ func (p Provider) Assets() http.FileSystem {
 		// it's already containing other files known to Bazel. So instead we put those into the dist folder.
 		// If we do detect a dist folder when running this code, we immediately substitute the root to that dist folder.
 		//
-		// Therefore, this code works with both the traditionnal build approach and when built with Bazel.
+		// Therefore, this code works with both the traditional build approach and when built with Bazel.
 		if _, err := assetsFS.ReadDir("dist"); err == nil {
 			var err error
 			afs, err = fs.Sub(assetsFS, "dist")
@@ -72,8 +74,7 @@ func (p Provider) Assets() http.FileSystem {
 				panic("incorrect embed")
 			}
 		}
-		Assets = http.FS(afs)
+		assetsHTTPFS = http.FS(afs)
 	})
-
-	return Assets
+	return assetsHTTPFS
 }
