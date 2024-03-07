@@ -32,7 +32,7 @@ func FromSearchClient(client client.SearchClient) NewSearcher {
 		// latency is not a priority of Search Jobs.
 		q = "index:no " + q
 
-		if strings.Contains(q, "patterntype:structural") {
+		if strings.Contains(strings.ToLower(q), "patterntype:structural") {
 			return nil, errors.New("Structural search is not supported in Search Jobs")
 		}
 

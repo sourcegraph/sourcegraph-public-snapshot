@@ -31,7 +31,7 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 	}
 
 	if len(inputs.Plan) != 1 {
-		return Exhaustive{}, errors.Errorf("Invalid query: Search Jobs only supports simple expressions. Use AND/OR for patterns but not for filters. Consider splitting into multiple subqueries and creating separate search jobs for each.")
+		return Exhaustive{}, errors.Errorf("Invalid query: Search Jobs does not support using AND/OR with filters (for example \"file:.go or file:.rs\"). Consider splitting your query into multiple subqueries and creating separate search jobs for each.")
 	}
 
 	b := inputs.Plan[0]
@@ -69,16 +69,10 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 		repoOptionsCopy := repoOptions
 		repoOptionsCopy.OnlyCloned = true
 
-		// We can probably support higher limits here if we need to. This is the same
-		// limit we use for interactive search. The assumption is that the limiting
-		// factor for diff/commit search is usually time and not the number of results.
-		// We should revisit this if we see that we are hitting the limit often.
-		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.DefaultLimit()))
-
 		commitSearchJob := &commit.SearchJob{
 			Query:                commit.QueryToGitQuery(b, diff),
 			Diff:                 diff,
-			Limit:                int(fileMatchLimit),
+			Limit:                b.MaxResults(inputs.DefaultLimit()),
 			IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker) || own,
 		}
 
