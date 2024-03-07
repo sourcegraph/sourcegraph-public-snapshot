@@ -1736,7 +1736,6 @@ ts_project(
         ":code_intel_schema",
         ":graphql_operations",
         ":module_style_typings",
-        ":node_modules/@playwright/browser-chromium",
         ":node_modules/@playwright/test",
         ":node_modules/@sourcegraph/branded",
         ":node_modules/@sourcegraph/client-api",
@@ -2452,12 +2451,17 @@ ts_project(
     ],
 )
 
+genrule(
+    name = "install_playwright",
+    cmd = "npx playwright install",
+)
+
 playwright_bin.playwright_test(
     name = "playwright_test",
     args = ["test"],
     data = glob(["src/playwright/*.spec.ts"]) + [
         "playwright.config.ts",
-        "//:node_modules/@playwright/browser-chromium",
         "//:node_modules/@playwright/test",
     ],
+    deps = ["install_playwright"],
 )

@@ -29,7 +29,6 @@
     "bundlesize": "pnpm exec bundlesize --config=./bundlesize.config.js"
   },
   "devDependencies": {
-    "@playwright/browser-chromium": "1.42.1",
     "@playwright/test": "1.40.1",
     "@sourcegraph/build-config": "workspace:*",
     "@sourcegraph/extension-api-types": "workspace:*",
