@@ -122,12 +122,12 @@ func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscr
 	}, nil
 }
 
-// getSAMSAccountIDForUser returns the user's SAMS account ID if available.
+// getSAMSAccountIDsForUser returns the user's SAMS account ID if available.
 //
 // If the user has not associated a SAMS identity with their dotcom user account,
 // will return ("", nil). After we migrate all dotcom user accounts to SAMS, that
 // should no longer be possible.
-func getSAMSAccountIDForUser(ctx context.Context, db database.DB, dotcomUserID int32) (string, error) {
+func getSAMSAccountIDsForUser(ctx context.Context, db database.DB, dotcomUserID int32) ([]string, error) {
 	// NOTE: We hard-code this to look for the SAMS-prod environment, meaning there isn't a way
 	// to test dotcom pulling subscription data from a local SAMS/SSC instance. To support that
 	// we'd need to make the SAMSHostname configurable. (Or somehow identify which OIDC provider
@@ -141,38 +141,67 @@ func getSAMSAccountIDForUser(ctx context.Context, db database.DB, dotcomUserID i
 		},
 	})
 	if err != nil {
-		return "", errors.Wrap(err, "listing external accounts")
+		return []string{}, errors.Wrap(err, "listing external accounts")
 	}
 
-	if len(oidcAccounts) > 0 {
-		return oidcAccounts[0].AccountID, nil
+	var ids []string
+
+	for _, account := range oidcAccounts {
+		ids = append(ids, account.AccountID)
 	}
-	return "", nil
+
+	return ids, nil
 }
 
 // SubscriptionForUser returns the user's Cody subscription details.
 func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (*UserSubscription, error) {
-	samsAccountID, err := getSAMSAccountIDForUser(ctx, db, user.ID)
+	samsAccountIDs, err := getSAMSAccountIDsForUser(ctx, db, user.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching user's SAMS account ID")
 	}
 
-	// While developing the SSC backend, we only fetch subscription data for users based on a flag.
-	var subscription *ssc.Subscription
-	useSCCForSubscriptionData := featureflag.FromContext(ctx).GetBoolOr(featureFlagUseSCCForSubscription, false)
-	if samsAccountID != "" && useSCCForSubscriptionData {
-		sscClient, err := getSSCClient()
-		if err != nil {
-			return nil, err
+	if len(samsAccountIDs) == 0 {
+		return consolidateSubscriptionDetails(ctx, user, nil)
+	}
+
+	// NOTE(naman): As part of #inc-284-plg-users-paying-for-and-being-billed-for-pro-without-being-upgrade
+	// it is noted that a user can have multiple SAMS accounts associated with their dotcom account.
+	// Originally we only fetchted subscription data from the first SAMS account associated with the user.
+	// But we are now fetching subscription data from all SAMS accounts associated with the user, and using
+	// the one with active subscription. This is only a TEMPORARY solution to mititgate the incident.
+	// MUST be removed/fixed once we have a proper solution in place as part of #60912.
+	var subscriptions []*ssc.Subscription
+	for _, samsAccountID := range samsAccountIDs {
+		// While developing the SSC backend, we only fetch subscription data for users based on a flag.
+		var subscription *ssc.Subscription
+		useSCCForSubscriptionData := featureflag.FromContext(ctx).GetBoolOr(featureFlagUseSCCForSubscription, false)
+
+		if samsAccountID != "" && useSCCForSubscriptionData {
+			sscClient, err := getSSCClient()
+			if err != nil {
+				return nil, err
+			}
+
+			subscription, err = sscClient.FetchSubscriptionBySAMSAccountID(ctx, samsAccountID)
+			if err != nil {
+				return nil, errors.Wrap(err, "fetching subscription from SSC")
+			}
 		}
 
-		subscription, err = sscClient.FetchSubscriptionBySAMSAccountID(ctx, samsAccountID)
-		if err != nil {
-			return nil, errors.Wrap(err, "fetching subscription from SSC")
+		if subscription != nil {
+			subscriptions = append(subscriptions, subscription)
+
+			if subscription.Status == ssc.SubscriptionStatusActive {
+				return consolidateSubscriptionDetails(ctx, user, subscription)
+			}
 		}
 	}
 
-	return consolidateSubscriptionDetails(ctx, user, subscription)
+	if len(subscriptions) == 0 {
+		return consolidateSubscriptionDetails(ctx, user, nil)
+	}
+
+	return consolidateSubscriptionDetails(ctx, user, subscriptions[0])
 }
 
 // getSSCClient returns a self-service Cody API client. We only do this once so that the stateless client
