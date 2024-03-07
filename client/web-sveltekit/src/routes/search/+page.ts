@@ -1,4 +1,4 @@
-import { BehaviorSubject, type Observable, of, type Subscription } from 'rxjs'
+import { BehaviorSubject, type Observable, of } from 'rxjs'
 import { get } from 'svelte/store'
 
 import { browser } from '$app/environment'
@@ -15,60 +15,38 @@ import {
     FilterType,
     getGlobalSearchContextFilter,
     omitFilter,
+    emptyAggregateResults,
 } from '$lib/shared'
 
 import type { PageLoad } from './$types'
 
-interface SearchStreamCacheEntry {
-    searchStream: Observable<AggregateStreamingSearchResults | undefined>
-    complete: boolean
-}
+type SearchStreamCacheEntry = Observable<AggregateStreamingSearchResults>
 
 /**
  * CachingStreamManager helps caching and canceling search streams in the browser.
  */
 class CachingStreamManager {
     private cache: Map<string, SearchStreamCacheEntry> = new Map()
-    private activeSubscription: { cacheKey: string; subscription: Subscription } | undefined
     private streamManager = new NonCachingStreamManager()
 
     search(
         parsedQuery: ExtendedParsedSearchURL,
         searchOptions: StreamSearchOptions,
         bypassCache: boolean
-    ): Observable<AggregateStreamingSearchResults | undefined> {
+    ): Observable<AggregateStreamingSearchResults> {
         const key = createCacheKey(parsedQuery, searchOptions)
 
-        // Cancel any active query to reduce load on the server
-        {
-            const { cacheKey, subscription } = this.activeSubscription ?? {}
-            if (cacheKey && cacheKey !== key) {
-                subscription?.unsubscribe()
-                // We need to remove the cache entry for ongoing queries otherwise
-                // the cache will contain partial data
-                if (!this.cache.get(cacheKey)?.complete) {
-                    this.cache.delete(cacheKey)
-                }
-            }
-        }
-
-        const searchStream = this.cache.get(key)?.searchStream
+        const searchStream = this.cache.get(key)
 
         if (bypassCache || !searchStream) {
             const stream = this.streamManager.search(parsedQuery, searchOptions)
-            const searchStream = new BehaviorSubject<AggregateStreamingSearchResults | undefined>(undefined)
-            const cacheEntry: SearchStreamCacheEntry = { searchStream, complete: false }
-            this.cache.set(key, cacheEntry)
-            // Primes the stream
-            const subscription = stream.subscribe({
+            const searchStream = new BehaviorSubject<AggregateStreamingSearchResults>(emptyAggregateResults)
+            this.cache.set(key, searchStream)
+            stream.subscribe({
                 next: value => {
                     searchStream.next(value)
                 },
-                complete: () => {
-                    cacheEntry.complete = true
-                },
             })
-            this.activeSubscription = { cacheKey: key, subscription }
             return searchStream
         }
 
@@ -83,7 +61,7 @@ class NonCachingStreamManager {
     search(
         parsedQuery: ExtendedParsedSearchURL,
         searchOptions: StreamSearchOptions
-    ): Observable<AggregateStreamingSearchResults | undefined> {
+    ): Observable<AggregateStreamingSearchResults> {
         return aggregateStreamingSearch(of(parsedQuery.filteredQuery ?? ''), searchOptions)
     }
 }

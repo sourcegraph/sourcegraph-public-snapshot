@@ -5,7 +5,9 @@ go_library(
     name = "completions",
     srcs = [
         "anthropic.go",
+        "anthropicmessages.go",
         "fireworks.go",
+        "flagging.go",
         "openai.go",
         "upstream.go",
     ],
@@ -23,6 +25,7 @@ go_library(
         "//cmd/cody-gateway/shared/config",
         "//internal/codygateway",
         "//internal/completions/client/anthropic",
+        "//internal/completions/client/anthropicmessages",
         "//internal/completions/client/fireworks",
         "//internal/completions/client/openai",
         "//internal/conf/conftypes",
@@ -42,6 +45,7 @@ go_test(
     name = "completions_test",
     srcs = [
         "anthropic_test.go",
+        "anthropicmessages_test.go",
         "fireworks_test.go",
         "openai_test.go",
     ],

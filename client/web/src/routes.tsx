@@ -70,7 +70,6 @@ const CodySubscriptionPage = lazyComponent(
 )
 const CodyUpsellPage = lazyComponent(() => import('./cody/upsell/CodyUpsellPage'), 'CodyUpsellPage')
 const CodyDashboardPage = lazyComponent(() => import('./cody/dashboard/CodyDashboardPage'), 'CodyDashboardPage')
-const OwnPage = lazyComponent(() => import('./enterprise/own/OwnPage'), 'OwnPage')
 const SearchJob = lazyComponent(() => import('./enterprise/search-jobs/SearchJobsPage'), 'SearchJobsPage')
 
 const Index = lazyComponent(() => import('./Index'), 'IndexPage')
@@ -235,15 +234,6 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <GlobalNotebooksArea {...props} />}
-                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
-            />
-        ),
-    },
-    {
-        path: PageRoutes.Own,
-        element: (
-            <LegacyRoute
-                render={() => <OwnPage />}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />
         ),

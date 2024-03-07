@@ -24,13 +24,9 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "aspect_bazel_lib",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party/bazel_lib:use_default_shell_env.patch",
-    ],
-    sha256 = "4d6010ca5e3bb4d7045b071205afa8db06ec11eb24de3f023d74d77cca765f66",
-    strip_prefix = "bazel-lib-1.39.0",
-    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.39.0/bazel-lib-v1.39.0.tar.gz",
+    sha256 = "f2c1f91cc0a55f7a44c94b8a79974f21349b844075740c01045acaa49e731307",
+    strip_prefix = "bazel-lib-1.40.3",
+    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.40.3/bazel-lib-v1.40.3.tar.gz",
 )
 
 # rules_js defines an older rules_nodejs, so we override it here
@@ -43,10 +39,6 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_js",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party/rules_js:use_default_shell_env.patch",
-    ],
     sha256 = "76a04ef2120ee00231d85d1ff012ede23963733339ad8db81f590791a031f643",
     strip_prefix = "rules_js-1.34.1",
     url = "https://github.com/aspect-build/rules_js/releases/download/v1.34.1/rules_js-v1.34.1.tar.gz",
@@ -72,10 +64,10 @@ http_archive(
     patches = [
         "//third_party/rules_go:package_main.patch",
     ],
-    sha256 = "de7974538c31f76658e0d333086c69efdf6679dbc6a466ac29e65434bf47076d",
+    sha256 = "80a98277ad1311dacd837f9b16db62887702e9f1d1c4c9f796d0121a46c8e184",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.45.0/rules_go-v0.45.0.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.45.0/rules_go-v0.45.0.zip",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.46.0/rules_go-v0.46.0.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.46.0/rules_go-v0.46.0.zip",
     ],
 )
 
@@ -165,13 +157,6 @@ http_archive(
     sha256 = "9cd384e42b2da00104f0e18f25e66285aa21f64b573c667638a7a213206885ab",
     strip_prefix = "rules_multirun-0.6.1",
     url = "https://github.com/keith/rules_multirun/archive/refs/tags/0.6.1.tar.gz",
-)
-
-http_archive(
-    name = "with_cfg.bzl",
-    sha256 = "c6b80cad298afa8a46bc01cd96df4f4d8660651101f6bf5af58f2724e349017d",
-    strip_prefix = "with_cfg.bzl-0.2.1",
-    url = "https://github.com/fmeum/with_cfg.bzl/releases/download/v0.2.1/with_cfg.bzl-v0.2.1.tar.gz",
 )
 
 # hermetic_cc_toolchain setup ================================
@@ -339,7 +324,7 @@ go_rules_dependencies()
 
 go_register_toolchains(
     nogo = "@//:sg_nogo",
-    version = "1.21.6",
+    version = "1.22.1",
 )
 
 linter_dependencies()

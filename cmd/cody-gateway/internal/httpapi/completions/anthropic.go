@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 
@@ -248,56 +248,19 @@ func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, cfg
 	if ar.Model != "claude-2" && ar.Model != "claude-2.0" && ar.Model != "claude-2.1" && ar.Model != "claude-v1" {
 		return nil, nil
 	}
-	var reasons []string
 
-	prompt := strings.ToLower(ar.Prompt)
-
-	if len(cfg.AllowedPromptPatterns) > 0 && !containsAny(prompt, cfg.AllowedPromptPatterns) {
-		reasons = append(reasons, "unknown_prompt")
-	}
-
-	// If this request has a very high token count for responses, then flag it.
-	if ar.MaxTokensToSample > int32(cfg.MaxTokensToSampleFlaggingLimit) {
-		reasons = append(reasons, "high_max_tokens_to_sample")
-	}
-
-	// If this prompt consists of a very large number of tokens, then flag it.
-	tokenCount, err := ar.GetPromptTokenCount(tk)
-	if err != nil {
-		return &flaggingResult{}, errors.Wrap(err, "tokenize prompt")
-	}
-	if tokenCount > cfg.PromptTokenFlaggingLimit {
-		reasons = append(reasons, "high_prompt_token_count")
-	}
-
-	if len(reasons) > 0 { // request is flagged
-		blocked := false
-		if tokenCount > cfg.PromptTokenBlockingLimit || ar.MaxTokensToSample > int32(cfg.ResponseTokenBlockingLimit) || containsAny(prompt, cfg.BlockedPromptPatterns) {
-			blocked = true
-		}
-
-		promptPrefix := ar.Prompt
-		if len(promptPrefix) > logPromptPrefixLength {
-			promptPrefix = promptPrefix[0:logPromptPrefixLength]
-		}
-		return &flaggingResult{
-			reasons:           reasons,
-			maxTokensToSample: int(ar.MaxTokensToSample),
-			promptPrefix:      promptPrefix,
-			promptTokenCount:  tokenCount,
-			shouldBlock:       blocked,
-		}, nil
-	}
-
-	return nil, nil
-}
-
-func containsAny(prompt string, patterns []string) bool {
-	prompt = strings.ToLower(prompt)
-	for _, pattern := range patterns {
-		if strings.Contains(prompt, pattern) {
-			return true
-		}
-	}
-	return false
+	return isFlaggedRequest(tk,
+		flaggingRequest{
+			FlattenedPrompt: ar.Prompt,
+			MaxTokens:       int(ar.MaxTokensToSample),
+		},
+		flaggingConfig{
+			AllowedPromptPatterns:          cfg.AllowedPromptPatterns,
+			BlockedPromptPatterns:          cfg.BlockedPromptPatterns,
+			PromptTokenFlaggingLimit:       cfg.PromptTokenFlaggingLimit,
+			PromptTokenBlockingLimit:       cfg.PromptTokenBlockingLimit,
+			MaxTokensToSampleFlaggingLimit: cfg.MaxTokensToSampleFlaggingLimit,
+			ResponseTokenBlockingLimit:     cfg.ResponseTokenBlockingLimit,
+		},
+	)
 }
