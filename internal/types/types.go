@@ -1003,8 +1003,8 @@ type UserDates struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type CodyUsageStatistics struct {
-	Daily   *CodyUsagePeriod
-	Weekly  *CodyUsagePeriod
+	Daily   *CodyUsagePeriodLimited
+	Weekly  *CodyUsagePeriodLimited
 	Monthly *CodyUsagePeriod
 }
 
@@ -1020,6 +1020,12 @@ type CodyUsagePeriod struct {
 	TotalNeovimProductUsers    *CodyCountStatistics `json:"TotalNeovimProductUsers,omitempty"`
 	TotalEmacsProductUsers     *CodyCountStatistics `json:"TotalEmacsProductUsers,omitempty"`
 	TotalWebProductUsers       *CodyCountStatistics `json:"TotalWebProductUsers,omitempty"`
+}
+
+type CodyUsagePeriodLimited struct {
+	StartTime         time.Time
+	TotalCodyUsers    *CodyCountStatistics `json:"TotalCodyUsers,omitempty"`
+	TotalProductUsers *CodyCountStatistics `json:"TotalProductUsers,omitempty"`
 }
 
 type CodyCountStatistics struct {
