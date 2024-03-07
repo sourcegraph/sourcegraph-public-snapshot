@@ -6845,6 +6845,7 @@ type ExternalAccount implements Node {
     """
     publicAccountData: PublicExternalAccountData
     """
+    TEMPORARY: to debug #inc-284-plg-users-paying-for-and-being-billed-for-pro-without-being-upgrade.
     Cody Subscription associated with the external account.
     """
     codySubscription: CodySubscription

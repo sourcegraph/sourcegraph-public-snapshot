@@ -57,6 +57,7 @@ func (r *externalAccountResolver) ServiceID() string   { return r.account.Servic
 func (r *externalAccountResolver) ClientID() string    { return r.account.ClientID }
 func (r *externalAccountResolver) AccountID() string   { return r.account.AccountID }
 
+// TEMPORARY: This resolver is temporary to help us debug the #inc-284-plg-users-paying-for-and-being-billed-for-pro-without-being-upgrade.
 func (r *externalAccountResolver) CodySubscription(ctx context.Context) (*CodySubscriptionResolver, error) {
 	if !dotcom.SourcegraphDotComMode() {
 		return nil, errors.New("this feature is only available on sourcegraph.com")
