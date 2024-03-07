@@ -327,6 +327,7 @@ func TestNewExhaustive_negative(t *testing.T) {
 		// unsupported types
 		{query: `index:no type:repo`},
 		{query: `index:no type:symbol`},
+		{query: `index:no foo select:file.owners`},
 	}
 
 	for _, c := range tc {
