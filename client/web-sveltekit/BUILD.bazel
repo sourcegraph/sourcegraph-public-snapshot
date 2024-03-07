@@ -2,6 +2,7 @@ load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@npm//client/web-sveltekit:vite/package_json.bzl", vite_bin = "bin")
 load("@npm//client/web-sveltekit:vitest/package_json.bzl", vitest_bin = "bin")
+load("//dev:defs.bzl", "vitest_test")
 
 # gazelle:ignore
 
@@ -141,16 +142,10 @@ TEST_BUILD_DEPS = [
     ":node_modules/@testing-library/user-event",
 ]
 
-vitest_bin.vitest_test(
+vitest_test(
     name = "unit_tests",
-    args = [
-        "run",
-        "--reporter=default",
-        "--color",
-        "--update=false",
-    ],
+    bin = vitest_bin,
     chdir = package_name(),
     data = SRCS + BUILD_DEPS + CONFIGS + TESTS + TEST_BUILD_DEPS,
-    env = {"BAZEL": "1", "CI": "1"},
-    patch_node_fs = True,
+    with_vitest_config = False,
 )
