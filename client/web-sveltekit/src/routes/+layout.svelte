@@ -1,6 +1,6 @@
 <script lang="ts">
     import { setContext } from 'svelte'
-    import { derived, writable } from 'svelte/store'
+    import { writable } from 'svelte/store'
 
     import { browser, dev } from '$app/environment'
     import { isErrorLike } from '$lib/common'
@@ -18,7 +18,7 @@
     import { createFeatureFlagStore, featureFlag } from '$lib/featureflags'
     import InfoBanner from './InfoBanner.svelte'
     import { getGraphQLClient } from '$lib/graphql/apollo'
-    import { isRouteEnabled } from '$lib/navigation'
+    import { isRouteRolledOut } from '$lib/navigation'
     import { beforeNavigate } from '$app/navigation'
 
     export let data: LayoutData
@@ -55,11 +55,8 @@
         document.documentElement.classList.toggle('theme-dark', !$isLightTheme)
     }
 
-    $: allRoutesEnabled = derived(
-        [featureFlag('web-next'), featureFlag('enable-sveltekit')],
-        ([$webNext, $svelteKit]) => $webNext || $svelteKit
-    )
-    $: defaultRoutesEnabled = featureFlag('web-next-enabled')
+    $: allRoutesEnabled = featureFlag('web-next')
+    $: rolledoutRoutesEnabled = featureFlag('web-next-rollout')
 
     // Redirect the user to the react app when they navigate to a page that is
     // supported but not enabled.
@@ -71,7 +68,7 @@
             return
         }
 
-        if (dev || $allRoutesEnabled || ($defaultRoutesEnabled && isRouteEnabled(navigation.to?.route.id ?? ''))) {
+        if (dev || $allRoutesEnabled || ($rolledoutRoutesEnabled && isRouteRolledOut(navigation.to?.route.id ?? ''))) {
             // Routes are handled by SvelteKit
             return
         }
