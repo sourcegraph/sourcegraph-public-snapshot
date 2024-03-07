@@ -197,7 +197,13 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                 </section>
             )}
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
-                <FilesCard historyEntries={treeWithHistory} entries={tree.entries} className={styles.files} url={tree.url} repoType={repo.sourceType} />
+                <FilesCard
+                    historyEntries={treeWithHistory}
+                    entries={tree.entries}
+                    className={styles.files}
+                    url={tree.url}
+                    repoType={repo.sourceType}
+                />
 
                 {!isPackage && (
                     <div className={styles.contributors}>

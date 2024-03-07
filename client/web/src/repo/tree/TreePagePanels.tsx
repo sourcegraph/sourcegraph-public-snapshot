@@ -261,9 +261,11 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                     </tr>
                 ))}
                 <tr>
-                    <td colSpan={3} align='right'>
+                    <td colSpan={3} align="right">
                         <small>
-                            <Link to={revisionURL}>Show all {repoType === RepositoryType.PERFORCE_DEPOT ? 'changelists' : 'commits'}</Link>
+                            <Link to={revisionURL}>
+                                Show all {repoType === RepositoryType.PERFORCE_DEPOT ? 'changelists' : 'commits'}
+                            </Link>
                         </small>
                     </td>
                 </tr>
