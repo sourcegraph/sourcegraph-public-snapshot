@@ -63,7 +63,7 @@ func (r *externalAccountResolver) CodySubscription(ctx context.Context) (*CodySu
 		return nil, errors.New("this feature is only available on sourcegraph.com")
 	}
 
-	if r.account.ServiceType == "openidconnect" && r.account.ServiceID == fmt.Sprintf("https://%s", ssc.GetSAMSHostName()) {
+	if r.account.ServiceType != "openidconnect" || r.account.ServiceID != fmt.Sprintf("https://%s", ssc.GetSAMSHostName()) {
 		return nil, nil
 	}
 
