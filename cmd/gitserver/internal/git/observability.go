@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"sync"
 
@@ -260,6 +261,37 @@ func (b *observableBackend) ResolveRevision(ctx context.Context, revspec string)
 	return b.backend.ResolveRevision(ctx, revspec)
 }
 
+func (b *observableBackend) Stat(ctx context.Context, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
+	ctx, _, endObservation := b.operations.stat.With(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{
+			attribute.String("commit", string(commit)),
+			attribute.String("path", path),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("Stat").Inc()
+	defer concurrentOps.WithLabelValues("Stat").Dec()
+
+	return b.backend.Stat(ctx, commit, path)
+}
+
+func (b *observableBackend) ReadDir(ctx context.Context, commit api.CommitID, path string, recursive bool) (_ []fs.FileInfo, err error) {
+	ctx, _, endObservation := b.operations.readDir.With(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{
+			attribute.String("commit", string(commit)),
+			attribute.String("path", path),
+			attribute.Bool("recursive", recursive),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("ReadDir").Inc()
+	defer concurrentOps.WithLabelValues("ReadDir").Dec()
+
+	return b.backend.ReadDir(ctx, commit, path, recursive)
+}
+
 type observableReadCloser struct {
 	inner          io.ReadCloser
 	endObservation func(err error)
@@ -289,6 +321,8 @@ type operations struct {
 	getCommit       *observation.Operation
 	archiveReader   *observation.Operation
 	resolveRevision *observation.Operation
+	stat            *observation.Operation
+	readDir         *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -330,6 +364,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getCommit:       op("get-commit"),
 		archiveReader:   op("archive-reader"),
 		resolveRevision: op("resolve-revision"),
+		stat:            op("stat"),
+		readDir:         op("read-dir"),
 	}
 }
 

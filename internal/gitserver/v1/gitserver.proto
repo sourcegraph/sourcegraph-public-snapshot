@@ -148,6 +148,67 @@ service GitserverService {
   rpc ResolveRevision(ResolveRevisionRequest) returns (ResolveRevisionResponse) {
     option idempotency_level = IDEMPOTENT;
   }
+  // Stat returns a FileInfo describing the named file at commit.
+  rpc Stat(StatRequest) returns (StatResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // ReadDir returns a list of FileInfos describing the files in the directory.
+  rpc ReadDir(ReadDirRequest) returns (stream ReadDirResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message StatRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // The commit at which we want to stat the file.
+  string commit_sha = 3;
+  // The path to the file to stat.
+  bytes path = 4;
+}
+
+message StatResponse {
+  FileInfo file_info = 1;
+}
+
+message ReadDirRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // The commit at which we want to read the directory.
+  string commit_sha = 3;
+  // The path to the directory to read. Empty means root.
+  optional bytes path = 4;
+  // recursive indicates whether to read the directory recursively. The default is false.
+  bool recursive = 5;
+}
+
+message ReadDirResponse {
+  repeated FileInfo file_info = 1;
+}
+
+message GitSubmodule {
+  // URL is the submodule repository clone URL.
+	string url = 1;
+	// Path is the path of the submodule relative to the repository root.
+  bytes path = 2;
+	// CommitSHA is the pinned commit ID of the submodule (in the submodule repository's
+  // commit ID space).
+	string commit_sha = 3;
+}
+
+message FileInfo {
+  // The file name, relative to the repository root.
+  bytes name = 1;
+  // The file size.
+  int64 size = 2;
+  // The file mode.
+  uint32 mode = 3;
+  // The blob OID in the git ODB.
+  string blob_oid = 4;
+  // If this FileInfo describes a submodule, this field will be populated.
+  optional GitSubmodule submodule = 5;
 }
 
 message ResolveRevisionRequest {
