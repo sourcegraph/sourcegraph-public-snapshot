@@ -2453,7 +2453,7 @@ ts_project(
 genrule(
     name = "playwright_install",
     outs = ["playwright_install.txt"],
-    cmd = "npx playwright install",
+    cmd = "npm run playwright:install",
 )
 
 genrule(
@@ -2463,5 +2463,5 @@ genrule(
         "//:node_modules/@playwright/test",
     ],
     outs = ["playwright_test.txt"],
-    cmd = "npx playwright test",
+    cmd = "npm run playwright:test",
 )
