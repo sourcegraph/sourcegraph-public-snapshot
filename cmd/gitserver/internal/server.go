@@ -1282,7 +1282,7 @@ func setHEAD(ctx context.Context, logger log.Logger, rcf *wrexec.RecordingComman
 	r := urlredactor.New(remoteURL)
 
 	// Configure the command to be able to talk to a remote.
-	executil.ConfigureRemoteGitCommand(cmd)
+	executil.ConfigureRemoteGitCommand(cmd, remoteURL)
 
 	output, err := rcf.WrapWithRepoName(ctx, logger, repoName, cmd).WithRedactorFunc(r.Redact).CombinedOutput()
 	if err != nil {
