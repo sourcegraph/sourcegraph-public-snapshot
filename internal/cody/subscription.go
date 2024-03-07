@@ -204,6 +204,26 @@ func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (
 	return consolidateSubscriptionDetails(ctx, user, subscriptions[0])
 }
 
+// SubscriptionForSAMSAccountID returns the user's Cody subscription details associated with the given SAMS account ID.
+func SubscriptionForSAMSAccountID(ctx context.Context, db database.DB, user types.User, samsAccountID string) (*UserSubscription, error) {
+	if samsAccountID == "" {
+		return consolidateSubscriptionDetails(ctx, user, nil)
+	}
+
+	var subscription *ssc.Subscription
+	sscClient, err := getSSCClient()
+	if err != nil {
+		return nil, err
+	}
+
+	subscription, err = sscClient.FetchSubscriptionBySAMSAccountID(ctx, samsAccountID)
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching subscription from SSC")
+	}
+
+	return consolidateSubscriptionDetails(ctx, user, subscription)
+}
+
 // getSSCClient returns a self-service Cody API client. We only do this once so that the stateless client
 // can persist in memory longer, so we can benefit from the underlying HTTP client only needing to reissue
 // SAMS access tokens when needed, rather than minting a new token for every request.
