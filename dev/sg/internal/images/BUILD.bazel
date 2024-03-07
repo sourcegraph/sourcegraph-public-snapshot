@@ -35,7 +35,7 @@ go_library(
 
 go_test(
     name = "images_test",
-    timeout = "eternal",
+    timeout = "short",
     srcs = [
         "images_test.go",
         "pure_docker_test.go",
