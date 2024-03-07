@@ -18,13 +18,11 @@ tasks:
       fix_target: //:configure
   # Checks that all tests are passing
   - test:
-      include_eternal_tests: true
       targets:
         - //...
         # exclude testing as it is executed in a seperate job
         - -//testing/...
   - test:
-      include_eternal_tests: true
       name: Integration/E2E
       targets:
         - //testing/...
