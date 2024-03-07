@@ -112,7 +112,7 @@
         <DynamicFiltersSidebar {selectedFilters} streamFilters={$stream.filters} searchQuery={queryFromURL} {loading} />
     </div>
     <Separator currentPosition={sidebarSize} />
-    <div class="results" bind:this={resultContainer}>
+    <div class="results">
         <aside class="actions">
             {#if loading}
                 <div>
@@ -121,7 +121,7 @@
             {/if}
             <StreamingProgress progress={$stream.progress} on:submit={onResubmitQuery} />
         </aside>
-        <div class="result-list">
+        <div class="result-list" bind:this={resultContainer}>
             <ol>
                 {#each resultsToShow as result, i}
                     {@const component = getSearchResultComponent(result)}
@@ -159,7 +159,8 @@
 
     .results {
         flex: 1;
-        overflow: auto;
+        overflow: hidden;
+        min-height: 0;
         display: flex;
         flex-direction: column;
 
