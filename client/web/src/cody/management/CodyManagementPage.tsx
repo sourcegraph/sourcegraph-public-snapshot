@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useCallback, useEffect } from 'react'
 
 import { mdiHelpCircleOutline, mdiInformationOutline, mdiOpenInNew, mdiCreditCardOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     ButtonLink,
     H1,
@@ -51,7 +52,7 @@ import { CHANGE_CODY_PLAN, USER_CODY_PLAN, USER_CODY_USAGE } from '../subscripti
 
 import styles from './CodyManagementPage.module.scss'
 
-interface CodyManagementPageProps {
+interface CodyManagementPageProps extends TelemetryV2Props {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
 }
@@ -59,6 +60,7 @@ interface CodyManagementPageProps {
 export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps> = ({
     isSourcegraphDotCom,
     authenticatedUser,
+    telemetryRecorder,
 }) => {
     const parameters = useSearchParameters()
 
@@ -69,7 +71,8 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     useEffect(() => {
         eventLogger.log(EventName.CODY_MANAGEMENT_PAGE_VIEWED, { utm_source })
-    }, [utm_source])
+        telemetryRecorder.recordEvent('cody.management', 'view')
+    }, [utm_source, telemetryRecorder])
 
     const { data, error: dataError } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
 
@@ -109,6 +112,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
             navigate('/sign-in?returnTo=/cody/manage')
         }
     }, [data, navigate])
+
+    const onClickUpgradeToProCTA = useCallback(() => {
+        telemetryRecorder.recordEvent('cody.management.upgradeToProCTA', 'click')
+    }, [telemetryRecorder])
 
     if (dataError || usageDateError) {
         throw dataError || usageDateError
@@ -168,7 +175,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </PageHeader.Heading>
                 </PageHeader>
 
-                <UpgradeToProBanner userIsOnProTier={userIsOnProTier} />
+                <UpgradeToProBanner userIsOnProTier={userIsOnProTier} onClick={onClickUpgradeToProCTA} />
                 <DoNotLoseCodyProBanner
                     userIsOnProTier={userIsOnProTier}
                     arePaymentsEnabled={arePaymentsEnabled}
@@ -204,6 +211,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     onClick={event => {
                                         event.preventDefault()
                                         eventLogger.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
+                                        telemetryRecorder.recordEvent('cody.manageSubscription', 'click')
                                         window.location.href = manageSubscriptionRedirectURL
                                     }}
                                 >
@@ -460,14 +468,15 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     ))}
                 </div>
             </Page>
-            <CodyOnboarding authenticatedUser={authenticatedUser} />
+            <CodyOnboarding authenticatedUser={authenticatedUser} telemetryRecorder={telemetryRecorder} />
         </>
     )
 }
 
 const UpgradeToProBanner: React.FunctionComponent<{
     userIsOnProTier: boolean
-}> = ({ userIsOnProTier }) =>
+    onClick: () => void
+}> = ({ userIsOnProTier, onClick }) =>
     userIsOnProTier ? null : (
         <div className={classNames('d-flex justify-content-between align-items-center p-4', styles.upgradeToProBanner)}>
             <div>
@@ -481,7 +490,7 @@ const UpgradeToProBanner: React.FunctionComponent<{
                 </ul>
             </div>
             <div>
-                <ButtonLink to="/cody/subscription" variant="primary" size="sm">
+                <ButtonLink to="/cody/subscription" variant="primary" size="sm" onClick={onClick}>
                     Upgrade
                 </ButtonLink>
             </div>

@@ -333,7 +333,9 @@ export const routes: RouteObject[] = [
         path: PageRoutes.CodySearch,
         element: (
             <LegacyRoute
-                render={props => <CodySearchPage {...props} />}
+                render={props => (
+                    <CodySearchPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+                )}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
             />
         ),
@@ -363,7 +365,13 @@ export const routes: RouteObject[] = [
         path: PageRoutes.CodyChat + '/*',
         element: (
             <LegacyRoute
-                render={props => <CodyChatPage {...props} context={window.context} />}
+                render={props => (
+                    <CodyChatPage
+                        {...props}
+                        context={window.context}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
+                    />
+                )}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
             />
         ),
@@ -372,7 +380,9 @@ export const routes: RouteObject[] = [
         path: PageRoutes.CodyManagement,
         element: (
             <LegacyRoute
-                render={props => <CodyManagementPage {...props} />}
+                render={props => (
+                    <CodyManagementPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+                )}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
             />
         ),
@@ -381,7 +391,9 @@ export const routes: RouteObject[] = [
         path: PageRoutes.CodySubscription,
         element: (
             <LegacyRoute
-                render={props => <CodySubscriptionPage {...props} />}
+                render={props => (
+                    <CodySubscriptionPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+                )}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
             />
         ),
@@ -398,7 +410,10 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => (
-                    <CodySidebarStoreProvider authenticatedUser={props.authenticatedUser}>
+                    <CodySidebarStoreProvider
+                        authenticatedUser={props.authenticatedUser}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
+                    >
                         <RepoContainer {...props} />
                     </CodySidebarStoreProvider>
                 )}
@@ -436,5 +451,5 @@ function CodyDashboardOrUpsellPage(props: LegacyLayoutRouteContext): JSX.Element
     if (!isCodyEnabled) {
         return <CodyUpsellPage />
     }
-    return <CodyDashboardPage {...props} />
+    return <CodyDashboardPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
 }

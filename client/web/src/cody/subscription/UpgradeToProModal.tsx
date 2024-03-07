@@ -2,6 +2,7 @@ import { mdiCalendarMonth, mdiClose, mdiCreditCardOff, mdiTag, mdiTrendingUp } f
 import classNames from 'classnames'
 
 import { useMutation } from '@sourcegraph/http-client'
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Button, H1, H2, Icon, Modal, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -19,10 +20,12 @@ export function UpgradeToProModal({
     authenticatedUser,
     onClose,
     onSuccess,
+    telemetryRecorder,
 }: {
     authenticatedUser: AuthenticatedUser
     onClose: () => void
     onSuccess: () => void
+    telemetryRecorder: TelemetryRecorder
 }): JSX.Element {
     const [changeCodyPlan, { data }] = useMutation<ChangeCodyPlanResult, ChangeCodyPlanVariables>(CHANGE_CODY_PLAN)
 
@@ -156,6 +159,13 @@ export function UpgradeToProModal({
                                             },
                                             {
                                                 tier: 'pro',
+                                            }
+                                        )
+                                        telemetryRecorder.recordEvent(
+                                            'cody.planSelection.upgradeToProModal',
+                                            'submit',
+                                            {
+                                                metadata: { tier: 1 },
                                             }
                                         )
 
