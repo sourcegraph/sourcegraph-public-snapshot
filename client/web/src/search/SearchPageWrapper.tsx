@@ -5,7 +5,6 @@ import { useLocation } from 'react-router-dom'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { useMetaRobotsNoIndex } from '../hooks/useMetaRobotsNoindex'
 import type { LegacyLayoutRouteContext } from '../LegacyRouteContext'
 
 import { parseSearchURLQuery } from '.'
@@ -20,7 +19,6 @@ const StreamingSearchResults = lazyComponent(() => import('./results/StreamingSe
 export const SearchPageWrapper: FC<LegacyLayoutRouteContext> = props => {
     const location = useLocation()
     const hasSearchQuery = parseSearchURLQuery(location.search)
-    useMetaRobotsNoIndex(!hasSearchQuery)
 
     return hasSearchQuery ? (
         <TraceSpanProvider name="StreamingSearchResults">

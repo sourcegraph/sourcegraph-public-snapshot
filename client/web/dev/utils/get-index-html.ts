@@ -46,7 +46,6 @@ export function getIndexHTML(options: GetHTMLPageOptions): string {
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, viewport-fit=cover" />
         <meta name="referrer" content="origin-when-cross-origin"/>
-        <meta name="robots" content="__META_ROBOTS_CONTENT__" />
         <meta name="color-scheme" content="light dark"/>
         <link rel="stylesheet" href="${assetPathPrefix}/${mainCSS}">
         ${

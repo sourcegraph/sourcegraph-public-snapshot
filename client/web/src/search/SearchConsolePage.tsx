@@ -17,7 +17,6 @@ import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
-import { useMetaRobotsNoIndex } from '../hooks/useMetaRobotsNoindex'
 import type { OwnConfigProps } from '../own/OwnConfigProps'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, type SearchStreamingProps } from '.'
@@ -34,7 +33,6 @@ interface SearchConsolePageProps
 export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<SearchConsolePageProps>> = props => {
     const location = useLocation()
     const navigate = useNavigate()
-    useMetaRobotsNoIndex(!parseSearchURLQuery(location.search))
     const { streamSearch, isSourcegraphDotCom } = props
     const searchQuery = useMemo(
         () => new BehaviorSubject<string>(parseSearchURLQuery(location.search) ?? ''),
