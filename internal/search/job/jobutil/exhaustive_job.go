@@ -22,6 +22,11 @@ type Exhaustive struct {
 	repoPagerJob *repoPagerJob
 }
 
+const (
+	exhaustiveSupportedResultTypes = result.TypeCommit | result.TypeDiff | result.TypeFile | result.TypePath
+	exhaustiveDefaultResultTypes   = result.TypeFile | result.TypePath
+)
+
 // NewExhaustive constructs Exhaustive from the search inputs.
 //
 // It will return an error if the input query is not supported by Exhaustive.
@@ -52,11 +57,10 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 	}
 
 	repoOptions := toRepoOptions(b, inputs.UserSettings)
-	resultTypes := computeResultTypes(b, inputs.PatternType, result.TypePath|result.TypeFile)
+	resultTypes := computeResultTypes(b, inputs.PatternType, exhaustiveDefaultResultTypes)
 
-	supportedTypes := result.TypeCommit | result.TypeDiff | result.TypeFile | result.TypePath
-	if resultTypes.Without(supportedTypes) != 0 {
-		return Exhaustive{}, errors.Errorf("your query contains the following type filters: %v. However Search Jobs only supports: %v.", resultTypes, supportedTypes)
+	if resultTypes.Without(exhaustiveSupportedResultTypes) != 0 {
+		return Exhaustive{}, errors.Errorf("your query contains the following type filters: %v. However Search Jobs only supports: %v.", resultTypes, exhaustiveSupportedResultTypes)
 	}
 
 	var planJob job.Job
