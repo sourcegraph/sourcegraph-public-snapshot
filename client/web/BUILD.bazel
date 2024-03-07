@@ -2451,9 +2451,12 @@ ts_project(
     ],
 )
 
-genrule(
-    name = "install_playwright",
-    cmd = "npx playwright install",
+playwright_bin.playwright_test(
+    name = "playwright_install",
+    args = ["install chromium"],
+    data = [
+        "//:node_modules/@playwright/test",
+    ],
 )
 
 playwright_bin.playwright_test(
@@ -2463,5 +2466,4 @@ playwright_bin.playwright_test(
         "playwright.config.ts",
         "//:node_modules/@playwright/test",
     ],
-    deps = ["install_playwright"],
 )
