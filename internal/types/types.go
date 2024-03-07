@@ -1013,18 +1013,18 @@ type CodyUsageStatistics struct {
 // BigQuery, which requires the input match its schema exactly.
 type CodyUsagePeriod struct {
 	StartTime                  time.Time
-	TotalCodyUsers             *CodyCountStatistics
-	TotalProductUsers          *CodyCountStatistics
-	TotalVSCodeProductUsers    *CodyCountStatistics
-	TotalJetBrainsProductUsers *CodyCountStatistics
-	TotalNeovimProductUsers    *CodyCountStatistics
-	TotalEmacsProductUsers     *CodyCountStatistics
-	TotalWebProductUsers       *CodyCountStatistics
+	TotalCodyUsers             *CodyCountStatistics `json:"TotalCodyUsers,omitempty"`
+	TotalProductUsers          *CodyCountStatistics `json:"TotalProductUsers,omitempty"`
+	TotalVSCodeProductUsers    *CodyCountStatistics `json:"TotalVSCodeProductUsers,omitempty"`
+	TotalJetBrainsProductUsers *CodyCountStatistics `json:"TotalJetBrainsProductUsers,omitempty"`
+	TotalNeovimProductUsers    *CodyCountStatistics `json:"TotalNeovimProductUsers,omitempty"`
+	TotalEmacsProductUsers     *CodyCountStatistics `json:"TotalEmacsProductUsers,omitempty"`
+	TotalWebProductUsers       *CodyCountStatistics `json:"TotalWebProductUsers,omitempty"`
 }
 
 type CodyCountStatistics struct {
-	UserCount   *int32
-	EventsCount *int32
+	UserCount   *int32 `json:"UserCount,omitempty"`
+	EventsCount *int32 `json:"EventsCount,omitempty"`
 }
 
 // CodyAggregatedUsage represents the total Cody-related event count and
