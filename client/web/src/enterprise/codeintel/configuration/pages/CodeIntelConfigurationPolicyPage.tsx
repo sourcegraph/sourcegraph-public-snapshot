@@ -85,7 +85,19 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeIntelConfigurationPolicy')
-        telemetryRecorder.recordEvent('codeIntel.configurationPolicy', 'view')
+        if (domain === 'scip') {
+            if (!!repo) {
+                telemetryRecorder.recordEvent('repo.codeIntel.configurationPolicy', 'view')
+            } else {
+                telemetryRecorder.recordEvent('admin.codeIntel.configurationPolicy', 'view')
+            }
+        } else {
+            if (!!repo) {
+                telemetryRecorder.recordEvent('repo.cody.configurationPolicy', 'view')
+            } else {
+                telemetryRecorder.recordEvent('admin.cody.configurationPolicy', 'view')
+            }
+        }
     }, [telemetryService, telemetryRecorder])
 
     // Handle local policy state

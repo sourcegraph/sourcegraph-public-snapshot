@@ -131,7 +131,11 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
     const location = useLocation()
     useEffect(() => {
         telemetryService.logViewEvent('CodeIntelPreciseIndexesPage')
-        telemetryRecorder.recordEvent('codeIntel.preciseIndexes', 'view')
+        if (!!repo) {
+            telemetryRecorder.recordEvent('repo.codeIntel.preciseIndexes', 'view')
+        } else {
+            telemetryRecorder.recordEvent('admin.codeIntel.preciseIndexes', 'view')
+        }
     }, [telemetryService, telemetryRecorder])
 
     const apolloClient = useApolloClient()

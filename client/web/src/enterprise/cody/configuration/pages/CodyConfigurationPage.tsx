@@ -43,7 +43,11 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
 }) => {
     useEffect(() => {
         telemetryService.logPageView('CodyConfigurationPage')
-        telemetryRecorder.recordEvent('cody.configuration', 'view')
+        if (!!repo) {
+            telemetryRecorder.recordEvent('repo.cody.configuration', 'view')
+        } else {
+            telemetryRecorder.recordEvent('admin.cody.configuration', 'view')
+        }
     }, [telemetryService, telemetryRecorder])
 
     const navigate = useNavigate()
