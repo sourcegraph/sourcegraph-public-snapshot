@@ -969,7 +969,6 @@ ts_project(
         "src/enterprise/main.tsx",
         "src/enterprise/own/DeleteFileButton.tsx",
         "src/enterprise/own/IngestedFileViewer.tsx",
-        "src/enterprise/own/OwnPage.tsx",
         "src/enterprise/own/RepositoryOwnEditPage.tsx",
         "src/enterprise/own/RepositoryOwnPage.tsx",
         "src/enterprise/own/RepositoryOwnPageContents.tsx",
