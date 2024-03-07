@@ -6,6 +6,8 @@ import inspect from 'vite-plugin-inspect'
 
 import graphqlCodegen from './dev/vite-graphql-codegen'
 
+console.log(process.env.SOURCEGRAPH_API_URL)
+
 export default defineConfig(({ mode }) => {
     let config: UserConfig = {
         plugins: [

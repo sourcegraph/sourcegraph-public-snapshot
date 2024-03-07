@@ -1,8 +1,10 @@
 <script lang="ts">
+    let className = '';
+    export {className as class};
     export let variant: 'info' | 'danger'
 </script>
 
-<div class:danger={variant === 'danger'} class:info={variant === 'info'}>
+<div class={className} class:danger={variant === 'danger'} class:info={variant === 'info'}>
     <slot />
 </div>
 
