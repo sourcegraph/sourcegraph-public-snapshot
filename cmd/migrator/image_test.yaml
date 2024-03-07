@@ -21,14 +21,9 @@ commandTests:
     args: ["-c", "[ $(ls -al /schema-descriptions/*-internal_database_schema*.json | wc -l) -eq 3 ]"]
 
 fileExistenceTests:
-  # Unless built with stamping + VERSION, we won't end up with the schema descriptions here.
-  - name: '/schema-descriptions 3.20.0 schema'
+    # Unless built with stamping + VERSION, we won't end up with the schema descriptions here.
     # Instead we should test that at release time to still guarnatee that our customers are getting
-    path: '/schema-descriptions/v3.20.0-internal_database_schema.json'
     # the correct schemas.
-    shouldExist: true
     # TODO https://github.com/sourcegraph/sourcegraph/issues/59721
-    uid: 0
   - name: '/schema-descriptions README'
-    gid: 0
     path: '/schema-descriptions/README.md'
