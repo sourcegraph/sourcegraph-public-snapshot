@@ -855,7 +855,6 @@ type User struct {
 	TosAccepted           bool
 	CompletedPostSignup   bool
 	SCIMControlled        bool
-	CodyProEnabledAt      *time.Time
 }
 
 // Name returns a name for the user. If the user has a display name,
