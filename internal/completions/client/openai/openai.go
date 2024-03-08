@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/pkoukk/tiktoken-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -34,6 +37,7 @@ func (c *openAIChatCompletionStreamClient) Complete(
 ) (*types.CompletionResponse, error) {
 	var resp *http.Response
 	var err error
+
 	defer (func() {
 		if resp != nil {
 			resp.Body.Close()
@@ -80,6 +84,7 @@ func (c *openAIChatCompletionStreamClient) Stream(
 			resp.Body.Close()
 		}
 	})()
+
 	if feature == types.CompletionsFeatureCode {
 		resp, err = c.makeCompletionRequest(ctx, requestParams, true)
 	} else {
@@ -112,9 +117,12 @@ func (c *openAIChatCompletionStreamClient) Stream(
 			} else {
 				content += event.Choices[0].Delta.Content
 			}
+			tokennums := tokencalculator(requestParams.Messages)
+			fmt.Println(tokennums)
 			ev := types.CompletionResponse{
 				Completion: content,
 				StopReason: event.Choices[0].FinishReason,
+				TokensUsed: tokennums,
 			}
 			err = sendEvent(ev)
 			if err != nil {
@@ -124,6 +132,23 @@ func (c *openAIChatCompletionStreamClient) Stream(
 	}
 
 	return dec.Err()
+}
+
+func tokencalculator(messages []types.Message) int {
+	allText := ""
+	encoding := "cl100k_base"
+	for _, message := range messages {
+		allText += message.Text
+	}
+	tke, _ := tiktoken.GetEncoding(encoding)
+	// encode
+	token := tke.Encode(allText, nil, nil)
+	// encode
+	fmt.Println(token)
+	// num_tokens
+	fmt.Println("these are tokens bro", len(token))
+
+	return len(token)
 }
 
 // makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
