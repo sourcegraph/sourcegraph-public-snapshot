@@ -18,7 +18,7 @@ trap 'rm -Rf "$workdir_abs"' EXIT
 cp "${base}/executor.pkr.hcl" workdir/
 cp "${base}/aws_regions.json" workdir/
 cp "${base}/install.sh" workdir/
-cp "$executor" workdir
+cp "$executor" workdir/
 
 # Copy src-cli, see //dev/tools:src-cli
 cp "$srccli" workdir/
