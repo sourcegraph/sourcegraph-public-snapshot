@@ -129,10 +129,18 @@ func NewReleaseRunner(workdir string, version string, inputsArg string, typ stri
 		return nil, err
 	}
 
+	var gitBranch string
+	out, err := run.Cmd(context.Background(), `git rev-parse --abbrev-ref HEAD`).Run().String()
+	if err != nil {
+		return nil, err
+	}
+	gitBranch = out
+
 	vars := map[string]string{
-		"version": version,
-		"tag":     strings.TrimPrefix(version, "v"),
-		"config":  string(configBytes),
+		"version":    version,
+		"tag":        strings.TrimPrefix(version, "v"),
+		"config":     string(configBytes),
+		"git.branch": gitBranch,
 	}
 	for k, v := range inputs {
 		// TODO sanitize input format
