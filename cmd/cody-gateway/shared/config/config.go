@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -60,6 +61,8 @@ type Config struct {
 	Attribution struct {
 		Enabled bool
 	}
+
+	Sourcegraph SourcegraphConfig
 }
 
 type OpenTelemetryConfig struct {
@@ -99,6 +102,10 @@ type OpenAIConfig struct {
 	AllowedModels []string
 	AccessToken   string
 	OrgID         string
+}
+
+type SourcegraphConfig struct {
+	TritonURL string
 }
 
 func (c *Config) Load() {
@@ -199,7 +206,7 @@ func (c *Config) Load() {
 	c.Fireworks.StarcoderEnterpriseSingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_ENTERPRISE_SINGLE_TENANT_PERCENT", "100", "The percentage of Enterprise traffic for Starcoder to be redirected to the single-tenant deployment.")
 	c.Fireworks.StarcoderQuantizedPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_QUANTIZED_PERCENT", "100", "The percentage of multi-tenant traffic to be redirected to the quantized model.")
 
-	c.AllowedEmbeddingsModels = splitMaybe(c.Get("CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS", strings.Join([]string{"openai/text-embedding-ada-002"}, ","), "The models allowed for embeddings generation."))
+	c.AllowedEmbeddingsModels = splitMaybe(c.Get("CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS", strings.Join([]string{string(embeddings.ModelNameOpenAIAda), string(embeddings.ModelNameSourcegraphTriton)}, ","), "The models allowed for embeddings generation."))
 	if len(c.AllowedEmbeddingsModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for embeddings generation"))
 	}
@@ -232,6 +239,8 @@ func (c *Config) Load() {
 	c.AutoFlushStreamingResponses = c.GetBool("CODY_GATEWAY_AUTO_FLUSH_STREAMING_RESPONSES", "false", "Whether we should flush streaming responses after every write.")
 
 	c.Attribution.Enabled = c.GetBool("CODY_GATEWAY_ENABLE_ATTRIBUTION_SEARCH", "false", "Whether attribution search endpoint is available.")
+
+	c.Sourcegraph.TritonURL = c.Get("CODY_GATEWAY_SOURCEGRAPH_TRITON_URL", "https://embeddings-triton.sgdev.org/v2/models/ensemble_model/infer", "URL of the Triton server.")
 }
 
 // splitMaybe splits on commas, but only returns at least one element if the input

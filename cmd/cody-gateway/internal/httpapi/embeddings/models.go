@@ -13,7 +13,8 @@ import (
 type ModelName string
 
 const (
-	ModelNameOpenAIAda ModelName = "openai/text-embedding-ada-002"
+	ModelNameOpenAIAda         ModelName = "openai/text-embedding-ada-002"
+	ModelNameSourcegraphTriton ModelName = "sourcegraph/triton"
 )
 
 type EmbeddingsClient interface {
@@ -41,7 +42,8 @@ func NewListHandler() http.Handler {
 			if !act.AccessEnabled || !ok || !rl.IsValid() {
 				return false
 			}
-			return slices.Contains(rl.AllowedModels, string(model))
+			// TODO(rafax): Remove the SourcegraphTriton model once sourcegraph.com allow-list rolls out with https://github.com/sourcegraph/sourcegraph/pull/60956
+			return model == ModelNameSourcegraphTriton || slices.Contains(rl.AllowedModels, string(model))
 		}
 
 		models := modelsResponse{
@@ -50,6 +52,12 @@ func NewListHandler() http.Handler {
 				Enabled:    modelEnabled(ModelNameOpenAIAda),
 				Name:       string(ModelNameOpenAIAda),
 				Dimensions: 1536,
+				Deprecated: false,
+			},
+			{
+				Enabled:    modelEnabled(ModelNameSourcegraphTriton),
+				Name:       string(ModelNameSourcegraphTriton),
+				Dimensions: 756,
 				Deprecated: false,
 			},
 		}
