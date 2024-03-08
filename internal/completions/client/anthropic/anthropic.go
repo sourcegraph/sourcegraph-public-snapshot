@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
@@ -93,29 +94,24 @@ func (a *anthropicClient) Stream(
 }
 
 func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
-	prompt, err := GetPrompt(requestParams.Messages)
+	messages, err := ToAnthropicMessages(requestParams.Messages)
 	if err != nil {
 		return nil, err
 	}
-	// Backcompat: Remove this code once enough clients are upgraded and we drop the
-	// Prompt field on requestParams.
-	if prompt == "" {
-		prompt = requestParams.Prompt
-	}
 
-	if len(requestParams.StopSequences) == 0 {
-		requestParams.StopSequences = []string{HUMAN_PROMPT}
-	}
+	// TODO:
+	// this needs backward-compat with eventually overwritten config values ending in `/v1/complete`
+	fmt.Println("%+v", a.apiURL)
 
-	payload := anthropicCompletionsRequestParameters{
-		Stream:            stream,
-		StopSequences:     requestParams.StopSequences,
-		Model:             requestParams.Model,
-		Temperature:       requestParams.Temperature,
-		MaxTokensToSample: requestParams.MaxTokensToSample,
-		TopP:              requestParams.TopP,
-		TopK:              requestParams.TopK,
-		Prompt:            prompt,
+	payload := anthropicMessagesRequestParameters{
+		Messages:      messages,
+		Stream:        stream,
+		StopSequences: requestParams.StopSequences,
+		Model:         requestParams.Model,
+		Temperature:   requestParams.Temperature,
+		MaxTokens:     requestParams.MaxTokensToSample,
+		TopP:          requestParams.TopP,
+		TopK:          requestParams.TopK,
 	}
 
 	reqBody, err := json.Marshal(payload)
@@ -128,6 +124,14 @@ func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.C
 		return nil, err
 	}
 
+	// Only run this branch if we're not talking to cody gateway
+	// Convert the eventual first message from `system` to a top-level system prompt
+	payload.System = "" // prevent the upstream API from setting this
+	if len(payload.Messages) > 0 && payload.Messages[0].Role == types.SYSTEM_MESSAGE_SPEAKER {
+		payload.System = payload.Messages[0].Content[0].Text
+		payload.Messages = payload.Messages[1:]
+	}
+
 	// Mimic headers set by the official Anthropic client:
 	// https://sourcegraph.com/github.com/anthropics/anthropic-sdk-typescript@493075d70f50f1568a276ed0cb177e297f5fef9f/-/blob/src/index.ts
 	req.Header.Set("Cache-Control", "no-cache")
@@ -135,12 +139,7 @@ func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.C
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Client", clientID)
 	req.Header.Set("X-API-Key", a.accessToken)
-	// Set the API version so responses are in the expected format.
-	// NOTE: When changing this here, Cody Gateway currently overwrites this header
-	// with 2023-01-01, so it will not be respected in Gateway usage and we will
-	// have to fall back to the old parser, or implement a mechanism on the Gateway
-	// side that understands the version header we send here and switch out the parser.
-	req.Header.Set("anthropic-version", "2023-01-01")
+	req.Header.Set("anthropic-version", "2023-06-01")
 
 	resp, err := a.cli.Do(req)
 	if err != nil {
@@ -154,17 +153,30 @@ func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.C
 	return resp, nil
 }
 
-type anthropicCompletionsRequestParameters struct {
-	Prompt            string   `json:"prompt"`
-	Temperature       float32  `json:"temperature"`
-	MaxTokensToSample int      `json:"max_tokens_to_sample"`
-	StopSequences     []string `json:"stop_sequences"`
-	TopK              int      `json:"top_k"`
-	TopP              float32  `json:"top_p"`
-	Model             string   `json:"model"`
-	Stream            bool     `json:"stream"`
+type anthropicMessagesRequestParameters struct {
+	Messages      []anthropicMessage `json:"messages,omitempty"`
+	Model         string             `json:"model"`
+	Temperature   float32            `json:"temperature,omitempty"`
+	TopP          float32            `json:"top_p,omitempty"`
+	TopK          int                `json:"top_k,omitempty"`
+	Stream        bool               `json:"stream,omitempty"`
+	StopSequences []string           `json:"stop_sequences,omitempty"`
+	MaxTokens     int                `json:"max_tokens,omitempty"`
+
+	// These are not accepted from the client an instead are only used to talk to the upstream LLM
+	// APIs directly (these do NOT need to be set when talking to Cody Gateway)
+	System string `json:"system,omitempty"`
 }
 
+type anthropicMessage struct {
+	Role    string                    `json:"role"` // "user", "assistant", or "system" (only allowed for the first message)
+	Content []anthropicMessageContent `json:"content"`
+}
+
+type anthropicMessageContent struct {
+	Type string `json:"type"` // "text" or "image" (not yet supported)
+	Text string `json:"text"`
+}
 type anthropicCompletionResponse struct {
 	Completion string `json:"completion"`
 	StopReason string `json:"stop_reason"`

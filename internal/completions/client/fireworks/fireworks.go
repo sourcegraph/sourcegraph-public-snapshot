@@ -188,7 +188,7 @@ func (c *fireworksClient) makeRequest(ctx context.Context, feature types.Complet
 			switch m.Speaker {
 			case types.HUMAN_MESSAGE_SPEAKER:
 				role = "user"
-			case types.ASISSTANT_MESSAGE_SPEAKER:
+			case types.ASSISTANT_MESSAGE_SPEAKER:
 				role = "assistant"
 			default:
 				role = strings.ToLower(role)

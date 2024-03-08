@@ -1176,7 +1176,7 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - blobstore
-      - cody-gateway
+      # - cody-gateway
       - embeddings
       - telemetry-gateway
     env:

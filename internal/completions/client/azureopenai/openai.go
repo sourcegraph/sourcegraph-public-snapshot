@@ -300,7 +300,7 @@ func getChatMessages(messages []types.Message) []azopenai.ChatRequestMessageClas
 		switch m.Speaker {
 		case types.HUMAN_MESSAGE_SPEAKER:
 			azureMessages[i] = &azopenai.ChatRequestUserMessage{Content: azopenai.NewChatRequestUserMessageContent(message)}
-		case types.ASISSTANT_MESSAGE_SPEAKER:
+		case types.ASSISTANT_MESSAGE_SPEAKER:
 			azureMessages[i] = &azopenai.ChatRequestAssistantMessage{Content: &message}
 		}
 

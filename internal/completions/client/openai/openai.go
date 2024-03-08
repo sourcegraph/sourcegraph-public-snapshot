@@ -155,7 +155,7 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 		switch m.Speaker {
 		case types.HUMAN_MESSAGE_SPEAKER:
 			role = "user"
-		case types.ASISSTANT_MESSAGE_SPEAKER:
+		case types.ASSISTANT_MESSAGE_SPEAKER:
 			role = "assistant"
 			//
 		default:
