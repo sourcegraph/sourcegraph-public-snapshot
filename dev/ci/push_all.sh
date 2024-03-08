@@ -4,7 +4,8 @@ set -eu
 
 aspectRC="/tmp/aspect-generated.bazelrc"
 rosetta bazelrc > "$aspectRC"
-bazelrc=(--bazelrc="$aspectRC")
+# TODO(RF795) why do we have to do this? JH -> ask @burmudar
+bazelrc=(--bazelrc="$aspectRC" --bazelrc=".aspect/bazelrc/ci.generated.bazelrc")
 
 function preview_tags() {
   IFS=' ' read -r -a registries <<<"$1"
