@@ -41,6 +41,10 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 
 	b := inputs.Plan[0]
 
+	if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
+		return Exhaustive{}, errors.Errorf("select: is not supported in Search Jobs")
+	}
+
 	// We don't support file predicates, such as file:has.content(), because the
 	// search breaks in unexpected ways. For example, for interactive search
 	// file:has.content() is translated to an AND query which we don't support in
