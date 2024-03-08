@@ -39,7 +39,7 @@ func bazelPublishExecutorVM(c Config, alwaysRebuild bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		// TODO(rfc795) because we don't have a real testbed for those, let's not push
 		// those amis for now.
-		if strings.Contains(c.Branch, "rfc795/v") {
+		if strings.Contains(c.Branch, "rfc795") {
 			return
 		}
 
