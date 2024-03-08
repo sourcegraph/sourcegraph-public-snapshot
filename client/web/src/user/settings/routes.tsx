@@ -36,21 +36,6 @@ const AboutOrganizationPage = lazyComponent(
     'AboutOrganizationPage'
 )
 
-const UserEventLogsPage = lazyComponent<UserEventLogsPageProps, 'UserEventLogsPage'>(
-    () => import('../../enterprise/user/settings/UserEventLogsPage'),
-    'UserEventLogsPage'
-)
-
-const UserSubscriptionsProductSubscriptionsPage = lazyComponent(
-    () => import('../../enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionsPage'),
-    'UserSubscriptionsProductSubscriptionsPage'
-)
-
-const UserSubscriptionsProductSubscriptionPage = lazyComponent(
-    () => import('../../enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionPage'),
-    'UserSubscriptionsProductSubscriptionPage'
-)
-
 const shouldRenderBatchChangesPage = ({
     batchChangesEnabled,
     user: { viewerCanAdminister },
@@ -110,7 +95,10 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     },
     {
         path: 'event-log',
-        render: props => <UserEventLogsPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />,
+        render: lazyComponent<UserEventLogsPageProps, 'UserEventLogsPage'>(
+            () => import('../../enterprise/user/settings/UserEventLogsPage'),
+            'UserEventLogsPage'
+        ),
     },
     {
         path: 'executors/*',
@@ -133,21 +121,17 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     },
     {
         path: 'subscriptions/:subscriptionUUID',
-        render: props => (
-            <UserSubscriptionsProductSubscriptionPage
-                {...props}
-                telemetryRecorder={props.platformContext.telemetryRecorder}
-            />
+        render: lazyComponent(
+            () => import('../../enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionPage'),
+            'UserSubscriptionsProductSubscriptionPage'
         ),
         condition: () => SHOW_BUSINESS_FEATURES,
     },
     {
         path: 'subscriptions',
-        render: props => (
-            <UserSubscriptionsProductSubscriptionsPage
-                {...props}
-                telemetryRecorder={props.platformContext.telemetryRecorder}
-            />
+        render: lazyComponent(
+            () => import('../../enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionsPage'),
+            'UserSubscriptionsProductSubscriptionsPage'
         ),
         condition: () => SHOW_BUSINESS_FEATURES,
     },
