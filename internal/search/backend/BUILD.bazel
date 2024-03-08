@@ -34,6 +34,7 @@ go_library(
         "@com_github_mitchellh_hashstructure//:hashstructure",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_zoekt//:zoekt",
         "@com_github_sourcegraph_zoekt//cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1:configuration",
