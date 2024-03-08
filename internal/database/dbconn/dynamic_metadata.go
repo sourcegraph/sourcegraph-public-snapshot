@@ -38,9 +38,17 @@ func instrumentQuery(ctx context.Context, query string, numArguments int) (conte
 		metadataLines = append(metadataLines, "-- (could not infer source)")
 	}
 
-	// Set the hash on the span.
+	// Set the hash, caller, and query on the span.
+	// Attributes representing the args are added in argsAsAttributes(...).
 	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(attribute.Int64("db.statement.checksum", int64(hash)))
+	span.SetAttributes(
+		attribute.Int64("db.statement.checksum", int64(hash)),
+		attribute.String("db.statement.callerPrefix", truncateStringValue(callerPrefix)),
+		// Do this ourselves here because we set 'DisableQuery: true' on otelsql
+		// instrumentation. This gives us better control over the size of the
+		// attribute representing the query. The checksum and caller should
+		// provide additional context if the truncation is too aggressive.
+		attribute.String("db.statement", truncateStringValue(strings.TrimSpace(query))))
 
 	return ctx, strings.Join(append(metadataLines, query), "\n")
 }
