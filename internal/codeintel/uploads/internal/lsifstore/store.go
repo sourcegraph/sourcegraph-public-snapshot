@@ -17,6 +17,7 @@ type Store interface {
 	// Insert
 	InsertMetadata(ctx context.Context, uploadID int, meta ProcessedMetadata) error
 	NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, error)
+	NewSyntacticSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, error)
 
 	// Reconciliation and cleanup
 	IDsWithMeta(ctx context.Context, ids []int) ([]int, error)

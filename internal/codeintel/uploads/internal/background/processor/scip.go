@@ -365,9 +365,18 @@ func writeSCIPDocuments(
 			return err
 		}
 
-		scipWriter, err := tx.NewSCIPWriter(ctx, upload.ID)
-		if err != nil {
-			return err
+		var scipWriter lsifstore.SCIPWriter
+
+		if upload.Indexer == shared.SYNTACTIC_INDEXER {
+			scipWriter, err = tx.NewSyntacticSCIPWriter(ctx, upload.ID)
+			if err != nil {
+				return err
+			}
+		} else {
+			scipWriter, err = tx.NewSCIPWriter(ctx, upload.ID)
+			if err != nil {
+				return err
+			}
 		}
 
 		var numDocuments uint32

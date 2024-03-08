@@ -100,6 +100,18 @@ INSERT INTO codeintel_scip_metadata (upload_id, text_document_encoding, tool_nam
 VALUES (%s, %s, %s, %s, %s, %s)
 `
 
+func (s *store) NewSyntacticSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, error) {
+
+	scipWriter := &scipWriter{
+		uploadID:    uploadID,
+		db:          s.db,
+		count:       0,
+		isSyntactic: true,
+	}
+
+	return scipWriter, nil
+}
+
 func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, error) {
 	if !s.db.InTransaction() {
 		return nil, errors.New("WriteSCIPSymbols must be called in a transaction")
@@ -168,6 +180,7 @@ CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 type scipWriter struct {
 	uploadID           int
 	nextID             int
+	isSyntactic        bool
 	db                 *basestore.Store
 	symbolNameInserter *batch.Inserter
 	symbolInserter     *batch.Inserter
@@ -303,6 +316,16 @@ func (s *scipWriter) flush(ctx context.Context) error {
 		return errors.New("unexpected number of document lookup records inserted")
 	}
 
+	return s.writeSymbols(ctx, documentLookupIDs)
+
+}
+
+func (s *scipWriter) writeSymbols(ctx context.Context, documentLookupIDs []int) error {
+	// NOTE(Christoph): We don't write symbols for syntactic indices
+	if s.isSyntactic {
+		return nil
+	}
+	documents := s.batch
 	symbolNameMap := map[string]struct{}{}
 	invertedRangeIndexes := make([][]shared.InvertedRangeIndex, 0, len(documents))
 	for _, document := range documents {
@@ -404,22 +427,25 @@ func (s *scipWriter) Flush(ctx context.Context) (uint32, error) {
 		return 0, err
 	}
 
-	// Flush all data into temp tables
-	if err := s.symbolNameInserter.Flush(ctx); err != nil {
-		return 0, err
-	}
-	if err := s.symbolInserter.Flush(ctx); err != nil {
-		return 0, err
-	}
+	// NOTE(Christoph): Only flush symbols for non-syntactic indices
+	if !s.isSyntactic {
+		// Flush all data into temp tables
+		if err := s.symbolNameInserter.Flush(ctx); err != nil {
+			return 0, err
+		}
+		if err := s.symbolInserter.Flush(ctx); err != nil {
+			return 0, err
+		}
 
-	// Move all data from temp tables into target tables
-	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolNamesQuery, s.uploadID)); err != nil {
-		return 0, err
-	}
-	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uploadID, 1)); err != nil {
-		return 0, err
-	}
+		// Move all data from temp tables into target tables
+		if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolNamesQuery, s.uploadID)); err != nil {
+			return 0, err
+		}
+		if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uploadID, 1)); err != nil {
+			return 0, err
+		}
 
+	}
 	return s.count, nil
 }
 
