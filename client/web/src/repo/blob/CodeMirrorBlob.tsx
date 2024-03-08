@@ -29,6 +29,7 @@ import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/sett
 import type { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import {
     parseQueryAndHash,
     toPrettyBlobURL,
@@ -224,6 +225,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         searchPanelConfig,
         staticHighlightRanges,
         'data-testid': dataTestId,
+        telemetryService,
     } = props
 
     const navigate = useNavigate()
@@ -524,6 +526,10 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         setEditorScope,
     ])
 
+    const logEventOnCopy = useCallback(() => {
+        telemetryService.log(...codeCopiedEvent('blob-view'))
+    }, [telemetryService])
+
     return (
         <>
             <div
@@ -533,6 +539,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 data-testid={dataTestId}
                 className={`${className} overflow-hidden test-editor`}
                 data-editor="codemirror6"
+                onCopy={logEventOnCopy}
             />
             {overrideBrowserSearchKeybinding && useFileSearch && (
                 <Shortcut ordered={['f']} held={['Mod']} onMatch={openSearch} ignoreInput={true} />
