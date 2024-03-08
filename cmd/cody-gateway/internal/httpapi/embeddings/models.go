@@ -42,7 +42,8 @@ func NewListHandler() http.Handler {
 			if !act.AccessEnabled || !ok || !rl.IsValid() {
 				return false
 			}
-			return slices.Contains(rl.AllowedModels, string(model))
+			// TODO(rafax): Remove the SourcegraphTriton model once sourcegraph.com allow-list rolls out with https://github.com/sourcegraph/sourcegraph/pull/60956
+			return model == ModelNameSourcegraphTriton || slices.Contains(rl.AllowedModels, string(model))
 		}
 
 		models := modelsResponse{
