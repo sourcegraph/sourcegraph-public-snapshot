@@ -15,7 +15,7 @@
 <script lang="ts">
     import { mdiCloseOctagonOutline } from '@mdi/js'
     import type { Observable } from 'rxjs'
-    import { tick } from 'svelte'
+    import { tick, type ComponentProps } from 'svelte'
 
     import { beforeNavigate, goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
@@ -28,6 +28,7 @@
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
     import { type AggregateStreamingSearchResults, type SearchMatch } from '$lib/shared'
 
+    import PreviewPanel from './PreviewPanel.svelte'
     import { getSearchResultComponent } from './searchResultFactory'
     import { setSearchResultsContext } from './searchResultsContext'
     import StreamingProgress from './StreamingProgress.svelte'
@@ -72,6 +73,8 @@
     $: resultsToShow = results.slice(0, count)
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
 
+    let previewData: ComponentProps<PreviewPanel> | undefined = undefined
+
     setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
             return expandedSet.has(match)
@@ -83,11 +86,19 @@
                 expandedSet.delete(match)
             }
         },
+        setPreview(data: ComponentProps<PreviewPanel>): void {
+            console.log({ data })
+            previewData = data
+        },
         queryState,
     })
     beforeNavigate(() => {
         cache.set(queryFromURL, { count, expanded: expandedSet })
     })
+
+    $: {
+        console.log({ previewData })
+    }
 
     function loadMore(event: { detail: boolean }) {
         if (event.detail) {
@@ -152,6 +163,9 @@
             {/if}
         </div>
     </div>
+    {#if previewData}
+        <PreviewPanel {...previewData} />
+    {/if}
 </div>
 
 <style lang="scss">

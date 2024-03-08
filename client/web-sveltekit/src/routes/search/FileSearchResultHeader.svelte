@@ -10,6 +10,8 @@
         type SymbolMatch,
     } from '$lib/shared'
 
+    import { getSearchResultsContext } from './searchResultsContext'
+
     export let result: ContentMatch | PathMatch | SymbolMatch
 
     $: repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
@@ -21,6 +23,16 @@
         result.type !== 'symbol' && result.pathMatches
             ? result.pathMatches.map((match): [number, number] => [match.start.column, match.end.column])
             : []
+
+    const searchResultContext = getSearchResultsContext()
+    function handlePreview() {
+        searchResultContext.setPreview({
+            repoName: result.repository,
+            commitID: result.commit,
+            fileName: result.path,
+            matchedRanges: [], // TODO
+        })
+    }
 </script>
 
 <a href={repoAtRevisionURL}>{repoName}</a>
@@ -31,3 +43,4 @@
         {#if fileBase}{fileBase}/{/if}<strong>{fileName}</strong>
     </a>
 {/key}
+<button on:click={handlePreview}>Preview</button>

@@ -42,7 +42,7 @@
             revspec: commitID,
             path: filePath,
         })
-        .then(mapOrThrow(result => result.data?.repository?.commit?.blob?.content ?? null))
+        .then(mapOrThrow(result => result.data?.repository?.commit?.blob ?? null))
     // const highlights = client.query(BlobSyntaxHighlightQuery, {
     //     repoName,
     //     revspec: commitID,
@@ -53,23 +53,27 @@
 
 {#await blob}
     <LoadingSpinner />
-{:then content}
-    <CodeMirrorBlob
-        blobInfo={{
-            repoName,
-            commitID,
-            revision: '',
-            filePath,
-            content: content ?? '',
-            languages: ['TODO'],
-        }}
-        highlights=""
-        {codeIntelAPI}
-    />
+{:then blob}
+    {@debug blob}
+    <!-- <CodeMirrorBlob -->
+    <!--     blobInfo={{ -->
+    <!--         repoName, -->
+    <!--         commitID, -->
+    <!--         revision: '', -->
+    <!--         filePath, -->
+    <!--         content: blob?.content ?? '', -->
+    <!--         languages: blob?.languages ?? [], -->
+    <!--     }} -->
+    <!--     highlights={''} -->
+    <!--     {codeIntelAPI} -->
+    <!-- /> -->
     <!-- TODO {highlights} -->
     <!-- selectedLines={selectedPosition?.line ? selectedPosition : null} -->
     <!-- on:selectline={event => { -->
     <!--     goto('?' + updateSearchParamsWithLineInformation($page.url.searchParams, event.detail)) -->
     <!-- }} -->
     <!-- {codeIntelAPI} -->
+{:catch error}
+    <!-- {@debug error} -->
+    <p>{error}</p>
 {/await}
