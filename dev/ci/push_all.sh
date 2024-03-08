@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu
+set -exu
 
 aspectRC="/tmp/aspect-generated.bazelrc"
 rosetta bazelrc > "$aspectRC"
@@ -155,6 +155,7 @@ echo "-- jobfile"
 cat "$job_file"
 echo "--- done"
 
+exit 1
 echo "--- :bazel::docker: Pushing images..."
 log_file=$(mktemp)
 # shellcheck disable=SC2064
