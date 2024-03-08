@@ -124,6 +124,11 @@ func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (
 		return consolidateSubscriptionDetails(ctx, user, nil)
 	}
 
+	sscClient, err := SSCClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// NOTE(naman): As part of #inc-284-plg-users-paying-for-and-being-billed-for-pro-without-being-upgrade
 	// it is noted that a user can have multiple SAMS accounts associated with their dotcom account.
 	// Originally we only fetchted subscription data from the first SAMS account associated with the user.
@@ -135,10 +140,6 @@ func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (
 		// While developing the SSC backend, we only fetch subscription data for users based on a flag.
 		var subscription *ssc.Subscription
 		if samsAccountID != "" {
-			sscClient, err := getSSCClient()
-			if err != nil {
-				return nil, err
-			}
 
 			subscription, err = sscClient.FetchSubscriptionBySAMSAccountID(ctx, samsAccountID)
 			if err != nil {
@@ -169,7 +170,7 @@ func SubscriptionForSAMSAccountID(ctx context.Context, db database.DB, user type
 	}
 
 	var subscription *ssc.Subscription
-	sscClient, err := getSSCClient()
+	sscClient, err := SSCClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -192,3 +193,44 @@ func SubscriptionForSAMSAccountID(ctx context.Context, db database.DB, user type
 var getSSCClient = sync.OnceValues[ssc.Client, error](func() (ssc.Client, error) {
 	return ssc.NewClient()
 })
+
+type MockSSCValue struct {
+	Subscription  *ssc.Subscription
+	SAMSAccountID string
+}
+
+type MockSSCClient struct {
+	MockSSCValue   []MockSSCValue
+	ShouldBeCalled bool
+}
+
+func (m MockSSCClient) FetchSubscriptionBySAMSAccountID(
+	ctx context.Context, samsAccountID string) (*ssc.Subscription, error) {
+	if !m.ShouldBeCalled {
+		return nil, errors.Errorf("FetchSubscriptionBySAMSAccountID should not have be called")
+	}
+
+	for _, v := range m.MockSSCValue {
+		if v.SAMSAccountID == samsAccountID {
+			return v.Subscription, nil
+		}
+	}
+
+	return nil, errors.Errorf("FetchSubscriptionBySAMSAccountID should not have be called with the given samsAccountID: %s", samsAccountID)
+}
+
+type sscClientCtxKey int
+
+const mockSSCClientCtxKey sscClientCtxKey = iota
+
+func SSCClientFromCtx(ctx context.Context) (ssc.Client, error) {
+	c, ok := ctx.Value(mockSSCClientCtxKey).(ssc.Client)
+	if !ok || c == nil {
+		return getSSCClient()
+	}
+	return c, nil
+}
+
+func WithMockSSCClient(ctx context.Context, c ssc.Client) context.Context {
+	return context.WithValue(ctx, mockSSCClientCtxKey, c)
+}
