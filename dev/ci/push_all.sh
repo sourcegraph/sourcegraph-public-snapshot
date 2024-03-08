@@ -4,7 +4,7 @@ set -eu
 
 aspectRC="/tmp/aspect-generated.bazelrc"
 rosetta bazelrc > "$aspectRC"
-bazelrc=(--bazelrc="$aspectRC")
+bazelrc=(--bazelrc="$aspectRC" --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
 
 function preview_tags() {
   IFS=' ' read -r -a registries <<<"$1"
