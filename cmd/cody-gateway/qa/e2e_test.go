@@ -56,7 +56,7 @@ func Test_Completions(t *testing.T) {
 	}
 }
 
-func Test_Embeddings(t *testing.T) {
+func Test_Embeddings_OpenAI(t *testing.T) {
 	t.Parallel()
 	gatewayURL, gatewayToken := parseBackendData(t)
 	gatewayURL.Path = "/v1/embeddings"
@@ -80,6 +80,35 @@ func Test_Embeddings(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(response.Embeddings))
 	assert.Equal(t, 1536, len(response.Embeddings[0].Data))
+}
+
+func Test_Embeddings_Sourcegraph(t *testing.T) {
+	t.Parallel()
+	gatewayURL, gatewayToken := parseBackendData(t)
+	gatewayURL.Path = "/v1/embeddings"
+	req, err := http.NewRequest("POST", gatewayURL.String(), strings.NewReader(`{"input": ["Pls embed"],"model": "sourcegraph/triton"}`))
+	if err != nil {
+		t.Fail()
+	}
+	req.Header.Set("X-Sourcegraph-Feature", string(codygateway.FeatureEmbeddings))
+	req.Header.Set("Authorization", "Bearer "+gatewayToken)
+	resp, err := http.DefaultClient.Do(req)
+	assert.NoError(t, err)
+	body, err := io.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	assert.Equal(t, resp.StatusCode, http.StatusOK, string(body))
+	var response struct {
+		Embeddings []struct {
+			Data []float32 `json:"data"`
+		} `json:"embeddings"`
+		Model string `json:"model"`
+	}
+	err = json.Unmarshal(body, &response)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(response.Embeddings))
+	assert.Equal(t, 768, len(response.Embeddings[0].Data))
+	assert.Equal(t, float32(-0.009880066), response.Embeddings[0].Data[0])
+	assert.Equal(t, "sourcegraph/triton", response.Model)
 }
 
 type GatewayFeatureClient interface {

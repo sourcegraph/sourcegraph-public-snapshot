@@ -197,7 +197,8 @@ func NewHandler(
 									rs,
 									config.RateLimitNotifier,
 									embeddings.ModelFactoryMap{
-										embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
+										embeddings.ModelNameOpenAIAda:         embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
+										embeddings.ModelNameSourcegraphTriton: embeddings.NewSourcegraphClient(httpClient),
 									},
 									config.EmbeddingsAllowedModels,
 								),
