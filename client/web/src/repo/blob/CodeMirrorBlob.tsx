@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject, type RefObject } from 'react'
 
+import { useApolloClient } from '@apollo/client'
 import { openSearchPanel } from '@codemirror/search'
 import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
@@ -577,6 +578,7 @@ function useCodeIntelExtension(
 ): Extension {
     const navigate = useNavigate()
     const location = useLocation()
+    const apolloClient = useApolloClient()
     const locationRef = useRef(location)
     const [api, setApi] = useState<CodeIntelAPI | null>(null)
 
@@ -605,7 +607,7 @@ function useCodeIntelExtension(
                           api,
                           documentInfo: { repoName, filePath, commitID, revision, languages },
                           createTooltipView: ({ view, token, hovercardData }) =>
-                              new HovercardView(view, token, hovercardData),
+                              new HovercardView(view, token, hovercardData, apolloClient),
                           openImplementations(_view, documentInfo, occurrence) {
                               navigate(
                                   toPrettyBlobURL({
@@ -721,7 +723,7 @@ function useCodeIntelExtension(
                   })
                 : [],
         ],
-        [repoName, filePath, commitID, revision, mode, api, navigate, locationRef, languages]
+        [repoName, filePath, commitID, revision, mode, api, navigate, locationRef, languages, apolloClient]
     )
 }
 

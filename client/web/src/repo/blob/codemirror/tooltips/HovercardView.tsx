@@ -1,3 +1,4 @@
+import { ApolloClient, ApolloProvider } from '@apollo/client'
 import { type EditorView, repositionTooltips, type TooltipView, type ViewUpdate } from '@codemirror/view'
 import classNames from 'classnames'
 import { createRoot, type Root } from 'react-dom/client'
@@ -39,7 +40,8 @@ export class HovercardView implements TooltipView {
     constructor(
         private readonly view: EditorView,
         private readonly tokenRange: TooltipViewOptions['token'],
-        hovercardData: TooltipViewOptions['hovercardData']
+        hovercardData: TooltipViewOptions['hovercardData'],
+        private readonly client: ApolloClient<any>
     ) {
         this.dom = document.createElement('div')
         this.dom.className = 'sg-code-intel-hovercard'
@@ -106,44 +108,46 @@ export class HovercardView implements TooltipView {
         }
 
         root.render(
-            <CodeMirrorContainer navigate={props.navigate} onRender={() => repositionTooltips(this.view)}>
-                <div
-                    className={classNames({
-                        'cm-code-intel-hovercard': true,
-                        'cm-code-intel-hovercard-pinned': pinned,
-                    })}
-                >
-                    <WebHoverOverlay
-                        // Blob props
-                        location={props.location}
-                        onHoverShown={props.onHoverShown}
-                        platformContext={props.platformContext}
-                        settingsCascade={props.settingsCascade}
-                        telemetryService={props.telemetryService}
-                        extensionsController={props.extensionsController}
-                        // Hover props
-                        actionsOrError={actionsOrError}
-                        hoverOrError={hoverOrError}
-                        // CodeMirror handles the positioning but a
-                        // non-nullable value must be passed for the
-                        // hovercard to render
-                        overlayPosition={dummyOverlayPosition}
-                        hoveredToken={hoveredToken}
-                        pinOptions={{
-                            showCloseButton: pinned,
-                            onCloseButtonClick: () => {
-                                const { line, character } = hoveredToken
-                                this.view.state.facet(pinConfig).onUnpin?.({ line, character })
-                            },
-                            onCopyLinkButtonClick: () => {
-                                const { line, character } = hoveredToken
-                                this.view.state.facet(pinConfig).onPin?.({ line, character })
-                            },
-                        }}
-                        hoverOverlayContainerClassName="position-relative"
-                    />
-                </div>
-            </CodeMirrorContainer>
+            <ApolloProvider client={this.client}>
+                <CodeMirrorContainer navigate={props.navigate} onRender={() => repositionTooltips(this.view)}>
+                    <div
+                        className={classNames({
+                            'cm-code-intel-hovercard': true,
+                            'cm-code-intel-hovercard-pinned': pinned,
+                        })}
+                    >
+                        <WebHoverOverlay
+                            // Blob props
+                            location={props.location}
+                            onHoverShown={props.onHoverShown}
+                            platformContext={props.platformContext}
+                            settingsCascade={props.settingsCascade}
+                            telemetryService={props.telemetryService}
+                            extensionsController={props.extensionsController}
+                            // Hover props
+                            actionsOrError={actionsOrError}
+                            hoverOrError={hoverOrError}
+                            // CodeMirror handles the positioning but a
+                            // non-nullable value must be passed for the
+                            // hovercard to render
+                            overlayPosition={dummyOverlayPosition}
+                            hoveredToken={hoveredToken}
+                            pinOptions={{
+                                showCloseButton: pinned,
+                                onCloseButtonClick: () => {
+                                    const { line, character } = hoveredToken
+                                    this.view.state.facet(pinConfig).onUnpin?.({ line, character })
+                                },
+                                onCopyLinkButtonClick: () => {
+                                    const { line, character } = hoveredToken
+                                    this.view.state.facet(pinConfig).onPin?.({ line, character })
+                                },
+                            }}
+                            hoverOverlayContainerClassName="position-relative"
+                        />
+                    </div>
+                </CodeMirrorContainer>
+            </ApolloProvider>
         )
     }
 }
