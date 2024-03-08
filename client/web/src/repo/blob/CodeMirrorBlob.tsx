@@ -716,7 +716,7 @@ function useCodeIntelExtension(
                   })
                 : [],
         ],
-        [repoName, filePath, commitID, revision, mode, api, navigate, locationRef, languages]
+        [repoName, filePath, commitID, revision, mode, api, navigate, locationRef, languages, apolloClient]
     )
 }
 
