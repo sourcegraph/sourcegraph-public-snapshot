@@ -102,10 +102,7 @@ func bazelPushImagesCmd(version string, isCandidate bool, opts ...bk.StepOpt) fu
 				bk.Key(stepKey),
 				bk.Env("PUSH_VERSION", version),
 				bk.Env("CANDIDATE_ONLY", candidate),
-				bk.Cmd("echo --- 🧨"),
-				bk.Cmd("rosetta bazelrc"),
-				bk.Cmd("echo --- 🧨"),
-				bk.Cmd(bazelStampedCmd(fmt.Sprintf(`build $$(bazel --bazelrc=%s query 'kind("oci_push rule", //...)')`, bazelRC))),
+				bk.Cmd(bazelStampedCmd(fmt.Sprintf(`build $$(bazel --bazelrc=%s --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc query 'kind("oci_push rule", //...)')`, bazelRC))),
 				bk.Cmd("./dev/ci/push_all.sh"),
 			)...,
 		)
