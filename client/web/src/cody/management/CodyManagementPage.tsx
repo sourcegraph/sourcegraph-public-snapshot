@@ -138,7 +138,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </PageHeader.Heading>
                 </PageHeader>
 
-                {userIsOnProTier && <UpgradeToProBanner onClick={onClickUpgradeToProCTA} />}
+                {!userIsOnProTier && <UpgradeToProBanner onClick={onClickUpgradeToProCTA} />}
 
                 <div className={classNames('p-4 border bg-1 mt-4', styles.container)}>
                     <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
