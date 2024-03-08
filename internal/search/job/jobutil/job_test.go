@@ -189,7 +189,7 @@ func TestNewPlanJob(t *testing.T) {
           (SEQUENTIAL
             (ensureUnique . false)
             (ZOEKTGLOBALTEXTSEARCH
-              (query . regex:"ok(?-s:.)*?ok")
+              (query . regex:"(?-s:ok.*?ok)")
               (type . text))
             (REPOSEARCH
               (repoOpts.repoFilters . [(?:ok).*?(?:ok)])
@@ -299,7 +299,7 @@ func TestNewPlanJob(t *testing.T) {
         (limit . 10000)
         (PARALLEL
           (ZOEKTGLOBALTEXTSEARCH
-            (query . regex:"foo(?-s:.)*?@bar")
+            (query . regex:"(?-s:foo.*?@bar)")
             (type . text))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
