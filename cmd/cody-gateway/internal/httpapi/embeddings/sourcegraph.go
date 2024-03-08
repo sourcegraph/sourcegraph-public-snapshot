@@ -50,6 +50,7 @@ func (s sourcegraphClient) GenerateEmbeddings(ctx context.Context, request codyg
 	if err != nil {
 		return nil, 0, err
 	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.apiURL, bytes.NewReader(dat))
 	if err != nil {
 		return nil, 0, err
@@ -66,11 +67,13 @@ func (s sourcegraphClient) GenerateEmbeddings(ctx context.Context, request codyg
 		}
 		return nil, 0, errors.Newf("unexpected status code: %d, response: %s", resp.StatusCode, respBody)
 	}
+
 	var tritonResponse tritonResponse
 	err = s.json.NewDecoder(resp.Body).Decode(&tritonResponse)
 	if err != nil {
 		return nil, 0, err
 	}
+
 	res := codygateway.EmbeddingsResponse{
 		Embeddings:      make([]codygateway.Embedding, items),
 		Model:           request.Model,
@@ -83,7 +86,8 @@ func (s sourcegraphClient) GenerateEmbeddings(ctx context.Context, request codyg
 			Index: i,
 		}
 	}
-	// returning 0 tokens means that triton doesn't count towards the OpenAI rate limit
+
+	// returning 0 tokens means that triton doesn't count towards the overall rate limit (which is what we want for now)
 	return &res, 0, nil
 }
 
