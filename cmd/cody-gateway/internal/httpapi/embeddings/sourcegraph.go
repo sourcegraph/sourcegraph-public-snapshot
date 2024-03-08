@@ -14,19 +14,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-const tritonURL = "https://embeddings-triton.sgdev.org/v2/models/ensemble_model/infer"
 const modelDimensions = 768
 
-func NewSourcegraphClient(httpClient httpcli.Doer) EmbeddingsClient {
+func NewSourcegraphClient(httpClient httpcli.Doer, apiURL string) EmbeddingsClient {
 	return &sourcegraphClient{
 		httpClient: httpClient,
-		json:       jsoniter.ConfigFastest,
+		json:       jsoniter.ConfigCompatibleWithStandardLibrary,
+		apiURL:     apiURL,
 	}
 }
 
 type sourcegraphClient struct {
 	httpClient httpcli.Doer
 	json       jsoniter.API
+	apiURL     string
 }
 
 func (s sourcegraphClient) ProviderName() string {
@@ -49,7 +50,7 @@ func (s sourcegraphClient) GenerateEmbeddings(ctx context.Context, request codyg
 	if err != nil {
 		return nil, 0, err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tritonURL, bytes.NewReader(dat))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.apiURL, bytes.NewReader(dat))
 	if err != nil {
 		return nil, 0, err
 	}

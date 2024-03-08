@@ -38,6 +38,7 @@ type Config struct {
 	EmbeddingsAllowedModels     []string
 	AutoFlushStreamingResponses bool
 	EnableAttributionSearch     bool
+	Sourcegraph                 config.SourcegraphConfig
 }
 
 var meter = otel.GetMeterProvider().Meter("cody-gateway/internal/httpapi")
@@ -198,7 +199,7 @@ func NewHandler(
 									config.RateLimitNotifier,
 									embeddings.ModelFactoryMap{
 										embeddings.ModelNameOpenAIAda:         embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
-										embeddings.ModelNameSourcegraphTriton: embeddings.NewSourcegraphClient(httpClient),
+										embeddings.ModelNameSourcegraphTriton: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.TritonURL),
 									},
 									config.EmbeddingsAllowedModels,
 								),

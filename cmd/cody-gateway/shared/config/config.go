@@ -61,6 +61,8 @@ type Config struct {
 	Attribution struct {
 		Enabled bool
 	}
+
+	Sourcegraph SourcegraphConfig
 }
 
 type OpenTelemetryConfig struct {
@@ -100,6 +102,10 @@ type OpenAIConfig struct {
 	AllowedModels []string
 	AccessToken   string
 	OrgID         string
+}
+
+type SourcegraphConfig struct {
+	TritonURL string
 }
 
 func (c *Config) Load() {
@@ -233,6 +239,8 @@ func (c *Config) Load() {
 	c.AutoFlushStreamingResponses = c.GetBool("CODY_GATEWAY_AUTO_FLUSH_STREAMING_RESPONSES", "false", "Whether we should flush streaming responses after every write.")
 
 	c.Attribution.Enabled = c.GetBool("CODY_GATEWAY_ENABLE_ATTRIBUTION_SEARCH", "false", "Whether attribution search endpoint is available.")
+
+	c.Sourcegraph.TritonURL = c.Get("CODY_GATEWAY_SOURCEGRAPH_TRITON_URL", "https://embeddings-triton.sgdev.org/v2/models/ensemble_model/infer", "URL of the Triton server.")
 }
 
 // splitMaybe splits on commas, but only returns at least one element if the input
