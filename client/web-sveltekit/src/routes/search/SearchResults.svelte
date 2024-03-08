@@ -149,6 +149,8 @@
         border-bottom: 1px solid var(--border-color);
         align-self: stretch;
         padding: 0.25rem;
+        // This ensures that suggestions are rendered above sticky search result headers
+        z-index: 1;
     }
 
     .search-results {

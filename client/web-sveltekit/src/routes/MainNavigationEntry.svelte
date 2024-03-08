@@ -81,7 +81,6 @@
     }
 
     [role='menu'] {
-        isolation: isolate;
         font-size: 0.875rem;
         min-width: 10rem;
         background-clip: padding-box;
