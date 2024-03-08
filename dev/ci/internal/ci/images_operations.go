@@ -93,6 +93,8 @@ func bazelPushImagesCmd(version string, isCandidate bool, opts ...bk.StepOpt) fu
 		candidate = "true"
 	}
 
+	genBazelRC, _ := aspectBazelRC()
+
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(stepName,
 			append(opts,
@@ -100,7 +102,7 @@ func bazelPushImagesCmd(version string, isCandidate bool, opts ...bk.StepOpt) fu
 				bk.Key(stepKey),
 				bk.Env("PUSH_VERSION", version),
 				bk.Env("CANDIDATE_ONLY", candidate),
-				bk.Cmd(bazelStampedCmd(`build $$(bazel query 'kind("oci_push rule", //...)')`)),
+				bk.Cmd(bazelStampedCmd(fmt.Sprintf(`build $$(bazel --bazelrc=%s query 'kind("oci_push rule", //...)')`, genBazelRC))),
 				bk.AnnotatedCmd(
 					"./dev/ci/push_all.sh",
 					bk.AnnotatedCmdOpts{
