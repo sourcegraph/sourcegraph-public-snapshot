@@ -44,6 +44,17 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+## 5.3.2
+
+### Added
+
+### Changed
+
+### Fixed
+
+- A bug in search that could trigger a panic
+- An unintentional change to the search results when using the LineMatch API which would include surrounding lines with no matches
+
 ## 5.3.1
 
 ### Added
