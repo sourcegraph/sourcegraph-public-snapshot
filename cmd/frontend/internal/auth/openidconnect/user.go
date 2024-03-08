@@ -99,6 +99,7 @@ func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, token *oa
 		},
 		ExternalAccountData: data,
 		CreateIfNotExist:    p.config.AllowSignup == nil || *p.config.AllowSignup,
+		SingleProvider:      p.config.SingleIdentityProvider,
 	})
 	if err != nil {
 		return false, nil, safeErrMsg, err
