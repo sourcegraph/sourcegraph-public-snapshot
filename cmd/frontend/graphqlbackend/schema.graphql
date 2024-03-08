@@ -6380,7 +6380,6 @@ enum CodySubscriptionStatus {
     UNPAID
     CANCELED
     TRIALING
-    PENDING
     OTHER
 }
 

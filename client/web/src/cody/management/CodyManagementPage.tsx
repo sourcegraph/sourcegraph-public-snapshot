@@ -5,13 +5,12 @@ import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     ButtonLink,
     H1,
     H2,
-    H3,
     H4,
     H5,
     Icon,
@@ -27,28 +26,19 @@ import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import type {
-    ChangeCodyPlanResult,
-    ChangeCodyPlanVariables,
     UserCodyPlanResult,
     UserCodyPlanVariables,
     UserCodyUsageResult,
     UserCodyUsageVariables,
 } from '../../graphql-operations'
-import { CodySubscriptionStatus, CodySubscriptionPlan } from '../../graphql-operations'
+import { CodySubscriptionPlan } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
-import {
-    CodyProIcon,
-    AutocompletesIcon,
-    ChatMessagesIcon,
-    TrialPeriodIcon,
-    DashboardIcon,
-} from '../components/CodyIcon'
-import { useArePaymentsEnabled, useHasTrialEnded } from '../featureFlags'
+import { CodyProIcon, AutocompletesIcon, ChatMessagesIcon, DashboardIcon } from '../components/CodyIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, editorGroups, type IEditor } from '../onboarding/CodyOnboarding'
 import { ProTierIcon, useCodyPaymentsUrl } from '../subscription/CodySubscriptionPage'
-import { CHANGE_CODY_PLAN, USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
+import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
 
 import styles from './CodyManagementPage.module.scss'
 
@@ -65,9 +55,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     const parameters = useSearchParameters()
 
     const utm_source = parameters.get('utm_source')
-
-    const arePaymentsEnabled = useArePaymentsEnabled()
-    const hasTrialEnded = useHasTrialEnded()
 
     useEffect(() => {
         eventLogger.log(EventName.CODY_MANAGEMENT_PAGE_VIEWED, { utm_source })
@@ -87,23 +74,13 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     const codyCurrentPeriodCodeLimit = stats?.codyCurrentPeriodCodeLimit || 0
     const codyCurrentPeriodCodeUsage = stats?.codyCurrentPeriodCodeUsage || 0
 
-    const [changeCodyPlan] = useMutation<ChangeCodyPlanResult, ChangeCodyPlanVariables>(CHANGE_CODY_PLAN)
-
     const [selectedEditor, setSelectedEditor] = React.useState<IEditor | null>(null)
     const [selectedEditorStep, setSelectedEditorStep] = React.useState<number | null>(null)
-
-    const enrollPro = parameters.get('pro') === 'true'
 
     const subscription = data?.currentUser?.codySubscription
 
     const codyPaymentsUrl = useCodyPaymentsUrl()
     const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
-
-    useEffect(() => {
-        if (!arePaymentsEnabled && enrollPro && data?.currentUser && subscription?.plan !== CodySubscriptionPlan.PRO) {
-            void changeCodyPlan({ variables: { pro: true, id: data?.currentUser?.id } })
-        }
-    }, [arePaymentsEnabled, data?.currentUser, changeCodyPlan, enrollPro, subscription])
 
     const navigate = useNavigate()
 
@@ -127,10 +104,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const codeLimitReached = codyCurrentPeriodCodeUsage >= codyCurrentPeriodCodeLimit && codyCurrentPeriodCodeLimit > 0
     const chatLimitReached = codyCurrentPeriodChatUsage >= codyCurrentPeriodChatLimit && codyCurrentPeriodChatLimit > 0
-    const userIsOnProTier =
-        subscription.plan === CodySubscriptionPlan.PRO &&
-        !(subscription.status === CodySubscriptionStatus.TRIALING && subscription.cancelAtPeriodEnd)
-    const hasNotAddedCreditCard = subscription.status === CodySubscriptionStatus.PENDING
+    const userIsOnProTier = subscription.plan === CodySubscriptionPlan.PRO
 
     // Flag usage limits as resetting based on the current subscription's billing cycle.
     //
@@ -150,18 +124,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     //      to update the UI to simply say "subscription canceled" or "you are on the free"
     //      plan, you don't have any subscription billing cycle anchors".
     //
-    let codyProSubscriptionEndTime = subscription.currentPeriodEndAt
-
-    // Correct the situation where the user is on a Cody Pro free trial, but hasn't entered
-    // any subscription information into the SSC frontend. This would mean that their free
-    // trial is coming to an end on ~2/21. We need the UI to reflect this, however, because
-    // we are overloading `currentPeriodEnd` for usageRefreshTime, we do not return the
-    // correct value from the backend. So we separate it out into a separate variable and
-    // change its value accordingly.
-    const freeTrialEndString = 'Until Feb 21, 2024'
-    if (!hasTrialEnded && userIsOnProTier) {
-        codyProSubscriptionEndTime = new Date(2024, 2, 21, 12, 0, 0).toISOString()
-    }
+    const codyProSubscriptionEndTime = subscription.currentPeriodEndAt
 
     return (
         <>
@@ -175,13 +138,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </PageHeader.Heading>
                 </PageHeader>
 
-                <UpgradeToProBanner userIsOnProTier={userIsOnProTier} onClick={onClickUpgradeToProCTA} />
-                <DoNotLoseCodyProBanner
-                    userIsOnProTier={userIsOnProTier}
-                    arePaymentsEnabled={arePaymentsEnabled}
-                    hasTrialEnded={hasTrialEnded}
-                    subscriptionStatus={subscription.status}
-                />
+                {!userIsOnProTier && <UpgradeToProBanner onClick={onClickUpgradeToProCTA} />}
 
                 <div className={classNames('p-4 border bg-1 mt-4', styles.container)}>
                     <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
@@ -189,11 +146,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             <H2>My subscription</H2>
                             <Text className="text-muted mb-0">
                                 {userIsOnProTier ? (
-                                    hasTrialEnded && hasNotAddedCreditCard ? (
-                                        'Your Cody Pro trial has ended.'
-                                    ) : (
-                                        'You are on the Pro tier.'
-                                    )
+                                    'You are on the Pro tier.'
                                 ) : (
                                     <span>
                                         You are on the Free tier.{' '}
@@ -223,7 +176,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </div>
                     <div className={classNames('d-flex align-items-center mt-3', styles.responsiveContainer)}>
                         <div className="d-flex flex-column align-items-center flex-grow-1 p-3">
-                            {userIsOnProTier && !(hasTrialEnded && hasNotAddedCreditCard) ? (
+                            {userIsOnProTier ? (
                                 <ProTierIcon />
                             ) : (
                                 <Text className={classNames(styles.planName, 'mb-0')}>Free</Text>
@@ -331,19 +284,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     </Text>
                                 ))}
                         </div>
-                        {!hasTrialEnded && userIsOnProTier && hasNotAddedCreditCard && (
-                            <div className="d-flex flex-column align-items-center flex-grow-1 p-3 border-left">
-                                <TrialPeriodIcon />
-                                <div className="mb-2 mt-4">
-                                    <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
-                                        Free trial
-                                    </Text>
-                                </div>
-                                <Text className="text-muted mb-0" size="small">
-                                    {freeTrialEndString}
-                                </Text>
-                            </div>
-                        )}
                     </div>
                 </div>
 
@@ -474,71 +414,23 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 }
 
 const UpgradeToProBanner: React.FunctionComponent<{
-    userIsOnProTier: boolean
     onClick: () => void
-}> = ({ userIsOnProTier, onClick }) =>
-    userIsOnProTier ? null : (
-        <div className={classNames('d-flex justify-content-between align-items-center p-4', styles.upgradeToProBanner)}>
-            <div>
-                <H1>
-                    Become limitless with
-                    <CodyProIcon className="ml-1" />
-                </H1>
-                <ul className="pl-4 mb-0">
-                    <li>Unlimited autocompletions</li>
-                    <li>Unlimited chat messages</li>
-                </ul>
-            </div>
-            <div>
-                <ButtonLink to="/cody/subscription" variant="primary" size="sm" onClick={onClick}>
-                    Upgrade
-                </ButtonLink>
-            </div>
+}> = ({ onClick }) => (
+    <div className={classNames('d-flex justify-content-between align-items-center p-4', styles.upgradeToProBanner)}>
+        <div>
+            <H1>
+                Become limitless with
+                <CodyProIcon className="ml-1" />
+            </H1>
+            <ul className="pl-4 mb-0">
+                <li>Unlimited autocompletions</li>
+                <li>Unlimited chat messages</li>
+            </ul>
         </div>
-    )
-
-const DoNotLoseCodyProBanner: React.FunctionComponent<{
-    userIsOnProTier: boolean
-    arePaymentsEnabled: boolean
-    hasTrialEnded: boolean
-    subscriptionStatus: CodySubscriptionStatus
-}> = ({ userIsOnProTier, arePaymentsEnabled, hasTrialEnded, subscriptionStatus }) => {
-    const codyPaymentsUrl = useCodyPaymentsUrl()
-    const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
-
-    if (arePaymentsEnabled && userIsOnProTier && subscriptionStatus === CodySubscriptionStatus.PENDING) {
-        return (
-            <div
-                className={classNames(
-                    'd-flex justify-content-between align-items-center p-4',
-                    styles.dontLoseCodyProBanner
-                )}
-            >
-                <div className="d-flex align-items-center text-dark">
-                    <div className={styles.creditCardEmoji}>💳</div>
-                    <div className="ml-3">
-                        <H3>Keep using Cody Pro</H3>
-                        <Text className="mb-0">
-                            {hasTrialEnded ? (
-                                <span>Enter your credit card details now and keep your Pro subscription.</span>
-                            ) : (
-                                <span>
-                                    Enter your credit card details now and keep your subscription after your trial ends.
-                                    You will only be charged on <strong>Feb 21, 2024</strong>.
-                                </span>
-                            )}
-                        </Text>
-                    </div>
-                </div>
-                <div>
-                    <ButtonLink to={manageSubscriptionRedirectURL} variant="primary" size="sm">
-                        <Icon svgPath={mdiCreditCardOutline} className="mr-1" aria-hidden={true} />
-                        Add Credit Card
-                    </ButtonLink>
-                </div>
-            </div>
-        )
-    }
-
-    return null
-}
+        <div>
+            <ButtonLink to="/cody/subscription" variant="primary" size="sm" onClick={onClick}>
+                Upgrade
+            </ButtonLink>
+        </div>
+    </div>
+)
