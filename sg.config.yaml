@@ -987,6 +987,18 @@ commands:
 bazelCommands:
   blobstore:
     target: //cmd/blobstore
+  cody-gateway:
+    target: //cmd/cody-gateway
+    env:
+      CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN: foobar
+      # Set in override if you want to test local Cody Gateway: https://sourcegraph.com/docs/dev/how-to/cody_gateway
+      CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: ''
+      CODY_GATEWAY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
+      CODY_GATEWAY_ALLOW_ANONYMOUS: true
+      CODY_GATEWAY_DIAGNOSTICS_SECRET: sekret
+      SRC_LOG_LEVEL: info
+      # Enables metrics in dev via debugserver
+      SRC_PROF_HTTP: '127.0.0.1:6098'
   docsite:
     runTarget: //doc:serve
   searcher:
@@ -1176,9 +1188,10 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - blobstore
-      - cody-gateway
       - embeddings
       - telemetry-gateway
+    bazelCommands:
+      - cody-gateway
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
@@ -1545,6 +1558,12 @@ commandsets:
     checks:
       - redis
     commands:
+      - cody-gateway
+
+  cody-gateway-bazel:
+    checks:
+      - redis
+    bazelCommands:
       - cody-gateway
 
   qdrant:

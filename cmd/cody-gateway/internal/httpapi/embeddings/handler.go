@@ -10,9 +10,10 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead"
 	"go.opentelemetry.io/otel/attribute"
 	oteltrace "go.opentelemetry.io/otel/trace"
+
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
@@ -192,6 +193,10 @@ func NewHandler(
 }
 
 func isAllowedModel(allowedModels []string, model string) bool {
+	// TODO(rafax): Remove the SourcegraphTriton model once sourcegraph.com allow-list rolls out with https://github.com/sourcegraph/sourcegraph/pull/60956
+	if model == "sourcegraph/triton" {
+		return true
+	}
 	for _, m := range allowedModels {
 		if strings.EqualFold(m, model) {
 			return true
