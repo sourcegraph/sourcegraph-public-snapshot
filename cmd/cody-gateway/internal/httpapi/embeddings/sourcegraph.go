@@ -77,7 +77,7 @@ func (s sourcegraphClient) GenerateEmbeddings(ctx context.Context, request codyg
 	res := codygateway.EmbeddingsResponse{
 		Embeddings:      make([]codygateway.Embedding, items),
 		Model:           request.Model,
-		ModelDimensions: 768,
+		ModelDimensions: modelDimensions,
 	}
 	for i := 0; i*modelDimensions < len(tritonResponse.Outputs[0].Data); i++ {
 		tensor := tritonResponse.Outputs[0].Data[i*modelDimensions : (i+1)*modelDimensions]
