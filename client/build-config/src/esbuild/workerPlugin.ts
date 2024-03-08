@@ -24,8 +24,10 @@ async function buildWorker(
                 ...RXJS_RESOLUTIONS,
             }),
         ],
-        // (inline) Sourcemaps drastically increase the size of the generated output
-        sourcemap: false,
+        // Use the minify option as an indicator for running in dev mode.
+        // We only enable sourcmapping in dev mode, otherwise 'inline' sourcemaps
+        // would more than double the size of the data URL in the worker bundle in production.
+        sourcemap: extraConfig.minify ? false : 'inline',
         metafile: true,
         ...extraConfig,
     })
