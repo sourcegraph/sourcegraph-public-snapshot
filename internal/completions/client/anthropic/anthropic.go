@@ -6,17 +6,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewClient(cli httpcli.Doer, apiURL, accessToken string) types.CompletionsClient {
+func NewClient(cli httpcli.Doer, apiURL, accessToken string, viaGateway bool) types.CompletionsClient {
+	messagesApi := strings.HasSuffix(apiURL, "/messages")
 	return &anthropicClient{
 		cli:         cli,
 		accessToken: accessToken,
 		apiURL:      apiURL,
+		messagesApi: messagesApi || viaGateway,
+		viaGateway:  viaGateway,
 	}
 }
 
@@ -28,6 +32,8 @@ type anthropicClient struct {
 	cli         httpcli.Doer
 	accessToken string
 	apiURL      string
+	messagesApi bool
+	viaGateway  bool
 }
 
 func (a *anthropicClient) Complete(
@@ -41,14 +47,31 @@ func (a *anthropicClient) Complete(
 	}
 	defer resp.Body.Close()
 
-	var response anthropicCompletionResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, err
+	if a.messagesApi {
+		var response anthropicMessagesNonStreamingResponse
+		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			return nil, err
+		}
+
+		completion := ""
+		for _, content := range response.Content {
+			completion += content.Text
+		}
+
+		return &types.CompletionResponse{
+			Completion: completion,
+			StopReason: response.StopReason,
+		}, nil
+	} else {
+		var response anthropicCompletionResponse
+		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			return nil, err
+		}
+		return &types.CompletionResponse{
+			Completion: response.Completion,
+			StopReason: response.StopReason,
+		}, nil
 	}
-	return &types.CompletionResponse{
-		Completion: response.Completion,
-		StopReason: response.StopReason,
-	}, nil
 }
 
 func (a *anthropicClient) Stream(
@@ -63,7 +86,14 @@ func (a *anthropicClient) Stream(
 	}
 	defer resp.Body.Close()
 
-	dec := NewDecoder(resp.Body)
+	var dec *decoder
+	if a.messagesApi {
+		dec = NewMessagesDecoder(resp.Body)
+	} else {
+		dec = NewDecoder(resp.Body)
+	}
+
+	completion := ""
 	for dec.Scan() {
 		if ctx.Err() != nil && ctx.Err() == context.Canceled {
 			return nil
@@ -76,17 +106,48 @@ func (a *anthropicClient) Stream(
 			continue
 		}
 
-		var event anthropicCompletionResponse
-		if err := json.Unmarshal(data, &event); err != nil {
-			return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
-		}
+		if a.messagesApi {
+			stopReason := ""
+			var event anthropicMessagesStreamingResponse
+			if err := json.Unmarshal(data, &event); err != nil {
+				return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
+			}
 
-		err = sendEvent(types.CompletionResponse{
-			Completion: event.Completion,
-			StopReason: event.StopReason,
-		})
-		if err != nil {
-			return err
+			switch event.Type {
+			case "content_block_delta":
+				if event.Delta != nil {
+					completion += event.Delta.Text
+				}
+			case "message_delta":
+				if event.Delta != nil {
+					stopReason = event.Delta.StopReason
+				}
+			default:
+				continue
+			}
+
+			fmt.Printf(event.Type)
+
+			err = sendEvent(types.CompletionResponse{
+				Completion: completion,
+				StopReason: stopReason,
+			})
+			if err != nil {
+				return err
+			}
+		} else {
+			var event anthropicCompletionResponse
+			if err := json.Unmarshal(data, &event); err != nil {
+				return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
+			}
+
+			err = sendEvent(types.CompletionResponse{
+				Completion: event.Completion,
+				StopReason: event.StopReason,
+			})
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -94,24 +155,58 @@ func (a *anthropicClient) Stream(
 }
 
 func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
-	messages, err := ToAnthropicMessages(requestParams.Messages)
-	if err != nil {
-		return nil, err
-	}
+	var payload any
+	if a.messagesApi {
+		messages, err := ToAnthropicMessages(sanitizeMessagesForMessagesApi(requestParams.Messages))
+		if err != nil {
+			return nil, err
+		}
+		messagesPayload := anthropicMessagesRequestParameters{
+			Messages:      messages,
+			Stream:        stream,
+			StopSequences: requestParams.StopSequences,
+			Model:         requestParams.Model,
+			Temperature:   requestParams.Temperature,
+			MaxTokens:     requestParams.MaxTokensToSample,
+			TopP:          requestParams.TopP,
+			TopK:          requestParams.TopK,
+		}
 
-	// TODO:
-	// this needs backward-compat with eventually overwritten config values ending in `/v1/complete`
-	fmt.Println("%+v", a.apiURL)
+		if !a.viaGateway {
+			// Convert the eventual first message from `system` to a top-level system prompt
+			messagesPayload.System = "" // prevent the upstream API from setting this
+			if len(messagesPayload.Messages) > 0 && messagesPayload.Messages[0].Role == types.SYSTEM_MESSAGE_SPEAKER {
+				messagesPayload.System = messagesPayload.Messages[0].Content[0].Text
+				messagesPayload.Messages = messagesPayload.Messages[1:]
+			}
+		}
 
-	payload := anthropicMessagesRequestParameters{
-		Messages:      messages,
-		Stream:        stream,
-		StopSequences: requestParams.StopSequences,
-		Model:         requestParams.Model,
-		Temperature:   requestParams.Temperature,
-		MaxTokens:     requestParams.MaxTokensToSample,
-		TopP:          requestParams.TopP,
-		TopK:          requestParams.TopK,
+		payload = messagesPayload
+	} else {
+		prompt, err := GetPrompt(requestParams.Messages)
+		if err != nil {
+			return nil, err
+		}
+		// Backcompat: Remove this code once enough clients are upgraded and we drop the
+		// Prompt field on requestParams.
+		if prompt == "" {
+			prompt = requestParams.Prompt
+		}
+
+		if len(requestParams.StopSequences) == 0 {
+			requestParams.StopSequences = []string{HUMAN_PROMPT}
+		}
+
+		payload = anthropicCompletionsRequestParameters{
+			Stream:            stream,
+			StopSequences:     requestParams.StopSequences,
+			Model:             requestParams.Model,
+			Temperature:       requestParams.Temperature,
+			MaxTokensToSample: requestParams.MaxTokensToSample,
+			TopP:              requestParams.TopP,
+			TopK:              requestParams.TopK,
+			Prompt:            prompt,
+		}
 	}
 
 	reqBody, err := json.Marshal(payload)
@@ -122,14 +217,6 @@ func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.C
 	req, err := http.NewRequestWithContext(ctx, "POST", a.apiURL, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
-	}
-
-	// Only run this branch if we're not talking to cody gateway
-	// Convert the eventual first message from `system` to a top-level system prompt
-	payload.System = "" // prevent the upstream API from setting this
-	if len(payload.Messages) > 0 && payload.Messages[0].Role == types.SYSTEM_MESSAGE_SPEAKER {
-		payload.System = payload.Messages[0].Content[0].Text
-		payload.Messages = payload.Messages[1:]
 	}
 
 	// Mimic headers set by the official Anthropic client:
@@ -180,4 +267,32 @@ type anthropicMessageContent struct {
 type anthropicCompletionResponse struct {
 	Completion string `json:"completion"`
 	StopReason string `json:"stop_reason"`
+}
+type anthropicMessagesNonStreamingResponse struct {
+	Content    []anthropicMessageContent `json:"content"`
+	StopReason string                    `json:"stop_reason"`
+}
+
+// Legacy params for the /complete endpoint.
+type anthropicCompletionsRequestParameters struct {
+	Prompt            string   `json:"prompt"`
+	Temperature       float32  `json:"temperature"`
+	MaxTokensToSample int      `json:"max_tokens_to_sample"`
+	StopSequences     []string `json:"stop_sequences"`
+	TopK              int      `json:"top_k"`
+	TopP              float32  `json:"top_p"`
+	Model             string   `json:"model"`
+	Stream            bool     `json:"stream"`
+}
+
+// AnthropicMessagesStreamingResponse captures all relevant-to-us fields from each relevant SSE event from https://docs.anthropic.com/claude/reference/messages_post.
+type anthropicMessagesStreamingResponse struct {
+	Type         string                                        `json:"type"`
+	Delta        *anthropicMessagesStreamingResponseTextBucket `json:"delta"`
+	ContentBlock *anthropicMessagesStreamingResponseTextBucket `json:"content_block"`
+}
+
+type anthropicMessagesStreamingResponseTextBucket struct {
+	Text       string `json:"text"`        // for event `content_block_delta`
+	StopReason string `json:"stop_reason"` // for event `message_delta`
 }

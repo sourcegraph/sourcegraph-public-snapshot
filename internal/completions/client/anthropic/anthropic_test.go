@@ -37,7 +37,7 @@ func getMockClient(responseBody []byte) types.CompletionsClient {
 		func(r *http.Request) (*http.Response, error) {
 			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewReader(responseBody))}, nil
 		},
-	}, "", "")
+	}, "", "", false)
 }
 
 func TestValidAnthropicStream(t *testing.T) {
@@ -80,7 +80,7 @@ func TestErrStatusNotOK(t *testing.T) {
 				Body:       io.NopCloser(bytes.NewReader([]byte("oh no, please slow down!"))),
 			}, nil
 		},
-	}, "", "")
+	}, "", "", false)
 
 	t.Run("Complete", func(t *testing.T) {
 		resp, err := mockClient.Complete(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{})

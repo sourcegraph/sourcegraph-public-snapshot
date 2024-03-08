@@ -80,7 +80,7 @@ func (c *codyGatewayClient) clientForParams(feature types.CompletionsFeature, re
 	// gatewayDoer that authenticates against the Gateway's API.
 	switch provider {
 	case string(conftypes.CompletionsProviderNameAnthropic):
-		return anthropic.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/anthropic"), "", ""), nil
+		return anthropic.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/anthropic-messages"), "", "", true), nil
 	case string(conftypes.CompletionsProviderNameOpenAI):
 		return openai.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/openai"), "", ""), nil
 	case string(conftypes.CompletionsProviderNameFireworks):
