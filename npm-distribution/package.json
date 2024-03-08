@@ -7,7 +7,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "install": "node install.js",
-    "prepack": "cp ../LICENSE ."
+    "prepack": "cp ../LICENSE . && cp ../README.md ."
   },
   "main": "src.js",
   "bin": {
