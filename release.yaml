@@ -14,9 +14,10 @@ internal:
   create:
     steps:
       patch:
-        - name: "Create Buildkite Build"
+        - name: "buildkite"
           cmd: |
-            curl -v -X POST "https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds" -H "Content-Type: application/json" -H "Authorization: Bearer $BUILDKITE_ACCESS_TOKEN" -d '{
+            echo "Triggering build on sourcegraph/sourcegraph"
+            body=$(curl -s --fail-with-body -X POST "https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds" -H "Content-Type: application/json" -H "Authorization: Bearer $BUILDKITE_ACCESS_TOKEN" -d '{
                 "commit": "HEAD",
                 "branch": "rfc795/main",
                 "message": "Internal release build for {{version}}",
@@ -24,7 +25,19 @@ internal:
                   "RELEASE_INTERNAL": "true",
                   "VERSION": "{{tag}}"
                 }
-              }'
+              }')
+            exit_code=$?
+
+            if [ $exit_code != 0 ]; then
+              echo "❌ Failed to create build on Buildkite, got:"
+              echo "--- raw body ---"
+              echo $body
+              echo "--- raw body ---"
+              exit $exit_code
+            else
+              echo "Build created, see:"
+              echo $body | jq .web_url
+            fi
   finalize:
     steps:
       - name: "Register on release registry"
@@ -40,9 +53,10 @@ test:
 promoteToPublic:
   create:
     steps:
-      - name: "Creating build"
+      - name: "buildkite"
         cmd: |
-          curl --fail-with-body -X POST "https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds" -H "Content-Type: application/json" -H "Authorization: Bearer $BUILDKITE_ACCESS_TOKEN" -d '{
+          echo "Triggering build on sourcegraph/sourcegraph"
+          body=$(curl -s --fail-with-body -X POST "https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds" -H "Content-Type: application/json" -H "Authorization: Bearer $BUILDKITE_ACCESS_TOKEN" -d '{
               "commit": "HEAD",
               "branch": "rfc795/main",
               "message": "Promoting internal release {{version}} to public",
@@ -50,7 +64,19 @@ promoteToPublic:
                 "RELEASE_PUBLIC": "true",
                 "VERSION": "{{tag}}"
               }
-            }'
+            }')
+          exit_code=$?
+
+          if [ $exit_code != 0 ]; then
+            echo "❌ Failed to create build on Buildkite, got:"
+            echo "--- raw body ---"
+            echo $body
+            echo "--- raw body ---"
+            exit $exit_code
+          else
+            echo "Build created, see:"
+            echo $body | jq .web_url
+          fi
   finalize:
     steps:
       - name: "Register on release registry"
