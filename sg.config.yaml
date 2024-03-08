@@ -1188,9 +1188,10 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - blobstore
-      - cody-gateway
       - embeddings
       - telemetry-gateway
+    bazelCommands:
+      - cody-gateway
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
