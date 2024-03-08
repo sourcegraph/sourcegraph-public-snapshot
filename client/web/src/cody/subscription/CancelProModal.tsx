@@ -1,4 +1,5 @@
 import { useMutation } from '@sourcegraph/http-client'
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Modal, Button, H2, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -14,9 +15,11 @@ import styles from './CodySubscriptionPage.module.scss'
 export function CancelProModal({
     authenticatedUser,
     onClose,
+    telemetryRecorder,
 }: {
     authenticatedUser: AuthenticatedUser
     onClose: () => void
+    telemetryRecorder: TelemetryRecorder
 }): JSX.Element {
     const [changeCodyPlan, { data }] = useMutation<ChangeCodyPlanResult, ChangeCodyPlanVariables>(CHANGE_CODY_PLAN)
 
@@ -62,6 +65,9 @@ export function CancelProModal({
                                         tier: 'free',
                                     }
                                 )
+                                telemetryRecorder.recordEvent('cody.planSelection.cancelProModal', 'confirm', {
+                                    metadata: { tier: 0 }, // 1 is used for Pro tier
+                                })
 
                                 changeCodyPlan({ variables: { pro: false, id: authenticatedUser.id } })
                             }}
