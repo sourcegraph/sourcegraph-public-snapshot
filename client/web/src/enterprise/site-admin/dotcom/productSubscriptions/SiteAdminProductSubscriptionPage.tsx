@@ -85,7 +85,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
         } catch (error) {
             logger.error(error)
         }
-    }, [data, archiveProductSubscription, navigate])
+    }, [data, archiveProductSubscription, navigate, telemetryRecorder])
 
     const toggleShowGenerate = useCallback((): void => setShowGenerate(previousValue => !previousValue), [])
 

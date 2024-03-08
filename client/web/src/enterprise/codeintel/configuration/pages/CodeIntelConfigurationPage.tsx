@@ -55,12 +55,12 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('CodeIntelConfiguration')
-        if (!!repo) {
+        if (repo) {
             telemetryRecorder.recordEvent('repo.codeIntel.configuration', 'view')
         } else {
             telemetryRecorder.recordEvent('admin.codeIntel.configuration', 'view')
         }
-    }, [telemetryService, telemetryRecorder])
+    }, [telemetryService, telemetryRecorder, repo])
 
     const navigate = useNavigate()
     const location = useLocation()

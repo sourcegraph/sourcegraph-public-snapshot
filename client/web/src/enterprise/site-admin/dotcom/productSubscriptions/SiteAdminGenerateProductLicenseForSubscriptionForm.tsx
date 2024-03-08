@@ -153,16 +153,14 @@ const getTagsFromFormData = (formData: FormData): string[] =>
         ])
     )
 
-const getTagsForTelemetry = (formData: FormData): { [key: string]: number } => {
-    return {
-        trueUp: formData.trueUp ? 1 : 0,
-        trial: formData.trial ? 1 : 0,
-        airGapped: formData.airGapped ? 1 : 0,
-        batchChanges: formData.batchChanges ? 1 : 0,
-        codeInsights: formData.codeInsights ? 1 : 0,
-        disableTelemetry: formData.disableTelemetry ? 1 : 0,
-    }
-}
+const getTagsForTelemetry = (formData: FormData): { [key: string]: number } => ({
+    trueUp: formData.trueUp ? 1 : 0,
+    trial: formData.trial ? 1 : 0,
+    airGapped: formData.airGapped ? 1 : 0,
+    batchChanges: formData.batchChanges ? 1 : 0,
+    codeInsights: formData.codeInsights ? 1 : 0,
+    disableTelemetry: formData.disableTelemetry ? 1 : 0,
+})
 
 const HANDBOOK_INFO_URL =
     'https://handbook.sourcegraph.com/ce/license_keys#how-to-create-a-license-key-for-a-new-prospect-or-new-customer'
