@@ -1,4 +1,4 @@
-import {ApolloClient, ApolloProvider} from '@apollo/client'
+import { ApolloClient, ApolloProvider } from '@apollo/client'
 import { type EditorView, repositionTooltips, type TooltipView, type ViewUpdate } from '@codemirror/view'
 import classNames from 'classnames'
 import { createRoot, type Root } from 'react-dom/client'
@@ -135,12 +135,12 @@ export class HovercardView implements TooltipView {
                             pinOptions={{
                                 showCloseButton: pinned,
                                 onCloseButtonClick: () => {
-                                    const {line, character} = hoveredToken
-                                    this.view.state.facet(pinConfig).onUnpin?.({line, character})
+                                    const { line, character } = hoveredToken
+                                    this.view.state.facet(pinConfig).onUnpin?.({ line, character })
                                 },
                                 onCopyLinkButtonClick: () => {
-                                    const {line, character} = hoveredToken
-                                    this.view.state.facet(pinConfig).onPin?.({line, character})
+                                    const { line, character } = hoveredToken
+                                    this.view.state.facet(pinConfig).onPin?.({ line, character })
                                 },
                             }}
                             hoverOverlayContainerClassName="position-relative"
