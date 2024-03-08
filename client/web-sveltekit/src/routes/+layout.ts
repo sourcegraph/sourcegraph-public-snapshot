@@ -25,17 +25,22 @@ if (browser) {
 
 export const load: LayoutLoad = async ({ fetch }) => {
     const client = getGraphQLClient()
+
+    const globalNotificationsData = client.query(GlobalNotificationQuery, {fetch, requestPolicy: 'network-only'})
     const result = await client.query(Init, {}, { fetch, requestPolicy: 'network-only' })
+
     if (result.error?.response?.status === 401) {
         // The server will take care of redirecting to the sign-in page, but when
         // developing locally an proxying the API requests, we need to do it ourselves.
         redirect(307, '/sign-in')
     }
+
     if (!result.data || result.error) {
         error(500, `Failed to initialize app: ${result.error}`)
     }
 
     const settings = parseJSONCOrError<Settings>(result.data.viewerSettings.final)
+
     if (isErrorLike(settings)) {
         error(500, `Failed to parse user settings: ${settings.message}`)
     }
@@ -45,6 +50,8 @@ export const load: LayoutLoad = async ({ fetch }) => {
         // Initial user settings
         settings,
         featureFlags: result.data.evaluatedFeatureFlags,
+        globalNotifications: globalNotificationsData.then(data =>
+        ),
         fetchEvaluatedFeatureFlags: async () => {
             const result = await client.query(EvaluatedFeatureFlagsQuery, {}, { requestPolicy: 'network-only', fetch })
             if (!result.data || result.error) {
