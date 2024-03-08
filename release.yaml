@@ -16,10 +16,10 @@ internal:
       patch:
         - name: "buildkite"
           cmd: |
-            echo "Triggering build on sourcegraph/sourcegraph"
+            echo "Triggering build on sourcegraph/sourcegraph with VERSION={{version}} on branch {{git.branch}}"
             body=$(curl -s --fail-with-body -X POST "https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds" -H "Content-Type: application/json" -H "Authorization: Bearer $BUILDKITE_ACCESS_TOKEN" -d '{
                 "commit": "HEAD",
-                "branch": "rfc795/main",
+                "branch": "{{git.branch}}",
                 "message": "Internal release build for {{version}}",
                 "env": {
                   "RELEASE_INTERNAL": "true",
@@ -55,10 +55,10 @@ promoteToPublic:
     steps:
       - name: "buildkite"
         cmd: |
-          echo "Triggering build on sourcegraph/sourcegraph"
+          echo "Triggering build on sourcegraph/sourcegraph with VERSION={{version}} on branch {{git.branch}}"
           body=$(curl -s --fail-with-body -X POST "https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds" -H "Content-Type: application/json" -H "Authorization: Bearer $BUILDKITE_ACCESS_TOKEN" -d '{
               "commit": "HEAD",
-              "branch": "rfc795/main",
+              "branch": "{{git.branch}}",
               "message": "Promoting internal release {{version}} to public",
               "env": {
                 "RELEASE_PUBLIC": "true",
