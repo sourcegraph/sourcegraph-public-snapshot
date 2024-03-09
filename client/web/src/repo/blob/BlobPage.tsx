@@ -620,6 +620,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                         blameHunks={isErrorLike(blameHunks) ? undefined : blameHunks}
                         ocgVisibility={ocgVisibility}
                         overrideBrowserSearchKeybinding={true}
+                        codeIntelAndSgExtensions={true}
+                        navigateToLineOnLineClick={true}
                     />
                 </TraceSpanProvider>
             )}

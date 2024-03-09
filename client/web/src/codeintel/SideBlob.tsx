@@ -37,6 +37,7 @@ export interface SideBlobProps
     position?: Position
     blobNav?: (url: string) => void
     wrapLines?: boolean
+    codeIntelAndSgExtensions?: boolean
     navigateToLineOnAnyClick?: boolean
     searchPanelConfig?: SearchPanelConfig
     className?: string
@@ -50,8 +51,13 @@ export const SideBlob: FC<SideBlobProps> = props => {
         commitID,
         file,
         blobNav,
-        wrapLines = true,
+
+        // SideBlob currently only used in ReferencePanel, where code intel and sg-extensions are permanently disabled,
+        // and clicking on any line navigates to that line in the main BlobPage view.
+        codeIntelAndSgExtensions = false,
         navigateToLineOnAnyClick = true,
+        wrapLines = true,
+
         searchPanelConfig,
         extensionsController,
         settingsCascade,
@@ -117,6 +123,7 @@ export const SideBlob: FC<SideBlobProps> = props => {
             activeURL={activeURL}
             nav={blobNav}
             wrapCode={wrapLines}
+            codeIntelAndSgExtensions={codeIntelAndSgExtensions}
             navigateToLineOnAnyClick={navigateToLineOnAnyClick}
             blobInfo={{
                 lsif: blob.highlight.lsif ?? '',

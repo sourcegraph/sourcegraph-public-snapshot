@@ -49,12 +49,14 @@ export const usePreviousData = (value: INode[] | undefined) => {
 
 export const isBranchNode = (data: INode[], i: number) => data[i].children != null && data[i].children.length > 0
 
+/** scrollToRef scrolls a node into view. */
 export const scrollToRef = (ref: INodeRef) => {
-    if (ref != null && ref.scrollIntoView) {
+    if (ref != null) {
         ref.scrollIntoView({ block: 'nearest' })
     }
 }
 
+/** focusRef focuses a node without scrolling it into view. */
 export const focusRef = (ref: INodeRef) => {
     if (ref != null && ref.focus) {
         ref.focus({ preventScroll: true })

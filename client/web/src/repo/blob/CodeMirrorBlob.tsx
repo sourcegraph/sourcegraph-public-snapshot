@@ -106,9 +106,28 @@ export interface BlobProps
     blobInfo: BlobInfo
     'data-testid'?: string
 
-    // When navigateToLineOnAnyClick=true, the code intel popover is disabled
-    // and clicking on any line should navigate to that specific line.
+    /**
+     * Toggle code intel, keyboard navigation, and other Sourcegraph extensions
+     * (see {@link sourcegraphExtensions}).
+     *
+     * Use this setting in Reference Panel to disable these additional features,
+     * as passing `navigateToLineOnAnyClick=true` will only control code navigation.
+     */
+    codeIntelAndSgExtensions?: boolean
+
+    /**
+     * Enable {@link navigateToLineOnAnyClickExtension}.
+     *
+     * Previously used to disable code intel and Sourcegraph extensions in Reference Panel.
+     * Refer to {@link codeIntelAndSgExtensions} for this functionality.
+     */
     navigateToLineOnAnyClick?: boolean
+
+    /**
+     * On clicking the line's number in the gutter, the URL updates to reflect the selected line.
+     * {@link navigateToLineOnAnyClick} overrides this value if `navigateToLineOnAnyClick=true`.
+     */
+    navigateToLineOnLineClick?: boolean
 
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
@@ -221,7 +240,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         blameHunks,
         ocgVisibility,
 
-        // Reference panel specific props
+        codeIntelAndSgExtensions,
         navigateToLineOnAnyClick,
 
         overrideBrowserSearchKeybinding,
@@ -230,6 +249,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         'data-testid': dataTestId,
         telemetryService,
     } = props
+
+    const navigateToLineOnLineClick = navigateToLineOnAnyClick ? true : props.navigateToLineOnLineClick
 
     const navigate = useNavigate()
     const location = useLocation()
@@ -265,7 +286,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 
     const navigateOnClick = useMemo(
         () =>
-            navigateToLineOnAnyClick
+            navigateToLineOnLineClick
                 ? (line: number) =>
                       navigate(
                           toPrettyBlobURL({
@@ -277,7 +298,14 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                           })
                       )
                 : undefined,
-        [navigateToLineOnAnyClick, navigate, blobInfo.repoName, blobInfo.filePath, blobInfo.revision, blobInfo.commitID]
+        [
+            navigateToLineOnLineClick,
+            navigate,
+            blobInfo.repoName,
+            blobInfo.filePath,
+            blobInfo.revision,
+            blobInfo.commitID,
+        ]
     )
 
     const customHistoryAction = props.nav
@@ -391,15 +419,16 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                   )
                 : [],
             pinnedTooltip,
-            navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension(navigate) : codeIntelExtension,
-            syntaxHighlight.of(blobInfo),
-            extensionsController !== null && !navigateToLineOnAnyClick
+            navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension(navigate) : [],
+            codeIntelAndSgExtensions ? codeIntelExtension : [],
+            codeIntelAndSgExtensions && extensionsController !== null
                 ? sourcegraphExtensions({
                       blobInfo,
                       initialSelection: position,
                       extensionsController,
                   })
                 : [],
+            syntaxHighlight.of(blobInfo),
             blobProps,
             blameDecorations,
             wrapCodeSettings,
@@ -446,9 +475,9 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             const state = EditorState.create({ doc: blobInfo.content, extensions })
             editor.setState(state)
 
-            if (navigateToLineOnAnyClick) {
+            if (!codeIntelAndSgExtensions) {
                 /**
-                 * `navigateToLineOnAnyClick` is `true` when CodeMirrorBlob is rendered in the references panel.
+                 * `codeIntelAndSgExtensions` is set to `false` when CodeMirrorBlob is rendered in the references panel.
                  * We don't need code intel and keyboard navigation in the references panel blob: https://github.com/sourcegraph/sourcegraph/pull/41615.
                  */
                 return
@@ -466,7 +495,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             // when using macOS VoiceOver.
             editor.contentDOM.focus({ preventScroll: true })
         }
-    }, [blobInfo.content, extensions, navigateToLineOnAnyClick, positionRef])
+    }, [blobInfo.content, extensions, codeIntelAndSgExtensions, positionRef])
 
     // Update selected lines when URL changes
     useEffect(() => {
