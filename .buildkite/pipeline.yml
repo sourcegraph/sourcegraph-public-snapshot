@@ -12,8 +12,9 @@ steps:
     steps:
       - key: aspect-workflows-upload
         label: ":aspect: Setup Aspect Workflows"
-        commands:
-          - "rosetta steps | buildkite-agent pipeline upload"
+        if: build.env("RELEASE_PUBLIC") != "true"
+        commands: |
+          rosetta steps | buildkite-agent pipeline upload
         agents:
           queue: aspect-small
       - label: ":pipeline: Generate pipeline"
