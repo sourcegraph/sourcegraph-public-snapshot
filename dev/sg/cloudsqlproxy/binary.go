@@ -35,7 +35,7 @@ func Init(download bool) error {
 	if err != nil && os.IsNotExist(err) {
 		std.Out.WriteWarningf("cloud-sql-proxy binary not found at %q", cloudSQLProxyPath)
 
-		std.Out.Promptf("Would you like me to install cloud-sql-proxy for you?")
+		std.Out.Promptf("Would you like me to install cloud-sql-proxy for you? [y/N]")
 		var input string
 		if _, err := fmt.Scan(&input); err != nil {
 			return err
