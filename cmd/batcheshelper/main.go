@@ -38,7 +38,7 @@ func doMain() error {
 	var programArgs []string
 
 	argLen := len(os.Args[1:])
-	for i := range argLen {
+	for i := 0; i < argLen; i++ {
 		token := os.Args[i+1]
 		if token[0] == '-' {
 			flags = append(flags, token, os.Args[i+2])
