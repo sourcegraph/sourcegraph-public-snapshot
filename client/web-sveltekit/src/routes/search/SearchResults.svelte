@@ -17,12 +17,15 @@
     import type { Observable } from 'rxjs'
     import { tick, type ComponentProps } from 'svelte'
 
+    import { limitHit } from '@sourcegraph/branded'
+
     import { beforeNavigate, goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import type { URLQueryFilter } from '$lib/search/dynamicFilters'
     import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
+    import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { getQueryURL, type QueryStateStore } from '$lib/search/state'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
@@ -32,8 +35,6 @@
     import { getSearchResultComponent } from './searchResultFactory'
     import { setSearchResultsContext } from './searchResultsContext'
     import StreamingProgress from './StreamingProgress.svelte'
-    import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
-    import { limitHit } from '@sourcegraph/branded'
 
     export let stream: Observable<AggregateStreamingSearchResults>
     export let queryFromURL: string
@@ -53,8 +54,8 @@
     let resultContainer: HTMLElement | null = null
 
     const recentSearches = createRecentSearchesStore()
-    const sidebarSize = getSeparatorPosition('search-results-sidebar', 0.2)
-    $: sidebarWidth = `clamp(14rem, ${$sidebarSize * 100}%, 50%)`
+    const filtersSidebarPosition = getSeparatorPosition('search-results-sidebar', 0.2)
+    const previewSidebarPosition = getSeparatorPosition('preview-sidebar', 0.2)
 
     $: loading = $stream.state === 'loading'
     $: results = $stream.results
@@ -128,10 +129,10 @@
 </div>
 
 <div class="search-results">
-    <div style:width={sidebarWidth}>
+    <div style:width={`clamp(14rem, ${$filtersSidebarPosition * 100}%, 50%)`}>
         <DynamicFiltersSidebar {selectedFilters} streamFilters={$stream.filters} searchQuery={queryFromURL} {loading} />
     </div>
-    <Separator currentPosition={sidebarSize} />
+    <Separator currentPosition={filtersSidebarPosition} />
     <div class="results">
         <aside class="actions">
             {#if loading}
@@ -163,7 +164,8 @@
         </div>
     </div>
     {#if previewData}
-        <div class="preview">
+        <Separator currentPosition={previewSidebarPosition} />
+        <div style:width={`clamp(10rem, ${100 - $previewSidebarPosition * 100}%, 50%)`}>
             <PreviewPanel {...previewData} />
         </div>
     {/if}
@@ -220,9 +222,5 @@
             margin: auto;
             color: var(--text-muted);
         }
-    }
-
-    .preview {
-        width: 100px;
     }
 </style>
