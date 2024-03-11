@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
-	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 )
 
@@ -112,7 +111,9 @@ func parseReleaseConfig(configRaw string) (*releaseConfig, error) {
 	return &rc, nil
 }
 
-func NewReleaseRunner(workdir string, version string, inputsArg string, typ string, pretend bool) (*releaseRunner, error) {
+func NewReleaseRunner(ctx context.Context, workdir string, version string, inputsArg string, typ string, gitBranch string, pretend bool) (*releaseRunner, error) {
+	announce2("setup", "Finding release manifest in %q", workdir)
+
 	inputs, err := parseInputs(inputsArg)
 	if err != nil {
 		return nil, err
@@ -129,12 +130,16 @@ func NewReleaseRunner(workdir string, version string, inputsArg string, typ stri
 		return nil, err
 	}
 
-	var gitBranch string
-	out, err := run.Cmd(context.Background(), `git rev-parse --abbrev-ref HEAD`).Run().String()
-	if err != nil {
-		return nil, err
+	if gitBranch == "" {
+		cmd := run.Cmd(ctx, "git rev-parse --abbrev-ref HEAD")
+		cmd.Dir(workdir)
+		out, err := cmd.Run().String()
+		if err != nil {
+			return nil, err
+		}
+		gitBranch = out
+		sayWarn("setup", "No explicit branch name was provided, assuming current branch is the target: %s", gitBranch)
 	}
-	gitBranch = out
 
 	vars := map[string]string{
 		"version":    version,
@@ -148,7 +153,6 @@ func NewReleaseRunner(workdir string, version string, inputsArg string, typ stri
 		vars[fmt.Sprintf("inputs.%s.tag", k)] = strings.TrimPrefix(v, "v")
 	}
 
-	announce2("setup", "Finding release manifest in %q", workdir)
 	if err := os.Chdir(workdir); err != nil {
 		return nil, err
 	}
@@ -360,27 +364,4 @@ func saySuccess(section string, format string, a ...any) {
 
 func sayKind(style output.Style, section string, format string, a ...any) {
 	std.Out.WriteLine(output.Linef("  ", style, fmt.Sprintf("[%10s] %s", section, format), a...))
-}
-
-func loadReleaseManifest(cctx *cli.Context) (*ReleaseManifest, error) {
-	workdir := cctx.String("workdir")
-	announce2("setup", "Finding release manifest in %q", workdir)
-	if err := os.Chdir(cctx.String("workdir")); err != nil {
-		return nil, err
-	}
-
-	f, err := os.Open("release.yaml")
-	if err != nil {
-		say("setup", "failed to find release manifest")
-		return nil, err
-	}
-	defer f.Close()
-
-	var m ReleaseManifest
-	dec := yaml.NewDecoder(f)
-	if err := dec.Decode(&m); err != nil {
-		say("setup", "failed to decode manifest")
-	}
-	saySuccess("setup", "Found manifest for %q (%s)", m.Meta.ProductName, m.Meta.Repository)
-	return &m, nil
 }
