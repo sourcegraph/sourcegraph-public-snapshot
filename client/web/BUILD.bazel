@@ -2457,7 +2457,6 @@ playwright_bin.playwright_test(
     args = [
         "install",
         "--with-deps",
-        "chromium",
     ],
     # data = [
     #     "//:node_modules/playwright",
