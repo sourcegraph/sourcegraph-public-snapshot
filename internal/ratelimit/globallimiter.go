@@ -218,7 +218,7 @@ const (
 )
 
 func invokeScriptWithRetries(ctx context.Context, script *redis.Script, c redis.Conn, keysAndArgs ...any) (result any, err error) {
-	for i := range scriptInvocationMaxRetries {
+	for _ = range scriptInvocationMaxRetries {
 		result, err = script.DoContext(ctx, c, keysAndArgs...)
 		if err == nil {
 			// If no error, return the result.

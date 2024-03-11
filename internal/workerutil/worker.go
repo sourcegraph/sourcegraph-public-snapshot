@@ -122,7 +122,7 @@ func newWorker[T Record](ctx context.Context, store Store[T], handler Handler[T]
 	dequeueContext, cancel := context.WithCancel(ctx)
 
 	handlerSemaphore := make(chan struct{}, options.NumHandlers)
-	for i := range options.NumHandlers {
+	for _ = range options.NumHandlers {
 		handlerSemaphore <- struct{}{}
 	}
 
