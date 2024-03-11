@@ -16,9 +16,11 @@
     import { from } from 'rxjs'
 
     import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
+    import { isErrorLike } from '$lib/common'
     import { getGraphQLClient, mapOrThrow, toGraphQLResult } from '$lib/graphql'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { createCodeIntelAPI } from '$lib/shared'
+    import { settings } from '$lib/stores'
 
     // TODO: should I be importing this from a page? Seems funky.
     import { BlobPageQuery } from '../[...repo=reporev]/(validrev)/(code)/-/blob/[...path]/page.gql'
@@ -30,7 +32,7 @@
 
     const client = getGraphQLClient()
     $: codeIntelAPI = createCodeIntelAPI({
-        settings: () => undefined, // TODO: add settings
+        settings: setting => (isErrorLike($settings?.final) ? undefined : $settings?.final?.[setting]),
         requestGraphQL(options) {
             return from(client.query(options.request, options.variables).then(toGraphQLResult))
         },
@@ -54,25 +56,23 @@
 {#await blob}
     <LoadingSpinner />
 {:then blob}
-    {@debug blob}
-    <!-- <CodeMirrorBlob -->
-    <!--     blobInfo={{ -->
-    <!--         repoName, -->
-    <!--         commitID, -->
-    <!--         revision: '', -->
-    <!--         filePath, -->
-    <!--         content: blob?.content ?? '', -->
-    <!--         languages: blob?.languages ?? [], -->
-    <!--     }} -->
-    <!--     highlights={''} -->
-    <!--     {codeIntelAPI} -->
-    <!-- /> -->
+    <CodeMirrorBlob
+        blobInfo={{
+            repoName,
+            commitID,
+            revision: '',
+            filePath,
+            content: blob?.content ?? '',
+            languages: blob?.languages ?? [],
+        }}
+        highlights={''}
+        {codeIntelAPI}
+    />
     <!-- TODO {highlights} -->
     <!-- selectedLines={selectedPosition?.line ? selectedPosition : null} -->
     <!-- on:selectline={event => { -->
     <!--     goto('?' + updateSearchParamsWithLineInformation($page.url.searchParams, event.detail)) -->
     <!-- }} -->
-    <!-- {codeIntelAPI} -->
 {:catch error}
     <!-- {@debug error} -->
     <p>{error}</p>

@@ -29,7 +29,7 @@
         searchResultContext.setPreview({
             repoName: result.repository,
             commitID: result.commit,
-            fileName: result.path,
+            filePath: result.path,
             matchedRanges: [], // TODO
         })
     }

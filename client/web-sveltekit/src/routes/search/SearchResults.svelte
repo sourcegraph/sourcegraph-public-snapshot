@@ -87,7 +87,6 @@
             }
         },
         setPreview(data: ComponentProps<PreviewPanel>): void {
-            console.log({ data })
             previewData = data
         },
         queryState,
@@ -164,7 +163,9 @@
         </div>
     </div>
     {#if previewData}
-        <PreviewPanel {...previewData} />
+        <div class="preview">
+            <PreviewPanel {...previewData} />
+        </div>
     {/if}
 </div>
 
@@ -219,5 +220,9 @@
             margin: auto;
             color: var(--text-muted);
         }
+    }
+
+    .preview {
+        width: 100px;
     }
 </style>
