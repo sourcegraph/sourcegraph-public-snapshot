@@ -152,13 +152,6 @@ http_archive(
     url = "https://github.com/aspect-build/aspect-cli/archive/5.8.20.tar.gz",
 )
 
-http_archive(
-    name = "rules_multirun",
-    sha256 = "9cd384e42b2da00104f0e18f25e66285aa21f64b573c667638a7a213206885ab",
-    strip_prefix = "rules_multirun-0.6.1",
-    url = "https://github.com/keith/rules_multirun/archive/refs/tags/0.6.1.tar.gz",
-)
-
 # hermetic_cc_toolchain setup ================================
 HERMETIC_CC_TOOLCHAIN_VERSION = "v2.2.1"
 
