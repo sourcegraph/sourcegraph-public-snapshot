@@ -1098,7 +1098,7 @@ func makeFindClosestProcessUploadsConditions(path string, rootMustEnclosePath bo
 		conds = append(conds, sqlf.Sprintf("indexer = %s", indexer))
 	} else {
 		// NOTE(Christoph): We want to ignore syntactic indices unless we're explicitly requesting them
-		conds = append(conds, sqlf.Sprintf("indexer <> %s", shared.SYNTACTIC_INDEXER))
+		conds = append(conds, sqlf.Sprintf("indexer <> %s", shared.SyntacticIndexer))
 	}
 
 	return conds

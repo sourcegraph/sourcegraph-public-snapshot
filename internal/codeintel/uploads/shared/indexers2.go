@@ -12,7 +12,7 @@ type CodeIntelIndexer struct {
 	DockerImages []string
 }
 
-const SYNTACTIC_INDEXER = "scip-syntax"
+const SyntacticIndexer = "scip-syntax"
 
 // allIndexers is a list of all detectable/suggested indexers known to Sourcegraph.
 // Two indexers with the same language key will be preferred according to the given order.
