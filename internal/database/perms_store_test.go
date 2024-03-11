@@ -429,7 +429,7 @@ func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 			}(),
 			expectedStats: func() []*SetPermissionsResult {
 				result := make([]*SetPermissionsResult, countToExceedParameterLimit)
-				for i := 0; i < countToExceedParameterLimit; i++ {
+				for i := range countToExceedParameterLimit {
 					result[i] = &SetPermissionsResult{
 						Added:   1,
 						Removed: 0,
@@ -1055,7 +1055,7 @@ func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
 		// Add a couple of repos and a user
 		executeQuery(t, ctx, s, sqlf.Sprintf(`INSERT INTO users (username) VALUES ('alice')`))
 		executeQuery(t, ctx, s, sqlf.Sprintf(`INSERT INTO users (username) VALUES ('bob')`))
-		for i := 0; i < 2; i++ {
+		for i := range 2 {
 			createRepo(t, i+1)
 			if _, err := s.SetRepoPerms(context.Background(), int32(i+1), []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
 				t.Fatal(err)
@@ -1931,7 +1931,7 @@ func TestPermsStore_SetRepoPendingPermissions(t *testing.T) {
 			for _, update := range test.updates {
 				const numOps = 30
 				g, ctx := errgroup.WithContext(ctx)
-				for i := 0; i < numOps; i++ {
+				for range numOps {
 					// Make local copy to prevent race conditions
 					accounts := *update.accounts
 					perm := &authz.RepoPermissions{
@@ -3024,25 +3024,25 @@ func TestPermsStore_DatabaseDeadlocks(t *testing.T) {
 	wg.Add(4)
 	go func() {
 		defer wg.Done()
-		for i := 0; i < numOps; i++ {
+		for range numOps {
 			setUserPermissions(ctx, t)
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		for i := 0; i < numOps; i++ {
+		for range numOps {
 			setRepoPermissions(ctx, t)
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		for i := 0; i < numOps; i++ {
+		for range numOps {
 			setRepoPendingPermissions(ctx, t)
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		for i := 0; i < numOps; i++ {
+		for range numOps {
 			grantPendingPermissions(ctx, t)
 		}
 	}()

@@ -33,6 +33,9 @@ type GetAndSaveUserOp struct {
 	ExternalAccountData extsvc.AccountData
 	CreateIfNotExist    bool
 	LookUpByUsername    bool
+	// SingleProvider indicates that the provider should only allow to
+	// connect a single external identity per user.
+	SingleProvider bool
 }
 
 // GetAndSaveUser accepts authentication information associated with a given user, validates and applies
@@ -250,6 +253,26 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 			)
 		}
 		return newUserSaved, 0, safeErrMsg, err
+	}
+
+	if op.SingleProvider && !extAcctSaved {
+		// If we're here, the user has already signed up before this request,
+		// but has no entry for this exact accountID in the user external accounts
+		// table yet.
+		// In single provider mode, we want to attach a new external account
+		// only if no other identity for the same user already exists.
+		other, err := externalAccountsStore.List(ctx, database.ExternalAccountsListOptions{
+			UserID:      userID,
+			ServiceType: acct.ServiceType,
+			ServiceID:   acct.ServiceID,
+			ClientID:    acct.ClientID,
+		})
+		if err != nil {
+			return newUserSaved, 0, "Failed to list user identities. Ask a site admin for help.", err
+		}
+		if len(other) > 0 {
+			return newUserSaved, 0, "Another identity for this user from this provider already exists. Remove the link to the other identity from your account.", errors.New("duplicate identity for single identity provider")
+		}
 	}
 
 	// There is a legacy event instrumented earlier in this function that covers

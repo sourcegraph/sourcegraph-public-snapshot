@@ -7,18 +7,10 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/ssc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// featureFlagUseSCCForSubscription determines if we should attempt to lookup subscription data from SSC.
-const featureFlagUseSCCForSubscription = "use-ssc-for-cody-subscription-on-web"
-
-// featureFlagCodyProTrialEnded indicates if the Cody Pro "Free Trial"  has ended.
-// (Enabling users to use Cody Pro for free for 3-months starting in late Q4'2023.)
-const featureFlagCodyProTrialEnded = "cody-pro-trial-ended"
 
 type UserSubscriptionPlan string
 
@@ -50,14 +42,9 @@ type UserSubscription struct {
 	CancelAtPeriodEnd bool
 }
 
-// consolidateSubscriptionDetails merges the subscription data available on dotcom and SCC.
-// This is needed while transitioning to use SCC as the source of truth for all subscription data. (Which should happen ~Q1/2024.)
-// TODO[sourcegraph#59785]: Update dotcom to use SSC as the source of truth for all subscription data.
+// consolidateSubscriptionDetails handles the raw subscription data from SSC.
 func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscription *ssc.Subscription) (*UserSubscription, error) {
-	// If subscription information is available from SSC, we use that.
-	// And just ignore what is stored in dotcom. (Since they've already
-	// been migrated so to speak.)
-	if subscription != nil && subscription.Status != ssc.SubscriptionStatusCanceled {
+	if subscription != nil && (subscription.Status == ssc.SubscriptionStatusActive || subscription.Status == ssc.SubscriptionStatusPastDue) {
 		currentPeriodStart, err := time.Parse(time.RFC3339, subscription.CurrentPeriodStart)
 		if err != nil {
 			return nil, err
@@ -68,12 +55,10 @@ func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscr
 			return nil, err
 		}
 
-		applyProRateLimits := subscription.Status == ssc.SubscriptionStatusActive || subscription.Status == ssc.SubscriptionStatusPastDue || (subscription.Status == ssc.SubscriptionStatusTrialing && !subscription.CancelAtPeriodEnd)
-
 		return &UserSubscription{
 			Status:               subscription.Status,
 			Plan:                 UserSubscriptionPlanPro,
-			ApplyProRateLimits:   applyProRateLimits,
+			ApplyProRateLimits:   true,
 			CurrentPeriodStartAt: currentPeriodStart,
 			CurrentPeriodEndAt:   currentPeriodEnd,
 			CancelAtPeriodEnd:    subscription.CancelAtPeriodEnd,
@@ -81,39 +66,14 @@ func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscr
 	}
 
 	// If the user doesn't have a subscription in the SSC backend or it is cancelled, then we need
-	// synthesize one using the data available on dotcom.
-	currentPeriodStartAt, currentPeriodEndAt, err := preSSCReleaseCurrentPeriodDateRange(ctx, user, subscription)
+	// find current period date range using the user.createdAt.
+	currentPeriodStartAt, currentPeriodEndAt, err := freeUserCurrentPeriodDateRange(ctx, user, subscription)
 	if err != nil {
 		return nil, err
 	}
 
-	if subscription != nil && subscription.Status == ssc.SubscriptionStatusCanceled {
-		return &UserSubscription{
-			Status:               ssc.SubscriptionStatusActive,
-			Plan:                 UserSubscriptionPlanFree,
-			ApplyProRateLimits:   false,
-			CurrentPeriodStartAt: *currentPeriodStartAt,
-			CurrentPeriodEndAt:   *currentPeriodEndAt,
-			CancelAtPeriodEnd:    false,
-		}, nil
-	}
-
-	// Whether or not the Cody Pro free trial offer is still running.
-	codyProTrialEnded := featureflag.FromContext(ctx).GetBoolOr(featureFlagCodyProTrialEnded, false)
-
-	if user.CodyProEnabledAt != nil {
-		return &UserSubscription{
-			Status:               ssc.SubscriptionStatusPending,
-			Plan:                 UserSubscriptionPlanPro,
-			ApplyProRateLimits:   !codyProTrialEnded,
-			CurrentPeriodStartAt: *currentPeriodStartAt,
-			CurrentPeriodEndAt:   *currentPeriodEndAt,
-			CancelAtPeriodEnd:    false,
-		}, nil
-	}
-
 	return &UserSubscription{
-		Status:               ssc.SubscriptionStatusPending,
+		Status:               ssc.SubscriptionStatusActive,
 		Plan:                 UserSubscriptionPlanFree,
 		ApplyProRateLimits:   false,
 		CurrentPeriodStartAt: *currentPeriodStartAt,
@@ -164,6 +124,11 @@ func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (
 		return consolidateSubscriptionDetails(ctx, user, nil)
 	}
 
+	sscClient, err := SSCClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// NOTE(naman): As part of #inc-284-plg-users-paying-for-and-being-billed-for-pro-without-being-upgrade
 	// it is noted that a user can have multiple SAMS accounts associated with their dotcom account.
 	// Originally we only fetchted subscription data from the first SAMS account associated with the user.
@@ -174,13 +139,7 @@ func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (
 	for _, samsAccountID := range samsAccountIDs {
 		// While developing the SSC backend, we only fetch subscription data for users based on a flag.
 		var subscription *ssc.Subscription
-		useSCCForSubscriptionData := featureflag.FromContext(ctx).GetBoolOr(featureFlagUseSCCForSubscription, false)
-
-		if samsAccountID != "" && useSCCForSubscriptionData {
-			sscClient, err := getSSCClient()
-			if err != nil {
-				return nil, err
-			}
+		if samsAccountID != "" {
 
 			subscription, err = sscClient.FetchSubscriptionBySAMSAccountID(ctx, samsAccountID)
 			if err != nil {
@@ -191,7 +150,7 @@ func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (
 		if subscription != nil {
 			subscriptions = append(subscriptions, subscription)
 
-			if subscription.Status == ssc.SubscriptionStatusActive {
+			if subscription.Status == ssc.SubscriptionStatusActive || subscription.Status == ssc.SubscriptionStatusPastDue {
 				return consolidateSubscriptionDetails(ctx, user, subscription)
 			}
 		}
@@ -211,7 +170,7 @@ func SubscriptionForSAMSAccountID(ctx context.Context, db database.DB, user type
 	}
 
 	var subscription *ssc.Subscription
-	sscClient, err := getSSCClient()
+	sscClient, err := SSCClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -234,3 +193,44 @@ func SubscriptionForSAMSAccountID(ctx context.Context, db database.DB, user type
 var getSSCClient = sync.OnceValues[ssc.Client, error](func() (ssc.Client, error) {
 	return ssc.NewClient()
 })
+
+type MockSSCValue struct {
+	Subscription  *ssc.Subscription
+	SAMSAccountID string
+}
+
+type MockSSCClient struct {
+	MockSSCValue   []MockSSCValue
+	ShouldBeCalled bool
+}
+
+func (m MockSSCClient) FetchSubscriptionBySAMSAccountID(
+	ctx context.Context, samsAccountID string) (*ssc.Subscription, error) {
+	if !m.ShouldBeCalled {
+		return nil, errors.Errorf("FetchSubscriptionBySAMSAccountID should not have be called")
+	}
+
+	for _, v := range m.MockSSCValue {
+		if v.SAMSAccountID == samsAccountID {
+			return v.Subscription, nil
+		}
+	}
+
+	return nil, errors.Errorf("FetchSubscriptionBySAMSAccountID should not have be called with the given samsAccountID: %s", samsAccountID)
+}
+
+type sscClientCtxKey int
+
+const mockSSCClientCtxKey sscClientCtxKey = iota
+
+func SSCClientFromCtx(ctx context.Context) (ssc.Client, error) {
+	c, ok := ctx.Value(mockSSCClientCtxKey).(ssc.Client)
+	if !ok || c == nil {
+		return getSSCClient()
+	}
+	return c, nil
+}
+
+func WithMockSSCClient(ctx context.Context, c ssc.Client) context.Context {
+	return context.WithValue(ctx, mockSSCClientCtxKey, c)
+}

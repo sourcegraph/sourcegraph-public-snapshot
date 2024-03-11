@@ -184,7 +184,7 @@ func GetIndexOptions(
 	}
 
 	// Wait for jobs to finish (acquire full semaphore)
-	for i := 0; i < cap(sema); i++ {
+	for range cap(sema) {
 		sema <- struct{}{}
 	}
 

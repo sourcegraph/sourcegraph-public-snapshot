@@ -4,7 +4,7 @@ set -eu -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
-GCP_PROJECT="aspect-dev"
+GCP_PROJECT="sourcegraph-ci"
 GCS_BUCKET="package-repository"
 TARGET_ARCH="x86_64"
 MAIN_BRANCH="main"

@@ -425,7 +425,7 @@ sg ci build docker-images-candidates-notest
 		if rt != runtype.PullRequest {
 			pollTicker := time.NewTicker(5 * time.Second)
 			std.Out.WriteLine(output.Styledf(output.StylePending, "Polling for build for branch %s at %s...", branch, commit))
-			for i := 0; i < 30; i++ {
+			for range 30 {
 				// attempt to fetch the new build - it might take some time for the hooks so we will
 				// retry up to 30 times (roughly 30 seconds)
 				if build != nil && build.Commit != nil && *build.Commit == commit {

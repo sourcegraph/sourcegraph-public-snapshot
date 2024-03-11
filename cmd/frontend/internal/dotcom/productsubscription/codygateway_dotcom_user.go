@@ -228,7 +228,7 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 	}
 
 	return licensing.CodyGatewayRateLimit{
-		AllowedModels:   []string{"openai/text-embedding-ada-002"},
+		AllowedModels:   []string{"openai/text-embedding-ada-002", "sourcegraph/triton"},
 		Limit:           limit,
 		IntervalSeconds: intervalSeconds,
 	}, nil
