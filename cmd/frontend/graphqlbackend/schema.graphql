@@ -10478,6 +10478,11 @@ enum PermissionNamespace {
     This represents the Cody namespace.
     """
     CODY
+
+    """
+    ❗ Product subscriptions are only available in Sourcegraph.com
+    """
+    PRODUCT_SUBSCRIPTIONS
 }
 
 """
