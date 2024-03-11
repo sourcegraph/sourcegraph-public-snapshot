@@ -78,7 +78,7 @@ func BenchmarkObserverArticle(b *testing.B) {
 func benchmarkObserver(b *testing.B, observer *messageSizeObserver, message proto.Message) {
 	b.ReportAllocs()
 
-	for n := 0; n < b.N; n++ {
+	for n := range b.N {
 		observer.Observe(message)
 	}
 

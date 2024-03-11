@@ -34,7 +34,7 @@ func initializeData(ctx context.Context, store *Store, repos, times int, withCap
 	currentTime := time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
 	var records []RecordSeriesPointArgs
 	for i := range times {
-		for j := 0; j < repos; j++ {
+		for j := range repos {
 			repoName := fmt.Sprintf("repo-%d", j)
 			id := api.RepoID(j)
 			for _, val := range cv {

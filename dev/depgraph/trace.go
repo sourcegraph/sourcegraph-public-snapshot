@@ -66,7 +66,7 @@ func traceTraverse(pkg string, relation map[string][]string, maxDepth int) (pack
 	packageMap := map[string]int{pkg: 0}
 	edges = map[string][]string{pkg: relation[pkg]}
 
-	for depth := 0; depth < maxDepth && len(frontier) > 0; depth++ {
+	for depth := range maxDepth && len(frontier) > 0 {
 		nextFrontier := []string{}
 		for _, pkg := range frontier {
 			if _, ok := packageMap[pkg]; ok {

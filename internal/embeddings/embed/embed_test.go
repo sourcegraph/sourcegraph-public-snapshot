@@ -769,7 +769,7 @@ func (c *partialFailureEmbeddingsClient) getEmbeddings(_ context.Context, texts 
 			failed = append(failed, i)
 		}
 
-		for j := 0; j < dimensions; j++ {
+		for j := range dimensions {
 			idx := (i * dimensions) + j
 			embeddings[idx] = float32(sign)
 		}

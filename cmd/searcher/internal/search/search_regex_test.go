@@ -285,7 +285,7 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 
 	b.ResetTimer()
 
-	for n := 0; n < b.N; n++ {
+	for n := range b.N {
 		_, err := regexSearchBatch(ctx, &p.PatternInfo, zf, 0)
 		if err != nil {
 			b.Fatal(err)
@@ -361,7 +361,7 @@ func TestMaxMatches(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for j := 0; j < 10; j++ {
+		for j := range 10 {
 			_, _ = w.Write([]byte(pattern))
 			_, _ = w.Write([]byte{' '})
 			_, _ = w.Write([]byte{'\n'})

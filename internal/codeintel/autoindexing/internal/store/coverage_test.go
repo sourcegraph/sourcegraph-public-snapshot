@@ -40,7 +40,7 @@ func TestTopRepositoriesToConfigure(t *testing.T) {
 	for i := range 10 {
 		insertEvent("codeintel.searchHover", 60+i%3, 1)
 	}
-	for j := 0; j < 10; j++ {
+	for j := range 10 {
 		insertEvent("codeintel.searchHover", 70+j, 1)
 	}
 

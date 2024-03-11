@@ -106,7 +106,7 @@ func (index *EmbeddingIndex) SimilaritySearch(
 
 	if len(rowsPerWorker) > 1 {
 		var wg conc.WaitGroup
-		for workerIdx := 0; workerIdx < len(rowsPerWorker); workerIdx++ {
+		for workerIdx := range len(rowsPerWorker) {
 			// Capture the loop variable value so we can use it in the closure below.
 			workerIdx := workerIdx
 			wg.Go(func() {
@@ -132,7 +132,7 @@ func (index *EmbeddingIndex) SimilaritySearch(
 	// Take top neighbors and return them as results.
 	results := make([]EmbeddingSearchResult, numResults)
 
-	for idx := 0; idx < min(numResults, len(neighbors)); idx++ {
+	for idx := range min(numResults, len(neighbors)) {
 		metadata := index.RowMetadata[neighbors[idx].index]
 		results[idx] = EmbeddingSearchResult{
 			RepoName:     repoName,

@@ -263,10 +263,10 @@ func (s *SquirrelService) findNodeInScopePython(block Node, ident string) (ret *
 			if found != nil {
 				return found
 			}
-			for j := 0; j < int(child.NamedChildCount()); j++ {
+			for j := range int(child.NamedChildCount()) {
 				tryChild := child.NamedChild(j)
 				if tryChild.Type() == "except_clause" {
-					for k := 0; k < int(tryChild.NamedChildCount()); k++ {
+					for k := range int(tryChild.NamedChildCount()) {
 						exceptChild := tryChild.NamedChild(k)
 						if exceptChild.Type() == "block" {
 							next := exceptChild
