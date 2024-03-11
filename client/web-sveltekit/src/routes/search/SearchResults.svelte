@@ -16,6 +16,7 @@
     import { mdiCloseOctagonOutline } from '@mdi/js'
     import type { Observable } from 'rxjs'
     import { tick, type ComponentProps } from 'svelte'
+    import { writable } from 'svelte/store'
 
     import { limitHit } from '@sourcegraph/branded'
 
@@ -74,7 +75,7 @@
     $: resultsToShow = results.slice(0, count)
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
 
-    let previewData: ComponentProps<PreviewPanel> | undefined = undefined
+    let previewData = writable<ComponentProps<PreviewPanel> | undefined>(undefined)
 
     setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
@@ -88,17 +89,14 @@
             }
         },
         setPreview(data: ComponentProps<PreviewPanel>): void {
-            previewData = data
+            console.log({ data })
+            previewData.set(data)
         },
         queryState,
     })
     beforeNavigate(() => {
         cache.set(queryFromURL, { count, expanded: expandedSet })
     })
-
-    $: {
-        console.log({ previewData })
-    }
 
     function loadMore(event: { detail: boolean }) {
         if (event.detail) {
@@ -163,10 +161,12 @@
             {/if}
         </div>
     </div>
-    {#if previewData}
+    {#if $previewData}
         <Separator currentPosition={previewSidebarPosition} />
         <div style:width={`clamp(10rem, ${100 - $previewSidebarPosition * 100}%, 50%)`}>
-            <PreviewPanel {...previewData} />
+            {#key $previewData}
+                <PreviewPanel {...$previewData} />
+            {/key}
         </div>
     {/if}
 </div>

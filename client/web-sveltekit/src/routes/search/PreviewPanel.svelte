@@ -23,7 +23,10 @@
     import { settings } from '$lib/stores'
 
     // TODO: should I be importing this from a page? Seems funky.
-    import { BlobPageQuery } from '../[...repo=reporev]/(validrev)/(code)/-/blob/[...path]/page.gql'
+    import {
+        BlobPageQuery,
+        BlobSyntaxHighlightQuery,
+    } from '../[...repo=reporev]/(validrev)/(code)/-/blob/[...path]/page.gql'
 
     export let repoName: string
     export let commitID: string
@@ -38,6 +41,8 @@
         },
     })
 
+    console.log({ filePath })
+
     const blob = client
         .query(BlobPageQuery, {
             repoName,
@@ -45,35 +50,59 @@
             path: filePath,
         })
         .then(mapOrThrow(result => result.data?.repository?.commit?.blob ?? null))
-    // const highlights = client.query(BlobSyntaxHighlightQuery, {
-    //     repoName,
-    //     revspec: commitID,
-    //     path: filePath,
-    //     disableTimeout: false,
-    // }).then(mapOrThrow(result => result.data?.repository?.commit?.blob?.highlight.lsif ?? '')),
+
+    const highlights = client
+        .query(BlobSyntaxHighlightQuery, {
+            repoName,
+            revspec: commitID,
+            path: filePath,
+            disableTimeout: false,
+        })
+        .then(mapOrThrow(result => result.data?.repository?.commit?.blob?.highlight.lsif ?? ''))
 </script>
 
-{#await blob}
-    <LoadingSpinner />
-{:then blob}
-    <CodeMirrorBlob
-        blobInfo={{
-            repoName,
-            commitID,
-            revision: '',
-            filePath,
-            content: blob?.content ?? '',
-            languages: blob?.languages ?? [],
-        }}
-        highlights={''}
-        {codeIntelAPI}
-    />
-    <!-- TODO {highlights} -->
-    <!-- selectedLines={selectedPosition?.line ? selectedPosition : null} -->
-    <!-- on:selectline={event => { -->
-    <!--     goto('?' + updateSearchParamsWithLineInformation($page.url.searchParams, event.detail)) -->
-    <!-- }} -->
-{:catch error}
-    <!-- {@debug error} -->
-    <p>{error}</p>
-{/await}
+<div class="content">
+    {#await blob}
+        <LoadingSpinner />
+    {:then blob}
+        {#await highlights}
+            <CodeMirrorBlob
+                blobInfo={{
+                    repoName,
+                    commitID,
+                    revision: '',
+                    filePath,
+                    content: blob?.content ?? '',
+                    languages: blob?.languages ?? [],
+                }}
+                highlights={''}
+                {codeIntelAPI}
+            />
+        {:then highlights}
+            <CodeMirrorBlob
+                blobInfo={{
+                    repoName,
+                    commitID,
+                    revision: '',
+                    filePath,
+                    content: blob?.content ?? '',
+                    languages: blob?.languages ?? [],
+                }}
+                {highlights}
+                {codeIntelAPI}
+            />
+        {/await}
+    {:catch error}
+        <p>{error}</p>
+    {/await}
+</div>
+
+<style lang="scss">
+    .content {
+        display: flex;
+        flex-direction: column;
+        overflow-x: auto;
+        height: 100%;
+        flex: 1;
+    }
+</style>
