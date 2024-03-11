@@ -31,7 +31,7 @@ func linesToResponse(lines []string, separator string) []byte {
 	return responseBytes
 }
 
-func getMockClient(responseBody []byte, messagesApi bool, viaGateway bool) types.CompletionsClient {
+func getMockClient(responseBody []byte, messagesApi bool) types.CompletionsClient {
 	apiURL := "https://api.anthropic.com/v1/complete"
 	if messagesApi {
 		apiURL = "https://api.anthropic.com/v1/messages"
@@ -40,7 +40,7 @@ func getMockClient(responseBody []byte, messagesApi bool, viaGateway bool) types
 		func(r *http.Request) (*http.Response, error) {
 			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewReader(responseBody))}, nil
 		},
-	}, apiURL, "", viaGateway)
+	}, apiURL, "", false)
 }
 
 func TestValidAnthropicStream(t *testing.T) {
@@ -52,7 +52,7 @@ func TestValidAnthropicStream(t *testing.T) {
 		"data: [DONE]",
 	}
 
-	mockClient := getMockClient(linesToResponse(mockAnthropicResponseLines, "\r\n\r\n"), false, false)
+	mockClient := getMockClient(linesToResponse(mockAnthropicResponseLines, "\r\n\r\n"), false)
 	events := []types.CompletionResponse{}
 	err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {
 		events = append(events, event)
@@ -86,7 +86,7 @@ func TestValidAnthropicMessagesStream(t *testing.T) {
 		data: {"type": "message_stop"}`,
 	}
 
-	mockClient := getMockClient(linesToResponse(mockAnthropicMessagesResponseLines, "\n\n"), true, false)
+	mockClient := getMockClient(linesToResponse(mockAnthropicMessagesResponseLines, "\n\n"), true)
 	events := []types.CompletionResponse{}
 	stream := true
 	err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{
@@ -107,7 +107,7 @@ func TestValidAnthropicMessagesStream(t *testing.T) {
 func TestInvalidAnthropicStream(t *testing.T) {
 	var mockAnthropicInvalidResponseLines = []string{`{]`}
 
-	mockClient := getMockClient(linesToResponse(mockAnthropicInvalidResponseLines, "\r\n\r\n"), false, false)
+	mockClient := getMockClient(linesToResponse(mockAnthropicInvalidResponseLines, "\r\n\r\n"), false)
 	err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil })
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -142,5 +142,94 @@ func TestErrStatusNotOK(t *testing.T) {
 		autogold.Expect("Anthropic: unexpected status code 429: oh no, please slow down!").Equal(t, err.Error())
 		_, ok := types.IsErrStatusNotOK(err)
 		assert.True(t, ok)
+	})
+}
+
+func TestCompleteApiToMessages(t *testing.T) {
+	var response *http.Request
+	mockClient := NewClient(&mockDoer{
+		func(r *http.Request) (*http.Response, error) {
+			response = r
+			return &http.Response{
+				StatusCode: http.StatusTooManyRequests,
+				Body:       io.NopCloser(bytes.NewReader([]byte("oh no, please slow down!"))),
+			}, nil
+		},
+	}, "https://api.anthropic.com/v1/messages", "", false)
+	messages := []types.Message{
+		{Speaker: "human", Text: "¡Hola!"},
+		// /complete prompts can have human messages without an assistant response. These should
+		// be ignored.
+		{Speaker: "assistant", Text: ""},
+		{Speaker: "human", Text: "Servus!"},
+		// /complete prompts might end with an empty assistant message
+		{Speaker: "assistant"},
+	}
+
+	t.Run("Complete", func(t *testing.T) {
+		resp, err := mockClient.Complete(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{Messages: messages})
+		require.Error(t, err)
+		assert.Nil(t, resp)
+
+		assert.NotNil(t, response)
+		body, err := io.ReadAll(response.Body)
+		assert.NoError(t, err)
+
+		autogold.Expect(body).Equal(t, []byte(`{"messages":[{"role":"user","content":[{"type":"text","text":"Servus!"}]}],"model":""}`))
+	})
+
+	t.Run("Stream", func(t *testing.T) {
+		stream := true
+		err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{Messages: messages, Stream: &stream}, func(event types.CompletionResponse) error { return nil })
+		require.Error(t, err)
+
+		assert.NotNil(t, response)
+		body, err := io.ReadAll(response.Body)
+		assert.NoError(t, err)
+
+		autogold.Expect(body).Equal(t, []byte(`{"messages":[{"role":"user","content":[{"type":"text","text":"Servus!"}]}],"model":"","stream":true}`))
+	})
+}
+
+func TestMessagesApiToComplete(t *testing.T) {
+	var response *http.Request
+	mockClient := NewClient(&mockDoer{
+		func(r *http.Request) (*http.Response, error) {
+			response = r
+			return &http.Response{
+				StatusCode: http.StatusTooManyRequests,
+				Body:       io.NopCloser(bytes.NewReader([]byte("oh no, please slow down!"))),
+			}, nil
+		},
+	}, "https://api.anthropic.com/v1/complete", "", false)
+	messages := []types.Message{
+		// /messages responses can have a system message
+		{Speaker: "system", Text: "You are an Austrian emperor."},
+		{Speaker: "human", Text: "Servus!"},
+		// No ending `assistant` message
+	}
+
+	t.Run("Complete", func(t *testing.T) {
+		resp, err := mockClient.Complete(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{Messages: messages})
+		require.Error(t, err)
+		assert.Nil(t, resp)
+
+		assert.NotNil(t, response)
+		body, err := io.ReadAll(response.Body)
+		assert.NoError(t, err)
+
+		autogold.Expect(body).Equal(t, []byte(`{"prompt":"\n\nHuman: You are an Austrian emperor.\n\nAssistant: Ok.\n\nHuman: Servus!\n\nAssistant:","temperature":0,"max_tokens_to_sample":0,"stop_sequences":["\n\nHuman:"],"top_k":0,"top_p":0,"model":"","stream":false}`))
+	})
+
+	t.Run("Stream", func(t *testing.T) {
+		stream := true
+		err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{Messages: messages, Stream: &stream}, func(event types.CompletionResponse) error { return nil })
+		require.Error(t, err)
+
+		assert.NotNil(t, response)
+		body, err := io.ReadAll(response.Body)
+		assert.NoError(t, err)
+
+		autogold.Expect(body).Equal(t, []byte(`{"prompt":"\n\nHuman: You are an Austrian emperor.\n\nAssistant: Ok.\n\nHuman: Servus!\n\nAssistant:","temperature":0,"max_tokens_to_sample":0,"stop_sequences":["\n\nHuman:"],"top_k":0,"top_p":0,"model":"","stream":true}`))
 	})
 }
