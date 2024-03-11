@@ -60,3 +60,12 @@ test('fills search query from URL', async ({ page }) => {
     await page.goto('/search?q=test')
     await expect(page.getByRole('textbox')).toHaveText('test')
 })
+
+test('main navbar menus are visible above search input', async ({ page, sg }) => {
+    const dispatch = sg.mockSearchResults()
+    await page.goto('/search?q=test')
+    await dispatch()
+    await page.getByRole('button', { name: 'Code Search' }).click()
+    await page.getByRole('link', { name: 'Search Home' }).click()
+    await expect(page).toHaveURL(/\/search$/)
+})

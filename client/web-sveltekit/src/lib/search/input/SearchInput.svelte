@@ -232,11 +232,9 @@
     @use '$lib/breakpoints';
 
     form {
+        isolation: isolate;
         width: 100%;
         position: relative;
-        // Necessary to ensure that the search input (especially the suggestions) are rendered above sticky headers
-        // in the search results page ("position: sticky" creates a new stacking context).
-        z-index: 1;
         padding: 0.75rem;
 
         &:focus-within {
@@ -260,6 +258,7 @@
         border: 1px solid var(--border-color-2);
         background-color: var(--input-bg);
         position: relative;
+        // This is necessary to ensure that the input is shown above the suggestions container
         z-index: 1;
 
         &:focus-within {
