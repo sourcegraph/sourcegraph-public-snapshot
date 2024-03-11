@@ -67,7 +67,7 @@ func findGroups(pattern string) (groups []group) {
 	var opens []group
 	inCharClass := false
 	groupNumber := 0
-	for i := range len(pattern) {
+	for i := 0; i < len(pattern); i++ {
 		if pattern[i] == '\\' {
 			i += 1
 			continue
@@ -171,7 +171,6 @@ func NewPatternReplacer(query BasicQuery, searchType searchquery.SearchType) (Pa
 			Negated:    negated,
 			Annotation: annotation,
 		})
-
 	})
 	if len(patterns) > 1 {
 		return nil, MultiplePatternErr
