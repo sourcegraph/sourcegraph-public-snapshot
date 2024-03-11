@@ -274,7 +274,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 	var wg sync.WaitGroup
 
 	projch := make(chan *schema.GitLabProject)
-	for i := 0; i < 5; i++ { // 5 concurrent requests
+	for range 5 { // 5 concurrent requests
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

@@ -65,7 +65,7 @@ func TestCachedLocationResolver(t *testing.T) {
 
 	var wg sync.WaitGroup
 	errs := make(chan error, numRoutines)
-	for i := 0; i < numRoutines; i++ {
+	for range numRoutines {
 		wg.Add(1)
 
 		go func() {

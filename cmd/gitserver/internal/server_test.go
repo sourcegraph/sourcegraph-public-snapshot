@@ -389,7 +389,7 @@ func TestCloneRepo(t *testing.T) {
 	// Wait until the clone is done. Please do not use this code snippet
 	// outside of a test. We only know this works since our test only starts
 	// one clone and will have nothing else attempt to lock.
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		_, cloning := s.locker.Status(repoDir)
 		if !cloning {
 			break
