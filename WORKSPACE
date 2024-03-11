@@ -413,10 +413,6 @@ load("//dev:tool_deps.bzl", "tool_deps")
 
 tool_deps()
 
-load("//tools/release:schema_deps.bzl", "schema_deps")
-
-schema_deps()
-
 # Buildifier
 load("@buildifier_prebuilt//:deps.bzl", "buildifier_prebuilt_deps")
 
