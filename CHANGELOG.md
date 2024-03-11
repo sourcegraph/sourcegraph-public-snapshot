@@ -43,6 +43,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fixed an issue in our build process that broke tooltips and validation in the settings editors. [#60808](https://github.com/sourcegraph/sourcegraph/pull/60808)
+
 ### Removed
 
 ## 5.3.2
