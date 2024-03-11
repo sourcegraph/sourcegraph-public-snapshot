@@ -32,7 +32,7 @@ func makeTestJobGenerator(numJobs int) SearchJobGenerator {
 	return func(ctx context.Context, req requestContext) (*requestContext, []*queryrunner.SearchJob, error) {
 		jobs := make([]*queryrunner.SearchJob, 0, numJobs)
 		recordDate := time.Date(2022, time.April, 1, 0, 0, 0, 0, time.UTC)
-		for i := 0; i < numJobs; i++ {
+		for i := range numJobs {
 			jobs = append(jobs, &queryrunner.SearchJob{
 				SeriesID:    req.backfillRequest.Series.SeriesID,
 				SearchQuery: "test search",

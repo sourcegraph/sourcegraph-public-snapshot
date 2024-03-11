@@ -96,13 +96,13 @@ func generateQuery(rand *rand.Rand, depth int) protocol.QueryNode {
 	switch rand.Int() % 3 {
 	case 0:
 		children := make([]protocol.QueryNode, 0)
-		for i := 0; i < rand.Int()%4; i++ {
+		for i := range rand.Int()%4 {
 			children = append(children, generateQuery(rand, depth-1))
 		}
 		return &protocol.AndNode{Children: children}
 	case 1:
 		children := make([]protocol.QueryNode, 0)
-		for i := 0; i < rand.Int()%4; i++ {
+		for i := range rand.Int()%4 {
 			children = append(children, generateQuery(rand, depth-1))
 		}
 		return &protocol.OrNode{Children: children}

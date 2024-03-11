@@ -353,7 +353,7 @@ func TestMaxMatches(t *testing.T) {
 	buf := new(bytes.Buffer)
 	zw := zip.NewWriter(buf)
 	maxMatches := 33
-	for i := 0; i < maxMatches+1; i++ {
+	for i := range maxMatches+1 {
 		w, err := zw.CreateHeader(&zip.FileHeader{
 			Name:   strconv.Itoa(i),
 			Method: zip.Store,

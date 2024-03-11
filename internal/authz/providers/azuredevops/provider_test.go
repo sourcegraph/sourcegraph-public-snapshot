@@ -141,7 +141,7 @@ func TestProvider_NewAuthzProviders(t *testing.T) {
 				return
 			}
 
-			for i := 0; i < tc.expectedTotalProviders; i++ {
+			for i := range tc.expectedTotalProviders {
 				p := result.Providers[0]
 				gotAzureProvider, ok := p.(*Provider)
 				if !ok {

@@ -26,7 +26,7 @@ func calculateRecordingTimes(createdAt time.Time, lastRecordedAt time.Time, inte
 	// If the first existing point is newer than the oldest expected point then leading points are added.
 	oldestReferencePoint := referenceTimes[0]
 	if !withinHalfAnInterval(existingPoints[0], oldestReferencePoint, interval) {
-		for i := 0; i < len(referenceTimes) && !withinHalfAnInterval(referenceTimes[i], existingPoints[0], interval); i++ {
+		for i := range len(referenceTimes) && !withinHalfAnInterval(referenceTimes[i], existingPoints[0], interval) {
 			calculatedRecordingTimes = append(calculatedRecordingTimes, referenceTimes[i])
 		}
 	}

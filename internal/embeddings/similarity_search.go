@@ -63,7 +63,7 @@ func splitRows(numRows int, numWorkers int, minRowsToSplit int) []partialRows {
 	nRowsPerWorker := int(math.Ceil(float64(numRows) / float64(numWorkers)))
 
 	rowsPerWorker := make([]partialRows, numWorkers)
-	for i := 0; i < numWorkers; i++ {
+	for i := range numWorkers {
 		rowsPerWorker[i] = partialRows{
 			start: min(i*nRowsPerWorker, numRows),
 			end:   min((i+1)*nRowsPerWorker, numRows),

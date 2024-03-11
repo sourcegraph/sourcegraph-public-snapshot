@@ -108,7 +108,7 @@ func regexSearch(
 	defer func() { cancel(); <-done }()
 
 	// Start workers. They read from files and write to matches.
-	for i := 0; i < numWorkers; i++ {
+	for i := range numWorkers {
 		l := fileLoader{zf: zf, isCaseSensitive: isCaseSensitive}
 		var f *srcFile
 

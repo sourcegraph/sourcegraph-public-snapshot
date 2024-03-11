@@ -43,7 +43,7 @@ func LoadIssues(ctx context.Context, cli *graphql.Client, queries []string) (iss
 	pullRequestsCh := make(chan []*PullRequest, len(chunks))
 	errs := make(chan error, len(chunks))
 
-	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
+	for i := range runtime.GOMAXPROCS(0) {
 		wg.Add(1)
 
 		go func() {
@@ -206,7 +206,7 @@ func (l *IssueLoader) performRequest(ctx context.Context, cli *graphql.Client, r
 // makeFragmentArgs makes `n` named GraphQL fragment and an associated set of variables.
 // This is used to later construct a GraphQL request with a subset of these queries.
 func makeFragmentArgs(n int) (fragments []string, args [][]string) {
-	for i := 0; i < n; i++ {
+	for i := range n {
 		fragments = append(fragments, makeSearchQuery(fmt.Sprintf("%d", i)))
 
 		args = append(args, []string{

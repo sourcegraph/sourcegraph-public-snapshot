@@ -32,7 +32,7 @@ func TestFlushCollectSender(t *testing.T) {
 			repoList := make([]*zoekt.RepoListEntry, 3)
 			results := make([]*zoekt.SearchResult, 3)
 
-			for i := 0; i < len(results); i++ {
+			for i := range len(results) {
 				repoID := 100*endpointID + i
 				repoName := strconv.Itoa(repoID)
 
@@ -62,7 +62,7 @@ func TestFlushCollectSender(t *testing.T) {
 
 	// Start up background goroutines which continuously hit the searcher
 	// methods to ensure we are safe under concurrency.
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		cleanup := backgroundSearch(searcher)
 		defer cleanup(t)
 	}

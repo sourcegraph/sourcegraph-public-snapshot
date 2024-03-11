@@ -570,7 +570,7 @@ func TestMembersConnectionStore(t *testing.T) {
 	org, err := db.Orgs().Create(ctx, "test-org", nil)
 	require.NoError(t, err)
 
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		user, err := db.Users().Create(ctx, database.NewUser{
 			Username:        "test" + strconv.Itoa(i),
 			Email:           fmt.Sprintf("test%d@sourcegraph.com", i),

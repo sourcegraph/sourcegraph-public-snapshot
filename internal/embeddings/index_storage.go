@@ -232,7 +232,7 @@ func (d *decoder) decode() (*RepoEmbeddingIndex, error) {
 		ei.Embeddings = make([]int8, 0, numChunks*embeddingsChunkSize)
 		embeddingsBuf := make([]float32, 0, embeddingsChunkSize)
 		quantizeBuf := make([]int8, embeddingsChunkSize)
-		for i := 0; i < numChunks; i++ {
+		for i := range numChunks {
 			if err := d.dec.Decode(&embeddingsBuf); err != nil {
 				return nil, err
 			}
@@ -306,7 +306,7 @@ func (e *encoder) encode(rei *RepoEmbeddingIndex) error {
 			return err
 		}
 
-		for i := 0; i < numChunks; i++ {
+		for i := range numChunks {
 			start := i * e.chunkSize
 			end := start + e.chunkSize
 

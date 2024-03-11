@@ -37,7 +37,7 @@ func (s *WeatherService) GetCurrentWeather(ctx context.Context, location string)
 }
 
 func (s *WeatherService) SubscribeWeatherAlerts(ctx context.Context, region string, onAlert func(a *WeatherAlert) error) error {
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		select {
 		case <-ctx.Done(): // The client either explicitly canceled the operation or the context timed out.
 			return ctx.Err()

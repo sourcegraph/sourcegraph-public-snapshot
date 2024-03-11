@@ -194,7 +194,7 @@ func (s *SquirrelService) getDefPython(ctx context.Context, node Node) (ret *Nod
 func (s *SquirrelService) findNodeInScopePython(block Node, ident string) (ret *Node) {
 	defer s.onCall(block, &Tuple{String(block.Type()), String(ident)}, lazyNodeStringer(&ret))()
 
-	for i := 0; i < int(block.NamedChildCount()); i++ {
+	for i := range int(block.NamedChildCount()) {
 		child := block.NamedChild(i)
 
 		switch child.Type() {
@@ -487,7 +487,7 @@ func (s *SquirrelService) getDefInImports(ctx context.Context, program Node, ide
 				return nil
 			}
 			dots := int(importPrefix.ChildCount())
-			for i := 0; i < dots-1; i++ {
+			for i := range dots-1 {
 				path = strings.TrimSuffix(path, filepath.Base(path))
 				path = strings.TrimSuffix(path, "/")
 			}

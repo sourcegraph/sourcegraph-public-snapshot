@@ -1024,7 +1024,7 @@ func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
 		go createRepo(offset, ready)
 	}
 
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		if status := <-ready; status != 0 {
 			t.Fatal("Error during repo creation")
 		}
@@ -1064,7 +1064,7 @@ func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
 		go createExtSvc(offset, ready2)
 	}
 
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		if status := <-ready2; status != 0 {
 			t.Fatal("Error during external service repo creation")
 		}

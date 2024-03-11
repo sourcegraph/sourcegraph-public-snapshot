@@ -299,7 +299,7 @@ func TestClient_Users(t *testing.T) {
 			name: "maximum 50 permission filters",
 			page: &PageToken{Limit: 1000},
 			filters: func() (fs UserFilters) {
-				for i := 0; i < 51; i++ {
+				for i := range 51 {
 					fs = append(fs, UserFilter{
 						Permission: PermissionFilter{
 							Root: PermSysAdmin,

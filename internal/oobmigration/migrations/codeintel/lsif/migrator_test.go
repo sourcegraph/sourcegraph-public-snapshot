@@ -67,7 +67,7 @@ func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
 
 	n := 600
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		// 33% id=42, 33% id=43, 33% id=44
 		dumpID := 42 + i/(n/3)
 

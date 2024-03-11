@@ -67,7 +67,7 @@ func findGroups(pattern string) (groups []group) {
 	var opens []group
 	inCharClass := false
 	groupNumber := 0
-	for i := 0; i < len(pattern); i++ {
+	for i := range len(pattern) {
 		if pattern[i] == '\\' {
 			i += 1
 			continue

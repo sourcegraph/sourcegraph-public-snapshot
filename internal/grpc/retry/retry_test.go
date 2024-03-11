@@ -245,7 +245,7 @@ func (s *RetrySuite) TestParallel_NoRace() {
 			s.srv.resetUnaryOrStreamEstablishmentFailingConfiguration(failExceptModulo(2), codes.DataLoss, noSleep) // fail every other request
 
 			var wg sync.WaitGroup
-			for i := 0; i < 2; i++ {
+			for i := range 2 {
 				wg.Add(1)
 
 				go func() {
@@ -265,7 +265,7 @@ func (s *RetrySuite) TestParallel_NoRace() {
 			s.srv.resetUnaryOrStreamEstablishmentFailingConfiguration(failExceptModulo(2), codes.DataLoss, noSleep) // fail every other request
 
 			var wg sync.WaitGroup
-			for i := 0; i < 2; i++ {
+			for i := range 2 {
 				wg.Add(1)
 
 				go func() {
@@ -288,7 +288,7 @@ func (s *RetrySuite) TestParallel_NoRace() {
 			s.srv.resetUnaryOrStreamEstablishmentFailingConfiguration(failExceptModulo(2), codes.DataLoss, noSleep) // fail every other request
 
 			var wg sync.WaitGroup
-			for i := 0; i < 2; i++ {
+			for i := range 2 {
 				wg.Add(1)
 
 				go func() {
@@ -308,7 +308,7 @@ func (s *RetrySuite) TestParallel_NoRace() {
 			s.srv.resetUnaryOrStreamEstablishmentFailingConfiguration(failExceptModulo(2), codes.DataLoss, noSleep) // fail every other request
 
 			var wg sync.WaitGroup
-			for i := 0; i < 2; i++ {
+			for i := range 2 {
 				wg.Add(1)
 
 				go func() {
@@ -748,7 +748,7 @@ func TestJitterUp(t *testing.T) {
 	highCount := 0
 	lowCount := 0
 
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		out := jitterUp(duration, variance)
 		assert.True(t, out <= max, "value %s must be <= %s", out, max)
 		assert.True(t, out >= min, "value %s must be >= %s", out, min)

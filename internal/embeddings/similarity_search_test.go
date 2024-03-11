@@ -55,7 +55,7 @@ func TestSimilaritySearch(t *testing.T) {
 		RowMetadata:     []RepoEmbeddingRowMetadata{},
 	}
 
-	for i := 0; i < numRows; i++ {
+	for i := range numRows {
 		index.RowMetadata = append(index.RowMetadata, RepoEmbeddingRowMetadata{FileName: strconv.Itoa(i)})
 	}
 
