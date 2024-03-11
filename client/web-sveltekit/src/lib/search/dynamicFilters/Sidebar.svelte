@@ -183,6 +183,7 @@
             }
             a {
                 margin-left: auto;
+                line-height: 1;
                 kbd {
                     // TODO: use this style globally
                     font-family: var(--font-family-base);

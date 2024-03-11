@@ -3113,6 +3113,11 @@
           "!go": {
             "pointer": true
           }
+        },
+        "singleIdentityProvider": {
+          "description": "When true, any user can connect exactly one identity from the identity provider.",
+          "type": "boolean",
+          "default": false
         }
       }
     },

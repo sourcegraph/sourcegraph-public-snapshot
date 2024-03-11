@@ -53,7 +53,14 @@
                 </li>
             {/each}
         </ul>
-        {#if showMore}
+        {#if filteredItems.length === 0}
+            <small class="filter-message">
+                <div class="header"><strong>No matches in search results.</strong></div>
+                Try expanding your search using the
+                <Button variant="link" display="inline" on:click={() => filterInputRef.focus()}>search bar</Button>
+                above.
+            </small>
+        {:else if showMore}
             {#if filteredItems.length > limitedItems.length}
                 <small class="filter-message">
                     {filteredItems.length - limitedItems.length} not shown. Use
@@ -64,17 +71,10 @@
             <footer class="show-more">
                 <Button variant="link" on:click={() => (showMore = false)}>Show less</Button>
             </footer>
-        {:else if !showMore && filteredItems.length > limitedItems.length}
+        {:else if filteredItems.length > limitedItems.length}
             <footer class="show-more">
                 <Button variant="link" on:click={() => (showMore = true)}>Show more</Button>
             </footer>
-        {:else if filteredItems.length === 0}
-            <small class="filter-message">
-                <div class="header"><strong>No matches in search results.</strong></div>
-                Try expanding your search using the
-                <Button variant="link" display="inline" on:click={() => filterInputRef.focus()}>search bar</Button>
-                above.
-            </small>
         {/if}
     </article>
 {/if}

@@ -5,6 +5,7 @@ set -eu -o pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
 KEYS_DIR="/etc/sourcegraph/keys/"
+GCP_PROJECT="sourcegraph-ci"
 GCS_BUCKET="package-repository"
 TARGET_ARCH="x86_64"
 MAIN_BRANCH="main"

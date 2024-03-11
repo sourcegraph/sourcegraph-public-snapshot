@@ -14,8 +14,12 @@ export const FEATURE_FLAGS = [
     'contrast-compliant-syntax-highlighting',
     'enable-ownership-panels',
     'enable-simple-search',
+    // TODO(fkling): Remove this flag
+    'enable-sveltekit',
+    // TODO(fkling): Remove this flag
+    'enable-sveltekit-toggle',
     'web-next',
-    'web-next-rollout',
+    'web-next-enabled',
     'web-next-toggle',
     'end-user-onboarding',
     'insight-polling-enabled',
@@ -29,8 +33,6 @@ export const FEATURE_FLAGS = [
     'search-debug',
     'signup-survey-enabled',
     'sourcegraph-operator-site-admin-hide-maintenance',
-    'use-ssc-for-cody-subscription-on-web',
-    'cody-pro-trial-ended',
     'cody-payments-testing-mode',
 ] as const
 
