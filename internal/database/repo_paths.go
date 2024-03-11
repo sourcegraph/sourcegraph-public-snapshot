@@ -59,7 +59,7 @@ func ensureRepoPaths(ctx context.Context, db *basestore.Store, files []string, r
 	// Add empty string which references the repo root directory.
 	paths = append(paths, "")
 	// Reverse paths so we start at the root.
-	for i := range len(paths)/2 {
+	for i := range len(paths) / 2 {
 		j := len(paths) - i - 1
 		paths[i], paths[j] = paths[j], paths[i]
 	}
