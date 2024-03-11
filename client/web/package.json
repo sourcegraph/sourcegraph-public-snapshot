@@ -27,8 +27,8 @@
     "lint:js": "NODE_OPTIONS=\"--max_old_space_size=16192\" eslint --cache '**/*.[tj]s?(x)'",
     "lint:css": "stylelint 'src/**/*.scss' --quiet",
     "bundlesize": "pnpm exec bundlesize --config=./bundlesize.config.js",
-    "playwright:install": "playwright install",
-    "playwright:test": "playwright test"
+    "playwright:install": "pnpm exec playwright install",
+    "playwright:test": "pnpm exec playwright test"
   },
   "devDependencies": {
     "@playwright/test": "1.40.1",
