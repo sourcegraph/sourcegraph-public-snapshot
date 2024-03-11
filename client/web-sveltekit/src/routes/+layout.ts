@@ -49,8 +49,6 @@ export const load: LayoutLoad = async ({ fetch }) => {
         error(500, `Failed to parse user settings: ${settings.message}`)
     }
 
-    console.log(result.data.evaluatedFeatureFlags)
-
     return {
         user: result.data.currentUser,
         // Initial user settings
