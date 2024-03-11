@@ -50,7 +50,7 @@ func switchFn(local int) int {
 }
 
 func forFn(local int) int {
-	for i := range 3 {
+	for i := 0; i < 3; i++ {
 		fmt.Println(i)
 	}
 	return local
