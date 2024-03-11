@@ -57,7 +57,7 @@ func GetAPIClient(endpoint, accessToken string) (CompletionsClient, error) {
 	apiClient.mu.Lock()
 	defer apiClient.mu.Unlock()
 
-	//var clientOpts *azopenai.ClientOptions
+	// API Versions and docs https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#completions
 	clientOpts := &azopenai.ClientOptions{
 		ClientOptions: azcore.ClientOptions{
 			Transport: apiVersionClient("2023-05-15"),
