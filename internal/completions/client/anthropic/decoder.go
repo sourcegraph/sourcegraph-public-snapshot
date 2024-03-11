@@ -35,28 +35,6 @@ func NewDecoder(r io.Reader) *decoder {
 		if i := bytes.Index(data, []byte("\r\n\r\n")); i >= 0 {
 			return i + 4, data[:i], nil
 		}
-		// If we're at EOF, we have a final, non-terminated event. This should
-		// be empty.
-		if atEOF {
-			return len(data), data, nil
-		}
-		// Request more data.
-		return 0, nil, nil
-	}
-	scanner.Split(split)
-	return &decoder{
-		scanner: scanner,
-	}
-}
-
-func NewMessagesDecoder(r io.Reader) *decoder {
-	scanner := bufio.NewScanner(r)
-	scanner.Buffer(make([]byte, 0, 4096), maxPayloadSize)
-	// bufio.ScanLines, except we look for \n\n which separate events.
-	split := func(data []byte, atEOF bool) (int, []byte, error) {
-		if atEOF && len(data) == 0 {
-			return 0, nil, nil
-		}
 		if i := bytes.Index(data, []byte("\n\n")); i >= 0 {
 			return i + 2, data[:i], nil
 		}

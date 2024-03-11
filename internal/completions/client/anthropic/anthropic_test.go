@@ -105,7 +105,7 @@ func TestValidAnthropicMessagesStream(t *testing.T) {
 }
 
 func TestInvalidAnthropicStream(t *testing.T) {
-	var mockAnthropicInvalidResponseLines = []string{`{]`}
+	var mockAnthropicInvalidResponseLines = []string{`data:{]`}
 
 	mockClient := getMockClient(linesToResponse(mockAnthropicInvalidResponseLines, "\r\n\r\n"), false)
 	err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil })

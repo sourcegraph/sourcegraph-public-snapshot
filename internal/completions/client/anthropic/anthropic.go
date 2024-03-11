@@ -86,12 +86,7 @@ func (a *anthropicClient) Stream(
 	}
 	defer resp.Body.Close()
 
-	var dec *decoder
-	if a.messagesApi {
-		dec = NewMessagesDecoder(resp.Body)
-	} else {
-		dec = NewDecoder(resp.Body)
-	}
+	dec := NewDecoder(resp.Body)
 
 	completion := ""
 	for dec.Scan() {

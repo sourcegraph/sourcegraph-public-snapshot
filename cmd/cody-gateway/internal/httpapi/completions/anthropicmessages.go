@@ -242,7 +242,7 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 	}
 
 	// Otherwise, we have to parse the event stream from anthropic.
-	dec := anthropic.NewMessagesDecoder(r)
+	dec := anthropic.NewDecoder(r)
 	for dec.Scan() {
 		data := dec.Data()
 
