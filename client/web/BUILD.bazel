@@ -2458,6 +2458,9 @@ playwright_bin.playwright_test(
         "install",
         "--with-deps",
     ],
+    env = {
+        "PLAYWRIGHT_BROWSERS_PATH": "0",
+    },
     # data = [
     #     "//:node_modules/playwright",
     # ],
@@ -2470,4 +2473,7 @@ playwright_test_bin.playwright_test(
         "playwright.config.ts",
         "//:node_modules/@playwright/test",
     ],
+    env = {
+        "PLAYWRIGHT_BROWSERS_PATH": "0",
+    },
 )
