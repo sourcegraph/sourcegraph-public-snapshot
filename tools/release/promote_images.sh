@@ -13,10 +13,11 @@ if [ "$#" -lt 1 ]; then
 fi
 
 echo -e "## Release: image promotions" > ./annotations/image_promotions.md
+echo -e "\n| Name | From | To |\n|---|---|---|" > ./annotations/image_promotions.md
 for name in "${@:1}"; do
   echo "--- Copying ${name} from private registry to public registry"
   # docker pull "${INTERNAL_REGISTRY}/${name}:${VERSION}"
   # docker tag "${INTERNAL_REGISTRY}/${name}:${VERSION}" "${PUBLIC_REGISTRY}/${name}:${VERSION}"
   # docker push "${PUBLIC_REGISTRY}/${name}:${VERSION}"
-  echo -e "- ${INTERNAL_REGISTRY}/${name}:${VERSION}"\n  - "${PUBLIC_REGISTRY}/${name}:${VERSION}" >./annotations/image_promotions.md
+  echo -e "| ${name} | \`${INTERNAL_REGISTRY}/${name}:${VERSION}\` | \`${PUBLIC_REGISTRY}/${name}:${VERSION}\` |" >>./annotations/image_promotions.md
 done

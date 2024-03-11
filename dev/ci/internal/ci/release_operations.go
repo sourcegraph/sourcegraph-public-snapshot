@@ -22,7 +22,7 @@ func promoteRFC795Images(c Config) operations.Operation {
 				fmt.Sprintf("./tools/release/promote_images.sh %s", image_args),
 				bk.AnnotatedCmdOpts{
 					Annotations: &bk.AnnotationOpts{
-						Type:         bk.AnnotationTypeError,
+						Type:         bk.AnnotationTypeInfo,
 						IncludeNames: false,
 					},
 				},
