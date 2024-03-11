@@ -99,6 +99,22 @@ func NewHandler(
 		v1router.Path(route).Methods(http.MethodPost).Handler(overheadMiddleware)
 	}
 
+	// registerSimpleGETEndpoint registers a basic HTTP GET endpoint, without the
+	// latency and performance counter middle ware that we register for other endpoints.
+	registerSimpleGETEndpoint := func(name, route string, handler http.Handler) {
+		v1router.Path(route).Methods(http.MethodGet).Handler(
+			instrumentation.HTTPMiddleware(name,
+				authr.Middleware(
+					requestlogger.Middleware(
+						logger,
+						handler,
+					),
+				),
+				otelhttp.WithPublicEndpoint(),
+			),
+		)
+	}
+
 	if config.Anthropic.AccessToken == "" {
 		logger.Error("Anthropic access token not set. Not registering Anthropic-related endpoints.")
 	} else {
@@ -156,17 +172,7 @@ func NewHandler(
 			attributesOpenAICompletions,
 			openAIHandler)
 
-		v1router.Path("/embeddings/models").Methods(http.MethodGet).Handler(
-			instrumentation.HTTPMiddleware("v1.embeddings.models",
-				authr.Middleware(
-					requestlogger.Middleware(
-						logger,
-						embeddings.NewListHandler(),
-					),
-				),
-				otelhttp.WithPublicEndpoint(),
-			),
-		)
+		registerSimpleGETEndpoint("v1.embeddings.models", "/embeddings/models", embeddings.NewListHandler())
 
 		embeddingsHandler := embeddings.NewHandler(
 			logger,
@@ -208,17 +214,9 @@ func NewHandler(
 	}
 
 	// Register a route where actors can retrieve their current rate limit state.
-	v1router.Path("/limits").Methods(http.MethodGet).Handler(
-		instrumentation.HTTPMiddleware("v1.limits",
-			authr.Middleware(
-				requestlogger.Middleware(
-					logger,
-					featurelimiter.ListLimitsHandler(logger, rs),
-				),
-			),
-			otelhttp.WithPublicEndpoint(),
-		),
-	)
+	limitsHandler := featurelimiter.ListLimitsHandler(logger, rs)
+	registerSimpleGETEndpoint("v1.limits", "/limits", limitsHandler)
+
 	// Register a route where actors can refresh their rate limit state.
 	v1router.Path("/limits/refresh").Methods(http.MethodPost).Handler(
 		instrumentation.HTTPMiddleware("v1.limits",
