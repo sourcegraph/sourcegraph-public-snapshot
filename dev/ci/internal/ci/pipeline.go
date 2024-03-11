@@ -71,7 +71,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	bk.FeatureFlags.ApplyEnv(env)
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
-	if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease, runtype.RFC795InternalRelease) {
+	if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease) {
 		env["PERCY_TARGET_BRANCH"] = c.Branch
 		// When we are building a release, we do not want to cache the client bundle.
 		//
@@ -257,18 +257,17 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			bazelPublishExecutorDockerMirror(c),
 			bazelPublishExecutorBinary(c),
 		)
-	case runtype.RFC795PromoteRelease:
+	case runtype.PromoteRelease:
 		ops = operations.NewSet(
-			// Promote RFC795 images to release
-			promoteRFC795Images(c),
+			releasePromoteImages(c),
 		)
 	default:
 		// Executor VM image
-		alwaysRebuild := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease, runtype.RFC795InternalRelease) || c.Diff.Has(changed.ExecutorVMImage)
+		alwaysRebuild := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease) || c.Diff.Has(changed.ExecutorVMImage)
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
 
-		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease, runtype.RFC795InternalRelease) {
+		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease) {
 			imageBuildOps.Append(bazelBuildExecutorVM(c, alwaysRebuild))
 			if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
 				imageBuildOps.Append(bazelBuildExecutorDockerMirror(c))
@@ -278,7 +277,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Core tests
 		ops.Merge(CoreTestOperations(buildOptions, changed.All, CoreTestOperationsOptions{
-			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease, runtype.RFC795InternalRelease),
+			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
@@ -318,7 +317,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Add final artifacts
 		publishOps := operations.NewNamedSet("Publish images")
 		// Executor VM image
-		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease, runtype.RFC795InternalRelease) {
+		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease, runtype.InternalRelease) {
 			publishOps.Append(bazelPublishExecutorVM(c, alwaysRebuild))
 			publishOps.Append(bazelPublishExecutorBinary(c))
 			if c.RunType.Is(runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {

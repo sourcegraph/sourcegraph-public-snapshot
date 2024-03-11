@@ -138,12 +138,9 @@ func NewConfig(now time.Time) Config {
 
 // inferVersion constructs the Sourcegraph version from the given build state.
 func inferVersion(runType runtype.RunType, tag string, commit string, buildNumber int, branch string, now time.Time) string {
-	if runType.Is(runtype.RFC795InternalRelease) {
-		// TODO(RFC795)
-		return os.Getenv("VERSION")
-	}
-	if runType.Is(runtype.RFC795PromoteRelease) {
-		// TODO(RFC795)
+	// If we're building a release, use the version that is being released regardless of
+	// all other build attributes, such as tag, commit, build number, etc ...
+	if runType.Is(runtype.InternalRelease, runtype.PromoteRelease) {
 		return os.Getenv("VERSION")
 	}
 

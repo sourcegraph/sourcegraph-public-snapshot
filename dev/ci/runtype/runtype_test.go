@@ -53,21 +53,21 @@ func TestComputeRunType(t *testing.T) {
 		},
 		want: BextNightly,
 	}, {
-		name: "rfc795 internal release",
+		name: "internal release",
 		args: args{
 			env: map[string]string{
 				"RELEASE_INTERNAL": "true",
 			},
 		},
-		want: RFC795InternalRelease,
+		want: InternalRelease,
 	}, {
-		name: "rfc795 public release",
+		name: "public release",
 		args: args{
 			env: map[string]string{
 				"RELEASE_PUBLIC": "true",
 			},
 		},
-		want: RFC795PromoteRelease,
+		want: PromoteRelease,
 	}, {
 		name: "wolfi base image rebuild",
 		args: args{
