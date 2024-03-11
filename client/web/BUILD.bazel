@@ -2453,8 +2453,11 @@ ts_project(
 )
 
 playwright_bin.playwright_test(
-    name = "playwright_install --with-deps",
-    args = ["install"],
+    name = "playwright_install",
+    args = [
+        "install",
+        "--with-deps",
+    ],
     # data = [
     #     "//:node_modules/playwright",
     # ],
