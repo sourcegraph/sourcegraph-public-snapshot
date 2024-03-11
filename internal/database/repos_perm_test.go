@@ -884,7 +884,7 @@ func benchmarkAuthzQuery(b *testing.B, numRepos, numUsers, reposPerUser int) {
 	for i := 1; i <= numUsers; i++ {
 		objectIDs := make(map[int]struct{})
 		// Assign a random set of repos to the user
-		for j := 0; j < reposPerUser; j++ {
+		for j := range reposPerUser {
 			repoID := rand.Intn(numRepos) + 1
 			objectIDs[repoID] = struct{}{}
 		}

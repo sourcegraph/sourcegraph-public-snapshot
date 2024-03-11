@@ -46,7 +46,7 @@ func TestRepoIDsByGlobPatterns(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		for lo := 0; lo < len(testCase.expectedRepositoryIDs); lo++ {
+		for lo := range len(testCase.expectedRepositoryIDs) {
 			hi := lo + 3
 			if hi > len(testCase.expectedRepositoryIDs) {
 				hi = len(testCase.expectedRepositoryIDs)

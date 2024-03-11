@@ -101,7 +101,7 @@ func generateEmbeddingResponse(batchSize int) ([]byte, error) {
 	}
 	for i := range batchSize {
 		data := make([]float32, 1536)
-		for f := 0; f < 1536; f++ {
+		for f := range 1536 {
 			data[f] = rand.Float32()*2.0 - 1.0
 		}
 		res.Data[i] = openaiEmbeddingsData{

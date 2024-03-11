@@ -223,7 +223,7 @@ func (wkr *worker) process(ctx context.Context, owner, repo string) error {
 		return &feederError{"api", err}
 	}
 
-	for attempt := 0; attempt < wkr.numCloningAttempts && ctx.Err() == nil; attempt++ {
+	for attempt := range wkr.numCloningAttempts && ctx.Err() == nil {
 		err = wkr.pushToGHE(ctx, owner, repo)
 		if err == nil {
 			return nil

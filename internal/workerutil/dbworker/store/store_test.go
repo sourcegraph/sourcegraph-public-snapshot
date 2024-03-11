@@ -609,7 +609,7 @@ func TestStoreUpdateExecutionLogEntryUnknownEntry(t *testing.T) {
 		Out:     "<load payload>",
 	}
 
-	for unknownEntryID := 0; unknownEntryID < 2; unknownEntryID++ {
+	for unknownEntryID := range 2 {
 		err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).UpdateExecutionLogEntry(context.Background(), 1, unknownEntryID, entry, ExecutionLogEntryOptions{})
 		if err == nil {
 			t.Fatal("expected error but got none")

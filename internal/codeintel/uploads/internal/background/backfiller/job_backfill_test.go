@@ -49,7 +49,7 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 	pageSize := 50
 	for i := 0; i < n; i += pageSize {
 		commitsByRepo := map[int][]string{}
-		for j := 0; j < pageSize; j++ {
+		for j := range pageSize {
 			repositoryID := 42 + (i+j)/(n/2) // 50% id=42, 50% id=43
 			commitsByRepo[repositoryID] = append(commitsByRepo[repositoryID], fmt.Sprintf("%040d", i+j))
 		}
@@ -136,7 +136,7 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 	pageSize := 50
 	for i := 0; i < n; i += pageSize {
 		commitsByRepo := map[int][]string{}
-		for j := 0; j < pageSize; j++ {
+		for j := range pageSize {
 			repositoryID := 42 + (i+j)/(n/2) // 50% id=42, 50% id=43
 			commitsByRepo[repositoryID] = append(commitsByRepo[repositoryID], fmt.Sprintf("%040d", i+j))
 		}
