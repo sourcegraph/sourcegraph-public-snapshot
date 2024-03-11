@@ -50,7 +50,7 @@ func main() {
 		}}})
 	defer conf.Mock(nil)
 
-	for i := 0; i < logsCount; i++ {
+	for i := range logsCount {
 		audit.Log(ctx, logger, audit.Record{
 			Entity: "integration test",
 			Action: "sampling testing",

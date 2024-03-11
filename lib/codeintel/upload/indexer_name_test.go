@@ -30,7 +30,7 @@ func TestReadIndexerNameMalformed(t *testing.T) {
 
 func generateTestIndex(metaDataVertex string) io.Reader {
 	lines := []string{metaDataVertex}
-	for i := 0; i < 20000; i++ {
+	for i := range 20000 {
 		lines = append(lines, testVertex)
 	}
 

@@ -54,7 +54,7 @@ func TestLoggerAndReaderHappyPaths(t *testing.T) {
 	recorder.LogStart(routine3)
 	recorder.LogRun(routine1, 10*time.Millisecond, nil)
 	recorder.LogRun(routine1, 20*time.Millisecond, errors.New("test error"))
-	for i := 0; i < 100; i++ { // Make sure int32 overflow doesn't happen
+	for i := range 100 { // Make sure int32 overflow doesn't happen
 		recorder.LogRun(routine2, 10*time.Hour, nil)
 		recorder.LogRun(routine2, 20*time.Hour, nil)
 	}

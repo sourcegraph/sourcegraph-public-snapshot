@@ -281,7 +281,7 @@ func TestExecutorsDeleteInactiveHeartbeats(t *testing.T) {
 	store := db.Executors().(*executorStore)
 	ctx := context.Background()
 
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		db.Executors().UpsertHeartbeat(ctx, types.Executor{Hostname: fmt.Sprintf("h%02d", i+1), QueueName: "q1"})
 	}
 

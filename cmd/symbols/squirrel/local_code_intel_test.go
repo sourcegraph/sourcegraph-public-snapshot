@@ -514,7 +514,7 @@ func sortAnnotations(annotations []annotation) {
 		} else if coli != colj {
 			return coli < colj
 		} else {
-			for i := 0; i < len(tagsi) && i < len(tagsj); i++ {
+			for i := range len(tagsi) && i < len(tagsj) {
 				if tagsi[i] != tagsj[i] {
 					return tagsi[i] < tagsj[i]
 				}

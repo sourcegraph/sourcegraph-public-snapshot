@@ -172,7 +172,7 @@ func (c *azureOpenaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts [
 }
 
 func (c *azureOpenaiEmbeddingsClient) requestSingleEmbeddingWithRetryOnNull(ctx context.Context, input string, retries int) (*azopenai.GetEmbeddingsResponse, error) {
-	for i := 0; i < retries; i++ {
+	for i := range retries {
 		response, err := c.client.GetEmbeddings(ctx, azopenai.EmbeddingsOptions{
 			Input:          []string{input},
 			DeploymentName: &c.model,

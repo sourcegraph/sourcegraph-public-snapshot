@@ -239,7 +239,7 @@ func (r *PeriodicGoroutine) startPool(concurrency int) func() {
 	g := conc.NewWaitGroup()
 	ctx, cancel := context.WithCancel(context.Background())
 
-	for i := 0; i < concurrency; i++ {
+	for i := range concurrency {
 		g.Go(func() { r.runHandlerPeriodically(ctx) })
 	}
 

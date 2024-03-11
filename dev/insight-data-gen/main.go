@@ -179,7 +179,7 @@ func writeContent(path string, content string) error {
 func generateFileContent(snapshot SnapshotContent) string {
 	var b strings.Builder
 	for _, symbol := range snapshot.Symbols {
-		for i := 0; i < symbol.count; i++ {
+		for i := range symbol.count {
 			b.WriteString(fmt.Sprintf("%s\n", symbol.Symbol))
 		}
 	}

@@ -208,7 +208,7 @@ func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *grap
 		}
 	}
 
-	for i := 0; i < len(modifiedPoints); i++ {
+	for i := range len(modifiedPoints) {
 		var after *time.Time
 		if i > 0 {
 			after = &modifiedPoints[i-1].Time
@@ -237,7 +237,7 @@ func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *grap
 func removeClosePoints(points []store.SeriesPoint, series types.InsightViewSeries) []store.SeriesPoint {
 	buffer := intervalToMinutes(types.IntervalUnit(series.SampleIntervalUnit), series.SampleIntervalValue) / 5
 	modifiedPoints := []store.SeriesPoint{}
-	for i := 0; i < len(points)-1; i++ {
+	for i := range len(points)-1 {
 		modifiedPoints = append(modifiedPoints, points[i])
 		if points[i+1].Time.Sub(points[i].Time).Minutes() < buffer {
 			i++

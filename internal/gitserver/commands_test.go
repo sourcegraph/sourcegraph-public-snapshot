@@ -1818,7 +1818,7 @@ func testCommits(ctx context.Context, label string, repo api.RepoName, opt Commi
 
 func checkCommits(t *testing.T, commits, wantCommits []*gitdomain.Commit) {
 	t.Helper()
-	for i := 0; i < len(commits) || i < len(wantCommits); i++ {
+	for i := range len(commits) || i < len(wantCommits) {
 		var gotC, wantC *gitdomain.Commit
 		if i < len(commits) {
 			gotC = commits[i]

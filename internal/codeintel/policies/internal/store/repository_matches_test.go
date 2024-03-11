@@ -164,7 +164,7 @@ func TestUpdateReposMatchingPatternsOverLimit(t *testing.T) {
 
 	limit := 50
 	ids := make([]int, 0, limit*3)
-	for i := 0; i < cap(ids); i++ {
+	for i := range cap(ids) {
 		ids = append(ids, 50+i)
 	}
 

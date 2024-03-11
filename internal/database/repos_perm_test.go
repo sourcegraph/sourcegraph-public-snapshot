@@ -919,7 +919,7 @@ func benchmarkAuthzQuery(b *testing.B, numRepos, numUsers, reposPerUser int) {
 	b.ResetTimer()
 
 	b.Run("list repos", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for i := range b.N {
 			fetchMinRepos()
 		}
 	})

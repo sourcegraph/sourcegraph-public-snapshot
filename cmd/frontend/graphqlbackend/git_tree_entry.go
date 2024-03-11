@@ -208,7 +208,7 @@ func nthIndex(in []byte, sep byte, n int) (idx int) {
 	}
 
 	start := 0
-	for i := 0; i < n; i++ {
+	for i := range n {
 		idx := bytes.IndexByte(in[start:], sep)
 		if idx == -1 {
 			return idx

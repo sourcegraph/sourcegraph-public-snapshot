@@ -205,7 +205,7 @@ func (p *parser) peek(n int) (string, error) {
 	}()
 
 	var result []rune
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if p.done() {
 			return "", io.ErrShortBuffer
 		}

@@ -35,7 +35,7 @@ func TestRedisFixAOF(t *testing.T) {
 
 	// We run redisFixAOF twice. First time it will repair, second time should
 	// be a noop since the file will be fine.
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		redisFixAOF(filepath.Dir(dataDir), redisProcfileConfig{
 			name:    "redis-test",
 			dataDir: filepath.Base(dataDir),

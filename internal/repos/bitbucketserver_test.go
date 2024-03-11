@@ -495,7 +495,7 @@ func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
 
 			var got []*types.Repo
 
-			for i := 0; i < wantNumRepos; i++ {
+			for i := range wantNumRepos {
 				select {
 				case res := <-results:
 					got = append(got, res.Repo)

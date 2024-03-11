@@ -106,14 +106,14 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 				b.Fatal(err)
 			}
 		}
-		for i := 0; i < 32; i++ {
+		for i := range 32 {
 			writeRef("refs/heads/feature-branch", i)
 		}
 		_, err = fmt.Fprintf(f, "%s refs/heads/master\n", masterRev)
 		if err != nil {
 			b.Fatal(err)
 		}
-		for i := 0; i < 10000; i++ {
+		for i := range 10000 {
 			// actual format is refs/pull/${i}/head, but doesn't actually
 			// matter for testing
 			writeRef("refs/pull/head", i)
