@@ -5,7 +5,6 @@ load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@npm//:@playwright/test/package_json.bzl", playwright_test_bin = "bin")
 load("@npm//:bundlesize2/package_json.bzl", bundlesize_bin = "bin")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("@npm//client/web:playwright/package_json.bzl", playwright_bin = "bin")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
@@ -1737,6 +1736,9 @@ ts_project(
         ":code_intel_schema",
         ":graphql_operations",
         ":module_style_typings",
+        ":node_modules/@playwright/browser-chromium",
+        ":node_modules/@playwright/browser-firefox",
+        ":node_modules/@playwright/browser-webkit",
         ":node_modules/@playwright/test",
         ":node_modules/@sourcegraph/branded",
         ":node_modules/@sourcegraph/client-api",
@@ -2452,25 +2454,30 @@ ts_project(
     ],
 )
 
-playwright_bin.playwright_test(
-    name = "playwright_install",
-    args = [
-        "install",
-    ],
-    env = {
-        "PLAYWRIGHT_BROWSERS_PATH": "0",
-    },
-    # data = [
-    #     "//:node_modules/playwright",
-    # ],
-)
+# playwright_bin.playwright_test(
+#     name = "playwright_install",
+#     args = [
+#         "install",
+#     ],
+#     env = {
+#         "PLAYWRIGHT_BROWSERS_PATH": "0",
+#     },
+#     # data = [
+#     #     "//:node_modules/playwright",
+#     # ],
+# )
 
 playwright_test_bin.playwright_test(
     name = "playwright_test",
     args = ["test"],
     data = glob(["src/playwright/*.spec.ts"]) + [
         "playwright.config.ts",
+        # If I include these, bazel fails because it can't resolve them.
+        # "//:node_modules/@playwright/browser-chromium",
+        # "//:node_modules/@playwright/browser-firefox",
+        # "//:node_modules/@playwright/browser-webkit",
         "//:node_modules/@playwright/test",
+        # "//:node_modules/playwright-core",
     ],
     env = {
         "PLAYWRIGHT_BROWSERS_PATH": "0",

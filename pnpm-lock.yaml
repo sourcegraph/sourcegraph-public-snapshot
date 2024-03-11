@@ -1372,6 +1372,15 @@ importers:
         specifier: workspace:*
         version: link:../wildcard
     devDependencies:
+      '@playwright/browser-chromium':
+        specifier: ^1.42.1
+        version: 1.42.1
+      '@playwright/browser-firefox':
+        specifier: ^1.42.1
+        version: 1.42.1
+      '@playwright/browser-webkit':
+        specifier: ^1.42.1
+        version: 1.42.1
       '@playwright/test':
         specifier: 1.40.1
         version: 1.40.1
@@ -1391,6 +1400,9 @@ importers:
         specifier: ^20.11.19
         version: 20.11.19
       playwright:
+        specifier: ^1.42.1
+        version: 1.42.1
+      playwright-core:
         specifier: ^1.42.1
         version: 1.42.1
 
@@ -6455,6 +6467,30 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@playwright/browser-chromium@1.42.1:
+    resolution: {integrity: sha512-A7pcZIZQIiiafO2UCR/OEdkvGM8Hr2gsjcK0cQ7WStF28HUpPBbJiwR9qmo+rjxaEaK7c9XD1qNXOng8Q+eI0Q==}
+    engines: {node: '>=16'}
+    requiresBuild: true
+    dependencies:
+      playwright-core: 1.42.1
+    dev: true
+
+  /@playwright/browser-firefox@1.42.1:
+    resolution: {integrity: sha512-uLQQoIkRBi0IgPIJ/aYcUK+8FZLCCXJvs7qaqK5fdihbQnqrDyXt0grxYK/9Ylv+lVMGkfaQ0V7QE/YnrF/U6Q==}
+    engines: {node: '>=16'}
+    requiresBuild: true
+    dependencies:
+      playwright-core: 1.42.1
+    dev: true
+
+  /@playwright/browser-webkit@1.42.1:
+    resolution: {integrity: sha512-dZSrqkMbiB/Lc8Us98nxoNOvmMfxJH6LxRtDKwoukawjlO0cegQn9jdxtXh7GBddyd2tyd6gUoHFaoFwsd/qrg==}
+    engines: {node: '>=16'}
+    requiresBuild: true
+    dependencies:
+      playwright-core: 1.42.1
+    dev: true
 
   /@playwright/test@1.40.1:
     resolution: {integrity: sha512-EaaawMTOeEItCRvfmkI9v6rBkF1svM8wjl/YPRrg2N2Wmp+4qJYkWtJsbew1szfKKDm6fPLy4YAanBhIlf9dWw==}
