@@ -76,7 +76,9 @@ func NewHandler(
 	// V1 service routes
 	v1router := r.PathPrefix("/v1").Subrouter()
 
-	if config.Anthropic.AccessToken != "" {
+	if config.Anthropic.AccessToken == "" {
+		logger.Error("Anthropic access token not set. Not registering Anthropic-related endpoints.")
+	} else {
 		anthropicHandler, err := completions.NewAnthropicHandler(
 			logger,
 			eventLogger,
@@ -138,10 +140,11 @@ func NewHandler(
 					otelhttp.WithPublicEndpoint(),
 				),
 			))
-	} else {
-		logger.Error("Anthropic access token not set")
 	}
-	if config.OpenAI.AccessToken != "" {
+
+	if config.OpenAI.AccessToken == "" {
+		logger.Error("OpenAI access token not set. Not registering OpenAI-related endpoints.")
+	} else {
 		v1router.Path("/completions/openai").Methods(http.MethodPost).Handler(
 			overhead.HTTPMiddleware(latencyHistogram,
 				instrumentation.HTTPMiddleware("v1.completions.openai",
@@ -209,10 +212,11 @@ func NewHandler(
 					otelhttp.WithPublicEndpoint(),
 				),
 			))
-	} else {
-		logger.Error("OpenAI access token not set")
 	}
-	if config.Fireworks.AccessToken != "" {
+
+	if config.Fireworks.AccessToken == "" {
+		logger.Error("Fireworks access token not set. Not registering Fireworks-related endpoints.")
+	} else {
 		v1router.Path("/completions/fireworks").Methods(http.MethodPost).Handler(
 			overhead.HTTPMiddleware(latencyHistogram,
 				instrumentation.HTTPMiddleware("v1.completions.fireworks",
@@ -237,8 +241,6 @@ func NewHandler(
 					otelhttp.WithPublicEndpoint(),
 				),
 			))
-	} else {
-		logger.Error("Fireworks access token not set")
 	}
 
 	// Register a route where actors can retrieve their current rate limit state.
