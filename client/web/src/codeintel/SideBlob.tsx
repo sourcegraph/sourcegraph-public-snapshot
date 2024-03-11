@@ -7,6 +7,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Code, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
@@ -25,6 +26,7 @@ import styles from './ReferencesPanel.module.scss'
 
 export interface SideBlobProps
     extends TelemetryProps,
+        TelemetryV2Props,
         SettingsCascadeProps,
         PlatformContextProps,
         ExtensionsControllerProps {
@@ -54,6 +56,7 @@ export const SideBlob: FC<SideBlobProps> = props => {
         extensionsController,
         settingsCascade,
         telemetryService,
+        telemetryRecorder,
         platformContext,
         className,
         staticHighlightRanges,
@@ -131,6 +134,7 @@ export const SideBlob: FC<SideBlobProps> = props => {
             extensionsController={extensionsController}
             settingsCascade={settingsCascade}
             telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
             staticHighlightRanges={staticHighlightRanges}
         />
     )

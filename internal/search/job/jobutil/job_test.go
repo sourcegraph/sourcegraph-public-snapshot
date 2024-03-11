@@ -189,7 +189,7 @@ func TestNewPlanJob(t *testing.T) {
           (SEQUENTIAL
             (ensureUnique . false)
             (ZOEKTGLOBALTEXTSEARCH
-              (query . regex:"ok(?-s:.)*?ok")
+              (query . regex:"(?-s:ok.*?ok)")
               (type . text))
             (REPOSEARCH
               (repoOpts.repoFilters . [(?:ok).*?(?:ok)])
@@ -299,7 +299,7 @@ func TestNewPlanJob(t *testing.T) {
         (limit . 10000)
         (PARALLEL
           (ZOEKTGLOBALTEXTSEARCH
-            (query . regex:"foo(?-s:.)*?@bar")
+            (query . regex:"(?-s:foo.*?@bar)")
             (type . text))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
@@ -338,11 +338,13 @@ func TestNewPlanJob(t *testing.T) {
       (LIMIT
         (limit . 10000)
         (PARALLEL
-          (COMMITSEARCH
-            (query . *protocol.MessageMatches(test))
-            (diff . false)
-            (limit . 10000)
-            (repoOpts.onlyCloned . true))
+          (REPOPAGER
+            (repoOpts.onlyCloned . true)
+            (PARTIALREPOS
+              (COMMITSEARCH
+                (query . *protocol.MessageMatches(test))
+                (diff . false)
+                (limit . 10000))))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
 	}, {
@@ -360,11 +362,13 @@ func TestNewPlanJob(t *testing.T) {
       (LIMIT
         (limit . 10000)
         (PARALLEL
-          (DIFFSEARCH
-            (query . *protocol.DiffMatches(test))
-            (diff . true)
-            (limit . 10000)
-            (repoOpts.onlyCloned . true))
+          (REPOPAGER
+            (repoOpts.onlyCloned . true)
+            (PARTIALREPOS
+              (DIFFSEARCH
+                (query . *protocol.DiffMatches(test))
+                (diff . true)
+                (limit . 10000))))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
 	}, {
@@ -385,11 +389,13 @@ func TestNewPlanJob(t *testing.T) {
           (ZOEKTGLOBALTEXTSEARCH
             (query . content_substr:"test")
             (type . text))
-          (COMMITSEARCH
-            (query . *protocol.MessageMatches(test))
-            (diff . false)
-            (limit . 10000)
-            (repoOpts.onlyCloned . true))
+          (REPOPAGER
+            (repoOpts.onlyCloned . true)
+            (PARTIALREPOS
+              (COMMITSEARCH
+                (query . *protocol.MessageMatches(test))
+                (diff . false)
+                (limit . 10000))))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
 	}, {
@@ -429,12 +435,14 @@ func TestNewPlanJob(t *testing.T) {
             (PARTIALREPOS
               (ZOEKTSYMBOLSEARCH
                 (query . sym:substr:"test"))))
-          (COMMITSEARCH
-            (query . *protocol.MessageMatches(test))
-            (diff . false)
-            (limit . 10000)
+          (REPOPAGER
             (repoOpts.repoFilters . [test])
-            (repoOpts.onlyCloned . true))
+            (repoOpts.onlyCloned . true)
+            (PARTIALREPOS
+              (COMMITSEARCH
+                (query . *protocol.MessageMatches(test))
+                (diff . false)
+                (limit . 10000))))
           (REPOSCOMPUTEEXCLUDED
             (repoOpts.repoFilters . [test]))
           (PARALLEL
@@ -464,11 +472,13 @@ func TestNewPlanJob(t *testing.T) {
           (ZOEKTGLOBALTEXTSEARCH
             (query . content_substr:"test")
             (type . text))
-          (COMMITSEARCH
-            (query . *protocol.MessageMatches(test))
-            (diff . false)
-            (limit . 10000)
-            (repoOpts.onlyCloned . true))
+          (REPOPAGER
+            (repoOpts.onlyCloned . true)
+            (PARTIALREPOS
+              (COMMITSEARCH
+                (query . *protocol.MessageMatches(test))
+                (diff . false)
+                (limit . 10000))))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
 	}, {
@@ -508,12 +518,14 @@ func TestNewPlanJob(t *testing.T) {
             (PARTIALREPOS
               (ZOEKTSYMBOLSEARCH
                 (query . sym:substr:"test"))))
-          (COMMITSEARCH
-            (query . *protocol.MessageMatches(test))
-            (diff . false)
-            (limit . 10000)
+          (REPOPAGER
             (repoOpts.repoFilters . [test])
-            (repoOpts.onlyCloned . true))
+            (repoOpts.onlyCloned . true)
+            (PARTIALREPOS
+              (COMMITSEARCH
+                (query . *protocol.MessageMatches(test))
+                (diff . false)
+                (limit . 10000))))
           (REPOSCOMPUTEEXCLUDED
             (repoOpts.repoFilters . [test]))
           (PARALLEL
@@ -542,11 +554,13 @@ func TestNewPlanJob(t *testing.T) {
         (LIMIT
           (limit . 10000)
           (PARALLEL
-            (COMMITSEARCH
-              (query . (*protocol.MessageMatches((?:a)|(?:b))))
-              (diff . false)
-              (limit . 10000)
-              (repoOpts.onlyCloned . true))
+            (REPOPAGER
+              (repoOpts.onlyCloned . true)
+              (PARTIALREPOS
+                (COMMITSEARCH
+                  (query . (*protocol.MessageMatches((?:a)|(?:b))))
+                  (diff . false)
+                  (limit . 10000))))
             REPOSCOMPUTEEXCLUDED
             (OR
               NOOP
@@ -556,11 +570,13 @@ func TestNewPlanJob(t *testing.T) {
         (LIMIT
           (limit . 10000)
           (PARALLEL
-            (DIFFSEARCH
-              (query . (*protocol.DiffMatches((?:a)|(?:b))))
-              (diff . true)
-              (limit . 10000)
-              (repoOpts.onlyCloned . true))
+            (REPOPAGER
+              (repoOpts.onlyCloned . true)
+              (PARTIALREPOS
+                (DIFFSEARCH
+                  (query . (*protocol.DiffMatches((?:a)|(?:b))))
+                  (diff . true)
+                  (limit . 10000))))
             REPOSCOMPUTEEXCLUDED
             (OR
               NOOP
@@ -1138,19 +1154,23 @@ func Test_computeResultTypes(t *testing.T) {
 	}
 
 	t.Run("standard, only search file content when type not set", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("path:foo content:bar", query.SearchTypeStandard)))
+		autogold.Expect("file").Equal(t, test("path:foo content:bar", query.SearchTypeStandard))
 	})
 
 	t.Run("standard, plain pattern searches repo path file content", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("path:foo bar", query.SearchTypeStandard)))
+		autogold.Expect("file|path|repo").Equal(t, test("path:foo bar", query.SearchTypeStandard))
 	})
 
 	t.Run("keyword, only search file content when type not set", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("path:foo content:bar", query.SearchTypeKeyword)))
+		autogold.Expect("file").Equal(t, test("path:foo content:bar", query.SearchTypeKeyword))
 	})
 
 	t.Run("keyword, plain pattern searches repo path file content", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("path:foo bar", query.SearchTypeKeyword)))
+		autogold.Expect("file|path|repo").Equal(t, test("path:foo bar", query.SearchTypeKeyword))
+	})
+
+	t.Run("keyword, only search file content with negation", func(t *testing.T) {
+		autogold.Expect("file").Equal(t, test("path:foo content:bar -content:baz", query.SearchTypeKeyword))
 	})
 }
 

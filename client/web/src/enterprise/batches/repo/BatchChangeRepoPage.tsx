@@ -4,6 +4,7 @@ import VisuallyHidden from '@reach/visually-hidden'
 
 import { pluralize } from '@sourcegraph/common'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { PageHeader, H2, useObservable, Text, H4 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../auth'
@@ -29,7 +30,7 @@ import {
 } from './backend'
 import { RepoBatchChanges } from './RepoBatchChanges'
 
-interface BatchChangeRepoPageProps {
+interface BatchChangeRepoPageProps extends TelemetryV2Props {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
@@ -71,7 +72,13 @@ export const BatchChangeRepoPage: FC<BatchChangeRepoPageProps> = ({
             <PageHeader
                 path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
                 headingElement="h1"
-                actions={<NewBatchChangeButton to="/batch-changes/create" canCreate={canCreate} />}
+                actions={
+                    <NewBatchChangeButton
+                        to="/batch-changes/create"
+                        canCreate={canCreate}
+                        telemetryRecorder={props.telemetryRecorder}
+                    />
+                }
                 description={
                     hasChangesets
                         ? undefined

@@ -18,6 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - GitHub app installations can now be refreshed from the Batch Changes Site Admin page. [#60125](https://github.com/sourcegraph/sourcegraph/pull/60125)
+- Added the GraphQL query `User.evaluateFeatureFlag` to show if a feature flag is enabled or disabled for a user. [#60828](https://github.com/sourcegraph/sourcegraph/pull/60828)
 
 ### Changed
 
@@ -42,6 +43,18 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 ### Removed
+
+## 5.3.2
+
+### Added
+
+### Changed
+
+### Fixed
+
+- A bug in search that could trigger a panic
+- An unintentional change to the search results when using the LineMatch API which would include surrounding lines with no matches
+- Autoupgrade only looks for open db connections from the Sourcegraph application services, and disregards other applications connected to the postgres instance. [#60771](https://github.com/sourcegraph/sourcegraph/pull/60771)
 
 ## 5.3.1
 

@@ -2,6 +2,7 @@ import { type FC, type ReactElement, type ReactNode, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
@@ -38,7 +39,7 @@ export interface CodeHostJSONFormState {
     submitErrors: SubmissionErrors
 }
 
-interface CodeHostJSONFormProps {
+interface CodeHostJSONFormProps extends TelemetryV2Props {
     initialValues: CodeHostConnectFormFields
     children: (state: CodeHostJSONFormState) => ReactNode
     externalServiceOptions: AddExternalServiceOptions
@@ -69,6 +70,7 @@ export function CodeHostJSONForm(props: CodeHostJSONFormProps): ReactElement {
                 displayNameField={displayName}
                 configurationField={configuration}
                 externalServiceOptions={externalServiceOptions}
+                telemetryRecorder={props.telemetryRecorder}
             />
 
             <>
@@ -82,7 +84,7 @@ export function CodeHostJSONForm(props: CodeHostJSONFormProps): ReactElement {
     )
 }
 
-interface CodeHostJSONFormContentProps {
+interface CodeHostJSONFormContentProps extends TelemetryV2Props {
     displayNameField: useFieldAPI<string>
     configurationField: useFieldAPI<string>
     externalServiceOptions: AddExternalServiceOptions
@@ -119,6 +121,7 @@ export function CodeHostJSONFormContent(props: CodeHostJSONFormContentProps): Re
                     blockNavigationIfDirty={false}
                     onChange={configurationField.input.onChange}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={props.telemetryRecorder}
                     className={styles.configurationGroupEditor}
                     explanation={
                         <Text className="form-text text-muted" size="small">

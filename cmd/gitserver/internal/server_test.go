@@ -559,7 +559,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	s.getRemoteURLFunc = func(ctx context.Context, name api.RepoName) (string, error) {
 		return "https://invalid.example.com/", nil
 	}
-	s.RepoUpdate(&protocol.RepoUpdateRequest{
+	s.RepoUpdate(ctx, &protocol.RepoUpdateRequest{
 		Repo: repoName,
 	})
 
@@ -590,7 +590,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	// This will perform an initial clone
 	s.getRemoteURLFunc = oldRemoveURLFunc
-	s.RepoUpdate(&protocol.RepoUpdateRequest{
+	s.RepoUpdate(ctx, &protocol.RepoUpdateRequest{
 		Repo: repoName,
 	})
 
@@ -619,7 +619,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	t.Cleanup(func() { doBackgroundRepoUpdateMock = nil })
 
 	// This will trigger an update since the repo is already cloned
-	s.RepoUpdate(&protocol.RepoUpdateRequest{
+	s.RepoUpdate(ctx, &protocol.RepoUpdateRequest{
 		Repo: repoName,
 	})
 
@@ -644,7 +644,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	doBackgroundRepoUpdateMock = nil
 
 	// This will trigger an update since the repo is already cloned
-	s.RepoUpdate(&protocol.RepoUpdateRequest{
+	s.RepoUpdate(ctx, &protocol.RepoUpdateRequest{
 		Repo: repoName,
 	})
 

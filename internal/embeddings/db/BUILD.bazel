@@ -35,9 +35,9 @@ go_test(
     ],
     embed = [":db"],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/conf",
         "//internal/conf/conftypes",
+        "//internal/dotcom",
         "//lib/pointers",
         "//schema",
         "@com_github_sourcegraph_log//logtest",

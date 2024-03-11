@@ -243,7 +243,19 @@ func (r *skippedIndexedResolver) Count(ctx context.Context) (BigInt, error) {
 	if err := r.client.StreamSearch(
 		ctx,
 		q,
-		&zoekt.SearchOptions{},
+		&zoekt.SearchOptions{
+			// We are only interested in the stats.FileCount so we only send
+			// back 1 doc (can't do 0 since that indicates unset)
+			MaxDocDisplayCount: 1,
+
+			// Set a very high count for unindexed documents.
+			ShardMaxMatchCount: 10_000_000,
+			TotalMaxMatchCount: 10_000_000,
+
+			// We don't read the matches, but we want to consistently always
+			// ask for ChunkMatches from Sourcegraph.
+			ChunkMatches: true,
+		},
 		stream.SenderFunc(func(sr *zoekt.SearchResult) {
 			stats.Add(sr.Stats)
 		}),

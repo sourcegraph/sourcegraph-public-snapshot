@@ -3,6 +3,7 @@ import React, { useMemo } from 'react'
 import { mapValues, values } from 'lodash'
 
 import type { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, useObservable, Alert, Link, H2, Text } from '@sourcegraph/wildcard'
@@ -109,10 +110,11 @@ const allConfigSchema = {
         .reduce((allDefinitions, definitions) => ({ ...allDefinitions, ...definitions }), {}),
 }
 
-interface Props extends TelemetryProps {}
+interface Props extends TelemetryProps, TelemetryV2Props {}
 
 export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    telemetryRecorder,
 }) => {
     const isLightTheme = useIsLightTheme()
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
@@ -152,6 +154,7 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
                     isLightTheme={isLightTheme}
                     readOnly={true}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
         </div>

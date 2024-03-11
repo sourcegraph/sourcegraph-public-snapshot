@@ -6,6 +6,7 @@ import { useLocation } from 'react-router-dom'
 import { basename, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import type { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Code, Heading, ErrorAlert } from '@sourcegraph/wildcard'
@@ -201,6 +202,8 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
                         filePath={filePath}
                         isDir={true}
                         telemetryService={props.telemetryService}
+                        // TODO (dadlerj): update to use a real telemetry recorder
+                        telemetryRecorder={noOpTelemetryRecorder}
                     />
                 ),
             }
