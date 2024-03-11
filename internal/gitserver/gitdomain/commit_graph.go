@@ -23,7 +23,7 @@ func ParseCommitGraph(lines []string) *CommitGraph {
 	// topological ordering by simply scraping the keys off in this order.
 
 	n := len(lines) - 1
-	for i := range len(lines)/2 {
+	for i := range len(lines) / 2 {
 		lines[i], lines[n-i] = lines[n-i], lines[i]
 	}
 
