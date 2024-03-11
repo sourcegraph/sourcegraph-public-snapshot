@@ -100,7 +100,6 @@ func (a *anthropicClient) Stream(
 		}
 
 		data := dec.Data()
-		fmt.Printf("data: %s\n", string(data))
 		// Gracefully skip over any data that isn't JSON-like. Anthropic's API sometimes sends
 		// non-documented data over the stream, like timestamps.
 		if !bytes.HasPrefix(data, []byte("{")) {
