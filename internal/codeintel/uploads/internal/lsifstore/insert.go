@@ -316,16 +316,15 @@ func (s *scipWriter) flush(ctx context.Context) error {
 		return errors.New("unexpected number of document lookup records inserted")
 	}
 
-	return s.writeSymbols(ctx, documentLookupIDs)
+	return s.writeSymbols(ctx, documents, documentLookupIDs)
 
 }
 
-func (s *scipWriter) writeSymbols(ctx context.Context, documentLookupIDs []int) error {
+func (s *scipWriter) writeSymbols(ctx context.Context, documents []bufferedDocument, documentLookupIDs []int) error {
 	// NOTE(Christoph): We don't write symbols for syntactic indices
 	if s.isSyntactic {
 		return nil
 	}
-	documents := s.batch
 	symbolNameMap := map[string]struct{}{}
 	invertedRangeIndexes := make([][]shared.InvertedRangeIndex, 0, len(documents))
 	for _, document := range documents {
