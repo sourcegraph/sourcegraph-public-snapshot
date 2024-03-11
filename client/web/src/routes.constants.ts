@@ -43,15 +43,3 @@ export enum PageRoutes {
     CodySubscription = '/cody/subscription',
     Own = '/own',
 }
-
-export enum CommunityPageRoutes {
-    Kubernetes = '/kubernetes',
-    Stackstorm = '/stackstorm',
-    Temporal = '/temporal',
-    O3de = '/o3de',
-    ChakraUI = '/chakraui',
-    Stanford = '/stanford',
-    Cncf = '/cncf',
-    Julia = '/julia',
-    Backstage = '/backstage',
-}
