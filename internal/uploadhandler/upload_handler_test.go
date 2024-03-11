@@ -137,7 +137,7 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 
 	var lines []string
 	lines = append(lines, `{"label": "metaData", "toolInfo": {"name": "lsif-go"}}`)
-	for i := range 20000 {
+	for range 20000 {
 		lines = append(lines, `{"id": "a", "type": "edge", "label": "textDocument/references", "outV": "b", "inV": "c"}`)
 	}
 

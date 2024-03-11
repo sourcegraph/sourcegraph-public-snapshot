@@ -932,7 +932,7 @@ func TestMultiHandler_SelectQueueForDequeueing(t *testing.T) {
 				selectCounts[q] = 0
 			}
 
-			for i := range tt.amountOfruns {
+			for range tt.amountOfruns {
 				selectedQueue, err := m.SelectQueueForDequeueing(tt.candidateQueues)
 				if err != nil && err != tt.expectedErr {
 					t.Fatalf("expected err %s, got err %s", tt.expectedErr, err)

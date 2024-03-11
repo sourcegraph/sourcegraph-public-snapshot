@@ -363,7 +363,7 @@ func BenchmarkColumnHelper(b *testing.B) {
 
 	b.ResetTimer()
 
-	for i := range b.N {
+	for range b.N {
 		columnHelper := columnHelper{data: data}
 
 		lineOffset := 0

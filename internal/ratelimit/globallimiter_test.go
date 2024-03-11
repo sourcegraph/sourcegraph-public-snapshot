@@ -57,7 +57,7 @@ func TestGlobalRateLimiter(t *testing.T) {
 	}
 	// Exhaust the burst of the bucket entirely.
 	{
-		for i := range defaultBurst-1 {
+		for range defaultBurst - 1 {
 			require.NoError(t, rl.Wait(ctx))
 			assert.False(t, timerFuncCalled, "timerFunc should not be called when bucket is full")
 		}

@@ -28,7 +28,7 @@ func NewParserPool(newParser ParserFactory, numParserProcesses int, parserTypes 
 	// NOTE: We obviously don't make `NoCtags` available in the pool.
 	for _, parserType := range parserTypes {
 		pool[parserType] = make(chan ctags.Parser, numParserProcesses)
-		for i := range numParserProcesses {
+		for range numParserProcesses {
 			parser, err := newParser(parserType)
 			if err != nil {
 				return nil, err

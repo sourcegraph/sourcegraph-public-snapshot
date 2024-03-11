@@ -14,7 +14,7 @@ func TestNewProjectID(t *testing.T) {
 		envID     = "dev"
 	)
 
-	for i := range 100 {
+	for range 100 {
 		id, err := NewProjectID(serviceID, envID, DefaultSuffixLength)
 		require.NoError(t, err)
 

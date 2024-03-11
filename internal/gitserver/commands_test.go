@@ -865,9 +865,7 @@ func TestStat(t *testing.T) {
 	}
 }
 
-var (
-	NonExistentCommitID = api.CommitID(strings.Repeat("a", 40))
-)
+var NonExistentCommitID = api.CommitID(strings.Repeat("a", 40))
 
 func TestLogPartsPerCommitInSync(t *testing.T) {
 	require.Equal(t, partsPerCommit-1, strings.Count(logFormatWithoutRefs, "%x00"))
@@ -1818,7 +1816,7 @@ func testCommits(ctx context.Context, label string, repo api.RepoName, opt Commi
 
 func checkCommits(t *testing.T, commits, wantCommits []*gitdomain.Commit) {
 	t.Helper()
-	for i := range len(commits) || i < len(wantCommits) {
+	for i := 0; i < len(commits) || i < len(wantCommits); i++ {
 		var gotC, wantC *gitdomain.Commit
 		if i < len(commits) {
 			gotC = commits[i]

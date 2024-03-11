@@ -137,7 +137,7 @@ var app = &cli.App{
 									}
 									var err error
 									settings := &github.Repository{Private: github.Bool(true)}
-									for i := range cmd.Int("retry") {
+									for range cmd.Int("retry") {
 										_, _, err = gh.Repositories.Edit(cmd.Context, org, r.Name, settings)
 										if err != nil {
 											r.Failed = err.Error()
@@ -186,7 +186,7 @@ var app = &cli.App{
 						if len(errs) > 0 {
 							pending.Complete(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("%d errors occured while updating repos", len(errs))))
 							out.Writef("Printing first 5 errros")
-							for i := range len(errs) && i < 5 {
+							for i := range min(len(errs), 5) {
 								logger.Error("Error updating repo", log.Error(errs[i]))
 							}
 							return errs[0]

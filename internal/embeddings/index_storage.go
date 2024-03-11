@@ -140,7 +140,6 @@ func downloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Sto
 	defer dec.close()
 
 	rei, err := dec.decode()
-
 	if err != nil {
 		// If decoding fails, assume it is an old index and decode with a generic dec.
 		tr.AddEvent("failed to decode index, assuming that this is an old version and trying again", trace.Error(err))
@@ -232,7 +231,7 @@ func (d *decoder) decode() (*RepoEmbeddingIndex, error) {
 		ei.Embeddings = make([]int8, 0, numChunks*embeddingsChunkSize)
 		embeddingsBuf := make([]float32, 0, embeddingsChunkSize)
 		quantizeBuf := make([]int8, embeddingsChunkSize)
-		for i := range numChunks {
+		for range numChunks {
 			if err := d.dec.Decode(&embeddingsBuf); err != nil {
 				return nil, err
 			}

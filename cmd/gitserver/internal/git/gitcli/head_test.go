@@ -128,7 +128,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 	// Exclude setup
 	b.ResetTimer()
 
-	for n := range b.N {
+	for range b.N {
 		rev, err := QuickRevParseHead(gitDir)
 		if err != nil {
 			b.Fatal(err)
@@ -181,7 +181,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) 
 	// Exclude setup
 	b.ResetTimer()
 
-	for n := range b.N {
+	for range b.N {
 		rev, err := QuickRevParseHead(gitDir)
 		if err != nil {
 			b.Fatal(err)

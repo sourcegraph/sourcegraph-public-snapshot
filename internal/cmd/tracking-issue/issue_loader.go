@@ -13,9 +13,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const costPerSearch = 30
-const maxCostPerRequest = 1000
-const queriesPerLoadRequest = 10
+const (
+	costPerSearch         = 30
+	maxCostPerRequest     = 1000
+	queriesPerLoadRequest = 10
+)
 
 // IssueLoader efficiently fetches issues and pull request that match a given set
 // of queries.
@@ -43,7 +45,7 @@ func LoadIssues(ctx context.Context, cli *graphql.Client, queries []string) (iss
 	pullRequestsCh := make(chan []*PullRequest, len(chunks))
 	errs := make(chan error, len(chunks))
 
-	for i := range runtime.GOMAXPROCS(0) {
+	for range runtime.GOMAXPROCS(0) {
 		wg.Add(1)
 
 		go func() {

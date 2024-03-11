@@ -47,10 +47,11 @@ func main() {
 				GraphQL:         true,
 				SeverityLevel:   "INFO",
 			},
-		}}})
+		},
+	}})
 	defer conf.Mock(nil)
 
-	for i := range logsCount {
+	for range logsCount {
 		audit.Log(ctx, logger, audit.Record{
 			Entity: "integration test",
 			Action: "sampling testing",

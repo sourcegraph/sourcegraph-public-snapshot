@@ -351,7 +351,7 @@ func TestConnectionResolverStoreSuite[N any](t TB, store ConnectionResolverStore
 	}
 	// Check that first with cursor is properly working:
 	currentCursor := []any{}
-	for i := range int(total) {
+	for range int(total) {
 		page, err := store.ComputeNodes(ctx, &database.PaginationArgs{First: pointers.Ptr(1), After: currentCursor})
 		if err != nil {
 			t.Fatalf("failed to list page nodes: %v", err)
@@ -371,7 +371,7 @@ func TestConnectionResolverStoreSuite[N any](t TB, store ConnectionResolverStore
 	}
 	// Check that last with cursor is properly working:
 	currentCursor = []any{}
-	for i := range int(total) {
+	for range int(total) {
 		page, err := store.ComputeNodes(ctx, &database.PaginationArgs{Last: pointers.Ptr(1), Before: currentCursor})
 		if err != nil {
 			t.Fatalf("failed to list page nodes: %v", err)

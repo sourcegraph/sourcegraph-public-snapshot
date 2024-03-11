@@ -70,7 +70,7 @@ func mainErr(ctx context.Context) (err error) {
 	queries := buildQueries()
 	errCh := make(chan error)
 
-	for i := range numConcurrentRequests {
+	for range numConcurrentRequests {
 		wg.Add(1)
 
 		go func() {

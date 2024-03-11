@@ -74,7 +74,7 @@ func TestConcurrentTransactions(t *testing.T) {
 
 	t.Run("creating transactions concurrently does not fail", func(t *testing.T) {
 		var g errgroup.Group
-		for i := range 2 {
+		for range 2 {
 			g.Go(func() (err error) {
 				tx, err := store.Transact(ctx)
 				if err != nil {

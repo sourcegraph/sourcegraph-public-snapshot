@@ -90,13 +90,13 @@ var (
 
 func (m *scipMigrator) Up(ctx context.Context) error {
 	ch := make(chan struct{}, scipMigratorUploadReaderBatchSize)
-	for i := range scipMigratorUploadReaderBatchSize {
+	for range scipMigratorUploadReaderBatchSize {
 		ch <- struct{}{}
 	}
 	close(ch)
 
 	p := pool.New().WithContext(ctx)
-	for i := range scipMigratorConcurrencyLevel {
+	for range scipMigratorConcurrencyLevel {
 		p.Go(func(ctx context.Context) error {
 			for range ch {
 				if ok, err := m.upSingle(ctx); err != nil {

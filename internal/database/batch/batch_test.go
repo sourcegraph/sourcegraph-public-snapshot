@@ -51,7 +51,7 @@ func TestBatchInserterThin(t *testing.T) {
 
 	tableSizeFactor := 2
 	var expectedValues [][]any
-	for i := range MaxNumPostgresParameters*tableSizeFactor {
+	for i := range MaxNumPostgresParameters * tableSizeFactor {
 		expectedValues = append(expectedValues, []any{i})
 	}
 	testInsertThin(t, db, expectedValues)
@@ -153,7 +153,7 @@ func BenchmarkBatchInserter(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	for i := range b.N {
+	for range b.N {
 		testInsert(b, db, expectedValues)
 	}
 }
@@ -166,7 +166,7 @@ func BenchmarkBatchInserterLargePayload(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	for i := range b.N {
+	for range b.N {
 		testInsert(b, db, expectedValues)
 	}
 }
@@ -201,7 +201,7 @@ func setupTestTableThin(t testing.TB, db *sql.DB) {
 
 func makeTestValues(tableSizeFactor, payloadSize int) [][]any {
 	var expectedValues [][]any
-	for i := range MaxNumPostgresParameters*tableSizeFactor {
+	for i := range MaxNumPostgresParameters * tableSizeFactor {
 		expectedValues = append(expectedValues, []any{
 			i,
 			i + 1,
@@ -216,7 +216,7 @@ func makeTestValues(tableSizeFactor, payloadSize int) [][]any {
 
 func makePayload(size int) string {
 	s := make([]byte, 0, size)
-	for i := range size {
+	for range size {
 		s = append(s, '!')
 	}
 
@@ -310,7 +310,7 @@ func testInsertWithReturnWithConflicts(t testing.TB, db *sql.DB, n int, expected
 		},
 	)
 
-	for i := range n {
+	for range n {
 		for j, values := range expectedValues {
 			if err := inserter.Insert(ctx, append([]any{j + 1}, values...)...); err != nil {
 				t.Fatalf("unexpected error inserting values: %s", err)
@@ -337,7 +337,7 @@ func testInsertWithConflicts(t testing.TB, db *sql.DB, n int, expectedValues [][
 		"id", "col1", "col2", "col3", "col4", "col5",
 	)
 
-	for i := range n {
+	for range n {
 		for j, values := range expectedValues {
 			if err := inserter.Insert(ctx, append([]any{j + 1}, values...)...); err != nil {
 				t.Fatalf("unexpected error inserting values: %s", err)

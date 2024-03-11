@@ -193,7 +193,7 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 				tc := loadWebhookTestCase(t, fixtureFile)
 
 				// Send all events twice to ensure we are idempotent
-				for i := range 2 {
+				for range 2 {
 					for _, event := range tc.Payloads {
 						u, err := extsvc.WebhookURL(extsvc.TypeBitbucketServer, extSvc.ID, nil, "https://example.com/")
 						if err != nil {

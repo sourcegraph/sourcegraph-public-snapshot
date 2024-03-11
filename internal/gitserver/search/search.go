@@ -113,7 +113,7 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.Com
 	})
 
 	// Start workers
-	for i := range numWorkers {
+	for range numWorkers {
 		g.Go(func() error {
 			return cs.runJobs(ctx, jobs)
 		})

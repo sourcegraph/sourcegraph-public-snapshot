@@ -86,7 +86,7 @@ func readLines(ctx context.Context, r io.Reader, unmarshal func(line []byte) (El
 		// The result slice
 		pairs := make([]Pair, NumUnmarshalGoRoutines)
 
-		for i := range NumUnmarshalGoRoutines {
+		for range NumUnmarshalGoRoutines {
 			go func() {
 				for idx := range work {
 					element, err := unmarshal(lines[idx].Bytes())
@@ -117,7 +117,7 @@ func readLines(ctx context.Context, r io.Reader, unmarshal func(line []byte) (El
 			}
 
 			// Wait until the current batch has been completely unmarshalled
-			for j := range i {
+			for range i {
 				<-signal
 			}
 

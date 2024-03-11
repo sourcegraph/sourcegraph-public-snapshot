@@ -15,7 +15,7 @@ import (
 func BenchmarkBatchingStream(b *testing.B) {
 	s := NewBatchingStream(10*time.Millisecond, StreamFunc(func(SearchEvent) {}))
 	res := make(result.Matches, 1)
-	for i := range b.N {
+	for range b.N {
 		s.Send(SearchEvent{
 			Results: res,
 		})
@@ -33,7 +33,7 @@ func TestBatchingStream(t *testing.T) {
 			mu.Unlock()
 		}))
 
-		for i := range 10 {
+		for range 10 {
 			s.Send(SearchEvent{Results: make(result.Matches, 1)})
 		}
 
@@ -69,7 +69,7 @@ func TestBatchingStream(t *testing.T) {
 			mu.Unlock()
 		}))
 
-		for i := range 10 {
+		for range 10 {
 			s.Send(SearchEvent{Results: make(result.Matches, 1)})
 		}
 
@@ -116,7 +116,7 @@ func TestBatchingStream(t *testing.T) {
 		}))
 
 		p := pool.New()
-		for i := range 10 {
+		for range 10 {
 			p.Go(func() {
 				s.Send(SearchEvent{Results: make(result.Matches, 1)})
 			})
@@ -138,7 +138,7 @@ func TestDedupingStream(t *testing.T) {
 		sent = append(sent, e.Results...)
 	}))
 
-	for i := range 2 {
+	for range 2 {
 		s.Send(SearchEvent{
 			Results: []result.Match{&result.FileMatch{
 				File: result.File{Path: "lombardy"},

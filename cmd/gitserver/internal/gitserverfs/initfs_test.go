@@ -50,7 +50,7 @@ func TestSetupAndClearTmp(t *testing.T) {
 	}
 
 	// Wait until async cleaning is done
-	for i := range 1000 {
+	for range 1000 {
 		found := false
 		files, err := os.ReadDir(root)
 		if err != nil {

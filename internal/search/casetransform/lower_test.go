@@ -9,7 +9,7 @@ import (
 func benchBytesToLower(b *testing.B, src []byte) {
 	dst := make([]byte, len(src))
 	b.ResetTimer()
-	for i := range b.N {
+	for range b.N {
 		BytesToLowerASCII(dst, src)
 	}
 }

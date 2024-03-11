@@ -24,7 +24,7 @@ func TestTickerGoBrrr(t *testing.T) {
 	ticker := newTicker(cfg.Schedule())
 
 	// Take three as quickly as we can, with no delays going back.
-	for i := range 3 {
+	for range 3 {
 		c := <-ticker.C
 		if c == nil {
 			t.Errorf("unexpected nil channel")

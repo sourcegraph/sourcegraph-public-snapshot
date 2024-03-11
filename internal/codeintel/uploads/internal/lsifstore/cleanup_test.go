@@ -182,7 +182,7 @@ func TestDeleteUnreferencedDocuments(t *testing.T) {
 	// process this workload.
 
 	totalCount := 0
-	for i := range 10 {
+	for range 10 {
 		_, count, err = store.DeleteUnreferencedDocuments(context.Background(), 20, time.Minute, time.Now().Add(time.Minute*5))
 		if err != nil {
 			t.Fatalf("unexpected error deleting unreferenced documents: %s", err)

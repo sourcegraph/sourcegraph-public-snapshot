@@ -21,7 +21,7 @@ func TestLimitJob(t *testing.T) {
 	t.Run("only send limit", func(t *testing.T) {
 		mockJob := mockjob.NewMockJob()
 		mockJob.RunFunc.SetDefaultHook(func(_ context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
-			for i := range 10 {
+			for range 10 {
 				s.Send(streaming.SearchEvent{
 					Results: []result.Match{&result.FileMatch{}},
 				})
@@ -46,7 +46,7 @@ func TestLimitJob(t *testing.T) {
 	t.Run("send partial event", func(t *testing.T) {
 		mockJob := mockjob.NewMockJob()
 		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
-			for i := range 10 {
+			for range 10 {
 				s.Send(streaming.SearchEvent{
 					Results: []result.Match{
 						&result.FileMatch{},
@@ -74,7 +74,7 @@ func TestLimitJob(t *testing.T) {
 	t.Run("cancel after limit", func(t *testing.T) {
 		mockJob := mockjob.NewMockJob()
 		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
-			for i := range 10 {
+			for range 10 {
 				select {
 				case <-ctx.Done():
 					return nil, nil

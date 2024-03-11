@@ -245,7 +245,7 @@ func benchmarkUpdateIndexStatus(b *testing.B, numRepos int) {
 	b.ResetTimer()
 
 	b.Run("update-all", func(b *testing.B) {
-		for i := range b.N {
+		for range b.N {
 			if err := s.UpdateIndexStatuses(ctx, indexedAll); err != nil {
 				b.Fatalf("unexpected error: %s", err)
 			}
@@ -253,7 +253,7 @@ func benchmarkUpdateIndexStatus(b *testing.B, numRepos int) {
 	})
 
 	b.Run("update-half", func(b *testing.B) {
-		for i := range b.N {
+		for range b.N {
 			if err := s.UpdateIndexStatuses(ctx, indexedHalf); err != nil {
 				b.Fatalf("unexpected error: %s", err)
 			}
@@ -261,7 +261,7 @@ func benchmarkUpdateIndexStatus(b *testing.B, numRepos int) {
 	})
 
 	b.Run("update-none", func(b *testing.B) {
-		for i := range b.N {
+		for range b.N {
 			if err := s.UpdateIndexStatuses(ctx, make(zoekt.ReposMap)); err != nil {
 				b.Fatalf("unexpected error: %s", err)
 			}

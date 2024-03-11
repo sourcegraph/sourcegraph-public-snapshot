@@ -66,7 +66,7 @@ func newMockSender() sender {
 
 func newMockSenders(n int) senders {
 	senders := make([]sender, 0, n)
-	for i := range n {
+	for range n {
 		senders = append(senders, newMockSender())
 	}
 	return senders

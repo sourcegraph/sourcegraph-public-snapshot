@@ -79,7 +79,7 @@ func TestRead_rememberError(t *testing.T) {
 
 	// Intentionally call Read more than once. We want the error to be
 	// sticky.
-	for i := range 10 {
+	for range 10 {
 		_, err := r.Read(nil)
 		require.Equal(t, err, myError)
 	}

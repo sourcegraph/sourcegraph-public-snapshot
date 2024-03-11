@@ -351,7 +351,7 @@ func TestAddErrorBounded(t *testing.T) {
 	store := testStore(t, db)
 
 	var expectedErrors []MigrationError
-	for i := range MaxMigrationErrors*1.5 {
+	for i := range int(MaxMigrationErrors * 1.5) {
 		now = now.Add(time.Second)
 
 		if err := store.addError(context.Background(), 2, fmt.Sprintf("oops %d", i), now); err != nil {
@@ -373,7 +373,7 @@ func TestAddErrorBounded(t *testing.T) {
 	}
 
 	n := len(expectedErrors) - 1
-	for i := range len(expectedErrors)/2 {
+	for i := range len(expectedErrors) / 2 {
 		expectedErrors[i], expectedErrors[n-i] = expectedErrors[n-i], expectedErrors[i]
 	}
 

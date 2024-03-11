@@ -13,7 +13,7 @@ type Limiter struct {
 // NewLimiter creates a new limiter with the given maximum concurrency.
 func NewLimiter(concurrency int) *Limiter {
 	ch := make(chan struct{}, concurrency)
-	for i := range concurrency {
+	for range concurrency {
 		ch <- struct{}{}
 	}
 
@@ -39,7 +39,7 @@ func (l *Limiter) Release() {
 // Close closes the underlying channel.
 func (l *Limiter) Close() {
 	// Drain the channel before close
-	for i := range l.concurrency {
+	for range l.concurrency {
 		<-l.ch
 	}
 

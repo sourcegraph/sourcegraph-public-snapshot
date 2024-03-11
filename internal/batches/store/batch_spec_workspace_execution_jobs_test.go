@@ -246,7 +246,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 
 		t.Run("BatchSpecID", func(t *testing.T) {
 			workspaceIDByBatchSpecID := map[int64]int64{}
-			for i := range 3 {
+			for range 3 {
 				batchSpec := &btypes.BatchSpec{UserID: 500, NamespaceUserID: 500}
 				if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
 					t.Fatal(err)
@@ -280,7 +280,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 					t.Fatalf("wrong job returned. want=%d, have=%d", workspaceID, have[0].BatchSpecWorkspaceID)
 				}
 			}
-
 		})
 	})
 
