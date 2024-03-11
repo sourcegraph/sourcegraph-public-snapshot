@@ -88,9 +88,13 @@
 <svelte:body use:classNames={$scrollAll ? '' : 'overflowHidden'} />
 
 <InfoBanner />
-{#await data.globalNotifications
 
-}
+{#await data.globalSiteAlerts then globalSiteAlerts}
+    {#if globalSiteAlerts}
+        <GlobalNotification globalAlerts={globalSiteAlerts}/>
+    {/if}
+{/await}
+
 <Header authenticatedUser={$user} />
 
 <main>

@@ -18,6 +18,12 @@ query EvaluatedFeatureFlagsQuery {
     }
 }
 
+query GlobalAlertsSiteFlags {
+    site {
+        ...GlobalNotifications
+    }
+}
+
 fragment FeatureFlag on EvaluatedFeatureFlag {
     name
     value
@@ -27,3 +33,4 @@ fragment AuthenticatedUser on User {
     ...Header_User
     ...SearchInput_AuthenticatedUser
 }
+

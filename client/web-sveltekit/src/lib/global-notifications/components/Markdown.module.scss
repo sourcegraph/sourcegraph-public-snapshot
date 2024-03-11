@@ -6,6 +6,12 @@
         display: contents;
     }
 
+    > p:last-child,
+    > ul:last-child,
+    > ol:last-child {
+        margin-bottom: 0;
+    }
+
     h1,
     h2,
     h3,

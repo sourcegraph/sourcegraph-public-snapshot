@@ -19,8 +19,8 @@
     import Icon from '$lib/Icon.svelte'
     import {Alert, Button} from '$lib/wildcard'
 
-    export let variant: 'info' | 'danger'
-    export let partialStorageKey: string
+    export let variant: 'info' | 'warning' | 'danger' | 'success'
+    export let partialStorageKey: string | null
 
     let className = '';
     export {className as class};
@@ -39,20 +39,24 @@
 </script>
 
 {#if !dismissed}
-    <Alert class={classNames('root', className)} variant={variant}>
+    <Alert class={classNames('root', className)} variant={variant} sizeVariant='slim'>
 
         <div class='content'>
             <slot/>
         </div>
 
-        <Button
-                variant="icon"
-                aria-label="Dismiss alert"
-                class="close-button"
-                on:click={handleDismissClick}
-        >
-            <Icon aria-hidden={true} svgPath={mdiClose}/>
-        </Button>
+        {#if partialStorageKey}
+            <div class="button-wrapper">
+                <Button
+                    variant="icon"
+                    aria-label="Dismiss alert"
+                    class="close-button"
+                    on:click={handleDismissClick}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiClose}/>
+                </Button>
+            </div>
+        {/if}
     </Alert>
 {/if}
 
@@ -61,6 +65,10 @@
     display: flex;
     align-items: center;
     padding-right: 0.5rem;
+
+      &:last-child {
+          border-bottom-width: 0;
+      }
   }
 
   .content {
@@ -69,9 +77,8 @@
     line-height: (20/14);
   }
 
-  .root > :global(.close-button) {
+  .button-wrapper {
     align-self: flex-start;
     color: var(--icon-color);
   }
-
 </style>
