@@ -95,7 +95,6 @@ go_test(
         "//internal/accesstoken",
         "//internal/actor",
         "//internal/audit/audittest",
-        "//internal/auth",
         "//internal/authz",
         "//internal/cody",
         "//internal/conf",

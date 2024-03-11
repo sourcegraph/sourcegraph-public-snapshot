@@ -112,7 +112,7 @@ func TestProductSubscriptionActiveLicense(t *testing.T) {
 			actor:          actor.FromActualUser(boringUser),
 			subscriptionID: marshalProductSubscriptionID(sub),
 			// Should fail on access error
-			wantError: autogold.Expect("must be authenticated as the authorized user or site admin"),
+			wantError: autogold.Expect("unauthorized"),
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {

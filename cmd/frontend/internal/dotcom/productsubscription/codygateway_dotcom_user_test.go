@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/audit/audittest"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -227,7 +227,7 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	tests := []struct {
 		name    string
 		user    *types.User
-		wantErr error
+		wantErr autogold.Value
 	}{
 		{
 			name:    "admin user",
@@ -242,7 +242,7 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 		{
 			name:    "not admin or RBAC reader role user",
 			user:    noAccessUser,
-			wantErr: auth.ErrMustBeSiteAdmin,
+			wantErr: autogold.Expect("unauthorized"),
 		},
 	}
 
@@ -256,7 +256,12 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 			r := productsubscription.CodyGatewayDotcomUserResolver{Logger: logtest.Scoped(t), DB: db}
 			_, err := r.CodyGatewayDotcomUserByToken(userContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: codyUserGatewayToken})
 
-			require.ErrorIs(t, err, test.wantErr)
+			if test.wantErr != nil {
+				require.Error(t, err)
+				test.wantErr.Equal(t, err.Error())
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }

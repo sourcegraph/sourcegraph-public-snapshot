@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // 🚨 SECURITY: Use this to check if access to a subscription query or mutation
@@ -27,33 +28,36 @@ func hasRBACPermsOrOwnerOrSiteAdmin(
 	ownerUserID *int32,
 	requiresSubscriptionsWriter bool,
 ) (string, error) {
-	// Check if the user is has the prerequisite service account.
-	subscriptionsWriter := rbac.CheckCurrentUserHasPermission(ctx, db,
-		rbac.ProductSubscriptionsWritePermission) == nil
-	if requiresSubscriptionsWriter {
-		// 🚨 SECURITY: Require the more strict featureFlagProductSubscriptionsServiceAccount
-		// if requiresWriterServiceAccount=true
-		if subscriptionsWriter {
-			return rbac.ProductSubscriptionsWritePermission, nil
-		}
-		// Otherwise, fall through to check if actor is owner or site admin.
-	} else {
-		// If requiresWriterServiceAccount==false, then just reader account is
-		// sufficient.
-		if subscriptionsWriter {
-			return rbac.ProductSubscriptionsWritePermission, nil
-		}
+	// 🚨 SECURITY: In all cases, being a subscription writer is sufficient.
+	if rbac.CheckCurrentUserHasPermission(ctx, db,
+		rbac.ProductSubscriptionsWritePermission) == nil {
+		return rbac.ProductSubscriptionsWritePermission, nil
+	}
+
+	// 🚨 SECURITY: If we don't need write access, simply being a reader is sufficient.
+	if !requiresSubscriptionsWriter {
 		if rbac.CheckCurrentUserHasPermission(ctx, db,
 			rbac.ProductSubscriptionsReadPermission) == nil {
 			return rbac.ProductSubscriptionsReadPermission, nil
 		}
 	}
 
-	// If ownerUserID is specified, the user must be the owner, or a site admin.
+	// 🚨 SECURITY: The user does not have subscriptions permissions - but,
+	// if ownerUserID is specified, we can grant access if the actor is the owner.
 	if ownerUserID != nil {
-		return "same_user_or_site_admin", auth.CheckSiteAdminOrSameUser(ctx, db, *ownerUserID)
+		if auth.CheckSameUser(ctx, *ownerUserID) == nil {
+			return "is_owner", nil
+		}
 	}
 
-	// Otherwise, the user must be a site admin.
-	return "site_admin", auth.CheckCurrentUserIsSiteAdmin(ctx, db)
+	// HACK: rbac.CheckCurrentUserHasPermission _should_ return true for site
+	// admins, but this currently doesn't work in integration tests - for now,
+	// we retain our legacy direct check on whether the user is a site admin
+	// or not as a fallback, just in case.
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, db) == nil {
+		return "site_admin", nil
+	}
+
+	// Otherwise, we are done - this user does not have access.
+	return "unauthorized", errors.New("unauthorized")
 }

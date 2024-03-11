@@ -49,12 +49,12 @@ func TestHasRBACPermsOrOwnerOrSiteAdmin(t *testing.T) {
 			name:            "same user",
 			ownerUserID:     &actorID,
 			wantErr:         nil,
-			wantGrantReason: "same_user_or_site_admin",
+			wantGrantReason: "is_owner",
 		},
 		{
 			name:        "different user",
 			ownerUserID: &anotherID,
-			wantErr:     autogold.Expect("must be authenticated as the authorized user or site admin"),
+			wantErr:     autogold.Expect("unauthorized"),
 		},
 		{
 			name:            "site admin",
@@ -67,11 +67,11 @@ func TestHasRBACPermsOrOwnerOrSiteAdmin(t *testing.T) {
 			actorSiteAdmin:  true,
 			ownerUserID:     &anotherID,
 			wantErr:         nil,
-			wantGrantReason: "same_user_or_site_admin",
+			wantGrantReason: "site_admin",
 		},
 		{
 			name:    "not a site admin, not accessing a user-specific resource",
-			wantErr: autogold.Expect("must be site admin"),
+			wantErr: autogold.Expect("unauthorized"),
 		},
 		{
 			name: "account needs writer",
@@ -79,7 +79,7 @@ func TestHasRBACPermsOrOwnerOrSiteAdmin(t *testing.T) {
 				rbac.ProductSubscriptionsReadPermission: true,
 			},
 			serviceAccountCanWrite: true,
-			wantErr:                autogold.Expect("must be site admin"),
+			wantErr:                autogold.Expect("unauthorized"),
 		},
 		{
 			name: "account fulfills writer",
