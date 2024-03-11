@@ -206,7 +206,7 @@ func CreateGitHubSSHTestRepos(t *testing.T, ctx context.Context, db database.DB,
 	}
 
 	var rs []*types.Repo
-	for i := range count {
+	for range count {
 		r := TestRepo(t, esStore, extsvc.KindGitHub)
 		r.Sources = map[string]*types.SourceInfo{ext.URN(): {
 			ID:       ext.URN(),

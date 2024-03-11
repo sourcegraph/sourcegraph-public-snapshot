@@ -13,7 +13,7 @@ func BenchmarkAddrForKey(b *testing.B) {
 				nodes = append(nodes, fmt.Sprintf("Node%d", i))
 			}
 			b.ResetTimer()
-			for i := range b.N {
+			for range b.N {
 				addrForKey("foo", nodes)
 			}
 		})

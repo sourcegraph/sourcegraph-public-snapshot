@@ -165,7 +165,7 @@ func Test_NewFIFOListDynamic(t *testing.T) {
 	SetupForTest(t)
 	maxSize := 3
 	r := NewFIFOListDynamic("a", func() int { return maxSize })
-	for i := range 10 {
+	for range 10 {
 		err := r.Insert([]byte("a"))
 		if err != nil {
 			t.Errorf("expected no error, got %q", err)
@@ -181,7 +181,7 @@ func Test_NewFIFOListDynamic(t *testing.T) {
 	}
 
 	maxSize = 2
-	for i := range 10 {
+	for range 10 {
 		err := r.Insert([]byte("b"))
 		if err != nil {
 			t.Errorf("expected no error, got %q", err)

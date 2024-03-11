@@ -487,7 +487,7 @@ func (s *SquirrelService) getDefInImports(ctx context.Context, program Node, ide
 				return nil
 			}
 			dots := int(importPrefix.ChildCount())
-			for i := range dots-1 {
+			for range dots - 1 {
 				path = strings.TrimSuffix(path, filepath.Base(path))
 				path = strings.TrimSuffix(path, "/")
 			}

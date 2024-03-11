@@ -151,7 +151,7 @@ func BenchmarkSimilaritySearch(b *testing.B) {
 	for _, numWorkers := range []int{1, 2, 4, 8, 16} {
 		b.Run(fmt.Sprintf("numWorkers=%d", numWorkers), func(b *testing.B) {
 			start := time.Now()
-			for n := range b.N {
+			for range b.N {
 				_ = index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers}, SearchOptions{}, "", "")
 			}
 			m := float64(numRows) * float64(b.N) / time.Since(start).Seconds()

@@ -200,7 +200,7 @@ func TestWorkerConcurrent(t *testing.T) {
 
 			worker := newWorker(context.Background(), Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
 			go func() { worker.Start() }()
-			for i := range NumTestRecords {
+			for range NumTestRecords {
 				dequeueClock.BlockingAdvance(time.Second)
 			}
 			worker.Stop()
@@ -454,7 +454,7 @@ func TestWorkerMaxActiveTime(t *testing.T) {
 	store.DequeueFunc.SetDefaultReturn(nil, false, nil)
 	store.MarkCompleteFunc.SetDefaultReturn(true, nil)
 
-	for i := range 5 {
+	for range 5 {
 		store.DequeueFunc.PushHook(dequeueHook)
 	}
 
@@ -466,7 +466,7 @@ func TestWorkerMaxActiveTime(t *testing.T) {
 	}()
 
 	timeout := time.After(time.Second * 5)
-	for i := range 5 {
+	for range 5 {
 		select {
 		case <-timeout:
 			t.Fatal("timeout waiting for dequeues")

@@ -120,7 +120,7 @@ func testDefsRefsMultiRepoUseOfType() []queryFunc {
 
 		line := (startingLine - 1)
 
-		for g := range numGroups {
+		for range numGroups {
 			refs = append(refs, t(navRepo, navHash, fmt.Sprintf("proj%d/main.go", p+1), line, 16, false))
 			line += numLinesPerGroup + numGapLines
 		}
@@ -157,8 +157,8 @@ func testDefsRefsPagination() []queryFunc {
 	for p := range numProjects {
 		line := startingLine
 
-		for g := range numGroups {
-			for l := range numLinesPerGroup {
+		for range numGroups {
+			for range numLinesPerGroup {
 				refs = append(refs, t(navRepo, navHash, fmt.Sprintf("proj%d/main.go", p+1), line, 3, false))
 				line++
 			}

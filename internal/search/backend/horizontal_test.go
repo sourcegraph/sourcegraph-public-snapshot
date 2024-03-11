@@ -47,7 +47,7 @@ func TestHorizontalSearcher(t *testing.T) {
 
 	// Start up background goroutines which continuously hit the searcher
 	// methods to ensure we are safe under concurrency.
-	for i := range 5 {
+	for range 5 {
 		cleanup := backgroundSearch(searcher)
 		defer cleanup(t)
 	}
@@ -150,7 +150,7 @@ func TestHorizontalSearcherWithFileRanks(t *testing.T) {
 
 	// Start up background goroutines which continuously hit the searcher
 	// methods to ensure we are safe under concurrency.
-	for i := range 5 {
+	for range 5 {
 		cleanup := backgroundSearch(searcher)
 		defer cleanup(t)
 	}
@@ -508,7 +508,7 @@ func BenchmarkDedup(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for n := range b.N {
+	for range b.N {
 		// Create copy since we mutate the input in Deddup
 		b.StopTimer()
 		shards := make([][]zoekt.FileMatch, 0, len(shardsOrig))

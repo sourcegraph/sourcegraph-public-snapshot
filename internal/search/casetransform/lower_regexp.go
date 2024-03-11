@@ -144,7 +144,7 @@ func LowerRegexpASCII(re *syntax.Regexp) {
 		return
 	}
 	// Copy to small storage if necessary
-	for i := range 2 && i < len(re.Rune) {
+	for i := 0; i < 2 && i < len(re.Rune); i++ {
 		re.Rune0[i] = re.Rune[i]
 	}
 }

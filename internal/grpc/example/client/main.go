@@ -171,7 +171,7 @@ subscriptionDone:
 			logger.Fatal("Error on upload weather data", log.Error(err))
 		}
 
-		for i := range 5 {
+		for range 5 {
 			err := dataStream.Send(&pb.UploadWeatherDataRequest{
 				SensorId: "sensor-123",
 				Temperature: &pb.Temperature{
@@ -217,7 +217,6 @@ subscriptionDone:
 				},
 			},
 		})
-
 		if err != nil {
 			logger.Fatal("Error while sending image metadata", log.Error(err))
 		}

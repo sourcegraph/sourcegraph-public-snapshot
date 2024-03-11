@@ -93,7 +93,7 @@ func TestDot(t *testing.T) {
 	})
 
 	t.Run("random", func(t *testing.T) {
-		for i := range 1000 {
+		for range 1000 {
 			size := rand.Int() % 1000
 			a, b := make([]int8, size), make([]int8, size)
 

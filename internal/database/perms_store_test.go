@@ -1931,7 +1931,7 @@ func TestPermsStore_SetRepoPendingPermissions(t *testing.T) {
 			for _, update := range test.updates {
 				const numOps = 30
 				g, ctx := errgroup.WithContext(ctx)
-				for i := range numOps {
+				for range numOps {
 					// Make local copy to prevent race conditions
 					accounts := *update.accounts
 					perm := &authz.RepoPermissions{
@@ -3024,25 +3024,25 @@ func TestPermsStore_DatabaseDeadlocks(t *testing.T) {
 	wg.Add(4)
 	go func() {
 		defer wg.Done()
-		for i := range numOps {
+		for range numOps {
 			setUserPermissions(ctx, t)
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		for i := range numOps {
+		for range numOps {
 			setRepoPermissions(ctx, t)
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		for i := range numOps {
+		for range numOps {
 			setRepoPendingPermissions(ctx, t)
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		for i := range numOps {
+		for range numOps {
 			grantPendingPermissions(ctx, t)
 		}
 	}()

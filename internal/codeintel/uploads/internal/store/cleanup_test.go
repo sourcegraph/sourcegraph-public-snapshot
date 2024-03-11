@@ -103,7 +103,7 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 
 	var uploads []shared.Upload
 	for i := range 25 {
-		for j := range 10+i {
+		for range 10 + i {
 			uploads = append(uploads, shared.Upload{ID: len(uploads) + 1, RepositoryID: 50 + i})
 		}
 	}
@@ -533,7 +533,7 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 
 	var indexes []uploadsshared.Index
 	for i := range 25 {
-		for j := range 10+i {
+		for range 10 + i {
 			indexes = append(indexes, uploadsshared.Index{ID: len(indexes) + 1, RepositoryID: 50 + i})
 		}
 	}

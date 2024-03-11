@@ -24,7 +24,7 @@ func updateIssues(ctx context.Context, cli *graphql.Client, issues []*Issue) (er
 	var wg sync.WaitGroup
 	errs := make(chan error, len(issues))
 
-	for i := range runtime.GOMAXPROCS(0) {
+	for range runtime.GOMAXPROCS(0) {
 		wg.Add(1)
 
 		go func() {

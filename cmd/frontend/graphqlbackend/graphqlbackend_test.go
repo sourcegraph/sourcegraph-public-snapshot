@@ -49,7 +49,7 @@ func BenchmarkPrometheusFieldName(b *testing.B) {
 	for i, t := range tests {
 		typeName, fieldName, want := t[0], t[1], t[2]
 		b.Run(fmt.Sprintf("test-%v", i), func(b *testing.B) {
-			for i := range b.N {
+			for range b.N {
 				got := prometheusFieldName(typeName, fieldName)
 				if got != want {
 					b.Fatalf("got %q want %q", got, want)

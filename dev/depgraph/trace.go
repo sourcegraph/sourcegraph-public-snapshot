@@ -13,9 +13,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var traceFlagSet = flag.NewFlagSet("depgraph trace", flag.ExitOnError)
-var dependencyMaxDepthFlag = traceFlagSet.Int("dependency-max-depth", 1, "Show transitive dependencies up to this depth (default 1)")
-var dependentMaxDepthFlag = traceFlagSet.Int("dependent-max-depth", 1, "Show transitive dependents up to this depth (default 1)")
+var (
+	traceFlagSet           = flag.NewFlagSet("depgraph trace", flag.ExitOnError)
+	dependencyMaxDepthFlag = traceFlagSet.Int("dependency-max-depth", 1, "Show transitive dependencies up to this depth (default 1)")
+	dependentMaxDepthFlag  = traceFlagSet.Int("dependent-max-depth", 1, "Show transitive dependents up to this depth (default 1)")
+)
 
 var traceCommand = &ffcli.Command{
 	Name:       "trace",
@@ -66,7 +68,7 @@ func traceTraverse(pkg string, relation map[string][]string, maxDepth int) (pack
 	packageMap := map[string]int{pkg: 0}
 	edges = map[string][]string{pkg: relation[pkg]}
 
-	for depth := range maxDepth && len(frontier) > 0 {
+	for depth := 0; depth < maxDepth && len(frontier) > 0; depth++ {
 		nextFrontier := []string{}
 		for _, pkg := range frontier {
 			if _, ok := packageMap[pkg]; ok {

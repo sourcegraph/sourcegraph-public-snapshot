@@ -780,7 +780,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 		}
 
 		// Workspaces without execution job
-		for i := range setup.additionalWorkspace {
+		for range setup.additionalWorkspace {
 			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
 			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
 				t.Fatal(err)
@@ -788,7 +788,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 		}
 
 		// Workspaces with cached result
-		for i := range setup.additionalCachedWorkspace {
+		for range setup.additionalCachedWorkspace {
 			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID, CachedResultFound: true}
 			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
 				t.Fatal(err)
@@ -797,7 +797,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 
 		// Workspaces without execution job and skipped
 		if setup.additionalSkippedWorkspace > 0 {
-			for i := range setup.additionalSkippedWorkspace {
+			for range setup.additionalSkippedWorkspace {
 				ws := &btypes.BatchSpecWorkspace{
 					BatchSpecID: spec.ID,
 					RepoID:      repo.ID,

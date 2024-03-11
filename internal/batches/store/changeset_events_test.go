@@ -49,7 +49,7 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, clock
 		}
 
 		// Verify that no duplicates are introduced and no error is returned.
-		for i := range 2 {
+		for range 2 {
 			err := s.UpsertChangesetEvents(ctx, events...)
 			if err != nil {
 				t.Fatal(err)

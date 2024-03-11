@@ -29,7 +29,7 @@ func TestClient_ListProjects(t *testing.T) {
 	it := cli.ListProjects(ctx, args)
 
 	var projects []*Project
-	for i := range limit && it.Next() {
+	for i := 0; i < limit && it.Next(); i++ {
 		projects = append(projects, it.Current())
 	}
 

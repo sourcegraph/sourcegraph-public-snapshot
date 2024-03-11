@@ -112,7 +112,7 @@ func (r *Repo) WaitTillExists() {
 		Name: fmt.Sprintf("repo:exists:%s", r.name),
 		Apply: func(ctx context.Context) error {
 			var err error
-			for i := range 5 {
+			for range 5 {
 				time.Sleep(1 * time.Second)
 				_, err = r.get(ctx)
 				if err == nil {

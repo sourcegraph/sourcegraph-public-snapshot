@@ -65,7 +65,7 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 		store.SourcedCommitsWithoutCommittedAtFunc.PushReturn(sourcedCommits, nil)
 	}
 
-	for i := range n/pageSize {
+	for range n / pageSize {
 		if err := svc.BackfillCommittedAtBatch(ctx, pageSize); err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -152,7 +152,7 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 		store.SourcedCommitsWithoutCommittedAtFunc.PushReturn(sourcedCommits, nil)
 	}
 
-	for i := range n/pageSize {
+	for range n / pageSize {
 		if err := svc.BackfillCommittedAtBatch(ctx, pageSize); err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
