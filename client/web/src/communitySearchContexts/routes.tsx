@@ -3,7 +3,6 @@ import type { RouteObject } from 'react-router-dom'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { LegacyRoute } from '../LegacyRouteContext'
-import { CommunityPageRoutes } from '../routes.constants'
 
 const KubernetesCommunitySearchContextPage = lazyComponent(
     () => import('./Kubernetes'),
@@ -36,7 +35,7 @@ const BackstageCommunitySearchContextPage = lazyComponent(
 // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
 export const communitySearchContextsRoutes: readonly RouteObject[] = [
     {
-        path: CommunityPageRoutes.Kubernetes,
+        path: '/kubernetes',
         element: (
             <LegacyRoute
                 render={props => <KubernetesCommunitySearchContextPage {...props} />}
@@ -45,7 +44,7 @@ export const communitySearchContextsRoutes: readonly RouteObject[] = [
         ),
     },
     {
-        path: CommunityPageRoutes.Stackstorm,
+        path: '/stackstorm',
         element: (
             <LegacyRoute
                 render={props => <StackstormCommunitySearchContextPage {...props} />}
@@ -54,7 +53,7 @@ export const communitySearchContextsRoutes: readonly RouteObject[] = [
         ),
     },
     {
-        path: CommunityPageRoutes.Temporal,
+        path: '/temporal',
         element: (
             <LegacyRoute
                 render={props => <TemporalCommunitySearchContextPage {...props} />}
@@ -63,7 +62,7 @@ export const communitySearchContextsRoutes: readonly RouteObject[] = [
         ),
     },
     {
-        path: CommunityPageRoutes.O3de,
+        path: '/o3de',
         element: (
             <LegacyRoute
                 render={props => <O3deCommunitySearchContextPage {...props} />}
@@ -72,7 +71,7 @@ export const communitySearchContextsRoutes: readonly RouteObject[] = [
         ),
     },
     {
-        path: CommunityPageRoutes.ChakraUI,
+        path: '/chakraui',
         element: (
             <LegacyRoute
                 render={props => <ChakraUICommunitySearchContextPage {...props} />}
@@ -81,7 +80,7 @@ export const communitySearchContextsRoutes: readonly RouteObject[] = [
         ),
     },
     {
-        path: CommunityPageRoutes.Stanford,
+        path: '/stanford',
         element: (
             <LegacyRoute
                 render={props => <StanfordCommunitySearchContextPage {...props} />}
@@ -90,7 +89,7 @@ export const communitySearchContextsRoutes: readonly RouteObject[] = [
         ),
     },
     {
-        path: CommunityPageRoutes.Cncf,
+        path: '/cncf',
         element: (
             <LegacyRoute
                 render={props => <CncfCommunitySearchContextPage {...props} />}
@@ -99,7 +98,7 @@ export const communitySearchContextsRoutes: readonly RouteObject[] = [
         ),
     },
     {
-        path: CommunityPageRoutes.Julia,
+        path: '/julia',
         element: (
             <LegacyRoute
                 render={props => <JuliaCommunitySearchContextPage {...props} />}
@@ -108,7 +107,7 @@ export const communitySearchContextsRoutes: readonly RouteObject[] = [
         ),
     },
     {
-        path: CommunityPageRoutes.Backstage,
+        path: '/backstage',
         element: (
             <LegacyRoute
                 render={props => <BackstageCommunitySearchContextPage {...props} />}
