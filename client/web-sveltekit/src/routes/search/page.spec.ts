@@ -1,5 +1,18 @@
 import { test, expect } from '../../testing/integration'
 
+test('search input is autofocused', async ({ page }) => {
+    await page.goto('/search')
+    const searchInput = page.getByRole('textbox')
+    const suggestions = page.getByLabel('Narrow your search')
+    await expect(searchInput).toBeFocused()
+
+    // Doesn't show suggestions without user interaction
+    await expect(suggestions).not.toBeVisible()
+
+    await searchInput.click()
+    await expect(suggestions).toBeVisible()
+})
+
 test('shows suggestions', async ({ sg, page }) => {
     await page.goto('/search')
     const searchInput = page.getByRole('textbox')

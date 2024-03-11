@@ -108,6 +108,7 @@
 
 <script lang="ts">
     export let queryState: QueryStateStore
+    export let autoFocus = false
 
     export function focus() {
         input?.focus()
@@ -120,22 +121,29 @@
     let mode = ''
     let suggestionsPaddingTop = 0
     let suggestionsUI: Extension = []
+    // When autofocus is set we only show suggestions when the user has interacted with the input
+    let userHasInteracted = !autoFocus
+    const hasInteractedExtension = EditorView.updateListener.of(update => {
+        if (!userHasInteracted) {
+            if (update.transactions.some(tr => tr.isUserEvent('select') || tr.isUserEvent('input'))) {
+                userHasInteracted = true
+            }
+        }
+    })
 
     $: regularExpressionEnabled = $queryState.patternType === SearchPatternType.regexp
     $: structuralEnabled = $queryState.patternType === SearchPatternType.structural
-    $: extension = [
-        suggestions({
-            id: popoverID,
-            source: createSuggestionsSource({
-                graphqlQuery,
-                authenticatedUser: $user,
-                isSourcegraphDotCom: false,
-            }),
-            navigate: goto,
+    $: suggestionsExtension = suggestions({
+        id: popoverID,
+        source: createSuggestionsSource({
+            graphqlQuery,
+            authenticatedUser: $user,
+            isSourcegraphDotCom: false,
         }),
-        suggestionsUI,
-        staticExtensions,
-    ]
+        navigate: goto,
+    })
+
+    $: extension = [hasInteractedExtension, suggestionsExtension, suggestionsUI, staticExtensions]
 
     function setOrUnsetPatternType(patternType: SearchPatternType): void {
         queryState.setPatternType(currentPatternType =>
@@ -166,9 +174,10 @@
     on:submit={handleSubmit}
 >
     <input class="hidden" value={$queryState.query} name="q" />
-    <div class="focus-container">
+    <div class="focus-container" class:userHasInteracted>
         <div class="mode-switcher" />
         <BaseCodeMirrorQueryInput
+            {autoFocus}
             bind:this={input}
             bind:view={editor}
             placeholder="Search for code or files"
@@ -231,7 +240,7 @@
         padding: 0.75rem;
 
         &:focus-within {
-            .suggestions {
+            .userHasInteracted + .suggestions {
                 display: block;
             }
         }
