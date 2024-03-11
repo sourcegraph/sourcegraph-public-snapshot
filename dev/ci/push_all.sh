@@ -41,6 +41,10 @@ function create_push_command() {
     --workspace_status_command=./dev/bazel_stamp_vars.sh"
 
   echo "$cmd -- $tags_args $repositories_args"
+
+  for registry in "${registries[@]}"; do
+    echo -e "| ${repository} | \`${registry}\` | \`${tags_args}\` |" >>./annotations/pushed_images.md
+  done
 }
 
 dev_registries=(
@@ -105,6 +109,9 @@ if [ -n "$CANDIDATE_ONLY" ]; then
   push_prod=false
 fi
 
+
+echo -e "## Pushed images" > ./annotations/image_promotions.md
+echo -e "\n| Name | Registry | Tags |\n|---|---|---|" >> ./annotations/image_promotions.md
 preview_tags "${dev_registries[*]}" "${dev_tags[*]}"
 if $push_prod; then
   preview_tags "${prod_registries[*]}" "${prod_tags[*]}"
