@@ -13,7 +13,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"golang.org/x/net/http2"
 
@@ -62,7 +61,6 @@ func GetAPIClient(endpoint, accessToken string) (CompletionsClient, error) {
 	clientOpts := &azopenai.ClientOptions{
 		ClientOptions: azcore.ClientOptions{
 			Transport: apiVersionClient("2023-05-15"),
-			Logging:   policy.LogOptions{IncludeBody: true, AllowedHeaders: []string{"api-version"}},
 		},
 	}
 	var err error
@@ -394,19 +392,24 @@ type apiVersionRoundTripper struct {
 }
 
 func (rt *apiVersionRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	v := req.URL.Query()
-	v.Set("api-version", rt.apiVersion)
-	req.URL.RawQuery = v.Encode()
-	return rt.rt.RoundTrip(req)
+	// Copy the request and URL since modifying is not permitted
+	newReq := req
+	var newUrl url.URL = *req.URL
+	q := newUrl.Query()
+	q.Set("api-version", rt.apiVersion)
+	newUrl.RawQuery = q.Encode()
+	newReq.URL = &newUrl
+	return rt.rt.RoundTrip(newReq)
 }
 
 func apiVersionClient(apiVersion string) *http.Client {
-	defaultTransport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: defaultTransportDialContext(&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}),
+	dialer := &net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}
+	azureClientDefaultTransport := &http.Transport{
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext:           dialer.DialContext,
 		ForceAttemptHTTP2:     true,
 		MaxIdleConns:          100,
 		MaxIdleConnsPerHost:   10,
@@ -418,22 +421,16 @@ func apiVersionClient(apiVersion string) *http.Client {
 			Renegotiation: tls.RenegotiateFreelyAsClient,
 		},
 	}
-	// TODO: evaluate removing this once https://github.com/golang/go/issues/59690 has been fixed
-	if http2Transport, err := http2.ConfigureTransports(defaultTransport); err == nil {
-		// if the connection has been idle for 10 seconds, send a ping frame for a health check
+
+	if http2Transport, err := http2.ConfigureTransports(azureClientDefaultTransport); err == nil {
 		http2Transport.ReadIdleTimeout = 10 * time.Second
-		// if there's no response to the ping within the timeout, the connection will be closed
 		http2Transport.PingTimeout = 5 * time.Second
 	}
 
 	return &http.Client{
 		Transport: &apiVersionRoundTripper{
-			rt:         defaultTransport,
+			rt:         azureClientDefaultTransport,
 			apiVersion: apiVersion,
 		},
 	}
-}
-
-func defaultTransportDialContext(dialer *net.Dialer) func(context.Context, string, string) (net.Conn, error) {
-	return dialer.DialContext
 }
