@@ -26,10 +26,8 @@ const (
 	ReleaseBranch     // release branch build
 	BextReleaseBranch // browser extension release build
 
-	// RFC795
-
-	RFC795InternalRelease // Internal release
-	RFC795PromoteRelease  // Public release
+	InternalRelease // Internal release
+	PromoteRelease  // Public release
 
 	// Main branches
 
@@ -82,13 +80,13 @@ func (t RunType) Is(oneOfTypes ...RunType) bool {
 // Matcher returns the requirements for a build to be considered of this RunType.
 func (t RunType) Matcher() *RunTypeMatcher {
 	switch t {
-	case RFC795PromoteRelease:
+	case PromoteRelease:
 		return &RunTypeMatcher{
 			EnvIncludes: map[string]string{
 				"RELEASE_PUBLIC": "true",
 			},
 		}
-	case RFC795InternalRelease:
+	case InternalRelease:
 		return &RunTypeMatcher{
 			EnvIncludes: map[string]string{
 				"RELEASE_INTERNAL": "true",
@@ -132,8 +130,7 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		}
 	case MainDryRun:
 		return &RunTypeMatcher{
-			// TODO(@jhchabran) RFC795
-			Branch:       "(?:main-dry-run/)|(?:rfc795/main)",
+			Branch:       "(?:main-dry-run/)",
 			BranchRegexp: true,
 		}
 	case ManuallyTriggered:
@@ -201,9 +198,9 @@ func (t RunType) String() string {
 		return "Build executor without testing"
 	case BazelDo:
 		return "Bazel command"
-	case RFC795InternalRelease:
+	case InternalRelease:
 		return "Internal release"
-	case RFC795PromoteRelease:
+	case PromoteRelease:
 		return "Public release"
 	}
 	return "None"

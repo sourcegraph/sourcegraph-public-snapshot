@@ -79,12 +79,12 @@ function create_push_command() {
 
 dev_registries=(
   "us.gcr.io/sourcegraph-dev"
-  # Temporary registry we use to test release process with internal releases
-  # "us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal"
 )
+
 prod_registries=(
   # "index.docker.io/sourcegraph"
   # Temporary registry we use to test release process with public releases
+  # TODO rfc795
   "us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal"
 )
 
