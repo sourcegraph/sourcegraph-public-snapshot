@@ -149,7 +149,7 @@ func (a *AnthropicHandlerMethods) validateRequest(ctx context.Context, logger lo
 			logger.Warn("failed to record flagged prompt", log.Error(err))
 		}
 		if a.config.RequestBlockingEnabled && result.shouldBlock {
-			return http.StatusBadRequest, result, errors.Errorf("request blocked - if you think this is a mistake, please contact support@sourcegraph.com")
+			return http.StatusBadRequest, result, requestBlockedError(ctx)
 		}
 		return 0, result, nil
 	}
