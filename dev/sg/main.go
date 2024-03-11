@@ -300,7 +300,7 @@ var sg = &cli.App{
 		funkyLogoCommand,
 		helpCommand,
 		installCommand,
-		release.Command(),
+		release.Command,
 		updateCommand,
 		versionCommand,
 	},
