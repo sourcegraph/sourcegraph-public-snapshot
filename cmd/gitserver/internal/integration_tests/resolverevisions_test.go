@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 )
 
+// TODO: Remove.
 func TestClient_ResolveRevision(t *testing.T) {
 	root := t.TempDir()
 	remote := createSimpleGitRepo(t, root)
