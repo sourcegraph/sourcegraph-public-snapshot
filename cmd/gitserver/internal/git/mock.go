@@ -365,7 +365,7 @@ func NewMockGitBackend() *MockGitBackend {
 			},
 		},
 		ReadDirFunc: &GitBackendReadDirFunc{
-			defaultHook: func(context.Context, api.CommitID, string, bool) (r0 []fs.FileInfo, r1 error) {
+			defaultHook: func(context.Context, api.CommitID, string, bool) (r0 ReadDirIterator, r1 error) {
 				return
 			},
 		},
@@ -437,7 +437,7 @@ func NewStrictMockGitBackend() *MockGitBackend {
 			},
 		},
 		ReadDirFunc: &GitBackendReadDirFunc{
-			defaultHook: func(context.Context, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+			defaultHook: func(context.Context, api.CommitID, string, bool) (ReadDirIterator, error) {
 				panic("unexpected invocation of MockGitBackend.ReadDir")
 			},
 		},
@@ -1287,15 +1287,15 @@ func (c GitBackendMergeBaseFuncCall) Results() []interface{} {
 // GitBackendReadDirFunc describes the behavior when the ReadDir method of
 // the parent MockGitBackend instance is invoked.
 type GitBackendReadDirFunc struct {
-	defaultHook func(context.Context, api.CommitID, string, bool) ([]fs.FileInfo, error)
-	hooks       []func(context.Context, api.CommitID, string, bool) ([]fs.FileInfo, error)
+	defaultHook func(context.Context, api.CommitID, string, bool) (ReadDirIterator, error)
+	hooks       []func(context.Context, api.CommitID, string, bool) (ReadDirIterator, error)
 	history     []GitBackendReadDirFuncCall
 	mutex       sync.Mutex
 }
 
 // ReadDir delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitBackend) ReadDir(v0 context.Context, v1 api.CommitID, v2 string, v3 bool) ([]fs.FileInfo, error) {
+func (m *MockGitBackend) ReadDir(v0 context.Context, v1 api.CommitID, v2 string, v3 bool) (ReadDirIterator, error) {
 	r0, r1 := m.ReadDirFunc.nextHook()(v0, v1, v2, v3)
 	m.ReadDirFunc.appendCall(GitBackendReadDirFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -1304,7 +1304,7 @@ func (m *MockGitBackend) ReadDir(v0 context.Context, v1 api.CommitID, v2 string,
 // SetDefaultHook sets function that is called when the ReadDir method of
 // the parent MockGitBackend instance is invoked and the hook queue is
 // empty.
-func (f *GitBackendReadDirFunc) SetDefaultHook(hook func(context.Context, api.CommitID, string, bool) ([]fs.FileInfo, error)) {
+func (f *GitBackendReadDirFunc) SetDefaultHook(hook func(context.Context, api.CommitID, string, bool) (ReadDirIterator, error)) {
 	f.defaultHook = hook
 }
 
@@ -1312,7 +1312,7 @@ func (f *GitBackendReadDirFunc) SetDefaultHook(hook func(context.Context, api.Co
 // ReadDir method of the parent MockGitBackend instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *GitBackendReadDirFunc) PushHook(hook func(context.Context, api.CommitID, string, bool) ([]fs.FileInfo, error)) {
+func (f *GitBackendReadDirFunc) PushHook(hook func(context.Context, api.CommitID, string, bool) (ReadDirIterator, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1320,20 +1320,20 @@ func (f *GitBackendReadDirFunc) PushHook(hook func(context.Context, api.CommitID
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBackendReadDirFunc) SetDefaultReturn(r0 []fs.FileInfo, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+func (f *GitBackendReadDirFunc) SetDefaultReturn(r0 ReadDirIterator, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.CommitID, string, bool) (ReadDirIterator, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBackendReadDirFunc) PushReturn(r0 []fs.FileInfo, r1 error) {
-	f.PushHook(func(context.Context, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+func (f *GitBackendReadDirFunc) PushReturn(r0 ReadDirIterator, r1 error) {
+	f.PushHook(func(context.Context, api.CommitID, string, bool) (ReadDirIterator, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitBackendReadDirFunc) nextHook() func(context.Context, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+func (f *GitBackendReadDirFunc) nextHook() func(context.Context, api.CommitID, string, bool) (ReadDirIterator, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1380,7 +1380,7 @@ type GitBackendReadDirFuncCall struct {
 	Arg3 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []fs.FileInfo
+	Result0 ReadDirIterator
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

@@ -71,7 +71,8 @@ type GitBackend interface {
 	// If the commit does not exist, a RevisionNotFoundError is returned.
 	// ReadDir supports submodules, symlinks, directories and files.
 	// If recursive is true, ReadDir will return the contents of all subdirectories.
-	ReadDir(ctx context.Context, commit api.CommitID, path string, recursive bool) ([]fs.FileInfo, error)
+	// The caller must call Close on the returned ReadDirIterator when done.
+	ReadDir(ctx context.Context, commit api.CommitID, path string, recursive bool) (ReadDirIterator, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
@@ -129,3 +130,12 @@ const (
 	// ArchiveFormatTar indicates a tar archive is desired.
 	ArchiveFormatTar ArchiveFormat = "tar"
 )
+
+// ReadDirIterator is an iterator for the contents of a directory.
+type ReadDirIterator interface {
+	// Next returns the next file in the directory. io.EOF is returned at the end
+	// of the stream.
+	Next() (fs.FileInfo, error)
+	// Close closes the iterator.
+	Close() error
+}
