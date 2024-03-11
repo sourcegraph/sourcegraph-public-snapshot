@@ -74,10 +74,12 @@ func sanitizeMessagesForMessagesApi(messages []types.Message) []types.Message {
 	sanitizedMessages := messages
 
 	// 1. If the last message is from an `assistant` with no or empty `text`, omit it
-	lastMessage := messages[len(messages)-1]
-	truncateLastMessage := lastMessage.Speaker == types.ASSISTANT_MESSAGE_SPEAKER && lastMessage.Text == ""
-	if truncateLastMessage {
-		sanitizedMessages = messages[:len(messages)-1]
+	if len(messages) > 0 {
+		lastMessage := messages[len(messages)-1]
+		truncateLastMessage := lastMessage.Speaker == types.ASSISTANT_MESSAGE_SPEAKER && lastMessage.Text == ""
+		if truncateLastMessage {
+			sanitizedMessages = messages[:len(messages)-1]
+		}
 	}
 
 	// 2. If there is any assistant message in the middle of the messages without a `text`, omit
@@ -102,9 +104,11 @@ func sanitizeMessagesForMessagesApi(messages []types.Message) []types.Message {
 	sanitizedMessages = filteredMessages
 
 	// 3. Final assistant content cannot end with trailing whitespace
-	lastMessage = sanitizedMessages[len(sanitizedMessages)-1]
-	if lastMessage.Speaker == types.ASSISTANT_MESSAGE_SPEAKER && lastMessage.Text != "" {
-		lastMessage.Text = strings.TrimRight(lastMessage.Text, " \t\n\r")
+	if len(sanitizedMessages) >= 1 {
+		lastMessage := sanitizedMessages[len(sanitizedMessages)-1]
+		if lastMessage.Speaker == types.ASSISTANT_MESSAGE_SPEAKER && lastMessage.Text != "" {
+			lastMessage.Text = strings.TrimRight(lastMessage.Text, " \t\n\r")
+		}
 	}
 
 	return sanitizedMessages
@@ -123,10 +127,12 @@ func sanitizeMessagesForCompleteApi(messages []types.Message) []types.Message {
 		}
 	}
 
-	// 2. The last message must be from from an `assistant`
-	lastMessage := sanitizedMessages[len(sanitizedMessages)-1]
-	if lastMessage.Speaker != types.ASSISTANT_MESSAGE_SPEAKER {
-		sanitizedMessages = append(sanitizedMessages, types.Message{Speaker: types.ASSISTANT_MESSAGE_SPEAKER})
+	if len(sanitizedMessages) >= 1 {
+		// 2. The last message must be from from an `assistant`
+		lastMessage := sanitizedMessages[len(sanitizedMessages)-1]
+		if lastMessage.Speaker != types.ASSISTANT_MESSAGE_SPEAKER {
+			sanitizedMessages = append(sanitizedMessages, types.Message{Speaker: types.ASSISTANT_MESSAGE_SPEAKER})
+		}
 	}
 
 	return sanitizedMessages
