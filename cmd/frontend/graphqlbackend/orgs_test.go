@@ -3,8 +3,6 @@ package graphqlbackend
 import (
 	"testing"
 
-	"github.com/graph-gophers/graphql-go/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -52,7 +50,7 @@ func TestOrgs(t *testing.T) {
 	})
 }
 
-func TestListOrgsForCloud(t *testing.T) {
+func TestListOrgsForDotcom(t *testing.T) {
 	orig := dotcom.SourcegraphDotComMode()
 	dotcom.MockSourcegraphDotComMode(true)
 	defer dotcom.MockSourcegraphDotComMode(orig)
@@ -78,13 +76,14 @@ func TestListOrgsForCloud(t *testing.T) {
 					}
 				}
 			`,
-			ExpectedResult: "null",
-			ExpectedErrors: []*errors.QueryError{
-				{
-					Message: "listing organizations is not allowed",
-					Path:    []any{"organizations", "nodes"},
-				},
-			},
+			ExpectedResult: `
+			{
+				"organizations": {
+					"nodes": [],
+					"totalCount": 42
+				}
+			}
+		`,
 		},
 		{
 			Schema: mustParseGraphQLSchema(t, db),
