@@ -100,7 +100,7 @@ CANDIDATE_ONLY=${CANDIDATE_ONLY:-""}
 
 push_prod=false
 
-if [[ "$BUILDKITE_BRANCH" =~ ^docker-images-candidates-notest/.* ]]; then
+if [[ "$BUILDKITE_BRANCH" =~ ^main$ ]] || [[ "$BUILDKITE_BRANCH" =~ ^docker-images-candidates-notest/.* ]]; then
   dev_tags+=("insiders")
   prod_tags+=("insiders")
   push_prod=true
