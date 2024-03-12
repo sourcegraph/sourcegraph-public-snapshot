@@ -91,7 +91,7 @@
 
 {#await data.globalSiteAlerts then globalSiteAlerts}
     {#if globalSiteAlerts}
-        <GlobalNotification globalAlerts={globalSiteAlerts}/>
+        <GlobalNotification globalAlerts={globalSiteAlerts} />
     {/if}
 {/await}
 
