@@ -44,7 +44,14 @@ func scanSymbols(rows *sql.Rows, queryErr error) (symbols []result.Symbol, err e
 	return symbols, nil
 }
 
+const defaultLimit = 100
+
 func (s *store) Search(ctx context.Context, args search.SymbolsParameters) ([]result.Symbol, error) {
+	limit := defaultLimit
+	if args.First > 0 {
+		limit = args.First
+	}
+
 	return scanSymbols(s.Query(ctx, sqlf.Sprintf(
 		`
 			SELECT
@@ -63,7 +70,7 @@ func (s *store) Search(ctx context.Context, args search.SymbolsParameters) ([]re
 			LIMIT %s
 		`,
 		sqlf.Join(makeSearchConditions(args), "AND"),
-		args.First,
+		limit,
 	)))
 }
 
