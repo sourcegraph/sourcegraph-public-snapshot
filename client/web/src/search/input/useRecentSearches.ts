@@ -72,7 +72,7 @@ export function useRecentSearches(): {
                     })
             }
         }
-    }, [recentSearches, loadFromEventLog, recentSearchesManager, state])
+    }, [recentSearches, loadFromEventLog, recentSearchesManager, state, setRecentSearches])
 
     // Adds non-empty queries. A query is considered empty if it's an empty
     // string or only contains a context: filter.

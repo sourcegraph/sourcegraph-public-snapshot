@@ -191,7 +191,7 @@ export function onModeChange(
         const selectedMode = getSelectedMode(update.state)
         const prevSelectedMode = getSelectedMode(update.startState)
         if (selectedMode !== prevSelectedMode) {
-            callback(update.view, selectedMode?.name ?? null, prevSelectedMode?.name ?? null)
+            return callback(update.view, selectedMode?.name ?? null, prevSelectedMode?.name ?? null)
         }
     })
 }
