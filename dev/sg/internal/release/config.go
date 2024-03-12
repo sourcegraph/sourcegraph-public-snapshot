@@ -168,6 +168,7 @@ func NewReleaseRunner(ctx context.Context, workdir string, version string, input
 	dec := yaml.NewDecoder(f)
 	if err := dec.Decode(&m); err != nil {
 		say("setup", "failed to decode manifest")
+		return nil, err
 	}
 	saySuccess("setup", "Found manifest for %q (%s)", m.Meta.ProductName, m.Meta.Repository)
 
