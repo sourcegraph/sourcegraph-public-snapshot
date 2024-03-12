@@ -6,6 +6,6 @@ jobs:
   team-labeler:
     runs-on: ubuntu-latest
     steps:
-    - uses: JulienKode/team-labeler-action@v0.1.0
+    - uses: buf-breaking-action@a074e988ee34efcd4927079e79c611f428354c01 # SECURITY: pin third-party action hashes
       with:
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
