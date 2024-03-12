@@ -16,7 +16,7 @@ const (
 	SourcegraphDockerDevRegistry = "us.gcr.io/sourcegraph-dev"
 	// SourcegraphDockerPublishRegistry is a public registry for final images, and does not require authentication to pull from.
 	// TODO RFC795: safeguard
-	SourcegraphDockerPublishRegistry = "BROKENindex.docker.io/sourcegraph"
+	SourcegraphDockerPublishRegistry = "index.docker.io/sourcegraph"
 	// SourcegraphInternalReleaseRegistry is a private registry storing internal releases.
 	SourcegraphInternalReleaseRegistry = "us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal"
 	// SourcegraphPublicReleaseRegistry is a currently private registry for storing public releases.
