@@ -18,6 +18,8 @@
         error: mdiAlertCircle,
     }
     let searchAgainDisabled = true
+    let elapsedSeconds: number
+    let elapsedMilliseconds: number
 
     function updateButton(event: Event) {
         const element = event.target as HTMLInputElement
@@ -41,6 +43,8 @@
         trigger={registerTrigger}
         togglePopover={toggle}
         searchProgress={progress}
+        {elapsedSeconds}
+        {elapsedMilliseconds}
     />
     <div slot="content" class="streaming-popover">
         <p>

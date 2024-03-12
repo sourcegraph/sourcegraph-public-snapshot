@@ -1,5 +1,6 @@
 <script lang="ts">
     import { mdiChevronDown, mdiInformationOutline, mdiAlert, mdiAlertCircle } from '@mdi/js'
+    import { onMount } from 'svelte'
 
     import { getProgressText } from '$lib/branded'
     import Icon from '$lib/Icon.svelte'
@@ -15,12 +16,37 @@
     export let togglePopover: () => void
     export let trigger: (node: HTMLElement) => void
 
+    // Create variables to be passed into the SecondCounter component
+    // These variables will be used to determine the amount of time
+    // the search has run without a response
+    export let elapsedSeconds: number = 0
+    export let elapsedMilliseconds: number = 0
+    let displaySeconds: number = 0
+    let displayMilliseconds: number = 0
+
+    let lastUpdate = Date.now()
+    onMount(() => {
+        const startTime = Date.now()
+        setInterval(() => {
+            const now = Date.now()
+            const delta = now - startTime
+            elapsedSeconds = Math.floor(delta / 1000)
+            elapsedMilliseconds = delta % 100
+            if (now - lastUpdate >= 5) {
+                displaySeconds = elapsedSeconds
+                displayMilliseconds = elapsedMilliseconds
+                lastUpdate = now
+            }
+        }, 1300)
+    })
+
     const icons: Record<string, string> = {
         info: mdiInformationOutline,
         warning: mdiAlert,
         error: mdiAlertCircle,
     }
     const CENTER_DOT = '\u00B7' // interpunct
+    const MAX_SEARCH_DURATION = 15
 
     $: loading = searchProgress.skipped.length === 0
     $: mostSevere = sortedItems[0]
@@ -37,10 +63,26 @@
                     <LoadingSpinner inline />
                     <div class="messages">
                         <div class="progress-info-message">
-                            Fetching results...
-                            <!--<SecondCounter />-->
+                            Fetching results... {elapsedSeconds}.{elapsedMilliseconds}s
                         </div>
-                        <div class="loading-action">500+ results</div>
+                        {#if elapsedSeconds < MAX_SEARCH_DURATION}
+                            <div class="loading-action-message">Running search...</div>
+                        {:else}
+                            <div class="duration-badge">
+                                <div class={`info-badge duration`}>Taking too long?</div>
+                                <div class="separator">{CENTER_DOT}</div>
+                                <div class="action-badge">
+                                    Use
+                                    <a
+                                        href="https://sourcegraph.com/docs/code-search/types/search-jobs"
+                                        target="_blank"
+                                    >
+                                        Search Job
+                                    </a>
+                                    for background search
+                                </div>
+                            </div>
+                        {/if}
                     </div>
                 </div>
             {/if}
@@ -114,7 +156,6 @@
     div.separator {
         margin-right: 0.4rem;
         margin-left: 0.4rem;
-        padding-top: 0.1rem;
     }
 
     div.progress-action-message {
@@ -123,7 +164,7 @@
         font-family: var(--base-font-family);
         font-size: 0.7rem;
         justify-content: space-around;
-        margin-top: 0.3rem;
+        margin-top: 0.5rem;
     }
 
     .loading-action {
@@ -140,30 +181,40 @@
         border-radius: 3px;
         padding-left: 0.2rem;
         padding-right: 0.2rem;
-        padding-top: 0.1rem;
+        // padding-top: 0.1rem;
     }
 
     div.info-badge.error {
         background: var(--danger);
     }
 
-    div.action-badge {
-        padding-top: 0.1rem;
+    div.info-badge.duration {
+        background: var(--warning);
+        color: black;
     }
 
-    .code-font {
+    div.code-font {
         font-family: var(--code-font-family);
         background-color: var(--gray-08);
         border-radius: 3px;
         padding-left: 0.2rem;
         padding-right: 0.2rem;
-        padding-top: 0.1rem;
-        padding-bottom: 0.1rem;
     }
 
-    .loading {
+    div.loading {
         display: flex;
         flex-flow: row nowrap;
         margin-right: 1rem;
+    }
+
+    div.duration-badge {
+        display: flex;
+        flex-flow: row-nowrap;
+        margin-top: 0.5rem;
+    }
+
+    div.loading-action-message {
+        margin-top: 0.5rem;
+        color: var(--gray-06);
     }
 </style>
