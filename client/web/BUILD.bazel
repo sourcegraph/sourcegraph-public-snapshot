@@ -1617,6 +1617,7 @@ ts_project(
         "src/storm/pages/SearchPageWrapper/index.ts",
         "src/storm/routes.tsx",
         "src/sveltekit/SvelteKitNavItem.tsx",
+        "src/sveltekit/WebNextAwareLink.tsx",
         "src/sveltekit/util.ts",
         "src/team/TeamsArea.tsx",
         "src/team/area/EditParentTeamModal.tsx",
