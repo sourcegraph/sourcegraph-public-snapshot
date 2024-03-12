@@ -42,11 +42,19 @@ func init() {
 
 func main() {
 	ctx := context.Background()
-	currentVersionRaw := os.Args[1]
-	if currentVersionRaw == "" {
+
+	usage := func() {
 		fmt.Println("Current version argument is required.")
 		fmt.Println("usage: airgappedgen vX.Y.Z <path to folder>")
 		os.Exit(1)
+	}
+
+	if len(os.Args) < 3 {
+		usage()
+	}
+	currentVersionRaw := os.Args[1]
+	if currentVersionRaw == "" {
+		usage()
 	}
 
 	currentVersion, err := semver.NewVersion(currentVersionRaw)
@@ -56,9 +64,7 @@ func main() {
 
 	exportPath := os.Args[2]
 	if exportPath == "" {
-		fmt.Println("Export path argument is required.")
-		fmt.Println("usage: airgappedgen vX.Y.Z <path to folder>")
-		os.Exit(1)
+		usage()
 	}
 
 	schemasGCS, err := downloadGCSVersions(ctx, gcsVersions)
