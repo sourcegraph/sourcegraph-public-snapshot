@@ -1,6 +1,6 @@
 <script lang="ts" context="module">
-    import {AlertType} from '$lib/graphql-types';
-    import {formatDistanceStrict, isAfter} from 'date-fns';
+    import {AlertType} from '$lib/graphql-types'
+    import {formatDistanceStrict, isAfter} from 'date-fns'
 
     type PossibleAlertVariation = 'info' | 'warning' | 'danger'
 
@@ -39,7 +39,7 @@
     import DismissibleAlert from './DismissibleAlert.svelte'
 
     import type {GlobalNotifications} from './GlobalNotifications.gql'
-    import {differenceInDays, parseISO} from 'date-fns';
+    import {differenceInDays, parseISO} from 'date-fns'
 
     export let globalAlerts: GlobalNotifications
 
@@ -52,12 +52,9 @@
 </script>
 
 <div class="root" aria-label="Global site notifications">
-
     {#if globalAlerts.needsRepositoryConfiguration}
         <DismissibleAlert variant="success" partialStorageKey="needsRepositoryConfiguration">
-            <a href='/setup/remote-repositories'>
-                Go to setup wizard
-            </a>
+            <a href="/setup/remote-repositories"> Go to setup wizard </a>
             &nbsp;to add remote repositories from GitHub, GitLab, etc.
         </DismissibleAlert>
     {/if}
@@ -69,8 +66,7 @@
             must&nbsp;
             <a href="https://sourcegraph.com/contact/sales">
                 contact Sourcegraph to start a free trial or purchase a license
-            </a>&nbsp;
-            to add more
+            </a>&nbsp; to add more
         </DismissibleAlert>
     {/if}
 
@@ -99,11 +95,9 @@
     {#if globalAlerts.productSubscription.license && daysLeft <= 7}
         <DismissibleAlert variant="warning" partialStorageKey={`licenseExpiring.${daysLeft}`}>
             Your Sourcegraph license&nbsp;
-            {
-                isProductLicenseExpired(expiresAt)
-                    ? 'expired ' + formatRelativeExpirationDate(expiresAt) // 'Expired two months ago'
-                    : 'will expire in ' + formatDistanceStrict(expiresAt, Date.now())
-            }.&nbsp;
+            {isProductLicenseExpired(expiresAt)
+                ? 'expired ' + formatRelativeExpirationDate(expiresAt) // 'Expired two months ago'
+                : 'will expire in ' + formatDistanceStrict(expiresAt, Date.now())}.&nbsp;
             <a href="/site-admin/license">Renew now</a>
             &nbsp;or&nbsp;
             <a href="https://sourcegraph.com/contact">contact Sourcegraph</a>
@@ -121,16 +115,16 @@
 </div>
 
 <style lang="scss">
-  .root {
-      width: 100%;
-      border-top: 1px solid var(--border-color-2);
+    .root {
+        width: 100%;
+        border-top: 1px solid var(--border-color-2);
 
-      &:empty {
-          display: none;
-      }
-  }
+        &:empty {
+            display: none;
+        }
+    }
 
-  .proxy-link {
-    color: var(--body-color);
-  }
+    .proxy-link {
+        color: var(--body-color);
+    }
 </style>

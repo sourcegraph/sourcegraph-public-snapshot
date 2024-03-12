@@ -1,3 +1,4 @@
+import {AlertType} from '$lib/graphql-types'
 import { test, expect, defineConfig } from '../testing/integration'
 
 export default defineConfig({
@@ -37,9 +38,10 @@ test('has global notifications', async ({sg, page}) => {
                 needsRepositoryConfiguration: true,
                 alerts: [
                     {
-                        type: 'WARNING',
+                        type: AlertType.WARNING,
                         isDismissibleWithKey: null,
-                        message: '[**Update external service configuration**](/site-admin/external-services) to resolve problems:\n* perforce provider "perforce.sgdev.org:1666": rpc error: code = InvalidArgument desc = exit status 1 (output follows)\n\nFailed client connect, server using SSL.\nClient must add SSL protocol prefix to P4PORT.\n\n* perforce provider "perforce.sgdev.org:1666": rpc error: code = InvalidArgument desc = exit status 1 (output follows)\n\nFailed client connect, server using SSL.\nClient must add SSL protocol prefix to P4PORT.\n',
+                        message:
+                            '[**Update external service configuration**](/site-admin/external-services) to resolve problems:\n* perforce provider "perforce.sgdev.org:1666": rpc error: code = InvalidArgument desc = exit status 1 (output follows)\n\nFailed client connect, server using SSL.\nClient must add SSL protocol prefix to P4PORT.\n\n* perforce provider "perforce.sgdev.org:1666": rpc error: code = InvalidArgument desc = exit status 1 (output follows)\n\nFailed client connect, server using SSL.\nClient must add SSL protocol prefix to P4PORT.\n',
                     },
                 ],
                 productSubscription: {

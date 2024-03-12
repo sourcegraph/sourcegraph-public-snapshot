@@ -21,7 +21,7 @@
     export let partialStorageKey: string | null
 
     // Local state
-    let dismissed = partialStorageKey ? isAlertDismissed(partialStorageKey) : false;
+    let dismissed = partialStorageKey ? isAlertDismissed(partialStorageKey) : false
 
     // Callback handlers
     function handleDismissClick() {
@@ -34,19 +34,14 @@
 </script>
 
 {#if !dismissed}
-    <Alert variant={variant} size='slim'>
-
-        <div class='content'>
+    <Alert {variant} size="slim">
+        <div class="content">
             <slot/>
         </div>
 
         {#if partialStorageKey}
             <div class="button-wrapper">
-                <Button
-                    variant="icon"
-                    aria-label="Dismiss alert"
-                    on:click={handleDismissClick}
-                >
+                <Button variant="icon" aria-label="Dismiss alert" on:click={handleDismissClick}>
                     <Icon aria-hidden={true} svgPath={mdiClose}/>
                 </Button>
             </div>
@@ -55,14 +50,14 @@
 {/if}
 
 <style lang="scss">
-  .content {
-    display: flex;
-    flex: 1 1 auto;
-    line-height: (20/14);
-  }
+    .content {
+        display: flex;
+        flex: 1 1 auto;
+        line-height: (20/14);
+    }
 
-  .button-wrapper {
-    align-self: flex-start;
-    color: var(--icon-color);
-  }
+    .button-wrapper {
+        align-self: flex-start;
+        color: var(--icon-color);
+    }
 </style>

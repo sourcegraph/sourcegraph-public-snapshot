@@ -4,6 +4,7 @@
 </script>
 
 <div
+    role="alert"
     class:info={variant === 'info'}
     class:warning={variant === 'warning'}
     class:danger={variant === 'danger'}
