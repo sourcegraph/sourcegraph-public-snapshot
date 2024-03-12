@@ -220,7 +220,7 @@ func listRemoteTaggedVersions(ctx context.Context, currentVersion *semver.Versio
 	for _, tag := range allTags {
 		v, err := semver.NewVersion(tag)
 		if err != nil {
-			return nil, errors.Wrapf(err, "list remote release tags: %w")
+			return nil, errors.Wrapf(err, "invalid semver tag: %w")
 		}
 		allVersions = append(allVersions, *v)
 	}
