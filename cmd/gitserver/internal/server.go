@@ -610,6 +610,7 @@ func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, er
 func (s *Server) LogIfCorrupt(ctx context.Context, repo api.RepoName, err error) {
 	var corruptErr common.ErrRepoCorrupted
 	if errors.As(err, &corruptErr) {
+		repoCorruptedCounter.Inc()
 		if err := s.db.GitserverRepos().LogCorruption(ctx, repo, corruptErr.Reason, s.hostname); err != nil {
 			s.logger.Warn("failed to log repo corruption", log.String("repo", string(repo)), log.Error(err))
 		}
@@ -1108,6 +1109,10 @@ var (
 	repoCloneFailedCounter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repo_cloned_failed",
 		Help: "number of failed git clones",
+	})
+	repoCorruptedCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_repo_corrupted",
+		Help: "number of corruption events",
 	})
 )
 

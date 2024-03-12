@@ -350,6 +350,7 @@ func cleanupRepos(
 			return false, err
 		}
 
+		repoCorruptedCounter.Inc()
 		repoName := gitserverfs.RepoNameFromDir(reposDir, dir)
 		err = db.GitserverRepos().LogCorruption(ctx, repoName, fmt.Sprintf("sourcegraph detected corrupt repo: %s", reason), shardID)
 		if err != nil {
