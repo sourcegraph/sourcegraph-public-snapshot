@@ -1018,7 +1018,7 @@ func sgMaintenance(logger log.Logger, dir common.GitDir) (err error) {
 		)
 		return nil
 	}
-	defer unlock()
+	defer func() { _ = unlock() }()
 
 	b, err := cmd.CombinedOutput()
 	if err != nil {
