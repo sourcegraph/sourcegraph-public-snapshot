@@ -6,7 +6,7 @@ import { getGraphQLClient } from '$lib/graphql'
 import type { Settings } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
-import {Init, EvaluatedFeatureFlagsQuery, GlobalAlertsSiteFlags} from './layout.gql'
+import { Init, EvaluatedFeatureFlagsQuery, GlobalAlertsSiteFlags } from './layout.gql'
 
 // Disable server side rendering for the whole app
 export const ssr = false
@@ -29,7 +29,7 @@ export const load: LayoutLoad = async ({ fetch }) => {
     // We don't block the whole page loader with site alerts
     // it's handled later in the page svelte template, render page
     // immediately as soon as we have init data
-    const globalSiteAlerts = client.query(GlobalAlertsSiteFlags, {}, {fetch, requestPolicy: 'network-only'})
+    const globalSiteAlerts = client.query(GlobalAlertsSiteFlags, {}, { fetch, requestPolicy: 'network-only' })
 
     const result = await client.query(Init, {}, { fetch, requestPolicy: 'network-only' })
 
