@@ -133,7 +133,7 @@
 </div>
 
 <div class="search-results">
-    <div style:width={`clamp(14rem, ${$filtersSidebarPosition * 100}%, 50%)`}>
+    <div style:width={`clamp(14rem, ${$filtersSidebarPosition * 100}%, 35%)`}>
         <DynamicFiltersSidebar {selectedFilters} streamFilters={$stream.filters} searchQuery={queryFromURL} {loading} />
     </div>
     <Separator currentPosition={filtersSidebarPosition} />
