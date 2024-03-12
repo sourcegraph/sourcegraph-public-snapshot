@@ -27,7 +27,7 @@ func FromJobNode(node query.Node) QueryNode {
 		return &PatternNode{
 			Value:     n.Value,
 			IsNegated: n.Negated,
-			IsRegExp:  n.Annotation.Labels.IsSet(query.Regexp),
+			IsRegExp:  !n.Annotation.Labels.IsSet(query.Literal),
 		}
 	case query.Operator:
 		children := make([]QueryNode, 0, len(n.Operands))
