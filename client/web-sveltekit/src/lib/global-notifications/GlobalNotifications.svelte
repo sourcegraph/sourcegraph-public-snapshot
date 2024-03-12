@@ -112,7 +112,7 @@
 
     {#if process.env.SOURCEGRAPH_API_URL}
         <DismissibleAlert variant="danger" partialStorageKey="dev-web-server-alert">
-            <strong>Warning!</strong> This build uses data from the proxied API:{' '}
+            <strong>Warning!</strong>&nbsp;This build uses data from the proxied API:
             <a class="proxy-link" target="__blank" href={process.env.SOURCEGRAPH_API_URL}>
                 {process.env.SOURCEGRAPH_API_URL}
             </a>
