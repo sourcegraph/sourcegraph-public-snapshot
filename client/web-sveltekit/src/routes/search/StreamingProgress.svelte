@@ -18,8 +18,6 @@
         error: mdiAlertCircle,
     }
     let searchAgainDisabled = true
-    let elapsedSeconds: number
-    let elapsedMilliseconds: number
 
     function updateButton(event: Event) {
         const element = event.target as HTMLInputElement
@@ -36,16 +34,13 @@
 </script>
 
 <Popover let:registerTrigger let:toggle placement="bottom-start">
-    <ResultsIndicator
-        {hasSkippedItems}
-        {sortedItems}
-        {hasSuggestedItems}
-        trigger={registerTrigger}
-        togglePopover={toggle}
-        searchProgress={progress}
-        {elapsedSeconds}
-        {elapsedMilliseconds}
-    />
+    <Button variant="secondary" size="sm" outline>
+        <svelte:fragment slot="custom" let:buttonClass>
+            <button use:registerTrigger class="{buttonClass} progress-button" on:click={() => toggle()}>
+                <ResultsIndicator {hasSkippedItems} {sortedItems} {hasSuggestedItems} searchProgress={progress} />
+            </button>
+        </svelte:fragment>
+    </Button>
     <div slot="content" class="streaming-popover">
         <p>
             Found {limitHit(progress) ? 'more than ' : ''}
