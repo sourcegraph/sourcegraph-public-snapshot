@@ -120,12 +120,20 @@ func bazelPublishExecutorBinary(c Config) operations.Operation {
 // build.
 func executorDockerMirrorImageFamilyForConfig(c Config) string {
 	imageFamily := "sourcegraph-executors-docker-mirror-nightly"
-	if c.RunType.Is(runtype.TaggedRelease, runtype.InternalRelease) {
+	if c.RunType.Is(runtype.TaggedRelease) {
 		ver, err := semver.NewVersion(c.Version)
 		if err != nil {
 			panic("cannot parse version")
 		}
 		imageFamily = fmt.Sprintf("sourcegraph-executors-docker-mirror-%d-%d", ver.Major(), ver.Minor())
+	}
+
+	if c.RunType.Is(runtype.InternalRelease) {
+		ver, err := semver.NewVersion(c.Version)
+		if err != nil {
+			panic("cannot parse version")
+		}
+		imageFamily = fmt.Sprintf("sourcegraph-executors-docker-mirror-%d-%d-%d", ver.Major(), ver.Minor(), ver.Patch())
 	}
 	return imageFamily
 }
@@ -135,12 +143,19 @@ func executorDockerMirrorImageFamilyForConfig(c Config) string {
 // build.
 func executorImageFamilyForConfig(c Config) string {
 	imageFamily := "sourcegraph-executors-nightly"
-	if c.RunType.Is(runtype.TaggedRelease, runtype.InternalRelease) {
+	if c.RunType.Is(runtype.TaggedRelease) {
 		ver, err := semver.NewVersion(c.Version)
 		if err != nil {
 			panic("cannot parse version")
 		}
 		imageFamily = fmt.Sprintf("sourcegraph-executors-%d-%d", ver.Major(), ver.Minor())
+	}
+	if c.RunType.Is(runtype.InternalRelease) {
+		ver, err := semver.NewVersion(c.Version)
+		if err != nil {
+			panic("cannot parse version")
+		}
+		imageFamily = fmt.Sprintf("sourcegraph-executors-internal-%d-%d-%d", ver.Major(), ver.Minor(), ver.Patch())
 	}
 	return imageFamily
 }
