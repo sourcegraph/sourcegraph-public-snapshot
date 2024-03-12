@@ -4,6 +4,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "server",
     srcs = [
+        "managed_service.go",
         "metrics.go",
         "migrate_events.go",
         "publish_events.go",
@@ -13,8 +14,10 @@ go_library(
     visibility = ["//cmd/telemetry-gateway:__subpackages__"],
     deps = [
         "//cmd/telemetry-gateway/internal/events",
+        "//internal/authbearer",
         "//internal/licensing",
         "//internal/pubsub",
+        "//internal/sams",
         "//internal/telemetrygateway/v1:telemetrygateway",
         "//internal/trace",
         "//lib/errors",
@@ -23,6 +26,7 @@ go_library(
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel_metric//:metric",
         "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//metadata",
         "@org_golang_google_grpc//status",
     ],
 )

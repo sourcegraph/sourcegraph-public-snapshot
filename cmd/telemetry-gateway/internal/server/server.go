@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
+	"github.com/sourcegraph/sourcegraph/internal/sams"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -26,6 +27,8 @@ type Server struct {
 	eventsTopic pubsub.TopicPublisher
 	publishOpts events.PublishStreamOptions
 
+	samsClient sams.Client
+
 	recordEventsMetrics recordEventsMetrics
 	recordEventMetrics  recordEventMetrics
 
@@ -35,7 +38,12 @@ type Server struct {
 
 var _ telemetrygatewayv1.TelemeteryGatewayServiceServer = (*Server)(nil)
 
-func New(logger log.Logger, eventsTopic pubsub.TopicPublisher, publishOpts events.PublishStreamOptions) (*Server, error) {
+func New(
+	logger log.Logger,
+	eventsTopic pubsub.TopicPublisher,
+	samsClient sams.Client,
+	publishOpts events.PublishStreamOptions,
+) (*Server, error) {
 	recordEventsRPCMetrics, err := newRecordEventsMetrics()
 	if err != nil {
 		return nil, err
@@ -49,6 +57,8 @@ func New(logger log.Logger, eventsTopic pubsub.TopicPublisher, publishOpts event
 		logger:      logger.Scoped("server"),
 		eventsTopic: eventsTopic,
 		publishOpts: publishOpts,
+
+		samsClient: samsClient,
 
 		recordEventsMetrics: recordEventsRPCMetrics,
 		recordEventMetrics:  recordEventRPCMetrics,
@@ -126,7 +136,11 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 					log.String("serviceID", identifier.ServiceId),
 					log.Stringp("serviceEnvironment", identifier.ServiceEnvironment))
 
-				// 🚨 SECURITY: TODO: Add SAMS M2M authenticate/authorize
+				// 🚨 SECURITY: Only known clients registered in SAMS can submit events
+				// as a managed service.
+				if err := enforceSAMSM2M(stream.Context(), logger, s.samsClient); err != nil {
+					return err
+				}
 
 				logger.Info("handling events submission stream for managed service")
 
@@ -211,7 +225,11 @@ func (s *Server) RecordEvent(ctx context.Context, req *telemetrygatewayv1.Record
 			log.String("serviceID", identifier.ServiceId),
 			log.Stringp("serviceEnvironment", identifier.ServiceEnvironment))
 
-		// 🚨 SECURITY: TODO: Add SAMS M2M authenticate/authorize
+		// 🚨 SECURITY: Only known clients registered in SAMS can submit events
+		// as a managed service.
+		if err := enforceSAMSM2M(ctx, logger, s.samsClient); err != nil {
+			return nil, err
+		}
 
 	default:
 		logger.Error("identifier not supported for this RPC",
