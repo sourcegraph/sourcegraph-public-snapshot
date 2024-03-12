@@ -21,6 +21,7 @@ import (
 
 type Publisher struct {
 	logger log.Logger
+	source string
 
 	topic pubsub.TopicPublisher
 	opts  PublishStreamOptions
@@ -50,12 +51,37 @@ func NewPublisherForStream(
 	if opts.ConcurrencyLimit <= 0 {
 		opts.ConcurrencyLimit = 250
 	}
+
+	var source string
+	switch identifier := metadata.GetIdentifier(); identifier.Identifier.(type) {
+	case *telemetrygatewayv1.Identifier_LicensedInstance:
+		source = "licensed_instance"
+	case *telemetrygatewayv1.Identifier_UnlicensedInstance:
+		source = "unlicensed_instance"
+	case *telemetrygatewayv1.Identifier_ManagedService:
+		// Is a trusted client, so use the service ID directly as the source
+		source = identifier.GetManagedService().ServiceId
+	default:
+		source = "unknown"
+	}
+
 	return &Publisher{
 		logger:       logger,
+		source:       source,
 		topic:        eventsTopic,
 		opts:         opts,
 		metadataJSON: metadataJSON,
 	}, nil
+}
+
+// GetSourceName returns a name inferred from metadata provided to
+// NewPublisherForStream, for use as a metric label. It is safe to call on a nil
+// publisher.
+func (p *Publisher) GetSourceName() string {
+	if p == nil {
+		return "invalid"
+	}
+	return p.source
 }
 
 type PublishEventResult struct {
