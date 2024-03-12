@@ -71,7 +71,7 @@
 <div class="header">
     <h3>File Preview</h3>
     <button on:click={() => searchResultContext.setPreview(null)}>
-        <Icon svgPath={mdiClose} class="close-icon" />
+        <Icon svgPath={mdiClose} class="close-icon" size={16} inline />
     </button>
 </div>
 <div class="file-link">
@@ -127,6 +127,14 @@
             margin: 0;
             margin-right: auto;
             height: fit-content;
+        }
+        button {
+            background-color: transparent;
+            color: var(--text-muted);
+            border: none;
+            &:hover {
+                color: var(--body-color);
+            }
         }
     }
 
