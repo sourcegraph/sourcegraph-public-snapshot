@@ -176,7 +176,7 @@ class Sourcegraph {
                 return this.page.evaluate(
                     ([events]) => {
                         for (const event of events) {
-                            for (const source of this.page.window.$$sources) {
+                            for (const source of window.$$sources) {
                                 source.dispatchEvent(new MessageEvent(event.type, { data: JSON.stringify(event.data) }))
                             }
                         }
@@ -185,9 +185,11 @@ class Sourcegraph {
                 )
             },
             close: async (): Promise<void> => {
-                for (const source of this.page.window.$$sources) {
-                    source.close()
-                }
+                return this.page.evaluate(() => {
+                    for (const source of window.$$sources) {
+                        source.close()
+                    }
+                })
             },
         }
     }

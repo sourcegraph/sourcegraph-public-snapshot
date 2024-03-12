@@ -70,7 +70,7 @@
 
 <div class="header">
     <h3>File Preview</h3>
-    <button on:click={() => searchResultContext.setPreview(null)}>
+    <button data-testid="preview-close" on:click={() => searchResultContext.setPreview(null)}>
         <Icon svgPath={mdiClose} class="close-icon" size={16} inline />
     </button>
 </div>
