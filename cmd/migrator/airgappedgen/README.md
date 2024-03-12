@@ -90,13 +90,13 @@ drwxr-xr-x  0 0      0           0 Jan 19 14:32 schema-descriptions/
 
 ## Why do we need this?
 
-Airgapped customers are running migration in a fully isolated environment, and they can't reach the internat for security reasons,
+Airgapped customers are running migrations in a fully isolated environment, and they can't reach the internet for security reasons,
 meaning that we need to provide a migrator variant that comes with everything baked in.
 
 ## Why are we fetching database schemas prior to `v3.42.0` on GCS?
 
 For versions prior to `v3.42.0`, the repository didn't have the `*schema.json` files committed, so they're stored in a GCS bucket
-instead. See `.gcs_versions.json` in this folder for the file that manually lists them.
+instead. See `gcs_versions.json` in this folder for the file that manually lists them.
 
 ## Why do we have to list the GCS versions in `gcs_versions.json`?
 
