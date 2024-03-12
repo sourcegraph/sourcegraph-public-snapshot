@@ -1151,7 +1151,7 @@ func TestSyncerMultipleServices(t *testing.T) {
 		t.Fatalf("expected %d sync jobs, got %d", len(services), jobCount)
 	}
 
-	for i := 0; i < len(services)*10; i++ {
+	for range len(services) * 10 {
 		diff := <-syncer.Synced
 
 		if len(diff.Added) != 1 {

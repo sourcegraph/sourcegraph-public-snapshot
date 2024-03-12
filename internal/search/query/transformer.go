@@ -507,7 +507,7 @@ func substituteConcatForKeyword(callback func([]Node) []Node) func([]Node) []Nod
 // validate function.
 func escapeParens(s string) string {
 	var i int
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		if s[i] == '(' || s[i] == '\\' {
 			break
 		}

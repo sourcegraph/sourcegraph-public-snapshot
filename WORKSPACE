@@ -114,6 +114,10 @@ http_archive(
 # Container rules
 http_archive(
     name = "rules_oci",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party/rules_oci:no_xattr.patch",
+    ],
     sha256 = "d41d0ba7855f029ad0e5ee35025f882cbe45b0d5d570842c52704f7a47ba8668",
     strip_prefix = "rules_oci-1.4.3",
     url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.4.3/rules_oci-v1.4.3.tar.gz",
@@ -150,13 +154,6 @@ http_archive(
     sha256 = "045f0186edb25706dfe77d9c4916eec630a2b2736f9abb59e37eaac122d4b771",
     strip_prefix = "aspect-cli-5.8.20",
     url = "https://github.com/aspect-build/aspect-cli/archive/5.8.20.tar.gz",
-)
-
-http_archive(
-    name = "rules_multirun",
-    sha256 = "9cd384e42b2da00104f0e18f25e66285aa21f64b573c667638a7a213206885ab",
-    strip_prefix = "rules_multirun-0.6.1",
-    url = "https://github.com/keith/rules_multirun/archive/refs/tags/0.6.1.tar.gz",
 )
 
 # hermetic_cc_toolchain setup ================================

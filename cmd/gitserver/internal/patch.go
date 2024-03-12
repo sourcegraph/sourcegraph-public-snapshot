@@ -701,7 +701,7 @@ func (p p4Command) cloneAndEditFiles(fileList []string, baseChangelistId string)
 	// want to specify the file at the base changelist revision
 	// build a slice of file names with the changelist id appended
 	filesWithCid := append([]string(nil), fileList...)
-	for i := 0; i < len(filesWithCid); i++ {
+	for i := range len(filesWithCid) {
 		filesWithCid[i] = filesWithCid[i] + "@" + baseChangelistId
 	}
 	if err := p.cloneFiles(filesWithCid); err != nil {

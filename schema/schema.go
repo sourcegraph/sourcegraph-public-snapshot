@@ -1904,9 +1904,9 @@ type OpenIDConnectAuthProvider struct {
 	Order  int    `json:"order,omitempty"`
 	// RequireEmailDomain description: Only allow users to authenticate if their email domain is equal to this value (example: mycompany.com). Do not include a leading "@". If not set, all users on this OpenID Connect provider can authenticate to Sourcegraph.
 	RequireEmailDomain string `json:"requireEmailDomain,omitempty"`
-	// SingleIdentityProvider description: When true, any user can connect exactly one identity from the identity provider.
-	SingleIdentityProvider bool   `json:"singleIdentityProvider,omitempty"`
-	Type                   string `json:"type"`
+	// SingleIdentityPerUser description: When true, any user can connect exactly one identity from the identity provider.
+	SingleIdentityPerUser bool   `json:"singleIdentityPerUser,omitempty"`
+	Type                  string `json:"type"`
 }
 
 // OpenTelemetry description: Configuration for the client OpenTelemetry exporter

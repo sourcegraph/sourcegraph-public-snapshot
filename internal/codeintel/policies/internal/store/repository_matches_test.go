@@ -46,7 +46,7 @@ func TestRepoIDsByGlobPatterns(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		for lo := 0; lo < len(testCase.expectedRepositoryIDs); lo++ {
+		for lo := range len(testCase.expectedRepositoryIDs) {
 			hi := lo + 3
 			if hi > len(testCase.expectedRepositoryIDs) {
 				hi = len(testCase.expectedRepositoryIDs)
@@ -164,7 +164,7 @@ func TestUpdateReposMatchingPatternsOverLimit(t *testing.T) {
 
 	limit := 50
 	ids := make([]int, 0, limit*3)
-	for i := 0; i < cap(ids); i++ {
+	for i := range cap(ids) {
 		ids = append(ids, 50+i)
 	}
 

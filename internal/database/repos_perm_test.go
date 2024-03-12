@@ -884,7 +884,7 @@ func benchmarkAuthzQuery(b *testing.B, numRepos, numUsers, reposPerUser int) {
 	for i := 1; i <= numUsers; i++ {
 		objectIDs := make(map[int]struct{})
 		// Assign a random set of repos to the user
-		for j := 0; j < reposPerUser; j++ {
+		for range reposPerUser {
 			repoID := rand.Intn(numRepos) + 1
 			objectIDs[repoID] = struct{}{}
 		}
@@ -919,7 +919,7 @@ func benchmarkAuthzQuery(b *testing.B, numRepos, numUsers, reposPerUser int) {
 	b.ResetTimer()
 
 	b.Run("list repos", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			fetchMinRepos()
 		}
 	})

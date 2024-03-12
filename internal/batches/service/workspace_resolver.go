@@ -189,7 +189,7 @@ func findIgnoredRepositories(ctx context.Context, gitserverClient gitserver.Clie
 	)
 
 	// Spawn N workers.
-	for i := 0; i < ignoredWorkspaceResolverConcurrency; i++ {
+	for range ignoredWorkspaceResolverConcurrency {
 		wg.Add(1)
 		go func(in chan *RepoRevision, out chan result) {
 			defer wg.Done()
@@ -512,7 +512,7 @@ func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileNam
 
 	// Limit concurrency.
 	sem := make(chan struct{}, findDirectoriesInReposConcurrency)
-	for i := 0; i < findDirectoriesInReposConcurrency; i++ {
+	for range findDirectoriesInReposConcurrency {
 		sem <- struct{}{}
 	}
 
@@ -542,7 +542,7 @@ func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileNam
 	}
 
 	// Wait for all to finish.
-	for i := 0; i < findDirectoriesInReposConcurrency; i++ {
+	for range findDirectoriesInReposConcurrency {
 		<-sem
 	}
 
