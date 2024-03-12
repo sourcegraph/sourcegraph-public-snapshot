@@ -1,4 +1,5 @@
 import { test, expect } from '../../testing/integration'
+import { createDoneEvent, createProgressEvent } from '../../testing/search-testdata'
 
 test('search input is autofocused', async ({ page }) => {
     await page.goto('/search')
@@ -62,9 +63,10 @@ test('fills search query from URL', async ({ page }) => {
 })
 
 test('main navbar menus are visible above search input', async ({ page, sg }) => {
-    const dispatch = sg.mockSearchResults()
+    const stream = sg.mockSearchStream()
     await page.goto('/search?q=test')
-    await dispatch()
+    await stream.publish([createProgressEvent(), createDoneEvent()])
+    await stream.close()
     await page.getByRole('button', { name: 'Code Search' }).click()
     await page.getByRole('link', { name: 'Search Home' }).click()
     await expect(page).toHaveURL(/\/search$/)
