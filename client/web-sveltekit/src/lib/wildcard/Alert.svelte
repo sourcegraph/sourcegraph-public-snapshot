@@ -7,6 +7,7 @@
     class:info={variant === 'info'}
     class:warning={variant === 'warning'}
     class:danger={variant === 'danger'}
+    class:success={variant === 'success'}
     class:slim={sizeVariant === 'slim'}
 >
     <slot />
