@@ -343,7 +343,7 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 		wg.Add(1)
 		jobLogger.Debug("Running job")
 
-		go func(name string) {
+		go func() {
 			defer wg.Done()
 
 			routines, err := jobs[name].Routines(ctx, observationCtx)
@@ -361,7 +361,7 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 			} else {
 				cancel()
 			}
-		}(name)
+		}()
 	}
 
 	wg.Wait()

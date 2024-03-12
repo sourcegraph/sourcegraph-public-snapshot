@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
-	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	mockassert "github.com/derision-test/go-mockgen/v2/testutil/assert"
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"

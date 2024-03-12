@@ -97,8 +97,9 @@ func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, token *oa
 			ClientID:    pi.ClientID,
 			AccountID:   idToken.Subject,
 		},
-		ExternalAccountData: data,
-		CreateIfNotExist:    p.config.AllowSignup == nil || *p.config.AllowSignup,
+		ExternalAccountData:   data,
+		CreateIfNotExist:      p.config.AllowSignup == nil || *p.config.AllowSignup,
+		SingleIdentityPerUser: p.config.SingleIdentityPerUser,
 	})
 	if err != nil {
 		return false, nil, safeErrMsg, err

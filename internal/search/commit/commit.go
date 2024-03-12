@@ -19,16 +19,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type SearchJob struct {
 	Query                gitprotocol.Node
-	RepoOpts             search.RepoOptions
+	Repos                []*search.RepositoryRevisions
 	Diff                 bool
 	Limit                int
 	IncludeModifiedFiles bool
@@ -97,30 +95,19 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return doSearch(args)
 	}
 
-	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.SearcherGRPCConnectionCache, clients.Zoekt)
-	it := repos.Iterator(ctx, j.RepoOpts)
-
 	p := pool.New().WithContext(ctx).WithMaxGoroutines(4).WithFirstError()
 
-	for it.Next() {
-		page := it.Current()
-		page.MaybeSendStats(stream)
-
-		for _, repoRev := range page.RepoRevs {
-			repoRev := repoRev
-			p.Go(func(ctx context.Context) error {
-				return searchRepoRev(ctx, repoRev)
-			})
-		}
+	for _, repoRev := range j.Repos {
+		repoRev := repoRev
+		p.Go(func(ctx context.Context) error {
+			return searchRepoRev(ctx, repoRev)
+		})
 	}
 
-	if err := p.Wait(); err != nil {
-		return nil, err
-	}
-	return nil, it.Err()
+	return nil, p.Wait()
 }
 
-func (j SearchJob) Name() string {
+func (j *SearchJob) Name() string {
 	if j.Diff {
 		return "DiffSearchJob"
 	}
@@ -140,7 +127,6 @@ func (j *SearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 			attribute.Bool("diff", j.Diff),
 			attribute.Int("limit", j.Limit),
 		)
-		res = append(res, trace.Scoped("repoOpts", j.RepoOpts.Attributes()...)...)
 	}
 	return res
 }

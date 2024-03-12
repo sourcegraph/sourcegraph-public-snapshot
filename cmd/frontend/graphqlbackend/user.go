@@ -797,9 +797,10 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 
-func (r *UserResolver) Roles(_ context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
-	if dotcom.SourcegraphDotComMode() {
-		return nil, errors.New("roles are not available on sourcegraph.com")
+func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
+	// 🚨 SECURITY: In dotcom mode, only allow site admins to check roles.
+	if dotcom.SourcegraphDotComMode() && auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, errors.New("unauthorized")
 	}
 	userID := r.user.ID
 	connectionStore := &roleConnectionStore{
@@ -945,4 +946,18 @@ func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args S
 		}
 	}
 	return UserByIDInt32(ctx, r.db, user.ID)
+}
+
+func (r *UserResolver) EvaluateFeatureFlag(ctx context.Context, args *struct {
+	FlagName string
+}) (*bool, error) {
+	ffs, err := r.db.FeatureFlags().GetUserFlags(ctx, r.user.ID)
+	if err != nil {
+		return nil, err
+	}
+	if v, ok := ffs[args.FlagName]; ok {
+		return &v, nil
+	}
+	// If there is no value for this feature flag, then we return nil. This follows the existing behaviour from the root level evaluateFeatureFlag function.
+	return nil, nil
 }

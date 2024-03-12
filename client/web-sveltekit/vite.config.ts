@@ -72,11 +72,32 @@ export default defineConfig(({ mode }) => {
                     find: /^(.*)\.gql$/,
                     replacement: '$1.gql.ts',
                 },
-                // These are directories and cannot be imported from directly in
-                // production build.
+                // In rxjs v6 these are directories and cannot be imported from directly in the production build.
+                // The following error occurs:
+                // Error [ERR_UNSUPPORTED_DIR_IMPORT]: Directory import '[...]/node_modules/rxjs/operators' is not supported resolving ES modules
                 {
                     find: /^rxjs\/(operators|fetch)$/,
                     replacement: 'rxjs/$1/index.js',
+                    customResolver(source, importer, options) {
+                        // This is an hacky way to make the dev build work. @sourcegraph/telemetry uses a newer
+                        // version of rxjs (v7) where `rjx/operators` and `rxjs/fetch` are properly mapped
+                        // to their respective files in package.json.
+                        // Applying the same replacement to this version results in an error.
+                        // I tried various ways to prevent having the alias be applied to `@sourcegraph/telemetry`
+                        // without success:
+                        // - Removing this alias causes the production build to fail do the issue mentioned at the
+                        //   top of this alias.
+                        // - Adding something like `{ ssr: { external: '@sourcegraph/telemetry' } }` to the config
+                        //   does not prevent the alias from being applied. Maybe I don't understand how `external`
+                        //   is supposed to work.
+                        // - Using a custom plugin that implements a custom resolveId function is somehow not being
+                        //   run in the production build for `rxjs` imports. Maybe it has something to do with the
+                        //   interop between vite and sveltekit.
+                        if (importer?.includes('@sourcegraph/telemetry')) {
+                            source = source.replace('/index.js', '')
+                        }
+                        return this.resolve(source, importer, options)
+                    },
                 },
                 // Without aliasing lodash to lodash-es we get the following error:
                 // SyntaxError: Named export 'castArray' not found. The requested module 'lodash' is a CommonJS module, which may not support all module.exports as named exports.
@@ -141,8 +162,12 @@ export default defineConfig(({ mode }) => {
                 // and processes them as well.
                 // In a bazel sandbox however all @sourcegraph/* dependencies are built packages and thus not processed
                 // by vite without this additional setting.
-                // We have to process those files to apply certain "fixes", such as aliases defined in svelte.config.js.
+                // We have to process those files to apply certain "fixes", such as aliases defined in here
+                // and in svelte.config.js.
                 noExternal: [/@sourcegraph\/.*/],
+                // Exceptions to the above rule. These are packages that are not part of this monorepo and should
+                // not be processed by vite.
+                external: ['@sourcegraph/telemetry'],
             },
         } satisfies UserConfig)
     }
