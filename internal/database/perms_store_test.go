@@ -3397,11 +3397,11 @@ func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
 	user1UpdatedAt := clock().Add(-15 * time.Minute)
 	user2UpdatedAt := clock().Add(-5 * time.Minute)
 	user3UpdatedAt := clock().Add(-11 * time.Minute)
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, user1UpdatedAt, ReasonUserOutdatedPermissions)
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, state, finished_at, reason) VALUES(%d, 'completed', %s, %s)`, 1, user1UpdatedAt, ReasonUserOutdatedPermissions)
 	executeQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, user2UpdatedAt, ReasonUserOutdatedPermissions)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, state, finished_at, reason) VALUES(%d, 'completed', %s, %s)`, 2, user2UpdatedAt, ReasonUserOutdatedPermissions)
 	executeQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, user3UpdatedAt, ReasonUserOutdatedPermissions)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, state, finished_at, reason) VALUES(%d, 'completed', %s, %s)`, 3, user3UpdatedAt, ReasonUserOutdatedPermissions)
 	executeQuery(t, ctx, s, q)
 
 	t.Run("One result when limit is 1", func(t *testing.T) {
@@ -3568,11 +3568,11 @@ func TestPermsStore_ReposIDsWithOldestPerms(t *testing.T) {
 	repo1UpdatedAt := clock().Add(-15 * time.Minute)
 	repo2UpdatedAt := clock().Add(-5 * time.Minute)
 	repo3UpdatedAt := clock().Add(-10 * time.Minute)
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, repo1UpdatedAt, ReasonRepoOutdatedPermissions)
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, state, finished_at, reason) VALUES(%d, 'completed', %s, %s)`, 1, repo1UpdatedAt, ReasonRepoOutdatedPermissions)
 	executeQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, repo2UpdatedAt, ReasonRepoOutdatedPermissions)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, state, finished_at, reason) VALUES(%d, 'completed', %s, %s)`, 2, repo2UpdatedAt, ReasonRepoOutdatedPermissions)
 	executeQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, repo3UpdatedAt, ReasonRepoOutdatedPermissions)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, state, finished_at, reason) VALUES(%d, 'completed', %s, %s)`, 3, repo3UpdatedAt, ReasonRepoOutdatedPermissions)
 	executeQuery(t, ctx, s, q)
 
 	t.Run("One result when limit is 1", func(t *testing.T) {
