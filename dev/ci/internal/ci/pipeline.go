@@ -142,7 +142,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		securityOps := operations.NewNamedSet("Security Scanning")
 		securityOps.Append(semgrepScan())
-		securityOps.Append(sonarcloudScan())
 		ops.Merge(securityOps)
 
 		// Wolfi package and base images
@@ -281,11 +280,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			IsMainBranch:              true,
 		}))
 
-		// Security scanning - sonarcloud & semgrep scan
-		// Sonarcloud scan will soon be phased out after semgrep scan is fully enabled
+		// Security scanning - semgrep scan
 		securityOps := operations.NewNamedSet("Security Scanning")
 		securityOps.Append(semgrepScan())
-		securityOps.Append(sonarcloudScan())
 		ops.Merge(securityOps)
 
 		// Publish candidate images to dev registry
