@@ -111,10 +111,10 @@ func downloadRemoteTaggedVersions(ctx context.Context, versions []semver.Version
 				defer resp.Body.Close()
 
 				if resp.StatusCode >= 500 {
-					return nil, fmt.Errorf("server error downloading remote schema %q: %s", url, resp.Status)
+					return nil, fmt.Errorf("server error, remote schema %q: %s", url, resp.Status)
 				}
 				if resp.StatusCode == 404 {
-					return nil, fmt.Errorf("server error downloading remote schema %q: %s", url, resp.Status)
+					return nil, fmt.Errorf("server error, remote schema %q not found: %s", url, resp.Status)
 				}
 
 				b, err := io.ReadAll(resp.Body)
