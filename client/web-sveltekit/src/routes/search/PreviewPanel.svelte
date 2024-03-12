@@ -13,11 +13,13 @@
 </script>
 
 <script lang="ts">
+    import { mdiClose } from '@mdi/js'
     import { from } from 'rxjs'
 
     import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
     import { isErrorLike } from '$lib/common'
     import { getGraphQLClient, mapOrThrow, toGraphQLResult } from '$lib/graphql'
+    import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import {
         getFileMatchUrl,
@@ -34,7 +36,11 @@
         BlobSyntaxHighlightQuery,
     } from '../[...repo=reporev]/(validrev)/(code)/-/blob/[...path]/page.gql'
 
+    import { getSearchResultsContext } from './searchResultsContext'
+
     export let result: ContentMatch | SymbolMatch | PathMatch
+
+    const searchResultContext = getSearchResultsContext()
 
     const client = getGraphQLClient()
     $: codeIntelAPI = createCodeIntelAPI({
@@ -64,6 +70,9 @@
 
 <div class="header">
     <h3>File Preview</h3>
+    <button on:click={() => searchResultContext.setPreview(null)}>
+        <Icon svgPath={mdiClose} class="close-icon" />
+    </button>
 </div>
 <div class="file-link">
     <small>
@@ -116,6 +125,7 @@
         padding: 0 0.5rem;
         h3 {
             margin: 0;
+            margin-right: auto;
             height: fit-content;
         }
     }

@@ -9,6 +9,7 @@
     import type { SymbolMatch } from '$lib/shared'
 
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
+    import PreviewButton from './PreviewButton.svelte'
     import RepoStars from './RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
 
@@ -35,6 +36,7 @@
         {#if result.repoStars}
             <RepoStars repoStars={result.repoStars} />
         {/if}
+        <PreviewButton {result} />
     </svelte:fragment>
     <svelte:fragment slot="body">
         <div use:observeIntersection on:intersecting={event => (visible = event.detail)}>

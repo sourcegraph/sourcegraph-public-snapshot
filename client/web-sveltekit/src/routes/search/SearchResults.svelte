@@ -81,7 +81,7 @@
     $: resultsToShow = results.slice(0, count)
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
 
-    let previewResult = writable<ContentMatch | SymbolMatch | PathMatch | undefined>(undefined)
+    let previewResult = writable<ContentMatch | SymbolMatch | PathMatch | null>(null)
 
     setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
@@ -94,8 +94,7 @@
                 expandedSet.delete(match)
             }
         },
-        setPreview(result: ContentMatch | SymbolMatch | PathMatch | undefined): void {
-            console.log({ result })
+        setPreview(result: ContentMatch | SymbolMatch | PathMatch | null): void {
             previewResult.set(result)
         },
         queryState,
