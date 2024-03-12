@@ -42,6 +42,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Changed the Azure OpenAI Cody provider to use the stable 2023-05-15 api version, due to the retirement of previous preview api versions. [61005](https://github.com/sourcegraph/sourcegraph/pull/61005)
+
 ### Fixed
 
 - Fixed an issue in our build process that broke tooltips and validation in the settings editors. [#60808](https://github.com/sourcegraph/sourcegraph/pull/60808)
