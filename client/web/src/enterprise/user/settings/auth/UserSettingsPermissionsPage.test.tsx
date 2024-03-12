@@ -83,6 +83,7 @@ describe('UserSettingsPermissionsPage', () => {
                 <UserSettingsPermissionsPage
                     user={{ id: gqlUserID, username: 'alice' }}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    // TODO (dadlerj): update to use a real telemetry recorder
                     telemetryRecorder={noOpTelemetryRecorder}
                 />
             </MockedTestProvider>,
@@ -135,6 +136,7 @@ describe('UserSettingsPermissionsPage', () => {
                 <UserSettingsPermissionsPage
                     user={{ id: gqlUserID, username: 'alice' }}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    // TODO (dadlerj): update to use a real telemetry recorder
                     telemetryRecorder={noOpTelemetryRecorder}
                 />
             </MockedTestProvider>,

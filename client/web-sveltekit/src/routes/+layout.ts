@@ -1,4 +1,4 @@
-import { error } from '@sveltejs/kit'
+import { error, redirect } from '@sveltejs/kit'
 
 import { browser } from '$app/environment'
 import { isErrorLike, parseJSONCOrError } from '$lib/common'
@@ -26,6 +26,11 @@ if (browser) {
 export const load: LayoutLoad = async ({ fetch }) => {
     const client = getGraphQLClient()
     const result = await client.query(Init, {}, { fetch, requestPolicy: 'network-only' })
+    if (result.error?.response?.status === 401) {
+        // The server will take care of redirecting to the sign-in page, but when
+        // developing locally an proxying the API requests, we need to do it ourselves.
+        redirect(307, '/sign-in')
+    }
     if (!result.data || result.error) {
         error(500, `Failed to initialize app: ${result.error}`)
     }

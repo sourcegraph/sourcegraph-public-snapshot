@@ -26,6 +26,7 @@ import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operati
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { type ModeSpec, parseQueryAndHash, type RepoFile } from '@sourcegraph/shared/src/util/url'
@@ -98,6 +99,7 @@ interface BlobPageProps
         SettingsCascadeProps,
         PlatformContextProps,
         TelemetryProps,
+        TelemetryV2Props,
         ExtensionsControllerProps,
         HoverThresholdProps,
         BreadcrumbSetters,
@@ -151,7 +153,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
         props.telemetryService.logViewEvent('Blob', { repoName, filePath })
-    }, [repoName, commitID, filePath, renderMode, props.telemetryService])
+        props.telemetryRecorder.recordEvent('blob', 'view')
+    }, [repoName, commitID, filePath, renderMode, props.telemetryService, props.telemetryRecorder])
 
     useBreadcrumb(
         useMemo(() => {
@@ -171,10 +174,11 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                         filePath={filePath}
                         isDir={false}
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={props.telemetryRecorder}
                     />
                 ),
             }
-        }, [filePath, revision, repoName, props.telemetryService])
+        }, [filePath, revision, repoName, props.telemetryService, props.telemetryRecorder])
     )
 
     const [indexIDsForSnapshotData] = useSessionStorage<{ [repoName: string]: string | undefined }>(
@@ -357,6 +361,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
             {(props.isSourcegraphDotCom || isCodyEnabled()) && (
                 <TryCodyWidget
                     telemetryService={props.telemetryService}
+                    telemetryRecorder={props.telemetryRecorder}
                     type="blob"
                     authenticatedUser={props.authenticatedUser}
                     context={context}
@@ -450,6 +455,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                     <GoToRawAction
                         {...context}
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={props.telemetryRecorder}
                         key="raw-action"
                         repoName={repoName}
                         revision={props.revision}
@@ -607,6 +613,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                         settingsCascade={props.settingsCascade}
                         onHoverShown={props.onHoverShown}
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={props.telemetryRecorder}
                         role="region"
                         ariaLabel="File blob"
                         isBlameVisible={isBlameVisible}

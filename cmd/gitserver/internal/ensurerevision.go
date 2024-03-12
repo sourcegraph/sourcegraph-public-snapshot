@@ -23,6 +23,7 @@ func (s *Server) EnsureRevision(ctx context.Context, repo api.RepoName, rev stri
 		ensureRevisionCounter.WithLabelValues("HEAD").Inc()
 		return false
 	}
+
 	if conf.Get().DisableAutoGitUpdates {
 		ensureRevisionCounter.WithLabelValues("disabled").Inc()
 		// ensureRevision may kick off a git fetch operation which we don't want if we've
@@ -33,7 +34,9 @@ func (s *Server) EnsureRevision(ctx context.Context, repo api.RepoName, rev stri
 	// Revision not found, update before returning.
 	err := s.doRepoUpdate(ctx, repo, rev)
 	if err != nil {
-		ensureRevisionCounter.WithLabelValues("update_failed").Inc()
+		if ctx.Err() == nil {
+			ensureRevisionCounter.WithLabelValues("update_failed").Inc()
+		}
 		s.logger.Warn("failed to perform background repo update", log.Error(err), log.String("repo", string(repo)), log.String("rev", rev))
 		// TODO: Shouldn't we return false here?
 	} else {

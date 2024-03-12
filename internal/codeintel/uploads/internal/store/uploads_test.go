@@ -206,7 +206,7 @@ func TestGetUploads(t *testing.T) {
 		if n := len(testCase.expectedIDs); n == 0 {
 			runTest(testCase, 0, 0)
 		} else {
-			for lo := 0; lo < n; lo++ {
+			for lo := range n {
 				if numErrors := runTest(testCase, lo, int(math.Min(float64(lo)+3, float64(n)))); numErrors > 0 {
 					break
 				}

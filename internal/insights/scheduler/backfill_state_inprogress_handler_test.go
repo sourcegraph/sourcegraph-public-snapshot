@@ -97,7 +97,7 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 		repoStore:          repos,
 		insightsStore:      seriesStore,
 		backfillRunner:     &noopBackfillRunner{},
-		config:             newHandlerConfig(),
+		config:             newHandlerConfig,
 
 		clock: clock,
 	}
@@ -250,7 +250,7 @@ func Test_BackfillWithRetry(t *testing.T) {
 		repoStore:          repos,
 		insightsStore:      seriesStore,
 		backfillRunner:     runner,
-		config:             newHandlerConfig(),
+		config:             newHandlerConfig,
 		clock:              clock,
 	}
 
@@ -328,7 +328,7 @@ func Test_BackfillWithRetryAndComplete(t *testing.T) {
 		repoStore:          repos,
 		insightsStore:      seriesStore,
 		backfillRunner:     runner,
-		config:             newHandlerConfig(),
+		config:             newHandlerConfig,
 		clock:              clock,
 	}
 
@@ -410,7 +410,7 @@ func Test_BackfillWithRepoNotFound(t *testing.T) {
 		repoStore:          repos,
 		insightsStore:      seriesStore,
 		backfillRunner:     runner,
-		config:             newHandlerConfig(),
+		config:             newHandlerConfig,
 		clock:              clock,
 	}
 
@@ -493,7 +493,7 @@ func Test_BackfillWithARepoError(t *testing.T) {
 		repoStore:          repos,
 		insightsStore:      seriesStore,
 		backfillRunner:     runner,
-		config:             newHandlerConfig(),
+		config:             newHandlerConfig,
 		clock:              clock,
 	}
 
@@ -561,6 +561,10 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 		return nil
 	}}
 
+	handlerConf := newHandlerConfig()
+	handlerConf.interruptAfter = time.Second * 5
+	handlerConf.pageSize = 2 // setting the page size to only complete 1/2 repos in 1 iteration
+
 	dequeue, _, _ := monitor.inProgressStore.Dequeue(ctx, "test", nil)
 	handler := inProgressHandler{
 		workerStore:        monitor.newBackfillStore,
@@ -569,11 +573,9 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 		repoStore:          repos,
 		insightsStore:      seriesStore,
 		backfillRunner:     &runner,
-		config:             newHandlerConfig(),
+		config:             func() handlerConfig { return handlerConf },
 		clock:              clock,
 	}
-	handler.config.interruptAfter = time.Second * 5
-	handler.config.pageSize = 2 // setting the page size to only complete 1/2 repos in 1 iteration
 
 	err = handler.Handle(ctx, logger, dequeue)
 	require.NoError(t, err)
@@ -648,9 +650,9 @@ func Test_BackfillCrossingErrorThreshold(t *testing.T) {
 		return wantErr
 	}}
 
-	handlerConfig := newHandlerConfig()
-	handlerConfig.errorThresholdFloor = 3 // set this low enough that we will exceed it
-	handlerConfig.interruptAfter = time.Hour * 24
+	handlerConf := newHandlerConfig()
+	handlerConf.errorThresholdFloor = 3 // set this low enough that we will exceed it
+	handlerConf.interruptAfter = time.Hour * 24
 
 	dequeue, _, _ := monitor.inProgressStore.Dequeue(ctx, "test", nil)
 	handler := inProgressHandler{
@@ -660,7 +662,7 @@ func Test_BackfillCrossingErrorThreshold(t *testing.T) {
 		repoStore:          repos,
 		insightsStore:      seriesStore,
 		backfillRunner:     &runner,
-		config:             handlerConfig,
+		config:             func() handlerConfig { return handlerConf },
 		clock:              clock,
 	}
 

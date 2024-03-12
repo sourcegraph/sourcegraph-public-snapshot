@@ -1,3 +1,4 @@
+import { ApolloClient } from '@apollo/client'
 import { type EditorView, repositionTooltips, type TooltipView, type ViewUpdate } from '@codemirror/view'
 import classNames from 'classnames'
 import { createRoot, type Root } from 'react-dom/client'
@@ -39,7 +40,8 @@ export class HovercardView implements TooltipView {
     constructor(
         private readonly view: EditorView,
         private readonly tokenRange: TooltipViewOptions['token'],
-        hovercardData: TooltipViewOptions['hovercardData']
+        hovercardData: TooltipViewOptions['hovercardData'],
+        private readonly client: ApolloClient<any>
     ) {
         this.dom = document.createElement('div')
         this.dom.className = 'sg-code-intel-hovercard'
@@ -106,7 +108,11 @@ export class HovercardView implements TooltipView {
         }
 
         root.render(
-            <CodeMirrorContainer navigate={props.navigate} onRender={() => repositionTooltips(this.view)}>
+            <CodeMirrorContainer
+                navigate={props.navigate}
+                graphQLClient={this.client}
+                onRender={() => repositionTooltips(this.view)}
+            >
                 <div
                     className={classNames({
                         'cm-code-intel-hovercard': true,

@@ -28,13 +28,13 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -129,8 +129,8 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(false)
+	dotcom.MockSourcegraphDotComMode(true)
+	defer dotcom.MockSourcegraphDotComMode(false)
 
 	confGet := func() *conf.Unified { return &conf.Unified{} }
 
@@ -290,8 +290,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	now := timeutil.Now()
 	codeHostURL := "https://github.com/"
 
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(false)
+	dotcom.MockSourcegraphDotComMode(true)
+	defer dotcom.MockSourcegraphDotComMode(false)
 
 	// Create a new external service
 	confGet := func() *conf.Unified {
@@ -672,8 +672,8 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 		t.Fatal(err)
 	}
 
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(false)
+	dotcom.MockSourcegraphDotComMode(true)
+	defer dotcom.MockSourcegraphDotComMode(false)
 
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
@@ -1024,7 +1024,7 @@ func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
 		go createRepo(offset, ready)
 	}
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		if status := <-ready; status != 0 {
 			t.Fatal("Error during repo creation")
 		}
@@ -1064,7 +1064,7 @@ func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
 		go createExtSvc(offset, ready2)
 	}
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		if status := <-ready2; status != 0 {
 			t.Fatal("Error during external service repo creation")
 		}
@@ -1335,7 +1335,6 @@ func TestGetLastSyncError(t *testing.T) {
 INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at)
 VALUES ($1,'errored', now())
 `, es.ID)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1354,7 +1353,6 @@ VALUES ($1,'errored', now())
 INSERT INTO external_service_sync_jobs (external_service_id, failure_message, state, finished_at)
 VALUES ($1,$2,'errored', now())
 `, es.ID, expectedError)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2624,9 +2622,9 @@ func Test_validateOtherExternalServiceConnection(t *testing.T) {
 	require.Error(t, err)
 
 	// On DotCom, no error should be returned
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
+	orig := dotcom.SourcegraphDotComMode()
+	dotcom.MockSourcegraphDotComMode(true)
+	defer dotcom.MockSourcegraphDotComMode(orig)
 
 	err = validateOtherExternalServiceConnection(conn)
 	require.NoError(t, err)

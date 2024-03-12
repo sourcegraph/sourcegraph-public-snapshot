@@ -114,7 +114,7 @@ func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T
 		makeCommit(3): {{IsDefaultBranch: true}},
 	}
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		// Set dirty token to 3
 		if err := store.SetRepositoryAsDirty(context.Background(), 50); err != nil {
 			t.Fatalf("unexpected error marking repository as dirty: %s", err)
@@ -638,7 +638,7 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 		makeCommit(3): {{IsDefaultBranch: true}},
 	}
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		// Set dirty token to 3
 		if err := store.SetRepositoryAsDirty(context.Background(), 50); err != nil {
 			t.Fatalf("unexpected error marking repository as dirty: %s", err)

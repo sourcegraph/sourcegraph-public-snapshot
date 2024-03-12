@@ -17,6 +17,7 @@ import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensio
 import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     type RepoSpec,
@@ -69,6 +70,7 @@ export interface ReferencesPanelProps
         PlatformContextProps,
         Pick<CodeIntelligenceProps, 'useCodeIntel'>,
         TelemetryProps,
+        TelemetryV2Props,
         HoverThresholdProps,
         ExtensionsControllerProps,
         HighlightedFileLineRangesProps {

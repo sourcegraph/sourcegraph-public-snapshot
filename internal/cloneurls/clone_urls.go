@@ -5,16 +5,17 @@ import (
 	neturl "net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 // RepoSourceCloneURLToRepoName maps a Git clone URL (format documented here:
@@ -56,7 +57,7 @@ func RepoSourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL 
 		},
 	}
 
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		// We want to check these first as they'll be able to decode the majority of
 		// repos. If our cloud_default services are unable to decode the clone url then
 		// we fall back to going through all services until we find a match.

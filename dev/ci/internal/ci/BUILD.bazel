@@ -4,6 +4,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "ci",
     srcs = [
+        "aspect_workflows.go",
         "bazel_helpers.go",
         "bazel_operations.go",
         "cache_helpers.go",

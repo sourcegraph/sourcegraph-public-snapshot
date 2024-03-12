@@ -205,7 +205,7 @@ func (p *parser) peek(n int) (string, error) {
 	}()
 
 	var result []rune
-	for i := 0; i < n; i++ {
+	for range n {
 		if p.done() {
 			return "", io.ErrShortBuffer
 		}
@@ -882,7 +882,6 @@ func (p *parser) ParsePattern(label labels) Pattern {
 	}
 	p.pos += advance
 	return newPattern(value, label, newRange(start, p.pos))
-
 }
 
 // ParseParameter returns a leaf node corresponding to the syntax
