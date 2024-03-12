@@ -1,12 +1,9 @@
 <script lang="ts">
-    let className = '';
-    export {className as class};
     export let variant: 'info' | 'warning' | 'danger' | 'success'
     export let sizeVariant: 'normal' | 'slim' = 'normal'
 </script>
 
 <div
-    class={className}
     class:info={variant === 'info'}
     class:warning={variant === 'warning'}
     class:danger={variant === 'danger'}

@@ -26,12 +26,12 @@ if (browser) {
 export const load: LayoutLoad = async ({ fetch }) => {
     const client = getGraphQLClient()
 
-    const result = await client.query(Init, {}, { fetch, requestPolicy: 'network-only' })
-
     // We don't block the whole page loader with site alerts
     // it's handled later in the page svelte template, render page
     // immediately as soon as we have init data
     const globalSiteAlerts = client.query(GlobalAlertsSiteFlags, {}, {fetch, requestPolicy: 'network-only'})
+
+    const result = await client.query(Init, {}, { fetch, requestPolicy: 'network-only' })
 
     if (result.error?.response?.status === 401) {
         // The server will take care of redirecting to the sign-in page, but when

@@ -34,7 +34,7 @@
 </script>
 
 {#if !dismissed}
-    <Alert class='root' variant={variant} sizeVariant='slim'>
+    <Alert variant={variant} sizeVariant='slim'>
 
         <div class='content'>
             <slot/>
@@ -45,7 +45,6 @@
                 <Button
                     variant="icon"
                     aria-label="Dismiss alert"
-                    class="close-button"
                     on:click={handleDismissClick}
                 >
                     <Icon aria-hidden={true} svgPath={mdiClose}/>
@@ -56,16 +55,6 @@
 {/if}
 
 <style lang="scss">
-  .root {
-    display: flex;
-    align-items: center;
-    padding-right: 0.5rem;
-
-      &:last-child {
-          border-bottom-width: 0;
-      }
-  }
-
   .content {
     display: flex;
     flex: 1 1 auto;
