@@ -55,12 +55,15 @@ promoteToPublic:
     steps:
       - name: "buildkite"
         cmd: |
+          # We set DISABLE_ASPECT_WORKFLOWS to true, because the promotion is purely about retagging images
+          # and we don't rely on AW at all.
           echo "Triggering build on sourcegraph/sourcegraph with VERSION={{version}} on branch {{git.branch}}"
           body=$(curl -s --fail-with-body -X POST "https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds" -H "Content-Type: application/json" -H "Authorization: Bearer $BUILDKITE_ACCESS_TOKEN" -d '{
               "commit": "HEAD",
               "branch": "{{git.branch}}",
               "message": "Promoting internal release {{version}} to public",
               "env": {
+                "DISABLE_ASPECT_WORKFLOWS": "true"
                 "RELEASE_PUBLIC": "true",
                 "VERSION": "{{tag}}"
               }
