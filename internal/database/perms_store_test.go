@@ -22,7 +22,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -4332,17 +4331,18 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 				defer authz.SetProviders(true, nil)
 			}
 
-			before := globals.PermissionsUserMapping()
-			globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: test.UsePermissionsUserMapping})
 			conf.Mock(
 				&conf.Unified{
 					SiteConfiguration: schema.SiteConfiguration{
+						PermissionsUserMapping: &schema.PermissionsUserMapping{
+							Enabled: test.UsePermissionsUserMapping,
+							BindID:  "email",
+						},
 						AuthzEnforceForSiteAdmins: test.AuthzEnforceForSiteAdmins,
 					},
 				},
 			)
 			t.Cleanup(func() {
-				globals.SetPermissionsUserMapping(before)
 				conf.Mock(nil)
 			})
 
