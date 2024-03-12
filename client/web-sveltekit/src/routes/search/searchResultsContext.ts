@@ -6,7 +6,7 @@ import type { ContentMatch, PathMatch, SearchMatch, SymbolMatch } from '$lib/sha
 interface SearchResultsContext {
     isExpanded(match: SearchMatch): boolean
     setExpanded(match: SearchMatch, expanded: boolean): void
-    setPreview(props: PathMatch | ContentMatch | SymbolMatch | null): void
+    setPreview(result: PathMatch | ContentMatch | SymbolMatch | null): void
     queryState: QueryStateStore
 }
 
