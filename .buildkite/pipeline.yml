@@ -11,6 +11,7 @@ steps:
   - group: ":aspect: Aspect Workflows "
     steps:
       - key: aspect-workflows-upload
+        if: build.env("DISABLE_ASPECT_WORKFLOWS") != "true"
         label: ":aspect: Setup Aspect Workflows"
         commands:
           - "rosetta steps | buildkite-agent pipeline upload"
