@@ -146,10 +146,10 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 	}
 	results := make(chan result, len(clients))
 	for _, c := range clients {
-		go func(c zoekt.Streamer) {
+		go func() {
 			rl, err := c.List(ctx, q, opts)
 			results <- result{rl: rl, err: err}
-		}(c)
+		}()
 	}
 
 	// PERF: We don't deduplicate Repos since the only user of List already

@@ -394,7 +394,7 @@ func (p *clonePipelineRoutine) cloneJobConsumer(ctx context.Context, tasks <-cha
 			continue
 		}
 
-		go func(task *cloneTask) {
+		go func() {
 			defer cancel()
 
 			err := p.s.doClone(ctx, task.repo, task.dir, task.syncer, task.lock, task.remoteURL, task.options)
@@ -404,7 +404,7 @@ func (p *clonePipelineRoutine) cloneJobConsumer(ctx context.Context, tasks <-cha
 			// Use a different context in case we failed because the original context failed.
 			p.s.setLastErrorNonFatal(p.s.ctx, task.repo, err)
 			_ = task.done()
-		}(task)
+		}()
 	}
 }
 
