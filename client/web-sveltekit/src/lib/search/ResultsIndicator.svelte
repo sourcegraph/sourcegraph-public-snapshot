@@ -16,9 +16,6 @@
     export let togglePopover: () => void
     export let trigger: (node: HTMLElement) => void
 
-    // Create variables to be passed into the SecondCounter component
-    // These variables will be used to determine the amount of time
-    // the search has run without a response
     export let elapsedSeconds: number = 0
     export let elapsedMilliseconds: number = 0
     let displaySeconds: number = 0
@@ -94,7 +91,9 @@
                             {getProgressText(searchProgress).visibleText}
                         </div>
                         <div class="progress-action-message">
-                            {#if hasSkippedItems}
+                            {#if !hasSkippedItems}
+                                <div class="more-details">See more details</div>
+                            {:else}
                                 <div class={`info-badge ${mostSevere.severity === 'error' && 'error'}`}>
                                     {capitalizeFirstLetter(mostSevere.title)}
                                 </div>
@@ -181,7 +180,6 @@
         border-radius: 3px;
         padding-left: 0.2rem;
         padding-right: 0.2rem;
-        // padding-top: 0.1rem;
     }
 
     div.info-badge.error {
@@ -215,6 +213,10 @@
 
     div.loading-action-message {
         margin-top: 0.5rem;
+        color: var(--gray-06);
+    }
+
+    div.more-details {
         color: var(--gray-06);
     }
 </style>
