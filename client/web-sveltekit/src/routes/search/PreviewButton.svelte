@@ -9,3 +9,15 @@
 </script>
 
 <button on:click={() => searchResultContext.setPreview(result)}>Preview</button>
+
+<style lang="scss">
+    button {
+        border: none;
+        background-color: transparent;
+        font-weight: 500;
+        color: var(--link-color);
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+</style>
