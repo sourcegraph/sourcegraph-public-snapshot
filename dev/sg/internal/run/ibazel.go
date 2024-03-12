@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"slices"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -40,7 +39,7 @@ type IBazel struct {
 }
 
 // returns a runner to interact with ibazel.
-func NewIBazel(cmds []BazelCommand, dir string) (*IBazel, error) {
+func NewIBazel(targets []string, dir string) (*IBazel, error) {
 	logsDir, err := initLogsDir()
 	if err != nil {
 		return nil, err
@@ -49,13 +48,6 @@ func NewIBazel(cmds []BazelCommand, dir string) (*IBazel, error) {
 	logFile, err := os.Create(ibazelLogPath(logsDir))
 	if err != nil {
 		return nil, err
-	}
-
-	targets := make([]string, 0, len(cmds))
-	for _, cmd := range cmds {
-		if cmd.Target != "" && !slices.Contains(targets, cmd.Target) {
-			targets = append(targets, cmd.Target)
-		}
 	}
 
 	return &IBazel{

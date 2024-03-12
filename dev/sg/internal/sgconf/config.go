@@ -37,6 +37,11 @@ func parseConfig(data []byte) (*Config, error) {
 		conf.BazelCommands[name] = cmd
 	}
 
+	for name, cmd := range conf.DockerCommands {
+		cmd.Name = name
+		conf.DockerCommands[name] = cmd
+	}
+
 	for name, cmd := range conf.Commands {
 		cmd.Name = name
 		normalizeCmd(&cmd)
@@ -64,11 +69,12 @@ func normalizeCmd(cmd *run.Command) {
 }
 
 type Commandset struct {
-	Name          string            `yaml:"-"`
-	Commands      []string          `yaml:"commands"`
-	BazelCommands []string          `yaml:"bazelCommands"`
-	Checks        []string          `yaml:"checks"`
-	Env           map[string]string `yaml:"env"`
+	Name           string            `yaml:"-"`
+	Commands       []string          `yaml:"commands"`
+	BazelCommands  []string          `yaml:"bazelCommands"`
+	DockerCommands []string          `yaml:"dockerCommands"`
+	Checks         []string          `yaml:"checks"`
+	Env            map[string]string `yaml:"env"`
 
 	// If this is set to true, then the commandset requires the dev-private
 	// repository to be cloned at the same level as the sourcegraph repository.
@@ -114,6 +120,10 @@ func (c *Commandset) Merge(other *Commandset) *Commandset {
 		merged.BazelCommands = other.BazelCommands
 	}
 
+	if !equal(merged.DockerCommands, other.DockerCommands) && len(other.DockerCommands) != 0 {
+		merged.DockerCommands = other.DockerCommands
+	}
+
 	for k, v := range other.Env {
 		merged.Env[k] = v
 	}
@@ -124,12 +134,13 @@ func (c *Commandset) Merge(other *Commandset) *Commandset {
 }
 
 type Config struct {
-	Env               map[string]string           `yaml:"env"`
-	Commands          map[string]run.Command      `yaml:"commands"`
-	BazelCommands     map[string]run.BazelCommand `yaml:"bazelCommands"`
-	Commandsets       map[string]*Commandset      `yaml:"commandsets"`
-	DefaultCommandset string                      `yaml:"defaultCommandset"`
-	Tests             map[string]run.Command      `yaml:"tests"`
+	Env               map[string]string            `yaml:"env"`
+	Commands          map[string]run.Command       `yaml:"commands"`
+	BazelCommands     map[string]run.BazelCommand  `yaml:"bazelCommands"`
+	DockerCommands    map[string]run.DockerCommand `yaml:"dockerCommands"`
+	Commandsets       map[string]*Commandset       `yaml:"commandsets"`
+	DefaultCommandset string                       `yaml:"defaultCommandset"`
+	Tests             map[string]run.Command       `yaml:"tests"`
 }
 
 // Merges merges the top-level entries of two Config objects, with the receiver

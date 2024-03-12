@@ -343,7 +343,12 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		return err
 	}
 
-	if len(cmds) == 0 && len(bcmds) == 0 {
+	dcmds, err := getCommands(set.DockerCommands, set, conf.DockerCommands)
+	if err != nil {
+		return err
+	}
+
+	if len(cmds) == 0 && len(bcmds) == 0 && len(dcmds) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "WARNING: no commands to run"))
 		return nil
 	}
@@ -364,8 +369,16 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 	}
 
 	var ibazel *run.IBazel
-	if len(bcmds) > 0 {
-		ibazel, err = run.NewIBazel(bcmds, repoRoot)
+	if len(bcmds)+len(dcmds) > 0 {
+		var targets []string
+		for _, cmd := range bcmds {
+			targets = append(targets, cmd.Target)
+		}
+		for _, cmd := range dcmds {
+			targets = append(targets, cmd.Target)
+		}
+
+		ibazel, err = run.NewIBazel(targets, repoRoot)
 		if err != nil {
 			return err
 		}
@@ -386,6 +399,9 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 	}
 
 	for _, cmd := range cmds {
+		configCmds = append(configCmds, cmd)
+	}
+	for _, cmd := range dcmds {
 		configCmds = append(configCmds, cmd)
 	}
 	return run.Commands(ctx, env, verbose, configCmds...)

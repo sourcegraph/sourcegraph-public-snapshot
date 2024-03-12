@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "bazel_command.go",
         "command.go",
+        "docker_commmand.go",
         "helpers.go",
         "ibazel.go",
         "installer.go",

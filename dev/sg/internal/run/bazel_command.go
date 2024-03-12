@@ -57,22 +57,7 @@ func (bc BazelCommand) GetPreamble() string {
 }
 
 func (bc BazelCommand) GetBinaryLocation() (string, error) {
-	baseOutput, err := outputPath()
-	if err != nil {
-		return "", err
-	}
-	// Trim "bazel-out" because the next bazel query will include it.
-	outputPath := strings.TrimSuffix(strings.TrimSpace(string(baseOutput)), "bazel-out")
-
-	// Get the binary from the specific target.
-	cmd := exec.Command("bazel", "cquery", bc.Target, "--output=files")
-	baseOutput, err = cmd.Output()
-	if err != nil {
-		return "", err
-	}
-	binPath := strings.TrimSpace(string(baseOutput))
-
-	return fmt.Sprintf("%s%s", outputPath, binPath), nil
+	return binaryLocation(bc.Target)
 }
 
 func (bc BazelCommand) GetExternalSecrets() map[string]secrets.ExternalSecret {
@@ -115,6 +100,25 @@ func (bc BazelCommand) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
 	}
 
 	return exec.CommandContext(ctx, "bash", "-c", fmt.Sprintf("%s\n%s", bc.PreCmd, cmd)), nil
+}
+
+func binaryLocation(target string) (string, error) {
+	baseOutput, err := outputPath()
+	if err != nil {
+		return "", err
+	}
+	// Trim "bazel-out" because the next bazel query will include it.
+	outputPath := strings.TrimSuffix(strings.TrimSpace(string(baseOutput)), "bazel-out")
+
+	// Get the binary from the specific target.
+	cmd := exec.Command("bazel", "cquery", target, "--output=files")
+	baseOutput, err = cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	binPath := strings.TrimSpace(string(baseOutput))
+
+	return fmt.Sprintf("%s%s", outputPath, binPath), nil
 }
 
 func outputPath() ([]byte, error) {
