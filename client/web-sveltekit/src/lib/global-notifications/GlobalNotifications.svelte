@@ -1,5 +1,5 @@
 <script lang="ts" context="module">
-    import {AlertType} from '$root/client/shared/src/graphql-operations';
+    import {AlertType} from '$lib/graphql-types';
     import {formatDistanceStrict, isAfter} from 'date-fns';
 
     type PossibleAlertVariation = 'info' | 'warning' | 'danger'
@@ -35,8 +35,8 @@
 <script lang="ts">
     import {settings} from '$lib/stores'
 
-    import Markdown from './components/Markdown.svelte'
-    import DismissibleAlert from './components/DismissibleAlert.svelte'
+    import {Markdown} from '$lib/wildcard'
+    import DismissibleAlert from './DismissibleAlert.svelte'
 
     import type {GlobalNotifications} from './GlobalNotifications.gql'
     import {differenceInDays, parseISO} from 'date-fns';
@@ -46,12 +46,12 @@
     $: settingsMotd = $settings?.motd
     $: notices = $settings?.notices
 
-    const noLicenseWarningUserCount = globalAlerts.productSubscription.noLicenseWarningUserCount
-    const expiresAt = parseISO(globalAlerts.productSubscription.license.expiresAt)
-    const daysLeft = Math.floor(differenceInDays(expiresAt, Date.now()))
+    $: noLicenseWarningUserCount = globalAlerts.productSubscription.noLicenseWarningUserCount
+    $: expiresAt = parseISO(globalAlerts.productSubscription.license.expiresAt)
+    $: daysLeft = Math.floor(differenceInDays(expiresAt, Date.now()))
 </script>
 
-<div class="root">
+<div class="root" aria-label="Global site notifications">
 
     {#if globalAlerts.needsRepositoryConfiguration}
         <DismissibleAlert variant="success" partialStorageKey="needsRepositoryConfiguration">
@@ -64,12 +64,12 @@
 
     {#if globalAlerts.freeUsersExceeded}
         <DismissibleAlert variant="info" partialStorageKey={null}>
-            This Sourcegraph instance has reached{' '}
+            This Sourcegraph instance has reached&nbsp;
             {noLicenseWarningUserCount === null ? 'the limit for' : noLicenseWarningUserCount} free users, and an admin
-            must{' '}
+            must&nbsp;
             <a href="https://sourcegraph.com/contact/sales">
                 contact Sourcegraph to start a free trial or purchase a license
-            </a>{' '}
+            </a>&nbsp;
             to add more
         </DismissibleAlert>
     {/if}
@@ -98,7 +98,7 @@
 
     {#if globalAlerts.productSubscription.license && daysLeft <= 7}
         <DismissibleAlert variant="warning" partialStorageKey={`licenseExpiring.${daysLeft}`}>
-            Your Sourcegraph license{' '}
+            Your Sourcegraph license&nbsp;
             {
                 isProductLicenseExpired(expiresAt)
                     ? 'expired ' + formatRelativeExpirationDate(expiresAt) // 'Expired two months ago'

@@ -34,7 +34,7 @@
 </script>
 
 {#if !dismissed}
-    <Alert variant={variant} sizeVariant='slim'>
+    <Alert variant={variant} size='slim'>
 
         <div class='content'>
             <slot/>

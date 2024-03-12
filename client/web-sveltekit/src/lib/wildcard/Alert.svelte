@@ -1,6 +1,6 @@
 <script lang="ts">
+    export let size: 'normal' | 'slim' = 'normal'
     export let variant: 'info' | 'warning' | 'danger' | 'success'
-    export let sizeVariant: 'normal' | 'slim' = 'normal'
 </script>
 
 <div
@@ -8,7 +8,7 @@
     class:warning={variant === 'warning'}
     class:danger={variant === 'danger'}
     class:success={variant === 'success'}
-    class:slim={sizeVariant === 'slim'}
+    class:slim={size === 'slim'}
 >
     <slot />
 </div>
