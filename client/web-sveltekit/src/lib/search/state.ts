@@ -165,9 +165,3 @@ export function getQueryURL(
     }
     return url
 }
-
-export function submitSearch(
-    queryState: Pick<QueryState, 'searchMode' | 'query' | 'caseSensitive' | 'patternType' | 'searchContext'>
-): void {
-    void goto(getQueryURL(queryState))
-}

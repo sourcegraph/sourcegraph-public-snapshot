@@ -17,20 +17,22 @@
     import type { Observable } from 'rxjs'
     import { tick } from 'svelte'
 
-    import { beforeNavigate } from '$app/navigation'
+    import { beforeNavigate, goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import type { URLQueryFilter } from '$lib/search/dynamicFilters'
     import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
-    import { submitSearch, type QueryStateStore } from '$lib/search/state'
+    import { getQueryURL, type QueryStateStore } from '$lib/search/state'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
     import { type AggregateStreamingSearchResults, type SearchMatch } from '$lib/shared'
 
     import { getSearchResultComponent } from './searchResultFactory'
     import { setSearchResultsContext } from './searchResultsContext'
     import StreamingProgress from './StreamingProgress.svelte'
+    import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
+    import { limitHit } from '@sourcegraph/branded'
 
     export let stream: Observable<AggregateStreamingSearchResults>
     export let queryFromURL: string
@@ -49,11 +51,19 @@
 
     let resultContainer: HTMLElement | null = null
 
+    const recentSearches = createRecentSearchesStore()
     const sidebarSize = getSeparatorPosition('search-results-sidebar', 0.2)
     $: sidebarWidth = `clamp(14rem, ${$sidebarSize * 100}%, 50%)`
 
     $: loading = $stream.state === 'loading'
     $: results = $stream.results
+    $: if (!loading) {
+        recentSearches.addRecentSearch({
+            query: queryFromURL,
+            limitHit: limitHit($stream.progress),
+            resultCount: $stream.progress.matchCount,
+        })
+    }
 
     // Logic for maintaining list state (scroll position, rendered items, open
     // items) for backwards navigation.
@@ -95,7 +105,7 @@
             .join(' ')
         queryState.setQuery(query => query + ' ' + filters)
         await tick()
-        submitSearch($queryState)
+        void goto(getQueryURL($queryState))
     }
 </script>
 
