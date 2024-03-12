@@ -15,7 +15,7 @@
 <script lang="ts">
     import { mdiCloseOctagonOutline } from '@mdi/js'
     import type { Observable } from 'rxjs'
-    import { tick, type ComponentProps } from 'svelte'
+    import { tick } from 'svelte'
     import { writable } from 'svelte/store'
 
     import { limitHit } from '@sourcegraph/branded'
@@ -30,7 +30,13 @@
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { getQueryURL, type QueryStateStore } from '$lib/search/state'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
-    import { type AggregateStreamingSearchResults, type SearchMatch } from '$lib/shared'
+    import {
+        type AggregateStreamingSearchResults,
+        type PathMatch,
+        type SearchMatch,
+        type SymbolMatch,
+        type ContentMatch,
+    } from '$lib/shared'
 
     import PreviewPanel from './PreviewPanel.svelte'
     import { getSearchResultComponent } from './searchResultFactory'
@@ -75,7 +81,7 @@
     $: resultsToShow = results.slice(0, count)
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
 
-    let previewData = writable<ComponentProps<PreviewPanel> | undefined>(undefined)
+    let previewResult = writable<ContentMatch | SymbolMatch | PathMatch | undefined>(undefined)
 
     setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
@@ -88,9 +94,9 @@
                 expandedSet.delete(match)
             }
         },
-        setPreview(data: ComponentProps<PreviewPanel>): void {
-            console.log({ data })
-            previewData.set(data)
+        setPreview(result: ContentMatch | SymbolMatch | PathMatch | undefined): void {
+            console.log({ result })
+            previewResult.set(result)
         },
         queryState,
     })
@@ -161,11 +167,11 @@
             {/if}
         </div>
     </div>
-    {#if $previewData}
+    {#if $previewResult}
         <Separator currentPosition={previewSidebarPosition} />
         <div style:width={`clamp(10rem, ${100 - $previewSidebarPosition * 100}%, 50%)`}>
-            {#key $previewData}
-                <PreviewPanel {...$previewData} />
+            {#key $previewResult}
+                <PreviewPanel result={$previewResult} />
             {/key}
         </div>
     {/if}

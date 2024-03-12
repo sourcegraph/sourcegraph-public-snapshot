@@ -19,7 +19,13 @@
     import { isErrorLike } from '$lib/common'
     import { getGraphQLClient, mapOrThrow, toGraphQLResult } from '$lib/graphql'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import { createCodeIntelAPI } from '$lib/shared'
+    import {
+        getFileMatchUrl,
+        createCodeIntelAPI,
+        type ContentMatch,
+        type PathMatch,
+        type SymbolMatch,
+    } from '$lib/shared'
     import { settings } from '$lib/stores'
 
     // TODO: should I be importing this from a page? Seems funky.
@@ -28,10 +34,7 @@
         BlobSyntaxHighlightQuery,
     } from '../[...repo=reporev]/(validrev)/(code)/-/blob/[...path]/page.gql'
 
-    export let repoName: string
-    export let commitID: string
-    export let filePath: string
-    export let matchedRanges: Range[]
+    export let result: ContentMatch | SymbolMatch | PathMatch
 
     const client = getGraphQLClient()
     $: codeIntelAPI = createCodeIntelAPI({
@@ -41,26 +44,32 @@
         },
     })
 
-    console.log({ filePath })
-
     const blob = client
         .query(BlobPageQuery, {
-            repoName,
-            revspec: commitID,
-            path: filePath,
+            repoName: result.repository,
+            revspec: result.commit ?? '', // TODO: default value?
+            path: result.path,
         })
         .then(mapOrThrow(result => result.data?.repository?.commit?.blob ?? null))
 
     const highlights = client
         .query(BlobSyntaxHighlightQuery, {
-            repoName,
-            revspec: commitID,
-            path: filePath,
+            repoName: result.repository,
+            revspec: result.commit ?? '', // TODO: default value?
+            path: result.path,
             disableTimeout: false,
         })
         .then(mapOrThrow(result => result.data?.repository?.commit?.blob?.highlight.lsif ?? ''))
 </script>
 
+<div class="header">
+    <h3>File Preview</h3>
+</div>
+<div class="file-link">
+    <small>
+        <a href={getFileMatchUrl(result)}>{result.path}</a>
+    </small>
+</div>
 <div class="content">
     {#await blob}
         <LoadingSpinner />
@@ -68,10 +77,10 @@
         {#await highlights}
             <CodeMirrorBlob
                 blobInfo={{
-                    repoName,
-                    commitID,
+                    repoName: result.repository,
+                    commitID: result.commit ?? '',
                     revision: '',
-                    filePath,
+                    filePath: result.path,
                     content: blob?.content ?? '',
                     languages: blob?.languages ?? [],
                 }}
@@ -81,10 +90,10 @@
         {:then highlights}
             <CodeMirrorBlob
                 blobInfo={{
-                    repoName,
-                    commitID,
+                    repoName: result.repository,
+                    commitID: result.commit ?? '',
                     revision: '',
-                    filePath,
+                    filePath: result.path,
                     content: blob?.content ?? '',
                     languages: blob?.languages ?? [],
                 }}
@@ -98,6 +107,24 @@
 </div>
 
 <style lang="scss">
+    .header {
+        // Keep in sync with the action bar
+        height: 3rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        padding: 0 0.5rem;
+        h3 {
+            margin: 0;
+            height: fit-content;
+        }
+    }
+
+    .file-link {
+        padding: 0.25rem 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
     .content {
         display: flex;
         flex-direction: column;

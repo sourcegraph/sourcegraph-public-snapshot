@@ -26,12 +26,7 @@
 
     const searchResultContext = getSearchResultsContext()
     function handlePreview() {
-        searchResultContext.setPreview({
-            repoName: result.repository,
-            commitID: result.commit,
-            filePath: result.path,
-            matchedRanges: [], // TODO
-        })
+        searchResultContext.setPreview(result)
     }
 </script>
 

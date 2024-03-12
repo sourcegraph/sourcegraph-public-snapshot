@@ -1,14 +1,12 @@
-import { getContext, setContext, type ComponentProps } from 'svelte'
+import { getContext, setContext } from 'svelte'
 
 import type { QueryStateStore } from '$lib/search/state'
-import type { SearchMatch } from '$lib/shared'
-
-import PreviewPanel from './PreviewPanel.svelte'
+import type { ContentMatch, PathMatch, SearchMatch, SymbolMatch } from '$lib/shared'
 
 interface SearchResultsContext {
     isExpanded(match: SearchMatch): boolean
     setExpanded(match: SearchMatch, expanded: boolean): void
-    setPreview(props: ComponentProps<PreviewPanel> | undefined): void
+    setPreview(props: PathMatch | ContentMatch | SymbolMatch | undefined): void
     queryState: QueryStateStore
 }
 
