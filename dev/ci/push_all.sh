@@ -4,7 +4,7 @@ set -eu
 
 aspectRC="/tmp/aspect-generated.bazelrc"
 rosetta bazelrc > "$aspectRC"
-bazelrc=(--bazelrc="$aspectRC")
+bazelrc=(--bazelrc="$aspectRC" --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
 
 function preview_tags() {
   IFS=' ' read -r -a registries <<<"$1"
@@ -78,10 +78,11 @@ function create_push_command() {
 }
 
 dev_registries=(
-  "us.gcr.io/sourcegraph-dev"
+  "$DEV_REGISTRY"
 )
+
 prod_registries=(
-  "index.docker.io/sourcegraph"
+  "$PROD_REGISTRY"
 )
 
 date_fragment="$(date +%Y-%m-%d)"
@@ -99,11 +100,7 @@ CANDIDATE_ONLY=${CANDIDATE_ONLY:-""}
 
 push_prod=false
 
-# ok: main
-# ok: main-dry-run
-# ok: main-dry-run-123
-# no: main-foo
-if [[ "$BUILDKITE_BRANCH" =~ ^main$ ]] || [[ "$BUILDKITE_BRANCH" =~ ^docker-images-candidates-notest/.* ]]; then
+if [[ "$BUILDKITE_BRANCH" =~ ^docker-images-candidates-notest/.* ]]; then
   dev_tags+=("insiders")
   prod_tags+=("insiders")
   push_prod=true
@@ -114,6 +111,12 @@ if [[ "$BUILDKITE_BRANCH" =~ ^main-dry-run/.*  ]]; then
   dev_tags+=("insiders")
   prod_tags+=("insiders")
   push_prod=false
+fi
+
+# If we're doing an internal release, we need to push to the prod registry too.
+# TODO(rfc795) this should be more granular than this, we're abit abusing the idea of the prod registry here.
+if [ "${RELEASE_INTERNAL:-}" == "true" ]; then
+  push_prod=true
 fi
 
 # All release branch builds must be published to prod tags to support
