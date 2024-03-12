@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared/data/cmd/generator/version"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/stitch"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
@@ -18,6 +19,9 @@ import (
 func main() {
 	liblog := log.Init(log.Resource{Name: "stitched-migration-generator"})
 	defer liblog.Sync()
+
+	// TODO(JH): remove this when done POC'ing
+	println(version.FinalVersionString)
 
 	if err := mainErr(); err != nil {
 		panic(fmt.Sprintf("error: %s", err))
