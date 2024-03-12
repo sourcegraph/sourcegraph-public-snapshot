@@ -18,8 +18,8 @@ var MaxVersion = func() oobmigration.Version {
 	if version.FinalVersionString != "dev" {
 		ver = version.FinalVersionString
 	}
-	if version, ok := oobmigration.NewVersionFromString(ver); ok {
-		return version
+	if oobVersion, ok := oobmigration.NewVersionFromString(ver); ok {
+		return oobVersion
 	}
 
 	panic(fmt.Sprintf("malformed maxVersionString %q", ver))
