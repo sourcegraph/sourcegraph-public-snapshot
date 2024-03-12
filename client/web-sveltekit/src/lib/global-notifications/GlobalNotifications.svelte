@@ -54,10 +54,7 @@
 <div class="root">
 
     {#if globalAlerts.needsRepositoryConfiguration}
-        <DismissibleAlert
-            variant="success"
-            partialStorageKey="needsRepositoryConfiguration"
-        >
+        <DismissibleAlert variant="success" partialStorageKey="needsRepositoryConfiguration">
             <a href='/setup/remote-repositories'>
                 Go to setup wizard
             </a>
@@ -78,22 +75,14 @@
     {/if}
 
     {#each globalAlerts.alerts as alert (alert.message)}
-        <DismissibleAlert
-            variant={getAlertVariantForType(alert.type)}
-            partialStorageKey={alert.isDismissibleWithKey}
-            class='alert'
-        >
+        <DismissibleAlert variant={getAlertVariantForType(alert.type)} partialStorageKey={alert.isDismissibleWithKey}>
             <Markdown content={alert.message}/>
         </DismissibleAlert>
     {/each}
 
     {#if settingsMotd && Array.isArray(settingsMotd)}
         {#each settingsMotd as motd}
-            <DismissibleAlert
-                    variant="info"
-                    partialStorageKey={`motd.${motd}`}
-                    class='alert'
-            >
+            <DismissibleAlert variant="info" partialStorageKey={`motd.${motd}`}>
                 <Markdown content={motd}/>
             </DismissibleAlert>
         {/each}
@@ -101,21 +90,14 @@
 
     {#if notices && Array.isArray(notices)}
         {#each notices as notice (notice.message)}
-            <DismissibleAlert
-                    variant="info"
-                    partialStorageKey={`notices.${notice.message}`}
-                    class='alert'
-            >
+            <DismissibleAlert variant="info" partialStorageKey={`notices.${notice.message}`}>
                 <Markdown content={notice.message}/>
             </DismissibleAlert>
         {/each}
     {/if}
 
     {#if globalAlerts.productSubscription.license && daysLeft <= 7}
-        <DismissibleAlert
-            variant="warning"
-            partialStorageKey={`licenseExpiring.${daysLeft}`}
-        >
+        <DismissibleAlert variant="warning" partialStorageKey={`licenseExpiring.${daysLeft}`}>
             Your Sourcegraph license{' '}
             {
                 isProductLicenseExpired(expiresAt)
@@ -128,19 +110,12 @@
         </DismissibleAlert>
     {/if}
 
-    {#if true}
-        <DismissibleAlert
-                variant="danger"
-                partialStorageKey="dev-web-server-alert"
-                class='alert'
-        >
-            <div>
-                <strong>Warning!</strong> This build uses data from the proxied API:{' '}
-                <a class="proxy-link" target="__blank" href={process.env.SOURCEGRAPH_API_URL}>
-                    {process.env.SOURCEGRAPH_API_URL}
-                </a>
-            </div>
-            .
+    {#if process.env.SOURCEGRAPH_API_URL}
+        <DismissibleAlert variant="danger" partialStorageKey="dev-web-server-alert">
+            <strong>Warning!</strong> This build uses data from the proxied API:{' '}
+            <a class="proxy-link" target="__blank" href={process.env.SOURCEGRAPH_API_URL}>
+                {process.env.SOURCEGRAPH_API_URL}
+            </a>
         </DismissibleAlert>
     {/if}
 </div>

@@ -1,6 +1,4 @@
 <script lang="ts" context="module">
-    import classNames from 'classnames'
-
     function dismissAlert(key: string): void {
         localStorage.setItem(storageKeyForPartial(key), 'true')
     }
@@ -22,9 +20,6 @@
     export let variant: 'info' | 'warning' | 'danger' | 'success'
     export let partialStorageKey: string | null
 
-    let className = '';
-    export {className as class};
-
     // Local state
     let dismissed = partialStorageKey ? isAlertDismissed(partialStorageKey) : false;
 
@@ -39,7 +34,7 @@
 </script>
 
 {#if !dismissed}
-    <Alert class={classNames('root', className)} variant={variant} sizeVariant='slim'>
+    <Alert class='root' variant={variant} sizeVariant='slim'>
 
         <div class='content'>
             <slot/>
