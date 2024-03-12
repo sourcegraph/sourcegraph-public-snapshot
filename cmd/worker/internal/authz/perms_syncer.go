@@ -377,7 +377,6 @@ type fetchUserPermsViaExternalAccountsResults struct {
 // It returns a list of internal database repository IDs and is a noop when
 // ` dotcom.SourcegraphDotComMode()` is true.
 func (s *permsSyncerImpl) fetchUserPermsViaExternalAccounts(ctx context.Context, user *types.User, noPerms bool, fetchOpts authz.FetchPermsOptions) (results fetchUserPermsViaExternalAccountsResults, err error) {
-	time.Sleep(1 * time.Minute)
 	// NOTE: OAuth scope on sourcegraph.com does not grant access to read private
 	//  repositories, therefore it is no point wasting effort and code host API rate
 	//  limit quota on trying.
