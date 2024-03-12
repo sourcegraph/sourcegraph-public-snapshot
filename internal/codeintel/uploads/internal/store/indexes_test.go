@@ -84,7 +84,7 @@ func TestGetIndexes(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		for lo := 0; lo < len(testCase.expectedIDs); lo++ {
+		for lo := range len(testCase.expectedIDs) {
 			hi := lo + 3
 			if hi > len(testCase.expectedIDs) {
 				hi = len(testCase.expectedIDs)

@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -29,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -486,7 +486,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 	t.Cleanup(licensing.TestingSkipFeatureChecks())
 
 	t.Run("disabled on dotcom", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(true)
+		dotcom.MockSourcegraphDotComMode(true)
 
 		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
@@ -508,7 +508,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 		}
 
 		// Reset the env var for other tests.
-		envvar.MockSourcegraphDotComMode(false)
+		dotcom.MockSourcegraphDotComMode(false)
 	})
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
@@ -1825,7 +1825,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 
 func TestResolver_BitbucketProjectPermissionJobs(t *testing.T) {
 	t.Run("disabled on dotcom", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(true)
+		dotcom.MockSourcegraphDotComMode(true)
 
 		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
@@ -1842,7 +1842,7 @@ func TestResolver_BitbucketProjectPermissionJobs(t *testing.T) {
 		require.Nil(t, result)
 
 		// Reset the env var for other tests.
-		envvar.MockSourcegraphDotComMode(false)
+		dotcom.MockSourcegraphDotComMode(false)
 	})
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {

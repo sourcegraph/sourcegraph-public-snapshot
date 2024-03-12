@@ -17,23 +17,26 @@
     import type { Observable } from 'rxjs'
     import { tick } from 'svelte'
 
-    import { beforeNavigate } from '$app/navigation'
+    import { beforeNavigate, goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import type { URLQueryFilter } from '$lib/search/dynamicFilters'
     import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
-    import { submitSearch, type QueryStateStore } from '$lib/search/state'
+    import { getQueryURL, type QueryStateStore } from '$lib/search/state'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
-    import { type AggregateStreamingSearchResults, type SearchMatch, type Progress } from '$lib/shared'
+    import { type AggregateStreamingSearchResults, type SearchMatch } from '$lib/shared'
 
     import { getSearchResultComponent } from './searchResultFactory'
     import { setSearchResultsContext } from './searchResultsContext'
     import StreamingProgress from './StreamingProgress.svelte'
+    import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
+    import { limitHit } from '@sourcegraph/branded'
 
-    export let stream: Observable<AggregateStreamingSearchResults | undefined>
+    export let stream: Observable<AggregateStreamingSearchResults>
     export let queryFromURL: string
-    export let queryFilters: string
+    export let selectedFilters: URLQueryFilter[]
     export let queryState: QueryStateStore
 
     export function capture(): SearchResultsCapture {
@@ -48,19 +51,25 @@
 
     let resultContainer: HTMLElement | null = null
 
+    const recentSearches = createRecentSearchesStore()
     const sidebarSize = getSeparatorPosition('search-results-sidebar', 0.2)
+    $: sidebarWidth = `clamp(14rem, ${$sidebarSize * 100}%, 50%)`
 
-    $: progress = $stream?.progress
-    // NOTE: done is present but apparently not officially exposed. However
-    // $stream.state is always "loading". Need to look into this.
-    $: loading = !(progress as Progress & { done?: boolean })?.done
-    $: results = $stream?.results
+    $: loading = $stream.state === 'loading'
+    $: results = $stream.results
+    $: if (!loading) {
+        recentSearches.addRecentSearch({
+            query: queryFromURL,
+            limitHit: limitHit($stream.progress),
+            resultCount: $stream.progress.matchCount,
+        })
+    }
 
     // Logic for maintaining list state (scroll position, rendered items, open
     // items) for backwards navigation.
     $: cacheEntry = cache.get(queryFromURL)
     $: count = cacheEntry?.count ?? DEFAULT_INITIAL_ITEMS_TO_SHOW
-    $: resultsToShow = results ? results.slice(0, count) : null
+    $: resultsToShow = results.slice(0, count)
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
 
     setSearchResultsContext({
@@ -96,7 +105,7 @@
             .join(' ')
         queryState.setQuery(query => query + ' ' + filters)
         await tick()
-        submitSearch($queryState)
+        void goto(getQueryURL($queryState))
     }
 </script>
 
@@ -109,26 +118,20 @@
 </div>
 
 <div class="search-results">
-    <DynamicFiltersSidebar
-        size={$sidebarSize}
-        {queryFromURL}
-        {queryFilters}
-        {queryState}
-        streamFilters={$stream?.filters ?? []}
-    />
+    <div style:width={sidebarWidth}>
+        <DynamicFiltersSidebar {selectedFilters} streamFilters={$stream.filters} searchQuery={queryFromURL} {loading} />
+    </div>
     <Separator currentPosition={sidebarSize} />
-    <div class="results" bind:this={resultContainer}>
+    <div class="results">
         <aside class="actions">
             {#if loading}
                 <div>
                     <LoadingSpinner inline />
                 </div>
             {/if}
-            {#if progress}
-                <StreamingProgress {progress} on:submit={onResubmitQuery} />
-            {/if}
+            <StreamingProgress progress={$stream.progress} on:submit={onResubmitQuery} />
         </aside>
-        {#if resultsToShow}
+        <div class="result-list" bind:this={resultContainer}>
             <ol>
                 {#each resultsToShow as result, i}
                     {@const component = getSearchResultComponent(result)}
@@ -147,7 +150,7 @@
                     <p>No results found</p>
                 </div>
             {/if}
-        {/if}
+        </div>
     </div>
 </div>
 
@@ -156,6 +159,8 @@
         border-bottom: 1px solid var(--border-color);
         align-self: stretch;
         padding: 0.25rem;
+        // This ensures that suggestions are rendered above sticky search result headers
+        z-index: 1;
     }
 
     .search-results {
@@ -166,7 +171,8 @@
 
     .results {
         flex: 1;
-        overflow: auto;
+        overflow: hidden;
+        min-height: 0;
         display: flex;
         flex-direction: column;
 
@@ -182,10 +188,14 @@
             flex-shrink: 0;
         }
 
-        ol {
-            padding: 0;
-            margin: 0;
-            list-style: none;
+        .result-list {
+            overflow: auto;
+
+            ol {
+                padding: 0;
+                margin: 0;
+                list-style: none;
+            }
         }
 
         .no-result {

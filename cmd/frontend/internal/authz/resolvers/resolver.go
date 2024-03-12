@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/log"
 	"golang.org/x/exp/maps"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -59,7 +59,7 @@ func NewResolver(observationCtx *observation.Context, db database.DB) graphqlbac
 }
 
 func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.RepoPermsArgs) (*graphqlbackend.EmptyResponse, error) {
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
 	}
 
@@ -135,7 +135,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 }
 
 func (r *Resolver) SetRepositoryPermissionsUnrestricted(ctx context.Context, args *graphqlbackend.RepoUnrestrictedArgs) (*graphqlbackend.EmptyResponse, error) {
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
 	}
 
@@ -214,7 +214,7 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
 		return nil, err
 	}
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
 	}
 
@@ -302,7 +302,7 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 	ctx context.Context, args *graphqlbackend.RepoPermsBitbucketProjectArgs,
 ) (*graphqlbackend.EmptyResponse, error) {
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
 	}
 
@@ -377,7 +377,7 @@ func (r *Resolver) CancelPermissionsSyncJob(ctx context.Context, args *graphqlba
 }
 
 func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlbackend.AuthorizedRepoArgs) (graphqlbackend.RepositoryConnectionResolver, error) {
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
 	}
 
@@ -510,7 +510,7 @@ var jobStatuses = map[string]bool{
 }
 
 func (r *Resolver) BitbucketProjectPermissionJobs(ctx context.Context, args *graphqlbackend.BitbucketProjectPermissionJobsArgs) (graphqlbackend.BitbucketProjectsPermissionJobsResolver, error) {
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
 	}
 	// 🚨 SECURITY: Only site admins can query repository permissions.

@@ -13,13 +13,13 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -74,27 +74,27 @@ func TestRedirects(t *testing.T) {
 	}
 
 	t.Run("on Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
+		orig := dotcom.SourcegraphDotComMode()
+		dotcom.MockSourcegraphDotComMode(true)
+		defer dotcom.MockSourcegraphDotComMode(orig) // reset
 		t.Run("root", func(t *testing.T) {
 			check(t, "/", http.StatusTemporaryRedirect, "/search", "Mozilla/5.0")
 		})
 	})
 
 	t.Run("on Sourcegraph.com from Cookiebot", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
+		orig := dotcom.SourcegraphDotComMode()
+		dotcom.MockSourcegraphDotComMode(true)
+		defer dotcom.MockSourcegraphDotComMode(orig) // reset
 		t.Run("root", func(t *testing.T) {
 			check(t, "/", http.StatusTemporaryRedirect, "/search", "Mozilla/5.0 Cookiebot")
 		})
 	})
 
 	t.Run("non-Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(false)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
+		orig := dotcom.SourcegraphDotComMode()
+		dotcom.MockSourcegraphDotComMode(false)
+		defer dotcom.MockSourcegraphDotComMode(orig) // reset
 		t.Run("root", func(t *testing.T) {
 			check(t, "/", http.StatusTemporaryRedirect, "/search", "Mozilla/5.0")
 		})

@@ -26,7 +26,7 @@ interface Props extends TelemetryProps, TelemetryV2Props {
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
     onSignUp: (args: SignUpArguments) => Promise<void>
-    context: Pick<SourcegraphContext, 'authProviders' | 'authPasswordPolicy' | 'authMinPasswordLength'>
+    context: Pick<SourcegraphContext, 'externalURL' | 'authPasswordPolicy' | 'authMinPasswordLength'>
     isSourcegraphDotCom: boolean
     isLightTheme: boolean
 }

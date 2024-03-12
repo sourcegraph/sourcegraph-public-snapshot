@@ -11,13 +11,13 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -32,7 +32,7 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 	// 🚨 SECURITY: Creating access tokens for any user by site admins is not
 	// allowed on Sourcegraph.com. This check is mostly the defense for a
 	// misconfiguration of the site configuration.
-	if envvar.SourcegraphDotComMode() && conf.AccessTokensAllow() == conf.AccessTokensAdmin {
+	if dotcom.SourcegraphDotComMode() && conf.AccessTokensAllow() == conf.AccessTokensAdmin {
 		return nil, errors.Errorf("access token configuration value %q is disabled on Sourcegraph.com", conf.AccessTokensAllow())
 	}
 
@@ -95,7 +95,7 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 			// 🚨 SECURITY: Only site admins may create a token with the "site-admin:sudo" scope.
 			if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 				return nil, err
-			} else if envvar.SourcegraphDotComMode() {
+			} else if dotcom.SourcegraphDotComMode() {
 				return nil, errors.Errorf("creation of access tokens with scope %q is disabled on Sourcegraph.com", authz.ScopeSiteAdminSudo)
 			}
 		default:

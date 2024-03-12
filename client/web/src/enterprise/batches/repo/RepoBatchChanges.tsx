@@ -2,6 +2,7 @@ import React, { useCallback } from 'react'
 
 import { map } from 'rxjs/operators'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Container, H3, H5 } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
@@ -14,7 +15,7 @@ import { BatchChangeNode, type BatchChangeNodeProps } from './BatchChangeNode'
 
 import styles from './RepoBatchChanges.module.scss'
 
-interface Props {
+interface Props extends TelemetryV2Props {
     viewerCanAdminister: boolean
     // canCreate indicates whether or not the currently-authenticated user has sufficient
     // permissions to create a batch change. If not, canCreate will be a string reason why
@@ -40,6 +41,7 @@ export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<P
     isSourcegraphDotCom,
     queryRepoBatchChanges = _queryRepoBatchChanges,
     queryExternalChangesetWithFileDiffs = _queryExternalChangesetWithFileDiffs,
+    telemetryRecorder,
 }) => {
     const query = useCallback(
         (args: FilteredConnectionQueryArguments) => {
@@ -72,7 +74,13 @@ export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<P
                 headComponent={RepoBatchChangesHeader}
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}
-                emptyElement={<GettingStarted isSourcegraphDotCom={isSourcegraphDotCom} canCreate={canCreate} />}
+                emptyElement={
+                    <GettingStarted
+                        isSourcegraphDotCom={isSourcegraphDotCom}
+                        canCreate={canCreate}
+                        telemetryRecorder={telemetryRecorder}
+                    />
+                }
             />
         </Container>
     )

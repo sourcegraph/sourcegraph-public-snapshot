@@ -7,10 +7,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -119,9 +119,9 @@ func TestSettingsMutation(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
+		orig := dotcom.SourcegraphDotComMode()
+		dotcom.MockSourcegraphDotComMode(true)
+		defer dotcom.MockSourcegraphDotComMode(orig) // reset
 
 		tests := []struct {
 			name  string

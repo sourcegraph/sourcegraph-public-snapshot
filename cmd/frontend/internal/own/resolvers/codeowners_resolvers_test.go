@@ -7,12 +7,12 @@ import (
 	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -74,10 +74,10 @@ func TestCodeownersIngestionGuarding(t *testing.T) {
 	}
 	for path, query := range pathToQueries {
 		t.Run("dotcom guarding is respected for "+path, func(t *testing.T) {
-			orig := envvar.SourcegraphDotComMode()
-			envvar.MockSourcegraphDotComMode(true)
+			orig := dotcom.SourcegraphDotComMode()
+			dotcom.MockSourcegraphDotComMode(true)
 			t.Cleanup(func() {
-				envvar.MockSourcegraphDotComMode(orig)
+				dotcom.MockSourcegraphDotComMode(orig)
 			})
 			graphqlbackend.RunTest(t, &graphqlbackend.Test{
 				Schema:         schema,
