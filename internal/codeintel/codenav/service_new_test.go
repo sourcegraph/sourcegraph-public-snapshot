@@ -119,9 +119,9 @@ func TestGetDefinitions(t *testing.T) {
 
 		symbolNames := []string{
 			"tsc npm leftpad 0.1.0 padLeft.",
-			"local pad_left.",
+			"local pad_left",
 			"tsc npm leftpad 0.2.0 pad-left.",
-			"local left_pad.",
+			"local left_pad",
 		}
 		mockLsifStore.ExtractDefinitionLocationsFromPositionFunc.PushReturn(nil, symbolNames, nil)
 

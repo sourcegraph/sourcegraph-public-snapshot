@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import { getFileMatchUrl, getRepositoryUrl, getRevision, type PathMatch } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { CopyPathAction } from './CopyPathAction'
@@ -53,6 +54,8 @@ export const FilePathSearchResult: FC<FilePathSearchResult & TelemetryProps> = (
                 filePath={result.path}
                 className={resultStyles.copyButton}
                 telemetryService={telemetryService}
+                // TODO (dadlerj): update to use a real telemetry recorder
+                telemetryRecorder={noOpTelemetryRecorder}
             />
         </span>
     )

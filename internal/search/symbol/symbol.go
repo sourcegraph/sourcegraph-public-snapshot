@@ -256,31 +256,6 @@ func searchZoekt(
 			PreciseLanguage: file.Language,
 		}
 
-		for _, l := range file.LineMatches {
-			if l.FileName {
-				continue
-			}
-
-			for _, m := range l.LineFragments {
-				if m.SymbolInfo == nil {
-					continue
-				}
-
-				res = append(res, result.NewSymbolMatch(
-					newFile,
-					l.LineNumber,
-					-1, // -1 means infer the column
-					m.SymbolInfo.Sym,
-					m.SymbolInfo.Kind,
-					m.SymbolInfo.Parent,
-					m.SymbolInfo.ParentKind,
-					file.Language,
-					string(l.Line),
-					false,
-				))
-			}
-		}
-
 		for _, cm := range file.ChunkMatches {
 			if cm.FileName || len(cm.SymbolInfo) == 0 {
 				continue

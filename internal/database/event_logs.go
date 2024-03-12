@@ -37,8 +37,8 @@ type EventLogStore interface {
 	// AggregatedCodeIntelInvestigationEvents calculates CodeIntelAggregatedInvestigationEvent for each unique investigation type.
 	AggregatedCodeIntelInvestigationEvents(ctx context.Context) ([]types.CodeIntelAggregatedInvestigationEvent, error)
 
-	// AggregatedCodyEvents calculates CodyAggregatedEvent for each every unique event type related to Cody.
-	AggregatedCodyEvents(ctx context.Context, now time.Time) ([]types.CodyAggregatedEvent, error)
+	// AggregatedCodyUsgae calculates aggregated usage of Cody.
+	AggregatedCodyUsage(ctx context.Context, now time.Time) (*types.CodyAggregatedUsage, error)
 
 	// AggregatedRepoMetadataEvents calculates RepoMetadataAggregatedEvent for each every unique event type related to RepoMetadata.
 	AggregatedRepoMetadataEvents(ctx context.Context, now time.Time, period PeriodType) (*types.RepoMetadataAggregatedEvents, error)
@@ -1408,58 +1408,50 @@ GROUP BY name, current_week
 ORDER BY name;
 `
 
-func (l *eventLogStore) AggregatedCodyEvents(ctx context.Context, now time.Time) ([]types.CodyAggregatedEvent, error) {
-	codyEvents, err := l.aggregatedCodyEvents(ctx, aggregatedCodyUsageEventsQuery, now)
+func (l *eventLogStore) AggregatedCodyUsage(ctx context.Context, now time.Time) (*types.CodyAggregatedUsage, error) {
+	codyUsage, err := l.aggregatedCodyUsage(ctx, aggregatedCodyUsageEventsQuery, now)
 	if err != nil {
 		return nil, err
 	}
-	return codyEvents, nil
+	return codyUsage, nil
 }
 
-func (l *eventLogStore) aggregatedCodyEvents(ctx context.Context, queryString string, now time.Time) (events []types.CodyAggregatedEvent, err error) {
+func (l *eventLogStore) aggregatedCodyUsage(ctx context.Context, queryString string, now time.Time) (usages *types.CodyAggregatedUsage, err error) {
 	query := sqlf.Sprintf(queryString, now, now, now, now)
+	row := l.QueryRow(ctx, query)
 
-	rows, err := l.Query(ctx, query)
+	var usage types.CodyAggregatedUsage
+	err = row.Scan(
+		&usage.Month,
+		&usage.Week,
+		&usage.Day,
+		&usage.TotalMonth,
+		&usage.TotalWeek,
+		&usage.TotalDay,
+		&usage.UniquesMonth,
+		&usage.UniquesWeek,
+		&usage.UniquesDay,
+		&usage.ProductUsersMonth,
+		&usage.ProductUsersWeek,
+		&usage.ProductUsersDay,
+		&usage.VSCodeProductUsersMonth,
+		&usage.JetBrainsProductUsersMonth,
+		&usage.NeovimProductUsersMonth,
+		&usage.WebProductUsersMonth,
+		&usage.EmacsProductUsersMonth,
+	)
+
 	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var event types.CodyAggregatedEvent
-		err := rows.Scan(
-			&event.Name,
-			&event.Month,
-			&event.Week,
-			&event.Day,
-			&event.TotalMonth,
-			&event.TotalWeek,
-			&event.TotalDay,
-			&event.UniquesMonth,
-			&event.UniquesWeek,
-			&event.UniquesDay,
-			&event.CodeGenerationMonth,
-			&event.CodeGenerationWeek,
-			&event.CodeGenerationDay,
-			&event.ExplanationMonth,
-			&event.ExplanationWeek,
-			&event.ExplanationDay,
-			&event.InvalidMonth,
-			&event.InvalidWeek,
-			&event.InvalidDay,
-		)
-		if err != nil {
-			return nil, err
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
 		}
-
-		events = append(events, event)
-	}
-
-	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return events, nil
+	if err = row.Err(); err != nil {
+		return nil, err
+	}
+	return &usage, nil
 }
 
 func buildAggregatedRepoMetadataEventsQuery(period PeriodType) (string, error) {
@@ -1606,27 +1598,349 @@ func (l *eventLogStore) aggregatedSearchEvents(ctx context.Context, queryString 
 	return events, nil
 }
 
-// List of events that don't meet the criteria of "active" usage of Cody.
-var nonActiveCodyEvents = []string{
-	"CodyVSCodeExtension:CodySavedLogin:executed",
-	"web:codyChat:tryOnPublicCode",
-	"web:codyEditorWidget:viewed",
-	"web:codyChat:pageViewed",
-	"CodyConfigurationPageViewed",
-	"ClickedOnTryCodySearchCTA",
-	"TryCodyWebOnboardingDisplayed",
-	"AboutGetCodyPopover",
-	"TryCodyWeb",
-	"CodySurveyToastViewed",
-	"SiteAdminCodyPageViewed",
-	"CodyUninstalled",
-	"SpeakToACodyEngineerCTA",
+var codyEventPatterns = []string{
+	"cody.%%",
+	"completion.%%",
+	"web:cody%%",
+	"CodyJetBrainsPlugin:%%",
+	"CodyVSCodeExtension:%%",
+	"CodyNeovimPlugin:%%",
+	"CodyEmacsPlugin:%%",
+	"CodyInstalled",
+}
+
+// Definition: https://handbook.sourcegraph.com/departments/data-analytics/cody_analytics/#cody-product-dau
+// Sources:
+//   - https://console.cloud.google.com/bigquery?project=telligentsourcegraph&ws=!1m5!1m4!4m3!1stelligentsourcegraph!2sdotcom_events!3scody_dau_lookup
+//   - https://docs.google.com/spreadsheets/d/1rNdsk4mRojLwEIcGIDezKzKSnltZOLFFiFN4QcbrPnQ/edit#gid=1567985033
+//
+// Last updated: 2024-02-22
+var codyProductUserEvents = []string{
+	"CodyJetBrainsPlugin:completion:partiallyAccepted",
+	"CodyAgent:completion:accepted",
+	"CodyVSCodeExtension:command:reset:filtering",
+	"CodyVSCodeExtension:command:explan:filtering",
+	"CodyVSCodeExtension:command:Generate Release Notes:executed",
+	"CodyVSCodeExtension:walkthrough:clicked",
+	"CodyVSCodeExtension:recipe:generate-diagram:executed",
+	"web:codyChat:edit",
+	"CodyJetBrainsPlugin:recipe:translate-to-language:executed",
+	"CodyVSCodeExtension:recipe:my-prompt:executed",
+	"web:codyChat:recipe:explain-code-detailed:executed",
+	"CodyVSCodeExtension:slashCommand:/tests:submitted",
+	"CodyVSCodeExtension:recipe:optimize-code:executed",
+	"CodyVSCodeExtension:recipe:improve-design-style:executed",
+	"CodyVSCodeExtension:slashCommand:/reset:submitted",
+	"CodyVSCodeExtension:command:mr:executing",
+	"CodyVSCodeExtension:keyDown:Copy:clicked",
+	"CodyVSCodeExtension:recipe:explain-code-5:executed",
+	"CodyVSCodeExtension:command:smell:called",
+	"CodyVSCodeExtension:command:Commit Message for Staged Files:executed",
+	"CodyJetBrainsPlugin:recipe:explain-code-detailed:clicked",
+	"CodyVSCodeExtension:recipe:file-chat:executed",
+	"CodyVSCodeExtension:command:docstrings:executed",
+	"CodyVSCodeExtension:command:review:filtering",
+	"CodyVSCodeExtension:recipe:explain-code-rick-sanchez:executed",
+	"CodyVSCodeExtension:fixup:applied",
+	"CodyVSCodeExtension:recipe:fuzzy-search:executed",
+	"CodyVSCodeExtension:command:commands-settings:filtering",
+	"CodyNeovimExtension:codeAction:cody.diff:executed",
+	"CodyVSCodeExtension:command:/doc:executed",
+	"CodyNeovimPlugin:recipe:chat-question:executed",
+	"CodyVSCodeExtension:command:codesmell:filtering",
+	"CodyVSCodeExtension:command:Commit Message Suggestion:executed",
+	"CodyVSCodeExtension:inlineChat:Copy:detected",
+	"CodyVSCodeExtension:recipe:translate-to-language:executed",
+	"CodyVSCodeExtension:command:explique:filtering",
+	"CodyVSCodeExtension:command:(example) Commit Message Suggestion:executed",
+	"CodyVSCodeExtension:command:test:filtering",
+	"CodyNeovimPlugin:recipe:code-question:executed",
+	"CodyJetBrainsPlugin:completion:accepted",
+	"CodyVSCodeExtension:command:find:invalid",
+	"CodyVSCodeExtension:command:doc:filtering",
+	"CodyVSCodeExtension:recipe:chat-question:executed",
+	"CodyVSCodeExtension:command:utils:filtering",
+	"CodyVSCodeExtension:recipe:generate-docstring:executed",
+	"CodyVSCodeExtension:command:inspire:filtering",
+	"web:codySidebar:edit",
+	"CodyVSCodeExtension:command:document:filtering",
+	"CodyVSCodeExtension:copyButton:clicked",
+	"CodyVSCodeExtension:inline-assist:deleteButton:clicked",
+	"CodyVSCodeExtension:command:test:called",
+	"CodyVSCodeExtension:fixup:codeLens:clicked",
+	"CodyVSCodeExtension:recipe:explain-code-detailed:executed",
+	"CodyVSCodeExtension:recipe:non-stop:executed",
+	"CodyVSCodeExtension:command:run:filtering",
+	"CodyVSCodeExtension:command:custom:called",
+	"CodyVSCodeExtension:inlineChat:Paste:clicked",
+	"CodyVSCodeExtension:command:convert:filtering",
+	"CodyVSCodeExtension:command:fix:filtering",
+	"web:codySidebar:recipe",
+	"CodyVSCodeExtension:recipe:non-stop-cody:executed",
+	"CodyVSCodeExtension:command:Organize Imports:executed",
+	"CodyVSCodeExtension:command:repository:filtering",
+	"CodyVSCodeExtension:command:menu:default",
+	"CodyVSCodeExtension:command:Project Analyzer:executed",
+	"CodyVSCodeExtension:command:Add:filtering",
+	"CodyVSCodeExtension:command:Commit Message for Current Changes:executed",
+	"CodyVSCodeExtension:copy::clicked",
+	"CodyVSCodeExtension:command:Translate to C++:executed",
+	"CodyVSCodeExtension:recipe:find-code-smells:executed",
+	"CodyVSCodeExtension:recipe:local-indexed-keyword-search:executed",
+	"CodyVSCodeExtension:chatReset:executed",
+	"CodyVSCodeExtension:command:convert:executing",
+	"CodyVSCodeExtension:command:If:filtering",
+	"CodyVSCodeExtension:saveButton:clicked",
+	"CodyVSCodeExtension:fixup",
+	"CodyVSCodeExtension:command:views:filtering",
+	"CodyVSCodeExtension:guardrails:annotate",
+	"CodyVSCodeExtension:command:execCommand",
+	"CodyVSCodeExtension:command:commands:filtering",
+	"CodyVSCodeExtension:command:search:filtering",
+	"CodyJetBrainsPlugin:recipe:generate-docstring:clicked",
+	"CodyVSCodeExtension:command:get:filtering",
+	"CodyVSCodeExtension:command:explain:filtering",
+	"CodyVSCodeExtension:command:Compare Open Tabs:executed",
+	"CodyVSCodeExtension:command:react:executed",
+	"web:codyChat:recipe:explain-code-high-level:executed",
+	"CodyVSCodeExtension:command:sequence:filtering",
+	"CodyVSCodeExtension:command:Convert Unittest to Pytest:executed",
+	"CodyVSCodeExtension:command:Add error handling:executed",
+	"CodyVSCodeExtension:command:react:filtering",
+	"CodyVSCodeExtension:slashCommand:/docstring:submitted",
+	"CodyVSCodeExtension:command:Document Code:executed",
+	"CodyVSCodeExtension:recipe:my-prompts:executed",
+	"CodyVSCodeExtension:command:Explain Code:executed",
+	"CodyVSCodeExtension:command::filtering",
+	"CodyVSCodeExtension:command:command:filtering",
+	"CodyVSCodeExtension:pasteKeydown:clicked",
+	"CodyVSCodeExtension:recipe:inline-chat:executed",
+	"web:codySidebar:recipe:executed",
+	"CodyVSCodeExtension:copy:copyButton:clicked",
+	"CodyVSCodeExtension:command:edit:executed",
+	"CodyVSCodeExtension:command:/smell:executed",
+	"CodyVSCodeExtension:command:starter:executed",
+	"CodyVSCodeExtension:command:test:executing",
+	"CodyVSCodeExtension:inlineChat:Paste:detected",
+	"CodyJetBrainsPlugin:recipe:generate-unit-test:clicked",
+	"CodyJetBrainsPlugin:recipe:explain-code-high-level:clicked",
+	"CodyVSCodeExtension:slashCommand:/search _:submitted",
+	"CodyVSCodeExtension:command:complete:filtering",
+	"CodyVSCodeExtension:command:smell:filtering",
+	"CodyJetBrainsPlugin:recipe:find-code-smells:clicked",
+	"CodyVSCodeExtension:command:Generate Unit Tests:executed",
+	"web:codyChat:submit",
+	"CodyVSCodeExtension:copyKeydown:clicked",
+	"CodyVSCodeExtension:command:executedFromMenu",
+	"CodyVSCodeExtension:command:menu:custom",
+	"CodyVSCodeExtension:restoreChatHistoryButton:clicked",
+	"CodyVSCodeExtension:slashCommand:/:submitted",
+	"CodyVSCodeExtension:command:commit:filtering",
+	"CodyVSCodeExtension:recipe:context-search:executed",
+	"CodyVSCodeExtension:command:Explain the Code:executed",
+	"CodyVSCodeExtension:command:explain:executed",
+	"CodyVSCodeExtension:command:Improve Variable Name:executed",
+	"CodyVSCodeExtension:completion:accepted",
+	"CodyVSCodeExtension:recipe:fixup:executed",
+	"CodyVSCodeExtension:recipe:computational-complexity:executed",
+	"CodyVSCodeExtension:command:Generate nice documentation from summary notes:executed",
+	"CodyVSCodeExtension:codyExplainCodeHighLevel:clicked",
+	"CodyVSCodeExtension:fixupResponse:hasCode",
+	"CodyVSCodeExtension:slashCommand:/touch:submitted",
+	"CodyVSCodeExtension:command:*:filtering",
+	"CodyVSCodeExtension:recipe:code-refactor:executed",
+	"CodyVSCodeExtension:slashCommand:/test:submitted",
+	"CodyVSCodeExtension:command:smell:executing",
+	"CodyVSCodeExtension:recipe:translate-to-language:clicked",
+	"CodyJetBrainsPlugin:recipe:chat-question:executed",
+	"CodyVSCodeExtension:command:models:filtering",
+	"CodyJetBrainsPlugin:recipe:chat-question:clicked",
+	"CodyVSCodeExtension:command:test:executed",
+	"CodyVSCodeExtension:slashCommand:/commands-settings:submitted",
+	"CodyVSCodeExtension:recipe:custom:executed",
+	"CodyVSCodeExtension:command:Better Readability:executed",
+	"CodyVSCodeExtension:command:compare:filtering",
+	"CodyVSCodeExtension:command:write:filtering",
+	"CodyJetBrainsPlugin:recipe:summarize-recent-code-changes:clicked",
+	"CodyVSCodeExtension:command:/explain:executed",
+	"CodyVSCodeExtension:command:mr:filtering",
+	"CodyVSCodeExtension:recipe:generate-unit-test:clicked",
+	"CodyVSCodeExtension:command:swift-ut:filtering",
+	"CodyVSCodeExtension:recipe:release-notes:executed",
+	"CodyVSCodeExtension:codyTranslateToLanguage:clicked",
+	"CodyVSCodeExtension:recipe:rate-code:executed",
+	"CodyVSCodeExtension:command:implement:filtering",
+	"CodyVSCodeExtension:command:explain:executing",
+	"web:codySearch:submit",
+	"web:codyChat:recipe:translate-to-language:executed",
+	"CodyVSCodeExtension:recipe:generate-unit-test:executed",
+	"CodyVSCodeExtension:command:touch:filtering",
+	"CodyVSCodeExtension:recipe:git-history:clicked",
+	"CodyVSCodeExtension:recipe:git-file-history:executed",
+	"CodyVSCodeExtension:custom-recipe-command-menu:clicked",
+	"web:codyChat:recipe:generate-unit-test:executed",
+	"CodyVSCodeExtension:command:/:filtering",
+	"CodyVSCodeExtension:command:Convert to C#:executed",
+	"CodyVSCodeExtension:recipe:explain-code-detailed:clicked",
+	"CodyVSCodeExtension:insert::clicked",
+	"CodyVSCodeExtension:exportChatHistoryButton:clicked",
+	"CodyVSCodeExtension:command:compare:executing",
+	"CodyVSCodeExtension:command:/import:filtering",
+	"CodyVSCodeExtension:inline-assist:chat",
+	"CodyVSCodeExtension:command:smell:executed",
+	"CodyVSCodeExtension:command:Smell Code:executed",
+	"CodyVSCodeExtension:command:sign:filtering",
+	"CodyVSCodeExtension:command:customPremade:applied",
+	"CodyVSCodeExtension:slashCommand:/doc:submitted",
+	"CodyVSCodeExtension:command:default:executed",
+	"CodyVSCodeExtension:inline-assist:stopFixup",
+	"CodyVSCodeExtension:recipe:generate-horsegraph:executed",
+	"CodyVSCodeExtension:command:modify:filtering",
+	"CodyVSCodeExtension:command:menu:config",
+	"web:codySidebar:submit",
+	"CodyVSCodeExtension:command:please:filtering",
+	"CodyVSCodeExtension:command:Make:filtering",
+	"web:codyChat:recipe:generate-docstring:executed",
+	"CodyVSCodeExtension:command:Give me some Inspiration:executed",
+	"CodyVSCodeExtension:command:create:filtering",
+	"CodyVSCodeExtension:command:(example) Compare Open Tabs:executed",
+	"CodyVSCodeExtension:command:could:filtering",
+	"CodyVSCodeExtension:command:doc:called",
+	"CodyVSCodeExtension:chatPredictions:used",
+	"CodyVSCodeExtension:command:openFile:executed",
+	"CodyVSCodeExtension:command:started",
+	"CodyVSCodeExtension:command:fixup:filtering",
+	"CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
+	"CodyVSCodeExtension:command:r:filtering",
+	"CodyVSCodeExtension:command:fix::filtering",
+	"CodyVSCodeExtension:recipe:git-history:executed",
+	"CodyVSCodeExtension:custom-recipe:clicked",
+	"CodyVSCodeExtension:recipe:rewrite-functional:executed",
+	"CodyVSCodeExtension:command:/Add:filtering",
+	"CodyVSCodeExtension:recipe:explain-code-high-level:clicked",
+	"CodyVSCodeExtension:command:There:filtering",
+	"CodyVSCodeExtension:command:explain:called",
+	"CodyVSCodeExtension:command:/test:executed",
+	"web:codySearch:submitSucceeded",
+	"CodyVSCodeExtension:slash-command-menu:clicked",
+	"CodyVSCodeExtension:inlineChat:Copy:clicked",
+	"CodyVSCodeExtension:command:/test:executing",
+	"CodyVSCodeExtension:command:peux:filtering",
+	"CodyVSCodeExtension:command:commit:executing",
+	"CodyVSCodeExtension:command:doc:executed",
+	"CodyJetBrainsPlugin:recipe:improve-variable-names:clicked",
+	"CodyVSCodeExtension:recipe:inline-touch:executed",
+	"CodyVSCodeExtension:command:refactor:filtering",
+	"CodyVSCodeExtension:command:a:filtering",
+	"CodyVSCodeExtension:slashCommand:/search address_label:submitted",
+	"CodyVSCodeExtension:insertButton:clicked",
+	"CodyVSCodeExtension:command:doc:executing",
+	"CodyVSCodeExtension:recipe:improve-variable-names:clicked",
+	"CodyVSCodeExtension:completion:partiallyAccepted",
+	"CodyVSCodeExtension:command:swift-ut:executing",
+	"CodyVSCodeExtension:command:h:filtering",
+	"CodyVSCodeExtension:custom-command-menu:clicked",
+	"web:codyChat:recipe:find-code-smells:executed",
+	"CodyVSCodeExtension:slashCommand:/fix add docstring:submitted",
+	"CodyVSCodeExtension:inline-assist:replaced",
+	"CodyVSCodeExtension:command:hello:filtering",
+	"CodyVSCodeExtension:recipe:explain-code-high-level:executed",
+	"CodyVSCodeExtension:recipe:improve-variable-names:executed",
+	"CodyVSCodeExtension:command:/doc:executing",
+	"CodyNeovimExtension:codeAction:cody.explain:executed",
+	"CodyVSCodeExtension:inline-assist:fixup",
+	"CodyVSCodeExtension:recipe:pr-description:executed",
+	"CodyVSCodeExtension:slashCommand:/a:submitted",
+	"CodyVSCodeExtension:command:fix:executed",
+	"CodyVSCodeExtension:command:custom:executed",
+	"CodyNeovimExtension:codeAction:cody.remember:executed",
+	"CodyVSCodeExtension:recipe:chat-question:clicked",
+	"CodyVSCodeExtension:slashCommand:/improve variable name:submitted",
+	"CodyVSCodeExtension:command:Refactor the code block:executed",
+	"web:codyChat:recipeExecuted",
+	"CodyJetBrainsPlugin:recipe:translate-to-language:clicked",
+	"CodyJetBrainsPlugin:recipe:code-question:clicked",
+	"CodyVSCodeExtension:command:(example) Generate README.md for Current Directory:executed",
+	"CodyVSCodeExtension:command:improve:filtering",
+	"CodyNeovimExtension:codeAction:cody.chat:executed",
+	"CodyVSCodeExtension:command:read:filtering",
+	"CodyVSCodeExtension:fixup:created",
+	"CodyVSCodeExtension:keyDown:Paste:clicked",
+	"CodyVSCodeExtension:recipe:next-question:executed",
+	"CodyVSCodeExtension:slashCommand:/improve code:submitted",
+	"CodyVSCodeExtension:codyGenerateUnitTest:clicked",
+	"CodyVSCodeExtension:command:Compare Files in Opened Tabs:executed",
+	"CodyVSCodeExtension:recipe:file-touch:executed",
+	"web:codyChat:recipe:improve-variable-names:executed",
+	"CodyVSCodeExtension:slashCommand:/explain:submitted",
+	"CodyVSCodeExtension:recipe:explain-inline:executed",
+	"CodyVSCodeExtension:command:can:filtering",
+	"CodyVSCodeExtension:recipe:file-flow:executed",
+	"CodyVSCodeExtension:recipe:generate-docstring:clicked",
+	"CodyVSCodeExtension:command:/set:filtering",
+	"CodyVSCodeExtension:recipe:replace:executed",
+	"CodyVSCodeExtension:command:/explain:executing",
+	"CodyNeovimPlugin:completion:partiallyAccepted",
+	"CodyNeovimPlugin:completion:accepted",
+	"CodyEmacsPlugin:completion:accepted",
+	"CodyVSCodeExtension:chat-question:recipe-used",
+	"cody.fixup.codeLens.accept",
+	"completion.accepted",
+	"cody.completion.accepted",
+	"cody.fixup.applied",
+	"cody.insertButton.clicked",
+	"cody.walkthrough.clicked",
+	"cody.menu:command:default.clicked",
+	"cody.command.codelens.clicked",
+	"cody.keyDown:Copy.clicked",
+	"cody.copyButton.clicked",
+	"cody.exportChatHistoryButton.clicked",
+	"cody.menu:command:custom.clicked",
+	"cody.saveButton.clicked",
+	"cody.command.ask.clicked",
+	"cody.messageProvider.restoreChatHistoryButton.clicked",
+	"cody.fixup.codeLens.diff",
+	"cody.command.generateCommitMessage.executed",
+	"cody.command.custom.build.executed",
+	"cody.recipe.inline-chat.executed",
+	"cody.recipe.improve-variable-names.executed",
+	"cody.recipe.explain-code-high-level.executed",
+	"cody.recipe.explain-code-detailed.executed",
+	"cody.command.edit.executed",
+	"cody.at-mention.symbol.executed",
+	"cody.recipe.chat-question.executed",
+	"cody.recipe.local-indexed-keyword-search.executed",
+	"cody.command.smell.executed",
+	"cody.at-mention.file.executed",
+	"cody.command.openFile.executed",
+	"cody.recipe.generate-docstring.executed",
+	"cody.command.terminal.executed",
+	"cody.command.custom.executed",
+	"cody.recipe.find-code-smells.executed",
+	"cody.recipe.generate-unit-test.executed",
+	"cody.recipe.custom-prompt.executed",
+	"cody.command.explain.executed",
+	"cody.recipe.fixup.executed",
+	"cody.at-mention.executed",
+	"cody.guardrails.annotate.executed",
+	"cody.chat-question.executed",
+	"cody.command.test.executed",
+	"cody.command.doc.executed",
+	"cody.recipe.code-question.executed",
+	"cody.recipe.inline-touch.executed",
+	"cody.recipe.context-search.executed",
+	"cody.completion.partiallyAccepted",
+	"cody.keyDown.paste",
+	"cody.recipe.chat-question.recipe-used",
+	"cody.recipe.fixup.recipe-used",
+	"cody.fixup.apply.succeeded",
 }
 
 var aggregatedCodyUsageEventsQuery = `
 WITH events AS (
   SELECT
     name AS key,
+	client,
     ` + aggregatedUserIDQueryFragment + ` AS user_id,
     ` + makeDateTruncExpression("month", "timestamp") + ` as month,
     ` + makeDateTruncExpression("week", "timestamp") + ` as week,
@@ -1637,35 +1951,9 @@ WITH events AS (
   FROM event_logs
   WHERE
     timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
-    AND lower(name) like '%%cody%%'
-    AND name not like '%%CTA%%'
-    AND name not like '%%Cta%%'
-    AND (name NOT IN ('` + strings.Join(nonActiveCodyEvents, "','") + `'))
-),
-code_generation_keys AS (
-  SELECT * FROM unnest(ARRAY[
-    'CodyVSCodeExtension:recipe:rewrite-to-functional:executed',
-    'CodyVSCodeExtension:recipe:improve-variable-names:executed',
-    'CodyVSCodeExtension:recipe:replace:executed',
-    'CodyVSCodeExtension:recipe:generate-docstring:executed',
-    'CodyVSCodeExtension:recipe:generate-unit-test:executed',
-    'CodyVSCodeExtension:recipe:rewrite-functional:executed',
-    'CodyVSCodeExtension:recipe:code-refactor:executed',
-    'CodyVSCodeExtension:recipe:fixup:executed',
-	'CodyVSCodeExtension:recipe:translate-to-language:executed'
-  ]) AS key
-),
-explanation_keys AS (
-  SELECT * FROM unnest(ARRAY[
-    'CodyVSCodeExtension:recipe:explain-code-high-level:executed',
-    'CodyVSCodeExtension:recipe:explain-code-detailed:executed',
-    'CodyVSCodeExtension:recipe:find-code-smells:executed',
-    'CodyVSCodeExtension:recipe:git-history:executed',
-    'CodyVSCodeExtension:recipe:rate-code:executed'
-  ]) AS key
+    AND (name ILIKE ANY (array['` + strings.Join(codyEventPatterns, "','") + `']))
 )
 SELECT
-  key,
   current_month,
   current_week,
   current_day,
@@ -1675,25 +1963,29 @@ SELECT
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
   COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
-  SUM(case when month = current_month and key in
-  	(SELECT * FROM code_generation_keys)
-  	then 1 else 0 end) as code_generation_month,
-  SUM(case when week = current_week and key in
-  	(SELECT * FROM explanation_keys)
-	then 1 else 0 end) as code_generation_week,
-  SUM(case when day = current_day and key in (SELECT * FROM code_generation_keys)
-	then 1 else 0 end) as code_generation_day,
-  SUM(case when month = current_month and key in (SELECT * FROM explanation_keys)
-	then 1 else 0 end) as explanation_month,
-  SUM(case when week = current_week and key in (SELECT * FROM explanation_keys)
-	then 1 else 0 end) as explanation_week,
-  SUM(case when day = current_day and key in (SELECT * FROM explanation_keys)
-	then 1 else 0 end) as explanation_day,
-	0 as invalid_month,
-	0 as invalid_week,
-	0 as invalid_day
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month and key in
+	('` + strings.Join(codyProductUserEvents, "','") + `')) as product_users_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week and key in
+	('` + strings.Join(codyProductUserEvents, "','") + `')) as product_users_week,
+  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day and key in
+	('` + strings.Join(codyProductUserEvents, "','") + `')) as product_users_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month and key in
+	('` + strings.Join(codyProductUserEvents, "','") + `')
+	and client = 'VSCODE_CODY_EXTENSION') as vscode_product_users_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month and key in
+	('` + strings.Join(codyProductUserEvents, "','") + `')
+	and client = 'JETBRAINS_CODY_EXTENSION') as jetbrains_product_users_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month and key in
+	('` + strings.Join(codyProductUserEvents, "','") + `')
+	and client = 'NEOVIM_CODY_EXTENSION') as neovim_product_users_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month and key in
+	('` + strings.Join(codyProductUserEvents, "','") + `')
+	and client is null) as web_product_users_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month and key in
+	('` + strings.Join(codyProductUserEvents, "','") + `')
+	and client = 'EMACS_CODY_EXTENSION') as emacs_product_users_month
 FROM events
-GROUP BY key, current_month, current_week, current_day
+GROUP BY current_month, current_week, current_day
 `
 
 var searchLatencyEventNames = []string{

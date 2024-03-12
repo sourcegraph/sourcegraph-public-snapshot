@@ -6,6 +6,7 @@ import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
@@ -157,6 +158,7 @@ const Template: StoryFn<Args> = ({ url, supersedingBatchSpec, currentBatchSpec, 
                         deleteBatchChange={deleteBatchChange}
                         queryAllChangesetIDs={queryAllChangesetIDs}
                         settingsCascade={EMPTY_SETTINGS_CASCADE}
+                        telemetryRecorder={noOpTelemetryRecorder}
                     />
                 </MockedTestProvider>
             )}
@@ -269,6 +271,7 @@ export const EmptyChangesets: StoryFn = args => {
                         deleteBatchChange={deleteBatchChange}
                         settingsCascade={EMPTY_SETTINGS_CASCADE}
                         {...args}
+                        telemetryRecorder={noOpTelemetryRecorder}
                     />
                 </MockedTestProvider>
             )}

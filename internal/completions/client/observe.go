@@ -41,15 +41,6 @@ func (o *observedClient) Stream(ctx context.Context, feature types.CompletionsFe
 	tracedSend := func(event types.CompletionResponse) error {
 		if event.StopReason != "" {
 			tr.AddEvent("stopped", attribute.String("reason", event.StopReason))
-
-			o.events.Record(ctx, "cody.completions", "stream", &telemetry.EventParameters{
-				Metadata: telemetry.EventMetadata{
-					"feature": float64(feature.ID()),
-				},
-				PrivateMetadata: map[string]any{
-					"stop_reason": event.StopReason,
-				},
-			})
 		} else {
 			tr.AddEvent("completion", attribute.Int("len", len(event.Completion)))
 		}

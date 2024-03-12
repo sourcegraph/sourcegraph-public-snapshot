@@ -3,6 +3,7 @@ import { type FC, useEffect } from 'react'
 import { mdiPlus } from '@mdi/js'
 import { Navigate, useLocation } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, ButtonLink, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
 
@@ -22,7 +23,7 @@ import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDis
 import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
 import { ExternalServiceNode } from './ExternalServiceNode'
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
 }
@@ -32,12 +33,14 @@ interface Props extends TelemetryProps {
  */
 export const ExternalServicesPage: FC<Props> = ({
     telemetryService,
+    telemetryRecorder,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalServices')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('admin.externalServices', 'view')
+    }, [telemetryService, telemetryRecorder])
 
     const location = useLocation()
     const searchParameters = new URLSearchParams(location.search)

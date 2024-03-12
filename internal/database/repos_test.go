@@ -1126,7 +1126,7 @@ func TestRepos_List_sort(t *testing.T) {
 }
 
 // TestRepos_List_patterns tests the behavior of Repos.List when called with
-// IncludePatterns and ExcludePattern.
+// IncludePaths and ExcludePaths.
 func TestRepos_List_patterns(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1197,20 +1197,20 @@ func TestRepos_List_patterns(t *testing.T) {
 
 func TestRepos_List_queryAndPatternsMutuallyExclusive(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	wantErr := "Query and IncludePatterns/ExcludePattern options are mutually exclusive"
+	wantErr := "Query and IncludePaths/ExcludePaths options are mutually exclusive"
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
 
-	t.Run("Query and IncludePatterns", func(t *testing.T) {
+	t.Run("Query and IncludePaths", func(t *testing.T) {
 		_, err := db.Repos().List(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 		}
 	})
 
-	t.Run("Query and ExcludePattern", func(t *testing.T) {
+	t.Run("Query and ExcludePaths", func(t *testing.T) {
 		_, err := db.Repos().List(ctx, ReposListOptions{Query: "x", ExcludePattern: "y"})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)
@@ -1751,7 +1751,7 @@ func TestRepos_ListMinimalRepos_sort(t *testing.T) {
 }
 
 // TestRepos_ListMinimalRepos_patterns tests the behavior of Repos.List when called with
-// IncludePatterns and ExcludePattern.
+// IncludePaths and ExcludePaths.
 func TestRepos_ListMinimalRepos_patterns(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1810,19 +1810,19 @@ func TestRepos_ListMinimalRepos_patterns(t *testing.T) {
 
 func TestRepos_ListMinimalRepos_queryAndPatternsMutuallyExclusive(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	wantErr := "Query and IncludePatterns/ExcludePattern options are mutually exclusive"
+	wantErr := "Query and IncludePaths/ExcludePaths options are mutually exclusive"
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
-	t.Run("Query and IncludePatterns", func(t *testing.T) {
+	t.Run("Query and IncludePaths", func(t *testing.T) {
 		_, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 		}
 	})
 
-	t.Run("Query and ExcludePattern", func(t *testing.T) {
+	t.Run("Query and ExcludePaths", func(t *testing.T) {
 		_, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{Query: "x", ExcludePattern: "y"})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)

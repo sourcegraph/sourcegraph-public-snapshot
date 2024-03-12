@@ -20,7 +20,7 @@
     <div class="content">
         <img class="logo" src={$isLightTheme ? logoLight : logoDark} alt="Sourcegraph Logo" />
         <div class="search">
-            <SearchInput {queryState} />
+            <SearchInput {queryState} autoFocus />
         </div>
     </div>
 </section>

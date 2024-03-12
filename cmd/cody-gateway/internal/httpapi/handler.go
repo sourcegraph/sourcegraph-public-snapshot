@@ -7,11 +7,12 @@ import (
 	"github.com/Khan/genqlient/graphql"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 
@@ -37,6 +38,7 @@ type Config struct {
 	EmbeddingsAllowedModels     []string
 	AutoFlushStreamingResponses bool
 	EnableAttributionSearch     bool
+	Sourcegraph                 config.SourcegraphConfig
 }
 
 var meter = otel.GetMeterProvider().Meter("cody-gateway/internal/httpapi")
@@ -83,7 +85,6 @@ func NewHandler(
 			httpClient,
 			config.Anthropic,
 			promptRecorder,
-
 			config.AutoFlushStreamingResponses,
 		)
 		if err != nil {
@@ -106,6 +107,39 @@ func NewHandler(
 					otelhttp.WithPublicEndpoint(),
 				),
 			))
+
+		anthropicMessagesHandler, err := completions.NewAnthropicMessagesHandler(
+			logger,
+			eventLogger,
+			rs,
+			config.RateLimitNotifier,
+			httpClient,
+			config.Anthropic,
+			promptRecorder,
+			config.AutoFlushStreamingResponses,
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "init anthropicMessages handler")
+		}
+
+		v1router.Path("/completions/anthropic-messages").Methods(http.MethodPost).Handler(
+			overhead.HTTPMiddleware(latencyHistogram,
+				instrumentation.HTTPMiddleware("v1.completions.anthropicmessages",
+					gaugeHandler(
+						counter,
+						attributesAnthropicCompletions,
+						authr.Middleware(
+							requestlogger.Middleware(
+								logger,
+								anthropicMessagesHandler,
+							),
+						),
+					),
+					otelhttp.WithPublicEndpoint(),
+				),
+			))
+	} else {
+		logger.Error("Anthropic access token not set")
 	}
 	if config.OpenAI.AccessToken != "" {
 		v1router.Path("/completions/openai").Methods(http.MethodPost).Handler(
@@ -164,7 +198,8 @@ func NewHandler(
 									rs,
 									config.RateLimitNotifier,
 									embeddings.ModelFactoryMap{
-										embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
+										embeddings.ModelNameOpenAIAda:         embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
+										embeddings.ModelNameSourcegraphTriton: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.TritonURL),
 									},
 									config.EmbeddingsAllowedModels,
 								),
@@ -174,6 +209,8 @@ func NewHandler(
 					otelhttp.WithPublicEndpoint(),
 				),
 			))
+	} else {
+		logger.Error("OpenAI access token not set")
 	}
 	if config.Fireworks.AccessToken != "" {
 		v1router.Path("/completions/fireworks").Methods(http.MethodPost).Handler(
@@ -200,6 +237,8 @@ func NewHandler(
 					otelhttp.WithPublicEndpoint(),
 				),
 			))
+	} else {
+		logger.Error("Fireworks access token not set")
 	}
 
 	// Register a route where actors can retrieve their current rate limit state.

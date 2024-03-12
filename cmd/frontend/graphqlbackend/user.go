@@ -9,13 +9,13 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/internal/cody"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/ssc"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -47,7 +47,7 @@ func (r *schemaResolver) User(
 	case args.Email != nil:
 		// 🚨 SECURITY: Only site admins are allowed to look up by email address on
 		// Sourcegraph.com, for user privacy reasons.
-		if envvar.SourcegraphDotComMode() {
+		if dotcom.SourcegraphDotComMode() {
 			if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 				return nil, err
 			}
@@ -221,7 +221,7 @@ func (r *UserResolver) fetchCodySubscription(ctx context.Context) (*cody.UserSub
 }
 
 func (r *UserResolver) CodySubscription(ctx context.Context) (*CodySubscriptionResolver, error) {
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		return nil, errors.New("this feature is only available on sourcegraph.com")
 	}
 
@@ -238,7 +238,7 @@ func (r *UserResolver) CreatedAt() gqlutil.DateTime {
 }
 
 func (r *UserResolver) CodyProEnabled(ctx context.Context) (bool, error) {
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		return false, errors.New("this feature is only available on sourcegraph.com")
 	}
 
@@ -251,7 +251,7 @@ func (r *UserResolver) CodyProEnabled(ctx context.Context) (bool, error) {
 }
 
 func (r *UserResolver) CodyCurrentPeriodChatLimit(ctx context.Context) (int32, error) {
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		return 0, errors.New("this feature is only available on sourcegraph.com")
 	}
 
@@ -272,7 +272,7 @@ func (r *UserResolver) CodyCurrentPeriodChatLimit(ctx context.Context) (int32, e
 }
 
 func (r *UserResolver) CodyCurrentPeriodCodeLimit(ctx context.Context) (int32, error) {
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		return 0, errors.New("this feature is only available on sourcegraph.com")
 	}
 
@@ -293,7 +293,7 @@ func (r *UserResolver) CodyCurrentPeriodCodeLimit(ctx context.Context) (int32, e
 }
 
 func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (int32, error) {
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		return 0, errors.New("this feature is only available on sourcegraph.com")
 	}
 
@@ -343,7 +343,7 @@ func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (int32, e
 }
 
 func (r *UserResolver) CodyCurrentPeriodCodeUsage(ctx context.Context) (int32, error) {
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		return 0, errors.New("this feature is only available on sourcegraph.com")
 	}
 
@@ -377,7 +377,7 @@ func (r *UserResolver) settingsSubject() api.SettingsSubject {
 func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	// 🚨 SECURITY: Only the authenticated user can view their settings on
 	// Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		if err := auth.CheckSameUserFromActor(r.actor, r.user.ID); err != nil {
 			return nil, err
 		}
@@ -443,7 +443,7 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 
 	// 🚨 SECURITY: Only the authenticated user can update their properties on
 	// Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		if err := auth.CheckSameUser(ctx, userID); err != nil {
 			return nil, err
 		}
@@ -509,7 +509,7 @@ type changeCodyPlanArgs struct {
 }
 
 func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPlanArgs) (*UserResolver, error) {
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		return nil, errors.New("this feature is only available on sourcegraph.com")
 	}
 
@@ -531,7 +531,7 @@ func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPla
 		return nil, err
 	}
 
-	if err := cody.RefreshGatewayRateLimits(ctx, userID, r.db); err != nil {
+	if err, _ := cody.RefreshGatewayRateLimits(ctx, userID, r.db); err != nil {
 		// We intentionally don't fail the upgrade flow here, Gateway will pickup
 		// the new limits automatically. (Just later than we'd like.)
 		r.logger.Warn("refresh gateway limits", log.Error(err))
@@ -601,7 +601,7 @@ func (r *UserResolver) viewerCanAdministerSettings() (bool, error) {
 	// 🚨 SECURITY: Only the authenticated user can administrate settings themselves on
 	// Sourcegraph.com.
 	var err error
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		err = auth.CheckSameUserFromActor(r.actor, r.user.ID)
 	} else {
 		err = auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID)
@@ -797,9 +797,10 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 
-func (r *UserResolver) Roles(_ context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
-	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("roles are not available on sourcegraph.com")
+func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
+	// 🚨 SECURITY: In dotcom mode, only allow site admins to check roles.
+	if dotcom.SourcegraphDotComMode() && auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, errors.New("unauthorized")
 	}
 	userID := r.user.ID
 	connectionStore := &roleConnectionStore{
@@ -945,4 +946,18 @@ func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args S
 		}
 	}
 	return UserByIDInt32(ctx, r.db, user.ID)
+}
+
+func (r *UserResolver) EvaluateFeatureFlag(ctx context.Context, args *struct {
+	FlagName string
+}) (*bool, error) {
+	ffs, err := r.db.FeatureFlags().GetUserFlags(ctx, r.user.ID)
+	if err != nil {
+		return nil, err
+	}
+	if v, ok := ffs[args.FlagName]; ok {
+		return &v, nil
+	}
+	// If there is no value for this feature flag, then we return nil. This follows the existing behaviour from the root level evaluateFeatureFlag function.
+	return nil, nil
 }

@@ -8,6 +8,7 @@ export {
     buildSearchURLQuery,
     makeRepoURI,
 } from '@sourcegraph/shared/src/util/url'
+
 export {
     isCloneInProgressErrorLike,
     isRepoSeeOtherErrorLike,
@@ -26,6 +27,7 @@ export {
     getFileMatchUrl,
     getRepositoryUrl,
     aggregateStreamingSearch,
+    emptyAggregateResults,
     LATEST_VERSION,
     type AggregateStreamingSearchResults,
     type StreamSearchOptions,

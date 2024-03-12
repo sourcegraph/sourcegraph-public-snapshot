@@ -118,6 +118,9 @@ func (s Symbol) LSPKind() lsp.SymbolKind {
 }
 
 func (s Symbol) Range() lsp.Range {
+	// TODO(keegancsmith) For results from zoekt s.Character is not the start
+	// of the symbol, but the start of the match. So doing s.Character +
+	// len(s.Name) is incorrect.
 	return lsp.Range{
 		Start: lsp.Position{Line: s.Line - 1, Character: s.Character},
 		End:   lsp.Position{Line: s.Line - 1, Character: s.Character + len(s.Name)},

@@ -109,7 +109,7 @@ func TestCodyGatewayCodeRateLimit(t *testing.T) {
 			plan: "unknown",
 			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1", "anthropic/claude-instant-1.2", "fireworks/starcoder"},
-				Limit:           100,
+				Limit:           1000,
 				IntervalSeconds: 60 * 60 * 24,
 			},
 		},

@@ -1706,7 +1706,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	changesets := make(btypes.Changesets, 0, 3)
 	events := make([]*btypes.ChangesetEvent, 0)
 
-	for i := 0; i < cap(changesets); i++ {
+	for i := range cap(changesets) {
 		ch := &btypes.Changeset{
 			RepoID:              githubRepo.ID,
 			CreatedAt:           clock.Now(),

@@ -316,7 +316,13 @@ var Python = Combine(
 	CompareSemanticVersionWithASDF("python", "python --version"),
 )
 
-var Bazelisk = WrapErrMessage(Combine(InPath("bazel"), CommandOutputContains("bazel version", "Bazelisk version")), "sg setup --fix")
+var Bazelisk = WrapErrMessage(Combine(
+	InPath("bazel"),
+	SkipOnNix(
+		"nix ensures we are on the correct version",
+		CommandOutputContains("bazel version", "Bazelisk version"),
+	),
+), "sg setup --fix")
 
 func Caddy(_ context.Context) error {
 	certPath, err := caddySourcegraphCertificatePath()

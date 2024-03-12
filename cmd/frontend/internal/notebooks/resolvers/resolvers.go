@@ -6,10 +6,10 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/notebooks"
@@ -431,7 +431,7 @@ func (r *notebookResolver) Namespace(ctx context.Context) (*graphqlbackend.Names
 			// On Cloud, the user can have access to an org notebook if it is public. But if the user is not a member of
 			// that org, then he does not have access to further information about the org. Instead of returning an error
 			// (which would prevent the user from viewing the notebook) we return an empty namespace.
-			if envvar.SourcegraphDotComMode() && errors.HasType(err, &database.OrgNotFoundError{}) {
+			if dotcom.SourcegraphDotComMode() && errors.HasType(err, &database.OrgNotFoundError{}) {
 				return nil, nil
 			}
 			return nil, err

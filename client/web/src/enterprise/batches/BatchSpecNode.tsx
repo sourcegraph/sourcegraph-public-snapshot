@@ -18,6 +18,7 @@ import { upperFirst } from 'lodash'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
 import { BatchSpecSource, BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Code,
     Link,
@@ -47,7 +48,7 @@ import { BatchSpec } from './BatchSpec'
 
 import styles from './BatchSpecNode.module.scss'
 
-export interface BatchSpecNodeProps {
+export interface BatchSpecNodeProps extends TelemetryV2Props {
     node: BatchSpecListFields
     currentSpecID?: Scalars['ID']
     /** Used for testing purposes. Sets the current date */
@@ -58,6 +59,7 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
     node,
     currentSpecID,
     now = () => new Date(),
+    telemetryRecorder,
 }) => {
     const [isExpanded, setIsExpanded] = useState(currentSpecID === node.id)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(() => {
@@ -126,14 +128,14 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
             </div>
             {isExpanded && (
                 <div className={styles.nodeExpandedSection}>
-                    <BatchSpecInfo spec={node} />
+                    <BatchSpecInfo spec={node} telemetryRecorder={telemetryRecorder} />
                 </div>
             )}
         </li>
     )
 }
 
-interface BatchSpecInfoProps {
+interface BatchSpecInfoProps extends TelemetryV2Props {
     spec: Pick<BatchSpecListFields, 'originalInput' | 'id' | 'files' | 'description'>
 }
 
@@ -141,7 +143,7 @@ type BatchWorkspaceFile = {
     isSpecFile: boolean
 } & Omit<PartialBatchSpecWorkspaceFileFields, '__typename'>
 
-export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spec }) => {
+export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spec, telemetryRecorder }) => {
     const specFile: BatchWorkspaceFile = {
         binary: false,
         isSpecFile: true,
@@ -185,6 +187,7 @@ export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spe
                         name={spec.description.name}
                         originalInput={spec.originalInput}
                         className={classNames(styles.batchSpec, 'mb-0')}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 ) : (
                     <BatchWorkspaceFileContent file={selectedFile} specId={spec.id} />
@@ -200,6 +203,7 @@ export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spe
                 name={spec.description.name}
                 originalInput={spec.originalInput}
                 className={classNames(styles.batchSpec, 'mb-0')}
+                telemetryRecorder={telemetryRecorder}
             />
         </>
     )
