@@ -138,7 +138,7 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 
 				// 🚨 SECURITY: Only known clients registered in SAMS can submit events
 				// as a managed service.
-				if err := enforceSAMSM2M(stream.Context(), logger, s.samsClient); err != nil {
+				if err := checkSAMSM2MScope(stream.Context(), logger, s.samsClient); err != nil {
 					return err
 				}
 
@@ -227,7 +227,7 @@ func (s *Server) RecordEvent(ctx context.Context, req *telemetrygatewayv1.Record
 
 		// 🚨 SECURITY: Only known clients registered in SAMS can submit events
 		// as a managed service.
-		if err := enforceSAMSM2M(ctx, logger, s.samsClient); err != nil {
+		if err := checkSAMSM2MScope(ctx, logger, s.samsClient); err != nil {
 			return nil, err
 		}
 

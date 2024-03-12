@@ -17,9 +17,9 @@ import (
 
 const requiredSamsScope = "telemetry_gateway::events::write"
 
-// enforceSAMSM2M ensures the request context has a valid SAMS token with requiredSamsScope.
-// It returns a gRPC status error.
-func enforceSAMSM2M(ctx context.Context, logger log.Logger, samsClient sams.Client) error {
+// checkSAMSM2MScope ensures the request context has a valid SAMS token with requiredSamsScope.
+// It returns a gRPC status error suitable to be returned directly from an RPC implementation.
+func checkSAMSM2MScope(ctx context.Context, logger log.Logger, samsClient sams.Client) error {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return status.Error(codes.Unauthenticated, "no token header")
@@ -33,7 +33,7 @@ func enforceSAMSM2M(ctx context.Context, logger log.Logger, samsClient sams.Clie
 			return status.Errorf(codes.Unauthenticated, "invalid token header: %v", err)
 		}
 	} else {
-		return status.Error(codes.Unauthenticated, "no token header")
+		return status.Error(codes.Unauthenticated, "no token header value")
 	}
 
 	result, err := samsClient.IntrospectToken(ctx, token)
