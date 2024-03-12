@@ -3,7 +3,6 @@ package ci
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/Masterminds/semver"
 	bk "github.com/sourcegraph/sourcegraph/dev/ci/internal/buildkite"
@@ -37,12 +36,6 @@ func bazelBuildExecutorVM(c Config, alwaysRebuild bool) operations.Operation {
 
 func bazelPublishExecutorVM(c Config, alwaysRebuild bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		// TODO(rfc795) because we don't have a real testbed for those, let's not push
-		// those amis for now.
-		if strings.Contains(c.Branch, "rfc795") {
-			return
-		}
-
 		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.Agent("queue", AspectWorkflows.QueueDefault),
@@ -84,11 +77,6 @@ func bazelBuildExecutorDockerMirror(c Config) operations.Operation {
 
 func bazelPublishExecutorDockerMirror(c Config) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		// TODO(rfc795) because we don't have a real testbed for those, let's not push
-		// those amis for now.
-		if strings.Contains(c.Branch, "rfc795/v") {
-			return
-		}
 		candidateBuildStep := candidateImageStepKey("executor-docker-miror.vm-image")
 		imageFamily := executorDockerMirrorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
