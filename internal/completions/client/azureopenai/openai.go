@@ -392,13 +392,10 @@ type apiVersionRoundTripper struct {
 }
 
 func (rt *apiVersionRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	// Copy the request and URL since modifying is not permitted
-	newReq := req
-	var newUrl url.URL = *req.URL
-	q := newUrl.Query()
-	q.Set("api-version", rt.apiVersion)
-	newUrl.RawQuery = q.Encode()
-	newReq.URL = &newUrl
+	newReq := req.Clone(req.Context())
+	values := newReq.URL.Query()
+	values.Set("api-version", rt.apiVersion)
+	newReq.URL.RawQuery = values.Encode()
 	return rt.rt.RoundTrip(newReq)
 }
 
