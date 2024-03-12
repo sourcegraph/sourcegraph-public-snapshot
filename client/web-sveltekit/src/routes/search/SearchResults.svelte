@@ -5,6 +5,7 @@
     interface ResultStateCache {
         count: number
         expanded: Set<SearchMatch>
+        preview: ContentMatch | SymbolMatch | PathMatch | null
     }
     const cache = new Map<string, ResultStateCache>()
 
@@ -81,7 +82,7 @@
     $: resultsToShow = results.slice(0, count)
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
 
-    let previewResult = writable<ContentMatch | SymbolMatch | PathMatch | null>(null)
+    $: previewResult = writable<ContentMatch | SymbolMatch | PathMatch | null>(cacheEntry?.preview ?? null)
 
     setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
@@ -100,7 +101,7 @@
         queryState,
     })
     beforeNavigate(() => {
-        cache.set(queryFromURL, { count, expanded: expandedSet })
+        cache.set(queryFromURL, { count, expanded: expandedSet, preview: $previewResult })
     })
 
     function loadMore(event: { detail: boolean }) {
