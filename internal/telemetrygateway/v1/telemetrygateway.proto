@@ -58,7 +58,7 @@ message Identifier {
     string external_url = 2;
   }
 
-  message ManagedService {
+  message ManagedServiceIdentifier {
     // Self-reported service identifier, for example 'my-service'.
     string service_id = 1;
     // Self-reported service environment, for example 'prod' or 'dev'.
@@ -72,7 +72,7 @@ message Identifier {
     UnlicensedInstanceIdentifier unlicensed_instance = 2;
     // A service operated and managed by the Sourcegraph team, for example
     // a service deployed by https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/
-    ManagedService managed_service = 3;
+    ManagedServiceIdentifier managed_service = 3;
   }
 }
 
