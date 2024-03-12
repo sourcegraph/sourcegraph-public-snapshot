@@ -28,7 +28,7 @@ interface WidgetContentProps extends TelemetryProps, TelemetryV2Props {
 }
 
 interface NoAuhWidgetContentProps extends WidgetContentProps {
-    context: Pick<SourcegraphContext, 'authProviders'>
+    context: Pick<SourcegraphContext, 'externalURL'>
 }
 
 function useTryCodyWidget(telemetryService: TelemetryProps['telemetryService']): {
@@ -174,7 +174,7 @@ interface TryCodyWidgetProps extends TelemetryProps, TelemetryV2Props {
     className?: string
     type: 'blob' | 'repo'
     authenticatedUser: AuthenticatedUser | null
-    context: Pick<SourcegraphContext, 'authProviders'>
+    context: Pick<SourcegraphContext, 'externalURL'>
     isSourcegraphDotCom: boolean
 }
 
