@@ -1,14 +1,12 @@
 <script lang="ts" context="module">
-    import type { Placement } from '@popperjs/core'
-    import { placements } from '@popperjs/core'
-
-    export type { Placement }
-    export { placements }
+    export { placements, type Placement } from '@popperjs/core'
 </script>
 
 <script lang="ts">
-    import { createPopover, uniqueID } from './dom'
+    import type { Placement } from '@popperjs/core'
     import { afterUpdate } from 'svelte'
+
+    import { createPopover, uniqueID } from './dom'
 
     /**
      * The content of the tooltip.

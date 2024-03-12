@@ -8,7 +8,7 @@
     "build:watch": "vite build --watch",
     "preview": "vite preview",
     "test": "playwright test",
-    "test:dev": "PORT=5173 playwright test --ui",
+    "test:dev": "playwright test --ui",
     "sync": "svelte-kit sync",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
