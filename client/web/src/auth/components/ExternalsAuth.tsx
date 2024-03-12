@@ -163,6 +163,8 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
     // Since this component is only intended for use on Sourcegraph.com, it's OK to hardcode
     // our providers.
     const redirectQuery = redirect ? `&redirect=${redirect}` : ''
+    // Use absolute URL to force full-page reload (because the auth routes are
+    // handled by the backend router, not the frontend router).
     const gitHubLoginUrl = `${context.externalURL}/.auth/openidconnect/login?prompt_auth=github&pc=sams${redirectQuery}`
     const gitLabLoginUrl = `${context.externalURL}/.auth/openidconnect/login?prompt_auth=gitlab&pc=sams${redirectQuery}`
     const googleLoginUrl = `${context.externalURL}/.auth/openidconnect/login?prompt_auth=google&pc=sams${redirectQuery}`
