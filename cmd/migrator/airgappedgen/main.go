@@ -89,7 +89,7 @@ func main() {
 	}
 }
 
-func downloadRemoteTaggedVersions(ctx context.Context, versions []semver.Version) ([]*schemaDescription, error) {
+func downloadRemoteTaggedVersions(_ context.Context, versions []semver.Version) ([]*schemaDescription, error) {
 	urlFmt := "https://raw.githubusercontent.com/sourcegraph/sourcegraph/v%s/internal/database/%s"
 
 	p := pool.NewWithResults[*schemaDescription]().WithMaxGoroutines(5).WithErrors()
@@ -129,7 +129,7 @@ func downloadRemoteTaggedVersions(ctx context.Context, versions []semver.Version
 	return p.Wait()
 }
 
-func downloadGCSVersions(ctx context.Context, versions []semver.Version) ([]*schemaDescription, error) {
+func downloadGCSVersions(_ context.Context, versions []semver.Version) ([]*schemaDescription, error) {
 	urlFmt := "https://storage.googleapis.com/sourcegraph-assets/migrations/drift/v%s-%s"
 
 	p := pool.NewWithResults[*schemaDescription]().WithMaxGoroutines(5).WithErrors()
@@ -154,6 +154,7 @@ func downloadGCSVersions(ctx context.Context, versions []semver.Version) ([]*sch
 					return nil, fmt.Errorf("server error downloading remote schema %q: %s", url, resp.Status)
 				}
 				if resp.StatusCode == 404 {
+					// Oldest versions doesn't have all schemas, just the frontend, so we're fine skipping them.
 					continue
 				}
 
