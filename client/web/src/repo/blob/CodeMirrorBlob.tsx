@@ -770,7 +770,7 @@ function useBlameDecoration(
                           },
                       })
                     : [],
-            [visible, navigate]
+            [visible, navigate, apolloClient]
         ),
         lockFirstVisibleLine
     )
