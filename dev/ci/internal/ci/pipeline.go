@@ -200,7 +200,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Add final artifacts
 		publishOps := operations.NewNamedSet("Publish images")
-		publishOps.Append(bazelPushImagesNoTest(c.Version))
+		publishOps.Append(bazelPushImagesNoTest(c))
 
 		for _, dockerImage := range legacyDockerImages {
 			publishOps.Append(publishFinalDockerImage(c, dockerImage))
@@ -290,7 +290,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Publish candidate images to dev registry
 		publishOpsDev := operations.NewNamedSet("Publish candidate images")
-		publishOpsDev.Append(bazelPushImagesCandidates(c.Version))
+		publishOpsDev.Append(bazelPushImagesCandidates(c))
 		ops.Merge(publishOpsDev)
 
 		// End-to-end tests
@@ -323,7 +323,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 		// Final Bazel images
-		publishOps.Append(bazelPushImagesFinal(c.Version))
+		publishOps.Append(bazelPushImagesFinal(c))
 		ops.Merge(publishOps)
 	}
 
