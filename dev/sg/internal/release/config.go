@@ -300,7 +300,7 @@ func (r *releaseRunner) CreateRelease(ctx context.Context) error {
 		steps = r.m.Internal.Create.Steps.Major
 	}
 
-	announce2("create", "Will create a patch release %q", r.version)
+	announce2("create", "Will create a %s release %q", r.typ, r.version)
 	return r.runSteps(ctx, steps)
 }
 
