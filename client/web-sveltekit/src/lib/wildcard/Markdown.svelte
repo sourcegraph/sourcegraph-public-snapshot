@@ -1,5 +1,5 @@
 <script lang="ts">
-    import {renderMarkdown} from '$lib/common'
+    import { renderMarkdown } from '$lib/common'
     import styles from './Markdown.module.scss'
 
     export let content: string

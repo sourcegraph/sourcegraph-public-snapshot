@@ -1,6 +1,6 @@
 <script lang="ts" context="module">
-    import {AlertType} from '$lib/graphql-types'
-    import {formatDistanceStrict, isAfter} from 'date-fns'
+    import { AlertType } from '$lib/graphql-types'
+    import { formatDistanceStrict, isAfter } from 'date-fns'
 
     type PossibleAlertVariation = 'info' | 'warning' | 'danger'
 
@@ -33,13 +33,13 @@
 </script>
 
 <script lang="ts">
-    import {settings} from '$lib/stores'
+    import { settings } from '$lib/stores'
 
-    import {Markdown} from '$lib/wildcard'
+    import { Markdown } from '$lib/wildcard'
     import DismissibleAlert from './DismissibleAlert.svelte'
 
-    import type {GlobalNotifications} from './GlobalNotifications.gql'
-    import {differenceInDays, parseISO} from 'date-fns'
+    import type { GlobalNotifications } from './GlobalNotifications.gql'
+    import { differenceInDays, parseISO } from 'date-fns'
 
     export let globalAlerts: GlobalNotifications
 
@@ -62,8 +62,7 @@
     {#if globalAlerts.freeUsersExceeded}
         <DismissibleAlert variant="info" partialStorageKey={null}>
             This Sourcegraph instance has reached&nbsp;
-            {noLicenseWarningUserCount === null ? 'the limit for' : noLicenseWarningUserCount} free users, and an admin
-            must&nbsp;
+            {noLicenseWarningUserCount === null ? 'the limit for' : noLicenseWarningUserCount} free users, and an admin must&nbsp;
             <a href="https://sourcegraph.com/contact/sales">
                 contact Sourcegraph to start a free trial or purchase a license
             </a>&nbsp; to add more
@@ -72,14 +71,14 @@
 
     {#each globalAlerts.alerts as alert (alert.message)}
         <DismissibleAlert variant={getAlertVariantForType(alert.type)} partialStorageKey={alert.isDismissibleWithKey}>
-            <Markdown content={alert.message}/>
+            <Markdown content={alert.message} />
         </DismissibleAlert>
     {/each}
 
     {#if settingsMotd && Array.isArray(settingsMotd)}
         {#each settingsMotd as motd}
             <DismissibleAlert variant="info" partialStorageKey={`motd.${motd}`}>
-                <Markdown content={motd}/>
+                <Markdown content={motd} />
             </DismissibleAlert>
         {/each}
     {/if}
@@ -87,7 +86,7 @@
     {#if notices && Array.isArray(notices)}
         {#each notices as notice (notice.message)}
             <DismissibleAlert variant="info" partialStorageKey={`notices.${notice.message}`}>
-                <Markdown content={notice.message}/>
+                <Markdown content={notice.message} />
             </DismissibleAlert>
         {/each}
     {/if}

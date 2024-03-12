@@ -21,8 +21,8 @@ export default defineConfig(({ mode }) => {
                       'process.platform': '"browser"',
                       'process.env.VITEST': 'null',
                       'process.env.NODE_ENV': `"${mode}"`,
-                    'process.env.SOURCEGRAPH_API_URL': JSON.stringify(process.env.SOURCEGRAPH_API_URL),
-                    'process.env': '{}',
+                      'process.env.SOURCEGRAPH_API_URL': JSON.stringify(process.env.SOURCEGRAPH_API_URL),
+                      'process.env': '{}',
                   },
         css: {
             preprocessorOptions: {

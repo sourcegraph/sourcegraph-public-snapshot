@@ -13,9 +13,9 @@
 </script>
 
 <script lang="ts">
-    import {mdiClose} from '@mdi/js'
+    import { mdiClose } from '@mdi/js'
     import Icon from '$lib/Icon.svelte'
-    import {Alert, Button} from '$lib/wildcard'
+    import { Alert, Button } from '$lib/wildcard'
 
     export let variant: 'info' | 'warning' | 'danger' | 'success'
     export let partialStorageKey: string | null
@@ -36,13 +36,13 @@
 {#if !dismissed}
     <Alert {variant} size="slim">
         <div class="content">
-            <slot/>
+            <slot />
         </div>
 
         {#if partialStorageKey}
             <div class="button-wrapper">
                 <Button variant="icon" aria-label="Dismiss alert" on:click={handleDismissClick}>
-                    <Icon aria-hidden={true} svgPath={mdiClose}/>
+                    <Icon aria-hidden={true} svgPath={mdiClose} />
                 </Button>
             </div>
         {/if}
