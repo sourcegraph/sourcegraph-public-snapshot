@@ -78,14 +78,11 @@ function create_push_command() {
 }
 
 dev_registries=(
-  "us.gcr.io/sourcegraph-dev"
+  "$DEV_REGISTRY"
 )
 
 prod_registries=(
-  # "index.docker.io/sourcegraph"
-  # Temporary registry we use to test release process with public releases
-  # TODO rfc795
-  "us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal"
+  "$PROD_REGISTRY"
 )
 
 date_fragment="$(date +%Y-%m-%d)"
@@ -103,12 +100,8 @@ CANDIDATE_ONLY=${CANDIDATE_ONLY:-""}
 
 push_prod=false
 
-# ok: main
-# ok: main-dry-run
-# ok: main-dry-run-123
-# no: main-foo
-# TODO(rfc795)
-if [[ "$BUILDKITE_BRANCH" =~ ^rfc795/main ]]|| [[ "$BUILDKITE_BRANCH" =~ ^docker-images-candidates-notest/.* ]]; then
+# TODO outdated, should be removed.
+if [[ "$BUILDKITE_BRANCH" =~ ^docker-images-candidates-notest/.* ]]; then
   dev_tags+=("insiders")
   prod_tags+=("insiders")
   push_prod=true
@@ -121,8 +114,9 @@ if [[ "$BUILDKITE_BRANCH" =~ ^main-dry-run/.*  ]]; then
   push_prod=false
 fi
 
-# TODO(rfc795)
-if [[ "$BUILDKITE_BRANCH" =~ ^rfc795/v[0-9.]+$ ]]; then
+# If we're doing an internal release, we need to push to the prod registry too.
+# TODO(rfc795) this should be more granular than this, we're abit abusing the idea of the prod registry here.
+if [ "$RELEASE_INTERNAL" == "true" ]; then
   push_prod=true
 fi
 
