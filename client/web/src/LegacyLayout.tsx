@@ -230,7 +230,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                             showSearchBox={showNavigationSearchBox}
                             authenticatedUser={props.authenticatedUser}
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
-                            ownEnabled={props.ownEnabled}
                             notebooksEnabled={props.notebooksEnabled}
                             searchContextsEnabled={props.searchContextsEnabled}
                             codeMonitoringEnabled={props.codeMonitoringEnabled}
