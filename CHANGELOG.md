@@ -30,6 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Monitors now properly ignores monitors associated with soft-deleted users, which previously would have led to an error on the overview page. [#60405](https://github.com/sourcegraph/sourcegraph/pull/60405)
 - Fixed a bug where clicking "Exclude Repo" on Azure DevOps or Gerrit repositories would not work. [#60509](https://github.com/sourcegraph/sourcegraph/pull/60509)
 - Links in codeintel popovers respect the revision from the URL. [#60545](https://github.com/sourcegraph/sourcegraph/pull/60545)
+- Fixed a bug where permission syncs could be scheduled for repositories or users even when a sync is already scheduled or in progress, leading to significant delays in the permissions sync system as a whole. [#61024](https://github.com/sourcegraph/sourcegraph/pull/61024)
 
 ### Removed
 
