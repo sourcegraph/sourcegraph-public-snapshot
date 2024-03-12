@@ -54,6 +54,9 @@ test('has global notifications', async ({ sg, page }) => {
     })
 
     await page.goto('/')
-    const notifications = page.getByLabel('Global site notifications')
-    await expect(notifications).toBeVisible()
+
+    const alerts = page.getByRole('alert')
+
+    await expect(alerts.first()).toBeVisible()
+    await expect(alerts).toHaveCount(4)
 })
