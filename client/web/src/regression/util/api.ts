@@ -449,22 +449,23 @@ export async function setTosAccepted(gqlClient: GraphQLClient, userID: Scalars['
  * dependency-injected `requestGraphQL`.
  */
 export function currentProductVersion(gqlClient: GraphQLClient): Promise<string> {
-    return gqlClient
-        .queryGraphQL<SiteProductVersionResult, SiteProductVersionVariables>(
-            gql`
-                query SiteProductVersion {
-                    site {
-                        productVersion
+    return lastValueFrom(
+        gqlClient
+            .queryGraphQL<SiteProductVersionResult, SiteProductVersionVariables>(
+                gql`
+                    query SiteProductVersion {
+                        site {
+                            productVersion
+                        }
                     }
-                }
-            `,
-            {}
-        )
-        .pipe(
-            map(dataOrThrowErrors),
-            map(({ site }) => site.productVersion)
-        )
-        .toPromise()
+                `,
+                {}
+            )
+            .pipe(
+                map(dataOrThrowErrors),
+                map(({ site }) => site.productVersion)
+            )
+    )
 }
 
 /**
@@ -474,16 +475,16 @@ export function currentProductVersion(gqlClient: GraphQLClient): Promise<string>
 export function getViewerSettings({
     requestGraphQL,
 }: Pick<PlatformContext, 'requestGraphQL'>): Promise<ViewerSettingsResult['viewerSettings']> {
-    return requestGraphQL<ViewerSettingsResult, ViewerSettingsVariables>({
-        request: viewerSettingsQuery,
-        variables: {},
-        mightContainPrivateInfo: true,
-    })
-        .pipe(
+    return lastValueFrom(
+        requestGraphQL<ViewerSettingsResult, ViewerSettingsVariables>({
+            request: viewerSettingsQuery,
+            variables: {},
+            mightContainPrivateInfo: true,
+        }).pipe(
             map(dataOrThrowErrors),
             map(data => data.viewerSettings)
         )
-        .toPromise()
+    )
 }
 
 /**
@@ -632,55 +633,54 @@ export function createUser(
  * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
-export async function getUser(
+export function getUser(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     username: string
 ): Promise<UserResult['user']> {
-    const user = await requestGraphQL<UserResult, UserVariables>({
-        request: gql`
-            query User($username: String!) {
-                user(username: $username) {
-                    __typename
-                    id
-                    username
-                    displayName
-                    url
-                    settingsURL
-                    avatarURL
-                    viewerCanAdminister
-                    siteAdmin
-                    createdAt
-                    emails {
-                        email
-                        verified
-                    }
-                    organizations {
-                        nodes {
-                            id
-                            displayName
-                            name
+    return lastValueFrom(
+        requestGraphQL<UserResult, UserVariables>({
+            request: gql`
+                query User($username: String!) {
+                    user(username: $username) {
+                        __typename
+                        id
+                        username
+                        displayName
+                        url
+                        settingsURL
+                        avatarURL
+                        viewerCanAdminister
+                        siteAdmin
+                        createdAt
+                        emails {
+                            email
+                            verified
                         }
-                    }
-                    settingsCascade {
-                        subjects {
-                            latestSettings {
+                        organizations {
+                            nodes {
                                 id
-                                contents
+                                displayName
+                                name
+                            }
+                        }
+                        settingsCascade {
+                            subjects {
+                                latestSettings {
+                                    id
+                                    contents
+                                }
                             }
                         }
                     }
                 }
-            }
-        `,
-        variables: { username },
-        mightContainPrivateInfo: true,
-    })
-        .pipe(
+            `,
+            variables: { username },
+            mightContainPrivateInfo: true,
+        }).pipe(
             map(dataOrThrowErrors),
             map(({ user }) => user)
         )
-        .toPromise()
-    return user
+    )
 }
 
 /**
