@@ -61,7 +61,7 @@ export const wrapRemoteObservable = <T>(
         mergeMap((proxySubscribable): Observable<ProxyOrClone<T>> => {
             proxySubscription.add(new ProxySubscription(proxySubscribable))
             return new Observable(subscriber => {
-                let proxyObserver: Parameters<typeof proxySubscribable['subscribe']>[0] = {
+                const proxyObserver: Parameters<typeof proxySubscribable['subscribe']>[0] = {
                     [proxyMarker]: true,
                     // @ts-expect-error - this was previously typed as any
                     next: value => subscriber.next(value),

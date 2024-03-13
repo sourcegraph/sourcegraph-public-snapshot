@@ -170,7 +170,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
     }, [indexerData?.indexerKeys])
 
     // Poke filtered connection to refresh
-    const refresh = useMemo(() => new Subject<undefined>(), [])
+    const refresh = useMemo(() => new Subject<void>(), [])
     const querySubject = useMemo(() => new Subject<string>(), [])
 
     // State used to control bulk index selection

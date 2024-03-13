@@ -57,9 +57,9 @@ export async function getOrCreateCodeIntelAPI(context: PlatformContext): Promise
         return codeIntelAPI
     }
 
-    return new Promise<CodeIntelAPI>((resolve, reject) => {
-        context.settings.subscribe(settingsCascade => {
-            try {
+    return lastValueFrom(
+        context.settings.pipe(
+            map(settingsCascade => {
                 if (!isSettingsValid(settingsCascade)) {
                     throw new Error('Settings are not valid')
                 }
@@ -68,12 +68,10 @@ export async function getOrCreateCodeIntelAPI(context: PlatformContext): Promise
                     telemetryService: context.telemetryService,
                     settings: newSettingsGetter(settingsCascade),
                 })
-                resolve(codeIntelAPI)
-            } catch (error) {
-                reject(error)
-            }
-        })
-    })
+                return codeIntelAPI
+            })
+        )
+    )
 }
 
 class DefaultCodeIntelAPI implements CodeIntelAPI {

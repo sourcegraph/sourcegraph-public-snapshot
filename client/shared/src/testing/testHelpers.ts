@@ -109,6 +109,7 @@ export async function integrationTestContext(
 
 export function collectSubscribableValues<T>(observable: Observable<T>): T[] {
     const values: T[] = []
+    // eslint-disable-next-line rxjs/no-ignored-subscription
     observable.subscribe(value => values.push(value))
     return values
 }
