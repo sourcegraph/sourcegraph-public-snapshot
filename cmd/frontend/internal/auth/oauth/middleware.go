@@ -212,7 +212,7 @@ func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 
 // filterHiddenProviders removes all providers that have the Hidden field set to true.
 func filterHiddenProviders(ps []providers.Provider) []providers.Provider {
-	var filteredPs []providers.Provider
+	filteredPs := make([]providers.Provider, 0, len(ps))
 	for _, p := range ps {
 		if !providers.GetAuthProviderCommon(p).Hidden {
 			filteredPs = append(filteredPs, p)
