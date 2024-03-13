@@ -18,7 +18,10 @@ if [[ $EXIT_CODE -ne 0 ]]; then
 fi
 
 if [[ ${CI:-} == "true" ]]; then
-  bazelrcs=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
+  aspectRC="/tmp/aspect-generated.bazelrc"
+  rosetta bazelrc > "${aspectRC}"
+  echo -e "\ntry-import %workspace%/.aspect/bazelrc/ci.sourcegraph.bazelrc\n"  >> "$aspectRC"
+  bazelrcs=(--bazelrc="${aspectRC}")
 else
   if [[ $EXIT_CODE -ne 0 ]]; then
     echo "The following files have changes:"
