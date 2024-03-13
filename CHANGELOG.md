@@ -18,6 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - GitHub app installations can now be refreshed from the Batch Changes Site Admin page. [#60125](https://github.com/sourcegraph/sourcegraph/pull/60125)
+- The SAML auth provider configuration now supports a `usernameAttributeNames` field that can be used to specify a list of SAML attribute that should be used as the username. [#60603](https://github.com/sourcegraph/sourcegraph/pull/60603)
 - Added the GraphQL query `User.evaluateFeatureFlag` to show if a feature flag is enabled or disabled for a user. [#60828](https://github.com/sourcegraph/sourcegraph/pull/60828)
 - Search Jobs now supports diff, commit and path searches. Before, only file searches were supported. [#60883](https://github.com/sourcegraph/sourcegraph/pull/60883)
 
