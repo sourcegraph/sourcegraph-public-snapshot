@@ -1,4 +1,4 @@
-package server
+package samsm2m
 
 import (
 	"context"
@@ -17,9 +17,11 @@ import (
 
 const requiredSamsScope = "telemetry_gateway::events::write"
 
-// checkSAMSM2MScope ensures the request context has a valid SAMS token with requiredSamsScope.
+// CheckWriteEventsScope ensures the request context has a valid SAMS token with requiredSamsScope.
 // It returns a gRPC status error suitable to be returned directly from an RPC implementation.
-func checkSAMSM2MScope(ctx context.Context, logger log.Logger, samsClient sams.Client) error {
+//
+// See: go/sams-m2m
+func CheckWriteEventsScope(ctx context.Context, logger log.Logger, samsClient sams.Client) error {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return status.Error(codes.Unauthenticated, "no token header")
@@ -36,6 +38,9 @@ func checkSAMSM2MScope(ctx context.Context, logger log.Logger, samsClient sams.C
 		return status.Error(codes.Unauthenticated, "no token header value")
 	}
 
+	// TODO: as part of go/sams-m2m we need to build out a SDK for SAMS M2M
+	// consumers that has a recommended short-caching mechanism. Avoid doing it
+	// for now until we have a concerted effort.
 	result, err := samsClient.IntrospectToken(ctx, token)
 	if err != nil {
 		logger.Error("samsClient.IntrospectToken failed", log.Error(err))

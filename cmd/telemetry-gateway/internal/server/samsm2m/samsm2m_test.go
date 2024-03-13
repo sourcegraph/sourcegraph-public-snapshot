@@ -1,4 +1,4 @@
-package server
+package samsm2m
 
 import (
 	"context"
@@ -23,7 +23,7 @@ func (m mockSAMSClient) IntrospectToken(context.Context, string) (*sams.TokenInt
 	return m.result, m.error
 }
 
-func TestCheckSAMSM2MScope(t *testing.T) {
+func TestCheckWriteEventsScope(t *testing.T) {
 	for _, tc := range []struct {
 		name       string
 		metadata   map[string]string
@@ -85,7 +85,7 @@ func TestCheckSAMSM2MScope(t *testing.T) {
 				ctx = metadata.NewIncomingContext(ctx, metadata.New(tc.metadata))
 			}
 
-			err := checkSAMSM2MScope(ctx, logtest.Scoped(t), tc.samsClient)
+			err := CheckWriteEventsScope(ctx, logtest.Scoped(t), tc.samsClient)
 			if tc.wantErr == nil {
 				assert.NoError(t, err)
 			} else {

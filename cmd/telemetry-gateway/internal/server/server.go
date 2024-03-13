@@ -12,13 +12,14 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/sams"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
+	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/server/samsm2m"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
 
@@ -27,6 +28,7 @@ type Server struct {
 	eventsTopic pubsub.TopicPublisher
 	publishOpts events.PublishStreamOptions
 
+	// samsClient is used for M2M authn/authz: go/sams-m2m
 	samsClient sams.Client
 
 	recordEventsMetrics recordEventsMetrics
@@ -138,7 +140,7 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 
 				// 🚨 SECURITY: Only known clients registered in SAMS can submit events
 				// as a managed service.
-				if err := checkSAMSM2MScope(stream.Context(), logger, s.samsClient); err != nil {
+				if err := samsm2m.CheckWriteEventsScope(stream.Context(), logger, s.samsClient); err != nil {
 					return err
 				}
 
@@ -227,7 +229,7 @@ func (s *Server) RecordEvent(ctx context.Context, req *telemetrygatewayv1.Record
 
 		// 🚨 SECURITY: Only known clients registered in SAMS can submit events
 		// as a managed service.
-		if err := checkSAMSM2MScope(ctx, logger, s.samsClient); err != nil {
+		if err := samsm2m.CheckWriteEventsScope(ctx, logger, s.samsClient); err != nil {
 			return nil, err
 		}
 
