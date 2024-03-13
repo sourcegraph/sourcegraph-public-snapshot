@@ -84,7 +84,9 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	if len(fileContainsPatterns) > 0 {
 		newNodes := make([]query.Node, 0, len(fileContainsPatterns)+1)
 		for _, pat := range fileContainsPatterns {
-			newNodes = append(newNodes, query.Pattern{Value: pat})
+			node := query.Pattern{Value: pat}
+			node.Annotation.Labels.Set(query.Regexp)
+			newNodes = append(newNodes, node)
 		}
 		if b.Pattern != nil {
 			newNodes = append(newNodes, b.Pattern)
