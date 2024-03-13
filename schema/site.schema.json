@@ -3579,6 +3579,11 @@
           "type": "boolean",
           "default": false
         },
+        "noSignIn": {
+          "description": "Hides the configured auth provider from the sign in page, but still allows users to connect an external account using their Account Security page to enable permissions syncing.",
+          "type": "boolean",
+          "default": false
+        },
         "order": {
           "description": "Determines order of auth providers on the login screen. Ordered as numbers, for example 1, 2, 3.",
           "type": "integer",

@@ -152,6 +152,8 @@ type AuthProviderCommon struct {
 	DisplayPrefix *string `json:"displayPrefix,omitempty"`
 	// Hidden description: Hides the configured auth provider from regular use through our web interface by omitting it from the JSContext, useful for experimental auth setups.
 	Hidden bool `json:"hidden,omitempty"`
+	// NoSignIn description: Hides the configured auth provider from the sign in page, but still allows users to connect an external account using their Account Security page to enable permissions syncing.
+	NoSignIn bool `json:"noSignIn,omitempty"`
 	// Order description: Determines order of auth providers on the login screen. Ordered as numbers, for example 1, 2, 3.
 	Order int `json:"order,omitempty"`
 }

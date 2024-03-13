@@ -154,13 +154,14 @@ func Providers() []Provider {
 	return providers
 }
 
-// VisibleProviders returns the list of currently registered authentication providers that aren't hidden.
+// SignInProviders returns the list of currently registered authentication providers that aren't hidden.
 // The list is not sorted in any way.
-func VisibleProviders() []Provider {
+func SignInProviders() []Provider {
 	if MockProviders != nil {
 		providers := make([]Provider, 0, len(MockProviders))
 		for _, p := range MockProviders {
-			if !GetAuthProviderCommon(p).Hidden {
+			common := GetAuthProviderCommon(p)
+			if !common.Hidden && !common.NoSignIn {
 				providers = append(providers, p)
 			}
 		}
@@ -181,7 +182,8 @@ func VisibleProviders() []Provider {
 	providers := make([]Provider, 0, ct)
 	for _, pkgProviders := range curProviders {
 		for _, p := range pkgProviders {
-			if !GetAuthProviderCommon(p).Hidden {
+			common := GetAuthProviderCommon(p)
+			if !common.Hidden && !common.NoSignIn {
 				providers = append(providers, p)
 			}
 		}
@@ -259,6 +261,10 @@ func GetAuthProviderCommon(p Provider) schema.AuthProviderCommon {
 			if dP.IsValid() && !dP.IsNil() {
 				s := dP.Elem().String()
 				common.DisplayPrefix = &s
+			}
+			noSignIn := e.FieldByName("NoSignIn")
+			if noSignIn.IsValid() && !noSignIn.IsNil() {
+				common.NoSignIn = noSignIn.Bool()
 			}
 		}
 	}

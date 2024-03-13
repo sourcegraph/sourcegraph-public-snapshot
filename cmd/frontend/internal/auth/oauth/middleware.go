@@ -211,7 +211,7 @@ func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 }
 
 func getExactlyOneOAuthProvider() *Provider {
-	ps := providers.VisibleProviders()
+	ps := providers.SignInProviders()
 	if len(ps) != 1 {
 		return nil
 	}
