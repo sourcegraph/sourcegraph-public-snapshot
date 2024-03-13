@@ -937,7 +937,7 @@ export function createHoverifier<C extends object, D, A>({
                 switchMap(highlightObservable => highlightObservable),
                 map(({ documentHighlights, position, adjustPosition, codeView, part, ...rest }) =>
                     !documentHighlights || documentHighlights.length === 0 || !position
-                        ? { adjustPosition, codeView, part, ...rest, positions: of<Position[]>([]) }
+                        ? { adjustPosition, codeView, part, ...rest, positions: of([]) }
                         : {
                               adjustPosition,
                               codeView,

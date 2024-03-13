@@ -246,7 +246,7 @@ export const getDefinitionURL =
                     Partial<MaybeLoadingResult<UIDefinitionURL | null>>
                 > => {
                     if (definitions.length === 0) {
-                        return of<MaybeLoadingResult<UIDefinitionURL | null>>({ isLoading, result: null })
+                        return of({ isLoading, result: null })
                     }
 
                     // Get unique definitions.
@@ -258,7 +258,7 @@ export const getDefinitionURL =
                             workspaceRoots || [],
                             parseRepoURI(parameters.textDocument.uri)
                         )
-                        return of<MaybeLoadingResult<UIDefinitionURL | null>>({
+                        return of({
                             isLoading,
                             result: {
                                 url: urlToFile(
