@@ -23,33 +23,39 @@ import (
 )
 
 type Command struct {
-	Name                string
-	Cmd                 string            `yaml:"cmd"`
-	Install             string            `yaml:"install"`
-	InstallFunc         string            `yaml:"install_func"`
-	CheckBinary         string            `yaml:"checkBinary"`
-	Env                 map[string]string `yaml:"env"`
-	Watch               []string          `yaml:"watch"`
-	IgnoreStdout        bool              `yaml:"ignoreStdout"`
-	IgnoreStderr        bool              `yaml:"ignoreStderr"`
-	DefaultArgs         string            `yaml:"defaultArgs"`
-	ContinueWatchOnExit bool              `yaml:"continueWatchOnExit"`
-	// Preamble is a short and visible message, displayed when the command is launched.
-	Preamble string `yaml:"preamble"`
-
-	ExternalSecrets map[string]secrets.ExternalSecret `yaml:"external_secrets"`
-	Description     string                            `yaml:"description"`
+	Config      SGConfigCommandOptions
+	Cmd         string   `yaml:"cmd"`
+	DefaultArgs string   `yaml:"defaultArgs"`
+	Install     string   `yaml:"install"`
+	InstallFunc string   `yaml:"install_func"`
+	CheckBinary string   `yaml:"checkBinary"`
+	Watch       []string `yaml:"watch"`
 
 	// ATTENTION: If you add a new field here, be sure to also handle that
 	// field in `Merge` (below).
 }
 
-func (cmd Command) GetName() string {
-	return cmd.Name
+// UnmarshalYAML implements the Unmarshaler interface for Command.
+// This allows us to parse the flat YAML configuration into nested struct.
+func (cmd *Command) UnmarshalYAML(unmarshal func(any) error) error {
+	// In order to not recurse infinitely (calling UnmarshalYAML over and over) we create a
+	// temporary type alias.
+	// First parse the Command specific options
+	type rawCommand Command
+	if err := unmarshal((*rawCommand)(cmd)); err != nil {
+		return err
+	}
+
+	// Then parse the common options from the same list into a nested struct
+	return unmarshal(&cmd.Config)
 }
 
-func (cmd Command) GetContinueWatchOnExit() bool {
-	return cmd.ContinueWatchOnExit
+func (cmd Command) GetConfig() SGConfigCommandOptions {
+	return cmd.Config
+}
+
+func (cmd Command) GetName() string {
+	return cmd.Config.Name
 }
 
 func (cmd Command) GetBinaryLocation() (string, error) {
@@ -60,27 +66,7 @@ func (cmd Command) GetBinaryLocation() (string, error) {
 		}
 		return filepath.Join(repoRoot, cmd.CheckBinary), nil
 	}
-	return "", noBinaryError{name: cmd.Name}
-}
-
-func (cmd Command) GetExternalSecrets() map[string]secrets.ExternalSecret {
-	return cmd.ExternalSecrets
-}
-
-func (cmd Command) GetIgnoreStdout() bool {
-	return cmd.IgnoreStdout
-}
-
-func (cmd Command) GetIgnoreStderr() bool {
-	return cmd.IgnoreStderr
-}
-
-func (cmd Command) GetPreamble() string {
-	return cmd.Preamble
-}
-
-func (cmd Command) GetEnv() map[string]string {
-	return cmd.Env
+	return "", noBinaryError{name: cmd.Config.Name}
 }
 
 func (cmd Command) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
@@ -115,9 +101,9 @@ func (cmd Command) hasBashInstaller() bool {
 }
 
 func (cmd Command) bashInstall(ctx context.Context, parentEnv map[string]string) error {
-	output, err := BashInRoot(ctx, cmd.Install, makeEnv(parentEnv, cmd.Env))
+	output, err := BashInRoot(ctx, cmd.Install, makeEnv(parentEnv, cmd.Config.Env))
 	if err != nil {
-		return installErr{cmdName: cmd.Name, output: output, originalErr: err}
+		return installErr{cmdName: cmd.Config.Name, output: output, originalErr: err}
 	}
 	return nil
 }
@@ -125,10 +111,10 @@ func (cmd Command) bashInstall(ctx context.Context, parentEnv map[string]string)
 func (cmd Command) functionInstall(ctx context.Context, parentEnv map[string]string) error {
 	fn, ok := installFuncs[cmd.InstallFunc]
 	if !ok {
-		return installErr{cmdName: cmd.Name, originalErr: errors.Newf("no install func with name %q found", cmd.InstallFunc)}
+		return installErr{cmdName: cmd.Config.Name, originalErr: errors.Newf("no install func with name %q found", cmd.InstallFunc)}
 	}
-	if err := fn(ctx, makeEnvMap(parentEnv, cmd.Env)); err != nil {
-		return installErr{cmdName: cmd.Name, originalErr: err}
+	if err := fn(ctx, makeEnvMap(parentEnv, cmd.Config.Env)); err != nil {
+		return installErr{cmdName: cmd.Config.Name, originalErr: err}
 	}
 
 	return nil
@@ -159,9 +145,8 @@ func (cmd Command) StartWatch(ctx context.Context) (<-chan struct{}, error) {
 func (c Command) Merge(other Command) Command {
 	merged := c
 
-	if other.Name != merged.Name && other.Name != "" {
-		merged.Name = other.Name
-	}
+	merged.Config = c.Config.Merge(other.Config)
+
 	if other.Cmd != merged.Cmd && other.Cmd != "" {
 		merged.Cmd = other.Cmd
 	}
@@ -171,42 +156,16 @@ func (c Command) Merge(other Command) Command {
 	if other.InstallFunc != merged.InstallFunc && other.InstallFunc != "" {
 		merged.InstallFunc = other.InstallFunc
 	}
-	if other.IgnoreStdout != merged.IgnoreStdout && !merged.IgnoreStdout {
-		merged.IgnoreStdout = other.IgnoreStdout
-	}
-	if other.IgnoreStderr != merged.IgnoreStderr && !merged.IgnoreStderr {
-		merged.IgnoreStderr = other.IgnoreStderr
-	}
-	if other.DefaultArgs != merged.DefaultArgs && other.DefaultArgs != "" {
-		merged.DefaultArgs = other.DefaultArgs
-	}
-	if other.Preamble != merged.Preamble && other.Preamble != "" {
-		merged.Preamble = other.Preamble
-	}
-	if other.Description != merged.Description && other.Description != "" {
-		merged.Description = other.Description
-	}
-	merged.ContinueWatchOnExit = other.ContinueWatchOnExit || merged.ContinueWatchOnExit
-
-	for k, v := range other.Env {
-		if merged.Env == nil {
-			merged.Env = make(map[string]string)
-		}
-		merged.Env[k] = v
-	}
-
-	for k, v := range other.ExternalSecrets {
-		if merged.ExternalSecrets == nil {
-			merged.ExternalSecrets = make(map[string]secrets.ExternalSecret)
-		}
-		merged.ExternalSecrets[k] = v
-	}
 
 	if !equal(merged.Watch, other.Watch) && len(other.Watch) != 0 {
 		merged.Watch = other.Watch
 	}
 
 	return merged
+}
+
+func (cmd *Command) GetOptions() *SGConfigCommandOptions {
+	return &cmd.Config
 }
 
 func equal(a, b []string) bool {
@@ -297,23 +256,25 @@ func startSgCmd(ctx context.Context, cmd SGConfigCommand, dir string, parentEnv 
 		return nil, err
 	}
 
-	secretsEnv, err := getSecrets(ctx, cmd.GetName(), cmd.GetExternalSecrets())
+	conf := cmd.GetConfig()
+
+	secretsEnv, err := getSecrets(ctx, conf.Name, conf.ExternalSecrets)
 	if err != nil {
 		std.Out.WriteLine(output.Styledf(output.StyleWarning, "[%s] %s %s",
-			cmd.GetName(), output.EmojiFailure, err.Error()))
+			conf.Name, output.EmojiFailure, err.Error()))
 	}
 
 	opts := commandOptions{
-		name:   cmd.GetName(),
+		name:   conf.Name,
 		exec:   exec,
-		env:    makeEnv(parentEnv, secretsEnv, cmd.GetEnv()),
+		env:    makeEnv(parentEnv, secretsEnv, conf.Env),
 		dir:    dir,
-		stdout: outputOptions{ignore: cmd.GetIgnoreStdout()},
-		stderr: outputOptions{ignore: cmd.GetIgnoreStderr()},
+		stdout: outputOptions{ignore: conf.IgnoreStdout},
+		stderr: outputOptions{ignore: conf.IgnoreStderr},
 	}
 
-	if cmd.GetPreamble() != "" {
-		std.Out.WriteLine(output.Styledf(output.StyleOrange, "[%s] %s %s", cmd.GetName(), output.EmojiInfo, cmd.GetPreamble()))
+	if conf.Preamble != "" {
+		std.Out.WriteLine(output.Styledf(output.StyleOrange, "[%s] %s %s", conf.Name, output.EmojiInfo, conf.Preamble))
 	}
 
 	return startCmd(ctx, opts)

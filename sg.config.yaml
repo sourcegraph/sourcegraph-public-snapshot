@@ -1187,8 +1187,6 @@ dockerCommands:
       mkdir -p "${PROMETHEUS_DISK}"
       mkdir -p "$(dirname ${PROMETHEUS_LOG_FILE})"
 
-      echo docker inspect $CONTAINER >/dev/null 2>&1
-      echo docker rm -f $CONTAINER
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
 
       if [[ $(uname) == "Linux" ]]; then

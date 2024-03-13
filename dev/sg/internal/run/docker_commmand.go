@@ -6,60 +6,41 @@ import (
 	"os/exec"
 
 	"github.com/rjeczalik/notify"
-
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 )
 
 // A DockerCommand is a command definition for sg run/start that uses
 // bazel under the hood. It will handle restarting itself autonomously,
 // as long as iBazel is running and watch that specific target.
 type DockerCommand struct {
-	Name                string
-	Container           string            `yaml:"container"`
-	Description         string            `yaml:"description"`
-	Target              string            `yaml:"target"`
-	Args                string            `yaml:"args"`
-	PreCmd              string            `yaml:"precmd"`
-	Cmd                 string            `yaml:"cmd"`
-	Env                 map[string]string `yaml:"env"`
-	IgnoreStdout        bool              `yaml:"ignoreStdout"`
-	IgnoreStderr        bool              `yaml:"ignoreStderr"`
-	ContinueWatchOnExit bool              `yaml:"continueWatchOnExit"`
-	// Preamble is a short and visible message, displayed when the command is launched.
-	Preamble        string                            `yaml:"preamble"`
-	ExternalSecrets map[string]secrets.ExternalSecret `yaml:"external_secrets"`
+	Config    SGConfigCommandOptions
+	Container string `yaml:"container"`
+	Target    string `yaml:"target"`
+	Args      string `yaml:"args"`
+	PreCmd    string `yaml:"precmd"`
+	Cmd       string `yaml:"cmd"`
 }
 
-func (dc DockerCommand) GetName() string {
-	return dc.Name
+// UnmarshalYAML implements the Unmarshaler interface for DockerCommand.
+// This allows us to parse the flat YAML configuration into nested struct.
+func (dc *DockerCommand) UnmarshalYAML(unmarshal func(any) error) error {
+	// In order to not recurse infinitely (calling UnmarshalYAML over and over) we create a
+	// temporary type alias.
+	// First parse the DockerCommand specific options
+	type rawDocker DockerCommand
+	if err := unmarshal((*rawDocker)(dc)); err != nil {
+		return err
+	}
+
+	// Then parse the common options from the same list into a nested struct
+	return unmarshal(&dc.Config)
 }
 
-func (dc DockerCommand) GetContinueWatchOnExit() bool {
-	return dc.ContinueWatchOnExit
-}
-
-func (dc DockerCommand) GetEnv() map[string]string {
-	return dc.Env
-}
-
-func (dc DockerCommand) GetIgnoreStdout() bool {
-	return dc.IgnoreStdout
-}
-
-func (dc DockerCommand) GetIgnoreStderr() bool {
-	return dc.IgnoreStderr
-}
-
-func (dc DockerCommand) GetPreamble() string {
-	return dc.Preamble
+func (dc DockerCommand) GetConfig() SGConfigCommandOptions {
+	return dc.Config
 }
 
 func (dc DockerCommand) GetBinaryLocation() (string, error) {
 	return binaryLocation(dc.Target)
-}
-
-func (dc DockerCommand) GetExternalSecrets() map[string]secrets.ExternalSecret {
-	return dc.ExternalSecrets
 }
 
 func (dc DockerCommand) watchPaths() ([]string, error) {
@@ -91,8 +72,12 @@ func (dc DockerCommand) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
-	cleanup := fmt.Sprintf("docker inspect %s > /dev/null 2>&1 && docker rm -f %s", dc.Name, dc.Name)
+	cleanup := fmt.Sprintf("docker inspect %s > /dev/null 2>&1 && docker rm -f %s", dc.Config.Name, dc.Config.Name)
 	load := fmt.Sprintf("docker load -i %s", bin)
 	cmd := fmt.Sprintf("%s\n%s\n%s", cleanup, load, dc.Cmd)
 	return exec.CommandContext(ctx, "bash", "-c", cmd), nil
+}
+
+func (dc *DockerCommand) GetOptions() *SGConfigCommandOptions {
+	return &dc.Config
 }

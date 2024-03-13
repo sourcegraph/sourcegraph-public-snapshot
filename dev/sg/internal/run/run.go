@@ -67,7 +67,8 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 	for _, cmd := range runner.cmds {
 		cmd := cmd
 		p.Go(func(ctx context.Context) error {
-			std.Out.WriteLine(output.Styledf(output.StylePending, "Running %s...", cmd.GetName()))
+			config := cmd.GetConfig()
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Running %s...", config.Name))
 
 			// Start watching the commands dependencies
 			wantRestart, err := cmd.StartWatch(ctx)
@@ -80,7 +81,7 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 			proc, err := runner.start(ctx, cmd)
 			if err != nil {
 				runner.printError(cmd, err)
-				return errors.Wrapf(err, "failed to start command %q", cmd.GetName())
+				return errors.Wrapf(err, "failed to start command %q", config.Name)
 			}
 			defer proc.cancel()
 
@@ -98,17 +99,17 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 						return err
 					}
 
-					runner.WriteLine(output.Styledf(output.StyleSuccess, "%s%s exited without error%s", output.StyleBold, cmd.GetName(), output.StyleReset))
+					runner.WriteLine(output.Styledf(output.StyleSuccess, "%s%s exited without error%s", output.StyleBold, config.Name, output.StyleReset))
 
 					// If we shouldn't restart when the process exits, return
-					if !cmd.GetContinueWatchOnExit() {
+					if !config.ContinueWatchOnExit {
 						return nil
 					}
 
 				// handle file watcher triggered
 				case <-wantRestart:
 					// If the command has an installer, re-run the install and determine if we should restart
-					runner.WriteLine(output.Styledf(output.StylePending, "Change detected. Reloading %s...", cmd.GetName()))
+					runner.WriteLine(output.Styledf(output.StylePending, "Change detected. Reloading %s...", config.Name))
 					shouldRestart, err := runner.reinstall(ctx, cmd)
 					if err != nil {
 						runner.printError(cmd, err)
@@ -116,7 +117,7 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 					}
 
 					if shouldRestart {
-						runner.WriteLine(output.Styledf(output.StylePending, "Restarting %s...", cmd.GetName()))
+						runner.WriteLine(output.Styledf(output.StylePending, "Restarting %s...", config.Name))
 						proc.cancel()
 						proc, err = runner.start(ctx, cmd)
 						if err != nil {
@@ -124,7 +125,7 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 						}
 						defer proc.cancel()
 					} else {
-						runner.WriteLine(output.Styledf(output.StylePending, "Binary for %s did not change. Not restarting.", cmd.GetName()))
+						runner.WriteLine(output.Styledf(output.StylePending, "Binary for %s did not change. Not restarting.", config.Name))
 					}
 				}
 			}
@@ -135,7 +136,7 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 }
 
 func (runner *cmdRunner) printError(cmd SGConfigCommand, err error) {
-	printCmdError(runner.Output.Output, cmd.GetName(), err)
+	printCmdError(runner.Output.Output, cmd.GetConfig().Name, err)
 }
 
 func (runner *cmdRunner) debug(msg string, args ...any) { //nolint currently unused but a handy tool for debugginlg
@@ -354,10 +355,12 @@ func Test(ctx context.Context, cmd SGConfigCommand, parentEnv map[string]string)
 		return err
 	}
 
-	std.Out.WriteLine(output.Styledf(output.StylePending, "Starting testsuite %q.", cmd.GetName()))
+	name := cmd.GetConfig().Name
+
+	std.Out.WriteLine(output.Styledf(output.StylePending, "Starting testsuite %q.", name))
 	proc, err := startSgCmd(ctx, cmd, repoRoot, parentEnv)
 	if err != nil {
-		printCmdError(std.Out.Output, cmd.GetName(), err)
+		printCmdError(std.Out.Output, name, err)
 	}
 	return proc.Wait()
 }

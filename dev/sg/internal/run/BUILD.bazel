@@ -15,6 +15,7 @@ go_library(
         "prefix_suffix_saver.go",
         "run.go",
         "sgconfig_command.go",
+        "sgconfig_command_options.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/run",
     visibility = ["//dev/sg:__subpackages__"],

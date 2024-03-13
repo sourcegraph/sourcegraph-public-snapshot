@@ -33,17 +33,17 @@ func parseConfig(data []byte) (*Config, error) {
 	}
 
 	for name, cmd := range conf.BazelCommands {
-		cmd.Name = name
+		setName(name, &cmd)
 		conf.BazelCommands[name] = cmd
 	}
 
 	for name, cmd := range conf.DockerCommands {
-		cmd.Name = name
+		setName(name, &cmd)
 		conf.DockerCommands[name] = cmd
 	}
 
 	for name, cmd := range conf.Commands {
-		cmd.Name = name
+		setName(name, &cmd)
 		normalizeCmd(&cmd)
 		conf.Commands[name] = cmd
 	}
@@ -54,7 +54,7 @@ func parseConfig(data []byte) (*Config, error) {
 	}
 
 	for name, cmd := range conf.Tests {
-		cmd.Name = name
+		setName(name, &cmd)
 		normalizeCmd(&cmd)
 		conf.Tests[name] = cmd
 	}
@@ -66,6 +66,10 @@ func normalizeCmd(cmd *run.Command) {
 	// Trim trailing whitespace so extra args apply to last command (instead of being interpreted as
 	// a new shell command on a separate line).
 	cmd.Cmd = strings.TrimSpace(cmd.Cmd)
+}
+
+func setName[T run.HasSGConfigCommandOptions](name string, cmd T) {
+	cmd.GetOptions().Name = name
 }
 
 type Commandset struct {

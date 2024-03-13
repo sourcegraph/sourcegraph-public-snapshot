@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"slices"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -51,12 +52,23 @@ func NewIBazel(targets []string, dir string) (*IBazel, error) {
 	}
 
 	return &IBazel{
-		targets: targets,
+		targets: cleanTargets(targets),
 		events:  newIBazelEventHandler(profileEventsPath(logsDir)),
 		logsDir: logsDir,
 		logFile: logFile,
 		dir:     dir,
 	}, nil
+}
+
+func cleanTargets(targets []string) []string {
+	output := []string{}
+
+	for _, target := range targets {
+		if target != "" && !slices.Contains(output, target) {
+			output = append(output, target)
+		}
+	}
+	return output
 }
 
 func initLogsDir() (string, error) {

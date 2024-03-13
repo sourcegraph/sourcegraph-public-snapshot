@@ -22,7 +22,9 @@ func TestStartCommandSet(t *testing.T) {
 
 	commandSet := &sgconf.Commandset{Name: "test-set", Commands: []string{"test-cmd-1"}}
 	command := run.Command{
-		Name:    "test-cmd-1",
+		Config: run.SGConfigCommandOptions{
+			Name: "test-cmd-1",
+		},
 		Install: "echo 'booting up horsegraph'",
 		Cmd:     "echo 'horsegraph booted up. mount your horse.' && echo 'quitting. not horsing around anymore.'",
 	}
@@ -62,7 +64,9 @@ func TestStartCommandSet_InstallError(t *testing.T) {
 
 	commandSet := &sgconf.Commandset{Name: "test-set", Commands: []string{"test-cmd-1"}}
 	command := run.Command{
-		Name:    "test-cmd-1",
+		Config: run.SGConfigCommandOptions{
+			Name: "test-cmd-1",
+		},
 		Install: "echo 'booting up horsegraph' && exit 1",
 		Cmd:     "echo 'never appears'",
 	}
