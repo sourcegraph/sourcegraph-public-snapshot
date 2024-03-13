@@ -1,11 +1,19 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/wolfi"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
+)
+
+var (
+	buildLegacy bool
 )
 
 var (
@@ -77,6 +85,14 @@ This is convenient for testing package changes locally before publishing them.
 Once built, the base image is loaded into Docker and can be run locally.
 It can also be used for local development by updating its path and hash in the 'dev/oci_deps.bzl' file.
 `,
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:        "legacy",
+						Aliases:     []string{"l"},
+						Usage:       "Build using legacy apko binary rather than Bazel",
+						Destination: &buildLegacy,
+					},
+				},
 				Action: func(ctx *cli.Context) error {
 					args := ctx.Args().Slice()
 					if len(args) == 0 {
@@ -95,16 +111,25 @@ It can also be used for local development by updating its path and hash in the '
 						return err
 					}
 
-					if err = c.DoBaseImageBuild(manifestBaseName, buildDir); err != nil {
-						return err
-					}
+					if !buildLegacy {
+						fmt.Printf("Using bazel build process\n")
+						if err = c.DoBaseImageBuild(manifestBaseName, buildDir); err != nil {
+							return err
+						}
 
-					if err = c.LoadBaseImage(baseImageName); err != nil {
-						return err
-					}
+						std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Run base image locally using:\n\n\tdocker run -it --entrypoint /bin/sh %s\n", wolfi.DockerImageName(manifestBaseName)))
+					} else {
+						if err = c.DoBaseImageBuildLegacy(manifestBaseName, buildDir); err != nil {
+							return err
+						}
 
-					if err = c.CleanupBaseImageBuild(baseImageName); err != nil {
-						return err
+						if err = c.LoadBaseImage(baseImageName); err != nil {
+							return err
+						}
+
+						if err = c.CleanupBaseImageBuild(baseImageName); err != nil {
+							return err
+						}
 					}
 
 					return nil

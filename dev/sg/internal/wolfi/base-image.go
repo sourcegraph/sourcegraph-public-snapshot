@@ -36,7 +36,49 @@ func (c PackageRepoConfig) SetupBaseImageBuild(name string) (manifestBaseName st
 	return
 }
 
+// resolveImagePath takes an image name and returns the build path where the image's Bazel config can be found
+func resolveImagePath(name string) (string, error) {
+	// Special cases which are embedded in wolfi-images/
+	if name == "sourcegraph" || name == "sourcegraph-dev" {
+		return "wolfi-images", nil
+	}
+
+	// Search for requested image in standard locations
+	imageDirs := []string{"cmd", "docker-images"}
+	for _, dir := range imageDirs {
+		imagePath := filepath.Join(dir, name)
+		if _, err := os.Stat(imagePath); !os.IsNotExist(err) {
+			return imagePath, nil
+		}
+	}
+
+	return "", errors.New(fmt.Sprintf("no such image (searched %+v)", imageDirs))
+}
+
 func (c PackageRepoConfig) DoBaseImageBuild(name string, buildDir string) error {
+	std.Out.WriteLine(output.Linef("📦", output.StylePending, "Building base image %s...", name))
+	std.Out.WriteLine(output.Linef("🤖", output.StylePending, "Apko build output:\n"))
+
+	buildPath, err := resolveImagePath(name)
+	if err != nil {
+		return errors.Wrap(err, "failed to resolve image's Bazel build path")
+	}
+	bazelBuildPath := fmt.Sprintf("//%s:wolfi_base_tarball", buildPath)
+
+	cmd := exec.Command(
+		"bazel", "run", bazelBuildPath,
+	)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
+	if err != nil {
+		return errors.Wrap(err, "failed to build base image")
+	}
+
+	return nil
+}
+
+func (c PackageRepoConfig) DoBaseImageBuildLegacy(name string, buildDir string) error {
 	std.Out.WriteLine(output.Linef("📦", output.StylePending, "Building base image %s...", name))
 	std.Out.WriteLine(output.Linef("🤖", output.StylePending, "Apko build output:\n"))
 
@@ -73,7 +115,11 @@ func (c PackageRepoConfig) DoBaseImageBuild(name string, buildDir string) error 
 	return nil
 }
 
-func dockerImageName(name string) string {
+func DockerImageName(name string) string {
+	return fmt.Sprintf("%s-base:latest", name)
+}
+
+func legacyDockerImageName(name string) string {
 	return fmt.Sprintf("sourcegraph-wolfi/%s-base:latest-amd64", name)
 }
 
@@ -102,7 +148,7 @@ func (c PackageRepoConfig) LoadBaseImage(name string) error {
 	}
 
 	std.Out.Write("")
-	std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Run base image locally using:\n\n\tdocker run -it --entrypoint /bin/sh %s\n", dockerImageName(name)))
+	std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Run base image locally using:\n\n\tdocker run -it --entrypoint /bin/sh %s\n", legacyDockerImageName(name)))
 
 	return nil
 }
