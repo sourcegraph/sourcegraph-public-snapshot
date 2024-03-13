@@ -3,22 +3,12 @@
     //  - History more
     //  - Default context support
     //  - Global keyboard shortcut
-    import { mdiCodeBrackets, mdiFormatLetterCase, mdiRegex } from '@mdi/js'
-
-    import { goto, invalidate } from '$app/navigation'
-    import { SearchPatternType } from '$lib/graphql-operations'
-    import Icon from '$lib/Icon.svelte'
-    import Tooltip from '$lib/Tooltip.svelte'
-
-    import { type QueryStateStore, getQueryURL, QueryState } from '../state'
-    import BaseCodeMirrorQueryInput from '$lib/search/BaseQueryInput.svelte'
-    import { createSuggestionsSource } from '$lib/web'
-    import { query, type DocumentInput } from '$lib/graphql'
-    import Suggestions from './Suggestions.svelte'
-    import { user } from '$lib/stores'
 
     import { EditorSelection, EditorState, Prec, type Extension } from '@codemirror/state'
     import { EditorView } from '@codemirror/view'
+    import { mdiCodeBrackets, mdiFormatLetterCase, mdiRegex } from '@mdi/js'
+
+    import { goto, invalidate } from '$app/navigation'
     import {
         type Option,
         type Action,
@@ -35,7 +25,18 @@
         onModeChange,
         setMode,
     } from '$lib/branded'
+    import { query, type DocumentInput } from '$lib/graphql'
+    import { SearchPatternType } from '$lib/graphql-operations'
+    import Icon from '$lib/Icon.svelte'
+    import BaseCodeMirrorQueryInput from '$lib/search/BaseQueryInput.svelte'
+    import { user } from '$lib/stores'
+    import Tooltip from '$lib/Tooltip.svelte'
+    import { createSuggestionsSource } from '$lib/web'
+
+    import { type QueryStateStore, getQueryURL, QueryState } from '../state'
+
     import { createRecentSearchesStore } from './recentSearches'
+    import Suggestions from './Suggestions.svelte'
 
     const placeholderText = 'Search for code or files...'
 
@@ -370,10 +371,6 @@
         border: 0;
         background-color: transparent;
         cursor: pointer;
-    }
-
-    button.mode {
-        clear: all;
     }
 
     .mode-switcher {

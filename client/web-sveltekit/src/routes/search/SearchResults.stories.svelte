@@ -12,12 +12,12 @@
     import {
         createCommitMatch,
         createContentMatch,
-        createHighlightedFileResult,
         createPathMatch,
         createPersonMatch,
         createSymbolMatch,
         createTeamMatch,
-    } from '$testing/testdata'
+    } from '$testing/search-testdata'
+    import { createHighlightedFileResult } from '$testing/testdata'
 
     import CommitSearchResult from './CommitSearchResult.svelte'
     import FileContentSearchResult from './FileContentSearchResult.svelte'
