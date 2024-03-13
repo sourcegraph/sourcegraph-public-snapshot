@@ -133,8 +133,8 @@ require (
 	github.com/hexops/valast v1.4.4
 	github.com/honeycombio/libhoney-go v1.15.8
 	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac
-	github.com/jackc/pgconn v1.14.0
-	github.com/jackc/pgx/v4 v4.18.1
+	github.com/jackc/pgconn v1.14.3
+	github.com/jackc/pgx/v4 v4.18.2
 	github.com/joho/godotenv v1.5.1
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/json-iterator/go v1.1.12
@@ -222,7 +222,7 @@ require (
 	go.uber.org/automaxprocs v1.5.2
 	go.uber.org/ratelimit v0.2.0
 	go.uber.org/zap v1.26.0
-	golang.org/x/crypto v0.19.0
+	golang.org/x/crypto v0.20.0
 	golang.org/x/net v0.21.0
 	golang.org/x/oauth2 v0.16.0
 	golang.org/x/sync v0.6.0
@@ -232,7 +232,7 @@ require (
 	gonum.org/v1/gonum v0.13.0
 	google.golang.org/api v0.156.0
 	google.golang.org/genproto v0.0.0-20240116215550-a9fa1716bcac // indirect
-	google.golang.org/protobuf v1.32.0
+	google.golang.org/protobuf v1.33.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -360,7 +360,7 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/jsonapi v0.0.0-20210826224640-ee7dae0fb22d // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
-	github.com/jackc/pgproto3/v2 v2.3.2 // indirect
+	github.com/jackc/pgproto3/v2 v2.3.3 // indirect
 	github.com/jackc/pgx/v5 v5.5.0 // indirect
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
