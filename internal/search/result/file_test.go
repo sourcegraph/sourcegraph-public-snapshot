@@ -101,7 +101,7 @@ func TestAppendSymbols(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.input1.appendSymbols(tc.input2)
+			tc.input1.mergeSymbols(tc.input2)
 			require.Equal(t, tc.output, tc.input1)
 		})
 	}

@@ -169,11 +169,11 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 func (fm *FileMatch) AppendMatches(src *FileMatch) {
 	// TODO merge hunk matches smartly
 	fm.ChunkMatches = append(fm.ChunkMatches, src.ChunkMatches...)
-	fm.appendSymbols(src)
+	fm.mergeSymbols(src)
 	fm.LimitHit = fm.LimitHit || src.LimitHit
 }
 
-func (fm *FileMatch) appendSymbols(src *FileMatch) {
+func (fm *FileMatch) mergeSymbols(src *FileMatch) {
 	fm.Symbols = append(fm.Symbols, src.Symbols...)
 	slices.SortFunc(fm.Symbols, compareSymbolMatches)
 	fm.Symbols = DedupSymbols(fm.Symbols)
