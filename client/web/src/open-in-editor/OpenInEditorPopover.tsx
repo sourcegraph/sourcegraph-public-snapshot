@@ -4,7 +4,7 @@ import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { Button, H3, Icon, Input, Link, Select, Text, Form } from '@sourcegraph/wildcard'
+import { Button, H3, Icon, Input, Link, Select, Text, Form, Code } from '@sourcegraph/wildcard'
 
 import { isProjectPathValid } from './build-url'
 import type { EditorSettings } from './editor-settings'
@@ -97,8 +97,8 @@ export const OpenInEditorPopover: React.FunctionComponent<
                     />
                     <aside className="small text-muted">
                         The directory that contains your repository checkouts. For example, if this repository is
-                        checked out to <code>/Users/username/projects/cody</code>, then set your default projects path
-                        to <code>/Users/username/projects</code>.
+                        checked out to <Code>/Users/username/projects/cody</Code>, then set your default projects path
+                        to <Code>/Users/username/projects</Code>.
                     </aside>
                     <Select
                         id="OpenInEditorForm-editor"
