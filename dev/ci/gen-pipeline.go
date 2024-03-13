@@ -91,8 +91,9 @@ func previewPipeline(w io.Writer, c ci.Config, pipeline *buildkite.Pipeline) {
 		// that get generated, so we rather just specify that there will be Aspect Workflow steps instead of
 		// running the risk of hardcoding all the steps and the rendered steps getting out of sync with what
 		// is ACTUALLY running on the agent.
-		steps := []any{&buildkite.Step{
-			Label: "Aspect Workflows specific steps",
+		steps := []any{&buildkite.Pipeline{
+			Group: buildkite.Group{Group: "Aspect Workflow specific steps"},
+			Steps: []any{&buildkite.Step{Label: "🤖 Generated steps that include Buildifier, Gazelle, Test and Integration/E2E tests"}},
 		}}
 		// Flipping the order so that the Aspect steps appear first
 		pipeline.Steps = append(steps, pipeline.Steps...)
