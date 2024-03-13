@@ -74,7 +74,8 @@ func TestNewPlanJob(t *testing.T) {
               (repoOpts.searchContextSpec . @userA)
               (PARTIALREPOS
                 (SEARCHERTEXTSEARCH
-                  (indexed . false))))
+                  (indexed . false)
+                  (patternInfo . TextPatternInfo{"foo",filematchlimit:10000}))))
             (REPOSEARCH
               (repoOpts.repoFilters . [foo])
               (repoOpts.searchContextSpec . @userA)
@@ -163,7 +164,8 @@ func TestNewPlanJob(t *testing.T) {
               (repoOpts.repoFilters . [sourcegraph/sourcegraph])
               (PARTIALREPOS
                 (SEARCHERTEXTSEARCH
-                  (indexed . false))))
+                  (indexed . false)
+                  (patternInfo . TextPatternInfo{"foo",filematchlimit:10000}))))
             (REPOSEARCH
               (repoOpts.repoFilters . [sourcegraph/sourcegraph foo])
               (repoNamePatterns . [(?i)sourcegraph/sourcegraph (?i)foo])))
@@ -425,7 +427,8 @@ func TestNewPlanJob(t *testing.T) {
               (repoOpts.repoFilters . [test])
               (PARTIALREPOS
                 (SEARCHERTEXTSEARCH
-                  (indexed . false))))
+                  (indexed . false)
+                  (patternInfo . TextPatternInfo{/test/,filematchlimit:10000}))))
             (REPOSEARCH
               (repoOpts.repoFilters . [test test])
               (repoNamePatterns . [(?i)test (?i)test])))
@@ -508,7 +511,8 @@ func TestNewPlanJob(t *testing.T) {
               (repoOpts.repoFilters . [test])
               (PARTIALREPOS
                 (SEARCHERTEXTSEARCH
-                  (indexed . false))))
+                  (indexed . false)
+                  (patternInfo . TextPatternInfo{/test/,filematchlimit:10000}))))
             (REPOSEARCH
               (repoOpts.repoFilters . [test test])
               (repoNamePatterns . [(?i)test (?i)test])))
@@ -767,7 +771,8 @@ func TestNewPlanJob(t *testing.T) {
               (repoOpts.hasKVPs[0].key . tag)
               (PARTIALREPOS
                 (SEARCHERTEXTSEARCH
-                  (indexed . false))))
+                  (indexed . false)
+                  (patternInfo . TextPatternInfo{/foo/,filematchlimit:10000}))))
             (REPOSEARCH
               (repoOpts.repoFilters . [foo])
               (repoOpts.hasKVPs[0].key . tag)
