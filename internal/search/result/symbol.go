@@ -143,7 +143,7 @@ func (s *SymbolMatch) URL() *url.URL {
 	return base
 }
 
-func CompareSymbolMatches(a, b *SymbolMatch) int {
+func compareSymbolMatches(a, b *SymbolMatch) int {
 	if v := cmp.Compare(a.Symbol.Line, b.Symbol.Line); v != 0 {
 		return v
 	}
@@ -174,11 +174,7 @@ func DedupSymbols(symbols []*SymbolMatch) []*SymbolMatch {
 	dedup := symbols[:1]
 	for _, sym := range symbols[1:] {
 		last := dedup[len(dedup)-1]
-		if (sym.Symbol.Line == last.Symbol.Line) &&
-			(sym.Symbol.Name == last.Symbol.Name) &&
-			(sym.Symbol.Kind == last.Symbol.Kind) &&
-			(sym.Symbol.Parent == last.Symbol.Parent) &&
-			(sym.Symbol.ParentKind == last.Symbol.ParentKind) {
+		if compareSymbolMatches(sym, last) == 0 {
 			continue
 		}
 		dedup = append(dedup, sym)

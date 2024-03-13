@@ -175,7 +175,7 @@ func (fm *FileMatch) AppendMatches(src *FileMatch) {
 
 func (fm *FileMatch) appendSymbols(src *FileMatch) {
 	fm.Symbols = append(fm.Symbols, src.Symbols...)
-	slices.SortFunc(fm.Symbols, CompareSymbolMatches)
+	slices.SortFunc(fm.Symbols, compareSymbolMatches)
 	fm.Symbols = DedupSymbols(fm.Symbols)
 }
 
