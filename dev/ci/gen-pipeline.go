@@ -85,6 +85,18 @@ func previewPipeline(w io.Writer, c ci.Config, pipeline *buildkite.Pipeline) {
 	fmt.Fprintf(w, "- **Computed variables:**\n")
 	fmt.Fprintf(w, "  - VERSION=%s\n", c.Version)
 	fmt.Fprintf(w, "- **Computed build steps:**\n")
+
+	if c.RunType != runtype.BazelDo {
+		// The reason we hard code the Aspect steps here is because we have no control over the Aspect steps
+		// that get generated, so we rather just specify that there will be Aspect Workflow steps instead of
+		// running the risk of hardcoding all the steps and the rendered steps getting out of sync with what
+		// is ACTUALLY running on the agent.
+		steps := []any{&buildkite.Step{
+			Label: "Aspect Workflows specific steps",
+		}}
+		// Flipping the order so that the Aspect steps appear first
+		pipeline.Steps = append(steps, pipeline.Steps...)
+	}
 	printPipeline(w, "", pipeline)
 }
 
