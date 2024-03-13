@@ -83,7 +83,9 @@ func (node Pattern) String() string {
 // backends rather than directly checking annotations when building queries
 // for your backend.
 func (node Pattern) IsRegExp() bool {
-	return !node.Annotation.Labels.IsSet(Literal)
+	// NOTE: Structural tech debt. We want the patterns to be treated like
+	// literals and not passed down as regex to searcher.
+	return !node.Annotation.Labels.IsSet(Literal | Structural)
 }
 
 // RegExpPattern returns the pattern value as a regex string. If node.IsRegExp
