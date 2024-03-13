@@ -46,10 +46,7 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
 }) => {
     const repoName = props.repoName
     const repoOrError = useObservable(
-        useMemo(
-            () => fetchSettingsAreaRepository(repoName).pipe(catchError(error => of(asError(error)))),
-            [repoName]
-        )
+        useMemo(() => fetchSettingsAreaRepository(repoName).pipe(catchError(error => of(asError(error)))), [repoName])
     )
 
     useBreadcrumb(useMemo(() => ({ key: 'settings', element: 'Settings' }), []))

@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'vitest'
 
+import { fromSubscribable } from '@sourcegraph/common'
+
 import type { WorkspaceRoot } from '../../codeintel/legacy-extensions/api'
 import { collectSubscribableValues, integrationTestContext } from '../../testing/testHelpers'
-import { fromSubscribable } from '@sourcegraph/common'
 
 describe('Workspace roots (integration)', () => {
     describe('workspace.roots', () => {

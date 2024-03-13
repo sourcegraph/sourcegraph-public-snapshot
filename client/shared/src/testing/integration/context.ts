@@ -288,14 +288,15 @@ export const createSharedIntegrationTestContext = async <
             triggerRequest: () => Promise<void> | void,
             operationName: O
         ): Promise<Parameters<TGraphQlOperations[O]>[0]> => {
-            const requestPromise = lastValueFrom(graphQlRequests
-                .pipe(
+            const requestPromise = lastValueFrom(
+                graphQlRequests.pipe(
                     first(
                         (request: GraphQLRequestEvent<TGraphQlOperationNames>): request is GraphQLRequestEvent<O> =>
                             request.operationName === operationName
                     ),
                     timeoutWith(4000, throwError(new Error(`Timeout waiting for GraphQL request "${operationName}"`)))
-                ))
+                )
+            )
             await triggerRequest()
             const { variables } = await requestPromise
             return variables

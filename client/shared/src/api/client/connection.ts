@@ -41,7 +41,7 @@ export async function createExtensionHostClientConnection(
     /** Proxy to the exposed extension host API */
     const initializeExtensionHost = comlink.wrap<ExtensionHostAPIFactory>(endpoints.proxy)
 
-    const initialSettings = await firstValueFrom((platformContext.settings))
+    const initialSettings = await firstValueFrom(platformContext.settings)
     const proxy = await initializeExtensionHost({
         ...initData,
         // TODO what to do in error case?

@@ -361,7 +361,9 @@ export function requestGraphQL<T>(query: string, vars?: { [name: string]: unknow
             )
         )
     }
-    return lastValueFrom(context.requestGraphQL<T, any>({ request: query, variables: vars as any, mightContainPrivateInfo: true }))
+    return lastValueFrom(
+        context.requestGraphQL<T, any>({ request: query, variables: vars as any, mightContainPrivateInfo: true })
+    )
 }
 
 export function getSetting<T>(key: string): T | undefined {

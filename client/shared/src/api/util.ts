@@ -6,18 +6,12 @@ import {
     type Remote,
     proxyMarker,
 } from 'comlink'
-import {
-    type Unsubscribable,
-    Observable,
-    type Observer,
-    type PartialObserver,
-    Subscription,
-} from 'rxjs'
+import { type Unsubscribable, Observable, type Observer, type PartialObserver, Subscription } from 'rxjs'
+import { Subscribable } from 'sourcegraph'
 
 import { hasProperty, AbortError } from '@sourcegraph/common'
 
 import type { ProxySubscribable } from './extension/api/common'
-import { Subscribable } from 'sourcegraph'
 
 /**
  * Tests whether a value is a WHATWG URL object.

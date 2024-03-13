@@ -40,10 +40,7 @@ export function createStubHoverProvider(
     hover: Partial<HoverAttachment> = {},
     delayTime?: number
 ): HoverProvider<{}, {}> {
-    return () =>
-        of({ isLoading: false, result: createHoverAttachment(hover) }).pipe(
-            delay(delayTime ?? 0)
-        )
+    return () => of({ isLoading: false, result: createHoverAttachment(hover) }).pipe(delay(delayTime ?? 0))
 }
 
 /**

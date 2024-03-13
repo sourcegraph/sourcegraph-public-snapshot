@@ -80,15 +80,17 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
     private locationResult(
         locations: sourcegraph.ProviderResult<sourcegraph.Definition>
     ): Promise<clientType.Location[]> {
-        return lastValueFrom(locations
-            .pipe(
+        return lastValueFrom(
+            locations.pipe(
                 defaultIfEmpty(undefined),
                 map(result =>
                     castArray(result)
                         .filter(isDefined)
                         .map(location => ({ ...location, uri: location.uri.toString() }))
                 )
-            ), { defaultValue: [] })
+            ),
+            { defaultValue: [] }
+        )
     }
 
     public hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Promise<boolean> {
@@ -129,23 +131,24 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
     }
     public getHover(textParameters: TextDocumentPositionParameters): Promise<HoverMerged | null> {
         const request = requestFor(textParameters)
-        return (lastValueFrom(
+        return lastValueFrom(
             request.providers.hover
                 .provideHover(request.document, request.position)
                 // We intentionally don't use `defaultIfEmpty()` here because
                 // that makes the popover load with an empty docstring.
-                .pipe(map(result => fromHoverMerged([result])))
-            , { defaultValue: null })
+                .pipe(map(result => fromHoverMerged([result]))),
+            { defaultValue: null }
         )
     }
     public getDocumentHighlights(textParameters: TextDocumentPositionParameters): Promise<DocumentHighlight[]> {
         const request = requestFor(textParameters)
-        return lastValueFrom(request.providers.documentHighlights
-            .provideDocumentHighlights(request.document, request.position)
-            .pipe(
+        return lastValueFrom(
+            request.providers.documentHighlights.provideDocumentHighlights(request.document, request.position).pipe(
                 defaultIfEmpty(undefined),
                 map(result => result || [])
-            ), { defaultValue: [] })
+            ),
+            { defaultValue: [] }
+        )
     }
 }
 

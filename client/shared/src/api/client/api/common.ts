@@ -69,7 +69,6 @@ export const wrapRemoteObservable = <T>(
                     complete: () => subscriber.complete(),
                 }
                 return syncRemoteSubscription(proxySubscribable.subscribe(proxyObserver))
-
             })
         })
     )

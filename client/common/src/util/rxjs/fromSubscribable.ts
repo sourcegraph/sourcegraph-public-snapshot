@@ -1,5 +1,5 @@
+import { Observable, isObservable } from 'rxjs'
 import { type Subscribable } from 'sourcegraph'
-import { Observable, isObservable} from 'rxjs'
 
 /**
  * Converts a Sourcegraph {@link Subscribable} to an {@link Observable}.

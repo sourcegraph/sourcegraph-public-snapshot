@@ -101,12 +101,13 @@ export const initMainThreadAPI = (
     const api: MainThreadAPI = {
         applySettingsEdit: edit => updateSettings(platformContext, edit),
         requestGraphQL: (request, variables) =>
-            lastValueFrom(platformContext
-                .requestGraphQL({
+            lastValueFrom(
+                platformContext.requestGraphQL({
                     request,
                     variables,
                     mightContainPrivateInfo: true,
-                })),
+                })
+            ),
         // Commands
         executeCommand: (command, args) => executeCommand({ command, args }),
         registerCommand: (command, run) => {

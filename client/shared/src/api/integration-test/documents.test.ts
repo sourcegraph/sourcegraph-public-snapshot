@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'vitest'
 
+import { fromSubscribable } from '@sourcegraph/common'
+
 import type { TextDocument } from '../../codeintel/legacy-extensions/api'
 import { assertToJSON, collectSubscribableValues, integrationTestContext } from '../../testing/testHelpers'
-import { fromSubscribable } from '@sourcegraph/common'
 
 describe('Documents (integration)', () => {
     describe('workspace.textDocuments', () => {

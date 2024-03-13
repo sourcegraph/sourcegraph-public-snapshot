@@ -4,8 +4,9 @@ import { from, isObservable, type Observable, type Observer, of, type Unsubscrib
 import { map } from 'rxjs/operators'
 import type { ProviderResult, Subscribable } from 'sourcegraph'
 
-import { isAsyncIterable, isPromiseLike, isSubscribable, observableFromAsyncIterable } from '../../util'
 import { fromSubscribable } from '@sourcegraph/common'
+
+import { isAsyncIterable, isPromiseLike, isSubscribable, observableFromAsyncIterable } from '../../util'
 
 /**
  * A Subscribable that can be exposed by comlink to the other thread.
