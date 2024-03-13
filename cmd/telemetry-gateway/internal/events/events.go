@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	googlepubsub "cloud.google.com/go/pubsub"
 	"go.opentelemetry.io/otel/metric"
@@ -10,13 +11,17 @@ import (
 
 	"github.com/cockroachdb/redact"
 	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Publisher struct {
+	logger log.Logger
+
 	topic pubsub.TopicPublisher
 	opts  PublishStreamOptions
 
@@ -32,7 +37,12 @@ type PublishStreamOptions struct {
 	MessageSizeHistogram metric.Int64Histogram
 }
 
-func NewPublisherForStream(eventsTopic pubsub.TopicPublisher, metadata *telemetrygatewayv1.RecordEventsRequestMetadata, opts PublishStreamOptions) (*Publisher, error) {
+func NewPublisherForStream(
+	logger log.Logger,
+	eventsTopic pubsub.TopicPublisher,
+	metadata *telemetrygatewayv1.RecordEventsRequestMetadata,
+	opts PublishStreamOptions,
+) (*Publisher, error) {
 	metadataJSON, err := protojson.Marshal(metadata)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshaling metadata")
@@ -41,6 +51,7 @@ func NewPublisherForStream(eventsTopic pubsub.TopicPublisher, metadata *telemetr
 		opts.ConcurrencyLimit = 250
 	}
 	return &Publisher{
+		logger:       logger,
 		topic:        eventsTopic,
 		opts:         opts,
 		metadataJSON: metadataJSON,
@@ -84,17 +95,26 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 			// If the payload is obviously oversized, don't bother publishing it
 			// - record it with some additional details instead
 			//
-			// TODO: We can't error forever, as the instance will keep trying to
-			// deliver this event - eventually we may just need to take an action,
-			// then pretend the event succeeded. Pending decision from data team
-			// on what to do with these: https://sourcegraph.slack.com/archives/CN4FC7XT4/p1707986514302069
+			// We can't error forever, as the instance will keep trying to deliver
+			// this event - for now, we just pretend the event succeeded, and log
+			// some diagnostics.
 			if len(payload) >= googlepubsub.MaxPublishRequestBytes {
-				return errors.Newf("event %s/%s is oversized (ID: %s, size: %s)",
-					// Mark values as safe for cockroachdb Sentry reporting
-					redact.Safe(event.GetFeature()),
-					redact.Safe(event.GetAction()),
-					redact.Safe(event.GetId()),
-					len(payload))
+				trace.Logger(ctx, p.logger).Error("discarding oversized event",
+					log.Error(errors.Newf("event %s/%s is oversized",
+						// Mark values as safe for cockroachdb Sentry reporting
+						// Include this metadata in the actual error message so
+						// that each occurrence is treated as its own Sentry
+						// alert
+						redact.Safe(event.GetFeature()),
+						redact.Safe(event.GetAction()))),
+					log.String("eventID", event.GetId()),
+					log.Int("size", len(payload)),
+					// Record a section of the event content for diagnostics
+					log.String("eventSnippet", strings.ToValidUTF8(string(eventJSON[:256]), "�")))
+				// We must return nil, pretending the publish succeeded, so that
+				// the client stops attempting to publish an event that will
+				// never succeed.
+				return nil
 			}
 
 			// Publish a single message in each callback to manage concurrency

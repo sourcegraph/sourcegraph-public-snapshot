@@ -115,7 +115,7 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 			}
 
 			// Set up a publisher with the provided metadata
-			publisher, err = events.NewPublisherForStream(s.eventsTopic, metadata, s.publishOpts)
+			publisher, err = events.NewPublisherForStream(logger, s.eventsTopic, metadata, s.publishOpts)
 			if err != nil {
 				return status.Errorf(codes.Internal, "failed to create publisher: %v", err)
 			}
