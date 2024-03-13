@@ -271,7 +271,22 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		if err != nil {
 			return newUserSaved, 0, "Failed to list user identities. Ask a site admin for help.", err
 		}
-		if len(other) > 0 {
+
+		// Confirm that the user already has a different identity from the same
+		// provider. In cases where the user is already logged in (on an existing
+		// browser session) extAcctSaved would be false, even though they logged in with
+		// the same external identity. So as long as is the same identity, we are OK.
+		found := false
+		for _, eac := range other {
+			if eac.ServiceType == acct.ServiceType &&
+				eac.ServiceID == acct.ServiceID &&
+				eac.AccountID == acct.AccountID &&
+				eac.ClientID == acct.ClientID {
+				found = true
+				break
+			}
+		}
+		if !found && len(other) >= 1 {
 			return newUserSaved, 0, "Another identity for this user from this provider already exists. Remove the link to the other identity from your account.", errors.New("duplicate identity for single identity provider")
 		}
 	}
