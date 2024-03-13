@@ -1,7 +1,6 @@
 package anthropic
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
@@ -46,7 +45,7 @@ func ToAnthropicMessages(messages []types.Message) ([]anthropicMessage, error) {
 			}
 			systemRoleFound = true
 		} else if speaker != types.HUMAN_MESSAGE_SPEAKER && speaker != types.ASSISTANT_MESSAGE_SPEAKER {
-			return nil, fmt.Errorf("unexpected role: %s", text)
+			return nil, errors.New("unexpected role: " + text)
 		}
 
 		if text == "" {
