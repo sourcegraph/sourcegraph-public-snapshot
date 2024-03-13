@@ -50,22 +50,26 @@
         },
     })
 
-    const blob = client
-        .query(BlobPageQuery, {
-            repoName: result.repository,
-            revspec: result.commit ?? '', // TODO: default value?
-            path: result.path,
-        })
-        .then(mapOrThrow(result => result.data?.repository?.commit?.blob ?? null))
+    const blob = from(
+        client
+            .query(BlobPageQuery, {
+                repoName: result.repository,
+                revspec: result.commit ?? '', // TODO: default value?
+                path: result.path,
+            })
+            .then(mapOrThrow(result => result.data?.repository?.commit?.blob ?? null))
+    )
 
-    const highlights = client
-        .query(BlobSyntaxHighlightQuery, {
-            repoName: result.repository,
-            revspec: result.commit ?? '', // TODO: default value?
-            path: result.path,
-            disableTimeout: false,
-        })
-        .then(mapOrThrow(result => result.data?.repository?.commit?.blob?.highlight.lsif ?? ''))
+    const highlights = from(
+        client
+            .query(BlobSyntaxHighlightQuery, {
+                repoName: result.repository,
+                revspec: result.commit ?? '', // TODO: default value?
+                path: result.path,
+                disableTimeout: false,
+            })
+            .then(mapOrThrow(result => result.data?.repository?.commit?.blob?.highlight.lsif ?? ''))
+    )
 </script>
 
 <div class="header">
@@ -80,39 +84,22 @@
     </small>
 </div>
 <div class="content">
-    {#await blob}
+    {#if $blob}
+        <CodeMirrorBlob
+            blobInfo={{
+                repoName: result.repository,
+                commitID: result.commit ?? '',
+                revision: '',
+                filePath: result.path,
+                content: $blob.content ?? '',
+                languages: $blob.languages ?? [],
+            }}
+            highlights={$highlights}
+            {codeIntelAPI}
+        />
+    {:else}
         <LoadingSpinner />
-    {:then blob}
-        {#await highlights}
-            <CodeMirrorBlob
-                blobInfo={{
-                    repoName: result.repository,
-                    commitID: result.commit ?? '',
-                    revision: '',
-                    filePath: result.path,
-                    content: blob?.content ?? '',
-                    languages: blob?.languages ?? [],
-                }}
-                highlights={''}
-                {codeIntelAPI}
-            />
-        {:then highlights}
-            <CodeMirrorBlob
-                blobInfo={{
-                    repoName: result.repository,
-                    commitID: result.commit ?? '',
-                    revision: '',
-                    filePath: result.path,
-                    content: blob?.content ?? '',
-                    languages: blob?.languages ?? [],
-                }}
-                {highlights}
-                {codeIntelAPI}
-            />
-        {/await}
-    {:catch error}
-        <p>{error}</p>
-    {/await}
+    {/if}
 </div>
 
 <style lang="scss">
