@@ -180,6 +180,8 @@ http_archive(
     patches = [
         # required due to https://github.com/chainguard-dev/apko/issues/1052
         "//third_party/rules_apko:repository_label_strip.patch",
+        # required until a release contains https://github.com/chainguard-dev/rules_apko/pull/53
+        "//third_party/rules_apko:apko_run_runfiles_path.patch.patch",
     ],
     sha256 = "f176171f95ee2b6eef1572c6da796d627940a1e898a32d476a2d7a9a99332960",
     strip_prefix = "rules_apko-1.2.2",
