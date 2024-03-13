@@ -2,9 +2,10 @@ load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@npm//:@playwright/test/package_json.bzl", playwright_test_bin = "bin")
 load("@npm//:bundlesize2/package_json.bzl", bundlesize_bin = "bin")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//bazel/integration:index.bzl", "integration_test")
+load("@npm//client/web:playwright/package_json.bzl", playwright_bin = "bin")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
@@ -2451,18 +2452,23 @@ ts_project(
     ],
 )
 
-# playwright_bin.playwright_test(
-#     name = "playwright_install",
-#     args = [
-#         "install",
-#     ],
-#     env = {
-#         "PLAYWRIGHT_BROWSERS_PATH": "0",
-#     },
-#     # data = [
-#     #     "//:node_modules/playwright",
-#     # ],
-# )
+playwright_bin.playwright_test(
+    name = "playwright_install",
+    args = [
+        "install",
+    ],
+    env = {
+        "PLAYWRIGHT_BROWSERS_PATH": "0",
+    },
+    local = True,
+    tags = [
+        "no-sandbox",
+        "requires-network",
+    ],
+    # data = [
+    #     "//:node_modules/playwright",
+    # ],
+)
 
 # http_archive(
 #     name = "platforms",
@@ -2472,41 +2478,43 @@ ts_project(
 #     ],
 # )
 
-# playwright_test_bin.playwright_test(
-#     name = "playwright_test",
-#     args = ["test"],
-#     data = glob(["src/playwright/*.spec.ts"]) + [
-#         "playwright.config.ts",
-#         "//:node_modules/@playwright/browser-chromium",
-#         "//:node_modules/@playwright/test",
-#         "//:node_modules/playwright-core",
-#     ],
-#     env = {
-#         "PLAYWRIGHT_BROWSERS_PATH": "/Users/michael/Downloads",
-#     },
-# )
-
-integration_test(
+playwright_test_bin.playwright_test(
     name = "playwright_test",
-    srcs = glob(["src/playwright/*.spec.ts"]) + ["playwright.config.ts"],
-    commands = [
-        "npm run playwright:test",
-    ],
-    data = [
-        # Makes the chromium binaries available for the `ng test` command.
-        "//bazel/browsers/chromium",
-        "//:node_modules/@playwright/test",
+    args = ["test"],
+    data = glob(["src/playwright/*.spec.ts"]) + [
         "playwright.config.ts",
+        # "//:node_modules/@playwright/browser-chromium",
+        "//:node_modules/@playwright/test",
+        # "//:node_modules/playwright-core",
     ],
-    environment = {
-        "CHROME_BIN": "$(CHROMIUM)",
+    env = {
+        "PLAYWRIGHT_BROWSERS_PATH": "0",
     },
-    tags = [
-        # This test relies on `yarn` so there needs to be internet access.
-        "requires-network",
-    ],
-    tool_mappings = {
-        "@nodejs_toolchains//:resolved_toolchain": "node",
-    },
-    toolchains = ["//bazel/browsers/chromium:toolchain_alias"],
+    local = True,
+    tags = ["requires-network"],
 )
+
+# integration_test(
+#     name = "playwright_test",
+#     srcs = glob(["src/playwright/*.spec.ts"]) + ["playwright.config.ts"],
+#     commands = [
+#         "npm run playwright:test",
+#     ],
+#     data = [
+#         # Makes the chromium binaries available for the `ng test` command.
+#         "//client/shared/browsers/chromium",
+#         "//:node_modules/@playwright/test",
+#         "playwright.config.ts",
+#     ],
+#     environment = {
+#         "CHROME_BIN": "$(CHROMIUM)",
+#     },
+#     tags = [
+#         # This test relies on `yarn` so there needs to be internet access.
+#         "requires-network",
+#     ],
+#     tool_mappings = {
+#         "@nodejs_toolchains//:resolved_toolchain": "node",
+#     },
+#     toolchains = ["//client/shared/browsers/chromium:toolchain_alias"],
+# )
