@@ -345,6 +345,7 @@ require (
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gofrs/uuid/v5 v5.0.0 // indirect
 	github.com/golang-jwt/jwt/v5 v5.0.0 // indirect
+	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/flatbuffers v2.0.8+incompatible // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
@@ -500,7 +501,6 @@ require (
 	github.com/go-toast/toast v0.0.0-20190211030409-01e6764cf0a4 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/golang/glog v1.1.2 // indirect
-	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20230705174524-200ffdc848b8 // indirect
