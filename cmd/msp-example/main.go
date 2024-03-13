@@ -7,5 +7,6 @@ import (
 )
 
 func main() {
+	println("testing, testing, 1...2...testing")
 	runtime.Start[example.Config](example.Service{})
 }
