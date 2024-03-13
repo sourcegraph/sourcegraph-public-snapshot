@@ -77,7 +77,3 @@ func (dc DockerCommand) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
 	cmd := fmt.Sprintf("%s\n%s\n%s", cleanup, load, dc.Cmd)
 	return exec.CommandContext(ctx, "bash", "-c", cmd), nil
 }
-
-func (dc *DockerCommand) GetOptions() *SGConfigCommandOptions {
-	return &dc.Config
-}

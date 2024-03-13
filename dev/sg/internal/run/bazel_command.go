@@ -42,10 +42,6 @@ func (bc BazelCommand) GetConfig() SGConfigCommandOptions {
 	return bc.Config
 }
 
-func (bc *BazelCommand) GetOptions() *SGConfigCommandOptions {
-	return &bc.Config
-}
-
 func (bc BazelCommand) watchPaths() ([]string, error) {
 	// If no target is defined, there is nothing to be built and watched
 	if bc.Target == "" {
@@ -85,7 +81,9 @@ func (bc BazelCommand) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
 }
 
 func binaryLocation(target string) (string, error) {
-	baseOutput, err := outputPath()
+	// Get the output directory from Bazel, which varies depending on which OS
+	// we're running against.
+	baseOutput, err := exec.Command("bazel", "info", "output_path").Output()
 	if err != nil {
 		return "", err
 	}
@@ -93,19 +91,11 @@ func binaryLocation(target string) (string, error) {
 	outputPath := strings.TrimSuffix(strings.TrimSpace(string(baseOutput)), "bazel-out")
 
 	// Get the binary from the specific target.
-	cmd := exec.Command("bazel", "cquery", target, "--output=files")
-	baseOutput, err = cmd.Output()
+	bin, err := exec.Command("bazel", "cquery", target, "--output=files").Output()
 	if err != nil {
 		return "", err
 	}
-	binPath := strings.TrimSpace(string(baseOutput))
+	binPath := strings.TrimSpace(string(bin))
 
 	return fmt.Sprintf("%s%s", outputPath, binPath), nil
-}
-
-func outputPath() ([]byte, error) {
-	// Get the output directory from Bazel, which varies depending on which OS
-	// we're running against.
-	cmd := exec.Command("bazel", "info", "output_path")
-	return cmd.Output()
 }

@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/sourcegraph/lib/process"
@@ -60,11 +59,7 @@ func (cmd Command) GetName() string {
 
 func (cmd Command) GetBinaryLocation() (string, error) {
 	if cmd.CheckBinary != "" {
-		repoRoot, err := root.RepositoryRoot()
-		if err != nil {
-			return "", err
-		}
-		return filepath.Join(repoRoot, cmd.CheckBinary), nil
+		return filepath.Join(cmd.Config.RepositoryRoot, cmd.CheckBinary), nil
 	}
 	return "", noBinaryError{name: cmd.Config.Name}
 }
@@ -121,14 +116,9 @@ func (cmd Command) functionInstall(ctx context.Context, parentEnv map[string]str
 }
 
 func (cmd Command) getWatchPaths() ([]string, error) {
-	root, err := root.RepositoryRoot()
-	if err != nil {
-		return nil, err
-	}
-
 	fullPaths := make([]string, len(cmd.Watch))
 	for i, path := range cmd.Watch {
-		fullPaths[i] = filepath.Join(root, path)
+		fullPaths[i] = filepath.Join(cmd.Config.RepositoryRoot, path)
 	}
 
 	return fullPaths, nil
@@ -162,10 +152,6 @@ func (c Command) Merge(other Command) Command {
 	}
 
 	return merged
-}
-
-func (cmd *Command) GetOptions() *SGConfigCommandOptions {
-	return &cmd.Config
 }
 
 func equal(a, b []string) bool {
@@ -250,7 +236,7 @@ type outputOptions struct {
 	start chan struct{}
 }
 
-func startSgCmd(ctx context.Context, cmd SGConfigCommand, dir string, parentEnv map[string]string) (*startedCmd, error) {
+func startSgCmd(ctx context.Context, cmd SGConfigCommand, parentEnv map[string]string) (*startedCmd, error) {
 	exec, err := cmd.GetExecCmd(ctx)
 	if err != nil {
 		return nil, err
@@ -268,7 +254,7 @@ func startSgCmd(ctx context.Context, cmd SGConfigCommand, dir string, parentEnv 
 		name:   conf.Name,
 		exec:   exec,
 		env:    makeEnv(parentEnv, secretsEnv, conf.Env),
-		dir:    dir,
+		dir:    conf.RepositoryRoot,
 		stdout: outputOptions{ignore: conf.IgnoreStdout},
 		stderr: outputOptions{ignore: conf.IgnoreStderr},
 	}

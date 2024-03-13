@@ -13,17 +13,15 @@ import (
 	"github.com/sourcegraph/conc/pool"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 type cmdRunner struct {
 	*std.Output
-	cmds           []SGConfigCommand
-	repositoryRoot string
-	parentEnv      map[string]string
-	verbose        bool
+	cmds      []SGConfigCommand
+	parentEnv map[string]string
+	verbose   bool
 }
 
 func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cmds ...SGConfigCommand) (err error) {
@@ -33,11 +31,7 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 	}
 	std.Out.WriteLine(output.Styled(output.StylePending, fmt.Sprintf("Starting %d cmds", len(cmds))))
 
-	repoRoot, err := root.RepositoryRoot()
-	if err != nil {
-		return err
-	}
-
+	repoRoot := cmds[0].GetConfig().RepositoryRoot
 	// binaries get installed to <repository-root>/.bin. If the binary is installed with go build, then go
 	// will create .bin directory. Some binaries (like docsite) get downloaded instead of built and therefore
 	// need the directory to exist before hand.
@@ -53,7 +47,6 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 	runner := cmdRunner{
 		std.Out,
 		cmds,
-		repoRoot,
 		parentEnv,
 		verbose,
 	}
@@ -147,7 +140,7 @@ func (runner *cmdRunner) debug(msg string, args ...any) { //nolint currently unu
 }
 
 func (runner *cmdRunner) start(ctx context.Context, cmd SGConfigCommand) (*startedCmd, error) {
-	return startSgCmd(ctx, cmd, runner.repositoryRoot, runner.parentEnv)
+	return startSgCmd(ctx, cmd, runner.parentEnv)
 }
 
 func (runner *cmdRunner) reinstall(ctx context.Context, cmd SGConfigCommand) (bool, error) {
@@ -350,15 +343,10 @@ func md5HashFile(filename string) (string, error) {
 }
 
 func Test(ctx context.Context, cmd SGConfigCommand, parentEnv map[string]string) error {
-	repoRoot, err := root.RepositoryRoot()
-	if err != nil {
-		return err
-	}
-
 	name := cmd.GetConfig().Name
 
 	std.Out.WriteLine(output.Styledf(output.StylePending, "Starting testsuite %q.", name))
-	proc, err := startSgCmd(ctx, cmd, repoRoot, parentEnv)
+	proc, err := startSgCmd(ctx, cmd, parentEnv)
 	if err != nil {
 		printCmdError(std.Out.Output, name, err)
 	}

@@ -17,10 +17,8 @@ type SGConfigCommandOptions struct {
 	// Preamble is a short and visible message, displayed when the command is launched.
 	Preamble        string                            `yaml:"preamble"`
 	ExternalSecrets map[string]secrets.ExternalSecret `yaml:"external_secrets"`
-}
 
-type HasSGConfigCommandOptions interface {
-	GetOptions() *SGConfigCommandOptions
+	RepositoryRoot string
 }
 
 func (opts SGConfigCommandOptions) Merge(other SGConfigCommandOptions) SGConfigCommandOptions {

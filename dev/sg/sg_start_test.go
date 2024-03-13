@@ -21,7 +21,7 @@ func TestStartCommandSet(t *testing.T) {
 	buf := useOutputBuffer(t)
 
 	commandSet := &sgconf.Commandset{Name: "test-set", Commands: []string{"test-cmd-1"}}
-	command := run.Command{
+	command := &run.Command{
 		Config: run.SGConfigCommandOptions{
 			Name: "test-cmd-1",
 		},
@@ -30,7 +30,7 @@ func TestStartCommandSet(t *testing.T) {
 	}
 
 	testConf := &sgconf.Config{
-		Commands:    map[string]run.Command{"test-cmd-1": command},
+		Commands:    map[string]*run.Command{"test-cmd-1": command},
 		Commandsets: map[string]*sgconf.Commandset{"test-set": commandSet},
 	}
 
@@ -63,7 +63,7 @@ func TestStartCommandSet_InstallError(t *testing.T) {
 	buf := useOutputBuffer(t)
 
 	commandSet := &sgconf.Commandset{Name: "test-set", Commands: []string{"test-cmd-1"}}
-	command := run.Command{
+	command := &run.Command{
 		Config: run.SGConfigCommandOptions{
 			Name: "test-cmd-1",
 		},
@@ -72,7 +72,7 @@ func TestStartCommandSet_InstallError(t *testing.T) {
 	}
 
 	testConf := &sgconf.Config{
-		Commands:    map[string]run.Command{"test-cmd-1": command},
+		Commands:    map[string]*run.Command{"test-cmd-1": command},
 		Commandsets: map[string]*sgconf.Commandset{"test-set": commandSet},
 	}
 
