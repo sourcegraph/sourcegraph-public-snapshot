@@ -105,7 +105,7 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 			logger = logger.With(log.String("requestID", metadata.GetRequestId()))
 
 			// Validate self-reported instance identifier
-			switch metadata.GetIdentifier().Identifier.(type) {
+			switch metadata.GetIdentifier().GetIdentifier().(type) {
 			case *telemetrygatewayv1.Identifier_LicensedInstance:
 				identifier := metadata.Identifier.GetLicensedInstance()
 				licenseInfo, _, err := licensing.ParseProductLicenseKey(identifier.GetLicenseKey())
@@ -217,7 +217,7 @@ func (s *Server) RecordEvent(ctx context.Context, req *telemetrygatewayv1.Record
 
 	// We only allow a limited set of identifiers to use this RPC for now, as
 	// Sourcegraph instances should only use RecordEvents.
-	switch metadata.GetIdentifier().Identifier.(type) {
+	switch metadata.GetIdentifier().GetIdentifier().(type) {
 	case *telemetrygatewayv1.Identifier_ManagedService:
 		identifier := metadata.Identifier.GetManagedService()
 		if identifier.ServiceId == "" {

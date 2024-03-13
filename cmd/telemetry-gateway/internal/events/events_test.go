@@ -35,11 +35,20 @@ func TestPublish(t *testing.T) {
 	publisher, err := events.NewPublisherForStream(
 		logtest.Scoped(t),
 		memTopic,
-		&telemetrygatewayv1.RecordEventsRequestMetadata{},
+		&telemetrygatewayv1.RecordEventsRequestMetadata{
+			Identifier: &telemetrygatewayv1.Identifier{
+				Identifier: &telemetrygatewayv1.Identifier_LicensedInstance{
+					LicensedInstance: &telemetrygatewayv1.Identifier_LicensedInstanceIdentifier{},
+				},
+			},
+		},
 		events.PublishStreamOptions{
 			ConcurrencyLimit: concurrency,
 		})
 	require.NoError(t, err)
+
+	// Check the evaluated source
+	assert.Equal(t, "licensed_instance", publisher.GetSourceName())
 
 	events := make([]*telemetrygatewayv1.Event, concurrency)
 	for i := range events {

@@ -53,7 +53,7 @@ func NewPublisherForStream(
 	}
 
 	var source string
-	switch identifier := metadata.GetIdentifier(); identifier.Identifier.(type) {
+	switch identifier := metadata.GetIdentifier(); identifier.GetIdentifier().(type) {
 	case *telemetrygatewayv1.Identifier_LicensedInstance:
 		source = "licensed_instance"
 	case *telemetrygatewayv1.Identifier_UnlicensedInstance:
@@ -146,7 +146,7 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 			// Publish a single message in each callback to manage concurrency
 			// ourselves, and attach attributes for ease of routing the pub/sub
 			// message.
-			if err := p.topic.PublishMessage(ctx, payload, extractPubSubAttributes(event)); err != nil {
+			if err := p.topic.PublishMessage(ctx, payload, extractPubSubAttributes(p.source, event)); err != nil {
 				// Try to record the cancel cause as the primary error in case
 				// one is recorded.
 				if cancelCause := context.Cause(ctx); cancelCause != nil {
