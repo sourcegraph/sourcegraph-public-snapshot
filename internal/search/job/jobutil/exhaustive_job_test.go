@@ -49,8 +49,7 @@ func TestNewExhaustive(t *testing.T) {
       (patternInfo . TextPatternInfo{"content",nopath,filematchlimit:1000000})
       (numRepos . 0)
       (pathRegexps . [])
-      (indexed . false)
-      (patternInfo . TextPatternInfo{"content",nopath,filematchlimit:1000000}))))
+      (indexed . false))))
 `),
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
@@ -58,8 +57,7 @@ func TestNewExhaustive(t *testing.T) {
   (patternInfo . TextPatternInfo{"content",nopath,filematchlimit:1000000})
   (numRepos . 1)
   (pathRegexps . [])
-  (indexed . false)
-  (patternInfo . TextPatternInfo{"content",nopath,filematchlimit:1000000}))
+  (indexed . false))
 `),
 		},
 		{
@@ -75,8 +73,7 @@ func TestNewExhaustive(t *testing.T) {
       (patternInfo . TextPatternInfo{"content",nopath,filematchlimit:1000000})
       (numRepos . 0)
       (pathRegexps . [])
-      (indexed . false)
-      (patternInfo . TextPatternInfo{"content",nopath,filematchlimit:1000000}))))
+      (indexed . false))))
 `),
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
@@ -84,8 +81,7 @@ func TestNewExhaustive(t *testing.T) {
   (patternInfo . TextPatternInfo{"content",nopath,filematchlimit:1000000})
   (numRepos . 1)
   (pathRegexps . [])
-  (indexed . false)
-  (patternInfo . TextPatternInfo{"content",nopath,filematchlimit:1000000}))
+  (indexed . false))
 `),
 		},
 		{
@@ -101,8 +97,7 @@ func TestNewExhaustive(t *testing.T) {
       (patternInfo . TextPatternInfo{"foo bar baz",nopath,filematchlimit:1000000})
       (numRepos . 0)
       (pathRegexps . [])
-      (indexed . false)
-      (patternInfo . TextPatternInfo{"foo bar baz",nopath,filematchlimit:1000000}))))
+      (indexed . false))))
 `),
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
@@ -110,8 +105,7 @@ func TestNewExhaustive(t *testing.T) {
   (patternInfo . TextPatternInfo{"foo bar baz",nopath,filematchlimit:1000000})
   (numRepos . 1)
   (pathRegexps . [])
-  (indexed . false)
-  (patternInfo . TextPatternInfo{"foo bar baz",nopath,filematchlimit:1000000}))
+  (indexed . false))
 `),
 		},
 		{
@@ -127,8 +121,7 @@ func TestNewExhaustive(t *testing.T) {
       (patternInfo . TextPatternInfo{(("foo" OR "bar") AND "baz"),nopath,filematchlimit:1000000})
       (numRepos . 0)
       (pathRegexps . [])
-      (indexed . false)
-      (patternInfo . TextPatternInfo{(("foo" OR "bar") AND "baz"),nopath,filematchlimit:1000000}))))
+      (indexed . false))))
 `),
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
@@ -136,8 +129,7 @@ func TestNewExhaustive(t *testing.T) {
   (patternInfo . TextPatternInfo{(("foo" OR "bar") AND "baz"),nopath,filematchlimit:1000000})
   (numRepos . 1)
   (pathRegexps . [])
-  (indexed . false)
-  (patternInfo . TextPatternInfo{(("foo" OR "bar") AND "baz"),nopath,filematchlimit:1000000}))
+  (indexed . false))
 `),
 		},
 		{
@@ -153,8 +145,7 @@ func TestNewExhaustive(t *testing.T) {
       (patternInfo . TextPatternInfo{"foo.*bar",nopath,filematchlimit:1000000})
       (numRepos . 0)
       (pathRegexps . [])
-      (indexed . false)
-      (patternInfo . TextPatternInfo{"foo.*bar",nopath,filematchlimit:1000000}))))
+      (indexed . false))))
 `),
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
@@ -162,8 +153,7 @@ func TestNewExhaustive(t *testing.T) {
   (patternInfo . TextPatternInfo{"foo.*bar",nopath,filematchlimit:1000000})
   (numRepos . 1)
   (pathRegexps . [])
-  (indexed . false)
-  (patternInfo . TextPatternInfo{"foo.*bar",nopath,filematchlimit:1000000}))
+  (indexed . false))
 `),
 		},
 		{
@@ -180,8 +170,7 @@ func TestNewExhaustive(t *testing.T) {
       (patternInfo . TextPatternInfo{"foo",nopath,filematchlimit:1000000})
       (numRepos . 0)
       (pathRegexps . [])
-      (indexed . false)
-      (patternInfo . TextPatternInfo{"foo",nopath,filematchlimit:1000000}))))
+      (indexed . false))))
 `),
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
@@ -189,8 +178,7 @@ func TestNewExhaustive(t *testing.T) {
   (patternInfo . TextPatternInfo{"foo",nopath,filematchlimit:1000000})
   (numRepos . 1)
   (pathRegexps . [])
-  (indexed . false)
-  (patternInfo . TextPatternInfo{"foo",nopath,filematchlimit:1000000}))
+  (indexed . false))
 `),
 		},
 		{
@@ -207,8 +195,7 @@ func TestNewExhaustive(t *testing.T) {
       (patternInfo . TextPatternInfo{"foo",nopath,filematchlimit:1000000})
       (numRepos . 0)
       (pathRegexps . [])
-      (indexed . false)
-      (patternInfo . TextPatternInfo{"foo",nopath,filematchlimit:1000000}))))
+      (indexed . false))))
 `),
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
@@ -216,8 +203,7 @@ func TestNewExhaustive(t *testing.T) {
   (patternInfo . TextPatternInfo{"foo",nopath,filematchlimit:1000000})
   (numRepos . 1)
   (pathRegexps . [])
-  (indexed . false)
-  (patternInfo . TextPatternInfo{"foo",nopath,filematchlimit:1000000}))
+  (indexed . false))
 `),
 		},
 		{
@@ -279,8 +265,7 @@ func TestNewExhaustive(t *testing.T) {
       (patternInfo . TextPatternInfo{//,nocontent,filematchlimit:1000000,f:"search.go"})
       (numRepos . 0)
       (pathRegexps . [(?i)search.go])
-      (indexed . false)
-      (patternInfo . TextPatternInfo{//,nocontent,filematchlimit:1000000,f:"search.go"}))))
+      (indexed . false))))
 `),
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
@@ -288,8 +273,7 @@ func TestNewExhaustive(t *testing.T) {
   (patternInfo . TextPatternInfo{//,nocontent,filematchlimit:1000000,f:"search.go"})
   (numRepos . 1)
   (pathRegexps . [(?i)search.go])
-  (indexed . false)
-  (patternInfo . TextPatternInfo{//,nocontent,filematchlimit:1000000,f:"search.go"}))
+  (indexed . false))
 `),
 		},
 	}

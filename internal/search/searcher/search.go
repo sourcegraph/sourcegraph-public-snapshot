@@ -155,7 +155,6 @@ func (s *TextSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	case job.VerbosityBasic:
 		res = append(res,
 			attribute.Bool("indexed", s.Indexed),
-			attribute.Stringer("patternInfo", s.PatternInfo),
 		)
 	}
 	return res
