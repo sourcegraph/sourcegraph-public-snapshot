@@ -34,14 +34,14 @@ export default defineConfig({
     projects: [
         {
             name: 'chromium',
-            // use: { ...devices['Desktop Chrome'] },
-            use: {
-                headless: true,
-                launchOptions: {
-                  args: ['--no-sandbox'],
-                  executablePath: process.env.CHROME_BIN,
-                },
-            },
+            use: { ...devices['Desktop Chrome'] },
+            // use: {
+            //     headless: true,
+            //     launchOptions: {
+            //       args: ['--no-sandbox'],
+            //       executablePath: process.env.CHROME_BIN,
+            //     },
+            // },
         },
 
         // {
