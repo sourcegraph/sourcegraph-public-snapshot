@@ -1,7 +1,7 @@
 import type { Remote } from 'comlink'
 import * as H from 'history'
 import { isEqual, uniqWith } from 'lodash'
-import { combineLatest, merge, type Observable, of, Subscription, type Unsubscribable, concat, from, EMPTY } from 'rxjs'
+import { combineLatest, merge, type Observable, of, Subscription, type Unsubscribable, concat, from, EMPTY, lastValueFrom } from 'rxjs'
 import {
     catchError,
     delay,
@@ -409,7 +409,7 @@ export function registerHoverContributions({
                         const parameters: TextDocumentPositionParameters & URLToFileContext =
                             JSON.parse(parametersString)
 
-                        const { result } = await wrapRemoteObservable(extensionHostAPI.getDefinition(parameters))
+                        const { result } = await lastValueFrom(wrapRemoteObservable(extensionHostAPI.getDefinition(parameters))
                             .pipe(
                                 getDefinitionURL(
                                     { urlToFile, requestGraphQL },
@@ -424,8 +424,7 @@ export function registerHoverContributions({
                                     parameters
                                 ),
                                 first(({ isLoading, result }) => !isLoading || result !== null)
-                            )
-                            .toPromise()
+                            ))
 
                         if (!result) {
                             throw new Error('No definition found.')

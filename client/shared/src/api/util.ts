@@ -8,7 +8,6 @@ import {
 } from 'comlink'
 import {
     type Unsubscribable,
-    type Subscribable,
     Observable,
     type Observer,
     type PartialObserver,
@@ -18,6 +17,7 @@ import {
 import { hasProperty, AbortError } from '@sourcegraph/common'
 
 import type { ProxySubscribable } from './extension/api/common'
+import { Subscribable } from 'sourcegraph'
 
 /**
  * Tests whether a value is a WHATWG URL object.

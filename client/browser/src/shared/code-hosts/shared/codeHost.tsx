@@ -18,6 +18,7 @@ import {
     concat,
     BehaviorSubject,
     fromEvent,
+    lastValueFrom,
 } from 'rxjs'
 import {
     catchError,
@@ -643,10 +644,10 @@ const isSafeToContinueCodeIntel = async ({
 
         rawRepoName = context.rawRepoName
 
-        const isRepoCloned = await resolvePrivateRepo({
+        const isRepoCloned = await lastValueFrom(resolvePrivateRepo({
             rawRepoName,
             requestGraphQL,
-        }).toPromise()
+        }))
 
         return isRepoCloned
     } catch (error) {

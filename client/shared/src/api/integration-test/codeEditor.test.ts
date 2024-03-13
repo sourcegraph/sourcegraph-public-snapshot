@@ -1,24 +1,24 @@
-import { from } from 'rxjs'
+import { lastValueFrom } from 'rxjs'
 import { distinctUntilChanged, switchMap, take, toArray } from 'rxjs/operators'
 import { describe, test } from 'vitest'
 
 import { Selection } from '@sourcegraph/extension-api-classes'
 
 import { assertToJSON, integrationTestContext } from '../../testing/testHelpers'
+import { fromSubscribable } from '@sourcegraph/common'
 
 describe('CodeEditor (integration)', () => {
     describe('selection', () => {
         test('observe changes', async () => {
             const { extensionAPI, extensionHostAPI } = await integrationTestContext()
 
-            const values = from(extensionAPI.app.activeWindow!.activeViewComponentChanges)
+            const values = lastValueFrom(fromSubscribable(extensionAPI.app.activeWindow!.activeViewComponentChanges)
                 .pipe(
-                    switchMap(viewer => (viewer && viewer.type === 'CodeEditor' ? viewer.selectionsChanges : [])),
+                    switchMap(viewer => (viewer && viewer.type === 'CodeEditor' ? fromSubscribable(viewer.selectionsChanges) : [])),
                     distinctUntilChanged(),
                     take(3),
                     toArray()
-                )
-                .toPromise()
+                ))
 
             await extensionHostAPI.setEditorSelections({ viewerId: 'viewer#0' }, [new Selection(1, 2, 3, 4)])
             await extensionHostAPI.setEditorSelections({ viewerId: 'viewer#0' }, [])

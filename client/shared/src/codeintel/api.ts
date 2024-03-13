@@ -1,5 +1,5 @@
 import { castArray } from 'lodash'
-import { from, type Observable, of } from 'rxjs'
+import { from, of, lastValueFrom } from 'rxjs'
 import { defaultIfEmpty, map } from 'rxjs/operators'
 
 import {
@@ -42,7 +42,7 @@ export interface CodeIntelAPI {
         scipParameters?: ScipParameters
     ): Promise<clientType.Location[]>
     getImplementations(parameters: TextDocumentPositionParameters): Promise<clientType.Location[]>
-    getHover(textParameters: TextDocumentPositionParameters): Promise<HoverMerged | null | undefined>
+    getHover(textParameters: TextDocumentPositionParameters): Promise<HoverMerged | null>
     getDocumentHighlights(textParameters: TextDocumentPositionParameters): Promise<DocumentHighlight[]>
 }
 
@@ -80,16 +80,15 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
     private locationResult(
         locations: sourcegraph.ProviderResult<sourcegraph.Definition>
     ): Promise<clientType.Location[]> {
-        return locations
+        return lastValueFrom(locations
             .pipe(
-                defaultIfEmpty(),
+                defaultIfEmpty(undefined),
                 map(result =>
                     castArray(result)
                         .filter(isDefined)
                         .map(location => ({ ...location, uri: location.uri.toString() }))
                 )
-            )
-            .toPromise()
+            ), { defaultValue: [] })
     }
 
     public hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Promise<boolean> {
@@ -128,26 +127,25 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
             request.providers.implementations.provideLocations(request.document, request.position)
         )
     }
-    public getHover(textParameters: TextDocumentPositionParameters): Promise<HoverMerged | null | undefined> {
+    public getHover(textParameters: TextDocumentPositionParameters): Promise<HoverMerged | null> {
         const request = requestFor(textParameters)
-        return (
+        return (lastValueFrom(
             request.providers.hover
                 .provideHover(request.document, request.position)
                 // We intentionally don't use `defaultIfEmpty()` here because
                 // that makes the popover load with an empty docstring.
                 .pipe(map(result => fromHoverMerged([result])))
-                .toPromise()
+            , { defaultValue: null })
         )
     }
     public getDocumentHighlights(textParameters: TextDocumentPositionParameters): Promise<DocumentHighlight[]> {
         const request = requestFor(textParameters)
-        return request.providers.documentHighlights
+        return lastValueFrom(request.providers.documentHighlights
             .provideDocumentHighlights(request.document, request.position)
             .pipe(
-                defaultIfEmpty(),
+                defaultIfEmpty(undefined),
                 map(result => result || [])
-            )
-            .toPromise()
+            ), { defaultValue: [] })
     }
 }
 
@@ -242,13 +240,8 @@ export function injectNewCodeintel(
 }
 
 export function newCodeIntelExtensionHostAPI(codeintel: CodeIntelAPI): CodeIntelExtensionHostAPI {
-    function thenMaybeLoadingResult<T>(promise: Observable<T>): Observable<MaybeLoadingResult<T>> {
-        return promise.pipe(
-            map(result => {
-                const maybeLoadingResult: MaybeLoadingResult<T> = { isLoading: false, result }
-                return maybeLoadingResult
-            })
-        )
+    function thenMaybeLoadingResult<T>(result: T): MaybeLoadingResult<T> {
+        return { isLoading: false, result }
     }
 
     return {
@@ -257,22 +250,22 @@ export function newCodeIntelExtensionHostAPI(codeintel: CodeIntelAPI): CodeIntel
         },
         getLocations(id, parameters) {
             if (!id.startsWith('implementations_')) {
-                return proxySubscribable(thenMaybeLoadingResult(of([])))
+                return proxySubscribable(of({ isLoading: false, result: [] }))
             }
-            return proxySubscribable(thenMaybeLoadingResult(from(codeintel.getImplementations(parameters))))
+            return proxySubscribable(from(codeintel.getImplementations(parameters).then(thenMaybeLoadingResult)))
         },
         getDefinition(parameters) {
-            return proxySubscribable(thenMaybeLoadingResult(from(codeintel.getDefinition(parameters))))
+            return proxySubscribable(from(codeintel.getDefinition(parameters).then(thenMaybeLoadingResult)))
         },
         getReferences(parameters, context, scipParameters) {
             return proxySubscribable(
-                thenMaybeLoadingResult(from(codeintel.getReferences(parameters, context, scipParameters)))
+                from(codeintel.getReferences(parameters, context, scipParameters).then(thenMaybeLoadingResult))
             )
         },
         getDocumentHighlights: (textParameters: TextDocumentPositionParameters) =>
             proxySubscribable(from(codeintel.getDocumentHighlights(textParameters))),
         getHover: (textParameters: TextDocumentPositionParameters) =>
-            proxySubscribable(thenMaybeLoadingResult(from(codeintel.getHover(textParameters)))),
+            proxySubscribable(from(codeintel.getHover(textParameters).then(thenMaybeLoadingResult))),
     }
 }
 

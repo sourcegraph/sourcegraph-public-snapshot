@@ -1,4 +1,4 @@
-import { asapScheduler, type ObservableInput, Observable, of, zip, from } from 'rxjs'
+import { asapScheduler, type ObservableInput, Observable, of, zip, from, Subscription } from 'rxjs'
 
 /**
  * Like {@link combineLatest}, except that it does not wait for all Observables to emit before emitting an initial
@@ -45,6 +45,7 @@ export function combineLatestOrDefault<T>(observables: ObservableInput<T>[], def
 
                 // Whether the emission of the values array has been scheduled
                 let scheduled = false
+                let scheduledWork: Subscription | undefined
                 // The number of source Observables that have not yet completed
                 // (so that we know when to complete the output Observable)
                 let activeObservables = observables.length
@@ -61,12 +62,18 @@ export function combineLatestOrDefault<T>(observables: ObservableInput<T>[], def
                         from(observables[index]).subscribe({
                             next: value => {
                                 values[index] = value
-                                if (!scheduled) {
+                                if (activeObservables === 1) {
+                                    // If only one source Observable is active, emit the values array immediately
+                                    // Abort any scheduled emission
+                                    scheduledWork?.unsubscribe()
+                                    scheduled = false
+                                    subscriber.next(values.slice())
+                                } else if (!scheduled) {
                                     scheduled = true
                                     // Use asapScheduler to emit the values array, so that all
                                     // next values that are emitted at the same time are emitted together.
                                     // This makes tests (using expectObservable) easier to write.
-                                    asapScheduler.schedule(() => {
+                                    scheduledWork = asapScheduler.schedule(() => {
                                         if (!subscriber.closed) {
                                             subscriber.next(values.slice())
                                             scheduled = false
