@@ -29,6 +29,8 @@
         type SymbolMatch,
     } from '$lib/shared'
     import { settings } from '$lib/stores'
+    import { toReadable } from '$lib/utils/promises'
+    import { Alert } from '$lib/wildcard'
 
     // TODO: should I be importing this from a page? Seems funky.
     import {
@@ -50,7 +52,7 @@
         },
     })
 
-    const blob = from(
+    const blobStore = toReadable(
         client
             .query(BlobPageQuery, {
                 repoName: result.repository,
@@ -60,7 +62,7 @@
             .then(mapOrThrow(result => result.data?.repository?.commit?.blob ?? null))
     )
 
-    const highlights = from(
+    const highlightStore = toReadable(
         client
             .query(BlobSyntaxHighlightQuery, {
                 repoName: result.repository,
@@ -85,21 +87,25 @@
         </small>
     </div>
     <div class="content">
-        {#if $blob}
+        {#if $blobStore.pending}
+            <LoadingSpinner />
+        {:else if $blobStore.error}
+            <Alert variant="danger">
+                Unable to load file data: {$blobStore.error}
+            </Alert>
+        {:else}
             <CodeMirrorBlob
                 blobInfo={{
                     repoName: result.repository,
                     commitID: result.commit ?? '',
                     revision: '',
                     filePath: result.path,
-                    content: $blob.content ?? '',
-                    languages: $blob.languages ?? [],
+                    content: $blobStore.value.content ?? '',
+                    languages: $blobStore.value.languages ?? [],
                 }}
-                highlights={$highlights}
+                highlights={$highlightStore.value ?? ''}
                 {codeIntelAPI}
             />
-        {:else}
-            <LoadingSpinner />
         {/if}
     </div>
 </div>
