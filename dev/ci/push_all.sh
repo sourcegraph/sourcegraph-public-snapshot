@@ -4,7 +4,7 @@ set -eu
 
 aspectRC="/tmp/aspect-generated.bazelrc"
 rosetta bazelrc > "$aspectRC"
-bazelrc=(--bazelrc="$aspectRC")
+bazelrc=(--bazelrc="$aspectRC" --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
 
 function preview_tags() {
   IFS=' ' read -r -a registries <<<"$1"
@@ -15,6 +15,40 @@ function preview_tags() {
       echo -e "\t ${registry}/\$IMAGE:${tag}"
     done
   done
+}
+
+# Append to annotations which image was pushed and with which tags.
+# Because this is meant to be executed by parallel, meaning we write commands
+# to a jobfile, this echoes the command to post the annotation instead of actually
+# doing it.
+function echo_append_annotation() {
+  repository="$1"
+  IFS=' ' read -r -a registries <<<"$2"
+  IFS=' ' read -r -a tag_args <<<"$3"
+  formatted_tags=""
+  formatted_registries=""
+
+  for arg in "${tag_args[@]}"; do
+    if [ "$arg" != "--tag" ]; then
+      if [ "$formatted_tags" == "" ]; then
+        # Do not insert a comma for the first element
+        formatted_tags="\`$arg\`"
+      else
+        formatted_tags="${formatted_tags}, \`$arg\`"
+      fi
+    fi
+  done
+
+  for reg in "${registries[@]}"; do
+    if [ "$formatted_registries" == "" ]; then
+      formatted_registries="\`$reg\`"
+    else
+      formatted_registries="${formatted_registries}, \`$reg\`"
+    fi
+  done
+
+  raw="| ${repository} | ${formatted_registries} | ${formatted_tags} |"
+  echo "echo -e '${raw}' >>./annotations/pushed_images.md"
 }
 
 function create_push_command() {
@@ -40,14 +74,15 @@ function create_push_command() {
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh"
 
-  echo "$cmd -- $tags_args $repositories_args"
+  echo "$cmd -- $tags_args $repositories_args && $(echo_append_annotation "$repository" "${registries[@]}" "${tags_args[@]}")"
 }
 
 dev_registries=(
-  "us.gcr.io/sourcegraph-dev"
+  "$DEV_REGISTRY"
 )
+
 prod_registries=(
-  "index.docker.io/sourcegraph"
+  "$PROD_REGISTRY"
 )
 
 date_fragment="$(date +%Y-%m-%d)"
@@ -65,10 +100,6 @@ CANDIDATE_ONLY=${CANDIDATE_ONLY:-""}
 
 push_prod=false
 
-# ok: main
-# ok: main-dry-run
-# ok: main-dry-run-123
-# no: main-foo
 if [[ "$BUILDKITE_BRANCH" =~ ^main$ ]] || [[ "$BUILDKITE_BRANCH" =~ ^docker-images-candidates-notest/.* ]]; then
   dev_tags+=("insiders")
   prod_tags+=("insiders")
@@ -80,6 +111,12 @@ if [[ "$BUILDKITE_BRANCH" =~ ^main-dry-run/.*  ]]; then
   dev_tags+=("insiders")
   prod_tags+=("insiders")
   push_prod=false
+fi
+
+# If we're doing an internal release, we need to push to the prod registry too.
+# TODO(rfc795) this should be more granular than this, we're abit abusing the idea of the prod registry here.
+if [ "${RELEASE_INTERNAL:-}" == "true" ]; then
+  push_prod=true
 fi
 
 # All release branch builds must be published to prod tags to support
@@ -104,6 +141,11 @@ if [ -n "$CANDIDATE_ONLY" ]; then
   dev_tags=("${BUILDKITE_COMMIT}_${BUILDKITE_BUILD_NUMBER}_candidate")
   push_prod=false
 fi
+
+
+# Posting the preamble for image pushes.
+echo -e "### ${BUILDKITE_LABEL}" > ./annotations/pushed_images.md
+echo -e "\n| Name | Registries | Tags |\n|---|---|---|" >> ./annotations/pushed_images.md
 
 preview_tags "${dev_registries[*]}" "${dev_tags[*]}"
 if $push_prod; then

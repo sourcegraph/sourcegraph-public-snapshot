@@ -987,6 +987,8 @@ commands:
 bazelCommands:
   blobstore:
     target: //cmd/blobstore
+    env:
+      BLOBSTORE_DATA_DIR: $HOME/.sourcegraph-dev/data/blobstore-go
   cody-gateway:
     target: //cmd/cody-gateway
     env:

@@ -1388,8 +1388,8 @@ importers:
   client/web-sveltekit:
     dependencies:
       '@melt-ui/svelte':
-        specifier: ^0.66.2
-        version: 0.66.2(svelte@4.1.1)
+        specifier: ^0.76.0
+        version: 0.76.0(svelte@4.1.1)
       '@popperjs/core':
         specifier: ^2.11.8
         version: 2.11.8
@@ -5591,8 +5591,8 @@ packages:
       react: 18.1.0
     dev: true
 
-  /@melt-ui/svelte@0.66.2(svelte@4.1.1):
-    resolution: {integrity: sha512-ufIhgOYP11A/G3AvW+2Qw74UGudMBJQ2wK+sETpU51VkC63/5D2sctKgXzGl0OUEJBlPHku6LRSry9rIeAVkNw==}
+  /@melt-ui/svelte@0.76.0(svelte@4.1.1):
+    resolution: {integrity: sha512-X1ktxKujjLjOBt8LBvfckHGDMrkHWceRt1jdsUTf0EH76ikNPP1ofSoiV0IhlduDoCBV+2YchJ8kXCDfDXfC9Q==}
     peerDependencies:
       svelte: '>=3 <5'
     dependencies:
@@ -5601,7 +5601,7 @@ packages:
       '@internationalized/date': 3.5.1
       dequal: 2.0.3
       focus-trap: 7.5.2
-      nanoid: 4.0.2
+      nanoid: 5.0.6
       svelte: 4.1.1
     dev: false
 
@@ -19829,9 +19829,9 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
-  /nanoid@4.0.2:
-    resolution: {integrity: sha512-7ZtY5KTCNheRGfEFxnedV5zFiORN1+Y1N6zvPTnHQd8ENUvfaDBeuJDZb2bN/oXwXxu3qkTXDzy57W5vAmDTBw==}
-    engines: {node: ^14 || ^16 || >=18}
+  /nanoid@5.0.6:
+    resolution: {integrity: sha512-rRq0eMHoGZxlvaFOUdK1Ev83Bd1IgzzR+WJ3IbDJ7QOSdAxYjlurSPqFs9s4lJg29RT6nPwizFtJhQS6V5xgiA==}
+    engines: {node: ^18 || >=20}
     hasBin: true
     dev: false
 

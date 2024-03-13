@@ -313,11 +313,11 @@ func TestGetAndSaveUser(t *testing.T) {
 				expNewUserCreated:                false,
 			},
 			{
-				description: "single provider rejects multiple external identities from same provider",
+				description: "single identity per user mode rejects multiple external identities from same provider",
 				op: GetAndSaveUserOp{
-					ExternalAccount: ext("st1", "s1", "c1", "s1/u1-new"),
-					UserProps:       userProps("u1", "u1@example.com"), // This user exists in the DB already and has an external account for st1, s1, c1
-					SingleProvider:  true,
+					ExternalAccount:       ext("st1", "s1", "c1", "s1/u1-new"),
+					UserProps:             userProps("u1", "u1@example.com"), // This user exists in the DB already and has an external account for st1, s1, c1
+					SingleIdentityPerUser: true,
 				},
 				createIfNotExistIrrelevant:       true,
 				expSafeErr:                       "Another identity for this user from this provider already exists. Remove the link to the other identity from your account.",

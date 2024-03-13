@@ -96,7 +96,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		// This block generates jobs that can be built directly from
 		// a basic query rather than first being expanded into
 		// flat queries.
-		resultTypes := computeResultTypes(b, inputs.PatternType)
+		resultTypes := computeResultTypes(b, inputs.PatternType, defaultResultTypes)
 		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.DefaultLimit()))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 		repoOptions := toRepoOptions(b, inputs.UserSettings)
@@ -362,7 +362,7 @@ func orderRacingJobs(j job.Job) job.Job {
 // NewFlatJob creates all jobs that are built from a query.Flat.
 func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 	maxResults := f.MaxResults(searchInputs.DefaultLimit())
-	resultTypes := computeResultTypes(f.ToBasic(), searchInputs.PatternType)
+	resultTypes := computeResultTypes(f.ToBasic(), searchInputs.PatternType, defaultResultTypes)
 
 	// searcher to use full deadline if timeout: set or we are not batch.
 	useFullDeadline := f.GetTimeout() != nil || f.Count() != nil || searchInputs.Protocol != search.Batch
@@ -725,9 +725,11 @@ func toLangFilters(aliases []string) []string {
 	return filters
 }
 
+const defaultResultTypes = result.TypeFile | result.TypePath | result.TypeRepo
+
 // computeResultTypes returns result types based three inputs: `type:...` in the query,
 // the `pattern`, and top-level `searchType` (coming from a GQL value).
-func computeResultTypes(b query.Basic, searchType query.SearchType) result.Types {
+func computeResultTypes(b query.Basic, searchType query.SearchType, defaultTypes result.Types) result.Types {
 	if searchType == query.SearchTypeStructural && !b.IsEmptyPattern() {
 		return result.TypeStructural
 	}
@@ -750,7 +752,7 @@ func computeResultTypes(b query.Basic, searchType query.SearchType) result.Types
 	}
 
 	if len(types) == 0 {
-		return result.TypeFile | result.TypePath | result.TypeRepo
+		return defaultTypes
 	}
 
 	var rts result.Types

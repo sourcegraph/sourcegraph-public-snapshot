@@ -98,7 +98,7 @@ export interface Props
     isSourcegraphDotCom: boolean
     className?: string
     authenticatedUser: AuthenticatedUser | null
-    context: Pick<SourcegraphContext, 'authProviders'>
+    context: Pick<SourcegraphContext, 'externalURL'>
 }
 
 export const treePageRepositoryFragment = gql`

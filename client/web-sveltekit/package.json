@@ -65,7 +65,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@melt-ui/svelte": "^0.66.2",
+    "@melt-ui/svelte": "^0.76.0",
     "@popperjs/core": "^2.11.8",
     "@sourcegraph/branded": "workspace:*",
     "@sourcegraph/client-api": "workspace:*",

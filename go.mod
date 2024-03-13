@@ -246,8 +246,8 @@ require (
 )
 
 require (
-	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.4.1
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.1
+	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.5.0
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.2
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.4.0
 	github.com/TwiN/go-away v1.6.13
 	github.com/aws/constructs-go/constructs/v10 v10.2.69
@@ -304,7 +304,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.2.4-0.20230617002413-005d2dfb6b68 // indirect
 	cloud.google.com/go/trace v1.10.4 // indirect
 	dario.cat/mergo v1.0.0 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.1 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.2 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.1.1 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.21.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.45.0 // indirect
@@ -586,7 +586,7 @@ require (
 	github.com/scim2/filter-parser/v2 v2.2.0
 	github.com/sourcegraph/conc v0.3.1-0.20240108182409-4afefce20f9b
 	github.com/sourcegraph/mountinfo v0.0.0-20240201124957-b314c0befab1
-	github.com/sourcegraph/zoekt v0.0.0-20240212021124-1c158f9b8661
+	github.com/sourcegraph/zoekt v0.0.0-20240304160820-371a303692de
 	github.com/spf13/cobra v1.8.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect

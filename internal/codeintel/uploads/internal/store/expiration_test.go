@@ -170,7 +170,7 @@ func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 	} else if count != 0 {
 		t.Fatalf("unexpected number of uploads deleted via refcount: want=%d have=%d", 0, count)
 	}
-	for i := 0; i < 9; i++ {
+	for range 9 {
 		// Initially null last_traversal_scan_at values; run once for each upload (overkill)
 		if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
 			t.Fatalf("unexpected error soft deleting uploads: %s", err)

@@ -196,7 +196,7 @@ SELECT CASE c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast(c2.count 
 // enclosing transaction.
 func (m *migrator) Up(ctx context.Context) (err error) {
 	p := pool.New().WithErrors()
-	for i := 0; i < m.options.numRoutines; i++ {
+	for range m.options.numRoutines {
 		p.Go(func() error { return m.up(ctx) })
 	}
 
@@ -212,7 +212,7 @@ func (m *migrator) up(ctx context.Context) (err error) {
 // For notes on parallelism, see the symmetric `Up` method on this migrator.
 func (m *migrator) Down(ctx context.Context) error {
 	p := pool.New().WithErrors()
-	for i := 0; i < m.options.numRoutines; i++ {
+	for range m.options.numRoutines {
 		p.Go(func() error { return m.down(ctx) })
 	}
 
