@@ -10,6 +10,7 @@ import (
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/sslices"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -148,6 +149,41 @@ func Providers() []Provider {
 	for _, pkgProviders := range curProviders {
 		for _, p := range pkgProviders {
 			providers = append(providers, p)
+		}
+	}
+
+	return providers
+}
+
+// VisibleProviders returns the list of currently registered authentication providers that aren't hidden.
+// The list is not sorted in any way.
+func VisibleProviders() []Provider {
+	if MockProviders != nil {
+		return sslices.Filter(
+			MockProviders,
+			func(p Provider) bool {
+				return !GetAuthProviderCommon(p).Hidden
+			},
+		)
+	}
+
+	curProvidersMu.RLock()
+	defer curProvidersMu.RUnlock()
+
+	if curProviders == nil {
+		return nil
+	}
+
+	ct := 0
+	for _, pkgProviders := range curProviders {
+		ct += len(pkgProviders)
+	}
+	providers := make([]Provider, 0, ct)
+	for _, pkgProviders := range curProviders {
+		for _, p := range pkgProviders {
+			if !GetAuthProviderCommon(p).Hidden {
+				providers = append(providers, p)
+			}
 		}
 	}
 

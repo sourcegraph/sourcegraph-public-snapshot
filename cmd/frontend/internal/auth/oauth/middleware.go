@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/sslices"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -210,20 +211,8 @@ func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 	}
 }
 
-// filterHiddenProviders removes all providers that have the Hidden field set to true.
-func filterHiddenProviders(ps []providers.Provider) []providers.Provider {
-	filteredPs := make([]providers.Provider, 0, len(ps))
-	for _, p := range ps {
-		if !providers.GetAuthProviderCommon(p).Hidden {
-			filteredPs = append(filteredPs, p)
-		}
-	}
-
-	return filteredPs
-}
-
 func getExactlyOneOAuthProvider() *Provider {
-	ps := filterHiddenProviders(providers.Providers())
+	ps := providers.VisibleProviders()
 	if len(ps) != 1 {
 		return nil
 	}
