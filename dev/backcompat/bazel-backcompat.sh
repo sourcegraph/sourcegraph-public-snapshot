@@ -20,7 +20,7 @@ fi
 if [[ ${CI:-} == "true" ]]; then
   aspectRC="/tmp/aspect-generated.bazelrc"
   rosetta bazelrc > "$aspectRC"
-  echo "\ntry-import %workspace%/.aspect/bazelrc/ci.generated.bazelrc\n"  >> "$aspectRC"
+  echo -e "\ntry-import %workspace%/.aspect/bazelrc/ci.generated.bazelrc\n"  >> "$aspectRC"
   bazelrcs=(--bazelrc=${aspectRC})
 else
   if [[ $EXIT_CODE -ne 0 ]]; then
