@@ -75,15 +75,15 @@ export const OpenInEditorPopover: React.FunctionComponent<
             <>
                 <H3>Set your preferred editor</H3>
                 <Text>
-                    Open this and other files directly in your editor. Set your project path and editor to get started.
-                    Update anytime in your user settings.
+                    Open this and other files directly in your editor. Set your path and editor to get started. Update
+                    anytime in your user settings.
                 </Text>
 
                 <Form onSubmit={onSubmit} noValidate={true}>
                     <Input
                         id="OpenInEditorForm-projectPath"
                         type="text"
-                        label="Project path"
+                        label="Default projects path"
                         name="projectPath"
                         placeholder="/Users/username/projects"
                         required={true}
@@ -95,6 +95,11 @@ export const OpenInEditorPopover: React.FunctionComponent<
                         onChange={onProjectPathChange}
                         className={classNames('mr-sm-2')}
                     />
+                    <aside>
+                        The parent folder contains your repository checkouts. e.g. if this repository is checked out to{' '}
+                        <code>/Users/username/projects/cody</code> then set your default projects path to{' '}
+                        <code>/Users/username/projects</code>.
+                    </aside>
                     <Select
                         id="OpenInEditorForm-editor"
                         label="Editor"
