@@ -29,7 +29,7 @@ This page contains generated documentation for telemetry event data that gets ex
     - [EventUser](#telemetrygateway-v1-EventUser)
     - [Identifier](#telemetrygateway-v1-Identifier)
     - [Identifier.LicensedInstanceIdentifier](#telemetrygateway-v1-Identifier-LicensedInstanceIdentifier)
-    - [Identifier.ManagedService](#telemetrygateway-v1-Identifier-ManagedService)
+    - [Identifier.ManagedServiceIdentifier](#telemetrygateway-v1-Identifier-ManagedServiceIdentifier)
     - [Identifier.UnlicensedInstanceIdentifier](#telemetrygateway-v1-Identifier-UnlicensedInstanceIdentifier)
     - [RecordEventRequest](#telemetrygateway-v1-RecordEventRequest)
     - [RecordEventResponse](#telemetrygateway-v1-RecordEventResponse)
@@ -305,7 +305,7 @@ Sourcegraph.com instance and managed services.
 | ----- | ---- | ----- | ----------- |
 | licensed_instance | [Identifier.LicensedInstanceIdentifier](#telemetrygateway-v1-Identifier-LicensedInstanceIdentifier) |  | <p>A licensed Sourcegraph instance.</p> |
 | unlicensed_instance | [Identifier.UnlicensedInstanceIdentifier](#telemetrygateway-v1-Identifier-UnlicensedInstanceIdentifier) |  | <p>An unlicensed Sourcegraph instance.</p> |
-| managed_service | [Identifier.ManagedService](#telemetrygateway-v1-Identifier-ManagedService) |  | <p>A service operated and managed by the Sourcegraph team, for example</p><p>a service deployed by https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/</p> |
+| managed_service | [Identifier.ManagedServiceIdentifier](#telemetrygateway-v1-Identifier-ManagedServiceIdentifier) |  | <p>A service operated and managed by the Sourcegraph team, for example</p><p>a service deployed by https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/</p> |
 
 
 
@@ -329,9 +329,9 @@ Sourcegraph.com instance and managed services.
 
 
 
-<a name="telemetrygateway-v1-Identifier-ManagedService"></a>
+<a name="telemetrygateway-v1-Identifier-ManagedServiceIdentifier"></a>
 
-### Identifier.ManagedService
+### Identifier.ManagedServiceIdentifier
 
 
 
