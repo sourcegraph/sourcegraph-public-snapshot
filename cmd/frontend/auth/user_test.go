@@ -327,6 +327,20 @@ func TestGetAndSaveUser(t *testing.T) {
 				expNewUserCreated:                false,
 				expSavedExtAccts:                 map[int32][]extsvc.AccountSpec{},
 			},
+			{
+				description: "single identity per user mode accepts the same external identity from same provider",
+				op: GetAndSaveUserOp{
+					ExternalAccount:       ext("st1", "s1", "c1", "s1/u1"),
+					UserProps:             userProps("u1", "u1@example.com"), // This user exists in the DB already and has an external account for st1, s1, c1
+					SingleIdentityPerUser: true,
+				},
+				createIfNotExistIrrelevant: true,
+				expUserID:                  1,
+				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
+					1: {ext("st1", "s1", "c1", "s1/u1")},
+				},
+				expNewUserCreated: false,
+			},
 		},
 	}
 	errorCases := []outerCase{
