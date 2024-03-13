@@ -96,7 +96,7 @@ export const OpenInEditorPopover: React.FunctionComponent<
                         className={classNames('mr-sm-2')}
                     />
                     <aside className="small text-muted">
-                        The directory that contains your repository checkouts. e.g. if this repository is checked out to{' '}
+                        The directory that contains your repository checkouts. For example, if this repository is checked out to{' '}
                         <code>/Users/username/projects/cody</code> then set your default projects path to{' '}
                         <code>/Users/username/projects</code>.
                     </aside>
