@@ -191,13 +191,13 @@ func findIgnoredRepositories(ctx context.Context, gitserverClient gitserver.Clie
 	// Spawn N workers.
 	for range ignoredWorkspaceResolverConcurrency {
 		wg.Add(1)
-		go func(in chan *RepoRevision, out chan result) {
+		go func() {
 			defer wg.Done()
-			for repo := range in {
+			for repo := range input {
 				hasBatchIgnore, err := hasBatchIgnoreFile(ctx, gitserverClient, repo)
-				out <- result{repo, hasBatchIgnore, err}
+				results <- result{repo, hasBatchIgnore, err}
 			}
-		}(input, results)
+		}()
 	}
 
 	// Queue all the repos for processing.
@@ -206,10 +206,10 @@ func findIgnoredRepositories(ctx context.Context, gitserverClient gitserver.Clie
 	}
 	close(input)
 
-	go func(wg *sync.WaitGroup) {
+	go func() {
 		wg.Wait()
 		close(results)
-	}(&wg)
+	}()
 
 	var errs error
 	for result := range results {
@@ -524,7 +524,7 @@ func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileNam
 	)
 	for _, repoRev := range repos {
 		<-sem
-		go func(repoRev *RepoRevision) {
+		go func() {
 			defer func() {
 				sem <- struct{}{}
 			}()
@@ -538,7 +538,7 @@ func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileNam
 				return
 			}
 			results[repoRev.Key()] = result
-		}(repoRev)
+		}()
 	}
 
 	// Wait for all to finish.

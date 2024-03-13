@@ -194,6 +194,8 @@ class Sourcegraph {
     }
 
     public fixture(fixtures: (ObjectMock & { __typename: NonNullable<ObjectMock['__typename']> })[]): void {
+        // @ts-expect-error - Unclear how to type this correctly. ObjectMock is missing string index signature
+        // which is required by addFixtures
         this.graphqlMock.addFixtures(fixtures)
     }
 

@@ -51,8 +51,10 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
     const { data } = useQuery<GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables>(QUERY, {
         fetchPolicy: 'cache-and-network',
     })
+
     const siteFlagsValue = data?.site
     let alerts = siteFlagsValue?.alerts ?? []
+
     if (isAdminOnboardingEnabled) {
         alerts =
             siteFlagsValue?.alerts.filter(

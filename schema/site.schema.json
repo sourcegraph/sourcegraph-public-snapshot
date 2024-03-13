@@ -3233,6 +3233,14 @@
           "description": "Name of the SAML assertion attribute that holds group membership for allowGroups setting",
           "type": "string",
           "default": "groups"
+        },
+        "usernameAttributeNames": {
+          "description": "Names of the SAML assertions attributes to check for a user's username. Checked in the order the names are provided.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },

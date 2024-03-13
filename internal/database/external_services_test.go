@@ -28,7 +28,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -318,16 +317,15 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Set permissions user mapping and create an "Other" external service
-	pmu := globals.PermissionsUserMapping()
-	t.Cleanup(func() {
-		globals.SetPermissionsUserMapping(pmu)
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			PermissionsUserMapping: &schema.PermissionsUserMapping{
+				Enabled: true,
+				BindID:  "email",
+			},
+		},
 	})
-
-	globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{
-		BindID:  "email",
-		Enabled: true,
-	})
+	t.Cleanup(func() { conf.Mock(nil) })
 
 	esOther := &types.ExternalService{
 		Kind:          extsvc.KindOther,
@@ -2511,18 +2509,18 @@ func TestExternalServiceStore_recalculateFields(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			pmu := globals.PermissionsUserMapping()
-			t.Cleanup(func() {
-				globals.SetPermissionsUserMapping(pmu)
-			})
-
 			es := &types.ExternalService{}
 
 			if tc.explicitPermsEnabled {
-				globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{
-					BindID:  "email",
-					Enabled: true,
+				conf.Mock(&conf.Unified{
+					SiteConfiguration: schema.SiteConfiguration{
+						PermissionsUserMapping: &schema.PermissionsUserMapping{
+							Enabled: true,
+							BindID:  "email",
+						},
+					},
 				})
+				t.Cleanup(func() { conf.Mock(nil) })
 			}
 			rawConfig := "{}"
 			var err error

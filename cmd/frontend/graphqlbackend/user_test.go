@@ -180,26 +180,30 @@ func TestUser_LatestSettings(t *testing.T) {
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
+		db.SettingsFunc.SetDefaultReturn(dbmocks.NewMockSettingsStore())
 
 		orig := dotcom.SourcegraphDotComMode()
 		dotcom.MockSourcegraphDotComMode(true)
 		defer dotcom.MockSourcegraphDotComMode(orig)
 
 		tests := []struct {
-			name  string
-			ctx   context.Context
-			setup func()
+			name       string
+			ctx        context.Context
+			shouldFail bool
+			setup      func()
 		}{
 			{
-				name: "unauthenticated",
-				ctx:  context.Background(),
+				name:       "unauthenticated",
+				ctx:        context.Background(),
+				shouldFail: true,
 				setup: func() {
 					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 				},
 			},
 			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				name:       "another user",
+				ctx:        actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				shouldFail: true,
 				setup: func() {
 					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 						return &types.User{ID: id}, nil
@@ -207,8 +211,9 @@ func TestUser_LatestSettings(t *testing.T) {
 				},
 			},
 			{
-				name: "site admin",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				name:       "site admin",
+				ctx:        actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				shouldFail: false,
 				setup: func() {
 					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 						return &types.User{ID: id, SiteAdmin: true}, nil
@@ -221,9 +226,16 @@ func TestUser_LatestSettings(t *testing.T) {
 				test.setup()
 
 				_, err := NewUserResolver(test.ctx, db, &types.User{ID: 1}).LatestSettings(test.ctx)
-				got := fmt.Sprintf("%v", err)
-				want := "must be authenticated as user with id 1"
-				assert.Equal(t, want, got)
+
+				if test.shouldFail {
+					got := fmt.Sprintf("%v", err)
+					want := "must be authenticated as the authorized user or site admin"
+					assert.Equal(t, want, got)
+				} else {
+					if err != nil {
+						t.Errorf("unexpected error: %s", err)
+					}
+				}
 			})
 		}
 	})
@@ -459,20 +471,23 @@ func TestUpdateUser(t *testing.T) {
 		defer dotcom.MockSourcegraphDotComMode(orig)
 
 		tests := []struct {
-			name  string
-			ctx   context.Context
-			setup func()
+			name       string
+			ctx        context.Context
+			shouldFail bool
+			setup      func()
 		}{
 			{
-				name: "unauthenticated",
-				ctx:  context.Background(),
+				name:       "unauthenticated",
+				ctx:        context.Background(),
+				shouldFail: true,
 				setup: func() {
 					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 				},
 			},
 			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				name:       "another user",
+				ctx:        actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				shouldFail: true,
 				setup: func() {
 					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 						return &types.User{ID: id}, nil
@@ -480,8 +495,9 @@ func TestUpdateUser(t *testing.T) {
 				},
 			},
 			{
-				name: "site admin",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				name:       "site admin",
+				ctx:        actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				shouldFail: false,
 				setup: func() {
 					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 						return &types.User{ID: id, SiteAdmin: true}, nil
@@ -499,9 +515,15 @@ func TestUpdateUser(t *testing.T) {
 						User: MarshalUserID(1),
 					},
 				)
-				got := fmt.Sprintf("%v", err)
-				want := "must be authenticated as user with id 1"
-				assert.Equal(t, want, got)
+				if test.shouldFail {
+					got := fmt.Sprintf("%v", err)
+					want := "must be authenticated as the authorized user or site admin"
+					assert.Equal(t, want, got)
+				} else {
+					if err != nil {
+						t.Errorf("unexpected error: %v", err)
+					}
+				}
 			})
 		}
 	})

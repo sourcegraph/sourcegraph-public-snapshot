@@ -952,7 +952,7 @@ func TestLogIfCorrupt(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Cleanup(func() {
-			db.Repos().Delete(ctx, dbRepo.ID)
+			_ = db.Repos().Delete(ctx, dbRepo.ID)
 		})
 
 		stdErr := "error: packfile .git/objects/pack/pack-e26c1fc0add58b7649a95f3e901e30f29395e174.pack does not match index"
@@ -980,7 +980,7 @@ func TestLogIfCorrupt(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Cleanup(func() {
-			db.Repos().Delete(ctx, dbRepo.ID)
+			_ = db.Repos().Delete(ctx, dbRepo.ID)
 		})
 
 		s.LogIfCorrupt(ctx, repoName, errors.New("Brought to you by Horsegraph"))
