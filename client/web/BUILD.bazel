@@ -101,9 +101,9 @@ js_library(
         [
             "src/**/*.ts",
             "src/**/*.tsx",
-            "!src/playwright/*.spec.ts",
         ],
         [
+            "src/playwright/*.spec.ts",
             "src/end-to-end/**/*.*",
             # TODO: Ignore legacy build generated file as it conflicts with the Bazel
             # build. This can be removed after the migration.
