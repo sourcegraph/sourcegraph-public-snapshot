@@ -101,6 +101,7 @@ js_library(
         [
             "src/**/*.ts",
             "src/**/*.tsx",
+            "!src/playwright/*.spec.ts",
         ],
         [
             "src/end-to-end/**/*.*",
