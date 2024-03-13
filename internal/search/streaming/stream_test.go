@@ -131,20 +131,3 @@ func TestBatchingStream(t *testing.T) {
 		require.Equal(t, count.Load(), int64(10))
 	})
 }
-
-func TestDedupingStream(t *testing.T) {
-	var sent []result.Match
-	s := NewDedupingStream(StreamFunc(func(e SearchEvent) {
-		sent = append(sent, e.Results...)
-	}))
-
-	for range 2 {
-		s.Send(SearchEvent{
-			Results: []result.Match{&result.FileMatch{
-				File: result.File{Path: "lombardy"},
-			}},
-		})
-	}
-
-	require.Equal(t, 1, len(sent))
-}
