@@ -115,21 +115,17 @@ func (cmd Command) functionInstall(ctx context.Context, parentEnv map[string]str
 	return nil
 }
 
-func (cmd Command) getWatchPaths() ([]string, error) {
+func (cmd Command) getWatchPaths() []string {
 	fullPaths := make([]string, len(cmd.Watch))
 	for i, path := range cmd.Watch {
 		fullPaths[i] = filepath.Join(cmd.Config.RepositoryRoot, path)
 	}
 
-	return fullPaths, nil
+	return fullPaths
 }
 
 func (cmd Command) StartWatch(ctx context.Context) (<-chan struct{}, error) {
-	if watchPaths, err := cmd.getWatchPaths(); err != nil {
-		return nil, err
-	} else {
-		return WatchPaths(ctx, watchPaths)
-	}
+	return WatchPaths(ctx, cmd.getWatchPaths())
 }
 
 func (c Command) Merge(other Command) Command {

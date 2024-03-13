@@ -1098,128 +1098,99 @@ dockerCommands:
     # Nothing to run for this, we just want to re-run the install script every time.
     cmd: exit 0
     target: //cmd/batcheshelper:image_tarball
+    image: batcheshelper:candidate
     env:
-      IMAGE: batcheshelper:candidate
       # TODO: This is required but should only be set on M1 Macs.
       PLATFORM: linux/arm64
-    watch:
-      - cmd/batcheshelper
-      - lib/batches
     continueWatchOnExit: true
 
   grafana:
     target: //docker-images/grafana:image_tarball
-    cmd: |
-      if [[ $(uname) == "Linux" ]]; then
-        # Linux needs an extra arg to support host.internal.docker, which is how grafana connects
-        # to the prometheus backend.
-        ADD_HOST_FLAG="--add-host=host.docker.internal:host-gateway"
+    docker:
+      image: grafana:candidate
+      ports:
+        - 3370
+      flags:
+        cpus: 1
+        memory: 1g
+      volumes:
+        - from: $HOME/.sourcegraph-dev/data/grafana
+          to: /var/lib/grafana
+        - from: $(pwd)/dev/grafana/all
+          to: /sg_config_grafana/provisioning/datasources
 
-        # Docker users on Linux will generally be using direct user mapping, which
-        # means that they'll want the data in the volume mount to be owned by the
-        # same user as is running this script. Fortunately, the Grafana container
-        # doesn't really care what user it runs as, so long as it can write to
-        # /var/lib/grafana.
-        DOCKER_USER="--user=$UID"
-      fi
+      linux:
+        flags:
+          # Linux needs an extra arg to support host.internal.docker, which is how grafana connects
+          # to the prometheus backend.
+          add-host: host.docker.internal:host-gateway
 
-      echo "Grafana: serving on http://localhost:${PORT}"
-      echo "Grafana: note that logs are piped to ${GRAFANA_LOG_FILE}"
-      docker run --rm ${DOCKER_USER} \
-        --name=${CONTAINER} \
-        --cpus=1 \
-        --memory=1g \
-        -p 0.0.0.0:3370:3370 ${ADD_HOST_FLAG} \
-        -v "${GRAFANA_DISK}":/var/lib/grafana \
-        -v "$(pwd)"/dev/grafana/all:/sg_config_grafana/provisioning/datasources \
-        grafana:candidate >"${GRAFANA_LOG_FILE}" 2>&1
-    install: |
-      mkdir -p "${GRAFANA_DISK}"
-      mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
-      docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
-      docker load --input $(bazel cquery //docker-images/grafana:image_tarball --output=files)
+          # Docker users on Linux will generally be using direct user mapping, which
+          # means that they'll want the data in the volume mount to be owned by the
+          # same user as is running this script. Fortunately, the Grafana container
+          # doesn't really care what user it runs as, so long as it can write to
+          # /var/lib/grafana.
+          user: $UID
+    # Log file location: since we log outside of the Docker container, we should
+    # log somewhere that's _not_ ~/.sourcegraph-dev/data/grafana, since that gets
+    # volume mounted into the container and therefore has its own ownership
+    # semantics.
+    # Now for the actual logging. Grafana's output gets sent to stdout and stderr.
+    # We want to capture that output, but because it's fairly noisy, don't want to
+    # display it in the normal case.
+    logfile: $HOME/.sourcegraph-dev/logs/grafana/grafana.log
+
     env:
       GRAFANA_DISK: $HOME/.sourcegraph-dev/data/grafana
-      # Log file location: since we log outside of the Docker container, we should
-      # log somewhere that's _not_ ~/.sourcegraph-dev/data/grafana, since that gets
-      # volume mounted into the container and therefore has its own ownership
-      # semantics.
-      # Now for the actual logging. Grafana's output gets sent to stdout and stderr.
-      # We want to capture that output, but because it's fairly noisy, don't want to
-      # display it in the normal case.
-      GRAFANA_LOG_FILE: $HOME/.sourcegraph-dev/logs/grafana/grafana.log
-      IMAGE: grafana:candidate
-      CONTAINER: grafana
-      PORT: 3370
       # docker containers must access things via docker host on non-linux platforms
-      DOCKER_USER: ''
-      ADD_HOST_FLAG: ''
       CACHE: false
 
   prometheus:
     target: //docker-images/prometheus:image_tarball
-    cmd: |
-      if [[ $(uname) == "Linux" ]]; then
-        DOCKER_USER="--user=$UID"
-
-        # Frontend generally runs outside of Docker, so to access it we need to be
-        # able to access ports on the host. --net=host is a very dirty way of
-        # enabling this.
-        DOCKER_NET="--net=host"
-        SRC_FRONTEND_INTERNAL="localhost:3090"
-      fi
-
-      echo "Prometheus: serving on http://localhost:${PORT}"
-      echo "Prometheus: note that logs are piped to ${PROMETHEUS_LOG_FILE}"
-      docker run --rm ${DOCKER_NET} ${DOCKER_USER} \
-        --name=${CONTAINER} \
-        --cpus=1 \
-        --memory=4g \
-        -p 0.0.0.0:9090:9090 \
-        -v "${PROMETHEUS_DISK}":/prometheus \
-        -v "$(pwd)/${CONFIG_DIR}":/sg_prometheus_add_ons \
-        -e SRC_FRONTEND_INTERNAL="${SRC_FRONTEND_INTERNAL}" \
-        -e DISABLE_SOURCEGRAPH_CONFIG="${DISABLE_SOURCEGRAPH_CONFIG:-""}" \
-        -e DISABLE_ALERTMANAGER="${DISABLE_ALERTMANAGER:-""}" \
-        -e PROMETHEUS_ADDITIONAL_FLAGS="--web.enable-lifecycle --web.enable-admin-api" \
-        ${IMAGE} >"${PROMETHEUS_LOG_FILE}" 2>&1
-    install: |
-      mkdir -p "${PROMETHEUS_DISK}"
-      mkdir -p "$(dirname ${PROMETHEUS_LOG_FILE})"
-
-      docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
-
-      if [[ $(uname) == "Linux" ]]; then
-        PROM_TARGETS="dev/prometheus/linux/prometheus_targets.yml"
-      fi
-
-      cp ${PROM_TARGETS} "${CONFIG_DIR}"/prometheus_targets.yml
-
-      docker load --input $(bazel cquery //docker-images/prometheus:image_tarball --output=files)
+    logfile: $HOME/.sourcegraph-dev/logs/prometheus/prometheus.log
+    docker:
+      image: prometheus:candidate
+      volumes:
+        - from: $HOME/.sourcegraph-dev/data/prometheus
+          to: /prometheus
+        - from: $PROMETHEUS_CONFIG
+          to: /sg_prometheus_add_ons
+      flags:
+        cpus: 1
+        memory: 4g
+      ports:
+        - 9090
+      linux:
+        flags:
+          net: host
+          user: $UID
+        env:
+          PROM_TARGETS: dev/prometheus/linux/prometheus_targets.yml
+          SRC_FRONTEND_INTERNAL: localhost:3090
+    precmd: cp ${PROM_TARGETS} "${CONFIG_DIR}"/prometheus_targets.yml
     env:
-      PROMETHEUS_DISK: $HOME/.sourcegraph-dev/data/prometheus
-      # See comment above for `grafana`
-      PROMETHEUS_LOG_FILE: $HOME/.sourcegraph-dev/logs/prometheus/prometheus.log
-      IMAGE: prometheus:candidate
-      CONTAINER: prometheus
-      PORT: 9090
       CONFIG_DIR: docker-images/prometheus/config
-      DOCKER_USER: ''
-      DOCKER_NET: ''
       PROM_TARGETS: dev/prometheus/all/prometheus_targets.yml
       SRC_FRONTEND_INTERNAL: host.docker.internal:3090
-      ADD_HOST_FLAG: ''
       DISABLE_SOURCEGRAPH_CONFIG: false
+      DISABLE_ALERTMANAGER: false
+      PROMETHEUS_ADDITIONAL_FLAGS: '--web.enable-lifecycle --web.enable-admin-api'
 
   postgres_exporter:
     target: //docker-images/postgres_exporter:image_tarball
-    cmd: |
-      if [[ $(uname) == "Linux" ]]; then
-        # Linux needs an extra arg to support host.internal.docker, which is how grafana connects
-        # to the prometheus backend.
-        ADD_HOST_FLAG="--add-host=host.docker.internal:host-gateway"
-      fi
-
+    docker:
+      image: postgres-exporter:candidate
+      cpus: 1
+      memory: 1g
+      ports:
+        - 9187
+      linux:
+        args:
+          # Linux needs an extra arg to support host.internal.docker, which is how
+          # postgres_exporter connects to the prometheus backend.
+          add-host: host.docker.internal:host-gateway
+          net: host
+    precmd: |
       # Use psql to read the effective values for PG* env vars (instead of, e.g., hardcoding the default
       # values).
       get_pg_env() { psql -c '\set' | grep "$1" | cut -f 2 -d "'"; }
@@ -1233,53 +1204,31 @@ dockerCommands:
       if [[ ("$ADJUSTED_HOST" == "localhost" || "$ADJUSTED_HOST" == "127.0.0.1" || -f "$ADJUSTED_HOST") && "$OSTYPE" != "linux-gnu" ]]; then
         ADJUSTED_HOST="host.docker.internal"
       fi
-
-      NET_ARG=""
-      DATA_SOURCE_NAME="postgresql://${PGUSER}:${PGPASSWORD}@${ADJUSTED_HOST}:${PGPORT}/${PGDATABASE}?sslmode=${PGSSLMODE:-disable}"
-
-      if [[ "$OSTYPE" == "linux-gnu" ]]; then
-        NET_ARG="--net=host"
-        DATA_SOURCE_NAME="postgresql://${PGUSER}:${PGPASSWORD}@${ADJUSTED_HOST}:${PGPORT}/${PGDATABASE}?sslmode=${PGSSLMODE:-disable}"
-      fi
-
-      echo "postgres_exporter: serving on http://localhost:${PORT}"
-      docker run --rm ${DOCKER_USER} \
-        --name=${CONTAINER} \
-        -e DATA_SOURCE_NAME="${DATA_SOURCE_NAME}" \
-        --cpus=1 \
-        --memory=1g \
-        -p 0.0.0.0:9187:9187 ${ADD_HOST_FLAG} \
-        "${IMAGE}"
     env:
-      IMAGE: postgres-exporter:candidate
-      CONTAINER: postgres_exporter
-      # docker containers must access things via docker host on non-linux platforms
-      DOCKER_USER: ''
-      ADD_HOST_FLAG: ''
+      DATA_SOURCE_NAME: postgresql://${PGUSER}:${PGPASSWORD}@${ADJUSTED_HOST}:${PGPORT}/${PGDATABASE}?sslmode=${PGSSLMODE:-disable}
 
   otel-collector:
     target: //docker-images/opentelemetry-collector:image_tarball
     description: OpenTelemetry collector
-    cmd: |
-      JAEGER_HOST='host.docker.internal'
-      if [[ $(uname) == "Linux" ]]; then
-        # Jaeger generally runs outside of Docker, so to access it we need to be
-        # able to access ports on the host, because the Docker host only exists on
-        # MacOS. --net=host is a very dirty way of enabling this.
-        DOCKER_NET="--net=host"
-        JAEGER_HOST="localhost"
-      fi
-
-      docker container rm -f otel-collector
-      docker run --rm --name=otel-collector $DOCKER_NET $DOCKER_ARGS \
-        -p 4317:4317 -p 4318:4318 -p 55679:55679 -p 55670:55670 \
-        -p 8888:8888 \
-        -e JAEGER_HOST=$JAEGER_HOST \
-        -e HONEYCOMB_API_KEY=$HONEYCOMB_API_KEY \
-        -e HONEYCOMB_DATASET=$HONEYCOMB_DATASET \
-        $IMAGE --config "/etc/otel-collector/$CONFIGURATION_FILE"
+    args: '--config "/etc/otel-collector/$CONFIGURATION_FILE"'
+    docker:
+      image: opentelemetry-collector:candidate
+      ports:
+        - 4317
+        - 4318
+        - 55679
+        - 55670
+        - 8888
+      linux:
+        args:
+          # Jaeger generally runs outside of Docker, so to access it we need to be
+          # able to access ports on the host, because the Docker host only exists on
+          # MacOS. --net=host is a very dirty way of enabling this.
+          net: host
+        env:
+          JAEGER_HOST: localhost
     env:
-      IMAGE: opentelemetry-collector:candidate
+      JAEGER_HOST: host.docker.internal
       # Overwrite the following in sg.config.overwrite.yaml, based on which collector
       # config you are using - see docker-images/opentelemetry-collector for more details.
       CONFIGURATION_FILE: 'configs/jaeger.yaml'
