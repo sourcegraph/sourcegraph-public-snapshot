@@ -13,8 +13,11 @@ import (
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiamcustomrole"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiammember"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/serviceaccountiammember"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/storagebucket"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/storagebucketiammember"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/storagebucketobject"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/datasentryorganization"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/datasentryteam"
@@ -406,7 +409,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// Now, apply each target in a rollout pipeline. The targets don't need
 		// to exist at this point yet, though attempting to use the pipeline
 		// before creating targets will fail.
-		_, _ = deliverypipeline.New(stack, id.Group("pipeline"), deliverypipeline.Config{
+		deliveryPipeline, _ := deliverypipeline.New(stack, id.Group("pipeline"), deliverypipeline.Config{
 			Location: rolloutLocation,
 
 			Name: fmt.Sprintf("%s-%s-rollout", vars.Service.ID, rolloutLocation),
@@ -437,6 +440,53 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			Source:      pointers.Ptr(ScaffoldSourceFile), // see docstring for hack
 			ContentType: pointers.Ptr("application/gzip"),
 		})
+
+		// Provision Service Account IAM to create releases
+		sa := pointers.DerefZero(vars.RolloutPipeline.OriginalSpec.ServiceAccount)
+		if sa != "" {
+			id := id.Group("serviceaccount")
+			// Permission to create releases
+			_ = projectiammember.NewProjectIamMember(stack, id.TerraformID("releaser"), &projectiammember.ProjectIamMemberConfig{
+				Project: pointers.Ptr(vars.ProjectID),
+				Role:    pointers.Ptr("roles/clouddeploy.releaser"),
+				Member:  pointers.Stringf("serviceAccount:%s", sa),
+			})
+
+			// Needs access to `<pipeline_id>_clouddeploy` bucket
+			_ = storagebucketiammember.NewStorageBucketIamMember(stack, id.TerraformID("clouddeploy"), &storagebucketiammember.StorageBucketIamMemberConfig{
+				Bucket: pointers.Stringf("%s_clouddeploy", deliveryPipeline.PipelineID),
+				Role:   pointers.Ptr("roles/storage.admin"),
+				Member: pointers.Stringf("serviceAccount:%s", sa),
+			})
+
+			// Needs access to the skaffold source bucket
+			_ = storagebucketiammember.NewStorageBucketIamMember(stack, id.TerraformID("skaffold"), &storagebucketiammember.StorageBucketIamMemberConfig{
+				Bucket: skaffoldBucket.Name(),
+				Role:   pointers.Ptr("roles/storage.admin"),
+				Member: pointers.Stringf("serviceAccount:%s", sa),
+			})
+
+			// Needs to be able to list buckets
+			listbuckets := projectiamcustomrole.NewProjectIamCustomRole(stack, id.TerraformID("listbucketsrole"), &projectiamcustomrole.ProjectIamCustomRoleConfig{
+				Project:     pointers.Ptr(vars.ProjectID),
+				RoleId:      pointers.Ptr("clouddeploy_listbuckets"),
+				Title:       pointers.Ptr("Cloud Deploy: List buckets"),
+				Permissions: &[]*string{pointers.Ptr("storage.buckets.list")},
+			})
+
+			_ = projectiammember.NewProjectIamMember(stack, id.TerraformID("listbuckets"), &projectiammember.ProjectIamMemberConfig{
+				Project: pointers.Ptr(vars.ProjectID),
+				Role:    listbuckets.Id(),
+				Member:  pointers.Stringf("serviceAccount:%s", sa),
+			})
+
+			// Needs to be able to ActAs `clouddeply-executor` SA
+			_ = serviceaccountiammember.NewServiceAccountIamMember(stack, id.TerraformID("executor"), &serviceaccountiammember.ServiceAccountIamMemberConfig{
+				ServiceAccountId: pointers.Stringf("projects/%s/serviceAccounts/%s", vars.ProjectID, vars.IAM.CloudDeployExecutionServiceAccount.Email),
+				Role:             pointers.Ptr("roles/iam.serviceAccountUser"),
+				Member:           pointers.Stringf("serviceAccount:%s", sa),
+			})
+		}
 	}
 
 	// Collect outputs
