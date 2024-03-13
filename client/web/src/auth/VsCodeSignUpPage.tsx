@@ -24,7 +24,7 @@ export interface VsCodeSignUpPageProps extends TelemetryProps, TelemetryV2Props 
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
     onSignUp: (args: SignUpArguments) => Promise<void>
-    context: Pick<SourcegraphContext, 'authProviders' | 'authMinPasswordLength'>
+    context: Pick<SourcegraphContext, 'externalURL' | 'authMinPasswordLength'>
 }
 
 const VSCodeIcon: React.FC = () => (

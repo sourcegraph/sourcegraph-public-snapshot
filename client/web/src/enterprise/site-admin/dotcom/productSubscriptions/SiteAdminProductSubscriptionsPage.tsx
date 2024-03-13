@@ -24,7 +24,7 @@ interface Props {
 }
 
 /**
- * Displays the enterprise licenses (formerly known as "product subscriptions") that have been
+ * Displays the enterprise subscriptions (formerly known as "product subscriptions") that have been
  * created on Sourcegraph.com.
  */
 export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
@@ -34,14 +34,14 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.Pr
 
     return (
         <div className="site-admin-product-subscriptions-page">
-            <PageTitle title="Enterprise licenses" />
+            <PageTitle title="Enterprise subscriptions" />
             <PageHeader
                 headingElement="h2"
-                path={[{ text: 'Enterprise licenses' }]}
+                path={[{ text: 'Enterprise subscriptions' }]}
                 actions={
                     <Button to="./new" variant="primary" as={Link}>
                         <Icon aria-hidden={true} svgPath={mdiPlus} />
-                        Create Enterprise license
+                        Create Enterprise subscription
                     </Button>
                 }
                 className="mb-3"
@@ -52,8 +52,8 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.Pr
                     listComponent="table"
                     listClassName="table"
                     contentWrapperComponent={ListContentWrapper}
-                    noun="Enterprise license"
-                    pluralNoun="Enterprise licenses"
+                    noun="Enterprise subscription"
+                    pluralNoun="Enterprise subscriptions"
                     queryConnection={queryProductSubscriptions}
                     headComponent={SiteAdminProductSubscriptionNodeHeader}
                     nodeComponent={SiteAdminProductSubscriptionNode}

@@ -10,7 +10,7 @@
     import Icon from '$lib/Icon.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
 
-    import { submitSearch, type QueryStateStore } from '../state'
+    import { type QueryStateStore, getQueryURL, QueryState } from '../state'
     import BaseCodeMirrorQueryInput from '$lib/search/BaseQueryInput.svelte'
     import { createSuggestionsSource } from '$lib/web'
     import { query, type DocumentInput } from '$lib/graphql'
@@ -31,7 +31,11 @@
         placeholder,
         showWhenEmptyWithoutContext,
         suggestions,
+        searchHistoryExtension,
+        onModeChange,
+        setMode,
     } from '$lib/branded'
+    import { createRecentSearchesStore } from './recentSearches'
 
     const placeholderText = 'Search for code or files...'
 
@@ -107,6 +111,8 @@
 </script>
 
 <script lang="ts">
+    import { mdiClockOutline } from '@mdi/js'
+
     export let queryState: QueryStateStore
     export let autoFocus = false
 
@@ -115,12 +121,14 @@
     }
 
     const popoverID = 'main-search'
+    const recentSearches = createRecentSearchesStore()
 
     let input: BaseCodeMirrorQueryInput
     let editor: EditorView | null = null
     let mode = ''
     let suggestionsPaddingTop = 0
     let suggestionsUI: Extension = []
+
     // When autofocus is set we only show suggestions when the user has interacted with the input
     let userHasInteracted = !autoFocus
     const hasInteractedExtension = EditorView.updateListener.of(update => {
@@ -129,6 +137,17 @@
                 userHasInteracted = true
             }
         }
+    })
+    const searchHistory = searchHistoryExtension({
+        mode: {
+            name: 'History',
+            placeholder: 'Filter history',
+        },
+        source: () => $recentSearches ?? [],
+        submitQuery: (query, view) => {
+            void submitQuery($queryState.setQuery(query))
+            view.contentDOM.blur()
+        },
     })
 
     $: regularExpressionEnabled = $queryState.patternType === SearchPatternType.regexp
@@ -143,7 +162,14 @@
         navigate: goto,
     })
 
-    $: extension = [hasInteractedExtension, suggestionsExtension, suggestionsUI, staticExtensions]
+    $: extension = [
+        onModeChange((_view, newMode) => (mode = newMode ?? '')),
+        hasInteractedExtension,
+        suggestionsExtension,
+        suggestionsUI,
+        searchHistory,
+        staticExtensions,
+    ]
 
     function setOrUnsetPatternType(patternType: SearchPatternType): void {
         queryState.setPatternType(currentPatternType =>
@@ -151,17 +177,32 @@
         )
     }
 
+    async function submitQuery(state: QueryState): Promise<void> {
+        // This ensures that the same query can be resubmitted from the search input. Without
+        // this, SvelteKit will not re-run the loader because the URL hasn't changed.
+        await invalidate(`query:${state.query}--${state.caseSensitive}`)
+        void goto(getQueryURL(state))
+    }
+
     async function handleSubmit(event: Event) {
         event.preventDefault()
-        const currentQueryState = $queryState
-        await invalidate(`query:${$queryState.query}--${$queryState.caseSensitive}`)
-        submitSearch(currentQueryState)
+        if (!mode) {
+            // Only submit query if you are not in history mode
+            void submitQuery($queryState)
+        }
     }
 
     function selectOption(event: { detail: { option: Option; action: Action } }): void {
         if (editor) {
             applyAction(editor, event.detail.action, event.detail.option, 'mouse')
             window.requestAnimationFrame(() => editor?.focus())
+        }
+    }
+
+    function toggleMode() {
+        if (editor) {
+            setMode(editor, currentMode => (currentMode === 'History' ? null : 'History'))
+            editor.focus()
         }
     }
 </script>
@@ -175,7 +216,16 @@
 >
     <input class="hidden" value={$queryState.query} name="q" />
     <div class="focus-container" class:userHasInteracted>
-        <div class="mode-switcher" />
+        <div class="mode-switcher" class:active={!!mode}>
+            <Tooltip tooltip="Recent searches">
+                <button class="icon" type="button" on:click={toggleMode}>
+                    <Icon svgPath={mdiClockOutline} inline />
+                    {#if mode}
+                        <span>{mode}:</span>
+                    {/if}
+                </button>
+            </Tooltip>
+        </div>
         <BaseCodeMirrorQueryInput
             {autoFocus}
             bind:this={input}
@@ -320,5 +370,49 @@
         border: 0;
         background-color: transparent;
         cursor: pointer;
+    }
+
+    button.mode {
+        clear: all;
+    }
+
+    .mode-switcher {
+        display: flex;
+        align-items: center;
+        padding-right: 0.1875rem;
+        margin-right: 0.25rem;
+        border-right: 1px solid var(--border-color-2);
+        font-family: var(--code-font-family);
+        font-size: var(--code-font-size);
+        --color: var(--text-muted);
+
+        button {
+            padding: 0.0625rem 0.125rem;
+            color: var(--color);
+            border-radius: var(--border-radius);
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+
+            &:hover {
+                background-color: var(--color-bg-2);
+            }
+
+            span {
+                font-family: var(--code-font-family);
+                font-size: var(--code-font-size);
+            }
+        }
+
+        &.active {
+            --color: var(--logo-purple);
+            padding: 0;
+            border: 0;
+        }
+
+        @media (--xs-breakpoint-down) {
+            border: 0;
+        }
     }
 </style>

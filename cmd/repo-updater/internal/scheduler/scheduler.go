@@ -171,7 +171,7 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 
 			subLogger := s.logger.Scoped("RunUpdateLoop")
 
-			go func(ctx context.Context, repo configuredRepo, cancel context.CancelFunc) {
+			go func() {
 				defer cancel()
 				defer s.updateQueue.remove(repo, true)
 
@@ -209,7 +209,7 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 					interval := resp.LastFetched.Sub(*resp.LastChanged) / 2
 					s.schedule.updateInterval(repo, interval)
 				}
-			}(ctx, repo, cancel)
+			}()
 		}
 	}
 }
