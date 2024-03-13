@@ -8,6 +8,14 @@
     import { capitalizeFirstLetter } from '$lib/search/utils'
     import type { Progress, Skipped } from '$lib/shared'
 
+    const CENTER_DOT = '\u00B7' // interpunct
+    const MAX_SEARCH_DURATION = 15
+    const icons: Record<string, string> = {
+        info: mdiInformationOutline,
+        warning: mdiAlert,
+        error: mdiAlertCircle,
+    }
+
     export let hasSkippedItems: boolean
     export let sortedItems: Skipped[]
     export let hasSuggestedItems: boolean
@@ -34,14 +42,6 @@
         }, 1300)
     })
 
-    const icons: Record<string, string> = {
-        info: mdiInformationOutline,
-        warning: mdiAlert,
-        error: mdiAlertCircle,
-    }
-    const CENTER_DOT = '\u00B7' // interpunct
-    const MAX_SEARCH_DURATION = 15
-
     $: loading = searchProgress.skipped.length === 0
     $: mostSevere = sortedItems[0]
     $: severity = searchProgress.skipped.some(skipped => skipped.severity === 'warn' || skipped.severity === 'error')
@@ -49,66 +49,82 @@
         : 'info'
 </script>
 
-{#if !loading && searchProgress}
-    <div class="loading">
-        <LoadingSpinner inline />
-        <div class="messages">
-            <div class="progress-info-message">
-                Fetching results... {elapsedSeconds}.{elapsedMilliseconds}s
-            </div>
-            {#if elapsedSeconds < MAX_SEARCH_DURATION}
-                <div class="loading-action-message">Running search...</div>
-            {:else}
-                <div class="duration-badge">
-                    <div class={`info-badge duration`}>Taking too long?</div>
-                    <div class="separator">{CENTER_DOT}</div>
-                    <div class="action-badge">
-                        Use
-                        <a href="https://sourcegraph.com/docs/code-search/types/search-jobs" target="_blank">
-                            Search Job
-                        </a>
-                        for background search
-                    </div>
+<div class="indicator">
+    {#if loading}
+        <div class="loading">
+            <LoadingSpinner inline />
+            <div class="messages">
+                <div class="progress-info-message">
+                    Fetching results... {elapsedSeconds}.{elapsedMilliseconds}s
                 </div>
-            {/if}
-        </div>
-    </div>
-{/if}
-{#if !searchProgress}
-    <div class="progress">
-        <Icon svgPath={icons[severity]} size={18} />
-        <div class="messages">
-            <div class="progress-info-message">
-                {getProgressText(searchProgress).visibleText}
-            </div>
-            <div class="progress-action-message">
-                {#if !hasSkippedItems}
-                    <div class="more-details">See more details</div>
+                {#if elapsedSeconds < MAX_SEARCH_DURATION}
+                    <div class="loading-action-message">Running search...</div>
                 {:else}
-                    <div class={`info-badge ${mostSevere.severity === 'error' && 'error'}`}>
-                        {capitalizeFirstLetter(mostSevere.title)}
-                    </div>
-                {/if}
-                {#if hasSkippedItems && hasSuggestedItems}
-                    <div class="separator">{CENTER_DOT}</div>
-                {/if}
-                {#if hasSuggestedItems}
-                    <div class="action-badge">
-                        {capitalizeFirstLetter(mostSevere.suggested ? mostSevere.suggested.title : '')}
-                        <span class="code-font">
-                            {mostSevere.suggested?.queryExpression}
-                        </span>
+                    <div class="duration-badge">
+                        <div class="info-badge duration">Taking too long?</div>
+                        <div class="separator">{CENTER_DOT}</div>
+                        <div class="action-badge">
+                            Use
+                            <a href="https://sourcegraph.com/docs/code-search/types/search-jobs" target="_blank">
+                                Search Job
+                            </a>
+                            for background search
+                        </div>
                     </div>
                 {/if}
             </div>
         </div>
-    </div>
-{/if}
-<Icon svgPath={mdiChevronDown} size={18} />
+    {/if}
+    {#if !loading && searchProgress}
+        <div class="progress">
+            <Icon
+                class={`${mostSevere.severity === 'error' && 'error-text'} error-text`}
+                svgPath={icons[severity]}
+                size={18}
+            />
+            <div class="messages">
+                <div class="progress-info-message">
+                    {getProgressText(searchProgress).visibleText}
+                </div>
+                <div class="progress-action-message">
+                    {#if !hasSkippedItems}
+                        <div class="more-details">See more details</div>
+                    {:else}
+                        <div class={`info-badge ${mostSevere.severity === 'error' && 'error'}`}>
+                            {capitalizeFirstLetter(mostSevere.title)}
+                        </div>
+                    {/if}
+                    {#if hasSkippedItems && hasSuggestedItems}
+                        <div class="separator">{CENTER_DOT}</div>
+                    {/if}
+                    {#if hasSuggestedItems}
+                        <div class="action-badge">
+                            {capitalizeFirstLetter(mostSevere.suggested ? mostSevere.suggested.title : '')}
+                            <span class="code-font">
+                                {mostSevere.suggested?.queryExpression}
+                            </span>
+                        </div>
+                    {/if}
+                </div>
+            </div>
+        </div>
+    {/if}
+    <Icon svgPath={mdiChevronDown} size={18} />
+</div>
 
 <style lang="scss">
+    .indicator {
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+    }
+
     .error {
         background-color: var(--danger);
+    }
+
+    .error-text {
+        color: var(--danger);
     }
 
     .progress-button {
@@ -124,7 +140,7 @@
         display: flex;
         flex-flow: row nowrap;
         line-height: 1.2;
-        margin-right: 1rem;
+        margin-right: 2rem;
         background-color: transparent;
     }
 

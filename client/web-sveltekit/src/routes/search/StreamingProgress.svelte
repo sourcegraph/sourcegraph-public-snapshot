@@ -112,7 +112,7 @@
 
 <style lang="scss">
     div.streaming-popover {
-        width: 20rem;
+        width: 24rem;
 
         p,
         h3,
@@ -137,5 +137,6 @@
 
     .progress-button {
         border: none;
+        padding: 0.5rem 0.5rem 0.5rem 0.25rem;
     }
 </style>
