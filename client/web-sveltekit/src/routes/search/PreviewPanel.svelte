@@ -72,49 +72,62 @@
     )
 </script>
 
-<div class="header">
-    <h3>File Preview</h3>
-    <button data-testid="preview-close" on:click={() => searchResultContext.setPreview(null)}>
-        <Icon svgPath={mdiClose} class="close-icon" size={16} inline />
-    </button>
-</div>
-<div class="file-link">
-    <small>
-        <a href={getFileMatchUrl(result)}>{result.path}</a>
-    </small>
-</div>
-<div class="content">
-    {#if $blob}
-        <CodeMirrorBlob
-            blobInfo={{
-                repoName: result.repository,
-                commitID: result.commit ?? '',
-                revision: '',
-                filePath: result.path,
-                content: $blob.content ?? '',
-                languages: $blob.languages ?? [],
-            }}
-            highlights={$highlights}
-            {codeIntelAPI}
-        />
-    {:else}
-        <LoadingSpinner />
-    {/if}
+<div class="container">
+    <div class="header">
+        <h3>File Preview</h3>
+        <button data-testid="preview-close" on:click={() => searchResultContext.setPreview(null)}>
+            <Icon svgPath={mdiClose} class="close-icon" size={16} inline />
+        </button>
+    </div>
+    <div class="file-link">
+        <small>
+            <a href={getFileMatchUrl(result)}>{result.path}</a>
+        </small>
+    </div>
+    <div class="content">
+        {#if $blob}
+            <CodeMirrorBlob
+                blobInfo={{
+                    repoName: result.repository,
+                    commitID: result.commit ?? '',
+                    revision: '',
+                    filePath: result.path,
+                    content: $blob.content ?? '',
+                    languages: $blob.languages ?? [],
+                }}
+                highlights={$highlights}
+                {codeIntelAPI}
+            />
+        {:else}
+            <LoadingSpinner />
+        {/if}
+    </div>
 </div>
 
 <style lang="scss">
+    .container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 0;
+    }
+
     .header {
         // Keep in sync with the action bar
         height: 3rem;
-        border-bottom: 1px solid var(--border-color);
+        flex: none;
+
         display: flex;
         align-items: center;
         padding: 0 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+
         h3 {
             margin: 0;
             margin-right: auto;
             height: fit-content;
         }
+
         button {
             background-color: transparent;
             color: var(--text-muted);
@@ -131,10 +144,6 @@
     }
 
     .content {
-        display: flex;
-        flex-direction: column;
-        overflow-x: auto;
-        height: 100%;
-        flex: 1;
+        overflow: auto;
     }
 </style>
