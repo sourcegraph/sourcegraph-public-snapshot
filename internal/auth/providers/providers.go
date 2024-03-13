@@ -10,7 +10,6 @@ import (
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/sslices"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -159,12 +158,13 @@ func Providers() []Provider {
 // The list is not sorted in any way.
 func VisibleProviders() []Provider {
 	if MockProviders != nil {
-		return sslices.Filter(
-			MockProviders,
-			func(p Provider) bool {
-				return !GetAuthProviderCommon(p).Hidden
-			},
-		)
+		providers := make([]Provider, 0, len(MockProviders))
+		for _, p := range MockProviders {
+			if !GetAuthProviderCommon(p).Hidden {
+				providers = append(providers, p)
+			}
+		}
+		return providers
 	}
 
 	curProvidersMu.RLock()
