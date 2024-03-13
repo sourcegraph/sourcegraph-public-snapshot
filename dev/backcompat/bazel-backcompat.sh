@@ -18,7 +18,9 @@ if [[ $EXIT_CODE -ne 0 ]]; then
 fi
 
 if [[ ${CI:-} == "true" ]]; then
-  bazelrcs=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
+  aspectRC="/tmp/aspect-generated.bazelrc"
+  rosetta bazelrc > "$aspectRC"
+  bazelrcs=(--bazelrc=${aspectRC} --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
 else
   if [[ $EXIT_CODE -ne 0 ]]; then
     echo "The following files have changes:"
