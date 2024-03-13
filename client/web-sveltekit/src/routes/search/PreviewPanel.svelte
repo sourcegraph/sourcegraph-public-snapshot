@@ -74,7 +74,7 @@
     )
 </script>
 
-<div class="container">
+<div class="preview-container">
     <div class="header">
         <h3>File Preview</h3>
         <button data-testid="preview-close" on:click={() => searchResultContext.setPreview(null)}>
@@ -93,7 +93,7 @@
             <Alert variant="danger">
                 Unable to load file data: {$blobStore.error}
             </Alert>
-        {:else}
+        {:else if $blobStore.value}
             <CodeMirrorBlob
                 blobInfo={{
                     repoName: result.repository,
@@ -111,11 +111,10 @@
 </div>
 
 <style lang="scss">
-    .container {
+    .preview-container {
         display: flex;
         flex-direction: column;
         height: 100%;
-        padding: 0;
     }
 
     .header {
