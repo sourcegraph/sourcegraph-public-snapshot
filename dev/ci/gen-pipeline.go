@@ -79,6 +79,15 @@ func main() {
 	}
 }
 
+func isAspectWorkflowsEnabled() bool {
+	value, ok := os.LookupEnv("DISABLE_ASPECT_WORKFLOWS")
+	if ok && value == "true" {
+		return false
+	}
+
+	return true
+}
+
 func previewPipeline(w io.Writer, c ci.Config, pipeline *buildkite.Pipeline) {
 	fmt.Fprintf(w, "- **Detected run type:** %s\n", c.RunType.String())
 	fmt.Fprintf(w, "- **Detected diffs:** %s\n", c.Diff.String())
@@ -86,7 +95,7 @@ func previewPipeline(w io.Writer, c ci.Config, pipeline *buildkite.Pipeline) {
 	fmt.Fprintf(w, "  - VERSION=%s\n", c.Version)
 	fmt.Fprintf(w, "- **Computed build steps:**\n")
 
-	if c.RunType != runtype.BazelDo {
+	if c.RunType != runtype.BazelDo && isAspectWorkflowsEnabled() {
 		// The reason we hard code the Aspect steps here is because we have no control over the Aspect steps
 		// that get generated, so we rather just specify that there will be Aspect Workflow steps instead of
 		// running the risk of hardcoding all the steps and the rendered steps getting out of sync with what
