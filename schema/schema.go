@@ -244,6 +244,7 @@ type AzureDevOpsAuthProvider struct {
 	DisplayName   string  `json:"displayName,omitempty"`
 	DisplayPrefix *string `json:"displayPrefix,omitempty"`
 	Hidden        bool    `json:"hidden,omitempty"`
+	NoSignIn      bool    `json:"noSignIn,omitempty"`
 	Order         int     `json:"order,omitempty"`
 	Type          string  `json:"type"`
 }
@@ -333,6 +334,7 @@ type BitbucketCloudAuthProvider struct {
 	DisplayName   string  `json:"displayName,omitempty"`
 	DisplayPrefix *string `json:"displayPrefix,omitempty"`
 	Hidden        bool    `json:"hidden,omitempty"`
+	NoSignIn      bool    `json:"noSignIn,omitempty"`
 	Order         int     `json:"order,omitempty"`
 	Type          string  `json:"type"`
 	// Url description: URL of the Bitbucket Cloud instance.
@@ -1342,6 +1344,7 @@ type GitLabAuthProvider struct {
 	DisplayName   string  `json:"displayName,omitempty"`
 	DisplayPrefix *string `json:"displayPrefix,omitempty"`
 	Hidden        bool    `json:"hidden,omitempty"`
+	NoSignIn      bool    `json:"noSignIn,omitempty"`
 	Order         int     `json:"order,omitempty"`
 	// SsoURL description: An alternate sign-in URL used to ease SSO sign-in flows, such as https://gitlab.com/groups/your-group/saml/sso?token=xxxxxx
 	SsoURL string `json:"ssoURL,omitempty"`
@@ -1903,8 +1906,9 @@ type OpenIDConnectAuthProvider struct {
 	// Issuer description: The URL of the OpenID Connect issuer.
 	//
 	// For Google Apps: https://accounts.google.com
-	Issuer string `json:"issuer"`
-	Order  int    `json:"order,omitempty"`
+	Issuer   string `json:"issuer"`
+	NoSignIn bool   `json:"noSignIn,omitempty"`
+	Order    int    `json:"order,omitempty"`
 	// RequireEmailDomain description: Only allow users to authenticate if their email domain is equal to this value (example: mycompany.com). Do not include a leading "@". If not set, all users on this OpenID Connect provider can authenticate to Sourcegraph.
 	RequireEmailDomain string `json:"requireEmailDomain,omitempty"`
 	// SingleIdentityPerUser description: When true, any user can connect exactly one identity from the identity provider.
@@ -2245,6 +2249,7 @@ type SAMLAuthProvider struct {
 	InsecureSkipAssertionSignatureValidation bool `json:"insecureSkipAssertionSignatureValidation,omitempty"`
 	// NameIDFormat description: The SAML NameID format to use when performing user authentication.
 	NameIDFormat string `json:"nameIDFormat,omitempty"`
+	NoSignIn     bool   `json:"noSignIn,omitempty"`
 	Order        int    `json:"order,omitempty"`
 	// ServiceProviderCertificate description: The SAML Service Provider certificate in X.509 encoding (begins with "-----BEGIN CERTIFICATE-----"). This certificate is used by the Identity Provider to validate the Service Provider's AuthnRequests and LogoutRequests. It corresponds to the Service Provider's private key (`serviceProviderPrivateKey`). To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	ServiceProviderCertificate string `json:"serviceProviderCertificate,omitempty"`

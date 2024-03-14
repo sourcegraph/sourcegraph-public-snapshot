@@ -3079,6 +3079,9 @@
         "hidden": {
           "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
         },
+        "noSignIn": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/noSignIn"
+        },
         "order": {
           "$ref": "#/definitions/AuthProviderCommon/properties/order"
         },
@@ -3151,6 +3154,9 @@
         },
         "hidden": {
           "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "noSignIn": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/noSignIn"
         },
         "order": {
           "$ref": "#/definitions/AuthProviderCommon/properties/order"
@@ -3390,6 +3396,9 @@
         "hidden": {
           "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
         },
+        "noSignIn": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/noSignIn"
+        },
         "order": {
           "$ref": "#/definitions/AuthProviderCommon/properties/order"
         },
@@ -3466,6 +3475,9 @@
         },
         "hidden": {
           "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "noSignIn": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/noSignIn"
         },
         "order": {
           "$ref": "#/definitions/AuthProviderCommon/properties/order"
@@ -3544,6 +3556,9 @@
         },
         "hidden": {
           "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "noSignIn": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/noSignIn"
         },
         "order": {
           "$ref": "#/definitions/AuthProviderCommon/properties/order"
