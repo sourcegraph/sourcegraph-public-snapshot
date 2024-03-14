@@ -283,7 +283,9 @@ export const TreePage: FC<Props> = ({
                     <Tooltip content={tooltip}>
                         <Button
                             className="flex-shrink-0"
-                            to={`/${encodeURIPathComponent(repoName)}/-/${revisionPath}`}
+                            to={`/${encodeURIPathComponent(repoName)}${
+                                revision && `@${encodeURIPathComponent(revision)}`
+                            }/-/${revisionPath}`}
                             variant="secondary"
                             outline={true}
                             as={Link}
