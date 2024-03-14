@@ -265,6 +265,7 @@ commands:
       - internal
       - cmd/embeddings
       - internal/embeddings
+
   qdrant:
     cmd: |
       docker run -p 6333:6333 -p 6334:6334 \
@@ -1145,6 +1146,75 @@ dockerCommands:
       # docker containers must access things via docker host on non-linux platforms
       CACHE: false
 
+  loki:
+    logfile: $HOME/.sourcegraph-dev/logs/loki/loki.log
+    docker:
+      image: index.docker.io/grafana/loki:2.3.0
+      pull: true
+      ports:
+        - 3100
+      volumes:
+        - from: $HOME/.sourcegraph-dev/data/loki
+          to: /loki
+
+  otel-collector:
+    target: //docker-images/opentelemetry-collector:image_tarball
+    description: OpenTelemetry collector
+    args: '--config "/etc/otel-collector/$CONFIGURATION_FILE"'
+    docker:
+      image: opentelemetry-collector:candidate
+      ports:
+        - 4317
+        - 4318
+        - 55679
+        - 55670
+        - 8888
+      linux:
+        flags:
+          # Jaeger generally runs outside of Docker, so to access it we need to be
+          # able to access ports on the host, because the Docker host only exists on
+          # MacOS. --net=host is a very dirty way of enabling this.
+          net: host
+        env:
+          JAEGER_HOST: localhost
+    env:
+      JAEGER_HOST: host.docker.internal
+      # Overwrite the following in sg.config.overwrite.yaml, based on which collector
+      # config you are using - see docker-images/opentelemetry-collector for more details.
+      CONFIGURATION_FILE: 'configs/jaeger.yaml'
+
+  postgres_exporter:
+    target: //docker-images/postgres_exporter:image_tarball
+    docker:
+      image: postgres-exporter:candidate
+      flags:
+        cpus: 1
+        memory: 1g
+      ports:
+        - 9187
+      linux:
+        flags:
+          # Linux needs an extra arg to support host.internal.docker, which is how
+          # postgres_exporter connects to the prometheus backend.
+          add-host: host.docker.internal:host-gateway
+          net: host
+    precmd: |
+      # Use psql to read the effective values for PG* env vars (instead of, e.g., hardcoding the default
+      # values).
+      get_pg_env() { psql -c '\set' | grep "$1" | cut -f 2 -d "'"; }
+      PGHOST=${PGHOST-$(get_pg_env HOST)}
+      PGUSER=${PGUSER-$(get_pg_env USER)}
+      PGPORT=${PGPORT-$(get_pg_env PORT)}
+      # we need to be able to query migration_logs table
+      PGDATABASE=${PGDATABASE-$(get_pg_env DBNAME)}
+
+      ADJUSTED_HOST=${PGHOST:-127.0.0.1}
+      if [[ ("$ADJUSTED_HOST" == "localhost" || "$ADJUSTED_HOST" == "127.0.0.1" || -f "$ADJUSTED_HOST") && "$OSTYPE" != "linux-gnu" ]]; then
+        ADJUSTED_HOST="host.docker.internal"
+      fi
+    env:
+      DATA_SOURCE_NAME: postgresql://${PGUSER}:${PGPASSWORD}@${ADJUSTED_HOST}:${PGPORT}/${PGDATABASE}?sslmode=${PGSSLMODE:-disable}
+
   prometheus:
     target: //docker-images/prometheus:image_tarball
     logfile: $HOME/.sourcegraph-dev/logs/prometheus/prometheus.log
@@ -1153,7 +1223,7 @@ dockerCommands:
       volumes:
         - from: $HOME/.sourcegraph-dev/data/prometheus
           to: /prometheus
-        - from: $PROMETHEUS_CONFIG
+        - from: $(pwd)/$CONFIG_DIR
           to: /sg_prometheus_add_ons
       flags:
         cpus: 1
@@ -1176,64 +1246,33 @@ dockerCommands:
       DISABLE_ALERTMANAGER: false
       PROMETHEUS_ADDITIONAL_FLAGS: '--web.enable-lifecycle --web.enable-admin-api'
 
-  postgres_exporter:
-    target: //docker-images/postgres_exporter:image_tarball
+  syntax-highlighter:
+    ignoreStdout: true
+    ignoreStderr: true
     docker:
-      image: postgres-exporter:candidate
-      cpus: 1
-      memory: 1g
+      image: sourcegraph/syntax-highlighter:insiders
+      pull: true
       ports:
-        - 9187
-      linux:
-        args:
-          # Linux needs an extra arg to support host.internal.docker, which is how
-          # postgres_exporter connects to the prometheus backend.
-          add-host: host.docker.internal:host-gateway
-          net: host
-    precmd: |
-      # Use psql to read the effective values for PG* env vars (instead of, e.g., hardcoding the default
-      # values).
-      get_pg_env() { psql -c '\set' | grep "$1" | cut -f 2 -d "'"; }
-      PGHOST=${PGHOST-$(get_pg_env HOST)}
-      PGUSER=${PGUSER-$(get_pg_env USER)}
-      PGPORT=${PGPORT-$(get_pg_env PORT)}
-      # we need to be able to query migration_logs table
-      PGDATABASE=${PGDATABASE-$(get_pg_env DBNAME)}
+        - 9238
+      env:
+        WORKERS: 1
+        ROCKET_ADDRESS: 0.0.0.0
 
-      ADJUSTED_HOST=${PGHOST:-127.0.0.1}
-      if [[ ("$ADJUSTED_HOST" == "localhost" || "$ADJUSTED_HOST" == "127.0.0.1" || -f "$ADJUSTED_HOST") && "$OSTYPE" != "linux-gnu" ]]; then
-        ADJUSTED_HOST="host.docker.internal"
-      fi
-    env:
-      DATA_SOURCE_NAME: postgresql://${PGUSER}:${PGPASSWORD}@${ADJUSTED_HOST}:${PGPORT}/${PGDATABASE}?sslmode=${PGSSLMODE:-disable}
-
-  otel-collector:
-    target: //docker-images/opentelemetry-collector:image_tarball
-    description: OpenTelemetry collector
-    args: '--config "/etc/otel-collector/$CONFIGURATION_FILE"'
+  qdrant:
     docker:
-      image: opentelemetry-collector:candidate
+      image: sourcegraph/qdrant:insiders
       ports:
-        - 4317
-        - 4318
-        - 55679
-        - 55670
-        - 8888
-      linux:
-        args:
-          # Jaeger generally runs outside of Docker, so to access it we need to be
-          # able to access ports on the host, because the Docker host only exists on
-          # MacOS. --net=host is a very dirty way of enabling this.
-          net: host
-        env:
-          JAEGER_HOST: localhost
-    env:
-      JAEGER_HOST: host.docker.internal
-      # Overwrite the following in sg.config.overwrite.yaml, based on which collector
-      # config you are using - see docker-images/opentelemetry-collector for more details.
-      CONFIGURATION_FILE: 'configs/jaeger.yaml'
-      # HONEYCOMB_API_KEY: ''
-      # HONEYCOMB_DATASET: ''
+        - 6333
+        - 6334
+      volumes:
+        - from: $HOME/.sourcegraph-dev/data/qdrant_data
+          to: /data
+      env:
+        QDRANT__SERVICE__GRPC_PORT: 6334
+        QDRANT__LOG_LEVEL: INFO
+        QDRANT__STORAGE__STORAGE_PATH: /data
+        QDRANT__STORAGE__SNAPSHOTS_PATH: /data
+        QDRANT_INIT_FILE_PATH: /data/.qdrant-initialized
 
 #
 # CommandSets ################################################################
@@ -1271,6 +1310,7 @@ commandsets:
     dockerCommands:
       - prometheus
       - grafana
+      - loki
 
   # If you modify this command set, please consider also updating the dotcom runset.
   enterprise: &enterprise_set
@@ -1644,6 +1684,16 @@ commandsets:
     commands:
       - jaeger
     dockerCommands:
+      - otel-collector
+      - prometheus
+      - grafana
+      - postgres_exporter
+
+  monitoring-og:
+    checks:
+      - docker
+    commands:
+      - jaeger
       - otel-collector
       - prometheus
       - grafana

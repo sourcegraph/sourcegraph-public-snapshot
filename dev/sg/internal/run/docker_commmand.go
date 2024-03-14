@@ -18,11 +18,16 @@ import (
 type DockerCommand struct {
 	Config SGConfigCommandOptions
 	Docker DockerOptions `yaml:"docker"`
-	Target string        `yaml:"target"`
+	// Optional bazel target to build and watch which provides a docker image tarball
+	// if not provided, the DockerOptions::Image will simply be run directly
+	// if Pull=true, it will be pulled first
+	Target string `yaml:"target"`
 }
 
 type DockerOptions struct {
-	Image   string         `yaml:"image"`
+	Image string `yaml:"image"`
+	// If true, the image will be pulled before running the container
+	Pull    bool           `yaml:"pull"`
 	Volumes []DockerVolume `yaml:"volumes"`
 	// Additional flags to pass to the docker run command
 	// e.g. cpus: 1 would be converted to --cpus=1
@@ -63,19 +68,29 @@ func (dc *DockerCommand) UnmarshalYAML(unmarshal func(any) error) error {
 }
 
 func (dc DockerCommand) GetConfig() SGConfigCommandOptions {
-	return dc.Config
+	config := dc.Config
+	// Add a custom preamble for docker listing ports
+	config.Preamble += dc.GetDockerPreamble()
+	// Add any platform specific environment overrides
+	config.Env = makeEnvMap(config.Env, dc.GetDockerEnv(runtime.GOOS == "linux"))
+	return config
 }
 
 func (dc DockerCommand) GetBinaryLocation() (string, error) {
+	if dc.Target == "" {
+		return "", nil
+	}
 	return binaryLocation(dc.Target)
 }
 
-func (dc DockerCommand) GetDockerEnv(isLinux bool) map[string]string {
-	env := dc.Config.Env
-	if isLinux {
-		merge(env, dc.Docker.Linux.Env)
+func (dc DockerCommand) StartWatch(ctx context.Context) (<-chan struct{}, error) {
+	if watchPaths, err := dc.watchPaths(); err != nil {
+		return nil, err
+	} else {
+		// skip remove events as we don't care about files being removed, we only
+		// want to know when the binary has been rebuilt
+		return WatchPaths(ctx, watchPaths, notify.Remove)
 	}
-	return env
 }
 
 func (dc DockerCommand) watchPaths() ([]string, error) {
@@ -91,9 +106,64 @@ func (dc DockerCommand) watchPaths() ([]string, error) {
 	return []string{binLocation}, nil
 }
 
+// GetDockerEnv returns the environment variables to be passed to the docker run command
+func (dc DockerCommand) GetDockerEnv(isLinux bool) map[string]string {
+	env := dc.Config.Env
+	if isLinux {
+		merge(env, dc.Docker.Linux.Env)
+	}
+	return env
+}
+
+// GetFlags returns the flags (i.e. --something) to be passed to the docker run command
+func (opts DockerOptions) GetFlags(isLinux bool) map[string]string {
+	if isLinux {
+		merge(opts.Flags, opts.Linux.Flags)
+	}
+	return opts.Flags
+}
+
+// CreateDockerVolumes returns bash commands that will ensure that all of the local volumes
+// exist before the docker run command is executed
+func (dc DockerCommand) CreateDockerVolumes() string {
+	var cmd strings.Builder
+	for _, volume := range dc.Docker.Volumes {
+		fmt.Fprintf(&cmd, "mkdir -p %s\n", volume.From)
+	}
+	return cmd.String()
+}
+
+func (dc DockerCommand) GetDockerImage(bin string) string {
+	if bin != "" {
+		return fmt.Sprintf("docker load -i %s\n", bin)
+	}
+	if dc.Docker.Pull {
+		return fmt.Sprintf("docker pull %s\n", dc.Docker.Image)
+	}
+
+	return ""
+}
+
+func (dc DockerCommand) GetDockerPreamble() string {
+	var preamble strings.Builder
+	if dc.Config.Logfile != "" {
+		fmt.Fprintf(&preamble, "Writing log output to %s\n", dc.Config.Logfile)
+	}
+
+	if len(dc.Docker.Ports) > 0 {
+		var localports []string
+		for _, port := range dc.Docker.Ports {
+			localports = append(localports, strings.Split(port, ":")[0])
+		}
+		fmt.Fprintf(&preamble, "Listening on local ports: %s\n", strings.Join(localports, ", "))
+	}
+	return preamble.String()
+}
+
+// Constructs the actual docker run command to be executed
 func (dc DockerCommand) GetDockerCommand(isLinux bool) string {
 	var cmd strings.Builder
-	fmt.Fprintf(&cmd, "docker run --rm -d --name %s", dc.Config.Name)
+	fmt.Fprintf(&cmd, "docker run --rm --name %s", dc.Config.Name)
 	for _, volume := range dc.Docker.Volumes {
 		fmt.Fprintf(&cmd, " -v %s:%s", volume.From, volume.To)
 	}
@@ -108,11 +178,29 @@ func (dc DockerCommand) GetDockerCommand(isLinux bool) string {
 		fmt.Fprintf(&cmd, " --%s=%s", flag.Key, flag.Value)
 	}
 	for _, env := range toSortedPairs(dc.GetDockerEnv(isLinux)) {
-		fmt.Fprintf(&cmd, " -e %s=%s", env.Key, env.Value)
+		fmt.Fprintf(&cmd, ` -e %s="%s"`, env.Key, env.Value)
 	}
 	fmt.Fprintf(&cmd, " %s %s", dc.Docker.Image, dc.Config.Args)
 	return cmd.String()
 
+}
+
+func (dc DockerCommand) GetCmd(isLinux bool, bin string) string {
+	cleanup := fmt.Sprintf("docker inspect %s > /dev/null 2>&1 && docker rm -f %s", dc.Config.Name, dc.Config.Name)
+	load := dc.GetDockerImage(bin)
+	docker := dc.GetDockerCommand(isLinux)
+	volumes := dc.CreateDockerVolumes()
+
+	return strings.Join([]string{cleanup, load, volumes, dc.Config.PreCmd, docker}, "\n")
+}
+
+func (dc DockerCommand) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
+	bin, err := dc.GetBinaryLocation()
+	if err != nil {
+		return nil, err
+	}
+	cmd := dc.GetCmd(runtime.GOOS == "linux", bin)
+	return exec.CommandContext(ctx, "bash", "-c", cmd), nil
 }
 
 type Entry[K, V any] struct {
@@ -133,35 +221,6 @@ func toSortedPairs[K cmp.Ordered, V any](m map[K]V) []Entry[K, V] {
 		pairs[i] = Entry[K, V]{k, m[k]}
 	}
 	return pairs
-}
-
-func (dc DockerCommand) StartWatch(ctx context.Context) (<-chan struct{}, error) {
-	if watchPaths, err := dc.watchPaths(); err != nil {
-		return nil, err
-	} else {
-		// skip remove events as we don't care about files being removed, we only
-		// want to know when the binary has been rebuilt
-		return WatchPaths(ctx, watchPaths, notify.Remove)
-	}
-}
-
-func (dc DockerCommand) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
-	bin, err := dc.GetBinaryLocation()
-	if err != nil {
-		return nil, err
-	}
-	cleanup := fmt.Sprintf("docker inspect %s > /dev/null 2>&1 && docker rm -f %s", dc.Config.Name, dc.Config.Name)
-	load := fmt.Sprintf("docker load -i %s", bin)
-	docker := dc.GetDockerCommand(runtime.GOOS == "linux")
-	cmd := fmt.Sprintf("%s\n%s\n%s", cleanup, load, docker)
-	return exec.CommandContext(ctx, "bash", "-c", cmd), nil
-}
-
-func (opts DockerOptions) GetFlags(isLinux bool) map[string]string {
-	if isLinux {
-		merge(opts.Flags, opts.Linux.Flags)
-	}
-	return opts.Flags
 }
 
 func merge(base, overrides map[string]string) {

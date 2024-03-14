@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/grafana/regexp"
@@ -217,6 +219,9 @@ type outputOptions struct {
 	// When true, output will be ignored and not written to any writers
 	ignore bool
 
+	// When non-nil, all output will be flushed to this file and not to the terminal
+	logfile io.Writer
+
 	// when enabled, output will not be streamed to the writers until
 	// after the process is begun, only captured for later retrieval
 	buffer bool
@@ -254,12 +259,35 @@ func startSgCmd(ctx context.Context, cmd SGConfigCommand, parentEnv map[string]s
 		stdout: outputOptions{ignore: conf.IgnoreStdout},
 		stderr: outputOptions{ignore: conf.IgnoreStderr},
 	}
+	if conf.Logfile != "" {
+		if logfile, err := initLogFile(conf.Logfile); err != nil {
+			return nil, err
+		} else {
+			opts.stdout.logfile = logfile
+			opts.stderr.logfile = logfile
+		}
+	}
 
 	if conf.Preamble != "" {
 		std.Out.WriteLine(output.Styledf(output.StyleOrange, "[%s] %s %s", conf.Name, output.EmojiInfo, conf.Preamble))
 	}
 
 	return startCmd(ctx, opts)
+}
+
+func initLogFile(logfile string) (io.Writer, error) {
+	if strings.HasPrefix(logfile, "~/") || strings.HasPrefix(logfile, "$HOME") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get user home directory")
+		}
+		logfile = filepath.Join(home, strings.Replace(strings.Replace(logfile, "~/", "", 1), "$HOME", "", 1))
+	}
+	parent := filepath.Dir(logfile)
+	if err := os.MkdirAll(parent, os.ModePerm); err != nil {
+		return nil, err
+	}
+	return os.Create(logfile)
 }
 
 func startCmd(ctx context.Context, opts commandOptions) (*startedCmd, error) {
@@ -338,6 +366,8 @@ func (sc *startedCmd) getOutputWriter(ctx context.Context, opts *outputOptions, 
 
 	if opts.ignore {
 		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring %s of %s", outputName, sc.opts.name))
+	} else if opts.logfile != nil {
+		return opts.logfile
 	} else {
 		// Create a channel to signal when output should start. If buffering is disabled, close
 		// the channel so output starts immediately.

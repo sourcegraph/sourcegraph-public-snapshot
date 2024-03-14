@@ -9,7 +9,7 @@ import (
 )
 
 type SGConfigCommand interface {
-	// Getters for common fields
+	// Extracts common config and options, allowing the implementation any final overrides
 	GetConfig() SGConfigCommandOptions
 	GetBinaryLocation() (string, error)
 	GetExecCmd(context.Context) (*exec.Cmd, error)

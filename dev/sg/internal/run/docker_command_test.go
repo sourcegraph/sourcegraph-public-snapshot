@@ -66,15 +66,23 @@ func TestParseDockerCommand(t *testing.T) {
 }
 
 func TestCompileGrafanaCommand(t *testing.T) {
-	want := "docker run --rm -d --name grafana " +
-		"-v $HOME/.sourcegraph-dev/data/grafana:/var/lib/grafana " +
-		"-v $(pwd)/dev/grafana/all:/sg_config_grafana/provisioning/datasources " +
-		"-p 3370:3370 -p 5168:5168 -p 9128:9128 -p 5432:5678 --cpus=1 --memory=1g " +
-		"-e CACHE=false " +
-		"-e GRAFANA_DISK=$HOME/.sourcegraph-dev/data/grafana " +
-		"grafana:candidate --config /sg_config_grafana"
+	want := `docker inspect grafana > /dev/null 2>&1 && docker rm -f grafana
+docker load -i ./fake_img.tar
 
-	got := parse(t, grafana).GetDockerCommand(false)
+mkdir -p $HOME/.sourcegraph-dev/data/grafana
+mkdir -p $(pwd)/dev/grafana/all
+
+echo hello
+docker run --rm --name grafana ` +
+		`-v $HOME/.sourcegraph-dev/data/grafana:/var/lib/grafana ` +
+		`-v $(pwd)/dev/grafana/all:/sg_config_grafana/provisioning/datasources ` +
+		`-p 3370:3370 -p 5168:5168 -p 9128:9128 -p 5432:5678 ` +
+		`--cpus=1 --memory=1g ` +
+		`-e CACHE="false" -e GRAFANA_DISK="$HOME/.sourcegraph-dev/data/grafana" ` +
+		`grafana:candidate --config /sg_config_grafana`
+	got := parse(t, grafana).GetCmd(false, "./fake_img.tar")
+
+	t.Logf("got: %s", got)
 
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatalf("wrong cmd. (-want +got):\n%s", diff)
@@ -82,20 +90,24 @@ func TestCompileGrafanaCommand(t *testing.T) {
 }
 
 func TestCompileGrafanaCommand_Linux(t *testing.T) {
-	want := "docker run --rm -d --name grafana " +
-		"-v $HOME/.sourcegraph-dev/data/grafana:/var/lib/grafana " +
-		"-v $(pwd)/dev/grafana/all:/sg_config_grafana/provisioning/datasources " +
-		"-p 3370:3370 -p 5168:5168 -p 9128:9128 -p 5432:5678 " +
-		"--add-host=host.docker.internal:host-gateway " +
-		"--cpus=1 " +
-		"--memory=1g " +
-		"--user=$UID " +
-		"-e CACHE=false " +
-		"-e FOO=bar " +
-		"-e GRAFANA_DISK=$HOME/.sourcegraph-dev/data/grafana " +
-		"grafana:candidate --config /sg_config_grafana"
+	want := `docker inspect grafana > /dev/null 2>&1 && docker rm -f grafana
+docker load -i ./fake_img.tar
 
-	got := parse(t, grafana).GetDockerCommand(true)
+mkdir -p $HOME/.sourcegraph-dev/data/grafana
+mkdir -p $(pwd)/dev/grafana/all
+
+echo hello
+docker run --rm --name grafana ` +
+		`-v $HOME/.sourcegraph-dev/data/grafana:/var/lib/grafana ` +
+		`-v $(pwd)/dev/grafana/all:/sg_config_grafana/provisioning/datasources ` +
+		`-p 3370:3370 -p 5168:5168 -p 9128:9128 -p 5432:5678 ` +
+		`--add-host=host.docker.internal:host-gateway --cpus=1 --memory=1g --user=$UID ` +
+		`-e CACHE="false" -e FOO="bar" -e GRAFANA_DISK="$HOME/.sourcegraph-dev/data/grafana" ` +
+		`grafana:candidate --config /sg_config_grafana`
+
+	got := parse(t, grafana).GetCmd(true, "./fake_img.tar")
+
+	t.Logf("got: %s", got)
 
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatalf("wrong cmd. (-want +got):\n%s", diff)
