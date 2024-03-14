@@ -259,6 +259,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.PromoteRelease:
 		ops = operations.NewSet(
 			releasePromoteImages(c),
+			wait,
+			releaseTestOperation(c),
+			wait,
+			releaseFinalizeOperation(c),
 		)
 	default:
 		// Executor VM image
@@ -325,6 +329,17 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Final Bazel images
 		publishOps.Append(bazelPushImagesFinal(c))
 		ops.Merge(publishOps)
+
+		if c.RunType.Is(runtype.InternalRelease) {
+			releaseOps := operations.NewNamedSet("Release")
+			releaseOps.Append(
+				wait,
+				releaseTestOperation(c),
+				wait,
+				releaseFinalizeOperation(c),
+			)
+			ops.Merge(releaseOps)
+		}
 	}
 
 	// Construct pipeline

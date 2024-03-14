@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	bk "github.com/sourcegraph/sourcegraph/dev/ci/internal/buildkite"
+	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 
 	"github.com/sourcegraph/sourcegraph/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/operations"
@@ -30,5 +31,52 @@ func releasePromoteImages(c Config) operations.Operation {
 				},
 			),
 		)
+	}
+}
+
+// releaseTestOperations runs the script defined in release.yaml that tests the release.
+func releaseTestOperation(c Config) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep("Release tests",
+			bk.Agent("queue", AspectWorkflows.QueueDefault),
+			bk.Env("VERSION", c.Version),
+			bk.AnnotatedCmd(
+				bazelCmd(`run --run_under="cd $$PWD &&" //dev/sg -- release run test --branch $$BUILDKITE_BRANCH`),
+				bk.AnnotatedCmdOpts{
+					Annotations: &bk.AnnotationOpts{
+						Type:         bk.AnnotationTypeInfo,
+						IncludeNames: true,
+					},
+				},
+			))
+	}
+}
+
+// releaseFinalizeOperation runs the script defined in release.yaml that finalizes the release. It picks
+// the variant (internal or public) based on the run type.
+//
+// Important: this helper doesn't inject the `wait` step, it's on the calling side to handle that. This is
+// necessary because by definition, you want to call finalize only when everything else succeeded.
+func releaseFinalizeOperation(c Config) operations.Operation {
+	label := "Finalize internal release"
+	command := "internal"
+	if c.RunType.Is(runtype.PromoteRelease) {
+		label = "Final release promotion"
+		command = "promote-to-public"
+	}
+
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(label,
+			bk.Agent("queue", AspectWorkflows.QueueDefault),
+			bk.Env("VERSION", c.Version),
+			bk.AnnotatedCmd(
+				bazelCmd(fmt.Sprintf(`run --run_under="cd $$PWD &&" //dev/sg -- release run %s finalize --branch $$BUILDKITE_BRANCH`, command)),
+				bk.AnnotatedCmdOpts{
+					Annotations: &bk.AnnotationOpts{
+						Type:         bk.AnnotationTypeInfo,
+						IncludeNames: true,
+					},
+				},
+			))
 	}
 }
