@@ -14,7 +14,18 @@ import { SearchPatternType, type TreeFields } from '@sourcegraph/shared/src/grap
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Badge, Button, ButtonLink, ButtonGroup, Card, CardHeader, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Badge,
+    Button,
+    ButtonLink,
+    ButtonGroup,
+    Card,
+    CardHeader,
+    Icon,
+    Link,
+    Text,
+    Tooltip,
+} from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import {
@@ -45,8 +56,8 @@ import { getRefType } from '../utils'
 
 import { FilesCard, ReadmePreviewCard } from './TreePagePanels'
 
-import styles from './TreePageContent.module.scss'
 import menuStyles from './TreePage.module.scss'
+import styles from './TreePageContent.module.scss'
 import contributorsStyles from './TreePageContentContributors.module.scss'
 import panelStyles from './TreePagePanels.module.scss'
 
@@ -178,7 +189,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
     return (
         <>
-            {!isRoot &&
+            {!isRoot && (
                 <div className={menuStyles.menu}>
                     <ButtonGroup>
                         <Tooltip content="Git commits">
@@ -195,7 +206,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                         </Tooltip>
                     </ButtonGroup>
                 </div>
-            }
+            )}
 
             {(readmeEntry || isRoot) && (
                 <section className={classNames('container mb-3 px-0', styles.section)}>
@@ -217,9 +228,14 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                 </section>
             )}
 
-            <section className={classNames('test-tree-entries container mb-3 px-0', styles.section, !readmeEntry ? 'mt-3' : undefined)}>
-                <FilesCard historyEntries={treeWithHistory} entries={tree.entries} className={styles.files}
-                />
+            <section
+                className={classNames(
+                    'test-tree-entries container mb-3 px-0',
+                    styles.section,
+                    !readmeEntry ? 'mt-3' : undefined
+                )}
+            >
+                <FilesCard historyEntries={treeWithHistory} entries={tree.entries} className={styles.files} />
 
                 {!isPackage && (
                     <div className={styles.contributors}>
