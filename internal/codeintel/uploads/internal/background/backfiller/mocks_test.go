@@ -80,6 +80,13 @@ type MockStore struct {
 	// object controlling the behavior of the method
 	// GetCommitsVisibleToUpload.
 	GetCommitsVisibleToUploadFunc *StoreGetCommitsVisibleToUploadFunc
+	// GetCompletedUploadsByIDsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetCompletedUploadsByIDs.
+	GetCompletedUploadsByIDsFunc *StoreGetCompletedUploadsByIDsFunc
+	// GetCompletedUploadsWithDefinitionsForMonikersFunc is an instance of a
+	// mock function object controlling the behavior of the method
+	// GetCompletedUploadsWithDefinitionsForMonikers.
+	GetCompletedUploadsWithDefinitionsForMonikersFunc *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc
 	// GetDirtyRepositoriesFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDirtyRepositories.
 	GetDirtyRepositoriesFunc *StoreGetDirtyRepositoriesFunc
@@ -102,13 +109,6 @@ type MockStore struct {
 	// GetOldestCommitDateFunc is an instance of a mock function object
 	// controlling the behavior of the method GetOldestCommitDate.
 	GetOldestCommitDateFunc *StoreGetOldestCommitDateFunc
-	// GetCompletedUploadsByIDsFunc is an instance of a mock function object
-	// controlling the behavior of the method GetCompletedUploadsByIDs.
-	GetCompletedUploadsByIDsFunc *StoreGetCompletedUploadsByIDsFunc
-	// GetCompletedUploadsWithDefinitionsForMonikersFunc is an instance of a
-	// mock function object controlling the behavior of the method
-	// GetCompletedUploadsWithDefinitionsForMonikers.
-	GetCompletedUploadsWithDefinitionsForMonikersFunc *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc
 	// GetRecentIndexesSummaryFunc is an instance of a mock function object
 	// controlling the behavior of the method GetRecentIndexesSummary.
 	GetRecentIndexesSummaryFunc *StoreGetRecentIndexesSummaryFunc
@@ -323,6 +323,16 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
+		GetCompletedUploadsByIDsFunc: &StoreGetCompletedUploadsByIDsFunc{
+			defaultHook: func(context.Context, []int) (r0 []shared.CompletedUpload, r1 error) {
+				return
+			},
+		},
+		GetCompletedUploadsWithDefinitionsForMonikersFunc: &StoreGetCompletedUploadsWithDefinitionsForMonikersFunc{
+			defaultHook: func(context.Context, []precise.QualifiedMonikerData) (r0 []shared.CompletedUpload, r1 error) {
+				return
+			},
+		},
 		GetDirtyRepositoriesFunc: &StoreGetDirtyRepositoriesFunc{
 			defaultHook: func(context.Context) (r0 []shared.DirtyRepository, r1 error) {
 				return
@@ -355,16 +365,6 @@ func NewMockStore() *MockStore {
 		},
 		GetOldestCommitDateFunc: &StoreGetOldestCommitDateFunc{
 			defaultHook: func(context.Context, int) (r0 time.Time, r1 bool, r2 error) {
-				return
-			},
-		},
-		GetCompletedUploadsByIDsFunc: &StoreGetCompletedUploadsByIDsFunc{
-			defaultHook: func(context.Context, []int) (r0 []shared.CompletedUpload, r1 error) {
-				return
-			},
-		},
-		GetCompletedUploadsWithDefinitionsForMonikersFunc: &StoreGetCompletedUploadsWithDefinitionsForMonikersFunc{
-			defaultHook: func(context.Context, []precise.QualifiedMonikerData) (r0 []shared.CompletedUpload, r1 error) {
 				return
 			},
 		},
@@ -650,6 +650,16 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.GetCommitsVisibleToUpload")
 			},
 		},
+		GetCompletedUploadsByIDsFunc: &StoreGetCompletedUploadsByIDsFunc{
+			defaultHook: func(context.Context, []int) ([]shared.CompletedUpload, error) {
+				panic("unexpected invocation of MockStore.GetCompletedUploadsByIDs")
+			},
+		},
+		GetCompletedUploadsWithDefinitionsForMonikersFunc: &StoreGetCompletedUploadsWithDefinitionsForMonikersFunc{
+			defaultHook: func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error) {
+				panic("unexpected invocation of MockStore.GetCompletedUploadsWithDefinitionsForMonikers")
+			},
+		},
 		GetDirtyRepositoriesFunc: &StoreGetDirtyRepositoriesFunc{
 			defaultHook: func(context.Context) ([]shared.DirtyRepository, error) {
 				panic("unexpected invocation of MockStore.GetDirtyRepositories")
@@ -683,16 +693,6 @@ func NewStrictMockStore() *MockStore {
 		GetOldestCommitDateFunc: &StoreGetOldestCommitDateFunc{
 			defaultHook: func(context.Context, int) (time.Time, bool, error) {
 				panic("unexpected invocation of MockStore.GetOldestCommitDate")
-			},
-		},
-		GetCompletedUploadsByIDsFunc: &StoreGetCompletedUploadsByIDsFunc{
-			defaultHook: func(context.Context, []int) ([]shared.CompletedUpload, error) {
-				panic("unexpected invocation of MockStore.GetCompletedUploadsByIDs")
-			},
-		},
-		GetCompletedUploadsWithDefinitionsForMonikersFunc: &StoreGetCompletedUploadsWithDefinitionsForMonikersFunc{
-			defaultHook: func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error) {
-				panic("unexpected invocation of MockStore.GetCompletedUploadsWithDefinitionsForMonikers")
 			},
 		},
 		GetRecentIndexesSummaryFunc: &StoreGetRecentIndexesSummaryFunc{
@@ -945,6 +945,12 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		GetCommitsVisibleToUploadFunc: &StoreGetCommitsVisibleToUploadFunc{
 			defaultHook: i.GetCommitsVisibleToUpload,
 		},
+		GetCompletedUploadsByIDsFunc: &StoreGetCompletedUploadsByIDsFunc{
+			defaultHook: i.GetCompletedUploadsByIDs,
+		},
+		GetCompletedUploadsWithDefinitionsForMonikersFunc: &StoreGetCompletedUploadsWithDefinitionsForMonikersFunc{
+			defaultHook: i.GetCompletedUploadsWithDefinitionsForMonikers,
+		},
 		GetDirtyRepositoriesFunc: &StoreGetDirtyRepositoriesFunc{
 			defaultHook: i.GetDirtyRepositories,
 		},
@@ -965,12 +971,6 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		GetOldestCommitDateFunc: &StoreGetOldestCommitDateFunc{
 			defaultHook: i.GetOldestCommitDate,
-		},
-		GetCompletedUploadsByIDsFunc: &StoreGetCompletedUploadsByIDsFunc{
-			defaultHook: i.GetCompletedUploadsByIDs,
-		},
-		GetCompletedUploadsWithDefinitionsForMonikersFunc: &StoreGetCompletedUploadsWithDefinitionsForMonikersFunc{
-			defaultHook: i.GetCompletedUploadsWithDefinitionsForMonikers,
 		},
 		GetRecentIndexesSummaryFunc: &StoreGetRecentIndexesSummaryFunc{
 			defaultHook: i.GetRecentIndexesSummary,
@@ -2904,6 +2904,230 @@ func (c StoreGetCommitsVisibleToUploadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
+// StoreGetCompletedUploadsByIDsFunc describes the behavior when the
+// GetCompletedUploadsByIDs method of the parent MockStore instance is
+// invoked.
+type StoreGetCompletedUploadsByIDsFunc struct {
+	defaultHook func(context.Context, []int) ([]shared.CompletedUpload, error)
+	hooks       []func(context.Context, []int) ([]shared.CompletedUpload, error)
+	history     []StoreGetCompletedUploadsByIDsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetCompletedUploadsByIDs delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockStore) GetCompletedUploadsByIDs(v0 context.Context, v1 []int) ([]shared.CompletedUpload, error) {
+	r0, r1 := m.GetCompletedUploadsByIDsFunc.nextHook()(v0, v1)
+	m.GetCompletedUploadsByIDsFunc.appendCall(StoreGetCompletedUploadsByIDsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetCompletedUploadsByIDs method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreGetCompletedUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, []int) ([]shared.CompletedUpload, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetCompletedUploadsByIDs method of the parent MockStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *StoreGetCompletedUploadsByIDsFunc) PushHook(hook func(context.Context, []int) ([]shared.CompletedUpload, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreGetCompletedUploadsByIDsFunc) SetDefaultReturn(r0 []shared.CompletedUpload, r1 error) {
+	f.SetDefaultHook(func(context.Context, []int) ([]shared.CompletedUpload, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreGetCompletedUploadsByIDsFunc) PushReturn(r0 []shared.CompletedUpload, r1 error) {
+	f.PushHook(func(context.Context, []int) ([]shared.CompletedUpload, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreGetCompletedUploadsByIDsFunc) nextHook() func(context.Context, []int) ([]shared.CompletedUpload, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreGetCompletedUploadsByIDsFunc) appendCall(r0 StoreGetCompletedUploadsByIDsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreGetCompletedUploadsByIDsFuncCall
+// objects describing the invocations of this function.
+func (f *StoreGetCompletedUploadsByIDsFunc) History() []StoreGetCompletedUploadsByIDsFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreGetCompletedUploadsByIDsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreGetCompletedUploadsByIDsFuncCall is an object that describes an
+// invocation of method GetCompletedUploadsByIDs on an instance of
+// MockStore.
+type StoreGetCompletedUploadsByIDsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.CompletedUpload
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreGetCompletedUploadsByIDsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreGetCompletedUploadsByIDsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreGetCompletedUploadsWithDefinitionsForMonikersFunc describes the
+// behavior when the GetCompletedUploadsWithDefinitionsForMonikers method of
+// the parent MockStore instance is invoked.
+type StoreGetCompletedUploadsWithDefinitionsForMonikersFunc struct {
+	defaultHook func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error)
+	hooks       []func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error)
+	history     []StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall
+	mutex       sync.Mutex
+}
+
+// GetCompletedUploadsWithDefinitionsForMonikers delegates to the next hook
+// function in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockStore) GetCompletedUploadsWithDefinitionsForMonikers(v0 context.Context, v1 []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error) {
+	r0, r1 := m.GetCompletedUploadsWithDefinitionsForMonikersFunc.nextHook()(v0, v1)
+	m.GetCompletedUploadsWithDefinitionsForMonikersFunc.appendCall(StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetCompletedUploadsWithDefinitionsForMonikers method of the parent
+// MockStore instance is invoked and the hook queue is empty.
+func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) SetDefaultHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetCompletedUploadsWithDefinitionsForMonikers method of the parent
+// MockStore instance invokes the hook at the front of the queue and
+// discards it. After the queue is empty, the default hook function is
+// invoked for any future action.
+func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) PushHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) SetDefaultReturn(r0 []shared.CompletedUpload, r1 error) {
+	f.SetDefaultHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) PushReturn(r0 []shared.CompletedUpload, r1 error) {
+	f.PushHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) nextHook() func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) appendCall(r0 StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall objects
+// describing the invocations of this function.
+func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) History() []StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall is an object
+// that describes an invocation of method
+// GetCompletedUploadsWithDefinitionsForMonikers on an instance of
+// MockStore.
+type StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []precise.QualifiedMonikerData
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.CompletedUpload
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // StoreGetDirtyRepositoriesFunc describes the behavior when the
 // GetDirtyRepositories method of the parent MockStore instance is invoked.
 type StoreGetDirtyRepositoriesFunc struct {
@@ -3673,230 +3897,6 @@ func (c StoreGetOldestCommitDateFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreGetOldestCommitDateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// StoreGetCompletedUploadsByIDsFunc describes the behavior when the
-// GetCompletedUploadsByIDs method of the parent MockStore instance is
-// invoked.
-type StoreGetCompletedUploadsByIDsFunc struct {
-	defaultHook func(context.Context, []int) ([]shared.CompletedUpload, error)
-	hooks       []func(context.Context, []int) ([]shared.CompletedUpload, error)
-	history     []StoreGetCompletedUploadsByIDsFuncCall
-	mutex       sync.Mutex
-}
-
-// GetCompletedUploadsByIDs delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockStore) GetCompletedUploadsByIDs(v0 context.Context, v1 []int) ([]shared.CompletedUpload, error) {
-	r0, r1 := m.GetCompletedUploadsByIDsFunc.nextHook()(v0, v1)
-	m.GetCompletedUploadsByIDsFunc.appendCall(StoreGetCompletedUploadsByIDsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetCompletedUploadsByIDs method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreGetCompletedUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, []int) ([]shared.CompletedUpload, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetCompletedUploadsByIDs method of the parent MockStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *StoreGetCompletedUploadsByIDsFunc) PushHook(hook func(context.Context, []int) ([]shared.CompletedUpload, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreGetCompletedUploadsByIDsFunc) SetDefaultReturn(r0 []shared.CompletedUpload, r1 error) {
-	f.SetDefaultHook(func(context.Context, []int) ([]shared.CompletedUpload, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetCompletedUploadsByIDsFunc) PushReturn(r0 []shared.CompletedUpload, r1 error) {
-	f.PushHook(func(context.Context, []int) ([]shared.CompletedUpload, error) {
-		return r0, r1
-	})
-}
-
-func (f *StoreGetCompletedUploadsByIDsFunc) nextHook() func(context.Context, []int) ([]shared.CompletedUpload, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreGetCompletedUploadsByIDsFunc) appendCall(r0 StoreGetCompletedUploadsByIDsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreGetCompletedUploadsByIDsFuncCall
-// objects describing the invocations of this function.
-func (f *StoreGetCompletedUploadsByIDsFunc) History() []StoreGetCompletedUploadsByIDsFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreGetCompletedUploadsByIDsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreGetCompletedUploadsByIDsFuncCall is an object that describes an
-// invocation of method GetCompletedUploadsByIDs on an instance of
-// MockStore.
-type StoreGetCompletedUploadsByIDsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []shared.CompletedUpload
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreGetCompletedUploadsByIDsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreGetCompletedUploadsByIDsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// StoreGetCompletedUploadsWithDefinitionsForMonikersFunc describes the
-// behavior when the GetCompletedUploadsWithDefinitionsForMonikers method of
-// the parent MockStore instance is invoked.
-type StoreGetCompletedUploadsWithDefinitionsForMonikersFunc struct {
-	defaultHook func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error)
-	hooks       []func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error)
-	history     []StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall
-	mutex       sync.Mutex
-}
-
-// GetCompletedUploadsWithDefinitionsForMonikers delegates to the next hook
-// function in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockStore) GetCompletedUploadsWithDefinitionsForMonikers(v0 context.Context, v1 []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error) {
-	r0, r1 := m.GetCompletedUploadsWithDefinitionsForMonikersFunc.nextHook()(v0, v1)
-	m.GetCompletedUploadsWithDefinitionsForMonikersFunc.appendCall(StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetCompletedUploadsWithDefinitionsForMonikers method of the parent
-// MockStore instance is invoked and the hook queue is empty.
-func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) SetDefaultHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetCompletedUploadsWithDefinitionsForMonikers method of the parent
-// MockStore instance invokes the hook at the front of the queue and
-// discards it. After the queue is empty, the default hook function is
-// invoked for any future action.
-func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) PushHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) SetDefaultReturn(r0 []shared.CompletedUpload, r1 error) {
-	f.SetDefaultHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) PushReturn(r0 []shared.CompletedUpload, r1 error) {
-	f.PushHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error) {
-		return r0, r1
-	})
-}
-
-func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) nextHook() func(context.Context, []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) appendCall(r0 StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall objects
-// describing the invocations of this function.
-func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) History() []StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall is an object
-// that describes an invocation of method
-// GetCompletedUploadsWithDefinitionsForMonikers on an instance of
-// MockStore.
-type StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []precise.QualifiedMonikerData
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []shared.CompletedUpload
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // StoreGetRecentIndexesSummaryFunc describes the behavior when the
