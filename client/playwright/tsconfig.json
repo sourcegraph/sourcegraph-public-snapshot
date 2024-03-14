@@ -6,7 +6,5 @@
     "rootDir": ".",
     "outDir": "./out",
   },
-  "include": [
-    "src",
-  ],
+  "include": ["src"],
 }
