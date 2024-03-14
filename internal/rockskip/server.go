@@ -57,7 +57,7 @@ func NewService(
 	searchLastIndexedCommit bool,
 ) (*Service, error) {
 	indexRequestQueues := make([]chan indexRequest, maxConcurrentlyIndexing)
-	for i := 0; i < maxConcurrentlyIndexing; i++ {
+	for i := range maxConcurrentlyIndexing {
 		indexRequestQueues[i] = make(chan indexRequest, indexRequestsQueueSize)
 	}
 
@@ -83,7 +83,7 @@ func NewService(
 
 	go service.startCleanupLoop()
 
-	for i := 0; i < maxConcurrentlyIndexing; i++ {
+	for i := range maxConcurrentlyIndexing {
 		go service.startIndexingLoop(service.indexRequestQueues[i])
 	}
 

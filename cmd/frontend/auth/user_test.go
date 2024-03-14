@@ -313,11 +313,11 @@ func TestGetAndSaveUser(t *testing.T) {
 				expNewUserCreated:                false,
 			},
 			{
-				description: "single provider rejects multiple external identities from same provider",
+				description: "single identity per user mode rejects multiple external identities from same provider",
 				op: GetAndSaveUserOp{
-					ExternalAccount: ext("st1", "s1", "c1", "s1/u1-new"),
-					UserProps:       userProps("u1", "u1@example.com"), // This user exists in the DB already and has an external account for st1, s1, c1
-					SingleProvider:  true,
+					ExternalAccount:       ext("st1", "s1", "c1", "s1/u1-new"),
+					UserProps:             userProps("u1", "u1@example.com"), // This user exists in the DB already and has an external account for st1, s1, c1
+					SingleIdentityPerUser: true,
 				},
 				createIfNotExistIrrelevant:       true,
 				expSafeErr:                       "Another identity for this user from this provider already exists. Remove the link to the other identity from your account.",
@@ -326,6 +326,23 @@ func TestGetAndSaveUser(t *testing.T) {
 				expCalledCreateUserSyncJob:       false,
 				expNewUserCreated:                false,
 				expSavedExtAccts:                 map[int32][]extsvc.AccountSpec{},
+			},
+			{
+				description: "single identity per user mode accepts the same external identity from same provider",
+				actorUID:    1,
+				op: GetAndSaveUserOp{
+					ExternalAccount:       ext("st1", "s1", "c1", "s1/u1"),
+					UserProps:             userProps("u1", "u1@example.com"), // This user exists in the DB already and has an external account for st1, s1, c1
+					SingleIdentityPerUser: true,
+				},
+				createIfNotExistIrrelevant: true,
+				expUserID:                  1,
+				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
+					1: {ext("st1", "s1", "c1", "s1/u1")},
+				},
+				expCalledGrantPendingPermissions: true,
+				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                false,
 			},
 		},
 	}
@@ -698,7 +715,7 @@ func (m *mocks) DB() database.DB {
 	externalAccounts.UpsertFunc.SetDefaultHook(m.Upsert)
 	externalAccounts.ListFunc.SetDefaultHook(func(ctx context.Context, ealo database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
 		for _, ui := range m.mockParams.userInfos {
-			if ealo.UserID != 0 && ui.user.ID == ealo.UserID {
+			if ealo.UserID != 0 && ui.user.ID != ealo.UserID {
 				continue
 			}
 			eas := make([]*extsvc.Account, 0)

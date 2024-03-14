@@ -78,10 +78,16 @@
         display: flex;
         align-items: center;
         cursor: pointer;
+
+        // Since this button is part navigation links blocks
+        // we should override focus ring with inset to avoid
+        // visual cropping with parent border.
+        &:focus-visible {
+            box-shadow: 0 0 0 2px var(--primary-2) inset;
+        }
     }
 
     [role='menu'] {
-        isolation: isolate;
         font-size: 0.875rem;
         min-width: 10rem;
         background-clip: padding-box;

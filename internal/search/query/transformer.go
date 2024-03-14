@@ -4,8 +4,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/grafana/regexp"
-
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -303,11 +301,7 @@ func fuzzyRegexp(patterns []Pattern) []Node {
 	}
 	var values []string
 	for _, p := range patterns {
-		if p.Annotation.Labels.IsSet(Literal) {
-			values = append(values, regexp.QuoteMeta(p.Value))
-		} else {
-			values = append(values, p.Value)
-		}
+		values = append(values, p.RegExpPattern())
 	}
 	return []Node{
 		Pattern{
@@ -507,7 +501,7 @@ func substituteConcatForKeyword(callback func([]Node) []Node) func([]Node) []Nod
 // validate function.
 func escapeParens(s string) string {
 	var i int
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		if s[i] == '(' || s[i] == '\\' {
 			break
 		}

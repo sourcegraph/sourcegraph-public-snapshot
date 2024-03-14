@@ -564,7 +564,7 @@ func TestSavedSearchesConnectionStore(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		_, err := db.SavedSearches().Create(ctx, &types.SavedSearch{
 			Description: "Test Search",
 			Query:       "r:src-cli",

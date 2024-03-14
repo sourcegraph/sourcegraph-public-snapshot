@@ -14,25 +14,8 @@ const config: Meta = {
 
 export default config
 
-const context: Pick<SourcegraphContext, 'authProviders'> = {
-    authProviders: [
-        {
-            clientID: '000',
-            serviceType: 'github',
-            displayName: 'GitHub.com',
-            isBuiltin: false,
-            authenticationURL: '/.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F',
-            serviceID: 'https://github.com',
-        },
-        {
-            clientID: '001',
-            serviceType: 'gitlab',
-            displayName: 'GitLab.com',
-            isBuiltin: false,
-            authenticationURL: '/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F',
-            serviceID: 'https://gitlab.com',
-        },
-    ],
+const context: Pick<SourcegraphContext, 'externalURL'> = {
+    externalURL: 'https://sourcegraph.test:3443',
 }
 
 export const SourcegraphDotCom: StoryFn = () => (

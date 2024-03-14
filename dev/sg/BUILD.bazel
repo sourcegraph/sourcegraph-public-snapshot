@@ -30,7 +30,6 @@ go_library(
         "sg_monitoring.go",
         "sg_ops.go",
         "sg_page.go",
-        "sg_release.go",
         "sg_rfc.go",
         "sg_run.go",
         "sg_secret.go",
