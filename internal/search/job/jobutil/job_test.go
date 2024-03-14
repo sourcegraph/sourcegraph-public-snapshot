@@ -854,6 +854,86 @@ func TestNewPlanJob(t *testing.T) {
             (repoNamePatterns . [])))))))
 `),
 		}, {
+			query:      `file:contains.content(a.*b)`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeKeyword,
+			want: autogold.Expect(`
+(LOG
+  (ALERT
+    (features . error decoding features)
+    (protocol . Streaming)
+    (onSourcegraphDotCom . true)
+    (query . )
+    (originalQuery . )
+    (patternType . keyword)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 10000)
+        (FILECONTAINSFILTER
+          (originalPatterns . [])
+          (filterPatterns . [(?i:a.*b)])
+          (PARALLEL
+            (ZOEKTGLOBALTEXTSEARCH
+              (fileMatchLimit . 10000)
+              (select . )
+              (repoScope . [(and branch="HEAD" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)])
+              (includePrivate . true)
+              (globalZoektQueryRegexps . [(?i)(?-s:a.*b)])
+              (query . regex:"(?-s:a.*b)")
+              (type . text))
+            REPOSCOMPUTEEXCLUDED
+            NOOP))))))
+`),
+		}, {
+			query:      `repo:foo file:contains.content(a.*b) index:no`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeKeyword,
+			want: autogold.Expect(`
+(LOG
+  (ALERT
+    (features . error decoding features)
+    (protocol . Streaming)
+    (onSourcegraphDotCom . true)
+    (query . )
+    (originalQuery . )
+    (patternType . keyword)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 10000)
+        (FILECONTAINSFILTER
+          (originalPatterns . [])
+          (filterPatterns . [(?i:a.*b)])
+          (PARALLEL
+            (REPOPAGER
+              (containsRefGlobs . false)
+              (repoOpts.repoFilters . [foo])
+              (repoOpts.useIndex . no)
+              (PARTIALREPOS
+                (ZOEKTREPOSUBSETTEXTSEARCH
+                  (fileMatchLimit . 10000)
+                  (select . )
+                  (zoektQueryRegexps . [(?i)(?-s:a.*b)])
+                  (query . regex:"(?-s:a.*b)")
+                  (type . text))))
+            (REPOPAGER
+              (containsRefGlobs . false)
+              (repoOpts.repoFilters . [foo])
+              (repoOpts.useIndex . no)
+              (PARTIALREPOS
+                (SEARCHERTEXTSEARCH
+                  (useFullDeadline . true)
+                  (patternInfo . TextPatternInfo{(/a.*b/),filematchlimit:10000})
+                  (numRepos . 0)
+                  (pathRegexps . [(?i)a.*b])
+                  (indexed . false))))
+            (REPOSCOMPUTEEXCLUDED
+              (repoOpts.repoFilters . [foo])
+              (repoOpts.useIndex . no))
+            NOOP))))))
+`),
+		}, {
 			query:      `repo:contains.file(path:a content:b)`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeRegex,
