@@ -81,7 +81,7 @@
     $: resultsToShow = results.slice(0, count)
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
 
-    $: previewResult = writable<ContentMatch | SymbolMatch | PathMatch | null>(cacheEntry?.preview ?? null)
+    $: previewResult = writable(cacheEntry?.preview ?? null)
 
     setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
