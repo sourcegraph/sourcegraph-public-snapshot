@@ -1229,6 +1229,7 @@ type GitHubAuthProvider struct {
 	DisplayName   string  `json:"displayName,omitempty"`
 	DisplayPrefix *string `json:"displayPrefix,omitempty"`
 	Hidden        bool    `json:"hidden,omitempty"`
+	NoSignIn      bool    `json:"noSignIn,omitempty"`
 	Order         int     `json:"order,omitempty"`
 	Type          string  `json:"type"`
 	// Url description: URL of the GitHub instance, such as https://github.com or https://github-enterprise.example.com.

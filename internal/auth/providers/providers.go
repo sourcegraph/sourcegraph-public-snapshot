@@ -263,7 +263,7 @@ func GetAuthProviderCommon(p Provider) schema.AuthProviderCommon {
 				common.DisplayPrefix = &s
 			}
 			noSignIn := e.FieldByName("NoSignIn")
-			if noSignIn.IsValid() && !noSignIn.IsNil() {
+			if noSignIn.IsValid() {
 				common.NoSignIn = noSignIn.Bool()
 			}
 		}
