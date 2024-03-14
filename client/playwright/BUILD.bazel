@@ -15,7 +15,8 @@ ts_config(
     visibility = ["//client:__subpackages__"],
     deps = [
         "//:tsconfig",
-        "//client/playwright:tsconfig",
+        # ERROR: /.../client/playwright/BUILD.bazel:12:10: in ts_config rule //client/playwright:tsconfig: cycle in dependency graph
+        # "//client/playwright:tsconfig",
     ],
 )
 
