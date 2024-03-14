@@ -165,10 +165,7 @@
         }
 
         &:hover {
-            // Set the background color of the whole div to also change the color of the padding,
-            // but also make --background-color transparent to unset the background color of CodeExcerpt.
             background-color: var(--subtle-bg-2);
-            --background-color: transparent;
         }
 
         a {
