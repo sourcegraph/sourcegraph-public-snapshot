@@ -44,12 +44,14 @@ func scanSymbols(rows *sql.Rows, queryErr error) (symbols []result.Symbol, err e
 	return symbols, nil
 }
 
-const defaultLimit = 100
+// This limit prevents users from accidentally running a query that returns an
+// extremely large number of results. It is arbitrary, but it should be at least
+// as high as the default limit frontend sends to the symbol service.
+const maxSymbolLimit = 50_000
 
 func (s *store) Search(ctx context.Context, args search.SymbolsParameters) ([]result.Symbol, error) {
-	limit := defaultLimit
-	if args.First > 0 {
-		limit = args.First
+	if args.First < 0 || args.First > maxSymbolLimit {
+		return nil, errors.Newf("limit %d out of bounds [0, %d]", args.First, maxSymbolLimit)
 	}
 
 	return scanSymbols(s.Query(ctx, sqlf.Sprintf(
@@ -70,7 +72,7 @@ func (s *store) Search(ctx context.Context, args search.SymbolsParameters) ([]re
 			LIMIT %s
 		`,
 		sqlf.Join(makeSearchConditions(args), "AND"),
-		limit,
+		args.First,
 	)))
 }
 
