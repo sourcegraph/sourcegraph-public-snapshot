@@ -348,7 +348,7 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		return err
 	}
 
-	if len(cmds) == 0 && len(bcmds) == 0 && len(dcmds) == 0 {
+	if len(cmds)+len(bcmds)+len(dcmds) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "WARNING: no commands to run"))
 		return nil
 	}

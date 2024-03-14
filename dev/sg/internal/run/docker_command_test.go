@@ -80,9 +80,7 @@ docker run --rm --name grafana ` +
 		`--cpus=1 --memory=1g ` +
 		`-e CACHE="false" -e GRAFANA_DISK="$HOME/.sourcegraph-dev/data/grafana" ` +
 		`grafana:candidate --config /sg_config_grafana`
-	got := parse(t, grafana).GetCmd(false, "./fake_img.tar")
-
-	t.Logf("got: %s", got)
+	got := parse(t, grafana).GetCmd("./fake_img.tar", false)
 
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatalf("wrong cmd. (-want +got):\n%s", diff)
@@ -105,9 +103,7 @@ docker run --rm --name grafana ` +
 		`-e CACHE="false" -e FOO="bar" -e GRAFANA_DISK="$HOME/.sourcegraph-dev/data/grafana" ` +
 		`grafana:candidate --config /sg_config_grafana`
 
-	got := parse(t, grafana).GetCmd(true, "./fake_img.tar")
-
-	t.Logf("got: %s", got)
+	got := parse(t, grafana).GetCmd("./fake_img.tar", true)
 
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatalf("wrong cmd. (-want +got):\n%s", diff)

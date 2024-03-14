@@ -185,7 +185,7 @@ func (dc DockerCommand) GetDockerCommand(isLinux bool) string {
 
 }
 
-func (dc DockerCommand) GetCmd(isLinux bool, bin string) string {
+func (dc DockerCommand) GetCmd(bin string, isLinux bool) string {
 	cleanup := fmt.Sprintf("docker inspect %s > /dev/null 2>&1 && docker rm -f %s", dc.Config.Name, dc.Config.Name)
 	load := dc.GetDockerImage(bin)
 	docker := dc.GetDockerCommand(isLinux)
@@ -199,7 +199,7 @@ func (dc DockerCommand) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
-	cmd := dc.GetCmd(runtime.GOOS == "linux", bin)
+	cmd := dc.GetCmd(bin, runtime.GOOS == "linux")
 	return exec.CommandContext(ctx, "bash", "-c", cmd), nil
 }
 
