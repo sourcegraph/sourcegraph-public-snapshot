@@ -59,7 +59,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
         provider => provider.isBuiltin
     )
 
-    const shouldShowProvider = function(provider: AuthProvider): boolean {
+    const shouldShowProvider = function (provider: AuthProvider): boolean {
         if (provider.noSignIn) {
             return false
         }
