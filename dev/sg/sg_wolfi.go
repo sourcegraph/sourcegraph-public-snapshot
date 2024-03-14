@@ -112,6 +112,17 @@ It can also be used for local development by updating its path and hash in the '
 					}
 
 					if !buildLegacy {
+						isMatch, err := wolfi.CheckApkoLockHash(manifestBaseName, false)
+						if err != nil {
+							return err
+						}
+						if !isMatch {
+							std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "%s.yaml does not match %s.lock.json - regenerating lockfile (run manually with `sg wolfi update-images %s`)", baseImageName, baseImageName, baseImageName))
+							if err = wolfi.UpdateImages(ctx, manifestBaseName); err != nil {
+								return err
+							}
+						}
+
 						fmt.Printf("Using bazel build process\n")
 						if err = c.DoBaseImageBuild(manifestBaseName, buildDir); err != nil {
 							return err
@@ -164,6 +175,24 @@ Hash references are updated by fetching the ':latest' tag for each base image fr
 					}
 
 					return wolfi.UpdateHashes(ctx, imageName)
+				},
+			}, {
+				Name:      "update-images",
+				ArgsUsage: "<base-image-name>",
+				Usage:     "Update Wolfi base images to use the latest package versions",
+				UsageText: `
+Update the Wolfi base image lockfiles to use the latest package versions.
+By default all images will be updated; pass in a base image name to update a specific image.
+Lockfiles can be found at wolfi-images/<image>.lock.json
+`,
+				Action: func(ctx *cli.Context) error {
+					args := ctx.Args().Slice()
+					var imageName string
+					if len(args) == 1 {
+						imageName = args[0]
+					}
+
+					return wolfi.UpdateImages(ctx, imageName)
 				},
 			},
 		},
