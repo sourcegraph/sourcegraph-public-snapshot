@@ -183,7 +183,9 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                     <Tooltip content="Git commits">
                         <Button
                             className="flex-shrink-0"
-                            to={`/${encodeURIPathComponent(repo.name)}/-/commits/${filePath}`}
+                            to={`/${encodeURIPathComponent(repo.name)}${
+                                revision && `@${encodeURIPathComponent(revision)}`
+                            }/-/commits/${encodeURIPathComponent(filePath)}`}
                             variant="secondary"
                             outline={true}
                             as={Link}
