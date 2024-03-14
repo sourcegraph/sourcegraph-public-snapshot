@@ -68,7 +68,7 @@ const defaultMocks: TypeMocks = {
 }
 
 interface MockSearchStream {
-    publish(events: SearchEvent | SearchEvent[]): Promise<void>
+    publish(...events: SearchEvent[]): Promise<void>
     close(): Promise<void>
 }
 
@@ -82,7 +82,7 @@ const typeDefs = glob
 
 class Sourcegraph {
     private debugMode = false
-    constructor(private readonly page: Page, private readonly graphqlMock: GraphQLMockServer) {}
+    constructor(private readonly page: Page, private readonly graphqlMock: GraphQLMockServer) { }
 
     async setup(): Promise<void> {
         await this.page.route(/\.api\/graphql/, route => {
@@ -93,9 +93,9 @@ class Sourcegraph {
                 operationName,
                 this.debugMode
                     ? {
-                          logGraphQLErrors: true,
-                          warnOnMissingOperationMocks: true,
-                      }
+                        logGraphQLErrors: true,
+                        warnOnMissingOperationMocks: true,
+                    }
                     : undefined
             )
             route.fulfill({ json: result })
@@ -120,7 +120,7 @@ class Sourcegraph {
      * page to be "ready" by waiting for the "Filter results" heading to be visible.
      */
     public mockSearchStream(): MockSearchStream {
-        this.page.addInitScript(function () {
+        this.page.addInitScript(function() {
             window.$$sources = []
             window.EventSource = class MockEventSource {
                 static readonly CONNECTING = 0
@@ -169,10 +169,7 @@ class Sourcegraph {
         })
 
         return {
-            publish: async (events: SearchEvent | SearchEvent[]): Promise<void> => {
-                if (!(events instanceof Array)) {
-                    events = [events]
-                }
+            publish: async (...events: SearchEvent[]): Promise<void> => {
                 return this.page.evaluate(
                     ([events]) => {
                         for (const event of events) {
@@ -250,7 +247,7 @@ export const test = base.extend<{ sg: Sourcegraph; utils: Utils }, { graphqlMock
         { auto: true },
     ],
     graphqlMock: [
-        async ({}, use) => {
+        async ({ }, use) => {
             const graphqlMock = new GraphQLMockServer({
                 schema: buildSchema(typeDefs),
                 mocks: defaultMocks,

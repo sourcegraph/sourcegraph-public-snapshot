@@ -71,7 +71,7 @@ test('fills search query from URL', async ({ page }) => {
 test('main navbar menus are visible above search input', async ({ page, sg }) => {
     const stream = sg.mockSearchStream()
     await page.goto('/search?q=test')
-    await stream.publish([createProgressEvent(), createDoneEvent()])
+    await stream.publish(createProgressEvent(), createDoneEvent())
     await stream.close()
     await page.getByRole('button', { name: 'Code Search' }).click()
     await page.getByRole('link', { name: 'Search Home' }).click()
@@ -82,14 +82,14 @@ test('preview can be opened and closed', async ({ page, sg }) => {
     const stream = sg.mockSearchStream()
     await page.goto('/search?q=test')
     await page.getByRole('heading', { name: 'Filter results' }).waitFor()
-    await stream.publish([
+    await stream.publish(
         {
             type: 'matches',
             data: [createContentMatch(), createCommitMatch(), createPathMatch()],
         },
         createProgressEvent(),
-        createDoneEvent(),
-    ])
+        createDoneEvent()
+    )
     await stream.close()
 
     // 2 preview buttons: one for content match and one for path match
