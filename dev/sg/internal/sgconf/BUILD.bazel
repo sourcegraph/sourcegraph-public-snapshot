@@ -23,6 +23,9 @@ go_test(
     srcs = ["config_test.go"],
     embed = [":sgconf"],
     env = {
+        # This allows calls to root.RepositoryRoot() to return a fake root.
+        # Otherwise it will fail because it is being run not within the repository
+        # but within the bazel tree
         "SG_FORCE_REPO_ROOT": "./fake_root",
     },
     deps = [

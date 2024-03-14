@@ -1142,7 +1142,6 @@ dockerCommands:
     logfile: $HOME/.sourcegraph-dev/logs/grafana/grafana.log
 
     env:
-      GRAFANA_DISK: $HOME/.sourcegraph-dev/data/grafana
       # docker containers must access things via docker host on non-linux platforms
       CACHE: false
 
@@ -1305,12 +1304,6 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - caddy
-
-  simple:
-    dockerCommands:
-      - prometheus
-      - grafana
-      - loki
 
   # If you modify this command set, please consider also updating the dotcom runset.
   enterprise: &enterprise_set
