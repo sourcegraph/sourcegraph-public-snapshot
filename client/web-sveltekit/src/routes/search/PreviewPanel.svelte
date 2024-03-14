@@ -152,5 +152,6 @@
 
     .content {
         overflow: auto;
+        background-color: var(--code-bg);
     }
 </style>

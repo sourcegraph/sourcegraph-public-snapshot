@@ -114,6 +114,7 @@
                             startLine={group.startLine}
                             matches={group.matches}
                             plaintextLines={group.plaintextLines}
+                            --background-color="transparent"
                         />
                     {:then result}
                         <CodeExcerpt
@@ -121,6 +122,7 @@
                             matches={group.matches}
                             plaintextLines={group.plaintextLines}
                             highlightedHTMLRows={result?.[index]?.slice(0, group.plaintextLines.length)}
+                            --background-color="transparent"
                         />
                     {/await}
                 </a>
@@ -156,6 +158,10 @@
             position: sticky;
             bottom: 0;
         }
+
+        &:hover {
+            background-color: var(--subtle-bg-2);
+        }
     }
 
     .code {
@@ -163,6 +169,10 @@
 
         &:last-child {
             border-bottom: none;
+        }
+
+        &:hover {
+            background-color: var(--subtle-bg-2);
         }
 
         a {
