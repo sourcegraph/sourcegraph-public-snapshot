@@ -79,15 +79,15 @@ func TestGetUploads(t *testing.T) {
 
 	// upload 10 depends on uploads 7 and 8
 	insertPackages(t, store, []shared.Package{
-		{DumpID: 7, Scheme: "npm", Name: "foo", Version: "0.1.0"},
-		{DumpID: 8, Scheme: "npm", Name: "bar", Version: "1.2.3"},
-		{DumpID: 11, Scheme: "npm", Name: "foo", Version: "0.1.0"}, // duplicate package
+		{UploadID: 7, Scheme: "npm", Name: "foo", Version: "0.1.0"},
+		{UploadID: 8, Scheme: "npm", Name: "bar", Version: "1.2.3"},
+		{UploadID: 11, Scheme: "npm", Name: "foo", Version: "0.1.0"}, // duplicate package
 	})
 	insertPackageReferences(t, store, []shared.PackageReference{
-		{Package: shared.Package{DumpID: 7, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 10, Scheme: "npm", Name: "foo", Version: "0.1.0"}},
-		{Package: shared.Package{DumpID: 10, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 11, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
+		{Package: shared.Package{UploadID: 7, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
+		{Package: shared.Package{UploadID: 10, Scheme: "npm", Name: "foo", Version: "0.1.0"}},
+		{Package: shared.Package{UploadID: 10, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
+		{Package: shared.Package{UploadID: 11, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
 	})
 
 	dirtyRepositoryQuery := sqlf.Sprintf(
@@ -341,15 +341,15 @@ func TestGetUploadByIDDeleted(t *testing.T) {
 	}
 }
 
-func TestGetDumpsByIDs(t *testing.T) {
+func TestGetProcessedUploadsByIDs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// Dumps do not exist initially
-	if dumps, err := store.GetDumpsByIDs(context.Background(), []int{1, 2}); err != nil {
+	if uploads, err := store.GetProcessedUploadsByIDs(context.Background(), []int{1, 2}); err != nil {
 		t.Fatalf("unexpected error getting dump: %s", err)
-	} else if len(dumps) > 0 {
+	} else if len(uploads) > 0 {
 		t.Fatal("unexpected record")
 	}
 
@@ -357,7 +357,7 @@ func TestGetDumpsByIDs(t *testing.T) {
 	startedAt := uploadedAt.Add(time.Minute)
 	finishedAt := uploadedAt.Add(time.Minute * 2)
 	expectedAssociatedIndexID := 42
-	expected1 := shared.Dump{
+	expected1 := shared.ProcessedUpload{
 		ID:                1,
 		Commit:            makeCommit(1),
 		Root:              "sub/",
@@ -373,7 +373,7 @@ func TestGetDumpsByIDs(t *testing.T) {
 		IndexerVersion:    "latest",
 		AssociatedIndexID: &expectedAssociatedIndexID,
 	}
-	expected2 := shared.Dump{
+	expected2 := shared.ProcessedUpload{
 		ID:                2,
 		Commit:            makeCommit(2),
 		Root:              "other/",
@@ -393,21 +393,21 @@ func TestGetDumpsByIDs(t *testing.T) {
 	insertUploads(t, db, dumpToUpload(expected1), dumpToUpload(expected2))
 	insertVisibleAtTip(t, db, 50, 1)
 
-	if dumps, err := store.GetDumpsByIDs(context.Background(), []int{1}); err != nil {
+	if uploads, err := store.GetProcessedUploadsByIDs(context.Background(), []int{1}); err != nil {
 		t.Fatalf("unexpected error getting dump: %s", err)
-	} else if len(dumps) != 1 {
+	} else if len(uploads) != 1 {
 		t.Fatal("expected one record")
-	} else if diff := cmp.Diff(expected1, dumps[0]); diff != "" {
+	} else if diff := cmp.Diff(expected1, uploads[0]); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 
-	if dumps, err := store.GetDumpsByIDs(context.Background(), []int{1, 2}); err != nil {
+	if uploads, err := store.GetProcessedUploadsByIDs(context.Background(), []int{1, 2}); err != nil {
 		t.Fatalf("unexpected error getting dump: %s", err)
-	} else if len(dumps) != 2 {
+	} else if len(uploads) != 2 {
 		t.Fatal("expected two records")
-	} else if diff := cmp.Diff(expected1, dumps[0]); diff != "" {
+	} else if diff := cmp.Diff(expected1, uploads[0]); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
-	} else if diff := cmp.Diff(expected2, dumps[1]); diff != "" {
+	} else if diff := cmp.Diff(expected2, uploads[1]); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 }
@@ -511,11 +511,11 @@ func TestGetVisibleUploadsMatchingMonikers(t *testing.T) {
 	})
 
 	insertPackageReferences(t, store, []shared.PackageReference{
-		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
-		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
-		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
-		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
-		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{UploadID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{UploadID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{UploadID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{UploadID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{UploadID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
 	})
 
 	moniker := precise.QualifiedMonikerData{
@@ -529,11 +529,11 @@ func TestGetVisibleUploadsMatchingMonikers(t *testing.T) {
 	}
 
 	refs := []shared.PackageReference{
-		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
-		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
-		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
-		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
-		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{UploadID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{UploadID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{UploadID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{UploadID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{UploadID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
 	}
 
 	testCases := []struct {
@@ -613,16 +613,16 @@ func TestDefinitionDumps(t *testing.T) {
 	}
 
 	// Package does not exist initially
-	if dumps, err := store.GetDumpsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1}); err != nil {
+	if uploads, err := store.GetProcessedUploadsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1}); err != nil {
 		t.Fatalf("unexpected error getting package: %s", err)
-	} else if len(dumps) != 0 {
+	} else if len(uploads) != 0 {
 		t.Fatal("unexpected record")
 	}
 
 	uploadedAt := time.Unix(1587396557, 0).UTC()
 	startedAt := uploadedAt.Add(time.Minute)
 	finishedAt := uploadedAt.Add(time.Minute * 2)
-	expected1 := shared.Dump{
+	expected1 := shared.ProcessedUpload{
 		ID:             1,
 		Commit:         makeCommit(1),
 		Root:           "sub/",
@@ -637,7 +637,7 @@ func TestDefinitionDumps(t *testing.T) {
 		Indexer:        "lsif-go",
 		IndexerVersion: "latest",
 	}
-	expected2 := shared.Dump{
+	expected2 := shared.ProcessedUpload{
 		ID:                2,
 		Commit:            makeCommit(2),
 		Root:              "other/",
@@ -653,7 +653,7 @@ func TestDefinitionDumps(t *testing.T) {
 		IndexerVersion:    "1.2.3",
 		AssociatedIndexID: nil,
 	}
-	expected3 := shared.Dump{
+	expected3 := shared.ProcessedUpload{
 		ID:             3,
 		Commit:         makeCommit(3),
 		Root:           "sub/",
@@ -691,21 +691,21 @@ func TestDefinitionDumps(t *testing.T) {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}
 
-	if dumps, err := store.GetDumpsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1}); err != nil {
+	if uploads, err := store.GetProcessedUploadsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1}); err != nil {
 		t.Fatalf("unexpected error getting package: %s", err)
-	} else if len(dumps) != 1 {
+	} else if len(uploads) != 1 {
 		t.Fatal("expected one record")
-	} else if diff := cmp.Diff(expected1, dumps[0]); diff != "" {
+	} else if diff := cmp.Diff(expected1, uploads[0]); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 
-	if dumps, err := store.GetDumpsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1, moniker2}); err != nil {
+	if uploads, err := store.GetProcessedUploadsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1, moniker2}); err != nil {
 		t.Fatalf("unexpected error getting package: %s", err)
-	} else if len(dumps) != 2 {
+	} else if len(uploads) != 2 {
 		t.Fatal("expected two records")
-	} else if diff := cmp.Diff(expected1, dumps[0]); diff != "" {
+	} else if diff := cmp.Diff(expected1, uploads[0]); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
-	} else if diff := cmp.Diff(expected2, dumps[1]); diff != "" {
+	} else if diff := cmp.Diff(expected2, uploads[1]); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 
@@ -718,10 +718,10 @@ func TestDefinitionDumps(t *testing.T) {
 		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
 		defer globals.SetPermissionsUserMapping(before)
 
-		if dumps, err := store.GetDumpsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1, moniker2}); err != nil {
+		if uploads, err := store.GetProcessedUploadsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1, moniker2}); err != nil {
 			t.Fatalf("unexpected error getting package: %s", err)
-		} else if len(dumps) != 0 {
-			t.Errorf("unexpected count. want=%d have=%d", 0, len(dumps))
+		} else if len(uploads) != 0 {
+			t.Errorf("unexpected count. want=%d have=%d", 0, len(uploads))
 		}
 	})
 }
@@ -1023,7 +1023,7 @@ func TestReindexUploadByID(t *testing.T) {
 //
 //
 
-func dumpToUpload(expected shared.Dump) shared.Upload {
+func dumpToUpload(expected shared.ProcessedUpload) shared.Upload {
 	return shared.Upload{
 		ID:                expected.ID,
 		Commit:            expected.Commit,

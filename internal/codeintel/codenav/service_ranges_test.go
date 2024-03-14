@@ -57,7 +57,7 @@ func TestRanges(t *testing.T) {
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-	uploads := []uploadsshared.Dump{
+	uploads := []uploadsshared.ProcessedUpload{
 		{ID: 50, Commit: "deadbeef1", Root: "sub1/", RepositoryID: 42},
 		{ID: 51, Commit: "deadbeef1", Root: "sub2/", RepositoryID: 42},
 		{ID: 52, Commit: "deadbeef2", Root: "sub3/", RepositoryID: 42},
@@ -65,15 +65,15 @@ func TestRanges(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	testLocation1 := shared.Location{DumpID: 50, Path: "a.go", Range: testRange1}
-	testLocation2 := shared.Location{DumpID: 51, Path: "b.go", Range: testRange2}
-	testLocation3 := shared.Location{DumpID: 51, Path: "c.go", Range: testRange1}
-	testLocation4 := shared.Location{DumpID: 51, Path: "d.go", Range: testRange2}
-	testLocation5 := shared.Location{DumpID: 51, Path: "e.go", Range: testRange1}
-	testLocation6 := shared.Location{DumpID: 51, Path: "a.go", Range: testRange2}
-	testLocation7 := shared.Location{DumpID: 51, Path: "a.go", Range: testRange3}
-	testLocation8 := shared.Location{DumpID: 52, Path: "a.go", Range: testRange4}
-	testLocation9 := shared.Location{DumpID: 52, Path: "changed.go", Range: testRange6}
+	testLocation1 := shared.Location{UploadID: 50, Path: "a.go", Range: testRange1}
+	testLocation2 := shared.Location{UploadID: 51, Path: "b.go", Range: testRange2}
+	testLocation3 := shared.Location{UploadID: 51, Path: "c.go", Range: testRange1}
+	testLocation4 := shared.Location{UploadID: 51, Path: "d.go", Range: testRange2}
+	testLocation5 := shared.Location{UploadID: 51, Path: "e.go", Range: testRange1}
+	testLocation6 := shared.Location{UploadID: 51, Path: "a.go", Range: testRange2}
+	testLocation7 := shared.Location{UploadID: 51, Path: "a.go", Range: testRange3}
+	testLocation8 := shared.Location{UploadID: 52, Path: "a.go", Range: testRange4}
+	testLocation9 := shared.Location{UploadID: 52, Path: "changed.go", Range: testRange6}
 
 	ranges := []shared.CodeIntelligenceRange{
 		{Range: testRange1, HoverText: "text1", Definitions: nil, References: []shared.Location{testLocation1}, Implementations: []shared.Location{}},

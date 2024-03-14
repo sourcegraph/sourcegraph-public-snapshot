@@ -218,9 +218,9 @@ JOIN repo ON repo.id = u.repository_id
 WHERE repo.deleted_at IS NULL AND u.state != 'deleted' AND u.id = %s AND %s
 `
 
-// GetDumpsByIDs returns a set of dumps by identifiers.
-func (s *store) GetDumpsByIDs(ctx context.Context, ids []int) (_ []shared.Dump, err error) {
-	ctx, trace, endObservation := s.operations.getDumpsByIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// GetProcessedUploadsByIDs returns a set of uploads by identifiers.
+func (s *store) GetProcessedUploadsByIDs(ctx context.Context, ids []int) (_ []shared.ProcessedUpload, err error) {
+	ctx, trace, endObservation := s.operations.getProcessedUploadsByIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("numIDs", len(ids)),
 		attribute.IntSlice("ids", ids),
 	}})
@@ -235,16 +235,17 @@ func (s *store) GetDumpsByIDs(ctx context.Context, ids []int) (_ []shared.Dump, 
 		idx = append(idx, sqlf.Sprintf("%s", id))
 	}
 
-	dumps, err := scanDumps(s.db.Query(ctx, sqlf.Sprintf(getDumpsByIDsQuery, sqlf.Join(idx, ", "))))
+	// TODO(id: completed-state-check) Make sure we only return uploads with state = 'completed' here
+	uploads, err := scanProcessedUploads(s.db.Query(ctx, sqlf.Sprintf(getProcessedUploadsByIDsQuery, sqlf.Join(idx, ", "))))
 	if err != nil {
 		return nil, err
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numDumps", len(dumps)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numUploads", len(uploads)))
 
-	return dumps, nil
+	return uploads, nil
 }
 
-const getDumpsByIDsQuery = `
+const getProcessedUploadsByIDsQuery = `
 SELECT
 	u.id,
 	u.commit,
@@ -381,18 +382,18 @@ func (s *store) GetUploadIDsWithReferences(
 		}
 		recordsScanned++
 
-		if _, ok := filtered[packageReference.DumpID]; ok {
+		if _, ok := filtered[packageReference.UploadID]; ok {
 			// This index includes a definition so we can skip testing the filters here. The index
 			// will be included in the moniker search regardless if it contains additional references.
 			continue
 		}
 
-		if _, ok := ignoreIDsMap[packageReference.DumpID]; ok {
+		if _, ok := ignoreIDsMap[packageReference.UploadID]; ok {
 			// Ignore this dump
 			continue
 		}
 
-		filtered[packageReference.DumpID] = struct{}{}
+		filtered[packageReference.UploadID] = struct{}{}
 	}
 
 	if trace != nil {
@@ -544,9 +545,9 @@ WHERE
 // definitionDumpsLimit is the maximum number of records that can be returned from DefinitionDumps.
 var definitionDumpsLimit, _ = strconv.ParseInt(env.Get("PRECISE_CODE_INTEL_DEFINITION_DUMPS_LIMIT", "100", "The maximum number of dumps that can define the same package."), 10, 64)
 
-// GetDumpsWithDefinitionsForMonikers returns the set of dumps that define at least one of the given monikers.
-func (s *store) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []shared.Dump, err error) {
-	ctx, trace, endObservation := s.operations.getDumpsWithDefinitionsForMonikers.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// GetProcessedUploadsWithDefinitionsForMonikers returns the set of uploads that define at least one of the given monikers.
+func (s *store) GetProcessedUploadsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []shared.ProcessedUpload, err error) {
+	ctx, trace, endObservation := s.operations.getProcessedUploadsWithDefinitionsForMonikers.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("numMonikers", len(monikers)),
 		attribute.String("monikers", monikersToString(monikers)),
 	}})
@@ -566,17 +567,18 @@ func (s *store) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers
 		return nil, err
 	}
 
-	query := sqlf.Sprintf(definitionDumpsQuery, sqlf.Join(qs, ", "), authzConds, definitionDumpsLimit)
-	dumps, err := scanDumps(s.db.Query(ctx, query))
+	// TODO(id: completed-state-check) Make sure we only return uploads with state = 'completed' here
+	query := sqlf.Sprintf(getProcessedUploadsWithDefinitionsForMonikersQuery, sqlf.Join(qs, ", "), authzConds, definitionDumpsLimit)
+	uploads, err := scanProcessedUploads(s.db.Query(ctx, query))
 	if err != nil {
 		return nil, err
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numDumps", len(dumps)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numUploads", len(uploads)))
 
-	return dumps, nil
+	return uploads, nil
 }
 
-const definitionDumpsQuery = `
+const getProcessedUploadsWithDefinitionsForMonikersQuery = `
 WITH
 ranked_uploads AS (
 	SELECT
@@ -624,30 +626,31 @@ FROM lsif_dumps_with_repository_name u
 WHERE u.id IN (SELECT id FROM canonical_uploads)
 `
 
-// scanDumps scans a slice of dumps from the return value of `*Store.query`.
-func scanDump(s dbutil.Scanner) (dump shared.Dump, err error) {
-	return dump, s.Scan(
-		&dump.ID,
-		&dump.Commit,
-		&dump.Root,
-		&dump.VisibleAtTip,
-		&dump.UploadedAt,
-		&dump.State,
-		&dump.FailureMessage,
-		&dump.StartedAt,
-		&dump.FinishedAt,
-		&dump.ProcessAfter,
-		&dump.NumResets,
-		&dump.NumFailures,
-		&dump.RepositoryID,
-		&dump.RepositoryName,
-		&dump.Indexer,
-		&dbutil.NullString{S: &dump.IndexerVersion},
-		&dump.AssociatedIndexID,
+// scanProcessedUploads scans a slice of dumps from the return value of `*Store.query`.
+func scanProcessedUpload(s dbutil.Scanner) (upload shared.ProcessedUpload, err error) {
+	err = s.Scan(
+		&upload.ID,
+		&upload.Commit,
+		&upload.Root,
+		&upload.VisibleAtTip,
+		&upload.UploadedAt,
+		&upload.State,
+		&upload.FailureMessage,
+		&upload.StartedAt,
+		&upload.FinishedAt,
+		&upload.ProcessAfter,
+		&upload.NumResets,
+		&upload.NumFailures,
+		&upload.RepositoryID,
+		&upload.RepositoryName,
+		&upload.Indexer,
+		&dbutil.NullString{S: &upload.IndexerVersion},
+		&upload.AssociatedIndexID,
 	)
+	return upload, err
 }
 
-var scanDumps = basestore.NewSliceScanner(scanDump)
+var scanProcessedUploads = basestore.NewSliceScanner(scanProcessedUpload)
 
 // GetAuditLogsForUpload returns all the audit logs for the given upload ID in order of entry
 // from oldest to newest, according to the auto-incremented internal sequence field.
