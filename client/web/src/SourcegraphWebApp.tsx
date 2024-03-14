@@ -8,7 +8,6 @@ import { combineLatest, from, Subscription, fromEvent } from 'rxjs'
 
 import { HTTPStatusError } from '@sourcegraph/http-client'
 import { SharedSpanName, TraceSpanProvider } from '@sourcegraph/observability-client'
-import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import {
@@ -51,7 +50,6 @@ import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 export interface StaticSourcegraphWebAppContext {
     setSelectedSearchContextSpec: (spec: string) => void
     platformContext: PlatformContext
-    extensionsController: ExtensionsControllerProps['extensionsController'] | null
 }
 
 export interface DynamicSourcegraphWebAppContext {
@@ -235,7 +233,6 @@ export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
     const staticContext = {
         setSelectedSearchContextSpec,
         platformContext,
-        extensionsController: null,
     } satisfies StaticSourcegraphWebAppContext
 
     const dynamicContext = {
