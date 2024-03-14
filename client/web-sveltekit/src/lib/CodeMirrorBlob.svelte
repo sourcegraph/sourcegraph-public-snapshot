@@ -35,14 +35,20 @@
             height: '100%',
             color: 'var(--color-code)',
         },
+        '&.cm-focused': {
+            outline: 'none',
+        },
         '.cm-scroller': {
             lineHeight: '1rem',
             fontFamily: 'var(--code-font-family)',
             fontSize: 'var(--code-font-size)',
         },
-        '.cm-content:focus-visible': {
-            outline: 'none',
-            boxShadow: 'none',
+        '.cm-content': {
+            backgroundColor: 'var(--code-bg)',
+            '&:focus-visible': {
+                outline: 'none',
+                boxShadow: 'none',
+            },
         },
         '.cm-panels': {
             '&-top': {
