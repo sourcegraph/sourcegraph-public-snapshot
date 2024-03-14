@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub/pubsubtest"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
@@ -30,9 +32,13 @@ func TestPublish(t *testing.T) {
 	}
 
 	const concurrency = 50
-	publisher, err := events.NewPublisherForStream(memTopic, &telemetrygatewayv1.RecordEventsRequestMetadata{}, events.PublishStreamOptions{
-		ConcurrencyLimit: concurrency,
-	})
+	publisher, err := events.NewPublisherForStream(
+		logtest.Scoped(t),
+		memTopic,
+		&telemetrygatewayv1.RecordEventsRequestMetadata{},
+		events.PublishStreamOptions{
+			ConcurrencyLimit: concurrency,
+		})
 	require.NoError(t, err)
 
 	events := make([]*telemetrygatewayv1.Event, concurrency)

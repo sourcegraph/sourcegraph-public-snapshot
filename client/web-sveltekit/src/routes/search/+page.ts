@@ -93,7 +93,6 @@ export const load: PageLoad = ({ url, depends }) => {
             const globalSearchContext = getGlobalSearchContextFilter(query)
             if (globalSearchContext?.spec) {
                 searchContext = globalSearchContext.spec
-                query = omitFilter(query, globalSearchContext.filter)
             }
         }
 
@@ -123,8 +122,9 @@ export const load: PageLoad = ({ url, depends }) => {
         return {
             searchStream,
             queryFilters,
+            queryFromURL: query,
             queryOptions: {
-                query,
+                query: withoutGlobalContext(query),
                 caseSensitive,
                 patternType,
                 searchMode,
@@ -137,6 +137,15 @@ export const load: PageLoad = ({ url, depends }) => {
             query: '',
         },
     }
+}
+
+function withoutGlobalContext(query: string): string {
+    // TODO: Validate search context
+    const globalSearchContext = getGlobalSearchContextFilter(query)
+    if (globalSearchContext?.spec) {
+        return omitFilter(query, globalSearchContext.filter)
+    }
+    return query
 }
 
 function createCacheKey(parsedQuery: ExtendedParsedSearchURL, options: StreamSearchOptions): string {

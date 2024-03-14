@@ -2252,6 +2252,8 @@ type SAMLAuthProvider struct {
 	// SignRequests description: Sign AuthnRequests and LogoutRequests sent to the Identity Provider using the Service Provider's private key (`serviceProviderPrivateKey`). It defaults to true if the `serviceProviderPrivateKey` and `serviceProviderCertificate` are set, and false otherwise.
 	SignRequests *bool  `json:"signRequests,omitempty"`
 	Type         string `json:"type"`
+	// UsernameAttributeNames description: Names of the SAML assertions attributes to check for a user's username. Checked in the order the names are provided.
+	UsernameAttributeNames []string `json:"usernameAttributeNames,omitempty"`
 }
 
 // SMTPServerConfig description: The SMTP server used to send transactional emails.

@@ -177,10 +177,10 @@ func GetIndexOptions(
 
 	for i := range repos {
 		sema <- struct{}{}
-		go func(i int) {
+		go func() {
 			defer func() { <-sema }()
 			results[i] = getIndexOptions(c, repos[i], getRepoIndexOptions, getSearchContextRevisions, getSiteConfigRevisions)
-		}(i)
+		}()
 	}
 
 	// Wait for jobs to finish (acquire full semaphore)

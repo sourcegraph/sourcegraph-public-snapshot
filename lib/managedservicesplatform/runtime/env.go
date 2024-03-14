@@ -9,9 +9,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type requestedEnvVar struct {
+	name         string
+	defaultValue string
+	description  string
+}
+
 type Env struct {
 	errs []error
 	env  map[string]string
+
+	// requestedEnvVars are only available after ConfigLoader is used on this
+	// Env instance.
+	requestedEnvVars []requestedEnvVar
 }
 
 func newEnv() (*Env, error) {
@@ -30,8 +40,13 @@ func newEnv() (*Env, error) {
 	}, nil
 }
 
-// TODO: Try to use third param description to generate docs.
-func (e *Env) get(name, defaultValue, _ string) string {
+func (e *Env) get(name, defaultValue, description string) string {
+	e.requestedEnvVars = append(e.requestedEnvVars, requestedEnvVar{
+		name:         name,
+		defaultValue: defaultValue,
+		description:  description,
+	})
+
 	v, ok := e.env[name]
 	if !ok {
 		return defaultValue

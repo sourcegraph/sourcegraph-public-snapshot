@@ -327,7 +327,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 
 		const perPage = 100
 		wg.Add(1)
-		go func(projectQuery string) {
+		go func() {
 			defer wg.Done()
 
 			urlStr, err := projectQueryToURL(projectQuery, perPage) // first page URL
@@ -352,7 +352,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 				}
 				urlStr = *nextPageURL
 			}
-		}(projectQuery)
+		}()
 	}
 
 	go func() {
