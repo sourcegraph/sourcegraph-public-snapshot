@@ -11,8 +11,6 @@ import (
 )
 
 func TestRequestedScopes(t *testing.T) {
-	
-
 	tests := []struct {
 		dotComMode bool
 		schema     *schema.GitHubAuthProvider
