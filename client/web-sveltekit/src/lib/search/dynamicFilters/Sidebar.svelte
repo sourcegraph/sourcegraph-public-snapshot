@@ -100,12 +100,7 @@
         {#if !queryHasTypeFilter(searchQuery)}
             <Section items={typeFilters} title="By type" showAll>
                 <svelte:fragment slot="label" let:label>
-                    <Icon
-                        --color="var(--icon-color)"
-                        svgPath={typeFilterIcons[label]}
-                        inline
-                        aria-hidden="true"
-                    />&nbsp;
+                    <Icon svgPath={typeFilterIcons[label]} inline aria-hidden="true" />&nbsp;
                     {label}
                 </svelte:fragment>
             </Section>
@@ -115,7 +110,7 @@
             <svelte:fragment slot="label" let:label>
                 <Tooltip tooltip={label} placement="right">
                     <span>
-                        <CodeHostIcon --color="var(--icon-color)" disableTooltip repository={label} />
+                        <CodeHostIcon disableTooltip repository={label} />
                         <span>{displayRepoName(label)}</span>
                     </span>
                 </Tooltip>
