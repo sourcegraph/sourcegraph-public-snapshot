@@ -71,11 +71,9 @@
     {#if description}
         <!-- #key is needed here to recreate the paragraph because use:highlightRanges changes the DOM -->
         {#key description}
-            <div class="test">
-                <p class="p-2 m-0" use:highlightRanges={{ ranges: descriptionMatches }}>
-                    {limitDescription(description)}
-                </p>
-            </div>
+            <p class="p-2 m-0" use:highlightRanges={{ ranges: descriptionMatches }}>
+                {limitDescription(description)}
+            </p>
         {/key}
     {/if}<!--
         Intentional weird comment to avoid adding an empty line to the body
