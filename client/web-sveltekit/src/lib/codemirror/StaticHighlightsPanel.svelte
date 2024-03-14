@@ -11,39 +11,69 @@
     export let handlePrevious: () => void
     export let handleNext: () => void
 
-    const totalMatches = ranges.length
-    const selectedIdx = ranges.findIndex(range => range.selected)
+    $: totalMatches = ranges.length
+    $: selectedIdx = ranges.findIndex(range => range.selected)
 </script>
 
 <div class="root">
     {#if totalMatches > 1}
-        <div>
-            <Button
-                size="sm"
-                outline
-                variant="secondary"
-                on:click={handlePrevious}
-                data-testid="blob-view-static-previous"
-                aria-label="previous result"
-            >
-                <Icon svgPath={mdiChevronLeft} aria-hidden={true} />
-            </Button>
-
-            <Button
-                size="sm"
-                outline
-                variant="secondary"
-                on:click={handleNext}
-                data-testid="blob-view-static-next"
-                aria-label="next result"
-            >
-                <Icon svgPath={mdiChevronRight} aria-hidden={true} />
-            </Button>
+        <div class="buttons">
+            <div class="left">
+                <Button
+                    size="sm"
+                    outline
+                    variant="secondary"
+                    on:click={handlePrevious}
+                    data-testid="blob-view-static-previous"
+                    aria-label="previous result"
+                >
+                    <Icon inline svgPath={mdiChevronLeft} aria-hidden={true} />
+                </Button>
+            </div>
+            <div class="right">
+                <Button
+                    size="sm"
+                    outline
+                    variant="secondary"
+                    on:click={handleNext}
+                    data-testid="blob-view-static-next"
+                    aria-label="next result"
+                >
+                    <Icon inline svgPath={mdiChevronRight} aria-hidden={true} />
+                </Button>
+            </div>
         </div>
     {/if}
-    <text>
+    <div>
         {selectedIdx === -1 ? '' : `${selectedIdx + 1} of `}
         {totalMatches}
         {pluralize('result', totalMatches)}
-    </text>
+    </div>
 </div>
+
+<style lang="scss">
+    .root {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        color: var(--text-muted);
+
+        background-color: var(--color-bg);
+
+        .buttons {
+            display: flex;
+            .left :global(button) {
+                padding: 0.25rem;
+                border-top-right-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+            .right :global(button) {
+                padding: 0.25rem;
+                border-top-left-radius: 0;
+                border-bottom-left-radius: 0;
+                border-left: none;
+            }
+        }
+    }
+</style>

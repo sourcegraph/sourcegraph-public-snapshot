@@ -73,7 +73,7 @@ function scrollToFirstRange(): Extension {
 const staticHighlightDecoration = Decoration.mark({ class: 'cm-sg-static-highlight' })
 const staticHighlightSelectedDecoration = Decoration.mark({ class: 'cm-sg-static-highlight-selected' })
 
-interface HighlightedRange {
+export interface HighlightedRange {
     from: number
     to: number
     selected: boolean

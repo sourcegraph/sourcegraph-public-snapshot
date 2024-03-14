@@ -44,6 +44,12 @@
             outline: 'none',
             boxShadow: 'none',
         },
+        '.cm-panels': {
+            '&-top': {
+                borderBottom: '1px solid var(--border-color)',
+            },
+            backgroundColor: 'transparent',
+        },
         '.cm-gutters': {
             'background-color': 'var(--code-bg)',
             border: 'none',
