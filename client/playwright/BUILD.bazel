@@ -19,12 +19,12 @@ playwright_bin.playwright_test(
     ],
 )
 
-filegroup(
-    name = "test_files",
-    srcs = glob([
-        "src/playwright/*.spec.ts",
-    ]),
-)
+# filegroup(
+#     name = "test_files",
+#     srcs = glob([
+#         "src/playwright/*.spec.ts",
+#     ]),
+# )
 
 # ts_project(
 #     name = "p_project",
@@ -41,7 +41,7 @@ playwright_test_bin.playwright_test(
         # "@npm//client/playwright:@playwright/test",
         # "//:node_modules/playwright",
         "//client/playwright:node_modules/@playwright/test",
-        # ":playwright",
+        ":playwright",
         ":test_files",
         ":playwright_install",
     ],
@@ -52,10 +52,10 @@ playwright_test_bin.playwright_test(
     tags = ["requires-network"],
 )
 
-# ts_project(
-#     name = "playwright",
-#     srcs = glob([
-#         "src/playwright/*.spec.ts",
-#     ]),
-#     deps = [":node_modules/@playwright/test"],
-# )
+ts_project(
+    name = "playwright",
+    srcs = glob([
+        "src/playwright/*.spec.ts",
+    ]),
+    deps = [":node_modules/@playwright/test"],
+)
