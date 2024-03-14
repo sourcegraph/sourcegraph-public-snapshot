@@ -390,7 +390,7 @@ func TestGetCompletedUploadsByIDs(t *testing.T) {
 		AssociatedIndexID: nil,
 	}
 
-	insertUploads(t, db, dumpToUpload(expected1), dumpToUpload(expected2))
+	insertUploads(t, db, expected1.ConvertToUpload(), expected2.ConvertToUpload())
 	insertVisibleAtTip(t, db, 50, 1)
 
 	if uploads, err := store.GetCompletedUploadsByIDs(context.Background(), []int{1}); err != nil {
@@ -669,7 +669,7 @@ func TestDefinitionDumps(t *testing.T) {
 		IndexerVersion: "latest",
 	}
 
-	insertUploads(t, db, dumpToUpload(expected1), dumpToUpload(expected2), dumpToUpload(expected3))
+	insertUploads(t, db, expected1.ConvertToUpload(), expected2.ConvertToUpload(), expected3.ConvertToUpload())
 	insertVisibleAtTip(t, db, 50, 1)
 
 	if err := store.UpdatePackages(context.Background(), 1, []precise.Package{
@@ -1016,31 +1016,6 @@ func TestReindexUploadByID(t *testing.T) {
 		t.Fatal("upload missing")
 	} else if !upload.ShouldReindex {
 		t.Fatal("upload not marked for reindexing")
-	}
-}
-
-//
-//
-//
-
-func dumpToUpload(expected shared.CompletedUpload) shared.Upload {
-	return shared.Upload{
-		ID:                expected.ID,
-		Commit:            expected.Commit,
-		Root:              expected.Root,
-		UploadedAt:        expected.UploadedAt,
-		State:             expected.State,
-		FailureMessage:    expected.FailureMessage,
-		StartedAt:         expected.StartedAt,
-		FinishedAt:        expected.FinishedAt,
-		ProcessAfter:      expected.ProcessAfter,
-		NumResets:         expected.NumResets,
-		NumFailures:       expected.NumFailures,
-		RepositoryID:      expected.RepositoryID,
-		RepositoryName:    expected.RepositoryName,
-		Indexer:           expected.Indexer,
-		IndexerVersion:    expected.IndexerVersion,
-		AssociatedIndexID: expected.AssociatedIndexID,
 	}
 }
 

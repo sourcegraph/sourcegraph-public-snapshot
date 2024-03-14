@@ -80,6 +80,27 @@ type CompletedUpload struct {
 	AssociatedIndexID *int       `json:"associatedIndex"`
 }
 
+func (u *CompletedUpload) ConvertToUpload() Upload {
+	return Upload{
+		ID:                u.ID,
+		Commit:            u.Commit,
+		Root:              u.Root,
+		UploadedAt:        u.UploadedAt,
+		State:             u.State,
+		FailureMessage:    u.FailureMessage,
+		StartedAt:         u.StartedAt,
+		FinishedAt:        u.FinishedAt,
+		ProcessAfter:      u.ProcessAfter,
+		NumResets:         u.NumResets,
+		NumFailures:       u.NumFailures,
+		RepositoryID:      u.RepositoryID,
+		RepositoryName:    u.RepositoryName,
+		Indexer:           u.Indexer,
+		IndexerVersion:    u.IndexerVersion,
+		AssociatedIndexID: u.AssociatedIndexID,
+	}
+}
+
 type UploadLog struct {
 	LogTimestamp      time.Time
 	RecordDeletedAt   *time.Time
