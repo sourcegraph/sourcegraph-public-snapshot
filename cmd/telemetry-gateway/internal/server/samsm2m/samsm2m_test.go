@@ -52,19 +52,19 @@ func TestCheckWriteEventsScope(t *testing.T) {
 			name:       "token ok, introspect failed",
 			metadata:   map[string]string{"authorization": "bearer foobar"},
 			samsClient: mockSAMSClient{error: errors.New("introspection failed")},
-			wantErr:    autogold.Expect("rpc error: code = PermissionDenied desc = unable to validate token"),
+			wantErr:    autogold.Expect("rpc error: code = Internal desc = unable to validate token"),
 		},
 		{
 			name:       "token ok, but inactive",
 			metadata:   map[string]string{"authorization": "bearer foobar"},
 			samsClient: mockSAMSClient{result: &sams.TokenIntrospection{Active: false}},
-			wantErr:    autogold.Expect("rpc error: code = PermissionDenied desc = token is inactive"),
+			wantErr:    autogold.Expect("rpc error: code = PermissionDenied desc = permission denied"),
 		},
 		{
 			name:       "token ok and active, but invalid scope",
 			metadata:   map[string]string{"authorization": "bearer foobar"},
 			samsClient: mockSAMSClient{result: &sams.TokenIntrospection{Active: true, Scope: "foo bar"}},
-			wantErr:    autogold.Expect("rpc error: code = PermissionDenied desc = token does not have the required scopes"),
+			wantErr:    autogold.Expect("rpc error: code = PermissionDenied desc = permission denied"),
 		},
 		{
 			name:     "token ok and active and valid scope",

@@ -261,7 +261,7 @@ func (s *Server) RecordEvent(ctx context.Context, req *telemetrygatewayv1.Record
 			log.Error(errors.Newf("expected 1 result, got %d", len(results))))
 		return nil, status.Errorf(codes.Internal, "unexpected publishing issue")
 	}
-	if results[0].PublishError != nil {
+	if err := results[0].PublishError; err != nil {
 		logger.Error("failed to publish event", log.Error(err))
 		return nil, status.Errorf(codes.Internal, "failed to publish event: %v", err)
 	}

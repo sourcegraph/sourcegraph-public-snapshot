@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -53,9 +54,10 @@ func TestPublish(t *testing.T) {
 	events := make([]*telemetrygatewayv1.Event, concurrency)
 	for i := range events {
 		events[i] = &telemetrygatewayv1.Event{
-			Id:      strconv.Itoa(i),
-			Feature: t.Name(),
-			Action:  strconv.Itoa(i),
+			Id:        strconv.Itoa(i),
+			Feature:   t.Name(),
+			Action:    strconv.Itoa(i),
+			Timestamp: timestamppb.Now(),
 		}
 	}
 
@@ -86,9 +88,13 @@ func TestPublish(t *testing.T) {
 		var payload map[string]json.RawMessage
 		require.NoError(t, json.Unmarshal(m.Data, &payload))
 
-		var event telemetrygatewayv1.Event
+		var event struct {
+			Id      string
+			Feature string
+			Action  string
+		}
 		require.NoError(t, json.Unmarshal(payload["event"], &event))
-		publishedEvents[event.GetId()] = true
+		publishedEvents[event.Id] = true
 
 		assert.Equal(t, event.Feature, m.Attributes["event.feature"])
 		assert.Equal(t, event.Action, m.Attributes["event.action"])
