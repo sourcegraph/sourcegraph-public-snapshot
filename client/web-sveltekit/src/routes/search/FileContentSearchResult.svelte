@@ -74,20 +74,18 @@
     }
 
     let visible = false
-    let highlightedHTMLRows: string[][] | undefined
+    let highlightedHTMLRows: Promise<string[][]> | undefined
     $: if (visible) {
         // If the file contains some large lines, avoid stressing syntax-highlighter and the browser.
         if (!result.chunkMatches?.some(chunk => chunk.contentTruncated)) {
             // We rely on fetchFileRangeMatches to cache the result for us so that repeated
             // calls will not result in repeated network requests.
-            fetchFileRangeMatches({
+            highlightedHTMLRows = fetchFileRangeMatches({
                 result,
                 ranges: expandedMatchGroups.map(group => ({
                     startLine: group.startLine,
                     endLine: group.endLine,
                 })),
-            }).then(result => {
-                highlightedHTMLRows = result
             })
         }
     }
@@ -111,13 +109,22 @@
                         We need to "post-slice" `highlightedHTMLRows` because we fetch highlighting for
                         the whole chunk.
                     -->
-                    <CodeExcerpt
-                        startLine={group.startLine}
-                        matches={group.matches}
-                        plaintextLines={group.plaintextLines}
-                        highlightedHTMLRows={highlightedHTMLRows?.[index]?.slice(0, group.plaintextLines.length)}
-                        --background-color="transparent"
-                    />
+                    {#await highlightedHTMLRows}
+                        <CodeExcerpt
+                            startLine={group.startLine}
+                            matches={group.matches}
+                            plaintextLines={group.plaintextLines}
+                            --background-color="transparent"
+                        />
+                    {:then result}
+                        <CodeExcerpt
+                            startLine={group.startLine}
+                            matches={group.matches}
+                            plaintextLines={group.plaintextLines}
+                            highlightedHTMLRows={result?.[index]?.slice(0, group.plaintextLines.length)}
+                            --background-color="transparent"
+                        />
+                    {/await}
                 </a>
             </div>
         {/each}
