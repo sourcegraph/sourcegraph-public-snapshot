@@ -146,10 +146,11 @@
     .file-link {
         padding: 0.25rem 0.5rem;
         border-bottom: 1px solid var(--border-color);
+        flex: none;
     }
 
     .content {
-        overflow: auto;
-        background-color: var(--code-bg);
+        flex: 1;
+        min-height: 0;
     }
 </style>
