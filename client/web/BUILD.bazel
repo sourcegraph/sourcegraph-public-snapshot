@@ -142,7 +142,7 @@ filegroup(
 #TOOD(bazel): why is the indirect '@lezer/common' dep required here?
 
 ts_project(
-    name = "web_lib_2",
+    name = "web_lib",
     srcs = glob(["src/playwright/*.spec.ts"]) + [
         "src/Index.tsx",
         "src/LegacyLayout.tsx",
