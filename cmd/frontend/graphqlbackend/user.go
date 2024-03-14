@@ -375,18 +375,10 @@ func (r *UserResolver) settingsSubject() api.SettingsSubject {
 }
 
 func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	// 🚨 SECURITY: Only the authenticated user can view their settings on
-	// Sourcegraph.com.
-	if dotcom.SourcegraphDotComMode() {
-		if err := auth.CheckSameUserFromActor(r.actor, r.user.ID); err != nil {
-			return nil, err
-		}
-	} else {
-		// 🚨 SECURITY: Only the user and admins are allowed to access the user's
-		// settings, because they may contain secrets or other sensitive data.
-		if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
-			return nil, err
-		}
+	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
+	// settings, because they may contain secrets or other sensitive data.
+	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
+		return nil, err
 	}
 
 	settings, err := r.db.Settings().GetLatest(ctx, r.settingsSubject())
@@ -440,18 +432,9 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	if err != nil {
 		return nil, err
 	}
-
-	// 🚨 SECURITY: Only the authenticated user can update their properties on
-	// Sourcegraph.com.
-	if dotcom.SourcegraphDotComMode() {
-		if err := auth.CheckSameUser(ctx, userID); err != nil {
-			return nil, err
-		}
-	} else {
-		// 🚨 SECURITY: Only the user and site admins are allowed to update the user.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
-			return nil, err
-		}
+	// 🚨 SECURITY: Only the user and site admins are allowed to update the user.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		return nil, err
 	}
 
 	if args.Username != nil {
@@ -598,14 +581,8 @@ func (r *UserResolver) ViewerCanAdminister() (bool, error) {
 }
 
 func (r *UserResolver) viewerCanAdministerSettings() (bool, error) {
-	// 🚨 SECURITY: Only the authenticated user can administrate settings themselves on
-	// Sourcegraph.com.
-	var err error
-	if dotcom.SourcegraphDotComMode() {
-		err = auth.CheckSameUserFromActor(r.actor, r.user.ID)
-	} else {
-		err = auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID)
-	}
+	err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID)
+
 	if errcode.IsUnauthorized(err) {
 		return false, nil
 	} else if err != nil {
@@ -797,9 +774,10 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 
-func (r *UserResolver) Roles(_ context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
-	if dotcom.SourcegraphDotComMode() {
-		return nil, errors.New("roles are not available on sourcegraph.com")
+func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
+	// 🚨 SECURITY: In dotcom mode, only allow site admins to check roles.
+	if dotcom.SourcegraphDotComMode() && auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, errors.New("unauthorized")
 	}
 	userID := r.user.ID
 	connectionStore := &roleConnectionStore{

@@ -55,7 +55,7 @@ import styles from './CodyChatPage.module.scss'
 interface CodyChatPageProps extends TelemetryV2Props {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
-    context: Pick<SourcegraphContext, 'authProviders'>
+    context: Pick<SourcegraphContext, 'externalURL'>
 }
 
 const transcriptIdFromUrl = (pathname: string): string | undefined => {

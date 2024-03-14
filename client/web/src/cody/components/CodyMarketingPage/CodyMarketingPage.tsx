@@ -109,7 +109,7 @@ const codyPlatformCardItems = (
 
 export interface CodyMarketingPageProps extends TelemetryV2Props {
     isSourcegraphDotCom: boolean
-    context: Pick<SourcegraphContext, 'authProviders'>
+    context: Pick<SourcegraphContext, 'externalURL'>
     authenticatedUser: AuthenticatedUser | null
 }
 

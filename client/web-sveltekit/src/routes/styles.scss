@@ -21,3 +21,25 @@ a[data-sveltekit-reload='true'] {
         background-repeat: no-repeat;
     }
 }
+
+// Global focus ring styles.
+//
+// NOTE: Since in svelte we use plain HTML tags for elements like
+// links, buttons, inputs, etc. We have to have some common "global"
+// styles for them (like focus ring).
+
+a:focus-visible {
+    // Inset is required here since we have a lot of links
+    // that don't have any spacing between their border and
+    // overflowed parent visible border (so any outside shadow
+    // is visually cut/cropped)
+    box-shadow: 0 0 0 2px var(--primary-2) inset;
+}
+
+button:focus-visible {
+    box-shadow: 0 0 0 2px var(--primary-2);
+}
+
+input:focus-visible {
+    box-shadow: 0 0 0 2px var(--primary-2);
+}

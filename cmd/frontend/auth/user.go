@@ -33,9 +33,9 @@ type GetAndSaveUserOp struct {
 	ExternalAccountData extsvc.AccountData
 	CreateIfNotExist    bool
 	LookUpByUsername    bool
-	// SingleProvider indicates that the provider should only allow to
+	// SingleIdentityPerUser indicates that the provider should only allow to
 	// connect a single external identity per user.
-	SingleProvider bool
+	SingleIdentityPerUser bool
 }
 
 // GetAndSaveUser accepts authentication information associated with a given user, validates and applies
@@ -255,12 +255,13 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		return newUserSaved, 0, safeErrMsg, err
 	}
 
-	if op.SingleProvider && !extAcctSaved {
+	if op.SingleIdentityPerUser && !extAcctSaved {
 		// If we're here, the user has already signed up before this request,
 		// but has no entry for this exact accountID in the user external accounts
 		// table yet.
-		// In single provider mode, we want to attach a new external account
-		// only if no other identity for the same user already exists.
+		// In single identity mode, we want to attach a new external account
+		// only if no other identity of the same provider for the same user already
+		// exists.
 		other, err := externalAccountsStore.List(ctx, database.ExternalAccountsListOptions{
 			UserID:      userID,
 			ServiceType: acct.ServiceType,
@@ -270,7 +271,22 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		if err != nil {
 			return newUserSaved, 0, "Failed to list user identities. Ask a site admin for help.", err
 		}
-		if len(other) > 0 {
+
+		// Confirm that the user already has a different identity from the same
+		// provider. In cases where the user is already logged in (on an existing
+		// browser session) extAcctSaved would be false, even though they logged in with
+		// the same external identity. So as long as is the same identity, we are OK.
+		found := false
+		for _, eac := range other {
+			if eac.ServiceType == acct.ServiceType &&
+				eac.ServiceID == acct.ServiceID &&
+				eac.AccountID == acct.AccountID &&
+				eac.ClientID == acct.ClientID {
+				found = true
+				break
+			}
+		}
+		if !found && len(other) >= 1 {
 			return newUserSaved, 0, "Another identity for this user from this provider already exists. Remove the link to the other identity from your account.", errors.New("duplicate identity for single identity provider")
 		}
 	}

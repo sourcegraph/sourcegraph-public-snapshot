@@ -193,10 +193,6 @@ func NewHandler(
 }
 
 func isAllowedModel(allowedModels []string, model string) bool {
-	// TODO(rafax): Remove the SourcegraphTriton model once sourcegraph.com allow-list rolls out with https://github.com/sourcegraph/sourcegraph/pull/60956
-	if model == "sourcegraph/triton" {
-		return true
-	}
 	for _, m := range allowedModels {
 		if strings.EqualFold(m, model) {
 			return true

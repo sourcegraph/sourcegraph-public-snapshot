@@ -29,7 +29,7 @@ interface Props {
 }
 
 /**
- * Displays the enterprise licenses (formerly known as "product subscriptions") associated with this
+ * Displays the enterprise subscriptions (formerly known as "product subscriptions") associated with this
  * account.
  */
 export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
@@ -77,10 +77,10 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
 
     return (
         <div className="user-subscriptions-product-subscriptions-page">
-            <PageTitle title="Enterprise licenses" />
+            <PageTitle title="Enterprise subscriptions" />
             <PageHeader
                 headingElement="h2"
-                path={[{ text: 'Enterprise licenses' }]}
+                path={[{ text: 'Enterprise subscriptions' }]}
                 description={
                     <>
                         Search your private code with{' '}
@@ -99,8 +99,8 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                 <FilteredConnection<ProductSubscriptionFields, ProductSubscriptionNodeProps>
                     listComponent="table"
                     listClassName="table mb-0"
-                    noun="Enterprise license"
-                    pluralNoun="Enterprise licenses"
+                    noun="Enterprise subscription"
+                    pluralNoun="Enterprise subscriptions"
                     queryConnection={queryLicenses}
                     headComponent={ProductSubscriptionNodeHeader}
                     nodeComponent={ProductSubscriptionNode}
@@ -108,7 +108,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                     noSummaryIfAllNodesVisible={true}
                     emptyElement={
                         <Text alignment="center" className="w-100 mb-0 text-muted">
-                            You have no Enterprise licenses.
+                            You have no Enterprise subscriptions.
                         </Text>
                     }
                 />

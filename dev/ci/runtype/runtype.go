@@ -26,6 +26,9 @@ const (
 	ReleaseBranch     // release branch build
 	BextReleaseBranch // browser extension release build
 
+	InternalRelease // Internal release
+	PromoteRelease  // Public release
+
 	// Main branches
 
 	MainBranch // main branch build
@@ -77,6 +80,18 @@ func (t RunType) Is(oneOfTypes ...RunType) bool {
 // Matcher returns the requirements for a build to be considered of this RunType.
 func (t RunType) Matcher() *RunTypeMatcher {
 	switch t {
+	case PromoteRelease:
+		return &RunTypeMatcher{
+			EnvIncludes: map[string]string{
+				"RELEASE_PUBLIC": "true",
+			},
+		}
+	case InternalRelease:
+		return &RunTypeMatcher{
+			EnvIncludes: map[string]string{
+				"RELEASE_INTERNAL": "true",
+			},
+		}
 	case BextNightly:
 		return &RunTypeMatcher{
 			EnvIncludes: map[string]string{
@@ -115,7 +130,8 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		}
 	case MainDryRun:
 		return &RunTypeMatcher{
-			Branch: "main-dry-run/",
+			Branch:       "(?:main-dry-run/)",
+			BranchRegexp: true,
 		}
 	case ManuallyTriggered:
 		return &RunTypeMatcher{
@@ -144,6 +160,7 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		return &RunTypeMatcher{
 			Branch: "bazel-do/",
 		}
+
 	}
 
 	return nil
@@ -181,6 +198,10 @@ func (t RunType) String() string {
 		return "Build executor without testing"
 	case BazelDo:
 		return "Bazel command"
+	case InternalRelease:
+		return "Internal release"
+	case PromoteRelease:
+		return "Public release"
 	}
 	return "None"
 }

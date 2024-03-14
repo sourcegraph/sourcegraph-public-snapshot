@@ -506,7 +506,7 @@ func TestUpdatingSearchContexts(t *testing.T) {
 	require.NoError(t, err)
 
 	var scs []*types.SearchContext
-	for i := 0; i < 6; i++ {
+	for i := range 6 {
 		sc, err := db.SearchContexts().CreateSearchContextWithRepositoryRevisions(
 			internalCtx,
 			&types.SearchContext{Name: strconv.Itoa(i)},
