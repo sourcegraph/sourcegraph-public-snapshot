@@ -32,10 +32,8 @@
 
     const defaultTheme = EditorView.theme({
         '&': {
-            width: '100%',
-            'min-height': 0,
+            height: '100%',
             color: 'var(--color-code)',
-            flex: 1,
         },
         '.cm-scroller': {
             lineHeight: '1rem',
@@ -241,7 +239,6 @@
 <style lang="scss">
     .root {
         display: contents;
-        overflow: hidden;
     }
     pre {
         margin: 0;
