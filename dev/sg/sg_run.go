@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"sort"
 	"strings"
@@ -10,14 +9,10 @@ import (
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 
-	"github.com/sourcegraph/conc/pool"
-
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
-	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 func init() {
@@ -84,28 +79,14 @@ func runExec(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	legacy := ctx.Bool("legacy")
 
-	args := ctx.Args().Slice()
-	if len(args) == 0 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "No command specified"))
-		return flag.ErrHelp
-	}
-
-	cmds := make([]run.SGConfigCommand, 0, len(args))
-	for _, arg := range args {
-		if bazelCmd, ok := config.BazelCommands[arg]; ok && !legacy {
-			cmds = append(cmds, bazelCmd)
-		} else if cmd, ok := config.Commands[arg]; ok {
-			cmds = append(cmds, cmd)
-		} else {
-			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: command %q not found :(", arg))
-			return flag.ErrHelp
-		}
+	cmds, err := listToCommands(config, ctx.Args().Slice())
+	if err != nil {
+		return err
 	}
 
 	if ctx.Bool("describe") {
-		for _, cmd := range cmds {
+		for _, cmd := range cmds.commands {
 			out, err := yaml.Marshal(cmd)
 			if err != nil {
 				return err
@@ -118,12 +99,7 @@ func runExec(ctx *cli.Context) error {
 		return nil
 	}
 
-	p := pool.New().WithContext(ctx.Context).WithCancelOnError()
-	p.Go(func(ctx context.Context) error {
-		return run.Commands(ctx, config.Env, verbose, cmds...)
-	})
-
-	return p.Wait()
+	return cmds.start(ctx.Context)
 }
 
 func constructRunCmdLongHelp() string {

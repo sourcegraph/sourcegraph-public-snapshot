@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"slices"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -34,13 +33,12 @@ type IBazel struct {
 	events  *iBazelEventHandler
 	logsDir string
 	logFile *os.File
-	dir     string
 	proc    *startedCmd
 	logs    chan<- output.FancyLine
 }
 
 // returns a runner to interact with ibazel.
-func NewIBazel(targets []string, dir string) (*IBazel, error) {
+func NewIBazel(targets []string) (*IBazel, error) {
 	logsDir, err := initLogsDir()
 	if err != nil {
 		return nil, err
@@ -52,23 +50,11 @@ func NewIBazel(targets []string, dir string) (*IBazel, error) {
 	}
 
 	return &IBazel{
-		targets: cleanTargets(targets),
+		targets: targets,
 		events:  newIBazelEventHandler(profileEventsPath(logsDir)),
 		logsDir: logsDir,
 		logFile: logFile,
-		dir:     dir,
 	}, nil
-}
-
-func cleanTargets(targets []string) []string {
-	output := []string{}
-
-	for _, target := range targets {
-		if target != "" && !slices.Contains(output, target) {
-			output = append(output, target)
-		}
-	}
-	return output
 }
 
 func initLogsDir() (string, error) {
@@ -146,11 +132,15 @@ func (ib *IBazel) WaitForInitialBuild(ctx context.Context) error {
 	return nil
 }
 
-func (ib *IBazel) getCommandOptions(ctx context.Context) commandOptions {
+func (ib *IBazel) getCommandOptions(ctx context.Context) (commandOptions, error) {
+	dir, err := root.RepositoryRoot()
+	if err != nil {
+		return commandOptions{}, err
+	}
 	return commandOptions{
 		name: "iBazel",
 		exec: ib.GetExecCmd(ctx),
-		dir:  ib.dir,
+		dir:  dir,
 		// Don't output iBazel logs (which are all on stderr) until
 		// initial build is complete as it will break the progress bar
 		stderr: outputOptions{
@@ -159,13 +149,17 @@ func (ib *IBazel) getCommandOptions(ctx context.Context) commandOptions {
 				ib.logFile,
 				&patternMatcher{regex: watchErrorRegex, callback: ib.logWatchError},
 			}},
-	}
+	}, nil
 }
 
 // Build starts an ibazel process to build the targets provided in the constructor
 // It runs perpetually, watching for file changes
-func (ib *IBazel) build(ctx context.Context) (err error) {
-	ib.proc, err = startCmd(ctx, ib.getCommandOptions(ctx))
+func (ib *IBazel) build(ctx context.Context) error {
+	opts, err := ib.getCommandOptions(ctx)
+	if err != nil {
+		return err
+	}
+	ib.proc, err = startCmd(ctx, opts)
 	return err
 }
 

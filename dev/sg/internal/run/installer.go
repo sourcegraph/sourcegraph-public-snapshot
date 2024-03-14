@@ -50,7 +50,7 @@ type InstallManager struct {
 	stats               *installAnalytics
 }
 
-func Install(ctx context.Context, env map[string]string, verbose bool, cmds ...Installer) error {
+func Install(ctx context.Context, env map[string]string, verbose bool, cmds []Installer) error {
 	installer := newInstallManager(cmds, std.Out, env, verbose)
 
 	installer.start(ctx)
