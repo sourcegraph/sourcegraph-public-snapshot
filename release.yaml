@@ -63,7 +63,7 @@ promoteToPublic:
               "branch": "{{git.branch}}",
               "message": "Promoting internal release {{version}} to public",
               "env": {
-                "DISABLE_ASPECT_WORKFLOWS": "true"
+                "DISABLE_ASPECT_WORKFLOWS": "true",
                 "RELEASE_PUBLIC": "true",
                 "VERSION": "{{tag}}"
               }
