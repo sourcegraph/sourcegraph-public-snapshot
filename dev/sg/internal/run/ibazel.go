@@ -40,7 +40,7 @@ type IBazel struct {
 }
 
 // returns a runner to interact with ibazel.
-func NewIBazel(cmds []BazelCommand, dir string) (*IBazel, error) {
+func NewIBazel(targets []string, dir string) (*IBazel, error) {
 	logsDir, err := initLogsDir()
 	if err != nil {
 		return nil, err
@@ -51,20 +51,24 @@ func NewIBazel(cmds []BazelCommand, dir string) (*IBazel, error) {
 		return nil, err
 	}
 
-	targets := make([]string, 0, len(cmds))
-	for _, cmd := range cmds {
-		if cmd.Target != "" && !slices.Contains(targets, cmd.Target) {
-			targets = append(targets, cmd.Target)
-		}
-	}
-
 	return &IBazel{
-		targets: targets,
+		targets: cleanTargets(targets),
 		events:  newIBazelEventHandler(profileEventsPath(logsDir)),
 		logsDir: logsDir,
 		logFile: logFile,
 		dir:     dir,
 	}, nil
+}
+
+func cleanTargets(targets []string) []string {
+	output := []string{}
+
+	for _, target := range targets {
+		if target != "" && !slices.Contains(output, target) {
+			output = append(output, target)
+		}
+	}
+	return output
 }
 
 func initLogsDir() (string, error) {
