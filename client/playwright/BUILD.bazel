@@ -12,9 +12,9 @@ playwright_bin.playwright_test(
     # env = {
     #     "PLAYWRIGHT_BROWSERS_PATH": "0",
     # },
-    # local = True,
+    local = True,
     tags = [
-        # "no-sandbox",
+        "no-sandbox",
         "requires-network",
     ],
 )
@@ -47,6 +47,6 @@ playwright_test_bin.playwright_test(
     # env = {
     #     "PLAYWRIGHT_BROWSERS_PATH": "0",
     # },
-    # local = True,
+    local = True,
     tags = ["requires-network"],
 )
