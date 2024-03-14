@@ -9,7 +9,11 @@ go_library(
     deps = [
         "//internal/authbearer",
         "//internal/sams",
+        "//lib/errors",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//codes",
+        "@io_opentelemetry_go_otel_trace//:trace",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//metadata",
         "@org_golang_google_grpc//status",
