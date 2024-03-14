@@ -287,7 +287,7 @@ func initLogFile(logfile string) (io.Writer, error) {
 	if err := os.MkdirAll(parent, os.ModePerm); err != nil {
 		return nil, err
 	}
-       // we don't have to worry about the file existing already and growing large, since this will truncate the file if it exists
+	// we don't have to worry about the file existing already and growing large, since this will truncate the file if it exists
 	return os.Create(logfile)
 }
 
