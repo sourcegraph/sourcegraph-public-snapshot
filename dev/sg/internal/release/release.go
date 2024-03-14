@@ -31,9 +31,9 @@ var releaseRunFlags = []cli.Flag{
 		Usage: "Preview all the commands that would be performed",
 	},
 	&cli.StringFlag{
-		Name:  "version",
-		Value: "v6.6.666",
-		Usage: "Force version",
+		Name:     "version",
+		Usage:    "Force version",
+		Required: true,
 	},
 	&cli.StringFlag{
 		Name:  "inputs",
@@ -81,11 +81,11 @@ var Command = &cli.Command{
 				},
 				{
 					Name:  "internal",
-					Usage: "todo",
+					Usage: "Run manifest defined steps (internal releases)",
 					Subcommands: []*cli.Command{
 						{
 							Name:  "finalize",
-							Usage: "Run internal release finalize steps",
+							Usage: "Run manifest defined finalize step for internal releases",
 							Flags: releaseRunFlags,
 							Action: func(cctx *cli.Context) error {
 								r, err := newReleaseRunnerFromCliContext(cctx)
@@ -99,11 +99,11 @@ var Command = &cli.Command{
 				},
 				{
 					Name:  "promote-to-public",
-					Usage: "TODO",
+					Usage: "Run manifest defined steps (public releases)",
 					Subcommands: []*cli.Command{
 						{
 							Name:  "finalize",
-							Usage: "Run internal release finalize steps",
+							Usage: "Run manifest defined finalize step for public releases",
 							Flags: releaseRunFlags,
 							Action: func(cctx *cli.Context) error {
 								r, err := newReleaseRunnerFromCliContext(cctx)
@@ -118,11 +118,12 @@ var Command = &cli.Command{
 			},
 		},
 		{
-			Name:      "create",
-			Usage:     "Create a release for a given product",
-			UsageText: "sg release create --workdir [path] --type patch",
-			Category:  category.Util,
-			Flags:     releaseRunFlags,
+			Name:        "create",
+			Usage:       "Create a release for a given product",
+			Description: "See https://go/releases",
+			UsageText:   "sg release create --workdir [path-to-folder-with-manifest] --version vX.Y.Z",
+			Category:    category.Util,
+			Flags:       releaseRunFlags,
 			Action: func(cctx *cli.Context) error {
 				r, err := newReleaseRunnerFromCliContext(cctx)
 				if err != nil {
@@ -133,8 +134,8 @@ var Command = &cli.Command{
 		},
 		{
 			Name:      "promote-to-public",
-			Usage:     "Promete an existing release to the public",
-			UsageText: "sg release promote-to-public --workdir [path] --type patch",
+			Usage:     "Promote an internal release to the public",
+			UsageText: "sg release promote-to-public --workdir [path-to-folder-with-manifest] --version vX.Y.Z",
 			Category:  category.Util,
 			Flags:     releaseRunFlags,
 			Action: func(cctx *cli.Context) error {
