@@ -11,7 +11,11 @@
         </div>
     </div>
     {#if $$slots.default || $$slots.body}
-        <slot name="body"><div class="body"><slot /></div></slot>
+        <slot name="body">
+            <div class="body">
+                <slot />
+            </div>
+        </slot>
     {/if}
 </article>
 
