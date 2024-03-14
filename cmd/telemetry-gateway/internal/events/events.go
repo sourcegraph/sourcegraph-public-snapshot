@@ -66,7 +66,7 @@ func NewPublisherForStream(
 	}
 
 	return &Publisher{
-		logger:       logger,
+		logger:       logger.With(log.String("source", source)),
 		source:       source,
 		topic:        eventsTopic,
 		opts:         opts,
