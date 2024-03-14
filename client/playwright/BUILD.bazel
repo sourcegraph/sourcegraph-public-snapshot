@@ -1,9 +1,22 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@npm//client/playwright:@playwright/test/package_json.bzl", playwright_test_bin = "bin")
 load("@npm//client/playwright:playwright/package_json.bzl", playwright_bin = "bin")
 load("//dev:defs.bzl", "ts_project")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 npm_link_all_packages(name = "node_modules")
+
+eslint_config_and_lint_root()
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+    ],
+)
 
 playwright_bin.playwright_test(
     name = "playwright_install",
@@ -58,5 +71,6 @@ ts_project(
     srcs = glob([
         "src/playwright/*.spec.ts",
     ]),
+    tsconfig = ":tsconfig",
     deps = [":node_modules/@playwright/test"],
 )
