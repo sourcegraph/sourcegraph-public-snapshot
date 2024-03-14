@@ -7,7 +7,7 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
 import { basename } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { RepositoryType, type TreeFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { useSettings } from '@sourcegraph/shared/src/settings/settings'
 import {
     Card,
@@ -27,7 +27,6 @@ import type { BlobFileFields, TreeHistoryFields } from '../../graphql-operations
 import { fetchBlob } from '../blob/backend'
 import { RenderedFile } from '../blob/RenderedFile'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
-import { isPerforceChangelistMappingEnabled } from '../utils'
 
 import styles from './TreePagePanels.module.scss'
 
@@ -153,11 +152,9 @@ export interface FilePanelProps {
     entries: TreeFields['entries']
     historyEntries?: TreeHistoryFields[]
     className?: string
-    url: TreeFields['url']
-    repoType: RepositoryType
 }
 
-export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, className, url, repoType }) => {
+export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, className }) => {
     const settings = useSettings()
     const preferAbsoluteTimestamps = Boolean(settings?.['history.preferAbsoluteTimestamps'])
     const hasHistoryEntries = historyEntries && historyEntries.length > 0
@@ -170,18 +167,6 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
         }
         return fileHistoryByPath
     }, [historyEntries])
-
-    const revisionType =
-        isPerforceChangelistMappingEnabled() && repoType === RepositoryType.PERFORCE_DEPOT
-            ? '/-/changelists'
-            : '/-/commits'
-
-    let revisionURL = url
-    if (url.includes('/-/tree')) {
-        revisionURL = revisionURL.replace('/-/tree', revisionType)
-    } else {
-        revisionURL = revisionURL + revisionType
-    }
 
     return (
         <Card as="table" className={classNames(className, styles.files)}>
@@ -260,15 +245,6 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                         )}
                     </tr>
                 ))}
-                <tr>
-                    <td colSpan={3} align="right">
-                        <small>
-                            <Link to={revisionURL}>
-                                Show all {repoType === RepositoryType.PERFORCE_DEPOT ? 'changelists' : 'commits'}
-                            </Link>
-                        </small>
-                    </td>
-                </tr>
             </tbody>
         </Card>
     )
