@@ -273,7 +273,7 @@ ORDER BY c.commit_bytea
 LIMIT %s
 `
 
-// FindClosestProcessedUploads returns the set of uploads that can most accurately answer queries for the given repository, commit, path, and
+// FindClosestCompletedUploads returns the set of uploads that can most accurately answer queries for the given repository, commit, path, and
 // optional indexer. If rootMustEnclosePath is true, then only dumps with a root which is a prefix of path are returned. Otherwise,
 // any dump with a root intersecting the given path is returned.
 //
@@ -281,12 +281,12 @@ LIMIT %s
 // will return no dumps (as the input commit is not reachable from anything with an upload). The nearest uploads table must be
 // refreshed before calling this method when the commit is unknown.
 //
-// Because refreshing the commit graph can be very expensive, we also provide FindClosestProcessedUploadsFromGraphFragment. That method should
+// Because refreshing the commit graph can be very expensive, we also provide FindClosestCompletedUploadsFromGraphFragment. That method should
 // be used instead in low-latency paths. It should be supplied a small fragment of the commit graph that contains the input commit
 // as well as a commit that is likely to exist in the lsif_nearest_uploads table. This is enough to propagate the correct upload
 // visibility data down the graph fragment.
 //
-// The graph supplied to FindClosestProcessedUploadsFromGraphFragment will also determine whether or not it is possible to produce a partial set
+// The graph supplied to FindClosestCompletedUploadsFromGraphFragment will also determine whether or not it is possible to produce a partial set
 // of visible uploads (ideally, we'd like to return the complete set of visible uploads, or fail). If the graph fragment is complete
 // by depth (e.g. if the graph contains an ancestor at depth d, then the graph also contains all other ancestors up to depth d), then
 // we get the ideal behavior. Only if we contain a partial row of ancestors will we return partial results.
@@ -294,8 +294,8 @@ LIMIT %s
 // It is possible for some dumps to overlap theoretically, e.g. if someone uploads one dump covering the repository root and then later
 // splits the repository into multiple dumps. For this reason, the returned dumps are always sorted in most-recently-finished order to
 // prevent returning data from stale dumps.
-func (s *store) FindClosestProcessedUploads(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []shared.ProcessedUpload, err error) {
-	ctx, trace, endObservation := s.operations.findClosestProcessedUploads.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+func (s *store) FindClosestCompletedUploads(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []shared.CompletedUpload, err error) {
+	ctx, trace, endObservation := s.operations.findClosestCompletedUploads.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", repositoryID),
 		attribute.String("commit", commit),
 		attribute.String("path", path),
@@ -306,9 +306,9 @@ func (s *store) FindClosestProcessedUploads(ctx context.Context, repositoryID in
 
 	conds := makeFindClosestProcessUploadsConditions(path, rootMustEnclosePath, indexer)
 	// TODO(id: completed-state-check) Make sure we only return uploads with state = 'completed' here
-	query := sqlf.Sprintf(findClosestProcessedUploadsQuery, makeVisibleUploadsQuery(repositoryID, commit), sqlf.Join(conds, " AND "))
+	query := sqlf.Sprintf(findClosestCompletedUploadsQuery, makeVisibleUploadsQuery(repositoryID, commit), sqlf.Join(conds, " AND "))
 
-	uploads, err := scanProcessedUploads(s.db.Query(ctx, query))
+	uploads, err := scanCompletedUploads(s.db.Query(ctx, query))
 	if err != nil {
 		return nil, err
 	}
@@ -317,7 +317,7 @@ func (s *store) FindClosestProcessedUploads(ctx context.Context, repositoryID in
 	return uploads, nil
 }
 
-const findClosestProcessedUploadsQuery = `
+const findClosestCompletedUploadsQuery = `
 WITH
 visible_uploads AS (%s)
 SELECT
@@ -344,10 +344,10 @@ WHERE %s
 ORDER BY u.finished_at DESC
 `
 
-// FindClosestProcessedUploadsFromGraphFragment returns the set of uploads that can most accurately answer queries for the given repository, commit,
-// path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestProcessedUploads for additional details.
-func (s *store) FindClosestProcessedUploadsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []shared.ProcessedUpload, err error) {
-	ctx, trace, endObservation := s.operations.findClosestProcessedUploadsFromGraphFragment.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// FindClosestCompletedUploadsFromGraphFragment returns the set of uploads that can most accurately answer queries for the given repository, commit,
+// path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestCompletedUploads for additional details.
+func (s *store) FindClosestCompletedUploadsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []shared.CompletedUpload, err error) {
+	ctx, trace, endObservation := s.operations.findClosestCompletedUploadsFromGraphFragment.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", repositoryID),
 		attribute.String("commit", commit),
 		attribute.String("path", path),
@@ -367,7 +367,7 @@ func (s *store) FindClosestProcessedUploadsFromGraphFragment(ctx context.Context
 	}
 
 	commitGraphView, err := scanCommitGraphView(s.db.Query(ctx, sqlf.Sprintf(
-		findClosestProcessedUploadsFromGraphFragmentCommitGraphQuery,
+		findClosestCompletedUploadsFromGraphFragmentCommitGraphQuery,
 		repositoryID,
 		sqlf.Join(commitQueries, ", "),
 		repositoryID,
@@ -390,9 +390,9 @@ func (s *store) FindClosestProcessedUploadsFromGraphFragment(ctx context.Context
 
 	conds := makeFindClosestProcessUploadsConditions(path, rootMustEnclosePath, indexer)
 	// TODO(id: completed-state-check) Make sure we only return uploads with state = 'completed' here
-	query := sqlf.Sprintf(findClosestProcessedUploadsFromGraphFragmentQuery, sqlf.Join(ids, ","), sqlf.Join(conds, " AND "))
+	query := sqlf.Sprintf(findClosestCompletedUploadsFromGraphFragmentQuery, sqlf.Join(ids, ","), sqlf.Join(conds, " AND "))
 
-	uploads, err := scanProcessedUploads(s.db.Query(ctx, query))
+	uploads, err := scanCompletedUploads(s.db.Query(ctx, query))
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +401,7 @@ func (s *store) FindClosestProcessedUploadsFromGraphFragment(ctx context.Context
 	return uploads, nil
 }
 
-const findClosestProcessedUploadsFromGraphFragmentCommitGraphQuery = `
+const findClosestCompletedUploadsFromGraphFragmentCommitGraphQuery = `
 WITH
 visible_uploads AS (
 	-- Select the set of uploads visible from one of the given commits. This is done by
@@ -439,7 +439,7 @@ FROM visible_uploads vu
 JOIN lsif_uploads u ON u.id = vu.upload_id
 `
 
-const findClosestProcessedUploadsFromGraphFragmentQuery = `
+const findClosestCompletedUploadsFromGraphFragmentQuery = `
 SELECT
 	u.id,
 	u.commit,

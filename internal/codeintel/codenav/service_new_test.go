@@ -33,7 +33,7 @@ func TestGetDefinitions(t *testing.T) {
 		mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 
 		mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-		uploads := []uploadsshared.ProcessedUpload{
+		uploads := []uploadsshared.CompletedUpload{
 			{ID: 50, Commit: mockCommit, Root: "sub1/"},
 			{ID: 51, Commit: mockCommit, Root: "sub2/"},
 			{ID: 52, Commit: mockCommit, Root: "sub3/"},
@@ -93,7 +93,7 @@ func TestGetDefinitions(t *testing.T) {
 		mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 		mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
 		mockRequestState.GitTreeTranslator = mockedGitTreeTranslator()
-		uploads1 := []uploadsshared.ProcessedUpload{
+		uploads1 := []uploadsshared.CompletedUpload{
 			{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 			{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 			{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -101,13 +101,13 @@ func TestGetDefinitions(t *testing.T) {
 		}
 		mockRequestState.SetUploadsDataLoader(uploads1)
 
-		uploads2 := []uploadsshared.ProcessedUpload{
+		uploads2 := []uploadsshared.CompletedUpload{
 			{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 			{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 			{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
 			{ID: 153, Commit: "deadbeef4", Root: "sub4/"},
 		}
-		mockUploadSvc.GetProcessedUploadsWithDefinitionsForMonikersFunc.PushReturn(uploads2, nil)
+		mockUploadSvc.GetCompletedUploadsWithDefinitionsForMonikersFunc.PushReturn(uploads2, nil)
 
 		// upload #150's commit no longer exists; all others do
 		mockGitserverClient.GetCommitFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID) (*gitdomain.Commit, error) {
@@ -162,7 +162,7 @@ func TestGetDefinitions(t *testing.T) {
 			t.Errorf("unexpected locations (-want +got):\n%s", diff)
 		}
 
-		if history := mockUploadSvc.GetProcessedUploadsWithDefinitionsForMonikersFunc.History(); len(history) != 1 {
+		if history := mockUploadSvc.GetCompletedUploadsWithDefinitionsForMonikersFunc.History(); len(history) != 1 {
 			t.Fatalf("unexpected call count for dbstore.DefinitionDump. want=%d have=%d", 1, len(history))
 		} else {
 			expectedMonikers := []precise.QualifiedMonikerData{
@@ -214,7 +214,7 @@ func TestGetReferences(t *testing.T) {
 		mockRequestState := RequestState{}
 		mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 		mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-		uploads := []uploadsshared.ProcessedUpload{
+		uploads := []uploadsshared.CompletedUpload{
 			{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 			{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 			{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -279,7 +279,7 @@ func TestGetReferences(t *testing.T) {
 		mockRequestState := RequestState{}
 		mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 		mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-		uploads := []uploadsshared.ProcessedUpload{
+		uploads := []uploadsshared.CompletedUpload{
 			{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 			{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 			{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -287,23 +287,23 @@ func TestGetReferences(t *testing.T) {
 		}
 		mockRequestState.SetUploadsDataLoader(uploads)
 
-		definitionUploads := []uploadsshared.ProcessedUpload{
+		definitionUploads := []uploadsshared.CompletedUpload{
 			{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 			{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 			{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
 			{ID: 153, Commit: "deadbeef4", Root: "sub4/"},
 		}
-		mockUploadSvc.GetProcessedUploadsWithDefinitionsForMonikersFunc.PushReturn(definitionUploads, nil)
+		mockUploadSvc.GetCompletedUploadsWithDefinitionsForMonikersFunc.PushReturn(definitionUploads, nil)
 
-		referenceUploads := []uploadsshared.ProcessedUpload{
+		referenceUploads := []uploadsshared.CompletedUpload{
 			{ID: 250, Commit: "deadbeef1", Root: "sub1/"},
 			{ID: 251, Commit: "deadbeef2", Root: "sub2/"},
 			{ID: 252, Commit: "deadbeef3", Root: "sub3/"},
 			{ID: 253, Commit: "deadbeef4", Root: "sub4/"},
 		}
-		mockUploadSvc.GetProcessedUploadsByIDsFunc.PushReturn(nil, nil) // empty
-		mockUploadSvc.GetProcessedUploadsByIDsFunc.PushReturn(referenceUploads[:2], nil)
-		mockUploadSvc.GetProcessedUploadsByIDsFunc.PushReturn(referenceUploads[2:], nil)
+		mockUploadSvc.GetCompletedUploadsByIDsFunc.PushReturn(nil, nil) // empty
+		mockUploadSvc.GetCompletedUploadsByIDsFunc.PushReturn(referenceUploads[:2], nil)
+		mockUploadSvc.GetCompletedUploadsByIDsFunc.PushReturn(referenceUploads[2:], nil)
 
 		mockUploadSvc.GetUploadIDsWithReferencesFunc.PushReturn([]int{250, 251}, 0, 4, nil)
 		mockUploadSvc.GetUploadIDsWithReferencesFunc.PushReturn([]int{252, 253}, 0, 2, nil)
@@ -358,7 +358,7 @@ func TestGetReferences(t *testing.T) {
 		mockLsifStore.GetMinimalBulkMonikerLocationsFunc.PushReturn(monikerLocations[1:2], 1, nil) // refs batch 1
 		mockLsifStore.GetMinimalBulkMonikerLocationsFunc.PushReturn(monikerLocations[2:], 3, nil)  // refs batch 2
 
-		// uploads := []dbstore.ProcessedUpload{
+		// uploads := []dbstore.CompletedUpload{
 		// 	{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		// 	{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		// 	{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -398,7 +398,7 @@ func TestGetReferences(t *testing.T) {
 			t.Errorf("unexpected locations (-want +got):\n%s", diff)
 		}
 
-		if history := mockUploadSvc.GetProcessedUploadsWithDefinitionsForMonikersFunc.History(); len(history) != 1 {
+		if history := mockUploadSvc.GetCompletedUploadsWithDefinitionsForMonikersFunc.History(); len(history) != 1 {
 			t.Fatalf("unexpected call count for dbstore.DefinitionDump. want=%d have=%d", 1, len(history))
 		} else {
 			expectedMonikers := []precise.QualifiedMonikerData{
@@ -473,7 +473,7 @@ func TestGetImplementations(t *testing.T) {
 		}
 		mockLsifStore.ExtractImplementationLocationsFromPositionFunc.PushReturn(locations, nil, nil)
 
-		uploads := []uploadsshared.ProcessedUpload{
+		uploads := []uploadsshared.CompletedUpload{
 			{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 			{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 			{ID: 52, Commit: "deadbeef", Root: "sub3/"},

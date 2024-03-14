@@ -2965,13 +2965,13 @@ func (c GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall) Results() 
 // github.com/sourcegraph/sourcegraph/internal/codeintel/codenav) used for
 // unit testing.
 type MockUploadService struct {
-	// GetProcessedUploadsByIDsFunc is an instance of a mock function object
-	// controlling the behavior of the method GetProcessedUploadsByIDs.
-	GetProcessedUploadsByIDsFunc *UploadServiceGetProcessedUploadsByIDsFunc
-	// GetProcessedUploadsWithDefinitionsForMonikersFunc is an instance of a
+	// GetCompletedUploadsByIDsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetCompletedUploadsByIDs.
+	GetCompletedUploadsByIDsFunc *UploadServiceGetCompletedUploadsByIDsFunc
+	// GetCompletedUploadsWithDefinitionsForMonikersFunc is an instance of a
 	// mock function object controlling the behavior of the method
-	// GetProcessedUploadsWithDefinitionsForMonikers.
-	GetProcessedUploadsWithDefinitionsForMonikersFunc *UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFunc
+	// GetCompletedUploadsWithDefinitionsForMonikers.
+	GetCompletedUploadsWithDefinitionsForMonikersFunc *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc
 	// GetUploadIDsWithReferencesFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetUploadIDsWithReferences.
@@ -2985,13 +2985,13 @@ type MockUploadService struct {
 // All methods return zero values for all results, unless overwritten.
 func NewMockUploadService() *MockUploadService {
 	return &MockUploadService{
-		GetProcessedUploadsByIDsFunc: &UploadServiceGetProcessedUploadsByIDsFunc{
-			defaultHook: func(context.Context, []int) (r0 []shared1.ProcessedUpload, r1 error) {
+		GetCompletedUploadsByIDsFunc: &UploadServiceGetCompletedUploadsByIDsFunc{
+			defaultHook: func(context.Context, []int) (r0 []shared1.CompletedUpload, r1 error) {
 				return
 			},
 		},
-		GetProcessedUploadsWithDefinitionsForMonikersFunc: &UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFunc{
-			defaultHook: func(context.Context, []precise.QualifiedMonikerData) (r0 []shared1.ProcessedUpload, r1 error) {
+		GetCompletedUploadsWithDefinitionsForMonikersFunc: &UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc{
+			defaultHook: func(context.Context, []precise.QualifiedMonikerData) (r0 []shared1.CompletedUpload, r1 error) {
 				return
 			},
 		},
@@ -3001,7 +3001,7 @@ func NewMockUploadService() *MockUploadService {
 			},
 		},
 		InferClosestUploadsFunc: &UploadServiceInferClosestUploadsFunc{
-			defaultHook: func(context.Context, int, string, string, bool, string) (r0 []shared1.ProcessedUpload, r1 error) {
+			defaultHook: func(context.Context, int, string, string, bool, string) (r0 []shared1.CompletedUpload, r1 error) {
 				return
 			},
 		},
@@ -3012,14 +3012,14 @@ func NewMockUploadService() *MockUploadService {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockUploadService() *MockUploadService {
 	return &MockUploadService{
-		GetProcessedUploadsByIDsFunc: &UploadServiceGetProcessedUploadsByIDsFunc{
-			defaultHook: func(context.Context, []int) ([]shared1.ProcessedUpload, error) {
-				panic("unexpected invocation of MockUploadService.GetProcessedUploadsByIDs")
+		GetCompletedUploadsByIDsFunc: &UploadServiceGetCompletedUploadsByIDsFunc{
+			defaultHook: func(context.Context, []int) ([]shared1.CompletedUpload, error) {
+				panic("unexpected invocation of MockUploadService.GetCompletedUploadsByIDs")
 			},
 		},
-		GetProcessedUploadsWithDefinitionsForMonikersFunc: &UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFunc{
-			defaultHook: func(context.Context, []precise.QualifiedMonikerData) ([]shared1.ProcessedUpload, error) {
-				panic("unexpected invocation of MockUploadService.GetProcessedUploadsWithDefinitionsForMonikers")
+		GetCompletedUploadsWithDefinitionsForMonikersFunc: &UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc{
+			defaultHook: func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error) {
+				panic("unexpected invocation of MockUploadService.GetCompletedUploadsWithDefinitionsForMonikers")
 			},
 		},
 		GetUploadIDsWithReferencesFunc: &UploadServiceGetUploadIDsWithReferencesFunc{
@@ -3028,7 +3028,7 @@ func NewStrictMockUploadService() *MockUploadService {
 			},
 		},
 		InferClosestUploadsFunc: &UploadServiceInferClosestUploadsFunc{
-			defaultHook: func(context.Context, int, string, string, bool, string) ([]shared1.ProcessedUpload, error) {
+			defaultHook: func(context.Context, int, string, string, bool, string) ([]shared1.CompletedUpload, error) {
 				panic("unexpected invocation of MockUploadService.InferClosestUploads")
 			},
 		},
@@ -3040,11 +3040,11 @@ func NewStrictMockUploadService() *MockUploadService {
 // overwritten.
 func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 	return &MockUploadService{
-		GetProcessedUploadsByIDsFunc: &UploadServiceGetProcessedUploadsByIDsFunc{
-			defaultHook: i.GetProcessedUploadsByIDs,
+		GetCompletedUploadsByIDsFunc: &UploadServiceGetCompletedUploadsByIDsFunc{
+			defaultHook: i.GetCompletedUploadsByIDs,
 		},
-		GetProcessedUploadsWithDefinitionsForMonikersFunc: &UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFunc{
-			defaultHook: i.GetProcessedUploadsWithDefinitionsForMonikers,
+		GetCompletedUploadsWithDefinitionsForMonikersFunc: &UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc{
+			defaultHook: i.GetCompletedUploadsWithDefinitionsForMonikers,
 		},
 		GetUploadIDsWithReferencesFunc: &UploadServiceGetUploadIDsWithReferencesFunc{
 			defaultHook: i.GetUploadIDsWithReferences,
@@ -3055,37 +3055,37 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 	}
 }
 
-// UploadServiceGetProcessedUploadsByIDsFunc describes the behavior when the
-// GetProcessedUploadsByIDs method of the parent MockUploadService instance
+// UploadServiceGetCompletedUploadsByIDsFunc describes the behavior when the
+// GetCompletedUploadsByIDs method of the parent MockUploadService instance
 // is invoked.
-type UploadServiceGetProcessedUploadsByIDsFunc struct {
-	defaultHook func(context.Context, []int) ([]shared1.ProcessedUpload, error)
-	hooks       []func(context.Context, []int) ([]shared1.ProcessedUpload, error)
-	history     []UploadServiceGetProcessedUploadsByIDsFuncCall
+type UploadServiceGetCompletedUploadsByIDsFunc struct {
+	defaultHook func(context.Context, []int) ([]shared1.CompletedUpload, error)
+	hooks       []func(context.Context, []int) ([]shared1.CompletedUpload, error)
+	history     []UploadServiceGetCompletedUploadsByIDsFuncCall
 	mutex       sync.Mutex
 }
 
-// GetProcessedUploadsByIDs delegates to the next hook function in the queue
+// GetCompletedUploadsByIDs delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockUploadService) GetProcessedUploadsByIDs(v0 context.Context, v1 []int) ([]shared1.ProcessedUpload, error) {
-	r0, r1 := m.GetProcessedUploadsByIDsFunc.nextHook()(v0, v1)
-	m.GetProcessedUploadsByIDsFunc.appendCall(UploadServiceGetProcessedUploadsByIDsFuncCall{v0, v1, r0, r1})
+func (m *MockUploadService) GetCompletedUploadsByIDs(v0 context.Context, v1 []int) ([]shared1.CompletedUpload, error) {
+	r0, r1 := m.GetCompletedUploadsByIDsFunc.nextHook()(v0, v1)
+	m.GetCompletedUploadsByIDsFunc.appendCall(UploadServiceGetCompletedUploadsByIDsFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// GetProcessedUploadsByIDs method of the parent MockUploadService instance
+// GetCompletedUploadsByIDs method of the parent MockUploadService instance
 // is invoked and the hook queue is empty.
-func (f *UploadServiceGetProcessedUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, []int) ([]shared1.ProcessedUpload, error)) {
+func (f *UploadServiceGetCompletedUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, []int) ([]shared1.CompletedUpload, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetProcessedUploadsByIDs method of the parent MockUploadService instance
+// GetCompletedUploadsByIDs method of the parent MockUploadService instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *UploadServiceGetProcessedUploadsByIDsFunc) PushHook(hook func(context.Context, []int) ([]shared1.ProcessedUpload, error)) {
+func (f *UploadServiceGetCompletedUploadsByIDsFunc) PushHook(hook func(context.Context, []int) ([]shared1.CompletedUpload, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3093,20 +3093,20 @@ func (f *UploadServiceGetProcessedUploadsByIDsFunc) PushHook(hook func(context.C
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadServiceGetProcessedUploadsByIDsFunc) SetDefaultReturn(r0 []shared1.ProcessedUpload, r1 error) {
-	f.SetDefaultHook(func(context.Context, []int) ([]shared1.ProcessedUpload, error) {
+func (f *UploadServiceGetCompletedUploadsByIDsFunc) SetDefaultReturn(r0 []shared1.CompletedUpload, r1 error) {
+	f.SetDefaultHook(func(context.Context, []int) ([]shared1.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadServiceGetProcessedUploadsByIDsFunc) PushReturn(r0 []shared1.ProcessedUpload, r1 error) {
-	f.PushHook(func(context.Context, []int) ([]shared1.ProcessedUpload, error) {
+func (f *UploadServiceGetCompletedUploadsByIDsFunc) PushReturn(r0 []shared1.CompletedUpload, r1 error) {
+	f.PushHook(func(context.Context, []int) ([]shared1.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
-func (f *UploadServiceGetProcessedUploadsByIDsFunc) nextHook() func(context.Context, []int) ([]shared1.ProcessedUpload, error) {
+func (f *UploadServiceGetCompletedUploadsByIDsFunc) nextHook() func(context.Context, []int) ([]shared1.CompletedUpload, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3119,28 +3119,28 @@ func (f *UploadServiceGetProcessedUploadsByIDsFunc) nextHook() func(context.Cont
 	return hook
 }
 
-func (f *UploadServiceGetProcessedUploadsByIDsFunc) appendCall(r0 UploadServiceGetProcessedUploadsByIDsFuncCall) {
+func (f *UploadServiceGetCompletedUploadsByIDsFunc) appendCall(r0 UploadServiceGetCompletedUploadsByIDsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// UploadServiceGetProcessedUploadsByIDsFuncCall objects describing the
+// UploadServiceGetCompletedUploadsByIDsFuncCall objects describing the
 // invocations of this function.
-func (f *UploadServiceGetProcessedUploadsByIDsFunc) History() []UploadServiceGetProcessedUploadsByIDsFuncCall {
+func (f *UploadServiceGetCompletedUploadsByIDsFunc) History() []UploadServiceGetCompletedUploadsByIDsFuncCall {
 	f.mutex.Lock()
-	history := make([]UploadServiceGetProcessedUploadsByIDsFuncCall, len(f.history))
+	history := make([]UploadServiceGetCompletedUploadsByIDsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// UploadServiceGetProcessedUploadsByIDsFuncCall is an object that describes
-// an invocation of method GetProcessedUploadsByIDs on an instance of
+// UploadServiceGetCompletedUploadsByIDsFuncCall is an object that describes
+// an invocation of method GetCompletedUploadsByIDs on an instance of
 // MockUploadService.
-type UploadServiceGetProcessedUploadsByIDsFuncCall struct {
+type UploadServiceGetCompletedUploadsByIDsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -3149,7 +3149,7 @@ type UploadServiceGetProcessedUploadsByIDsFuncCall struct {
 	Arg1 []int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared1.ProcessedUpload
+	Result0 []shared1.CompletedUpload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -3157,48 +3157,48 @@ type UploadServiceGetProcessedUploadsByIDsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c UploadServiceGetProcessedUploadsByIDsFuncCall) Args() []interface{} {
+func (c UploadServiceGetCompletedUploadsByIDsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c UploadServiceGetProcessedUploadsByIDsFuncCall) Results() []interface{} {
+func (c UploadServiceGetCompletedUploadsByIDsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFunc describes
-// the behavior when the GetProcessedUploadsWithDefinitionsForMonikers
+// UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc describes
+// the behavior when the GetCompletedUploadsWithDefinitionsForMonikers
 // method of the parent MockUploadService instance is invoked.
-type UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFunc struct {
-	defaultHook func(context.Context, []precise.QualifiedMonikerData) ([]shared1.ProcessedUpload, error)
-	hooks       []func(context.Context, []precise.QualifiedMonikerData) ([]shared1.ProcessedUpload, error)
-	history     []UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFuncCall
+type UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc struct {
+	defaultHook func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error)
+	hooks       []func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error)
+	history     []UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFuncCall
 	mutex       sync.Mutex
 }
 
-// GetProcessedUploadsWithDefinitionsForMonikers delegates to the next hook
+// GetCompletedUploadsWithDefinitionsForMonikers delegates to the next hook
 // function in the queue and stores the parameter and result values of this
 // invocation.
-func (m *MockUploadService) GetProcessedUploadsWithDefinitionsForMonikers(v0 context.Context, v1 []precise.QualifiedMonikerData) ([]shared1.ProcessedUpload, error) {
-	r0, r1 := m.GetProcessedUploadsWithDefinitionsForMonikersFunc.nextHook()(v0, v1)
-	m.GetProcessedUploadsWithDefinitionsForMonikersFunc.appendCall(UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFuncCall{v0, v1, r0, r1})
+func (m *MockUploadService) GetCompletedUploadsWithDefinitionsForMonikers(v0 context.Context, v1 []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error) {
+	r0, r1 := m.GetCompletedUploadsWithDefinitionsForMonikersFunc.nextHook()(v0, v1)
+	m.GetCompletedUploadsWithDefinitionsForMonikersFunc.appendCall(UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// GetProcessedUploadsWithDefinitionsForMonikers method of the parent
+// GetCompletedUploadsWithDefinitionsForMonikers method of the parent
 // MockUploadService instance is invoked and the hook queue is empty.
-func (f *UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFunc) SetDefaultHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared1.ProcessedUpload, error)) {
+func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) SetDefaultHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetProcessedUploadsWithDefinitionsForMonikers method of the parent
+// GetCompletedUploadsWithDefinitionsForMonikers method of the parent
 // MockUploadService instance invokes the hook at the front of the queue and
 // discards it. After the queue is empty, the default hook function is
 // invoked for any future action.
-func (f *UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFunc) PushHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared1.ProcessedUpload, error)) {
+func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) PushHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3206,20 +3206,20 @@ func (f *UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFunc) PushHoo
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFunc) SetDefaultReturn(r0 []shared1.ProcessedUpload, r1 error) {
-	f.SetDefaultHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared1.ProcessedUpload, error) {
+func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) SetDefaultReturn(r0 []shared1.CompletedUpload, r1 error) {
+	f.SetDefaultHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFunc) PushReturn(r0 []shared1.ProcessedUpload, r1 error) {
-	f.PushHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared1.ProcessedUpload, error) {
+func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) PushReturn(r0 []shared1.CompletedUpload, r1 error) {
+	f.PushHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
-func (f *UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFunc) nextHook() func(context.Context, []precise.QualifiedMonikerData) ([]shared1.ProcessedUpload, error) {
+func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) nextHook() func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3232,29 +3232,29 @@ func (f *UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFunc) nextHoo
 	return hook
 }
 
-func (f *UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFunc) appendCall(r0 UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFuncCall) {
+func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) appendCall(r0 UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFuncCall
+// UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFuncCall
 // objects describing the invocations of this function.
-func (f *UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFunc) History() []UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFuncCall {
+func (f *UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFunc) History() []UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFuncCall {
 	f.mutex.Lock()
-	history := make([]UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFuncCall, len(f.history))
+	history := make([]UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFuncCall is an
+// UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFuncCall is an
 // object that describes an invocation of method
-// GetProcessedUploadsWithDefinitionsForMonikers on an instance of
+// GetCompletedUploadsWithDefinitionsForMonikers on an instance of
 // MockUploadService.
-type UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFuncCall struct {
+type UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -3263,7 +3263,7 @@ type UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFuncCall struct {
 	Arg1 []precise.QualifiedMonikerData
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared1.ProcessedUpload
+	Result0 []shared1.CompletedUpload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -3271,13 +3271,13 @@ type UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFuncCall) Args() []interface{} {
+func (c UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c UploadServiceGetProcessedUploadsWithDefinitionsForMonikersFuncCall) Results() []interface{} {
+func (c UploadServiceGetCompletedUploadsWithDefinitionsForMonikersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -3418,15 +3418,15 @@ func (c UploadServiceGetUploadIDsWithReferencesFuncCall) Results() []interface{}
 // InferClosestUploads method of the parent MockUploadService instance is
 // invoked.
 type UploadServiceInferClosestUploadsFunc struct {
-	defaultHook func(context.Context, int, string, string, bool, string) ([]shared1.ProcessedUpload, error)
-	hooks       []func(context.Context, int, string, string, bool, string) ([]shared1.ProcessedUpload, error)
+	defaultHook func(context.Context, int, string, string, bool, string) ([]shared1.CompletedUpload, error)
+	hooks       []func(context.Context, int, string, string, bool, string) ([]shared1.CompletedUpload, error)
 	history     []UploadServiceInferClosestUploadsFuncCall
 	mutex       sync.Mutex
 }
 
 // InferClosestUploads delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockUploadService) InferClosestUploads(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string) ([]shared1.ProcessedUpload, error) {
+func (m *MockUploadService) InferClosestUploads(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string) ([]shared1.CompletedUpload, error) {
 	r0, r1 := m.InferClosestUploadsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
 	m.InferClosestUploadsFunc.appendCall(UploadServiceInferClosestUploadsFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
 	return r0, r1
@@ -3435,7 +3435,7 @@ func (m *MockUploadService) InferClosestUploads(v0 context.Context, v1 int, v2 s
 // SetDefaultHook sets function that is called when the InferClosestUploads
 // method of the parent MockUploadService instance is invoked and the hook
 // queue is empty.
-func (f *UploadServiceInferClosestUploadsFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string) ([]shared1.ProcessedUpload, error)) {
+func (f *UploadServiceInferClosestUploadsFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string) ([]shared1.CompletedUpload, error)) {
 	f.defaultHook = hook
 }
 
@@ -3444,7 +3444,7 @@ func (f *UploadServiceInferClosestUploadsFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *UploadServiceInferClosestUploadsFunc) PushHook(hook func(context.Context, int, string, string, bool, string) ([]shared1.ProcessedUpload, error)) {
+func (f *UploadServiceInferClosestUploadsFunc) PushHook(hook func(context.Context, int, string, string, bool, string) ([]shared1.CompletedUpload, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3452,20 +3452,20 @@ func (f *UploadServiceInferClosestUploadsFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadServiceInferClosestUploadsFunc) SetDefaultReturn(r0 []shared1.ProcessedUpload, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string, bool, string) ([]shared1.ProcessedUpload, error) {
+func (f *UploadServiceInferClosestUploadsFunc) SetDefaultReturn(r0 []shared1.CompletedUpload, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, bool, string) ([]shared1.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadServiceInferClosestUploadsFunc) PushReturn(r0 []shared1.ProcessedUpload, r1 error) {
-	f.PushHook(func(context.Context, int, string, string, bool, string) ([]shared1.ProcessedUpload, error) {
+func (f *UploadServiceInferClosestUploadsFunc) PushReturn(r0 []shared1.CompletedUpload, r1 error) {
+	f.PushHook(func(context.Context, int, string, string, bool, string) ([]shared1.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
-func (f *UploadServiceInferClosestUploadsFunc) nextHook() func(context.Context, int, string, string, bool, string) ([]shared1.ProcessedUpload, error) {
+func (f *UploadServiceInferClosestUploadsFunc) nextHook() func(context.Context, int, string, string, bool, string) ([]shared1.CompletedUpload, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3519,7 +3519,7 @@ type UploadServiceInferClosestUploadsFuncCall struct {
 	Arg5 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared1.ProcessedUpload
+	Result0 []shared1.CompletedUpload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

@@ -196,16 +196,16 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected value for upload id. want=%d have=%d", 42, mockDBStore.InsertDependencySyncingJobFunc.History()[0].Arg1)
 	}
 
-	if len(mockDBStore.DeleteOverlappingProcessedUploadsFunc.History()) != 1 {
-		t.Errorf("unexpected number of DeleteOverlappingProcessedUploads calls. want=%d have=%d", 1, len(mockDBStore.DeleteOverlappingProcessedUploadsFunc.History()))
-	} else if mockDBStore.DeleteOverlappingProcessedUploadsFunc.History()[0].Arg1 != 50 {
-		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDBStore.DeleteOverlappingProcessedUploadsFunc.History()[0].Arg1)
-	} else if mockDBStore.DeleteOverlappingProcessedUploadsFunc.History()[0].Arg2 != "deadbeef" {
-		t.Errorf("unexpected value for commit. want=%s have=%s", "deadbeef", mockDBStore.DeleteOverlappingProcessedUploadsFunc.History()[0].Arg2)
-	} else if mockDBStore.DeleteOverlappingProcessedUploadsFunc.History()[0].Arg3 != "" {
-		t.Errorf("unexpected value for root. want=%s have=%s", "", mockDBStore.DeleteOverlappingProcessedUploadsFunc.History()[0].Arg3)
-	} else if mockDBStore.DeleteOverlappingProcessedUploadsFunc.History()[0].Arg4 != "lsif-go" {
-		t.Errorf("unexpected value for indexer. want=%s have=%s", "lsif-go", mockDBStore.DeleteOverlappingProcessedUploadsFunc.History()[0].Arg4)
+	if len(mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()) != 1 {
+		t.Errorf("unexpected number of DeleteOverlappingCompletedUploads calls. want=%d have=%d", 1, len(mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()))
+	} else if mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg1 != 50 {
+		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg1)
+	} else if mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg2 != "deadbeef" {
+		t.Errorf("unexpected value for commit. want=%s have=%s", "deadbeef", mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg2)
+	} else if mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg3 != "" {
+		t.Errorf("unexpected value for root. want=%s have=%s", "", mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg3)
+	} else if mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg4 != "lsif-go" {
+		t.Errorf("unexpected value for indexer. want=%s have=%s", "lsif-go", mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg4)
 	}
 
 	if len(mockDBStore.SetRepositoryAsDirtyFunc.History()) != 1 {

@@ -683,7 +683,7 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	}
 }
 
-func TestFindClosestProcessedUploads(t *testing.T) {
+func TestFindClosestCompletedUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
@@ -737,7 +737,7 @@ func TestFindClosestProcessedUploads(t *testing.T) {
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestProcessedUploads(t, store, []FindClosestProcessedUploadsTestCase{
+	testFindClosestCompletedUploads(t, store, []FindClosestCompletedUploadsTestCase{
 		{commit: makeCommit(1), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{1}},
 		{commit: makeCommit(2), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{1}},
 		{commit: makeCommit(3), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{2}},
@@ -749,7 +749,7 @@ func TestFindClosestProcessedUploads(t *testing.T) {
 	})
 }
 
-func TestFindClosestProcessedUploadsAlternateCommitGraph(t *testing.T) {
+func TestFindClosestCompletedUploadsAlternateCommitGraph(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
@@ -798,7 +798,7 @@ func TestFindClosestProcessedUploadsAlternateCommitGraph(t *testing.T) {
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestProcessedUploads(t, store, []FindClosestProcessedUploadsTestCase{
+	testFindClosestCompletedUploads(t, store, []FindClosestCompletedUploadsTestCase{
 		{commit: makeCommit(2), graph: graph, allOfIDs: []int{1}},
 		{commit: makeCommit(3), graph: graph, allOfIDs: []int{1}},
 		{commit: makeCommit(4), graph: graph},
@@ -809,7 +809,7 @@ func TestFindClosestProcessedUploadsAlternateCommitGraph(t *testing.T) {
 	})
 }
 
-func TestFindClosestProcessedUploadsAlternateCommitGraphWithOverwrittenVisibleUploads(t *testing.T) {
+func TestFindClosestCompletedUploadsAlternateCommitGraphWithOverwrittenVisibleUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
@@ -854,7 +854,7 @@ func TestFindClosestProcessedUploadsAlternateCommitGraphWithOverwrittenVisibleUp
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestProcessedUploads(t, store, []FindClosestProcessedUploadsTestCase{
+	testFindClosestCompletedUploads(t, store, []FindClosestCompletedUploadsTestCase{
 		{commit: makeCommit(2), graph: graph, allOfIDs: []int{1}},
 		{commit: makeCommit(3), graph: graph, allOfIDs: []int{1}},
 		{commit: makeCommit(4), graph: graph, allOfIDs: []int{1}},
@@ -862,7 +862,7 @@ func TestFindClosestProcessedUploadsAlternateCommitGraphWithOverwrittenVisibleUp
 	})
 }
 
-func TestFindClosestProcessedUploadsDistinctRoots(t *testing.T) {
+func TestFindClosestCompletedUploadsDistinctRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
@@ -903,7 +903,7 @@ func TestFindClosestProcessedUploadsDistinctRoots(t *testing.T) {
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestProcessedUploads(t, store, []FindClosestProcessedUploadsTestCase{
+	testFindClosestCompletedUploads(t, store, []FindClosestCompletedUploadsTestCase{
 		{commit: makeCommit(1), file: "blah", rootMustEnclosePath: true, graph: graph},
 		{commit: makeCommit(2), file: "root1/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{1}},
 		{commit: makeCommit(1), file: "root2/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{2}},
@@ -912,7 +912,7 @@ func TestFindClosestProcessedUploadsDistinctRoots(t *testing.T) {
 	})
 }
 
-func TestFindClosestProcessedUploadsOverlappingRoots(t *testing.T) {
+func TestFindClosestCompletedUploadsOverlappingRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
@@ -983,7 +983,7 @@ func TestFindClosestProcessedUploadsOverlappingRoots(t *testing.T) {
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestProcessedUploads(t, store, []FindClosestProcessedUploadsTestCase{
+	testFindClosestCompletedUploads(t, store, []FindClosestCompletedUploadsTestCase{
 		{commit: makeCommit(4), file: "root1/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{7, 3}},
 		{commit: makeCommit(5), file: "root2/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{8, 7}},
 		{commit: makeCommit(3), file: "root3/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{5, 1}},
@@ -992,7 +992,7 @@ func TestFindClosestProcessedUploadsOverlappingRoots(t *testing.T) {
 	})
 }
 
-func TestFindClosestProcessedUploadsIndexerName(t *testing.T) {
+func TestFindClosestCompletedUploadsIndexerName(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
@@ -1069,7 +1069,7 @@ func TestFindClosestProcessedUploadsIndexerName(t *testing.T) {
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestProcessedUploads(t, store, []FindClosestProcessedUploadsTestCase{
+	testFindClosestCompletedUploads(t, store, []FindClosestCompletedUploadsTestCase{
 		{commit: makeCommit(5), file: "root1/file.ts", indexer: "idx1", graph: graph, allOfIDs: []int{1}},
 		{commit: makeCommit(5), file: "root2/file.ts", indexer: "idx1", graph: graph, allOfIDs: []int{2}},
 		{commit: makeCommit(5), file: "root3/file.ts", indexer: "idx1", graph: graph, allOfIDs: []int{3}},
@@ -1081,7 +1081,7 @@ func TestFindClosestProcessedUploadsIndexerName(t *testing.T) {
 	})
 }
 
-func TestFindClosestProcessedUploadsIntersectingPath(t *testing.T) {
+func TestFindClosestCompletedUploadsIntersectingPath(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
@@ -1118,14 +1118,14 @@ func TestFindClosestProcessedUploadsIntersectingPath(t *testing.T) {
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestProcessedUploads(t, store, []FindClosestProcessedUploadsTestCase{
+	testFindClosestCompletedUploads(t, store, []FindClosestCompletedUploadsTestCase{
 		{commit: makeCommit(1), file: "", rootMustEnclosePath: false, graph: graph, allOfIDs: []int{1}},
 		{commit: makeCommit(1), file: "web/", rootMustEnclosePath: false, graph: graph, allOfIDs: []int{1}},
 		{commit: makeCommit(1), file: "web/src/file.ts", rootMustEnclosePath: false, graph: graph, allOfIDs: []int{1}},
 	})
 }
 
-func TestFindClosestProcessedUploadsFromGraphFragment(t *testing.T) {
+func TestFindClosestCompletedUploadsFromGraphFragment(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
@@ -1182,7 +1182,7 @@ func TestFindClosestProcessedUploadsFromGraphFragment(t *testing.T) {
 		strings.Join([]string{makeCommit(3)}, " "),
 	})
 
-	testFindClosestProcessedUploads(t, store, []FindClosestProcessedUploadsTestCase{
+	testFindClosestCompletedUploads(t, store, []FindClosestCompletedUploadsTestCase{
 		// Note: Can't query anything outside of the graph fragment
 		{commit: makeCommit(3), file: "file.ts", rootMustEnclosePath: true, graph: graphFragment, anyOfIDs: []int{1}},
 		{commit: makeCommit(6), file: "file.ts", rootMustEnclosePath: true, graph: graphFragment, anyOfIDs: []int{2}},
@@ -1272,7 +1272,7 @@ func TestCommitGraphMetadata(t *testing.T) {
 //
 //
 
-type FindClosestProcessedUploadsTestCase struct {
+type FindClosestCompletedUploadsTestCase struct {
 	commit              string
 	file                string
 	rootMustEnclosePath bool
@@ -1283,7 +1283,7 @@ type FindClosestProcessedUploadsTestCase struct {
 	allOfIDs            []int
 }
 
-func testFindClosestProcessedUploads(t *testing.T, store Store, testCases []FindClosestProcessedUploadsTestCase) {
+func testFindClosestCompletedUploads(t *testing.T, store Store, testCases []FindClosestCompletedUploadsTestCase) {
 	for _, testCase := range testCases {
 		name := fmt.Sprintf(
 			"commit=%s file=%s rootMustEnclosePath=%v indexer=%s",
@@ -1293,7 +1293,7 @@ func testFindClosestProcessedUploads(t *testing.T, store Store, testCases []Find
 			testCase.indexer,
 		)
 
-		assertUploadIDs := func(t *testing.T, uploads []shared.ProcessedUpload) {
+		assertUploadIDs := func(t *testing.T, uploads []shared.CompletedUpload) {
 			if len(testCase.anyOfIDs) > 0 {
 				testAnyOf(t, uploads, testCase.anyOfIDs)
 				return
@@ -1312,7 +1312,7 @@ func testFindClosestProcessedUploads(t *testing.T, store Store, testCases []Find
 
 		if !testCase.graphFragmentOnly {
 			t.Run(name, func(t *testing.T) {
-				uploads, err := store.FindClosestProcessedUploads(context.Background(), 50, testCase.commit, testCase.file, testCase.rootMustEnclosePath, testCase.indexer)
+				uploads, err := store.FindClosestCompletedUploads(context.Background(), 50, testCase.commit, testCase.file, testCase.rootMustEnclosePath, testCase.indexer)
 				if err != nil {
 					t.Fatalf("unexpected error finding closest uploads: %s", err)
 				}
@@ -1323,7 +1323,7 @@ func testFindClosestProcessedUploads(t *testing.T, store Store, testCases []Find
 
 		if testCase.graph != nil {
 			t.Run(name+" [graph-fragment]", func(t *testing.T) {
-				uploads, err := store.FindClosestProcessedUploadsFromGraphFragment(context.Background(), 50, testCase.commit, testCase.file, testCase.rootMustEnclosePath, testCase.indexer, testCase.graph)
+				uploads, err := store.FindClosestCompletedUploadsFromGraphFragment(context.Background(), 50, testCase.commit, testCase.file, testCase.rootMustEnclosePath, testCase.indexer, testCase.graph)
 				if err != nil {
 					t.Fatalf("unexpected error finding closest uploads: %s", err)
 				}
@@ -1334,7 +1334,7 @@ func testFindClosestProcessedUploads(t *testing.T, store Store, testCases []Find
 	}
 }
 
-func testAnyOf(t *testing.T, uploads []shared.ProcessedUpload, expectedIDs []int) {
+func testAnyOf(t *testing.T, uploads []shared.CompletedUpload, expectedIDs []int) {
 	if len(uploads) != 1 {
 		t.Errorf("unexpected nearest upload length. want=%d have=%d", 1, len(uploads))
 		return
@@ -1355,7 +1355,7 @@ func testPresence(needle int, haystack []int) bool {
 	return false
 }
 
-func testAllOf(t *testing.T, uploads []shared.ProcessedUpload, expectedIDs []int) {
+func testAllOf(t *testing.T, uploads []shared.CompletedUpload, expectedIDs []int) {
 	if len(uploads) != len(expectedIDs) {
 		t.Errorf("unexpected nearest upload length. want=%d have=%d", 1, len(uploads))
 	}

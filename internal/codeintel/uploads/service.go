@@ -104,7 +104,7 @@ const numAncestors = 100
 // the graph. This will not always produce the full set of visible commits - some responses may not contain
 // all results while a subsequent request made after the lsif_nearest_uploads has been updated to include
 // this commit will.
-func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []shared.ProcessedUpload, err error) {
+func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []shared.CompletedUpload, err error) {
 	ctx, _, endObservation := s.operations.inferClosestUploads.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", repositoryID),
 		attribute.String("commit", commit),
@@ -123,8 +123,8 @@ func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, com
 	// that can answer queries for a directory (e.g. diagnostics), we want any dump that happens
 	// to intersect the target directory. If we're looking for dumps that can answer queries for
 	// a single file, then we need a dump with a root that properly encloses that file.
-	if uploads, err := s.store.FindClosestProcessedUploads(ctx, repositoryID, commit, path, exactPath, indexer); err != nil {
-		return nil, errors.Wrap(err, "store.FindClosestProcessedUploads")
+	if uploads, err := s.store.FindClosestCompletedUploads(ctx, repositoryID, commit, path, exactPath, indexer); err != nil {
+		return nil, errors.Wrap(err, "store.FindClosestCompletedUploads")
 	} else if len(uploads) != 0 {
 		return uploads, nil
 	}
@@ -156,9 +156,9 @@ func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, com
 		return nil, errors.Wrap(err, "gitserverClient.CommitGraph")
 	}
 
-	uploads, err := s.store.FindClosestProcessedUploadsFromGraphFragment(ctx, repositoryID, commit, path, exactPath, indexer, graph)
+	uploads, err := s.store.FindClosestCompletedUploadsFromGraphFragment(ctx, repositoryID, commit, path, exactPath, indexer, graph)
 	if err != nil {
-		return nil, errors.Wrap(err, "dbstore.FindClosestProcessedUploadsFromGraphFragment")
+		return nil, errors.Wrap(err, "dbstore.FindClosestCompletedUploadsFromGraphFragment")
 	}
 
 	if err := s.store.SetRepositoryAsDirty(ctx, repositoryID); err != nil {
@@ -168,12 +168,12 @@ func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, com
 	return uploads, nil
 }
 
-func (s *Service) GetProcessedUploadsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) ([]shared.ProcessedUpload, error) {
-	return s.store.GetProcessedUploadsWithDefinitionsForMonikers(ctx, monikers)
+func (s *Service) GetCompletedUploadsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error) {
+	return s.store.GetCompletedUploadsWithDefinitionsForMonikers(ctx, monikers)
 }
 
-func (s *Service) GetProcessedUploadsByIDs(ctx context.Context, ids []int) ([]shared.ProcessedUpload, error) {
-	return s.store.GetProcessedUploadsByIDs(ctx, ids)
+func (s *Service) GetCompletedUploadsByIDs(ctx context.Context, ids []int) ([]shared.CompletedUpload, error) {
+	return s.store.GetCompletedUploadsByIDs(ctx, ids)
 }
 
 func (s *Service) ReferencesForUpload(ctx context.Context, uploadID int) (shared.PackageReferenceScanner, error) {

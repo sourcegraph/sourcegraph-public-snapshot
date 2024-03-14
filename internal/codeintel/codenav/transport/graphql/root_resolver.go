@@ -80,7 +80,7 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	uploads, err := r.svc.GetClosestProcessedUploadsForBlob(ctx, int(args.Repo.ID), string(args.Commit), args.Path, args.ExactPath, args.ToolName)
+	uploads, err := r.svc.GetClosestCompletedUploadsForBlob(ctx, int(args.Repo.ID), string(args.Commit), args.Path, args.ExactPath, args.ToolName)
 	if err != nil || len(uploads) == 0 {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func (r *gitBlobLSIFDataResolver) VisibleIndexes(ctx context.Context) (_ *[]reso
 	return &resolvers, nil
 }
 
-func dumpToUpload(expected uploadsshared.ProcessedUpload) *uploadsshared.Upload {
+func dumpToUpload(expected uploadsshared.CompletedUpload) *uploadsshared.Upload {
 	return &uploadsshared.Upload{
 		ID:                expected.ID,
 		Commit:            expected.Commit,

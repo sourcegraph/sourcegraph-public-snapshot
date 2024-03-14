@@ -32,7 +32,7 @@ type CodeIntelligenceRange struct {
 // UploadLocation is a path and range pair from within a particular upload. The target commit
 // denotes the target commit for which the location was set (the originally requested commit).
 type UploadLocation struct {
-	Dump         shared.ProcessedUpload
+	Dump         shared.CompletedUpload
 	Path         string
 	TargetCommit string
 	TargetRange  Range

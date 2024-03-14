@@ -55,12 +55,12 @@ func (u Upload) SizeStats() UploadSizeStats {
 	return UploadSizeStats{u.ID, u.UploadSize, u.UncompressedSize}
 }
 
-// ProcessedUpload is a subset of the lsif_uploads table
+// CompletedUpload is a subset of the lsif_uploads table
 // (queried via the lsif_dumps_with_repository_name view)
 // and stores only processed records.
 //
 // The State must be 'completed', see TODO(id: completed-state-check).
-type ProcessedUpload struct {
+type CompletedUpload struct {
 	ID                int        `json:"id"`
 	Commit            string     `json:"commit"`
 	Root              string     `json:"root"`

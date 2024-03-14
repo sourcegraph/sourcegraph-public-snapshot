@@ -341,13 +341,13 @@ func TestGetUploadByIDDeleted(t *testing.T) {
 	}
 }
 
-func TestGetProcessedUploadsByIDs(t *testing.T) {
+func TestGetCompletedUploadsByIDs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// Dumps do not exist initially
-	if uploads, err := store.GetProcessedUploadsByIDs(context.Background(), []int{1, 2}); err != nil {
+	if uploads, err := store.GetCompletedUploadsByIDs(context.Background(), []int{1, 2}); err != nil {
 		t.Fatalf("unexpected error getting dump: %s", err)
 	} else if len(uploads) > 0 {
 		t.Fatal("unexpected record")
@@ -357,7 +357,7 @@ func TestGetProcessedUploadsByIDs(t *testing.T) {
 	startedAt := uploadedAt.Add(time.Minute)
 	finishedAt := uploadedAt.Add(time.Minute * 2)
 	expectedAssociatedIndexID := 42
-	expected1 := shared.ProcessedUpload{
+	expected1 := shared.CompletedUpload{
 		ID:                1,
 		Commit:            makeCommit(1),
 		Root:              "sub/",
@@ -373,7 +373,7 @@ func TestGetProcessedUploadsByIDs(t *testing.T) {
 		IndexerVersion:    "latest",
 		AssociatedIndexID: &expectedAssociatedIndexID,
 	}
-	expected2 := shared.ProcessedUpload{
+	expected2 := shared.CompletedUpload{
 		ID:                2,
 		Commit:            makeCommit(2),
 		Root:              "other/",
@@ -393,7 +393,7 @@ func TestGetProcessedUploadsByIDs(t *testing.T) {
 	insertUploads(t, db, dumpToUpload(expected1), dumpToUpload(expected2))
 	insertVisibleAtTip(t, db, 50, 1)
 
-	if uploads, err := store.GetProcessedUploadsByIDs(context.Background(), []int{1}); err != nil {
+	if uploads, err := store.GetCompletedUploadsByIDs(context.Background(), []int{1}); err != nil {
 		t.Fatalf("unexpected error getting dump: %s", err)
 	} else if len(uploads) != 1 {
 		t.Fatal("expected one record")
@@ -401,7 +401,7 @@ func TestGetProcessedUploadsByIDs(t *testing.T) {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 
-	if uploads, err := store.GetProcessedUploadsByIDs(context.Background(), []int{1, 2}); err != nil {
+	if uploads, err := store.GetCompletedUploadsByIDs(context.Background(), []int{1, 2}); err != nil {
 		t.Fatalf("unexpected error getting dump: %s", err)
 	} else if len(uploads) != 2 {
 		t.Fatal("expected two records")
@@ -613,7 +613,7 @@ func TestDefinitionDumps(t *testing.T) {
 	}
 
 	// Package does not exist initially
-	if uploads, err := store.GetProcessedUploadsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1}); err != nil {
+	if uploads, err := store.GetCompletedUploadsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1}); err != nil {
 		t.Fatalf("unexpected error getting package: %s", err)
 	} else if len(uploads) != 0 {
 		t.Fatal("unexpected record")
@@ -622,7 +622,7 @@ func TestDefinitionDumps(t *testing.T) {
 	uploadedAt := time.Unix(1587396557, 0).UTC()
 	startedAt := uploadedAt.Add(time.Minute)
 	finishedAt := uploadedAt.Add(time.Minute * 2)
-	expected1 := shared.ProcessedUpload{
+	expected1 := shared.CompletedUpload{
 		ID:             1,
 		Commit:         makeCommit(1),
 		Root:           "sub/",
@@ -637,7 +637,7 @@ func TestDefinitionDumps(t *testing.T) {
 		Indexer:        "lsif-go",
 		IndexerVersion: "latest",
 	}
-	expected2 := shared.ProcessedUpload{
+	expected2 := shared.CompletedUpload{
 		ID:                2,
 		Commit:            makeCommit(2),
 		Root:              "other/",
@@ -653,7 +653,7 @@ func TestDefinitionDumps(t *testing.T) {
 		IndexerVersion:    "1.2.3",
 		AssociatedIndexID: nil,
 	}
-	expected3 := shared.ProcessedUpload{
+	expected3 := shared.CompletedUpload{
 		ID:             3,
 		Commit:         makeCommit(3),
 		Root:           "sub/",
@@ -691,7 +691,7 @@ func TestDefinitionDumps(t *testing.T) {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}
 
-	if uploads, err := store.GetProcessedUploadsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1}); err != nil {
+	if uploads, err := store.GetCompletedUploadsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1}); err != nil {
 		t.Fatalf("unexpected error getting package: %s", err)
 	} else if len(uploads) != 1 {
 		t.Fatal("expected one record")
@@ -699,7 +699,7 @@ func TestDefinitionDumps(t *testing.T) {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 
-	if uploads, err := store.GetProcessedUploadsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1, moniker2}); err != nil {
+	if uploads, err := store.GetCompletedUploadsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1, moniker2}); err != nil {
 		t.Fatalf("unexpected error getting package: %s", err)
 	} else if len(uploads) != 2 {
 		t.Fatal("expected two records")
@@ -718,7 +718,7 @@ func TestDefinitionDumps(t *testing.T) {
 		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
 		defer globals.SetPermissionsUserMapping(before)
 
-		if uploads, err := store.GetProcessedUploadsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1, moniker2}); err != nil {
+		if uploads, err := store.GetCompletedUploadsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1, moniker2}); err != nil {
 			t.Fatalf("unexpected error getting package: %s", err)
 		} else if len(uploads) != 0 {
 			t.Errorf("unexpected count. want=%d have=%d", 0, len(uploads))
@@ -1023,7 +1023,7 @@ func TestReindexUploadByID(t *testing.T) {
 //
 //
 
-func dumpToUpload(expected shared.ProcessedUpload) shared.Upload {
+func dumpToUpload(expected shared.CompletedUpload) shared.Upload {
 	return shared.Upload{
 		ID:                expected.ID,
 		Commit:            expected.Commit,

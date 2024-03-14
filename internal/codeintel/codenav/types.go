@@ -11,7 +11,7 @@ import (
 // visibleUpload pairs an upload visible from the current target commit with the
 // current target path and position matched to the data within the underlying index.
 type visibleUpload struct {
-	Upload                uploadsshared.ProcessedUpload
+	Upload                uploadsshared.CompletedUpload
 	TargetPath            string
 	TargetPosition        shared.Position
 	TargetPathWithoutRoot string
@@ -65,7 +65,7 @@ type PositionalRequestArgs struct {
 // the target commit for which the location was adjusted (the originally requested commit).
 type DiagnosticAtUpload struct {
 	shared.Diagnostic
-	Upload         uploadsshared.ProcessedUpload
+	Upload         uploadsshared.CompletedUpload
 	AdjustedCommit string
 	AdjustedRange  shared.Range
 }

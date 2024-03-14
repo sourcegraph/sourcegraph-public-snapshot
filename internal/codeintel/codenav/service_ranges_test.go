@@ -57,7 +57,7 @@ func TestRanges(t *testing.T) {
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-	uploads := []uploadsshared.ProcessedUpload{
+	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef1", Root: "sub1/", RepositoryID: 42},
 		{ID: 51, Commit: "deadbeef1", Root: "sub2/", RepositoryID: 42},
 		{ID: 52, Commit: "deadbeef2", Root: "sub3/", RepositoryID: 42},

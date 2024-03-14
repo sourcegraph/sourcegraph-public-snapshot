@@ -31,7 +31,7 @@ func TestHover(t *testing.T) {
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
-	uploads := []uploadsshared.ProcessedUpload{
+	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -87,7 +87,7 @@ func TestHoverRemote(t *testing.T) {
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
-	uploads := []uploadsshared.ProcessedUpload{
+	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef"},
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
@@ -104,13 +104,13 @@ func TestHoverRemote(t *testing.T) {
 	}
 	mockLsifStore.GetHoverFunc.PushReturn("doctext", remoteRange, true, nil)
 
-	uploadsWithDefinitions := []uploadsshared.ProcessedUpload{
+	uploadsWithDefinitions := []uploadsshared.CompletedUpload{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
 		{ID: 153, Commit: "deadbeef4", Root: "sub4/"},
 	}
-	mockUploadSvc.GetProcessedUploadsWithDefinitionsForMonikersFunc.PushReturn(uploadsWithDefinitions, nil)
+	mockUploadSvc.GetCompletedUploadsWithDefinitionsForMonikersFunc.PushReturn(uploadsWithDefinitions, nil)
 
 	monikers := []precise.MonikerData{
 		{Kind: "import", Scheme: "tsc", Identifier: "padLeft", PackageInformationID: "51"},
