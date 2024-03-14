@@ -1361,8 +1361,8 @@ func testAllOf(t *testing.T, uploads []shared.CompletedUpload, expectedIDs []int
 	}
 
 	var uploadIDs []int
-	for _, dump := range uploads {
-		uploadIDs = append(uploadIDs, dump.ID)
+	for _, upload := range uploads {
+		uploadIDs = append(uploadIDs, upload.ID)
 	}
 
 	for _, expectedID := range expectedIDs {

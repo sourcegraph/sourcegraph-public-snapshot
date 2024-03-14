@@ -65,11 +65,11 @@ func TestGetDefinitions(t *testing.T) {
 			t.Fatalf("unexpected error querying definitions: %s", err)
 		}
 		expectedLocations := []shared.UploadLocation{
-			{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: mockCommit, TargetRange: testRange1},
-			{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: mockCommit, TargetRange: testRange2},
-			{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: mockCommit, TargetRange: testRange3},
-			{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: mockCommit, TargetRange: testRange4},
-			{Dump: uploads[1], Path: "sub2/c.go", TargetCommit: mockCommit, TargetRange: testRange5},
+			{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: mockCommit, TargetRange: testRange1},
+			{Upload: uploads[1], Path: "sub2/b.go", TargetCommit: mockCommit, TargetRange: testRange2},
+			{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: mockCommit, TargetRange: testRange3},
+			{Upload: uploads[1], Path: "sub2/b.go", TargetCommit: mockCommit, TargetRange: testRange4},
+			{Upload: uploads[1], Path: "sub2/c.go", TargetCommit: mockCommit, TargetRange: testRange5},
 		}
 
 		if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
@@ -151,11 +151,11 @@ func TestGetDefinitions(t *testing.T) {
 		}
 
 		xLocations := []shared.UploadLocation{
-			{Dump: remoteUploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef2", TargetRange: testRange1},
-			{Dump: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange2},
-			{Dump: remoteUploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef2", TargetRange: testRange3},
-			{Dump: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange4},
-			{Dump: remoteUploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef2", TargetRange: testRange5},
+			{Upload: remoteUploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef2", TargetRange: testRange1},
+			{Upload: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange2},
+			{Upload: remoteUploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef2", TargetRange: testRange3},
+			{Upload: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange4},
+			{Upload: remoteUploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef2", TargetRange: testRange5},
 		}
 
 		if diff := cmp.Diff(xLocations, adjustedLocations); diff != "" {
@@ -253,11 +253,11 @@ func TestGetReferences(t *testing.T) {
 		}
 
 		expectedLocations := []shared.UploadLocation{
-			{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
-			{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
-			{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
-			{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
-			{Dump: uploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
+			{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
+			{Upload: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
+			{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
+			{Upload: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
+			{Upload: uploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
 		}
 		if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 			t.Errorf("unexpected locations (-want +got):\n%s", diff)
@@ -383,16 +383,16 @@ func TestGetReferences(t *testing.T) {
 		}
 
 		expectedLocations := []shared.UploadLocation{
-			{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
-			{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
-			{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
-			{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
-			{Dump: uploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
-			{Dump: uploads[3], Path: "sub4/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
-			{Dump: uploads[3], Path: "sub4/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
-			{Dump: uploads[3], Path: "sub4/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
-			{Dump: uploads[3], Path: "sub4/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
-			{Dump: uploads[3], Path: "sub4/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
+			{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
+			{Upload: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
+			{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
+			{Upload: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
+			{Upload: uploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
+			{Upload: uploads[3], Path: "sub4/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
+			{Upload: uploads[3], Path: "sub4/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
+			{Upload: uploads[3], Path: "sub4/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
+			{Upload: uploads[3], Path: "sub4/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
+			{Upload: uploads[3], Path: "sub4/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
 		}
 		if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 			t.Errorf("unexpected locations (-want +got):\n%s", diff)
@@ -497,11 +497,11 @@ func TestGetImplementations(t *testing.T) {
 		}
 
 		expectedLocations := []shared.UploadLocation{
-			{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
-			{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
-			{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
-			{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
-			{Dump: uploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
+			{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
+			{Upload: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
+			{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
+			{Upload: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
+			{Upload: uploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
 		}
 		if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 			t.Errorf("unexpected locations (-want +got):\n%s", diff)

@@ -103,14 +103,14 @@ func TestRanges(t *testing.T) {
 		t.Fatalf("unexpected error querying ranges: %s", err)
 	}
 
-	adjustedLocation1 := shared.UploadLocation{Dump: uploads[0], Path: "sub1/a.go", TargetCommit: "deadbeef", TargetRange: testRange1}
-	adjustedLocation2 := shared.UploadLocation{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2}
-	adjustedLocation3 := shared.UploadLocation{Dump: uploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange1}
-	adjustedLocation4 := shared.UploadLocation{Dump: uploads[1], Path: "sub2/d.go", TargetCommit: "deadbeef", TargetRange: testRange2}
-	adjustedLocation5 := shared.UploadLocation{Dump: uploads[1], Path: "sub2/e.go", TargetCommit: "deadbeef", TargetRange: testRange1}
-	adjustedLocation6 := shared.UploadLocation{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange2}
-	adjustedLocation7 := shared.UploadLocation{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3}
-	adjustedLocation8 := shared.UploadLocation{Dump: uploads[2], Path: "sub3/a.go", TargetCommit: "deadbeef", TargetRange: testRange4}
+	adjustedLocation1 := shared.UploadLocation{Upload: uploads[0], Path: "sub1/a.go", TargetCommit: "deadbeef", TargetRange: testRange1}
+	adjustedLocation2 := shared.UploadLocation{Upload: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2}
+	adjustedLocation3 := shared.UploadLocation{Upload: uploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange1}
+	adjustedLocation4 := shared.UploadLocation{Upload: uploads[1], Path: "sub2/d.go", TargetCommit: "deadbeef", TargetRange: testRange2}
+	adjustedLocation5 := shared.UploadLocation{Upload: uploads[1], Path: "sub2/e.go", TargetCommit: "deadbeef", TargetRange: testRange1}
+	adjustedLocation6 := shared.UploadLocation{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange2}
+	adjustedLocation7 := shared.UploadLocation{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3}
+	adjustedLocation8 := shared.UploadLocation{Upload: uploads[2], Path: "sub3/a.go", TargetCommit: "deadbeef", TargetRange: testRange4}
 
 	expectedRanges := []AdjustedCodeIntelligenceRange{
 		{Range: testRange1, HoverText: "text1", Definitions: []shared.UploadLocation{}, References: []shared.UploadLocation{adjustedLocation1}, Implementations: []shared.UploadLocation{}},

@@ -272,7 +272,7 @@ func (s *Service) getUploadLocations(ctx context.Context, args RequestArgs, requ
 		if !checkerEnabled {
 			uploadLocations = append(uploadLocations, adjustedLocation)
 		} else {
-			repo := api.RepoName(adjustedLocation.Dump.RepositoryName)
+			repo := api.RepoName(adjustedLocation.Upload.RepositoryName)
 			if include, err := authz.FilterActorPath(ctx, requestState.authChecker, a, repo, adjustedLocation.Path); err != nil {
 				return nil, err
 			} else if include {
@@ -287,15 +287,15 @@ func (s *Service) getUploadLocations(ctx context.Context, args RequestArgs, requ
 // getUploadLocation translates a location (relative to the indexed commit) into an equivalent location in
 // the requested commit. If the translation fails, then the original commit and range are used as the
 // commit and range of the adjusted location and a false flag is returned.
-func (s *Service) getUploadLocation(ctx context.Context, args RequestArgs, requestState RequestState, dump uploadsshared.CompletedUpload, location shared.Location) (shared.UploadLocation, bool, error) {
-	adjustedCommit, adjustedRange, ok, err := s.getSourceRange(ctx, args, requestState, dump.RepositoryID, dump.Commit, dump.Root+location.Path, location.Range)
+func (s *Service) getUploadLocation(ctx context.Context, args RequestArgs, requestState RequestState, upload uploadsshared.CompletedUpload, location shared.Location) (shared.UploadLocation, bool, error) {
+	adjustedCommit, adjustedRange, ok, err := s.getSourceRange(ctx, args, requestState, upload.RepositoryID, upload.Commit, upload.Root+location.Path, location.Range)
 	if err != nil {
 		return shared.UploadLocation{}, ok, err
 	}
 
 	return shared.UploadLocation{
-		Dump:         dump,
-		Path:         dump.Root + location.Path,
+		Upload:       upload,
+		Path:         upload.Root + location.Path,
 		TargetCommit: adjustedCommit,
 		TargetRange:  adjustedRange,
 	}, ok, nil
