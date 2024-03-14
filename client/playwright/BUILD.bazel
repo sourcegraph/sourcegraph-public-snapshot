@@ -1,0 +1,36 @@
+load("@npm//:@playwright/test/package_json.bzl", playwright_test_bin = "bin")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@npm//client/web:playwright/package_json.bzl", playwright_bin = "bin")
+
+npm_link_all_packages(name = "node_modules")
+
+playwright_bin.playwright_test(
+    name = "playwright_install",
+    args = [
+        "install",
+    ],
+    env = {
+        "PLAYWRIGHT_BROWSERS_PATH": "0",
+    },
+    local = True,
+    tags = [
+        "no-sandbox",
+        "requires-network",
+    ],
+)
+
+playwright_test_bin.playwright_test(
+    name = "playwright_test",
+    args = ["test"],
+    data = glob(["src/playwright/*.spec.ts"]) + [
+        "playwright.config.ts",
+        # "//:node_modules/@playwright/browser-chromium",
+        "//:node_modules/@playwright/test",
+        # "//:node_modules/playwright-core",
+    ],
+    env = {
+        "PLAYWRIGHT_BROWSERS_PATH": "0",
+    },
+    local = True,
+    tags = ["requires-network"],
+)

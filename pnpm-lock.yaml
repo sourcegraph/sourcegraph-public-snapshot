@@ -1273,6 +1273,31 @@ importers:
         specifier: workspace:*
         version: link:../build-config
 
+  client/playwright:
+    dependencies:
+      '@sourcegraph/web':
+        specifier: workspace:*
+        version: link:../web
+    devDependencies:
+      '@playwright/browser-chromium':
+        specifier: ^1.42.1
+        version: 1.42.1
+      '@playwright/browser-firefox':
+        specifier: ^1.42.1
+        version: 1.42.1
+      '@playwright/browser-webkit':
+        specifier: ^1.42.1
+        version: 1.42.1
+      '@playwright/test':
+        specifier: 1.42.0
+        version: 1.42.0
+      playwright:
+        specifier: ^1.42.1
+        version: 1.42.1
+      playwright-core:
+        specifier: ^1.42.1
+        version: 1.42.1
+
   client/shared:
     dependencies:
       '@sourcegraph/client-api':
