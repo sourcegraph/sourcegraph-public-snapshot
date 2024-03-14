@@ -240,7 +240,7 @@ func (s *Server) RecordEvent(ctx context.Context, req *telemetrygatewayv1.Record
 	}
 
 	// Set up a publisher with the provided metadata
-	publisher, err := events.NewPublisherForStream(s.eventsTopic, metadata, s.publishOpts)
+	publisher, err := events.NewPublisherForStream(s.logger, s.eventsTopic, metadata, s.publishOpts)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create publisher: %v", err)
 	}
