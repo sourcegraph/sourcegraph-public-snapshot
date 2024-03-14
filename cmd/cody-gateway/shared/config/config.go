@@ -150,6 +150,7 @@ func (c *Config) Load() {
 			"claude-instant-1.2-cyan",
 			"claude-3-opus-20240229",
 			"claude-3-sonnet-20240229",
+			"claude-3-haiku-20240307",
 		}, ","),
 		"Anthropic models that can be used."))
 	if c.Anthropic.AccessToken != "" && len(c.Anthropic.AllowedModels) == 0 {
