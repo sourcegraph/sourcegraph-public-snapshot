@@ -14,12 +14,6 @@ query CommitsPage_CommitsQuery($repoName: String!, $revision: String!, $first: I
         commit(rev: $revision) {
             id
             ancestors(first: $first, afterCursor: $afterCursor) {
-                # This is a bit hacky, but by fetching all the data needed by both
-                # the history panel and the commits page we ensure that our custom
-                # Apollo infinitiy scroll cache handling for this field works
-                # correctly. Eventually we should revisit the use of infinity scroll
-                # on the commits page.
-                ...HistoryPanel_HistoryConnection
                 ...CommitsPage_GitCommitConnection
             }
         }

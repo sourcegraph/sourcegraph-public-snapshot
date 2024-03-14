@@ -158,46 +158,62 @@ fmt.Println("Hello world")
 fmt.Println("Hello world")
 `),
 	}, {
-		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, ExcludePattern: "README.md"},
+		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, ExcludePaths: "README.md"},
 		want: autogold.Expect(`main.go:6:6:
 fmt.Println("Hello world")
 `),
 	}, {
-		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePatterns: []string{`\.md$`}},
+		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludeLangs: []string{"Markdown"}},
 		want: autogold.Expect(`README.md:1:1:
 # Hello World
 README.md:3:3:
 Hello world example in go
 `),
 	}, {
-		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "w"}, IncludePatterns: []string{`\.(md|txt)$`, `\.txt$`}},
+		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: ""}, ExcludeLangs: []string{"Markdown"}},
+		want: autogold.Expect(`abc.txt
+file++.plus
+main.go
+milton.png
+nonutf8.txt
+symlink
+`),
+	}, {
+		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePaths: []string{`\.md$`}},
+		want: autogold.Expect(`README.md:1:1:
+# Hello World
+README.md:3:3:
+Hello world example in go
+`),
+	}, {
+		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "w"}, IncludePaths: []string{`\.(md|txt)$`, `\.txt$`}},
 		want: autogold.Expect("abc.txt:1:1:\nw\n"),
 	}, {
-		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, ExcludePattern: "README\\.md"},
+		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, ExcludePaths: "README\\.md"},
 		want: autogold.Expect(`main.go:6:6:
 fmt.Println("Hello world")
 `),
 	}, {
-		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePatterns: []string{"\\.md"}},
+		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePaths: []string{"\\.md"}},
 		want: autogold.Expect(`README.md:1:1:
 # Hello World
 README.md:3:3:
 Hello world example in go
 `),
 	}, {
-		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "w"}, IncludePatterns: []string{"\\.(md|txt)", "README"}},
+		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "w"}, IncludePaths: []string{"\\.(md|txt)", "README"}},
 		want: autogold.Expect(`README.md:1:1:
 # Hello World
 README.md:3:3:
 Hello world example in go
 `),
 	}, {
-		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePatterns: []string{`\.(MD|go)$`}, PathPatternsAreCaseSensitive: true},
+		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePaths: []string{`\.(MD|go)$`}, PathPatternsAreCaseSensitive: true},
 		want: autogold.Expect(`main.go:6:6:
 fmt.Println("Hello world")
 `),
 	}, {
-		arg:          protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePatterns: []string{`\.(MD|go)$`}, PathPatternsAreCaseSensitive: true},
+		arg:          protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePaths: []string{`\.(MD|go)$`}, PathPatternsAreCaseSensitive: true},
 		contextLines: 1,
 		want: autogold.Expect(`main.go:5:7:
 func main() {
@@ -205,7 +221,7 @@ fmt.Println("Hello world")
 }
 `),
 	}, {
-		arg:          protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePatterns: []string{`\.(MD|go)$`}, PathPatternsAreCaseSensitive: true},
+		arg:          protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePaths: []string{`\.(MD|go)$`}, PathPatternsAreCaseSensitive: true},
 		contextLines: 2,
 		want: autogold.Expect(`main.go:4:7:
 
@@ -214,7 +230,7 @@ fmt.Println("Hello world")
 }
 `),
 	}, {
-		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePatterns: []string{`\.(MD|go)`}, PathPatternsAreCaseSensitive: true},
+		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePaths: []string{`\.(MD|go)`}, PathPatternsAreCaseSensitive: true},
 		want: autogold.Expect(`main.go:6:6:
 fmt.Println("Hello world")
 `),
@@ -222,7 +238,7 @@ fmt.Println("Hello world")
 		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "doesnotmatch"}},
 		want: autogold.Expect(""),
 	}, {
-		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "", IsRegExp: false}, IncludePatterns: []string{"\\.png"}, PatternMatchesPath: true},
+		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "", IsRegExp: false}, IncludePaths: []string{"\\.png"}, PatternMatchesPath: true},
 		want: autogold.Expect("milton.png\n"),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "package main\n\nimport \"fmt\"", IsRegExp: true}, IsCaseSensitive: false, PatternMatchesPath: true, PatternMatchesContent: true},
@@ -302,7 +318,7 @@ milton.png:1:1:
 				Value:    "filename contains regex metachars",
 				IsRegExp: true, // To test for a regression, imply that IsStructuralPat takes precedence.
 			},
-			IncludePatterns: []string{regexp.QuoteMeta("file++.plus")},
+			IncludePaths:    []string{regexp.QuoteMeta("file++.plus")},
 			IsStructuralPat: true,
 		},
 		want: autogold.Expect(`file++.plus:1:1:
@@ -335,7 +351,7 @@ nonutf8.txt
 symlink
 `),
 	}, {
-		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "go", IsNegated: true}, PatternMatchesPath: true, ExcludePattern: "\\.txt"},
+		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "go", IsNegated: true}, PatternMatchesPath: true, ExcludePaths: "\\.txt"},
 		want: autogold.Expect(`README.md
 file++.plus
 milton.png
@@ -513,7 +529,7 @@ func TestSearch_badrequest(t *testing.T) {
 				Query: &protocol.PatternNode{
 					Value: "test",
 				},
-				IncludePatterns: []string{"[c-a]"},
+				IncludePaths: []string{"[c-a]"},
 			},
 		},
 
@@ -526,7 +542,7 @@ func TestSearch_badrequest(t *testing.T) {
 				Query: &protocol.PatternNode{
 					Value: "test",
 				},
-				ExcludePattern: "[c-a]",
+				ExcludePaths: "[c-a]",
 			},
 		},
 
@@ -539,7 +555,7 @@ func TestSearch_badrequest(t *testing.T) {
 				Query: &protocol.PatternNode{
 					Value: "test",
 				},
-				IncludePatterns: []string{"**"},
+				IncludePaths: []string{"**"},
 			},
 		},
 
@@ -552,7 +568,7 @@ func TestSearch_badrequest(t *testing.T) {
 				Query: &protocol.PatternNode{
 					Value: "test",
 				},
-				ExcludePattern: "**",
+				ExcludePaths: "**",
 			},
 		},
 	}

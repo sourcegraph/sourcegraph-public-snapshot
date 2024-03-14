@@ -259,11 +259,11 @@ func TestGetIndexOptions(t *testing.T) {
 	{
 		// Generate case for no more than than 64 branches
 		var branches []string
-		for i := 0; i < 100; i++ {
+		for i := range 100 {
 			branches = append(branches, fmt.Sprintf("%.2d", i))
 		}
 		want := []zoekt.RepositoryBranch{{Name: "HEAD", Version: "!HEAD"}}
-		for i := 0; i < 63; i++ {
+		for i := range 63 {
 			want = append(want, zoekt.RepositoryBranch{
 				Name:    fmt.Sprintf("%.2d", i),
 				Version: fmt.Sprintf("!%.2d", i),

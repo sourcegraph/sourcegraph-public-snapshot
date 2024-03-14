@@ -9,6 +9,7 @@ import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Icon, LoadingSpinner, ErrorMessage, LinkOrSpan } from '@sourcegraph/wildcard'
 
@@ -42,7 +43,7 @@ import { ExecutionWorkspaces } from './workspaces/ExecutionWorkspaces'
 import layoutStyles from '../Layout.module.scss'
 import styles from './ExecuteBatchSpecPage.module.scss'
 
-export interface AuthenticatedExecuteBatchSpecPageProps extends TelemetryProps, NamespaceProps {
+export interface AuthenticatedExecuteBatchSpecPageProps extends TelemetryProps, TelemetryV2Props, NamespaceProps {
     authenticatedUser: AuthenticatedUser
     /** FOR TESTING ONLY */
     testContextState?: Partial<BatchSpecContextState<BatchSpecExecutionFields>>
@@ -107,7 +108,7 @@ export const AuthenticatedExecuteBatchSpecPage: FC<AuthenticatedExecuteBatchSpec
     )
 }
 
-interface ExecuteBatchSpecPageContentProps extends TelemetryProps {
+interface ExecuteBatchSpecPageContentProps extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
     queryWorkspacesList?: typeof _queryWorkspacesList
 }
@@ -128,6 +129,7 @@ type MemoizedExecuteBatchSpecContentProps = ExecuteBatchSpecPageContentProps &
 const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> = React.memo(
     function MemoizedExecuteBatchSpecContent({
         telemetryService,
+        telemetryRecorder,
         authenticatedUser,
         batchChange,
         batchSpec,
@@ -198,7 +200,7 @@ const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> 
                     </div>
 
                     <ActionButtons className="flex-shrink-0">
-                        <ActionsMenu />
+                        <ActionsMenu telemetryRecorder={telemetryRecorder} />
                     </ActionButtons>
                 </div>
 
@@ -224,7 +226,7 @@ const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> 
                         element={
                             <>
                                 <TabBar activeTabKey="spec" tabsConfig={tabsConfig} matchURL={executionURL} />
-                                <ReadOnlyBatchSpecForm />
+                                <ReadOnlyBatchSpecForm telemetryRecorder={telemetryRecorder} />
                             </>
                         }
                     />
@@ -233,7 +235,10 @@ const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> 
                         element={
                             <>
                                 <TabBar activeTabKey="execution" tabsConfig={tabsConfig} matchURL={executionURL} />
-                                <ExecutionWorkspaces queryWorkspacesList={queryWorkspacesList} />
+                                <ExecutionWorkspaces
+                                    queryWorkspacesList={queryWorkspacesList}
+                                    telemetryRecorder={telemetryRecorder}
+                                />
                             </>
                         }
                     />
@@ -242,7 +247,10 @@ const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> 
                         element={
                             <>
                                 <TabBar activeTabKey="execution" tabsConfig={tabsConfig} matchURL={executionURL} />
-                                <ExecutionWorkspaces queryWorkspacesList={queryWorkspacesList} />
+                                <ExecutionWorkspaces
+                                    queryWorkspacesList={queryWorkspacesList}
+                                    telemetryRecorder={telemetryRecorder}
+                                />
                             </>
                         }
                     />
@@ -261,6 +269,7 @@ const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> 
                                     <NewBatchChangePreviewPage
                                         authenticatedUser={authenticatedUser}
                                         telemetryService={telemetryService}
+                                        telemetryRecorder={telemetryRecorder}
                                     />
                                 </>
                             ) : (

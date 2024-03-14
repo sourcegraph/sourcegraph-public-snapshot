@@ -54,7 +54,11 @@ func (s *gitRepoSyncer) IsCloneable(ctx context.Context, repoName api.RepoName, 
 
 	r := urlredactor.New(remoteURL)
 	cmd := exec.CommandContext(ctx, "git", args...)
-	out, err := executil.RunRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.Redact), true)
+
+	// Configure the command to be able to talk to a remote.
+	executil.ConfigureRemoteGitCommand(cmd, remoteURL)
+
+	out, err := s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.Redact).CombinedOutput()
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -93,7 +97,7 @@ func (s *gitRepoSyncer) Clone(ctx context.Context, repo api.RepoName, remoteURL 
 	}
 	// see issue #7322: skip LFS content in repositories with Git LFS configured.
 	cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
-	executil.ConfigureRemoteGitCommand(cmd)
+	executil.ConfigureRemoteGitCommand(cmd, remoteURL)
 
 	tryWrite(s.logger, progressWriter, "Fetching remote contents\n")
 	redactor := urlredactor.New(remoteURL)
@@ -114,7 +118,13 @@ func (s *gitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, repoName 
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
 	r := urlredactor.New(remoteURL)
-	output, err := executil.RunRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.Redact), configRemoteOpts)
+
+	if configRemoteOpts {
+		// Configure the command to be able to talk to a remote.
+		executil.ConfigureRemoteGitCommand(cmd, remoteURL)
+	}
+
+	output, err := s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.Redact).CombinedOutput()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch from remote: "+string(output))
 	}

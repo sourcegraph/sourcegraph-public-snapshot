@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -48,7 +48,7 @@ func P4GroupMembers(ctx context.Context, args P4GroupMembersArguments) ([]string
 	defer os.Remove(scratchDir)
 
 	cmd := NewBaseCommand(ctx, args.P4Home, scratchDir, options...)
-	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = errors.Wrap(ctxerr, "p4 group context error")

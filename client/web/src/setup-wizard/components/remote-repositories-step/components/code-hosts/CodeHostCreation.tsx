@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, type FormChangeEvent, H4, Link, useLocalStorage } from '@sourcegraph/wildcard'
 
@@ -20,14 +21,36 @@ import { getRepositoriesSettings } from './github/helpers'
 
 import styles from './CodeHostCreation.module.scss'
 
-interface CodeHostCreationProps extends TelemetryProps {}
+interface CodeHostCreationProps extends TelemetryProps, TelemetryV2Props {}
+
+// For telemetry
+const v2CodeHostKind: { [key in ExternalServiceKind]: number } = {
+    AWSCODECOMMIT: 0,
+    AZUREDEVOPS: 1,
+    BITBUCKETCLOUD: 2,
+    BITBUCKETSERVER: 3,
+    GERRIT: 4,
+    GITHUB: 5,
+    GITLAB: 6,
+    GITOLITE: 7,
+    GOMODULES: 8,
+    JVMPACKAGES: 9,
+    NPMPACKAGES: 10,
+    OTHER: 11,
+    PAGURE: 12,
+    PERFORCE: 13,
+    PHABRICATOR: 14,
+    PYTHONPACKAGES: 15,
+    RUBYPACKAGES: 16,
+    RUSTPACKAGES: 17,
+}
 
 /**
  * Renders creation UI for any supported code hosts (GitHub, Gitlab) based on
  * "codeHostType" URL param see root component routing logic.
  */
 export const CodeHostCreation: FC<CodeHostCreationProps> = props => {
-    const { telemetryService } = props
+    const { telemetryService, telemetryRecorder } = props
 
     const { codeHostType } = useParams()
     const codeHostKind = getCodeHostKindFromURLParam(codeHostType!)
@@ -38,7 +61,10 @@ export const CodeHostCreation: FC<CodeHostCreationProps> = props => {
         }
 
         telemetryService.log('SetupWizardCodeHostCreation', { kind: codeHostKind }, { kind: codeHostKind })
-    }, [telemetryService, codeHostKind])
+        telemetryRecorder.recordEvent('setupWizard.codeHost.creation', 'view', {
+            metadata: { kind: v2CodeHostKind[codeHostKind] },
+        })
+    }, [telemetryService, codeHostKind, telemetryRecorder])
 
     if (codeHostKind === null) {
         return (
@@ -52,7 +78,11 @@ export const CodeHostCreation: FC<CodeHostCreationProps> = props => {
     // We render content inside react fragment because this view is rendered
     // within Container UI (avoid unnecessary DOM nesting)
     return (
-        <CodeHostCreationView codeHostKind={codeHostKind} telemetryService={telemetryService}>
+        <CodeHostCreationView
+            codeHostKind={codeHostKind}
+            telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
+        >
             {state => (
                 <footer className={styles.footer}>
                     <LoaderButton
@@ -73,7 +103,7 @@ export const CodeHostCreation: FC<CodeHostCreationProps> = props => {
     )
 }
 
-interface CodeHostCreationFormProps extends TelemetryProps {
+interface CodeHostCreationFormProps extends TelemetryProps, TelemetryV2Props {
     codeHostKind: ExternalServiceKind
     children: (state: CodeHostJSONFormState) => ReactNode
 }
@@ -84,7 +114,7 @@ interface CodeHostCreationFormProps extends TelemetryProps {
  * UI with pickers and other form UI.
  */
 const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
-    const { codeHostKind, children, telemetryService } = props
+    const { codeHostKind, children, telemetryService, telemetryRecorder } = props
 
     const navigate = useNavigate()
     const externalServiceOptions = defaultExternalServices[codeHostKind]
@@ -162,12 +192,25 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
             }
 
             telemetryService.log('SetupWizardConnectRemoteCodeHost', eventProperties, eventProperties)
+            telemetryRecorder.recordEvent('setupWizard.codeHost.creation', 'connect', {
+                metadata: {
+                    kind: v2CodeHostKind[codeHostKind],
+                    isAffiliatedRepositories: isAffiliatedRepositories ? 1 : 0,
+                    isOrgsRepositories: isOrgsRepositories ? 1 : 0,
+                    isSetRepositories: isSetRepositories ? 1 : 0,
+                },
+            })
         } else {
             telemetryService.log(
                 'SetupWizardConnectRemoteCodeHost',
                 { code_host: codeHostKind },
                 { code_host: codeHostKind }
             )
+            telemetryRecorder.recordEvent('setupWizard.codeHost.creation', 'connect', {
+                metadata: {
+                    kind: v2CodeHostKind[codeHostKind],
+                },
+            })
         }
 
         // Reset local storage values
@@ -195,6 +238,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
             externalServiceOptions={defaultExternalServices[codeHostKind]}
             onChange={handleFormChange}
             onSubmit={handleFormSubmit}
+            telemetryRecorder={telemetryRecorder}
         >
             {children}
         </CodeHostJSONForm>

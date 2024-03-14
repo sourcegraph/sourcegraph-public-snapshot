@@ -76,6 +76,8 @@
                     </svelte:self>
                 {/each}
             </ul>
+        {:catch error}
+            <slot name="error" {error} />
         {/await}
     {/if}
 </li>
@@ -86,7 +88,7 @@
         margin: 0.25rem 0;
         border-radius: var(--border-radius);
 
-        &[aria-expanded='true'][tabindex='0']:focus {
+        &[tabindex='0']:focus {
             box-shadow: none;
 
             > .label {

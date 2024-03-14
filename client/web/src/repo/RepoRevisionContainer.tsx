@@ -247,6 +247,7 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
                         <CopyPermalinkAction
                             key="copy-permalink"
                             telemetryService={props.telemetryService}
+                            telemetryRecorder={props.platformContext.telemetryRecorder}
                             revision={props.revision}
                             commitID={resolvedRevision?.commitID}
                             {...context}

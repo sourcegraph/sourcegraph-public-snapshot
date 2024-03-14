@@ -1,4 +1,6 @@
-import { getGraphQLClient } from '$lib/graphql'
+import { from } from 'rxjs'
+
+import { getGraphQLClient, infinityQuery } from '$lib/graphql'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
 
@@ -7,27 +9,53 @@ import { CommitsPage_CommitsQuery } from './page.gql'
 
 const PAGE_SIZE = 20
 
-export const load: PageLoad = async ({ parent, params }) => {
-    const client = await getGraphQLClient()
+export const load: PageLoad = ({ parent, params }) => {
+    const client = getGraphQLClient()
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
-    const resolvedRevision = await resolveRevision(parent, revision)
+    const resolvedRevision = resolveRevision(parent, revision)
 
-    const commitsQuery = client.watchQuery({
+    const commitsQuery = infinityQuery({
+        client,
         query: CommitsPage_CommitsQuery,
-        variables: {
-            repoName,
-            revision: resolvedRevision,
-            first: PAGE_SIZE,
-            afterCursor: null,
+        variables: from(
+            resolvedRevision.then(revision => ({
+                repoName,
+                revision,
+                first: PAGE_SIZE,
+                afterCursor: null as string | null,
+            }))
+        ),
+        nextVariables: previousResult => {
+            if (previousResult?.data?.repository?.commit?.ancestors?.pageInfo?.hasNextPage) {
+                return {
+                    afterCursor: previousResult.data.repository.commit.ancestors.pageInfo.endCursor,
+                }
+            }
+            return undefined
         },
-        notifyOnNetworkStatusChange: true,
+        combine: (previousResult, nextResult) => {
+            if (!nextResult.data?.repository?.commit) {
+                return nextResult
+            }
+            const previousNodes = previousResult.data?.repository?.commit?.ancestors?.nodes ?? []
+            const nextNodes = nextResult.data.repository?.commit?.ancestors.nodes ?? []
+            return {
+                ...nextResult,
+                data: {
+                    repository: {
+                        ...nextResult.data.repository,
+                        commit: {
+                            ...nextResult.data.repository.commit,
+                            ancestors: {
+                                ...nextResult.data.repository.commit.ancestors,
+                                nodes: [...previousNodes, ...nextNodes],
+                            },
+                        },
+                    },
+                },
+            }
+        },
     })
-
-    if (!client.readQuery({ query: CommitsPage_CommitsQuery, variables: commitsQuery.variables })) {
-        // Eagerly fetch data if it isn't in the cache already. This ensures that the data is fetched
-        // as soon as possible, not only after the layout subscribes to the query.
-        commitsQuery.refetch()
-    }
 
     return {
         commitsQuery,

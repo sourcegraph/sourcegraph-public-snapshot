@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream"
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -191,10 +192,12 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling request body")
 	}
-
-	apiURL := url.URL{
-		Scheme: "https",
-		Host:   fmt.Sprintf("bedrock-runtime.%s.amazonaws.com", defaultConfig.Region),
+	apiURL, err := url.Parse(c.endpoint)
+	if err != nil || apiURL.Scheme == "" {
+		apiURL = &url.URL{
+			Scheme: "https",
+			Host:   fmt.Sprintf("bedrock-runtime.%s.amazonaws.com", defaultConfig.Region),
+		}
 	}
 
 	if stream {
@@ -242,7 +245,15 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 func awsConfigOptsForKeyConfig(endpoint string, accessToken string) []func(*config.LoadOptions) error {
 	configOpts := []func(*config.LoadOptions) error{}
 	if endpoint != "" {
-		configOpts = append(configOpts, config.WithRegion(endpoint))
+		apiURL, err := url.Parse(endpoint)
+		if err != nil || apiURL.Scheme == "" { // this is not a url assume it is a region
+			configOpts = append(configOpts, config.WithRegion(endpoint))
+		} else { // this is a url just use it directly
+			configOpts = append(configOpts, config.WithEndpointResolverWithOptions(aws.EndpointResolverWithOptionsFunc(
+				func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+					return aws.Endpoint{URL: endpoint}, nil
+				})))
+		}
 	}
 
 	// We use the accessToken field to provide multiple values.

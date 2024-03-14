@@ -5,6 +5,8 @@ go_library(
     name = "alertpolicy",
     srcs = [
         "alertpolicy.go",
+        "conditionbuilder.go",
+        "metricabsence.go",
         "responsecode.go",
         "thresholdaggregation.go",
     ],
@@ -24,8 +26,8 @@ go_library(
 go_test(
     name = "alertpolicy_test",
     srcs = [
+        "conditionbuilder_test.go",
         "responsecode_test.go",
-        "thresholdaggregation_test.go",
     ],
     embed = [":alertpolicy"],
     deps = [

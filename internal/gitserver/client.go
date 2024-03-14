@@ -35,7 +35,6 @@ import (
 const git = "git"
 
 var ClientMocks, emptyClientMocks struct {
-	GetObject               func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
 	LocalGitserver          bool
 	LocalGitCommandReposDir string
 }
@@ -364,9 +363,8 @@ type Client interface {
 	// with more detailed responses. Do not use this if you are not repo-updater.
 	//
 	// Repo updates are not guaranteed to occur. If a repo has been updated
-	// recently (within the Since duration specified in the request), the
-	// update won't happen.
-	RequestRepoUpdate(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
+	// recently, the update won't happen.
+	RequestRepoUpdate(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
 
 	// RequestRepoClone is an asynchronous request to clone a repository.
 	RequestRepoClone(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error)
@@ -619,9 +617,6 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		Repo:      string(repoName),
 		Args:      stringsToByteSlices(c.args[1:]),
 		NoTimeout: c.noTimeout,
-
-		// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string.
-		EnsureRevision: []byte(c.EnsureRevision()),
 	}
 
 	stream, err := client.Exec(ctx, req)
@@ -647,12 +642,6 @@ type readCloseWrapper struct {
 func (r *readCloseWrapper) Close() error {
 	r.closeFn()
 	return nil
-}
-
-func isRevisionNotFound(err string) bool {
-	// error message is lowercased in to handle case insensitive error messages
-	loweredErr := strings.ToLower(err)
-	return strings.Contains(loweredErr, "not a valid object")
 }
 
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (_ bool, err error) {
@@ -717,19 +706,17 @@ func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 	}
 }
 
-func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since time.Duration) (_ *protocol.RepoUpdateResponse, err error) {
+func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.RepoName) (_ *protocol.RepoUpdateResponse, err error) {
 	ctx, _, endObservation := c.operations.requestRepoUpdate.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
 			repo.Attr(),
-			attribute.Stringer("since", since),
 		},
 	})
 	defer endObservation(1, observation.Args{})
 
 	req := &protocol.RepoUpdateRequest{
-		Repo:  repo,
-		Since: since,
+		Repo: repo,
 	}
 
 	client, err := c.ClientForRepo(ctx, repo)
@@ -1203,10 +1190,6 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 		},
 	})
 	defer endObservation(1, observation.Args{})
-
-	if ClientMocks.GetObject != nil {
-		return ClientMocks.GetObject(repo, objectName)
-	}
 
 	req := protocol.GetObjectRequest{
 		Repo:       repo,

@@ -389,7 +389,7 @@ func TestCloneRepo(t *testing.T) {
 	// Wait until the clone is done. Please do not use this code snippet
 	// outside of a test. We only know this works since our test only starts
 	// one clone and will have nothing else attempt to lock.
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		_, cloning := s.locker.Status(repoDir)
 		if !cloning {
 			break
@@ -559,7 +559,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	s.getRemoteURLFunc = func(ctx context.Context, name api.RepoName) (string, error) {
 		return "https://invalid.example.com/", nil
 	}
-	s.RepoUpdate(&protocol.RepoUpdateRequest{
+	s.RepoUpdate(ctx, &protocol.RepoUpdateRequest{
 		Repo: repoName,
 	})
 
@@ -590,7 +590,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	// This will perform an initial clone
 	s.getRemoteURLFunc = oldRemoveURLFunc
-	s.RepoUpdate(&protocol.RepoUpdateRequest{
+	s.RepoUpdate(ctx, &protocol.RepoUpdateRequest{
 		Repo: repoName,
 	})
 
@@ -619,7 +619,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	t.Cleanup(func() { doBackgroundRepoUpdateMock = nil })
 
 	// This will trigger an update since the repo is already cloned
-	s.RepoUpdate(&protocol.RepoUpdateRequest{
+	s.RepoUpdate(ctx, &protocol.RepoUpdateRequest{
 		Repo: repoName,
 	})
 
@@ -644,7 +644,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	doBackgroundRepoUpdateMock = nil
 
 	// This will trigger an update since the repo is already cloned
-	s.RepoUpdate(&protocol.RepoUpdateRequest{
+	s.RepoUpdate(ctx, &protocol.RepoUpdateRequest{
 		Repo: repoName,
 	})
 
@@ -952,7 +952,7 @@ func TestLogIfCorrupt(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Cleanup(func() {
-			db.Repos().Delete(ctx, dbRepo.ID)
+			_ = db.Repos().Delete(ctx, dbRepo.ID)
 		})
 
 		stdErr := "error: packfile .git/objects/pack/pack-e26c1fc0add58b7649a95f3e901e30f29395e174.pack does not match index"
@@ -980,7 +980,7 @@ func TestLogIfCorrupt(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Cleanup(func() {
-			db.Repos().Delete(ctx, dbRepo.ID)
+			_ = db.Repos().Delete(ctx, dbRepo.ID)
 		})
 
 		s.LogIfCorrupt(ctx, repoName, errors.New("Brought to you by Horsegraph"))

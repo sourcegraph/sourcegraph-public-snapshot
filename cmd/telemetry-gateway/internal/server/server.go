@@ -79,7 +79,7 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 			}
 
 			metadata := msg.GetMetadata()
-			logger = logger.With(log.String("request_id", metadata.GetRequestId()))
+			logger = logger.With(log.String("requestID", metadata.GetRequestId()))
 
 			// Validate self-reported instance identifier
 			switch metadata.GetIdentifier().Identifier.(type) {
@@ -89,8 +89,12 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 				if err != nil {
 					return status.Errorf(codes.InvalidArgument, "invalid license_key: %s", err)
 				}
+				// Attach instance ID to all subsequent log messages
+				logger = logger.With(log.String("instanceID", identifier.InstanceId))
+				// Record start of stream + additional diagnostics details
+				// like salesforce info and external URL once
 				logger.Info("handling events submission stream for licensed instance",
-					log.String("instanceID", identifier.InstanceId),
+					log.String("instanceExternalURL", identifier.ExternalUrl),
 					log.Stringp("license.salesforceOpportunityID", licenseInfo.SalesforceOpportunityID),
 					log.Stringp("license.salesforceSubscriptionID", licenseInfo.SalesforceSubscriptionID))
 
@@ -99,8 +103,10 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 				if identifier.InstanceId == "" {
 					return status.Error(codes.InvalidArgument, "instance_id is required for unlicensed instance")
 				}
-				logger.Info("handling events submission stream for unlicensed instance",
-					log.String("instanceID", identifier.InstanceId))
+				// Attach instance ID to all subsequent log messages
+				logger = logger.With(log.String("instanceID", identifier.InstanceId))
+				// Record start of stream
+				logger.Info("handling events submission stream for unlicensed instance")
 
 			default:
 				logger.Error("unknown identifier type",
@@ -109,7 +115,7 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 			}
 
 			// Set up a publisher with the provided metadata
-			publisher, err = events.NewPublisherForStream(s.eventsTopic, metadata, s.publishOpts)
+			publisher, err = events.NewPublisherForStream(logger, s.eventsTopic, metadata, s.publishOpts)
 			if err != nil {
 				return status.Errorf(codes.Internal, "failed to create publisher: %v", err)
 			}

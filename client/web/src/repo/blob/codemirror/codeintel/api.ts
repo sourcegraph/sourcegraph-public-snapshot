@@ -64,7 +64,7 @@ export interface DocumentInfo {
     repoName: string
     filePath: string
     commitID: string
-    revision?: string
+    revision: string
     languages: string[]
 }
 

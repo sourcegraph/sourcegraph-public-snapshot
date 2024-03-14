@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject, type RefObject } from 'react'
 
+import { useApolloClient } from '@apollo/client'
 import { openSearchPanel } from '@codemirror/search'
 import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
@@ -27,8 +28,10 @@ import type { PlatformContext, PlatformContextProps } from '@sourcegraph/shared/
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import { TelemetryV2Props, noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import {
     parseQueryAndHash,
     toPrettyBlobURL,
@@ -43,7 +46,7 @@ import { isCodyEnabled } from '../../cody/isCodyEnabled'
 import { useCodySidebar } from '../../cody/sidebar/Provider'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type { ExternalLinkFields, Scalars } from '../../graphql-operations'
-import type { BlameHunkData } from '../blame/useBlameHunks'
+import { type BlameHunkData } from '../blame/useBlameHunks'
 import type { HoverThresholdProps } from '../RepoContainer'
 
 import { BlameDecoration } from './BlameDecoration'
@@ -59,6 +62,7 @@ import { selectableLineNumbers, selectLines, type SelectedLineRange } from './co
 import { linkify } from './codemirror/links'
 import { lockFirstVisibleLine } from './codemirror/lock-line'
 import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
+import { CodeMirrorContainer } from './codemirror/react-interop'
 import { scipSnapshot } from './codemirror/scip-snapshot'
 import { search, type SearchPanelConfig } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
@@ -92,6 +96,7 @@ export interface BlobProps
     extends SettingsCascadeProps,
         PlatformContextProps,
         TelemetryProps,
+        TelemetryV2Props,
         HoverThresholdProps,
         ExtensionsControllerProps,
         CodeMirrorBlobProps {
@@ -224,8 +229,10 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         searchPanelConfig,
         staticHighlightRanges,
         'data-testid': dataTestId,
+        telemetryService,
     } = props
 
+    const apolloClient = useApolloClient()
     const navigate = useNavigate()
     const location = useLocation()
     const isLightTheme = useIsLightTheme()
@@ -337,6 +344,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             repoName: blobInfo.repoName,
             filePath: blobInfo.filePath,
             commitID: blobInfo.commitID,
+            revision: blobInfo.revision,
             languages: blobInfo.languages,
         },
         blobInfo.mode
@@ -360,7 +368,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const extensions = useMemo(
         () => [
             staticExtensions,
-            staticHighlights(navigate, staticHighlightRanges ?? []),
+            staticHighlights(navigate, apolloClient, staticHighlightRanges ?? []),
             selectableLineNumbers({
                 onSelection,
                 initialSelection: position.line !== undefined ? position : null,
@@ -371,6 +379,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             codeFoldingExtension(),
             isCodyEnabled()
                 ? codyWidgetExtension(
+                      // TODO: replace with real telemetryRecorder
+                      noOpTelemetryRecorder,
                       editorRef.current
                           ? new CodeMirrorEditor({
                                 view: editorRef.current,
@@ -402,6 +412,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 overrideBrowserFindInPageShortcut: useFileSearch,
                 onOverrideBrowserFindInPageToggle: setUseFileSearch,
                 initialState: searchPanelConfig,
+                graphQLClient: apolloClient,
                 navigate,
             }),
             themeExtension,
@@ -524,6 +535,10 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         setEditorScope,
     ])
 
+    const logEventOnCopy = useCallback(() => {
+        telemetryService.log(...codeCopiedEvent('blob-view'))
+    }, [telemetryService])
+
     return (
         <>
             <div
@@ -533,6 +548,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 data-testid={dataTestId}
                 className={`${className} overflow-hidden test-editor`}
                 data-editor="codemirror6"
+                onCopy={logEventOnCopy}
             />
             {overrideBrowserSearchKeybinding && useFileSearch && (
                 <Shortcut ordered={['f']} held={['Mod']} onMatch={openSearch} ignoreInput={true} />
@@ -560,11 +576,12 @@ function useCodeIntelExtension(
         commitID,
         revision,
         languages,
-    }: { repoName: string; filePath: string; commitID: string; revision?: string; languages: string[] },
+    }: { repoName: string; filePath: string; commitID: string; revision: string; languages: string[] },
     mode: string
 ): Extension {
     const navigate = useNavigate()
     const location = useLocation()
+    const apolloClient = useApolloClient()
     const locationRef = useRef(location)
     const [api, setApi] = useState<CodeIntelAPI | null>(null)
 
@@ -593,7 +610,7 @@ function useCodeIntelExtension(
                           api,
                           documentInfo: { repoName, filePath, commitID, revision, languages },
                           createTooltipView: ({ view, token, hovercardData }) =>
-                              new HovercardView(view, token, hovercardData),
+                              new HovercardView(view, token, hovercardData, apolloClient),
                           openImplementations(_view, documentInfo, occurrence) {
                               navigate(
                                   toPrettyBlobURL({
@@ -709,7 +726,7 @@ function useCodeIntelExtension(
                   })
                 : [],
         ],
-        [repoName, filePath, commitID, revision, mode, api, navigate, locationRef, languages]
+        [repoName, filePath, commitID, revision, mode, api, navigate, locationRef, languages, apolloClient]
     )
 }
 
@@ -721,6 +738,7 @@ function useBlameDecoration(
     { visible, blameHunks }: { visible: boolean; blameHunks?: BlameHunkData }
 ): Extension {
     const navigate = useNavigate()
+    const apolloClient = useApolloClient()
 
     // Blame support is split into two compartments because we only want to trigger
     // `lockFirstVisibleLine` when blame is enabled, not when data is received
@@ -734,14 +752,15 @@ function useBlameDecoration(
                           createBlameDecoration(container, { line, hunk, onSelect, onDeselect, externalURLs }) {
                               const root = createRoot(container)
                               root.render(
-                                  <BlameDecoration
-                                      navigate={navigate}
-                                      line={line ?? 0}
-                                      blameHunk={hunk}
-                                      onSelect={onSelect}
-                                      onDeselect={onDeselect}
-                                      externalURLs={externalURLs}
-                                  />
+                                  <CodeMirrorContainer navigate={navigate} graphQLClient={apolloClient}>
+                                      <BlameDecoration
+                                          line={line ?? 0}
+                                          blameHunk={hunk}
+                                          onSelect={onSelect}
+                                          onDeselect={onDeselect}
+                                          externalURLs={externalURLs}
+                                      />
+                                  </CodeMirrorContainer>
                               )
                               return {
                                   destroy() {
@@ -751,7 +770,7 @@ function useBlameDecoration(
                           },
                       })
                     : [],
-            [visible, navigate]
+            [visible, navigate, apolloClient]
         ),
         lockFirstVisibleLine
     )

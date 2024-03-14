@@ -18,22 +18,8 @@ func (g *gitCLIBackend) ArchiveReader(ctx context.Context, format git.ArchiveFor
 	}
 
 	archiveArgs := buildArchiveArgs(format, treeish, paths)
-	cmd, cancel, err := g.gitCommand(ctx, archiveArgs...)
-	if err != nil {
-		cancel()
-		return nil, err
-	}
 
-	r, err := g.runGitCommand(ctx, cmd)
-	if err != nil {
-		cancel()
-		return nil, err
-	}
-
-	return &closingFileReader{
-		ReadCloser: r,
-		onClose:    func() { cancel() },
-	}, nil
+	return g.NewCommand(ctx, WithArguments(archiveArgs...))
 }
 
 func buildArchiveArgs(format git.ArchiveFormat, treeish string, paths []string) []string {
@@ -60,19 +46,13 @@ func pathspecLiteral(s string) string { return ":(literal)" + s }
 func (g *gitCLIBackend) verifyPaths(ctx context.Context, treeish string, paths []string) error {
 	args := []string{"ls-tree", treeish, "--"}
 	args = append(args, paths...)
-	cmd, cancel, err := g.gitCommand(ctx, args...)
-	defer cancel()
+	r, err := g.NewCommand(ctx, WithArguments(args...))
 	if err != nil {
 		return err
 	}
+	defer r.Close()
 
-	out, err := g.runGitCommand(ctx, cmd)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	stdout, err := io.ReadAll(out)
+	stdout, err := io.ReadAll(r)
 	if err != nil {
 		// If exit code is 128 and `not a tree object` is part of stderr, most likely we
 		// are referencing a commit that does not exist.

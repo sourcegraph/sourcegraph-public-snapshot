@@ -25,6 +25,7 @@
     import { settings } from '$lib/stores'
 
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
+    import PreviewButton from './PreviewButton.svelte'
     import RepoStars from './RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
     import { getSearchResultsContext } from './searchResultsContext'
@@ -75,15 +76,18 @@
     let visible = false
     let highlightedHTMLRows: Promise<string[][]> | undefined
     $: if (visible) {
-        // We rely on fetchFileRangeMatches to cache the result for us so that repeated
-        // calls will not result in repeated network requests.
-        highlightedHTMLRows = fetchFileRangeMatches({
-            result,
-            ranges: expandedMatchGroups.map(group => ({
-                startLine: group.startLine,
-                endLine: group.endLine,
-            })),
-        })
+        // If the file contains some large lines, avoid stressing syntax-highlighter and the browser.
+        if (!result.chunkMatches?.some(chunk => chunk.contentTruncated)) {
+            // We rely on fetchFileRangeMatches to cache the result for us so that repeated
+            // calls will not result in repeated network requests.
+            highlightedHTMLRows = fetchFileRangeMatches({
+                result,
+                ranges: expandedMatchGroups.map(group => ({
+                    startLine: group.startLine,
+                    endLine: group.endLine,
+                })),
+            })
+        }
     }
 </script>
 
@@ -94,6 +98,7 @@
         {#if result.repoStars}
             <RepoStars repoStars={result.repoStars} />
         {/if}
+        <PreviewButton {result} />
     </svelte:fragment>
 
     <div bind:this={root} use:observeIntersection on:intersecting={event => (visible = event.detail)} class="matches">

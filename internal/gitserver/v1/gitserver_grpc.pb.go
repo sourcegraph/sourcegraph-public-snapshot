@@ -44,6 +44,7 @@ const (
 	GitserverService_DefaultBranch_FullMethodName               = "/gitserver.v1.GitserverService/DefaultBranch"
 	GitserverService_ReadFile_FullMethodName                    = "/gitserver.v1.GitserverService/ReadFile"
 	GitserverService_GetCommit_FullMethodName                   = "/gitserver.v1.GitserverService/GetCommit"
+	GitserverService_ResolveRevision_FullMethodName             = "/gitserver.v1.GitserverService/ResolveRevision"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -126,6 +127,24 @@ type GitserverServiceClient interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	GetCommit(ctx context.Context, in *GetCommitRequest, opts ...grpc.CallOption) (*GetCommitResponse, error)
+	// ResolveRevision resolves a given revspec-ish to a commit SHA.
+	// If passed a commit sha, the endpoint will also verify that the commit exists.
+	//
+	// If the revision cannot be resolved an error with RevisionNotFoundPayload is
+	// returned.
+	//
+	// Under the hood, this endpoint currently uses git rev-parse to resolve the revspec,
+	// but we forbid certain revspecs (like HEAD) to avoid leaking existence files,
+	// and to avoid running very expensive rev-parse operations.
+	// Assume only the following are supported:
+	// - Symbolic refs
+	// - All refs under refs/, including tags
+	// - Commit hashes
+	// - Abbreviated commit hashes
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	ResolveRevision(ctx context.Context, in *ResolveRevisionRequest, opts ...grpc.CallOption) (*ResolveRevisionResponse, error)
 }
 
 type gitserverServiceClient struct {
@@ -501,6 +520,15 @@ func (c *gitserverServiceClient) GetCommit(ctx context.Context, in *GetCommitReq
 	return out, nil
 }
 
+func (c *gitserverServiceClient) ResolveRevision(ctx context.Context, in *ResolveRevisionRequest, opts ...grpc.CallOption) (*ResolveRevisionResponse, error) {
+	out := new(ResolveRevisionResponse)
+	err := c.cc.Invoke(ctx, GitserverService_ResolveRevision_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
@@ -581,6 +609,24 @@ type GitserverServiceServer interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	GetCommit(context.Context, *GetCommitRequest) (*GetCommitResponse, error)
+	// ResolveRevision resolves a given revspec-ish to a commit SHA.
+	// If passed a commit sha, the endpoint will also verify that the commit exists.
+	//
+	// If the revision cannot be resolved an error with RevisionNotFoundPayload is
+	// returned.
+	//
+	// Under the hood, this endpoint currently uses git rev-parse to resolve the revspec,
+	// but we forbid certain revspecs (like HEAD) to avoid leaking existence files,
+	// and to avoid running very expensive rev-parse operations.
+	// Assume only the following are supported:
+	// - Symbolic refs
+	// - All refs under refs/, including tags
+	// - Commit hashes
+	// - Abbreviated commit hashes
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	ResolveRevision(context.Context, *ResolveRevisionRequest) (*ResolveRevisionResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -662,6 +708,9 @@ func (UnimplementedGitserverServiceServer) ReadFile(*ReadFileRequest, GitserverS
 }
 func (UnimplementedGitserverServiceServer) GetCommit(context.Context, *GetCommitRequest) (*GetCommitResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCommit not implemented")
+}
+func (UnimplementedGitserverServiceServer) ResolveRevision(context.Context, *ResolveRevisionRequest) (*ResolveRevisionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResolveRevision not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -1149,6 +1198,24 @@ func _GitserverService_GetCommit_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GitserverService_ResolveRevision_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResolveRevisionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).ResolveRevision(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_ResolveRevision_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).ResolveRevision(ctx, req.(*ResolveRevisionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1231,6 +1298,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCommit",
 			Handler:    _GitserverService_GetCommit_Handler,
+		},
+		{
+			MethodName: "ResolveRevision",
+			Handler:    _GitserverService_ResolveRevision_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

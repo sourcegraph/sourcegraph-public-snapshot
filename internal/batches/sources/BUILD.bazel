@@ -1,3 +1,4 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
@@ -113,7 +114,7 @@ go_test(
         "//lib/errors",
         "//lib/pointers",
         "//schema",
-        "@com_github_derision_test_go_mockgen//testutil/assert",
+        "@com_github_derision_test_go_mockgen_v2//testutil/assert",
         "@com_github_dnaeon_go_vcr//cassette",
         "@com_github_dnaeon_go_vcr//recorder",
         "@com_github_google_go_cmp//cmp",
@@ -124,5 +125,22 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//mock",
         "@com_github_stretchr_testify//require",
+    ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_test.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [
+        ":sources",
+        "//internal/extsvc/azuredevops",
+        "//internal/extsvc/bitbucketcloud",
+        "//internal/extsvc/gerrit",
+        "//internal/gitserver",
     ],
 )

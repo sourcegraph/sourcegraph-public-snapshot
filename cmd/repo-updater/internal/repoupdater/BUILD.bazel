@@ -3,24 +3,20 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "repoupdater",
-    srcs = [
-        "observability.go",
-        "server.go",
-    ],
+    srcs = ["server.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater",
     visibility = ["//visibility:public"],
     deps = [
+        "//internal/actor",
         "//internal/api",
         "//internal/batches/syncer",
         "//internal/database",
         "//internal/errcode",
-        "//internal/metrics",
         "//internal/repos",
         "//internal/repoupdater/protocol",
         "//internal/repoupdater/v1:repoupdater",
         "//internal/trace",
         "//lib/errors",
-        "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
         "@org_golang_google_grpc//codes",

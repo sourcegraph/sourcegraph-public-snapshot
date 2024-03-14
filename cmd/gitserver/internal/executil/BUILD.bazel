@@ -9,13 +9,12 @@ go_library(
     deps = [
         "//cmd/gitserver/internal/cacert",
         "//internal/conf",
-        "//internal/trace",
+        "//internal/vcs",
         "//internal/wrexec",
         "//lib/errors",
         "//lib/process",
         "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
-        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -25,8 +24,10 @@ go_test(
     embed = [":executil"],
     deps = [
         "//internal/conf",
+        "//internal/vcs",
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

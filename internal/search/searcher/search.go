@@ -268,12 +268,8 @@ func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, se
 				Repo:     repo,
 				CommitID: commit,
 				InputRev: rev,
-
-				// We do not have a precise language from searcher yet.
-				// TODO(camdencheek): return the language from searcher,
-				// where we have access to the file contents for more
-				// precise detection.
-				PreciseLanguage: "",
+				// Pass on the detected language. It's not always available and may be empty.
+				PreciseLanguage: fm.Language,
 			},
 			ChunkMatches: chunkMatches,
 			PathMatches:  pathMatches,

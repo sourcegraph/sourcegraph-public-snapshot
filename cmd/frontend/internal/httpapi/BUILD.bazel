@@ -1,3 +1,4 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
@@ -23,7 +24,6 @@ go_library(
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/enterprise",
-        "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/internal/handlerutil",
         "//cmd/frontend/internal/httpapi/releasecache",
@@ -43,6 +43,7 @@ go_library(
         "//internal/conf",
         "//internal/cookie",
         "//internal/database",
+        "//internal/dotcom",
         "//internal/encryption/keyring",
         "//internal/env",
         "//internal/errcode",
@@ -103,7 +104,6 @@ go_test(
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/enterprise",
-        "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
         "//internal/actor",
         "//internal/api",
@@ -113,6 +113,7 @@ go_test(
         "//internal/ctags_config",
         "//internal/database",
         "//internal/database/dbmocks",
+        "//internal/dotcom",
         "//internal/errcode",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
@@ -124,7 +125,7 @@ go_test(
         "//lib/errors",
         "//schema",
         "@com_github_derision_test_glock//:glock",
-        "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_derision_test_go_mockgen_v2//testutil/require",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_gorilla_mux//:mux",
@@ -140,4 +141,15 @@ go_test(
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_protobuf//testing/protocmp",
     ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_test.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = ["//internal/httpcli"],
 )

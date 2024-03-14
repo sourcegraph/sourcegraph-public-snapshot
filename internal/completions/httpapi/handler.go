@@ -12,11 +12,11 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/guardrails"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -102,7 +102,7 @@ func newCompletionsHandler(
 
 		// Use the user's access token for Cody Gateway on dotcom if PLG is enabled.
 		accessToken := completionsConfig.AccessToken
-		isDotcom := envvar.SourcegraphDotComMode()
+		isDotcom := dotcom.SourcegraphDotComMode()
 		isProviderCodyGateway := completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
 		if isDotcom && isProviderCodyGateway {
 			// Note: if we have no Authorization header, that's fine too, this will return an error
@@ -300,7 +300,7 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 						return
 					}
 
-					isDotcom := envvar.SourcegraphDotComMode()
+					isDotcom := dotcom.SourcegraphDotComMode()
 					if isDotcom {
 						if subscription.ApplyProRateLimits {
 							w.Header().Set("x-is-cody-pro-user", "true")
@@ -372,7 +372,7 @@ func newNonStreamingResponseHandler(logger log.Logger, db database.DB, feature t
 						return
 					}
 
-					isDotcom := envvar.SourcegraphDotComMode()
+					isDotcom := dotcom.SourcegraphDotComMode()
 					if isDotcom {
 						if subscription.ApplyProRateLimits {
 							w.Header().Set("x-is-cody-pro-user", "true")

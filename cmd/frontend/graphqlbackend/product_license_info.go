@@ -48,7 +48,7 @@ func (r ProductLicenseInfo) ProductNameWithBrand() string {
 }
 
 func (r ProductLicenseInfo) IsFreePlan() bool {
-	return r.Plan.IsFree()
+	return r.Plan.IsFreePlan()
 }
 
 func (r ProductLicenseInfo) Tags() []string { return r.TagsValue }

@@ -1,8 +1,16 @@
-load("@aspect_bazel_lib//lib:directory_path.bzl", "make_directory_path")
 load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@aspect_bazel_lib//lib:directory_path.bzl", "make_directory_path")
 load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 
-def write_generated_to_source_files(name, target, output_files, verbose_copy = False, **kwargs):
+def write_generated_to_source_files(name, target, output_files, **kwargs):
+    """Function description.
+
+    Args:
+      name: Name of the rule.
+      target: The target that generates files to copy.
+      output_files: A map of {dest: source} for files to copy.
+      **kwargs: Additional keyword arguments.
+    """
     for dest, orig in output_files.items():
         if dest == orig:
             fail("{} and {} must differ so we can detect source files needing to be regenerated".format(dest, orig))

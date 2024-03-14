@@ -4,6 +4,9 @@
     import type { PageData, Snapshot } from './$types'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
+    import { get } from 'svelte/store'
+    import { navigating } from '$app/stores'
+    import { Alert } from '$lib/wildcard'
     import type { CommitsPage_GitCommitConnection } from './page.gql'
 
     export let data: PageData
@@ -18,77 +21,29 @@
                 scroller: scroller.capture(),
             }
         },
-        restore(snapshot) {
-            restoredCommitCount = snapshot.commitCount
-            restoredScroller = snapshot.scroller
+        async restore(snapshot) {
+            if (snapshot?.commitCount !== undefined && get(navigating)?.type === 'popstate') {
+                await commitsQuery?.restore(result => {
+                    const count = result.data?.repository?.commit?.ancestors.nodes?.length
+                    return !!count && count < snapshot.commitCount
+                })
+            }
             scroller.restore(snapshot.scroller)
         },
     }
 
-    /**
-     * Fetches more commits when the user scrolls to the bottom of the page.
-     */
     function fetchMore() {
-        // Only fetch more commits if there are more commits and if we are not already
-        // fetching more commits.
-        if (commits?.pageInfo.hasNextPage && $commitsQuery && !$commitsQuery.loading) {
-            commitsQuery.fetchMore({
-                variables: {
-                    afterCursor: commits.pageInfo.endCursor,
-                },
-            })
-        }
-    }
-
-    /**
-     * Restores the previous scroll position when the user refreshes the page. Normally
-     * this would bring the user back to the top of the page, but we keep track of how
-     * many commits were previously loaded and fetch the missing commits if necessary.
-     * It's not ideal because we can only start fetching the remaining data when the
-     * component mounts, but it's better than nothing.
-     */
-    async function restoreCommits(
-        commits: CommitsPage_GitCommitConnection | undefined,
-        commitCount: number,
-        scrollerCapture: ScrollerCapture | undefined
-    ) {
-        // Fetch more commits to restore the previous scroll position
-        if (commits) {
-            if (commits.nodes.length < commitCount && !restoring) {
-                restoring = true
-                await commitsQuery.fetchMore({
-                    variables: {
-                        afterCursor: commits.pageInfo.endCursor,
-                        first: restoredCommitCount - commits.nodes.length,
-                    },
-                })
-                if (scrollerCapture) {
-                    scroller.restore(scrollerCapture)
-                }
-                restoring = false
-            }
-            restored = true
-        }
+        commitsQuery?.fetchMore()
     }
 
     let scroller: Scroller
-    // The number of commits that were previously loaded. This is only comes into
-    // play when the user refreshes the page and thus the Apollo cache is empty.
-    let restoredCommitCount: number = 0
-    // The previous scroll position. Similiarly this is only used when the user
-    // refreshes the page.
-    let restoredScroller: ScrollerCapture | undefined
-    // Restoring a large number of commits can take a while. This flag is used to
-    // show a loading spinner instead of the first page of commits while restoring.
-    let restoring = false
-    // This flag is used to prevent retrying restoring commits in case of unexpected
-    // issues with restoring.
-    let restored = false
+    let commits: CommitsPage_GitCommitConnection | null = null
 
     $: commitsQuery = data.commitsQuery
-    $: commits = $commitsQuery?.data.repository?.commit?.ancestors
-    $: if (!restored) {
-        restoreCommits(commits, restoredCommitCount, restoredScroller)
+    // We conditionally check for the ancestors field to be able to show
+    // previously loaded commits when an error occurs while fetching more commits.
+    $: if ($commitsQuery?.data?.repository?.commit?.ancestors) {
+        commits = $commitsQuery.data.repository.commit.ancestors
     }
 </script>
 
@@ -98,16 +53,26 @@
 
 <section>
     <Scroller bind:this={scroller} margin={600} on:more={fetchMore}>
-        {#if commits && !restoring}
+        {#if !$commitsQuery.restoring && commits}
             <ul>
                 {#each commits.nodes as commit (commit.canonicalURL)}
                     <li><Commit {commit} /></li>
+                {:else}
+                    <li>
+                        <Alert variant="info">No commits found</Alert>
+                    </li>
                 {/each}
             </ul>
         {/if}
-        {#if !$commitsQuery || $commitsQuery.loading || restoring}
+        {#if $commitsQuery.fetching || $commitsQuery.restoring}
             <div>
                 <LoadingSpinner />
+            </div>
+        {:else if $commitsQuery.error}
+            <div>
+                <Alert variant="danger">
+                    Unable to fetch commits: {$commitsQuery.error.message}
+                </Alert>
             </div>
         {/if}
     </Scroller>
@@ -120,11 +85,15 @@
         overflow: hidden;
     }
 
-    ul {
-        list-style: none;
+    ul,
+    div {
         padding: 1rem;
         max-width: var(--viewport-xl);
         margin: 0 auto;
+    }
+
+    ul {
+        list-style: none;
         --avatar-size: 2.5rem;
     }
 

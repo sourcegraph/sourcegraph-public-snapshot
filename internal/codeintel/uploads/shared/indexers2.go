@@ -80,7 +80,7 @@ func NamesForKey(key string) []string {
 }
 
 var extensions = map[string][]string{
-	"C++":        {".c", ".cp", ".cpp", ".cxx", ".h", ".hpp"},
+	"C++":        {".c", ".cp", ".cpp", ".cxx", ".h", ".hpp", ".hxx"},
 	"Dart":       {".dart"},
 	"DotNet":     {".cs", ".fs"},
 	"Go":         {".go"},

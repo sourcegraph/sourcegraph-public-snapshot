@@ -150,8 +150,3 @@ export function combyReplace(pattern: string, replace: string, path: string): Ed
     const sub = pattern.replace(':[1]', replace)
     return `comby -in-place "${pattern}" "${sub}" ${path}`
 }
-
-export function indexerUpdate(): Edit {
-    // eslint-disable-next-line no-template-curly-in-string
-    return 'cd internal/codeintel/autoindexing/internal/inference/libs/ && DOCKER_USER=${CR_USERNAME} DOCKER_PASS=${CR_PASSWORD} ./update-shas.sh'
-}

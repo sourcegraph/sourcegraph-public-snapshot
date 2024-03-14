@@ -215,7 +215,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
             ...this.props,
             selectedSearchContextSpec: this.state.selectedSearchContextSpec,
             setSelectedSearchContextSpec: this.setSelectedSearchContextSpec,
-            codeIntelligenceEnabled: !!this.props.codeInsightsEnabled,
+            codeIntelligenceEnabled: !!this.props.codeIntelligenceEnabled,
             notebooksEnabled: this.props.notebooksEnabled,
             codeMonitoringEnabled: this.props.codeMonitoringEnabled,
             searchAggregationEnabled: this.props.searchAggregationEnabled,

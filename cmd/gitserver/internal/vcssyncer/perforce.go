@@ -228,7 +228,7 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ a
 	// TODO(keegancsmith)(indradhanush) This is running a remote command and
 	// we have runRemoteGitCommand which sets TLS settings/etc. Do we need
 	// something for p4?
-	output, err := executil.RunCommandCombinedOutput(ctx, cmd)
+	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to update with output %q", urlredactor.New(remoteURL).Redact(string(output)))
 	}
@@ -243,7 +243,7 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ a
 			"HOME="+s.P4Home,
 		)
 		dir.Set(cmd.Cmd)
-		if output, err := executil.RunCommandCombinedOutput(ctx, cmd); err != nil {
+		if output, err := cmd.CombinedOutput(); err != nil {
 			return nil, errors.Wrapf(err, "failed to force update branch with output %q", string(output))
 		}
 	}

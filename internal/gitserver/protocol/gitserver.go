@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -220,35 +219,26 @@ func SignatureFromProto(p *proto.CommitMatch_Signature) Signature {
 // internal proxy route and any major change to this structure will need to
 // be reconciled in both places.
 type ExecRequest struct {
-	Repo api.RepoName `json:"repo"`
-
-	// ensureRevision is the revision to ensure is present in the repository before running the git command.
-	//
-	// 🚨Warning🚨: EnsureRevision might not be a utf 8 encoded string.
-	EnsureRevision string   `json:"ensureRevision"`
-	Args           []string `json:"args"`
-	NoTimeout      bool     `json:"noTimeout"`
+	Repo      api.RepoName `json:"repo"`
+	Args      []string     `json:"args"`
+	NoTimeout bool         `json:"noTimeout"`
 }
 
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
 type RepoUpdateRequest struct {
 	// Repo identifies URL for repo.
 	Repo api.RepoName `json:"repo"`
-	// Since is a debounce interval for queries, used only with request-repo-update.
-	Since time.Duration `json:"since"`
 }
 
 func (r *RepoUpdateRequest) ToProto() *proto.RepoUpdateRequest {
 	return &proto.RepoUpdateRequest{
-		Repo:  string(r.Repo),
-		Since: durationpb.New(r.Since),
+		Repo: string(r.Repo),
 	}
 }
 
 func (r *RepoUpdateRequest) FromProto(p *proto.RepoUpdateRequest) {
 	*r = RepoUpdateRequest{
-		Repo:  api.RepoName(p.GetRepo()),
-		Since: p.GetSince().AsDuration(),
+		Repo: api.RepoName(p.GetRepo()),
 	}
 }
 

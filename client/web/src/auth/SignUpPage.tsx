@@ -27,6 +27,7 @@ export interface SignUpPageProps extends TelemetryProps, TelemetryV2Props {
     context: Pick<
         SourcegraphContext,
         | 'allowSignup'
+        | 'externalURL'
         | 'authProviders'
         | 'sourcegraphDotComMode'
         | 'xhrHeaders'

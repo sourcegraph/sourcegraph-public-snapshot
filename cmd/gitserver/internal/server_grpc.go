@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -34,12 +35,12 @@ import (
 type service interface {
 	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchReader io.Reader) protocol.CreateCommitFromPatchResponse
 	LogIfCorrupt(context.Context, api.RepoName, error)
-	Exec(ctx context.Context, req *protocol.ExecRequest, w io.Writer) (execStatus, error)
 	MaybeStartClone(ctx context.Context, repo api.RepoName) (notFound *protocol.NotFoundPayload, cloned bool)
 	IsRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error)
-	RepoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
+	RepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
 	CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error)
 	SearchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error)
+	EnsureRevision(ctx context.Context, repo api.RepoName, rev string) (didUpdate bool)
 }
 
 func NewGRPCServer(server *Server) proto.GitserverServiceServer {
@@ -116,36 +117,37 @@ func (gs *grpcServer) DiskInfo(_ context.Context, _ *proto.DiskInfoRequest) (*pr
 }
 
 func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_ExecServer) error {
+	ctx := ss.Context()
+
 	// Log which actor is accessing the repo.
 	args := byteSlicesToStrings(req.GetArgs())
-	cmd := ""
+	logAttrs := []log.Field{}
 	if len(args) > 0 {
-		cmd = args[0]
-		args = args[1:]
+		logAttrs = append(logAttrs,
+			log.String("cmd", args[0]),
+			log.Strings("args", args[1:]),
+		)
 	}
 
-	accesslog.Record(ss.Context(), req.GetRepo(),
-		log.String("cmd", cmd),
-		log.Strings("args", args),
-	)
+	accesslog.Record(ctx, req.GetRepo(), logAttrs...)
 
 	if req.GetRepo() == "" {
 		return status.New(codes.InvalidArgument, "repo must be specified").Err()
 	}
 
 	repoName := api.RepoName(req.GetRepo())
+	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
+	backend := gs.getBackendFunc(repoDir, repoName)
 
-	if err := gs.maybeStartClone(ss.Context(), repoName); err != nil {
+	if err := gs.maybeStartClone(ctx, repoName); err != nil {
 		return err
 	}
 
-	internalReq := protocol.ExecRequest{
-		Repo:      api.RepoName(req.GetRepo()),
-		Args:      byteSlicesToStrings(req.GetArgs()),
-		NoTimeout: req.GetNoTimeout(),
+	if req.GetNoTimeout() {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, 24*time.Hour)
+		defer cancel()
 
-		// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string
-		EnsureRevision: string(req.GetEnsureRevision()),
 	}
 
 	w := streamio.NewWriter(func(p []byte) error {
@@ -154,7 +156,71 @@ func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 		})
 	})
 
-	return gs.doExec(ss.Context(), &internalReq, w)
+	// Special-case `git rev-parse HEAD` requests. These are invoked by search queries for every repo in scope.
+	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
+	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
+	if len(args) == 2 && args[0] == "rev-parse" && args[1] == "HEAD" {
+		if resolved, err := gitcli.QuickRevParseHead(repoDir); err == nil && gitdomain.IsAbsoluteRevision(resolved) {
+			_, _ = w.Write([]byte(resolved))
+			return nil
+		}
+	}
+
+	// Special-case `git symbolic-ref HEAD` requests. These are invoked by resolvers determining the default branch of a repo.
+	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
+	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
+	if len(args) == 2 && args[0] == "symbolic-ref" && args[1] == "HEAD" {
+		if resolved, err := gitcli.QuickSymbolicRefHead(repoDir); err == nil {
+			_, _ = w.Write([]byte(resolved))
+			return nil
+		}
+	}
+
+	stdout, err := backend.Exec(ctx, args...)
+	if err != nil {
+		if errors.Is(err, gitcli.ErrBadGitCommand) {
+			return status.New(codes.InvalidArgument, "invalid command").Err()
+		}
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return status.FromContextError(ctxErr).Err()
+		}
+
+		return err
+	}
+	defer stdout.Close()
+
+	_, err = io.Copy(w, stdout)
+	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return status.FromContextError(ctxErr).Err()
+		}
+
+		commandFailedErr := &gitcli.CommandFailedError{}
+		if errors.As(err, &commandFailedErr) {
+			gRPCStatus := codes.Unknown
+			if strings.Contains(commandFailedErr.Error(), "signal: killed") {
+				gRPCStatus = codes.Aborted
+			}
+
+			var errString string
+			if commandFailedErr.Unwrap() != nil {
+				errString = commandFailedErr.Unwrap().Error()
+			}
+			s, err := status.New(gRPCStatus, errString).WithDetails(&proto.ExecStatusPayload{
+				StatusCode: int32(commandFailedErr.ExitStatus),
+				Stderr:     string(commandFailedErr.Stderr),
+			})
+			if err != nil {
+				gs.logger.Error("failed to marshal status", log.Error(err))
+				return err
+			}
+			return s.Err()
+		}
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		return err
+	}
+
+	return nil
 }
 
 func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {
@@ -261,49 +327,6 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 
 	_, err = io.Copy(w, r)
 	return err
-}
-
-// doExec executes the given git command and streams the output to the given writer.
-//
-// Note: This function wraps the underlying exec implementation and returns grpc specific error handling.
-func (gs *grpcServer) doExec(ctx context.Context, req *protocol.ExecRequest, w io.Writer) error {
-	execStatus, err := gs.svc.Exec(ctx, req, w)
-	if err != nil {
-		if errors.Is(err, gitcli.ErrBadGitCommand) {
-			return status.New(codes.InvalidArgument, "invalid command").Err()
-		} else if ctxErr := ctx.Err(); ctxErr != nil {
-			return status.FromContextError(ctxErr).Err()
-		}
-
-		return err
-	}
-
-	if execStatus.ExitStatus != 0 || execStatus.Err != nil {
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			return status.FromContextError(ctxErr).Err()
-		}
-
-		gRPCStatus := codes.Unknown
-		if execStatus.Err != nil && strings.Contains(execStatus.Err.Error(), "signal: killed") {
-			gRPCStatus = codes.Aborted
-		}
-
-		var errString string
-		if execStatus.Err != nil {
-			errString = execStatus.Err.Error()
-		}
-		s, err := status.New(gRPCStatus, errString).WithDetails(&proto.ExecStatusPayload{
-			StatusCode: int32(execStatus.ExitStatus),
-			Stderr:     execStatus.Stderr,
-		})
-		if err != nil {
-			gs.logger.Error("failed to marshal status", log.Error(err))
-			return err
-		}
-		return s.Err()
-	}
-
-	return nil
 }
 
 func (gs *grpcServer) GetObject(ctx context.Context, req *proto.GetObjectRequest) (*proto.GetObjectResponse, error) {
@@ -417,18 +440,19 @@ func (gs *grpcServer) RepoDelete(ctx context.Context, req *proto.RepoDeleteReque
 	return &proto.RepoDeleteResponse{}, nil
 }
 
-func (gs *grpcServer) RepoUpdate(_ context.Context, req *proto.RepoUpdateRequest) (*proto.RepoUpdateResponse, error) {
+func (gs *grpcServer) RepoUpdate(ctx context.Context, req *proto.RepoUpdateRequest) (*proto.RepoUpdateResponse, error) {
 	var in protocol.RepoUpdateRequest
 	in.FromProto(req)
-	grpcResp := gs.svc.RepoUpdate(&in)
 
-	return grpcResp.ToProto(), nil
+	resp := gs.svc.RepoUpdate(ctx, &in)
+
+	return resp.ToProto(), nil
 }
 
 func (gs *grpcServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoCloneableRequest) (*proto.IsRepoCloneableResponse, error) {
 	repo := api.RepoName(req.GetRepo())
 
-	if req.Repo == "" {
+	if repo == "" {
 		return nil, status.Error(codes.InvalidArgument, "no Repo given")
 	}
 
@@ -835,9 +859,6 @@ func (gs *grpcServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 		return nil, err
 	}
 
-	// TODO: This should be included in requests where we do ensure the revision exists.
-	// gs.server.ensureRevision(ctx, repoName, "THE REVISION", repoDir)
-
 	backend := gs.getBackendFunc(repoDir, repoName)
 
 	sha, err := backend.MergeBase(ctx, string(req.GetBase()), string(req.GetHead()))
@@ -1180,6 +1201,64 @@ func (gs *grpcServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverSer
 
 	_, err = io.Copy(w, r)
 	return err
+}
+
+func (gs *grpcServer) ResolveRevision(ctx context.Context, req *proto.ResolveRevisionRequest) (*proto.ResolveRevisionResponse, error) {
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.String("revspec", string(req.GetRevSpec())),
+	)
+
+	if req.GetRepoName() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
+
+	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+		return nil, err
+	}
+
+	revspec := string(req.GetRevSpec())
+
+	backend := gs.getBackendFunc(repoDir, repoName)
+
+	// First, try to resolve the revspec.
+	sha, err := backend.ResolveRevision(ctx, revspec)
+	if err != nil {
+		// If that fails to resolve the revspec, try to ensure the revision exists,
+		// if requested by the caller.
+		if req.GetEnsureRevision() && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			// We ensured the revision exists, so try to resolve it again.
+			if gs.svc.EnsureRevision(ctx, repoName, revspec) {
+				sha, err = backend.ResolveRevision(ctx, revspec)
+			}
+		}
+	}
+
+	if err != nil {
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		// TODO: Better error checking.
+		return nil, err
+	}
+
+	return &proto.ResolveRevisionResponse{
+		CommitSha: string(sha),
+	}, nil
 }
 
 func (gs *grpcServer) maybeStartClone(ctx context.Context, repo api.RepoName) error {

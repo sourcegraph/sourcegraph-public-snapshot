@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
-
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -49,6 +49,7 @@ func NewOpenAIHandler(
 		// help in a minute-long rate limit window.
 		30, // seconds
 		autoFlushStreamingResponses,
+		nil,
 	)
 }
 
@@ -79,6 +80,14 @@ func (r openaiRequest) ShouldStream() bool {
 
 func (r openaiRequest) GetModel() string {
 	return r.Model
+}
+
+func (r openaiRequest) BuildPrompt() string {
+	var sb strings.Builder
+	for _, m := range r.Messages {
+		sb.WriteString(m.Content + "\n")
+	}
+	return sb.String()
 }
 
 type openaiUsage struct {

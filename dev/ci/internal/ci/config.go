@@ -69,6 +69,8 @@ func NewConfig(now time.Time) Config {
 			"RELEASE_NIGHTLY":    os.Getenv("RELEASE_NIGHTLY"),
 			"VSCE_NIGHTLY":       os.Getenv("VSCE_NIGHTLY"),
 			"WOLFI_BASE_REBUILD": os.Getenv("WOLFI_BASE_REBUILD"),
+			"RELEASE_INTERNAL":   os.Getenv("RELEASE_INTERNAL"),
+			"RELEASE_PUBLIC":     os.Getenv("RELEASE_PUBLIC"),
 		})
 		// defaults to 0
 		buildNumber, _ = strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
@@ -105,12 +107,19 @@ func NewConfig(now time.Time) Config {
 
 	diff, changedFilesByDiffType := changed.ParseDiff(changedFiles)
 
+	fmt.Fprintf(os.Stderr, "Parsed diff:\n\tgit command: %v\n\tchanged files: %v\n\tdiff changes: %q\n",
+		append([]string{"git"}, diffCommand...),
+		changedFiles,
+		diff.String(),
+	)
+	fmt.Fprint(os.Stderr, "The generated build pipeline will now follow, see you next time!")
+
 	return Config{
 		RunType: runType,
 
 		Time:              now,
 		Branch:            branch,
-		Version:           versionFromTag(runType, tag, commit, buildNumber, branch, now),
+		Version:           inferVersion(runType, tag, commit, buildNumber, branch, now),
 		Commit:            commit,
 		MustIncludeCommit: mustIncludeCommits,
 		Diff:              diff,
@@ -127,8 +136,14 @@ func NewConfig(now time.Time) Config {
 	}
 }
 
-// versionFromTag constructs the Sourcegraph version from the given build state.
-func versionFromTag(runType runtype.RunType, tag string, commit string, buildNumber int, branch string, now time.Time) string {
+// inferVersion constructs the Sourcegraph version from the given build state.
+func inferVersion(runType runtype.RunType, tag string, commit string, buildNumber int, branch string, now time.Time) string {
+	// If we're building a release, use the version that is being released regardless of
+	// all other build attributes, such as tag, commit, build number, etc ...
+	if runType.Is(runtype.InternalRelease, runtype.PromoteRelease) {
+		return os.Getenv("VERSION")
+	}
+
 	if runType.Is(runtype.TaggedRelease) {
 		// This tag is used for publishing versioned releases.
 		//

@@ -209,6 +209,7 @@ export const FILE_ICONS_BY_LANGUAGE: Map<string, UnifiedIcon> = new Map([
     ['OCaml', { react: { icon: SiOcaml, className: styles.yellow } }],
     ['PHP', { react: { icon: SiPhp, className: styles.cyan }, svg: mdiLanguagePhp }],
     ['Perl', { react: { icon: SiPerl, className: styles.defaultIcon } }],
+    ['PLpgSQL', { react: { icon: GoDatabase, className: styles.blue } }],
     ['PowerShell', { react: { icon: GoTerminal, className: styles.defaultIcon }, svg: mdiConsole }],
 
     // Missing icon for Protobuf
