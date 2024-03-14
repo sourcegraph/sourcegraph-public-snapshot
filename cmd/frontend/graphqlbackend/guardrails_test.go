@@ -243,7 +243,7 @@ func TestSnippetAttributionReactsToSiteConfigChanges(t *testing.T) {
 	require.NoError(t, err)
 	// Same query runs in every test:
 	query := `query SnippetAttribution {
-		snippetAttribution(snippet: "sourcegraph.Location(new URL", first: 2) {
+		snippetAttribution(snippet: "sourcegraph.Location(new URL\n\n\n\n\n\n\n\n\n\n", first: 2) {
 			nodes {
 				repositoryName
 			}
