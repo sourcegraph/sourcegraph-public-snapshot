@@ -66,9 +66,13 @@
         display: flex;
         align-items: center;
         width: 100%;
-        background-color: var(--code-bg);
         padding: 0.5rem;
         border-bottom: 1px solid var(--border-color);
+
+        background-color: var(--code-bg);
+        &:hover {
+            background-color: var(--subtle-bg-2);
+        }
     }
 
     .symbol-kind {

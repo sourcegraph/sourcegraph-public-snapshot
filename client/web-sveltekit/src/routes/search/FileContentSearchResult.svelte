@@ -74,18 +74,20 @@
     }
 
     let visible = false
-    let highlightedHTMLRows: Promise<string[][]> | undefined
+    let highlightedHTMLRows: string[][] | undefined
     $: if (visible) {
         // If the file contains some large lines, avoid stressing syntax-highlighter and the browser.
         if (!result.chunkMatches?.some(chunk => chunk.contentTruncated)) {
             // We rely on fetchFileRangeMatches to cache the result for us so that repeated
             // calls will not result in repeated network requests.
-            highlightedHTMLRows = fetchFileRangeMatches({
+            fetchFileRangeMatches({
                 result,
                 ranges: expandedMatchGroups.map(group => ({
                     startLine: group.startLine,
                     endLine: group.endLine,
                 })),
+            }).then(result => {
+                highlightedHTMLRows = result
             })
         }
     }
@@ -109,20 +111,13 @@
                         We need to "post-slice" `highlightedHTMLRows` because we fetch highlighting for
                         the whole chunk.
                     -->
-                    {#await highlightedHTMLRows}
-                        <CodeExcerpt
-                            startLine={group.startLine}
-                            matches={group.matches}
-                            plaintextLines={group.plaintextLines}
-                        />
-                    {:then result}
-                        <CodeExcerpt
-                            startLine={group.startLine}
-                            matches={group.matches}
-                            plaintextLines={group.plaintextLines}
-                            highlightedHTMLRows={result?.[index]?.slice(0, group.plaintextLines.length)}
-                        />
-                    {/await}
+                    <CodeExcerpt
+                        startLine={group.startLine}
+                        matches={group.matches}
+                        plaintextLines={group.plaintextLines}
+                        highlightedHTMLRows={highlightedHTMLRows?.[index]?.slice(0, group.plaintextLines.length)}
+                        --background-color="transparent"
+                    />
                 </a>
             </div>
         {/each}
@@ -156,6 +151,10 @@
             position: sticky;
             bottom: 0;
         }
+
+        &:hover {
+            background-color: var(--subtle-bg-2);
+        }
     }
 
     .code {
@@ -163,6 +162,13 @@
 
         &:last-child {
             border-bottom: none;
+        }
+
+        &:hover {
+            // Set the background color of the whole div to also change the color of the padding,
+            // but also make --background-color transparent to unset the background color of CodeExcerpt.
+            background-color: var(--subtle-bg-2);
+            --background-color: transparent;
         }
 
         a {
