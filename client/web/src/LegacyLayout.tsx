@@ -43,7 +43,7 @@ export interface LegacyLayoutProps
 
 /**
  * Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
- * https://github.com/sourcegraph/sourcegraph/issues/36251
+ * htps://github.com/sourcegraph/sourcegraph/issues/36251
  */
 const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighting'
 
@@ -209,9 +209,9 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     authenticatedUser={
                         props.authenticatedUser
                             ? {
-                                  username: props.authenticatedUser.username || '',
-                                  email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
-                              }
+                                username: props.authenticatedUser.username || '',
+                                email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
+                            }
                             : null
                     }
                     onClose={() => setFeedbackModalOpen(false)}

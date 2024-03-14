@@ -819,8 +819,8 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0
       chromatic:
-        specifier: ^10.1.0
-        version: 10.2.0
+        specifier: ^10.9.6
+        version: 10.9.6
       chrome-webstore-upload-cli:
         specifier: ^1.2.0
         version: 1.2.0
@@ -1067,6 +1067,21 @@ importers:
       yauzl:
         specifier: ^2.10.0
         version: 2.10.0
+
+  client/app-shell:
+    devDependencies:
+      '@sourcegraph/build-config':
+        specifier: workspace:*
+        version: link:../build-config
+      '@sourcegraph/common':
+        specifier: workspace:*
+        version: link:../common
+      esbuild:
+        specifier: ^0.17.7
+        version: 0.17.14
+      ts-node:
+        specifier: ^10.9.1
+        version: 10.9.1(@types/node@20.8.0)(typescript@5.2.2)
 
   client/branded:
     dependencies:
@@ -13248,10 +13263,17 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /chromatic@10.2.0:
-    resolution: {integrity: sha512-UDVGWa2Fx9CLCpwnyfvFHGr0vGF0ooB1TugUdgOcjC9pJXiFa67i7oaXMyTfVRIFxlt/QkqOJwdqDqqlLFffCw==}
-    deprecated: Broken due to out-of-memory issue
+  /chromatic@10.9.6:
+    resolution: {integrity: sha512-1MoT+/U+vQwEiq2GuehPyStbqhxqHmM1B9pdpVU1dKh26userQg1FyOFYifkTgy+9reo2w2p7sAbc0JRd2kzlA==}
     hasBin: true
+    peerDependencies:
+      '@chromatic-com/cypress': ^0.5.2 || ^1.0.0
+      '@chromatic-com/playwright': ^0.5.2 || ^1.0.0
+    peerDependenciesMeta:
+      '@chromatic-com/cypress':
+        optional: true
+      '@chromatic-com/playwright':
+        optional: true
     dev: true
 
   /chrome-trace-event@1.0.3:
