@@ -27,6 +27,7 @@ playwright_test_bin.playwright_test(
         # "//:node_modules/@playwright/browser-chromium",
         "//:node_modules/@playwright/test",
         # "//:node_modules/playwright-core",
+        ":playwright_install",
     ],
     env = {
         "PLAYWRIGHT_BROWSERS_PATH": "0",
