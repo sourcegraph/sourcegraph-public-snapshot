@@ -14,6 +14,7 @@ function fetch_tags() {
     COUNT=10
     echo "~~~ :git: Fetching last $COUNT tags"
     git ls-remote --tags origin | sort -t '/' -k 3 -V | tail -n $COUNT | awk -F'/' '{gsub(/\^\{\}$/, "", $3); print $3}' | uniq | while read -r tag; do
+    # we don't use deepen here since during testing it caused more history to be fetched than just the history for the tag which incured a ~40s cost over 5s with just fetch tag
     git fetch -v origin tag "$tag"
     done
 }
