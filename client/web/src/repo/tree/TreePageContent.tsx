@@ -18,7 +18,6 @@ import {
     Badge,
     Button,
     ButtonLink,
-    ButtonGroup,
     Card,
     CardHeader,
     Icon,
@@ -191,20 +190,18 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         <>
             {!isRoot && (
                 <div className={menuStyles.menu}>
-                    <ButtonGroup>
-                        <Tooltip content="Git commits">
-                            <Button
-                                className="flex-shrink-0"
-                                to={`/${encodeURIPathComponent(repo.name)}/-/commits/${filePath}`}
-                                variant="secondary"
-                                outline={true}
-                                as={Link}
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiSourceCommit} />{' '}
-                                <span className={menuStyles.text}>Commits</span>
-                            </Button>
-                        </Tooltip>
-                    </ButtonGroup>
+                    <Tooltip content="Git commits">
+                        <Button
+                            className="flex-shrink-0"
+                            to={`/${encodeURIPathComponent(repo.name)}/-/commits/${filePath}`}
+                            variant="secondary"
+                            outline={true}
+                            as={Link}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiSourceCommit} />{' '}
+                            <span className={menuStyles.text}>Commits</span>
+                        </Button>
+                    </Tooltip>
                 </div>
             )}
 
