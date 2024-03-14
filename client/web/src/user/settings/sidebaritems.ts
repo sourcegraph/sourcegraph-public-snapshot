@@ -42,7 +42,7 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         exact: true,
     },
     {
-        label: 'Enterprise licenses',
+        label: 'Enterprise subscriptions',
         to: '/subscriptions',
         condition: ({ user }) => SHOW_BUSINESS_FEATURES && user.viewerCanAdminister,
     },
