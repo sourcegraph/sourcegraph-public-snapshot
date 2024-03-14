@@ -14,17 +14,7 @@ import { SearchPatternType, type TreeFields } from '@sourcegraph/shared/src/grap
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import {
-    Badge,
-    Button,
-    ButtonLink,
-    Card,
-    CardHeader,
-    Icon,
-    Link,
-    Text,
-    Tooltip,
-} from '@sourcegraph/wildcard'
+import { Badge, Button, ButtonLink, Card, CardHeader, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import {
