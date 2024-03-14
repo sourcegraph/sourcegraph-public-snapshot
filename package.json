@@ -295,7 +295,6 @@
     "@opentelemetry/sdk-trace-base": "1.9.1",
     "@opentelemetry/sdk-trace-web": "^1.9.1",
     "@opentelemetry/semantic-conventions": "^1.9.1",
-    "@playwright/test": "1.40.1",
     "@reach/accordion": "^0.16.1",
     "@reach/auto-id": "^0.16.0",
     "@reach/combobox": "^0.16.5",

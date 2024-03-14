@@ -1,7 +1,6 @@
-load("@npm//:@playwright/test/package_json.bzl", playwright_test_bin = "bin")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("@npm//client/web:playwright/package_json.bzl", playwright_bin = "bin")
-load("//dev:defs.bzl", "ts_project")
+load("@npm//client/playwright:@playwright/test/package_json.bzl", playwright_test_bin = "bin")
+load("@npm//client/playwright:playwright/package_json.bzl", playwright_bin = "bin")
 
 npm_link_all_packages(name = "node_modules")
 
@@ -13,33 +12,41 @@ playwright_bin.playwright_test(
     # env = {
     #     "PLAYWRIGHT_BROWSERS_PATH": "0",
     # },
-    local = True,
+    # local = True,
     tags = [
-        "no-sandbox",
+        # "no-sandbox",
         "requires-network",
     ],
 )
 
-ts_project(
-    name = "p_project",
-    srcs = glob(["src/playwright/*.spec.ts"]),
-    deps = [":node_modules/@playwright/test"],
+filegroup(
+    name = "test_files",
+    srcs = glob([
+        "src/playwright/*.spec.ts",
+    ]),
 )
 
+# ts_project(
+#     name = "p_project",
+#     srcs = glob(["src/playwright/*.spec.ts"]),
+#     deps = [":node_modules/@playwright/test"],
+# )
+
 playwright_test_bin.playwright_test(
-    name = "playwright_test",
+    name = "e2e_test",
     args = ["test"],
     data = [
         "playwright.config.ts",
         # "//:node_modules/@playwright/browser-chromium",
-        "//:node_modules/@playwright/test",
-        # "//:node_modules/playwright-core",
+        # "@npm//client/playwright:@playwright/test",
+        # "//:node_modules/playwright",
+        "//client/playwright:node_modules/@playwright/test",
         ":playwright_install",
-        ":p_project",
+        ":test_files",
     ],
     # env = {
     #     "PLAYWRIGHT_BROWSERS_PATH": "0",
     # },
-    local = True,
+    # local = True,
     tags = ["requires-network"],
 )
