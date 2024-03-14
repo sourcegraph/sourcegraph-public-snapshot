@@ -19,9 +19,8 @@
     import { tick } from 'svelte'
     import { writable } from 'svelte/store'
 
-    import { limitHit } from '@sourcegraph/branded'
-
     import { beforeNavigate, goto } from '$app/navigation'
+    import { limitHit } from '$lib/branded'
     import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
