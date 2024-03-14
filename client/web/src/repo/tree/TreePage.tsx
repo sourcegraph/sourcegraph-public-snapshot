@@ -52,11 +52,13 @@ import { isCodyEnabled } from '../../cody/isCodyEnabled'
 import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import type { FileCommitsResult, FileCommitsVariables, RepositoryFields } from '../../graphql-operations'
+import { RepositoryType } from '../../graphql-operations'
 import type { SourcegraphContext } from '../../jscontext'
 import type { OwnConfigProps } from '../../own/OwnConfigProps'
 import { TryCodyWidget } from '../components/TryCodyWidget/TryCodyWidget'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
+import { isPerforceChangelistMappingEnabled } from '../utils'
 
 import { TreePageContent } from './TreePageContent'
 import { treeHistoryFragment } from './TreePagePanels'
@@ -256,6 +258,11 @@ export const TreePage: FC<Props> = ({
         return mdiSourceRepository
     }
 
+    const isRepoPerforce = isPerforceChangelistMappingEnabled() && repo?.sourceType === RepositoryType.PERFORCE_DEPOT
+    const tooltip = isRepoPerforce ? 'Perforce changelists' : 'Git commits'
+    const title = isRepoPerforce ? 'Changelists' : 'Commits'
+    const revisionPath = isRepoPerforce ? 'changelists' : 'commits'
+
     const RootHeaderSection = (): React.ReactElement => (
         <div className="d-flex flex-wrap justify-content-between px-0">
             <div className={styles.header}>
@@ -273,16 +280,16 @@ export const TreePage: FC<Props> = ({
             </div>
             <div className={styles.menu}>
                 <ButtonGroup>
-                    <Tooltip content="Git commits">
+                    <Tooltip content={tooltip}>
                         <Button
                             className="flex-shrink-0"
-                            to={`/${encodeURIPathComponent(repoName)}/-/commits`}
+                            to={`/${encodeURIPathComponent(repoName)}/-/${revisionPath}`}
                             variant="secondary"
                             outline={true}
                             as={Link}
                         >
                             <Icon aria-hidden={true} svgPath={mdiSourceCommit} />{' '}
-                            <span className={styles.text}>Commits</span>
+                            <span className={styles.text}>{title}</span>
                         </Button>
                     </Tooltip>
                     {!isPackage && (
@@ -401,7 +408,6 @@ export const TreePage: FC<Props> = ({
             </div>
         </div>
     )
-
     return (
         <div className={classNames(styles.treePage, className)}>
             {(isSourcegraphDotCom || isCodyEnabled()) && (
