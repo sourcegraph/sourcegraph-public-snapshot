@@ -6,10 +6,7 @@
     "rootDir": ".",
     "outDir": "./out",
   },
-  "include": ["src"],
-  "references": [
-    {
-      "path": "../build-config",
-    },
-  ],
+  "include": [
+    "src"
+  ]
 }
