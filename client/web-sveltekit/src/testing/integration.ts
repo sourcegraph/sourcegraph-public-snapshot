@@ -7,6 +7,8 @@ import { test as base, type Page, type Locator } from '@playwright/test'
 import glob from 'glob'
 import { buildSchema } from 'graphql'
 
+import { type SearchEvent } from '../lib/shared'
+
 import { GraphQLMockServer } from './graphql-mocking'
 import type { TypeMocks, ObjectMock, UserMock, OperationMocks } from './graphql-type-mocks'
 
@@ -65,6 +67,11 @@ const defaultMocks: TypeMocks = {
     JSONCString: () => '{}',
 }
 
+interface MockSearchStream {
+    publish(...events: SearchEvent[]): Promise<void>
+    close(): Promise<void>
+}
+
 const SCHEMA_DIR = path.resolve(
     path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../../cmd/frontend/graphqlbackend')
 )
@@ -112,23 +119,7 @@ class Sourcegraph {
      * the search results being received. The returned function will wait for the search results
      * page to be "ready" by waiting for the "Filter results" heading to be visible.
      */
-    public mockSearchResults(): () => Promise<void> {
-        // TODO: Allow customizing the events
-        const events = [
-            {
-                event: 'progress',
-                data: {
-                    done: true,
-                    matchCount: 0,
-                    skipped: [],
-                    durationMs: 100,
-                },
-            },
-            {
-                event: 'done',
-                data: {},
-            },
-        ]
+    public mockSearchStream(): MockSearchStream {
         this.page.addInitScript(function () {
             window.$$sources = []
             window.EventSource = class MockEventSource {
@@ -177,19 +168,26 @@ class Sourcegraph {
             }
         })
 
-        return async () => {
-            // Wait for the search results page to be "ready"
-            await this.page.getByRole('heading', { name: 'Filter results' }).waitFor()
-            return this.page.evaluate(
-                ([events]) => {
-                    for (const event of events) {
-                        for (const source of window.$$sources) {
-                            source.dispatchEvent(new MessageEvent(event.event, { data: JSON.stringify(event.data) }))
+        return {
+            publish: async (...events: SearchEvent[]): Promise<void> => {
+                return this.page.evaluate(
+                    ([events]) => {
+                        for (const event of events) {
+                            for (const source of window.$$sources) {
+                                source.dispatchEvent(new MessageEvent(event.type, { data: JSON.stringify(event.data) }))
+                            }
                         }
+                    },
+                    [events]
+                )
+            },
+            close: async (): Promise<void> => {
+                return this.page.evaluate(() => {
+                    for (const source of window.$$sources) {
+                        source.close()
                     }
-                },
-                [events]
-            )
+                })
+            },
         }
     }
 
