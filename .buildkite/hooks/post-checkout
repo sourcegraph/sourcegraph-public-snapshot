@@ -4,6 +4,8 @@
 source "$HOME/.profile"
 
 function fetch_tags() {
+    # ref relevant terraform: https://github.com/sourcegraph/infra-aspect-dev/blob/main/aspect/workflows.tf#L71
+    # ref docs about above terraform: https://pro.aspect.build/workflows/terraform/workflows#input_bk_runner_groups
     # due to how the repostiory is cloned with --depth=100 (see aspect terraform docs), we need to fetch the tags manually
     # we don't want to fetch all the tags, so here:
     # 1. Get a list of tags from the remote
