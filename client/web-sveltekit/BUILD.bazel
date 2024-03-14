@@ -45,14 +45,14 @@ SRCS = [
 
 BUILD_DEPS = [
     ":node_modules/@faker-js/faker",
+    ":node_modules/@floating-ui/dom",
     ":node_modules/@graphql-codegen/cli",
-    ":node_modules/@graphql-codegen/typescript",
-    ":node_modules/@graphql-codegen/typescript-operations",
     ":node_modules/@graphql-codegen/near-operation-file-preset",
     ":node_modules/@graphql-codegen/typed-document-node",
+    ":node_modules/@graphql-codegen/typescript",
+    ":node_modules/@graphql-codegen/typescript-operations",
     ":node_modules/@graphql-tools/utils",
     ":node_modules/@melt-ui/svelte",
-    ":node_modules/@popperjs/core",
     ":node_modules/@sourcegraph/branded",
     ":node_modules/@sourcegraph/common",
     ":node_modules/@sourcegraph/http-client",
