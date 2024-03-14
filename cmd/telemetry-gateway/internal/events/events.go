@@ -100,6 +100,21 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 		event := event // capture range variable :(
 
 		doPublish := func(event *telemetrygatewayv1.Event) error {
+			// Ensure the most important fields are in place
+			if event.Id == "" {
+				return errors.New("event ID is required")
+			}
+			if event.Feature == "" {
+				return errors.New("event feature is required")
+			}
+			if event.Action == "" {
+				return errors.New("event action is required")
+			}
+			if event.Timestamp == nil {
+				return errors.New("event timestamp is required")
+			}
+
+			// Render JSON format for publishing
 			eventJSON, err := protojson.Marshal(event)
 			if err != nil {
 				return errors.Wrap(err, "marshalling event")
