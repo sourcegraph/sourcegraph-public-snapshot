@@ -1,14 +1,11 @@
 <script lang="ts" context="module">
-    export interface Range {
-        start: Location
-        end: Location
-    }
+    import type { Range } from '$lib/codemirror/static-highlights'
 
-    export interface Location {
-        // A zero-based line number
-        line: number
-        // A zero-based column number
-        column: number
+    function extractHighlightedRanges(result: ContentMatch | SymbolMatch | PathMatch): Range[] {
+        if (result.type !== 'content') {
+            return []
+        }
+        return result.chunkMatches?.flatMap(chunkMatch => chunkMatch.ranges) || []
     }
 </script>
 
@@ -107,6 +104,7 @@
                 }}
                 highlights={$highlightStore.value ?? ''}
                 {codeIntelAPI}
+                staticHighlightRanges={extractHighlightedRanges(result)}
             />
         {/if}
     </div>

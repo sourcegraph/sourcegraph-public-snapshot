@@ -114,6 +114,9 @@
     import { createEventDispatcher, onMount } from 'svelte'
 
     import { browser } from '$app/environment'
+    import { goto } from '$app/navigation'
+    import type { LineOrPositionOrRange } from '$lib/common'
+    import type { CodeIntelAPI } from '$lib/shared'
     import {
         selectableLineNumbers,
         syntaxHighlight,
@@ -125,16 +128,16 @@
         syncSelection,
         temporaryTooltip,
     } from '$lib/web'
-    import { goto } from '$app/navigation'
-    import type { CodeIntelAPI } from '$lib/shared'
+
+    import { type Range, staticHighlights } from './codemirror/static-highlights'
     import { goToDefinition, openImplementations, openReferences } from './repo/blob'
-    import type { LineOrPositionOrRange } from '$lib/common'
 
     export let blobInfo: BlobInfo
     export let highlights: string
     export let wrapLines: boolean = false
     export let selectedLines: LineOrPositionOrRange | null = null
     export let codeIntelAPI: CodeIntelAPI
+    export let staticHighlightRanges: Range[] = []
 
     const dispatch = createEventDispatcher<{ selectline: SelectedLineRange }>()
 
@@ -180,8 +183,17 @@
     })
     $: settings = configureMiscSettings({ wrapLines })
     $: sh = configureSyntaxHighlighting(blobInfo.content, highlights)
+    $: staticHighlightExtension = staticHighlights(staticHighlightRanges)
 
-    $: extensions = [sh, settings, lineNumbers, temporaryTooltip, codeIntelExtension, staticExtensions]
+    $: extensions = [
+        sh,
+        settings,
+        lineNumbers,
+        temporaryTooltip,
+        codeIntelExtension,
+        staticExtensions,
+        staticHighlightExtension,
+    ]
 
     function update(blobInfo: BlobInfo, extensions: Extension, range: LineOrPositionOrRange | null) {
         if (editor) {
