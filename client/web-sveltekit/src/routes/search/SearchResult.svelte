@@ -11,11 +11,7 @@
         </div>
     </div>
     {#if $$slots.default || $$slots.body}
-        <slot name="body">
-            <div class="body">
-                <slot />
-            </div>
-        </slot>
+        <slot name="body"><div class="body"><slot /></div></slot>
     {/if}
 </article>
 
@@ -57,7 +53,7 @@
         align-items: center;
     }
 
-    .body {
+    .body:not(:empty) {
         background-color: var(--code-bg);
         border-bottom: 1px solid var(--border-color);
     }

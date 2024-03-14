@@ -71,12 +71,15 @@
     {#if description}
         <!-- #key is needed here to recreate the paragraph because use:highlightRanges changes the DOM -->
         {#key description}
-            <p class="p-2 m-0" use:highlightRanges={{ ranges: descriptionMatches }}>
-                {limitDescription(description)}
-            </p>
+            <div class="test">
+                <p class="p-2 m-0" use:highlightRanges={{ ranges: descriptionMatches }}>
+                    {limitDescription(description)}
+                </p>
+            </div>
         {/key}
-    {/if}
-    {#if badges.length > 0}
+    {/if}<!--
+        Intentional weird comment to avoid adding an empty line to the body
+    -->{#if badges.length > 0}
         <ul class="p-2">
             {#each badges as badge}
                 <li>
