@@ -210,7 +210,7 @@ message EventBillingMetadata {
 
 message EventUser {
   // Sourcegraph instance database user ID of the user. User IDs are specific to
-  // a Sourcegraph instance, and not universal.
+  // a Sourcegraph instance, and are not universal across Sourcegraph instances.
   //
   // We use an int64 as an ID because in Sourcegraph, database user IDs are
   // always integers.
@@ -221,12 +221,12 @@ message EventUser {
   // users as well.
   optional string anonymous_user_id = 2;
   // Sourcegraph Accounts Management System (SAMS) account associated with the
-  // user. This is only valid for services leveraging SAMS as an identity
-  // provider - on other words, traditional Sourcegraph instances will not
-  // provide this.
+  // user, represented by a SAMS external user ID in a UUID format. This is only
+  // valid for services leveraging SAMS as an identity provider - in other words,
+  // traditional Sourcegraph instances will not provide this.
   //
   // Learn more about SAMS: https://handbook.sourcegraph.com/departments/engineering/teams/core-services/sams
-  optional string sams_user_id = 3;
+  optional string sams_external_id = 3;
 }
 
 message EventFeatureFlags {

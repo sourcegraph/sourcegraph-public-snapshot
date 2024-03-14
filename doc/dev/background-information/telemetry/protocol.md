@@ -286,9 +286,9 @@ Sourcegraph.com instance and managed services.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| user_id | [int64](#int64) | optional | <p>Sourcegraph instance database user ID of the user. User IDs are specific to</p><p>a Sourcegraph instance, and not universal.</p><p>We use an int64 as an ID because in Sourcegraph, database user IDs are</p><p>always integers.</p> |
+| user_id | [int64](#int64) | optional | <p>Sourcegraph instance database user ID of the user. User IDs are specific to</p><p>a Sourcegraph instance, and are not universal across Sourcegraph instances.</p><p>We use an int64 as an ID because in Sourcegraph, database user IDs are</p><p>always integers.</p> |
 | anonymous_user_id | [string](#string) | optional | <p>Randomized unique identifier representing the user (typically stored in</p><p>localstorage in web clients, or similar mechanisms elsewhere). This is</p><p>often used for unauthenticated users, but can persist to authenticated</p><p>users as well.</p> |
-| sams_user_id | [string](#string) | optional | <p>Sourcegraph Accounts Management System (SAMS) account associated with the</p><p>user. This is only valid for services leveraging SAMS as an identity</p><p>provider - on other words, traditional Sourcegraph instances will not</p><p>provide this.</p><p>Learn more about SAMS: https://handbook.sourcegraph.com/departments/engineering/teams/core-services/sams</p> |
+| sams_external_id | [string](#string) | optional | <p>Sourcegraph Accounts Management System (SAMS) account associated with the</p><p>user, represented by a SAMS external user ID in a UUID format. This is only</p><p>valid for services leveraging SAMS as an identity provider - in other words,</p><p>traditional Sourcegraph instances will not provide this.</p><p>Learn more about SAMS: https://handbook.sourcegraph.com/departments/engineering/teams/core-services/sams</p> |
 
 
 
