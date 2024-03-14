@@ -32,7 +32,9 @@
     import { toReadable } from '$lib/utils/promises'
     import { Alert } from '$lib/wildcard'
 
-    // TODO: should I be importing this from a page? Seems funky.
+    // We are reusing the queries from the blob page to ensure we take advantage of
+    // the cache. It may make sense to pass loaders into this function
+    // rather than adding a dependency on the blob page.
     import {
         BlobPageQuery,
         BlobSyntaxHighlightQuery,
@@ -52,21 +54,21 @@
         },
     })
 
-    const blobStore = toReadable(
+    $: blobStore = toReadable(
         client
             .query(BlobPageQuery, {
                 repoName: result.repository,
-                revspec: result.commit ?? '', // TODO: default value?
+                revspec: result.commit ?? '',
                 path: result.path,
             })
             .then(mapOrThrow(result => result.data?.repository?.commit?.blob ?? null))
     )
 
-    const highlightStore = toReadable(
+    $: highlightStore = toReadable(
         client
             .query(BlobSyntaxHighlightQuery, {
                 repoName: result.repository,
-                revspec: result.commit ?? '', // TODO: default value?
+                revspec: result.commit ?? '',
                 path: result.path,
                 disableTimeout: false,
             })

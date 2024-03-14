@@ -170,9 +170,7 @@
     {#if $previewResult}
         <Separator currentPosition={previewSidebarPosition} />
         <div style:width={`clamp(10rem, ${100 - $previewSidebarPosition * 100}%, 50%)`}>
-            {#key $previewResult}
-                <PreviewPanel result={$previewResult} />
-            {/key}
+            <PreviewPanel result={$previewResult} />
         </div>
     {/if}
 </div>
