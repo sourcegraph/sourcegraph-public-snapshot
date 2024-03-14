@@ -26,7 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Fixed a bug in gitserver where it was possible to use expired Github App authorization tokens when syncing a large repository. Now, gitserver will use the latest tokens for each step of the syncing process (and refresh them if necessary). [#61179](https://github.com/sourcegraph/sourcegraph/pull/61179/)
 
 ### Removed
 

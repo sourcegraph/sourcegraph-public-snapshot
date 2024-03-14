@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"io"
 	"net/http/httptest"
 	"net/url"
@@ -96,6 +97,14 @@ func TestClient_ArchiveReader(t *testing.T) {
 	runArchiveReaderTestfunc := func(t *testing.T, mkClient func(t *testing.T, addrs []string) gitserver.Client, name api.RepoName, test test) {
 		t.Run(string(name), func(t *testing.T) {
 			// Setup: Prepare the test Gitserver server + register the gRPC server
+
+			getRemoteURLFunc := func(_ context.Context, name api.RepoName) (string, error) {
+				if test.remote != "" {
+					return test.remote, nil
+				}
+				return "", errors.Errorf("no remote for %s", test.name)
+			}
+
 			s := &server.Server{
 				Logger:   logtest.Scoped(t),
 				ReposDir: filepath.Join(root, "repos"),
@@ -103,14 +112,27 @@ func TestClient_ArchiveReader(t *testing.T) {
 				GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 					return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 				},
-				GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
-					if test.remote != "" {
-						return test.remote, nil
-					}
-					return "", errors.Errorf("no remote for %s", test.name)
-				},
+				GetRemoteURLFunc: getRemoteURLFunc,
 				GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-					return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory()), nil
+					getRemoteURLSource := func(ctx context.Context, name api.RepoName) (vcssyncer.RemoteURLSource, error) {
+						source := vcssyncer.RemoteURLSourceFunc(func(ctx context.Context) (*vcs.URL, error) {
+							raw, err := getRemoteURLFunc(ctx, name)
+							if err != nil {
+								return nil, errors.Wrapf(err, "failed to get remote URL for %s", name)
+							}
+
+							u, err := vcs.ParseURL(raw)
+							if err != nil {
+								return nil, errors.Wrapf(err, "failed to parse remote URL for repository: %s, raw: %s", name, raw)
+							}
+
+							return u, nil
+						})
+
+						return source, nil
+					}
+
+					return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), getRemoteURLSource), nil
 				},
 				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 				Locker:                  server.NewRepositoryLocker(),
