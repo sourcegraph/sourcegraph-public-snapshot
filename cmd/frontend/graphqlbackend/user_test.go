@@ -56,10 +56,7 @@ func TestUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		t.Run("allowed on Sourcegraph.com", func(t *testing.T) {
-			orig := dotcom.SourcegraphDotComMode()
-			dotcom.MockSourcegraphDotComMode(true)
-			defer dotcom.MockSourcegraphDotComMode(orig)
-
+			dotcom.MockSourcegraphDotComMode(t, true)
 			checkUserByUsername(t)
 		})
 
@@ -101,9 +98,7 @@ func TestUser(t *testing.T) {
 				})
 			}
 
-			orig := dotcom.SourcegraphDotComMode()
-			dotcom.MockSourcegraphDotComMode(true)
-			defer dotcom.MockSourcegraphDotComMode(orig)
+			dotcom.MockSourcegraphDotComMode(t, true)
 
 			t.Run("for anonymous viewer", func(t *testing.T) {
 				users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, database.ErrNoCurrentUser)
@@ -182,9 +177,7 @@ func TestUser_LatestSettings(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 		db.SettingsFunc.SetDefaultReturn(dbmocks.NewMockSettingsStore())
 
-		orig := dotcom.SourcegraphDotComMode()
-		dotcom.MockSourcegraphDotComMode(true)
-		defer dotcom.MockSourcegraphDotComMode(orig)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		tests := []struct {
 			name       string
@@ -247,11 +240,7 @@ func TestUser_ViewerCanAdminister(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		orig := dotcom.SourcegraphDotComMode()
-		dotcom.MockSourcegraphDotComMode(true)
-		t.Cleanup(func() {
-			dotcom.MockSourcegraphDotComMode(orig)
-		})
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		tests := []struct {
 			name string
@@ -366,9 +355,8 @@ func TestUpdateUser(t *testing.T) {
 	})
 
 	t.Run("disallow suspicious names", func(t *testing.T) {
-		orig := dotcom.SourcegraphDotComMode()
-		dotcom.MockSourcegraphDotComMode(true)
-		defer dotcom.MockSourcegraphDotComMode(orig)
+
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
@@ -466,9 +454,7 @@ func TestUpdateUser(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		orig := dotcom.SourcegraphDotComMode()
-		dotcom.MockSourcegraphDotComMode(true)
-		defer dotcom.MockSourcegraphDotComMode(orig)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		tests := []struct {
 			name       string
@@ -747,9 +733,8 @@ func TestUser_Organizations(t *testing.T) {
 	}
 
 	t.Run("on Sourcegraph.com", func(t *testing.T) {
-		orig := dotcom.SourcegraphDotComMode()
-		dotcom.MockSourcegraphDotComMode(true)
-		t.Cleanup(func() { dotcom.MockSourcegraphDotComMode(orig) })
+
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		t.Run("same user", func(t *testing.T) {
 			expectOrgSuccess(t, 1)

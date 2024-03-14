@@ -486,7 +486,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 	t.Cleanup(licensing.TestingSkipFeatureChecks())
 
 	t.Run("disabled on dotcom", func(t *testing.T) {
-		dotcom.MockSourcegraphDotComMode(true)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
@@ -506,9 +506,6 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 		if result != nil {
 			t.Errorf("result: want nil but got %v", result)
 		}
-
-		// Reset the env var for other tests.
-		dotcom.MockSourcegraphDotComMode(false)
 	})
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
@@ -1825,7 +1822,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 
 func TestResolver_BitbucketProjectPermissionJobs(t *testing.T) {
 	t.Run("disabled on dotcom", func(t *testing.T) {
-		dotcom.MockSourcegraphDotComMode(true)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
@@ -1840,9 +1837,6 @@ func TestResolver_BitbucketProjectPermissionJobs(t *testing.T) {
 
 		require.ErrorIs(t, err, errDisabledSourcegraphDotCom)
 		require.Nil(t, result)
-
-		// Reset the env var for other tests.
-		dotcom.MockSourcegraphDotComMode(false)
 	})
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {

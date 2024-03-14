@@ -79,11 +79,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 	}
 
 	t.Run("license check bypasses handler in dotcom mode", func(t *testing.T) {
-		currMode := dotcom.SourcegraphDotComMode()
-		dotcom.MockSourcegraphDotComMode(true)
-		t.Cleanup(func() {
-			dotcom.MockSourcegraphDotComMode(currMode)
-		})
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		req, _ := http.NewRequest("GET", "/.api/license/check", nil)
 		req.Header.Set("Authorization", "Bearer sometoken")
