@@ -16,11 +16,7 @@ import (
 func TestFreeUserCurrentPeriodDateRange(t *testing.T) {
 	db := dbmocks.NewMockDB()
 
-	orig := dotcom.SourcegraphDotComMode()
-	dotcom.MockSourcegraphDotComMode(true)
-	t.Cleanup(func() {
-		dotcom.MockSourcegraphDotComMode(orig)
-	})
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	users := dbmocks.NewMockUserStore()
 	db.UsersFunc.SetDefaultReturn(users)
