@@ -7,6 +7,6 @@
     "outDir": "./out",
   },
   "include": [
-    "src"
+    "src",
   ],
 }

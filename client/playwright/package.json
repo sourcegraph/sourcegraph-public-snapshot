@@ -5,8 +5,7 @@
   "description": "The Sourcegraph playwright suite",
   "scripts": {
     "playwright:install": "pnpm exec playwright install",
-    "playwright:test": "pnpm exec playwright test",
-    "lint": "eslint --cache 'src/**/*.[jt]s?(x)'"
+    "playwright:test": "pnpm exec playwright test"
   },
   "devDependencies": {
     "@playwright/browser-chromium": "^1.42.1",
