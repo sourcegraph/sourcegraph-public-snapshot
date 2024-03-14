@@ -5,25 +5,25 @@ load("//dev:defs.bzl", "ts_project")
 
 npm_link_all_packages(name = "node_modules")
 
-ts_project(
-    name = "p_project",
-    srcs = glob(["src/playwright/*.spec.ts"]),
-    deps = [":node_modules/@playwright/test"],
-)
-
 playwright_bin.playwright_test(
     name = "playwright_install",
     args = [
         "install",
     ],
-    env = {
-        "PLAYWRIGHT_BROWSERS_PATH": "0",
-    },
+    # env = {
+    #     "PLAYWRIGHT_BROWSERS_PATH": "0",
+    # },
     local = True,
     tags = [
         "no-sandbox",
         "requires-network",
     ],
+)
+
+ts_project(
+    name = "p_project",
+    srcs = glob(["src/playwright/*.spec.ts"]),
+    deps = [":node_modules/@playwright/test"],
 )
 
 playwright_test_bin.playwright_test(
@@ -37,9 +37,9 @@ playwright_test_bin.playwright_test(
         ":playwright_install",
         ":p_project",
     ],
-    env = {
-        "PLAYWRIGHT_BROWSERS_PATH": "0",
-    },
+    # env = {
+    #     "PLAYWRIGHT_BROWSERS_PATH": "0",
+    # },
     local = True,
     tags = ["requires-network"],
 )
