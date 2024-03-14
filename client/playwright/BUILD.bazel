@@ -43,7 +43,7 @@ playwright_test_bin.playwright_test(
         # "//:node_modules/playwright",
         "//client/playwright:node_modules/@playwright/test",
         ":playwright",
-        ":test_files",
+        # ":test_files",
         ":playwright_install",
     ],
     # env = {
