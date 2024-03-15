@@ -102,7 +102,8 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 	case runtype.InternalRelease:
 		prodRegistry = images.SourcegraphInternalReleaseRegistry
 	case runtype.MainDryRun:
-		prodRegistry = images.SourcegraphCloudEphemeral
+		// MainDryRun only pushses to internal dev registries
+		devRegistry = images.SourcegraphCloudEphemeral
 	}
 
 	_, bazelRC := aspectBazelRC()
