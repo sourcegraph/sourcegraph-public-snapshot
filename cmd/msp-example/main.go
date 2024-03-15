@@ -9,5 +9,6 @@ import (
 func main() {
 	println("testing, testing, 1...2...testing")
 	println("Adding a code change")
+	println("Code change again")
 	runtime.Start[example.Config](example.Service{})
 }
