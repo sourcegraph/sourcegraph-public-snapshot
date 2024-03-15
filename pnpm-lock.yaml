@@ -478,7 +478,7 @@ importers:
         version: 1.9.0(graphql@15.4.0)
       '@graphql-codegen/cli':
         specifier: ^2.16.1
-        version: 2.16.1(@babel/core@7.24.0)(@types/node@20.8.0)(graphql@15.4.0)(ts-node@10.9.1)(typescript@5.4.2)
+        version: 2.16.1(@babel/core@7.24.0)(@types/node@20.8.0)(graphql@15.4.0)(ts-node@10.9.2)(typescript@5.4.2)
       '@graphql-codegen/plugin-helpers':
         specifier: ^5.0.1
         version: 5.0.1(graphql@15.4.0)
@@ -961,7 +961,7 @@ importers:
         version: 4.1.0
       postcss-cli:
         specifier: ^10.1.0
-        version: 10.1.0(postcss@8.4.35)(ts-node@10.9.1)
+        version: 10.1.0(postcss@8.4.35)(ts-node@10.9.2)
       postcss-custom-media:
         specifier: ^8.0.0
         version: 8.0.0(postcss@8.4.35)
@@ -1032,8 +1032,8 @@ importers:
         specifier: ^2.2.0
         version: 2.2.0
       ts-node:
-        specifier: ^10.7.0
-        version: 10.9.1(@types/node@20.8.0)(typescript@5.4.2)
+        specifier: ^10.9.2
+        version: 10.9.2(@types/node@20.8.0)(typescript@5.4.2)
       typed-scss-modules:
         specifier: ^4.1.1
         version: 4.1.1(sass@1.32.4)
@@ -1081,7 +1081,7 @@ importers:
         version: 0.17.14
       ts-node:
         specifier: ^10.9.1
-        version: 10.9.1(@types/node@20.8.0)(typescript@5.4.2)
+        version: 10.9.2(@types/node@20.8.0)(typescript@5.4.2)
 
   client/branded:
     dependencies:
@@ -1164,7 +1164,7 @@ importers:
         version: 8.4.35
       postcss-cli:
         specifier: ^10.1.0
-        version: 10.1.0(postcss@8.4.35)(ts-node@10.9.1)
+        version: 10.1.0(postcss@8.4.35)(ts-node@10.9.2)
       postcss-modules:
         specifier: ^6.0.0
         version: 6.0.0(postcss@8.4.35)
@@ -4095,7 +4095,7 @@ packages:
       tslib: 2.1.0
     dev: true
 
-  /@graphql-codegen/cli@2.16.1(@babel/core@7.24.0)(@types/node@20.8.0)(graphql@15.4.0)(ts-node@10.9.1)(typescript@5.4.2):
+  /@graphql-codegen/cli@2.16.1(@babel/core@7.24.0)(@types/node@20.8.0)(graphql@15.4.0)(ts-node@10.9.2)(typescript@5.4.2):
     resolution: {integrity: sha512-11z3iSlsNCXcNNkoRKG3wCmT9XpLf7/GZG9bWGXkCoveWVRwnRmo37YakHdNV3hbcJ4iiGbR3Z+MX9gUTEPDVA==}
     hasBin: true
     peerDependencies:
@@ -4120,7 +4120,7 @@ packages:
       chalk: 4.1.2
       chokidar: 3.6.0
       cosmiconfig: 7.0.1
-      cosmiconfig-typescript-loader: 4.1.1(@types/node@20.8.0)(cosmiconfig@7.0.1)(ts-node@10.9.1)(typescript@5.4.2)
+      cosmiconfig-typescript-loader: 4.1.1(@types/node@20.8.0)(cosmiconfig@7.0.1)(ts-node@10.9.2)(typescript@5.4.2)
       debounce: 1.2.1
       detect-indent: 6.1.0
       graphql: 15.4.0
@@ -14140,7 +14140,7 @@ packages:
       '@iarna/toml': 2.2.5
     dev: true
 
-  /cosmiconfig-typescript-loader@4.1.1(@types/node@20.8.0)(cosmiconfig@7.0.1)(ts-node@10.9.1)(typescript@5.4.2):
+  /cosmiconfig-typescript-loader@4.1.1(@types/node@20.8.0)(cosmiconfig@7.0.1)(ts-node@10.9.2)(typescript@5.4.2):
     resolution: {integrity: sha512-9DHpa379Gp0o0Zefii35fcmuuin6q92FnLDffzdZ0l9tVd3nEobG3O+MZ06+kuBvFTSVScvNb/oHA13Nd4iipg==}
     engines: {node: '>=12', npm: '>=6'}
     peerDependencies:
@@ -14151,11 +14151,11 @@ packages:
     dependencies:
       '@types/node': 20.8.0
       cosmiconfig: 7.0.1
-      ts-node: 10.9.1(@types/node@20.8.0)(typescript@5.4.2)
+      ts-node: 10.9.2(@types/node@20.8.0)(typescript@5.4.2)
       typescript: 5.4.2
     dev: true
 
-  /cosmiconfig-typescript-loader@4.3.0(@types/node@20.8.0)(cosmiconfig@7.0.1)(ts-node@10.9.1)(typescript@5.4.2):
+  /cosmiconfig-typescript-loader@4.3.0(@types/node@20.8.0)(cosmiconfig@7.0.1)(ts-node@10.9.2)(typescript@5.4.2):
     resolution: {integrity: sha512-NTxV1MFfZDLPiBMjxbHRwSh5LaLcPMwNdCutmnHJCKoVnlvldPWlllonKwrsRJ5pYZBIBGRWWU2tfvzxgeSW5Q==}
     engines: {node: '>=12', npm: '>=6'}
     peerDependencies:
@@ -14166,7 +14166,7 @@ packages:
     dependencies:
       '@types/node': 20.8.0
       cosmiconfig: 7.0.1
-      ts-node: 10.9.1(@types/node@20.8.0)(typescript@5.4.2)
+      ts-node: 10.9.2(@types/node@20.8.0)(typescript@5.4.2)
       typescript: 5.4.2
     dev: true
 
@@ -17148,11 +17148,11 @@ packages:
       '@graphql-tools/utils': 8.13.1(graphql@15.4.0)
       cosmiconfig: 7.0.1
       cosmiconfig-toml-loader: 1.0.0
-      cosmiconfig-typescript-loader: 4.3.0(@types/node@20.8.0)(cosmiconfig@7.0.1)(ts-node@10.9.1)(typescript@5.4.2)
+      cosmiconfig-typescript-loader: 4.3.0(@types/node@20.8.0)(cosmiconfig@7.0.1)(ts-node@10.9.2)(typescript@5.4.2)
       graphql: 15.4.0
       minimatch: 4.2.1
       string-env-interpolation: 1.0.1
-      ts-node: 10.9.1(@types/node@20.8.0)(typescript@5.4.2)
+      ts-node: 10.9.2(@types/node@20.8.0)(typescript@5.4.2)
       tslib: 2.1.0
     transitivePeerDependencies:
       - '@swc/core'
@@ -21202,7 +21202,7 @@ packages:
       '@babel/runtime': 7.24.0
     dev: true
 
-  /postcss-cli@10.1.0(postcss@8.4.35)(ts-node@10.9.1):
+  /postcss-cli@10.1.0(postcss@8.4.35)(ts-node@10.9.2):
     resolution: {integrity: sha512-Zu7PLORkE9YwNdvOeOVKPmWghprOtjFQU3srMUGbdz3pHJiFh7yZ4geiZFMkjMfB0mtTFR3h8RemR62rPkbOPA==}
     engines: {node: '>=14'}
     hasBin: true
@@ -21216,7 +21216,7 @@ packages:
       globby: 13.1.3
       picocolors: 1.0.0
       postcss: 8.4.35
-      postcss-load-config: 4.0.1(postcss@8.4.35)(ts-node@10.9.1)
+      postcss-load-config: 4.0.1(postcss@8.4.35)(ts-node@10.9.2)
       postcss-reporter: 7.0.5(postcss@8.4.35)
       pretty-hrtime: 1.0.3
       read-cache: 1.0.0
@@ -21248,7 +21248,7 @@ packages:
       postcss: 6.0.1
     dev: false
 
-  /postcss-load-config@4.0.1(postcss@8.4.35)(ts-node@10.9.1):
+  /postcss-load-config@4.0.1(postcss@8.4.35)(ts-node@10.9.2):
     resolution: {integrity: sha512-vEJIc8RdiBRu3oRAI0ymerOn+7rPuMvRXslTvZUKZonDHFIczxztIyJ1urxM1x9JXEikvpWWTUUqal5j/8QgvA==}
     engines: {node: '>= 14'}
     peerDependencies:
@@ -21262,7 +21262,7 @@ packages:
     dependencies:
       lilconfig: 2.0.6
       postcss: 8.4.35
-      ts-node: 10.9.1(@types/node@20.8.0)(typescript@5.4.2)
+      ts-node: 10.9.2(@types/node@20.8.0)(typescript@5.4.2)
       yaml: 2.4.1
 
   /postcss-media-query-parser@0.2.3:
@@ -24547,8 +24547,8 @@ packages:
     resolution: {integrity: sha512-XvB+OdKSJ708Dmf9ore4Uf/q62AYDTzFcAdxc8KNML1mmAWywRFVt/dn1KYJH8Agt5UJNujfM3znU5PxgAzA2w==}
     dev: true
 
-  /ts-node@10.9.1(@types/node@20.8.0)(typescript@5.4.2):
-    resolution: {integrity: sha512-NtVysVPkxxrwFGUUxGYhfux8k78pQB3JqYBXlLRZgdGUqTO5wU/UyHop5p70iEbGhB7q5KmiZiU0Y3KlJrScEw==}
+  /ts-node@10.9.2(@types/node@20.8.0)(typescript@5.4.2):
+    resolution: {integrity: sha512-f0FFpIdcHgn8zcPSbf1dRevwt047YMnaiJM3u2w2RewrB+fob/zePZcrOyQoLMMO7aBIddLcQIEK5dYjkLnGrQ==}
     hasBin: true
     peerDependencies:
       '@swc/core': '>=1.2.50'
