@@ -7,7 +7,7 @@ import type {
     OnboardingTourConfigMutationVariables,
     OnboardingTourConfigResult,
     OnboardingTourConfigVariables,
-} from 'src/graphql-operations'
+} from '../graphql-operations'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

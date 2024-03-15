@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, H2, H5, Modal, Text, useSearchParameters } from '@sourcegraph/wildcard'
 

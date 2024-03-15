@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     ButtonLink,
     H1,

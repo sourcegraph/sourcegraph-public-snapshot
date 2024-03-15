@@ -5,7 +5,7 @@ import classnames from 'classnames'
 import { format, formatDistanceToNow } from 'date-fns'
 import * as jsonc from 'jsonc-parser'
 import { useNavigate } from 'react-router-dom'
-import type { SiteConfigResult } from 'src/graphql-operations'
+import type { SiteConfigResult } from '../graphql-operations'
 import { useDebouncedCallback } from 'use-debounce'
 
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'

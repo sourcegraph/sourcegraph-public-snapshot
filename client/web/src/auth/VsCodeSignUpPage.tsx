@@ -4,7 +4,7 @@ import { mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Link, Icon, H2 } from '@sourcegraph/wildcard'

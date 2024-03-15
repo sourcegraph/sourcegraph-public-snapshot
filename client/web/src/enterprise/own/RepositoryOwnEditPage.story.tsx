@@ -5,7 +5,7 @@ import { subDays } from 'date-fns'
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
 import {
     ExternalServiceKind,

@@ -1,5 +1,5 @@
 import type { ApolloClient } from '@apollo/client'
-import type { FuzzyFinderSymbolsResult, FuzzyFinderSymbolsVariables } from 'src/graphql-operations'
+import type { FuzzyFinderSymbolsResult, FuzzyFinderSymbolsVariables } from '../../graphql-operations'
 import gql from 'tagged-template-noop'
 
 import { getDocumentNode } from '@sourcegraph/http-client'

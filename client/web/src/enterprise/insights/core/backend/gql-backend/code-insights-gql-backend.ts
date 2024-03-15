@@ -9,7 +9,7 @@ import type {
     GetInsightsResult,
     RemoveInsightViewFromDashboardResult,
     RemoveInsightViewFromDashboardVariables,
-} from 'src/graphql-operations'
+} from '../../../../../graphql-operations'
 
 import { isDefined } from '@sourcegraph/common'
 import { fromObservableQuery } from '@sourcegraph/http-client'

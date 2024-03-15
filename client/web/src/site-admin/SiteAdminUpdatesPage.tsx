@@ -10,7 +10,7 @@ import type {
     SiteUpdateCheckVariables,
     SiteUpgradeReadinessResult,
     SiteUpgradeReadinessVariables,
-} from 'src/graphql-operations'
+} from '../graphql-operations'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useQuery, useMutation } from '@sourcegraph/http-client'

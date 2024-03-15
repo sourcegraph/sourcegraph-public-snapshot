@@ -5,7 +5,7 @@ import type {
     SiteConfigVariables,
     UpdateSiteConfigurationResult,
     UpdateSiteConfigurationVariables,
-} from 'src/graphql-operations'
+} from '../graphql-operations'
 
 import { useQuery, useMutation } from '@sourcegraph/http-client'
 

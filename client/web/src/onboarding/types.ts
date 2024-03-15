@@ -1,5 +1,5 @@
 import type { ApolloQueryResult } from '@apollo/client'
-import type { SiteConfigResult } from 'src/graphql-operations'
+import type { SiteConfigResult } from '../graphql-operations'
 
 import type { ErrorLike } from '@sourcegraph/common'
 
