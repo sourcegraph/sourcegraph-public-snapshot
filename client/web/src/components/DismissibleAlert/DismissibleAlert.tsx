@@ -29,6 +29,7 @@ export const DismissibleAlert: React.FunctionComponent<React.PropsWithChildren<D
     children,
     variant,
     backgroundColor,
+    textColor,
 }) => {
     const [dismissed, setDismissed] = React.useState<boolean>(
         partialStorageKey ? isAlertDismissed(partialStorageKey) : false
@@ -51,6 +52,7 @@ export const DismissibleAlert: React.FunctionComponent<React.PropsWithChildren<D
             className={classNames(styles.container, className)}
             variant={variant}
             backgroundColor={backgroundColor}
+            textColor={textColor}
         >
             <div className={styles.content}>{children}</div>
             <Button aria-label="Dismiss alert" variant="icon" className={styles.closeButton} onClick={onDismiss}>

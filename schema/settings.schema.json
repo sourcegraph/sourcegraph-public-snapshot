@@ -488,6 +488,11 @@
             "description": "The hex code of the background color for this notice. Defaults to the global notice background color if not specified.",
             "type": "string",
             "default": ""
+          },
+          "textColor": {
+            "description": "The hex code of the text color for this notice. Defaults to the global notice text color if not specified.",
+            "type": "string",
+            "default": ""
           }
 
         }

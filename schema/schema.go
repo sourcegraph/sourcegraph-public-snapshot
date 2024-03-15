@@ -1640,6 +1640,8 @@ type Notice struct {
 	Location string `json:"location"`
 	// Message description: The message to display. Markdown formatting is supported.
 	Message string `json:"message"`
+	// TextColor description: The hex code of the text color for this notice. Defaults to the global notice text color if not specified.
+	TextColor string `json:"textColor,omitempty"`
 }
 type Notifications struct {
 	// Key description: e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.

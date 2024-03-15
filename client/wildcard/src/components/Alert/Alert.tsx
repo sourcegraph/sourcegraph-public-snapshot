@@ -22,6 +22,7 @@ export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
     withIcon?: boolean
     //Custom background color if set
     backgroundColor?: string
+    textColor?: string
 }
 
 const userShouldBeImmediatelyNotified = (variant?: AlertVariant): boolean =>
@@ -43,6 +44,7 @@ export const Alert = React.forwardRef(function Alert(
         className,
         role = 'alert',
         backgroundColor,
+        textColor,
         ...attributes
     },
     reference
@@ -56,6 +58,7 @@ export const Alert = React.forwardRef(function Alert(
      * Polite: The alert will be read out by the screen reader when the user is idle.
      */
     const alertAssertiveness = userShouldBeImmediatelyNotified(variant) ? 'assertive' : 'polite'
+    const color = textColor
 
     return (
         <Component
@@ -65,6 +68,7 @@ export const Alert = React.forwardRef(function Alert(
             aria-live={alertAssertiveness}
             style={{
                 ...(backgroundColor !== '' && { backgroundColor }),
+                ...(textColor !== '' && { color }),
             }}
             {...attributes}
         >
