@@ -48,7 +48,6 @@ describe('TreePage', () => {
             subjects: null,
             final: null,
         },
-        extensionsController: null,
         platformContext: {
             settings: NEVER,
             updateSettings: () => Promise.reject(new Error('updateSettings not implemented')),

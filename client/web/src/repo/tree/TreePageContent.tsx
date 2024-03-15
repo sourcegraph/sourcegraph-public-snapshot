@@ -9,7 +9,6 @@ import { encodeURIPathComponent, numberWithCommas, pluralize } from '@sourcegrap
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType, type TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -146,7 +145,7 @@ const ExtraInfoSection: React.FC<{
     )
 }
 
-interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
+interface TreePageContentProps extends TelemetryProps, PlatformContextProps {
     filePath: string
     tree: TreeFields
     treeWithHistory?: TreeHistoryFields[]
