@@ -441,10 +441,10 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			ContentType: pointers.Ptr("application/gzip"),
 		})
 
-		// `<pipeline_uid>_deploy` bucket is normally created when the pipeline is first used
+		// `<pipeline_uid>_clouddeploy` bucket is normally created when the pipeline is first used
 		// We manually create it so we can provision IAM access
 		pipelineBucket := storagebucket.NewStorageBucket(stack, id.Group("pipeline").TerraformID("bucket"), &storagebucket.StorageBucketConfig{
-			Name:     pointers.Stringf("%s_deploy", deliveryPipeline.PipelineID),
+			Name:     pointers.Stringf("%s_clouddeploy", deliveryPipeline.PipelineID),
 			Location: &GCPRegion,
 		})
 
