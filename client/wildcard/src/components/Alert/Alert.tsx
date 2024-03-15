@@ -20,6 +20,8 @@ export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
      * be default.
      */
     withIcon?: boolean
+    //Custom background color if set
+    backgroundColor?: string
 }
 
 const userShouldBeImmediatelyNotified = (variant?: AlertVariant): boolean =>
@@ -33,7 +35,16 @@ const userShouldBeImmediatelyNotified = (variant?: AlertVariant): boolean =>
  * Further details: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/alert_role
  */
 export const Alert = React.forwardRef(function Alert(
-    { children, withIcon = true, as: Component = 'div', variant, className, role = 'alert', ...attributes },
+    {
+        children,
+        withIcon = true,
+        as: Component = 'div',
+        variant,
+        className,
+        role = 'alert',
+        backgroundColor,
+        ...attributes
+    },
     reference
 ) {
     const { isBranded } = useWildcardTheme()
@@ -52,6 +63,9 @@ export const Alert = React.forwardRef(function Alert(
             className={classNames(brandedClassName, className, { [styles.alertWithNoIcon]: !withIcon })}
             role={role}
             aria-live={alertAssertiveness}
+            style={{
+                ...(backgroundColor !== '' && { backgroundColor }),
+            }}
             {...attributes}
         >
             {children}

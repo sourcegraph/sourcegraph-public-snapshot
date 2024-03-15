@@ -1632,6 +1632,8 @@ type NoOpEncryptionKey struct {
 	Type string `json:"type"`
 }
 type Notice struct {
+	// BackgroundColor description: The hex code of the background color for this notice. Defaults to the global notice background color if not specified.
+	BackgroundColor string `json:"backgroundColor,omitempty"`
 	// Dismissible description: Whether this notice can be dismissed (closed) by the user.
 	Dismissible bool `json:"dismissible,omitempty"`
 	// Location description: The location where this notice is shown: "top" for the top of every page, "home" for the homepage.

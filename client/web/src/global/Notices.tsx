@@ -33,6 +33,7 @@ const NoticeAlert: React.FunctionComponent<React.PropsWithChildren<NoticeAlertPr
         'data-testid': testId,
         variant: getAlertVariant(notice.location),
         className: classNames(notice.location !== 'top' && 'bg transparent border p-2', className),
+        backgroundColor: notice.backgroundColor,
     }
 
     return notice.dismissible ? (

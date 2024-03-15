@@ -483,7 +483,13 @@
             "description": "Whether this notice can be dismissed (closed) by the user.",
             "type": "boolean",
             "default": false
+          },
+          "backgroundColor": {
+            "description": "The hex code of the background color for this notice. Defaults to the global notice background color if not specified.",
+            "type": "string",
+            "default": ""
           }
+
         }
       }
     },
