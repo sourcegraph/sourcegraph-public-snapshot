@@ -130,8 +130,7 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		}
 	case MainDryRun:
 		return &RunTypeMatcher{
-			Branch:       "(?:main-dry-run/)",
-			BranchRegexp: true,
+			Branch: "main-dry-run/",
 		}
 	case ManuallyTriggered:
 		return &RunTypeMatcher{
