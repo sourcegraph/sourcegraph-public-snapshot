@@ -38,12 +38,12 @@ func TestDeleteLsifDataByUploadIds(t *testing.T) {
 			t.Fatalf("unexpected error clearing bundle data: %s", err)
 		}
 
-		dumpIDs, err := basestore.ScanInts(codeIntelDB.QueryContext(context.Background(), "SELECT upload_id FROM codeintel_scip_metadata"))
+		uploadIDs, err := basestore.ScanInts(codeIntelDB.QueryContext(context.Background(), "SELECT upload_id FROM codeintel_scip_metadata"))
 		if err != nil {
 			t.Fatalf("Unexpected error querying dump identifiers: %s", err)
 		}
 
-		if diff := cmp.Diff([]int{1, 3, 5}, dumpIDs); diff != "" {
+		if diff := cmp.Diff([]int{1, 3, 5}, uploadIDs); diff != "" {
 			t.Errorf("unexpected dump identifiers (-want +got):\n%s", diff)
 		}
 	})
