@@ -2,15 +2,13 @@
 
 set -o errexit -o nounset -o pipefail
 
-# Add go to PATH
-readonly runfiles_dir="${PWD}"
-PATH="$(dirname "${runfiles_dir}/${GO}"):${PATH}"
 # Remove bazelisk from path
 PATH=$(echo "${PATH}" | awk -v RS=: -v ORS=: '/bazelisk/ {next} {print}')
 export PATH
 
 cd "${BUILD_WORKSPACE_DIRECTORY}"
 
+# This fails using rosetta binary, so we just use our normal bazelrc's
 bazel \
   --bazelrc=.bazelrc \
   --bazelrc=.aspect/bazelrc/ci.bazelrc \

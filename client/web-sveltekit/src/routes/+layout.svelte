@@ -2,7 +2,7 @@
     import { setContext } from 'svelte'
     import { writable } from 'svelte/store'
 
-    import { browser } from '$app/environment'
+    import { browser, dev } from '$app/environment'
     import { isErrorLike } from '$lib/common'
     import { TemporarySettingsStorage } from '$lib/shared'
     import { isLightTheme, KEY, scrollAll, type SourcegraphContext } from '$lib/stores'
@@ -15,9 +15,11 @@
     import './styles.scss'
 
     import type { LayoutData } from './$types'
-    import { createFeatureFlagStore } from '$lib/featureflags'
-    import InfoBanner from './InfoBanner.svelte'
+    import { createFeatureFlagStore, featureFlag } from '$lib/featureflags'
+    import GlobalNotification from '$lib/global-notifications/GlobalNotifications.svelte'
     import { getGraphQLClient } from '$lib/graphql/apollo'
+    import { isRouteRolledOut } from '$lib/navigation'
+    import { beforeNavigate } from '$app/navigation'
 
     export let data: LayoutData
 
@@ -52,6 +54,29 @@
         document.documentElement.classList.toggle('theme-light', $isLightTheme)
         document.documentElement.classList.toggle('theme-dark', !$isLightTheme)
     }
+
+    $: allRoutesEnabled = featureFlag('web-next')
+    $: rolledoutRoutesEnabled = featureFlag('web-next-rollout')
+
+    // Redirect the user to the react app when they navigate to a page that is
+    // supported but not enabled.
+    // (Routes that are not supported, i.e. don't exist in `routes/` are already
+    // handled by SvelteKit (by triggering a browser refresh)).
+    beforeNavigate(navigation => {
+        if (navigation.willUnload || !navigation.to) {
+            // Nothing to do here, request is already handled by the server
+            return
+        }
+
+        if (dev || $allRoutesEnabled || ($rolledoutRoutesEnabled && isRouteRolledOut(navigation.to?.route.id ?? ''))) {
+            // Routes are handled by SvelteKit
+            return
+        }
+
+        // Trigger page refresh to fetch the React app from the server
+        navigation.cancel()
+        window.location.href = navigation.to.url.toString()
+    })
 </script>
 
 <svelte:head>
@@ -61,7 +86,12 @@
 
 <svelte:body use:classNames={$scrollAll ? '' : 'overflowHidden'} />
 
-<InfoBanner />
+{#await data.globalSiteAlerts then globalSiteAlerts}
+    {#if globalSiteAlerts}
+        <GlobalNotification globalAlerts={globalSiteAlerts} />
+    {/if}
+{/await}
+
 <Header authenticatedUser={$user} />
 
 <main>
@@ -81,6 +111,7 @@
     }
 
     main {
+        isolation: isolate;
         flex: 1;
         display: flex;
         flex-direction: column;

@@ -4,6 +4,7 @@ import * as H from 'history'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import type { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import {
@@ -41,6 +42,7 @@ export const FuzzyWrapper: React.FunctionComponent<FuzzyWrapperProps> = props =>
             location={history.location}
             settingsCascade={{ final: { experimentalFeatures: props.experimentalFeatures }, subjects: null }}
             telemetryService={NOOP_TELEMETRY_SERVICE}
+            telemetryRecorder={noOpTelemetryRecorder}
             initialQuery={props.initialQuery}
             userHistory={new UserHistory()}
         />

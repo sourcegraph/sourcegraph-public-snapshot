@@ -12,18 +12,22 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func init() {
 	// Enable SourcegraphDotComMode for all tests in this package.
-	envvar.MockSourcegraphDotComMode(true)
+	dotcom.MockSourcegraphDotComMode(fakeTB{}, true)
 }
+
+type fakeTB struct{}
+
+func (fakeTB) Cleanup(func()) {}
 
 func TestRouter(t *testing.T) {
 	InitRouter(dbmocks.NewMockDB())

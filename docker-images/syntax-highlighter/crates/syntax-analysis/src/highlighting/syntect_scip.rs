@@ -388,8 +388,9 @@ impl<'a> DocumentGenerator<'a> {
 
                             match match_scope_to_kind(&scope) {
                                 Some(kind) => {
-                                    // Uncomment to debug what scopes are picked up
-                                    // println!("SCOPE {row:>3}:{character:<3} {:50} {kind:?}", format!("{}", scope));
+                                    // See also NOTE(id: only-flag)
+                                    // DEBUG: Print matched scopes here
+                                    // eprintln!("SCOPE {row:>3}:{character:<3} {:50} {kind:?}", format!("{}", scope));
                                     let partial_hl =
                                         HighlightStart::some(row, character, kind, scope);
                                     if let Some(partial_hl) = highlight_manager.push_hl(partial_hl)
@@ -404,7 +405,9 @@ impl<'a> DocumentGenerator<'a> {
                                     };
                                 }
                                 None => {
-                                    // println!("SCOPE {row:>3}:{character:<3} {:50}", format!("{}", scope));
+                                    // See also NOTE(id: only-flag)
+                                    // DEBUG: Print unknown/unhighlighted scope here
+                                    // eprintln!("SCOPE {row:>3}:{character:<3} {:50}", format!("{}", scope));
                                     unhandled_scopes.insert(scope);
                                     highlight_manager.push_empty();
                                 }
@@ -584,10 +587,8 @@ mod test {
 
         let dir = read_dir(&input_dir)?;
 
-        let filter = env::args()
-            .last()
-            .and_then(|x| x.strip_prefix("only=").map(|x| x.to_owned()))
-            .unwrap_or("".to_owned()); // run everything
+        // See NOTE(id: only-flag) for exact syntax on how to pass this.
+        let filter = env::var("ONLY").unwrap_or("".to_owned());
 
         let mut count = 0;
         for entry in dir {

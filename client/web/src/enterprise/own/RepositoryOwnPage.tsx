@@ -22,6 +22,7 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
     useBreadcrumb,
     repo,
     telemetryService,
+    telemetryRecorder,
     authenticatedUser,
 }) => {
     const [searchParams] = useSearchParams()
@@ -43,10 +44,11 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                         filePath={filePath}
                         isDir={true}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 ),
             }
-        }, [filePath, repo, telemetryService])
+        }, [filePath, repo, telemetryService, telemetryRecorder])
     )
 
     useBreadcrumb({ key: 'own', element: 'Ownership' })
@@ -62,7 +64,8 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
 
     useEffect(() => {
         telemetryService.log('repoPage:ownershipPage:viewed')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('repo.ownership', 'view')
+    }, [telemetryService, telemetryRecorder])
 
     const showAddOwnerBtn = doesUserHavePermission(authenticatedUser, OwnershipAssignPermission)
 

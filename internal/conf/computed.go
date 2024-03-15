@@ -9,10 +9,10 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
@@ -916,7 +916,7 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 	}
 
 	// Only allow embeddings on dotcom
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		return nil
 	}
 
@@ -1271,4 +1271,18 @@ func RepoConcurrentExternalServiceSyncers() int {
 		return 3
 	}
 	return v
+}
+
+// PermissionsUserMapping returns the last valid value of permissions user mapping in the site configuration.
+// Callers must not mutate the returned pointer.
+func PermissionsUserMapping() *schema.PermissionsUserMapping {
+	c := Get().PermissionsUserMapping
+	if c == nil {
+		return &schema.PermissionsUserMapping{Enabled: false, BindID: "email"}
+	}
+	// Invalid config.
+	if c.BindID != "email" && c.BindID != "username" {
+		return &schema.PermissionsUserMapping{Enabled: false, BindID: "email"}
+	}
+	return c
 }

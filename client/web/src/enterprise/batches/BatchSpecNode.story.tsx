@@ -4,6 +4,7 @@ import { addDays } from 'date-fns'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../components/WebStory'
@@ -43,7 +44,13 @@ export const BatchSpecNodeStory: StoryFn = () => {
                 <MockedTestProvider link={mocks}>
                     <>
                         {NODES.map(node => (
-                            <BatchSpecNode {...props} key={node.id} node={node} now={NOW} />
+                            <BatchSpecNode
+                                {...props}
+                                key={node.id}
+                                node={node}
+                                now={NOW}
+                                telemetryRecorder={noOpTelemetryRecorder}
+                            />
                         ))}
                     </>
                 </MockedTestProvider>

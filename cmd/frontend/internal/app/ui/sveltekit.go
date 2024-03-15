@@ -9,38 +9,52 @@ import (
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
 
+// Keep in sync with 'client/web-sveltekit/src/lib/navigation.ts' and 'client/web/src/sveltekite/util.ts'
 var sveltekitEnabledRoutes = map[string]struct{}{
-	routeSearch:           {},
-	routeTree:             {},
-	routeBlob:             {},
-	routeRepo:             {},
-	routeRepoSettings:     {},
-	routeRepoCodeGraph:    {},
-	routeRepoCommit:       {},
-	routeRepoBranches:     {},
-	routeRepoBatchChanges: {},
-	routeRepoCommits:      {},
-	routeRepoTags:         {},
-	routeRepoCompare:      {},
-	routeRepoStats:        {},
-	routeRepoOwn:          {},
+	routeSearch:       {},
+	routeTree:         {},
+	routeBlob:         {},
+	routeRepo:         {},
+	routeRepoCommit:   {},
+	routeRepoBranches: {},
+	routeRepoCommits:  {},
+	routeRepoTags:     {},
+	routeRepoStats:    {},
+}
+
+// rolledOutRoutes is a set of routes that are enabled via a different feature flag.
+// This allows us to have a two-stage rollout of SvelteKit, where we can enable it for
+// a subset of routes before enabling it for all routes.
+// Should be a subset of sveltekitEnabledRoutes.
+// Keep in sync with 'client/web-sveltekit/src/lib/navigation.ts' and 'client/web/src/sveltekite/util.ts'
+var rolledOutRoutes = map[string]struct{}{
+	routeSearch: {},
 }
 
 // useSvelteKit returns true if the route is configured to be supported by useSvelteKit
-// (see svelteKitEnabledRoutes) and the 'enable-sveltekit' or 'enable-sveltekit' feature flag is set
+// (see svelteKitEnabledRoutes) and the 'web-next' or 'web-next-rollout' feature flags are set
 func useSvelteKit(r *http.Request) bool {
 	route := mux.CurrentRoute(r)
 	if route == nil {
 		return false
 	}
+	routeName := route.GetName()
 
-	if _, ok := sveltekitEnabledRoutes[route.GetName()]; !ok {
+	if _, ok := sveltekitEnabledRoutes[routeName]; !ok {
 		return false
 	}
 
 	ff := featureflag.FromContext(r.Context())
 
-	return ff.GetBoolOr("enable-sveltekit", false) || ff.GetBoolOr("web-next", false)
+	if ff.GetBoolOr("web-next", false) {
+		return true
+	}
+
+	if _, ok := rolledOutRoutes[routeName]; ok {
+		return ff.GetBoolOr("web-next-rollout", false)
+	}
+
+	return false
 }
 
 // renderSvelteKit writes SvelteKit's fallback page to the provided writer
