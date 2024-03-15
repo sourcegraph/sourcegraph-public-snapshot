@@ -8,5 +8,6 @@ import (
 
 func main() {
 	println("testing, testing, 1...2...testing")
+	println("Adding a code change")
 	runtime.Start[example.Config](example.Service{})
 }
