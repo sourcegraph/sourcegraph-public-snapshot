@@ -1,8 +1,8 @@
 <script lang="ts">
     import { setContext } from 'svelte'
-    import { readable, writable } from 'svelte/store'
+    import { writable } from 'svelte/store'
 
-    import { browser } from '$app/environment'
+    import { browser, dev } from '$app/environment'
     import { isErrorLike } from '$lib/common'
     import { TemporarySettingsStorage } from '$lib/shared'
     import { isLightTheme, KEY, scrollAll, type SourcegraphContext } from '$lib/stores'
@@ -14,11 +14,12 @@
 
     import './styles.scss'
 
+    import type { LayoutData } from './$types'
+    import { createFeatureFlagStore, featureFlag } from '$lib/featureflags'
+    import GlobalNotification from '$lib/global-notifications/GlobalNotifications.svelte'
+    import { getGraphQLClient } from '$lib/graphql/apollo'
+    import { isRouteRolledOut } from '$lib/navigation'
     import { beforeNavigate } from '$app/navigation'
-
-    import type { LayoutData, Snapshot } from './$types'
-    import { createFeatureFlagStore } from '$lib/featureflags'
-    import InfoBanner from './InfoBanner.svelte'
 
     export let data: LayoutData
 
@@ -27,7 +28,7 @@
     // It's OK to set the temporary storage during initialization time because
     // sign-in/out currently performs a full page refresh
     const temporarySettingsStorage = createTemporarySettingsStorage(
-        data.user ? new TemporarySettingsStorage(data.graphqlClient, true) : undefined
+        data.user ? new TemporarySettingsStorage(getGraphQLClient(), true) : undefined
     )
 
     setContext<SourcegraphContext>(KEY, {
@@ -35,7 +36,6 @@
         settings,
         temporarySettingsStorage,
         featureFlags: createFeatureFlagStore(data.featureFlags, data.fetchEvaluatedFeatureFlags),
-        client: readable(data.graphqlClient),
     })
 
     // Update stores when data changes
@@ -55,34 +55,28 @@
         document.documentElement.classList.toggle('theme-dark', !$isLightTheme)
     }
 
-    let main: HTMLElement | null = null
-    let scrollTop = 0
-    beforeNavigate(() => {
-        // It looks like `snapshot.capture` is called "too late", i.e. after the
-        // content has been updated. beforeNavigate is used to capture the correct
-        // scroll offset
-        scrollTop = main?.scrollTop ?? 0
-    })
-    export const snapshot: Snapshot<{ x: number }> = {
-        capture() {
-            return { x: scrollTop }
-        },
-        restore(value) {
-            restoreScrollPosition(value.x)
-        },
-    }
+    $: allRoutesEnabled = featureFlag('web-next')
+    $: rolledoutRoutesEnabled = featureFlag('web-next-rollout')
 
-    function restoreScrollPosition(y: number) {
-        const start = Date.now()
-        requestAnimationFrame(function scroll() {
-            if (main) {
-                main.scrollTo(0, y)
-            }
-            if ((!main || main.scrollTop !== y) && Date.now() - start < 3000) {
-                requestAnimationFrame(scroll)
-            }
-        })
-    }
+    // Redirect the user to the react app when they navigate to a page that is
+    // supported but not enabled.
+    // (Routes that are not supported, i.e. don't exist in `routes/` are already
+    // handled by SvelteKit (by triggering a browser refresh)).
+    beforeNavigate(navigation => {
+        if (navigation.willUnload || !navigation.to) {
+            // Nothing to do here, request is already handled by the server
+            return
+        }
+
+        if (dev || $allRoutesEnabled || ($rolledoutRoutesEnabled && isRouteRolledOut(navigation.to?.route.id ?? ''))) {
+            // Routes are handled by SvelteKit
+            return
+        }
+
+        // Trigger page refresh to fetch the React app from the server
+        navigation.cancel()
+        window.location.href = navigation.to.url.toString()
+    })
 </script>
 
 <svelte:head>
@@ -92,10 +86,15 @@
 
 <svelte:body use:classNames={$scrollAll ? '' : 'overflowHidden'} />
 
-<InfoBanner />
+{#await data.globalSiteAlerts then globalSiteAlerts}
+    {#if globalSiteAlerts}
+        <GlobalNotification globalAlerts={globalSiteAlerts} />
+    {/if}
+{/await}
+
 <Header authenticatedUser={$user} />
 
-<main bind:this={main}>
+<main>
     <slot />
 </main>
 
@@ -112,6 +111,7 @@
     }
 
     main {
+        isolation: isolate;
         flex: 1;
         display: flex;
         flex-direction: column;

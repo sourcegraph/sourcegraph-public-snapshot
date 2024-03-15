@@ -1,6 +1,5 @@
 load("@container_structure_test//:defs.bzl", "container_structure_test")
-load("//dev:oci_defs.bzl", "oci_image", "oci_push", "oci_tarball")
-load("//dev:oci_defs.bzl", "image_repository")
+load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 
 oci_image(
     name = "s3_proxy_image",

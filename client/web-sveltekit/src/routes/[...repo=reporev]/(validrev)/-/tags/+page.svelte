@@ -1,18 +1,11 @@
 <script lang="ts">
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import GitReference from '$lib/repo/GitReference.svelte'
-    import { createPromiseStore } from '$lib/utils'
-    import type { GitTagsConnection } from './page.gql'
+    import { Alert } from '$lib/wildcard'
 
     import type { PageData } from './$types'
 
     export let data: PageData
-
-    const { pending, value: connection, set } = createPromiseStore<GitTagsConnection>()
-    $: set(data.tags)
-
-    $: nodes = $connection?.nodes
-    $: total = $connection?.totalCount
 </script>
 
 <svelte:head>
@@ -21,22 +14,28 @@
 
 <section>
     <div>
-        {#if $pending}
+        {#await data.tags}
             <LoadingSpinner />
-        {:else if nodes}
+        {:then connection}
             <!-- TODO: Search input to filter tags by name -->
             <!-- TODO: Pagination -->
             <table>
                 <tbody>
-                    {#each nodes as node (node.id)}
+                    {#each connection.nodes as node (node.id)}
                         <GitReference ref={node} />
+                    {:else}
+                        <tr>
+                            <td colspan="2">
+                                <Alert variant="info">No tags found</Alert>
+                            </td>
+                        </tr>
                     {/each}
                 </tbody>
             </table>
-            {#if total !== null}
-                <small class="text-muted">{total} tags total</small>
-            {/if}
-        {/if}
+            <small class="text-muted">{connection.totalCount} tags total</small>
+        {:catch error}
+            <Alert variant="danger">{error.message}</Alert>
+        {/await}
     </div>
 </section>
 

@@ -44,7 +44,16 @@ func scanSymbols(rows *sql.Rows, queryErr error) (symbols []result.Symbol, err e
 	return symbols, nil
 }
 
+// This limit prevents users from accidentally running a query that returns an
+// extremely large number of results. It is arbitrary, but it should be at least
+// as high as the default limit frontend sends to the symbol service.
+const maxSymbolLimit = 50_000
+
 func (s *store) Search(ctx context.Context, args search.SymbolsParameters) ([]result.Symbol, error) {
+	if args.First < 0 || args.First > maxSymbolLimit {
+		return nil, errors.Newf("limit %d out of bounds [0, %d]", args.First, maxSymbolLimit)
+	}
+
 	return scanSymbols(s.Query(ctx, sqlf.Sprintf(
 		`
 			SELECT
@@ -73,6 +82,13 @@ func makeSearchConditions(args search.SymbolsParameters) []*sqlf.Query {
 	conditions = append(conditions, negate(makeSearchCondition("path", args.ExcludePattern, args.IsCaseSensitive)))
 	for _, includePattern := range args.IncludePatterns {
 		conditions = append(conditions, makeSearchCondition("path", includePattern, args.IsCaseSensitive))
+	}
+
+	for _, includeLang := range args.IncludeLangs {
+		conditions = append(conditions, makeLangCondition(includeLang))
+	}
+	for _, excludeLang := range args.ExcludeLangs {
+		conditions = append(conditions, negate(makeLangCondition(excludeLang)))
 	}
 
 	filtered := conditions[:0]
@@ -118,6 +134,36 @@ func makeSearchCondition(column string, regex string, isCaseSensitive bool) *sql
 		regex = "(?i:" + regex + ")"
 	}
 	return sqlf.Sprintf(column+" REGEXP %s", regex)
+}
+
+func makeLangCondition(lang string) *sqlf.Query {
+	// We need to convert the lang since language filters use normalized enry names, but
+	// the database stores ctags languages.
+	ctagsLangs := convertEnryToCTagsLangs(lang)
+	var queries []*sqlf.Query
+	for _, ctagsLang := range ctagsLangs {
+		queries = append(queries, sqlf.Sprintf("%s", ctagsLang))
+	}
+	return sqlf.Sprintf("lower(language) IN (%s) ", sqlf.Join(queries, ", "))
+}
+
+// convertEnryToCTagsLangs performs a best-effort mapping from normalized go-enry
+// language names to ctags names. This list is currently not exhaustive.
+func convertEnryToCTagsLangs(enryLang string) []string {
+	lower := strings.ToLower(enryLang)
+	switch lower {
+	case "protocol buffer":
+		return []string{"protobuf"}
+	case "objective-c":
+		return []string{"objectivec"}
+	case "assembly":
+		return []string{"asm"}
+	case "raku":
+		return []string{"perl6"}
+	case "shell":
+		return []string{"sh", "zsh"}
+	}
+	return []string{lower}
 }
 
 // isLiteralEquality returns true if the given regex matches literal strings exactly.

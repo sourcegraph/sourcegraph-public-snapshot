@@ -106,7 +106,7 @@ type GetChangeListByClientArguments struct {
 func GetChangelistByClient(ctx context.Context, args GetChangeListByClientArguments) (*p4types.Changelist, error) {
 	options := []P4OptionFunc{
 		WithAuthentication(args.P4User, args.P4Passwd),
-		WithHost(args.P4Home),
+		WithHost(args.P4Port),
 		WithClient(args.Client),
 	}
 

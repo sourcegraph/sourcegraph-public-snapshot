@@ -5,39 +5,46 @@
     import type { PageData, Snapshot } from './$types'
     import FileDiff from '$lib/repo/FileDiff.svelte'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
+    import { get } from 'svelte/store'
+    import { navigating } from '$app/stores'
+    import type { CommitPage_DiffConnection } from './page.gql'
+    import { Alert } from '$lib/wildcard'
+
+    interface Capture {
+        scroll: ScrollerCapture
+        diffCount: number
+        expandedDiffs: Array<[number, boolean]>
+    }
 
     export let data: PageData
 
-    export const snapshot: Snapshot<{ scroll: ScrollerCapture; expandedDiffs: Array<[number, boolean]> }> = {
+    export const snapshot: Snapshot<Capture> = {
         capture: () => ({
             scroll: scroller.capture(),
+            diffCount: diffs?.nodes.length ?? 0,
             expandedDiffs: Array.from(expandedDiffs.entries()),
         }),
-        restore: capture => {
-            scroller.restore(capture.scroll)
+        restore: async capture => {
             expandedDiffs = new Map(capture.expandedDiffs)
+            if (capture?.diffCount !== undefined && get(navigating)?.type === 'popstate') {
+                await data.diff?.restore(result => {
+                    const count = result.data?.repository?.comparison.fileDiffs.nodes.length
+                    return !!count && count < capture.diffCount
+                })
+            }
+            scroller.restore(capture.scroll)
         },
     }
 
-    const diff = data.diff
     let scroller: Scroller
-    let loading = true
     let expandedDiffs = new Map<number, boolean>()
+    let diffs: CommitPage_DiffConnection | null = null
 
-    $: fileDiffConnection = $diff?.data.repository?.comparison.fileDiffs ?? null
-    $: if ($diff?.data.repository) {
-        loading = false
-    }
-
-    function fetchMore() {
-        if (fileDiffConnection?.pageInfo.hasNextPage) {
-            loading = true
-            diff?.fetchMore({
-                variables: {
-                    after: fileDiffConnection.pageInfo.endCursor,
-                },
-            })
-        }
+    $: diffQuery = data.diff
+    // We conditionally check for the ancestors field to be able to show
+    // previously loaded commits when an error occurs while fetching more commits.
+    $: if ($diffQuery?.data?.repository) {
+        diffs = $diffQuery.data.repository.comparison.fileDiffs
     }
 </script>
 
@@ -47,7 +54,7 @@
 
 <section>
     {#if data.commit}
-        <Scroller bind:this={scroller} margin={600} on:more={fetchMore}>
+        <Scroller bind:this={scroller} margin={600} on:more={data.diff?.fetchMore}>
             <div class="header">
                 <div class="info"><Commit commit={data.commit} alwaysExpanded /></div>
                 <div>
@@ -60,9 +67,9 @@
                     </span>
                 </div>
             </div>
-            {#if fileDiffConnection}
+            {#if !$diffQuery?.restoring && diffs}
                 <ul>
-                    {#each fileDiffConnection.nodes as node, index}
+                    {#each diffs.nodes as node, index}
                         <li>
                             <FileDiff
                                 fileDiff={node}
@@ -73,8 +80,14 @@
                     {/each}
                 </ul>
             {/if}
-            {#if loading}
+            {#if $diffQuery?.fetching || $diffQuery?.restoring}
                 <LoadingSpinner />
+            {:else if $diffQuery?.error}
+                <div class="m-4">
+                    <Alert variant="danger">
+                        Unable to fetch file diffs: {$diffQuery.error.message}
+                    </Alert>
+                </div>
             {/if}
         </Scroller>
     {/if}
@@ -82,12 +95,13 @@
 
 <style lang="scss">
     section {
-        padding: 1rem;
         overflow: auto;
     }
 
     .header {
         display: flex;
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
     }
 
     .parents {
@@ -99,6 +113,7 @@
 
     ul {
         list-style: none;
+        padding: 1rem;
 
         li {
             margin-bottom: 1rem;

@@ -55,7 +55,6 @@ import {
     bakeSrcCliSteps,
     batchChangesInAppChangelog,
     combyReplace,
-    indexerUpdate,
 } from './static-updates'
 import {
     backportStatus,
@@ -1118,14 +1117,12 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 ...multiVersionSteps,
                 ...srcCliSteps,
                 ...batchChangesInAppChangelog(new SemVer(release.version.version).inc('minor'), true), // in the next main branch this will reflect the guessed next version
-                indexerUpdate(),
             ]
 
             const releaseBranchEdits: Edit[] = [
                 ...multiVersionSteps,
                 ...srcCliSteps,
                 ...batchChangesInAppChangelog(release.version, false),
-                indexerUpdate(),
             ]
 
             const prDetails = {

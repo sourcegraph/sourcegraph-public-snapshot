@@ -136,6 +136,18 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 		//  Disallows direct traffic from public internet, we have a LB set up for that.
 		Ingress: pointers.Ptr("INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"),
 
+		// Send all traffic to the latest revison.
+		// This is needed to override changes to traffic configuration from the UI. Otherwise,
+		// it's possible that traffic will always be routed to a stale revision after new deployment.
+		//
+		// https://cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration#send-to-latest
+		Traffic: []*cloudrunv2service.CloudRunV2ServiceTraffic{
+			{
+				Percent: pointers.Float64(100),
+				Type:    pointers.Ptr("TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"),
+			},
+		},
+
 		Template: &cloudrunv2service.CloudRunV2ServiceTemplate{
 			// Act under our provisioned service account
 			ServiceAccount: pointers.Ptr(vars.ServiceAccount.Email),

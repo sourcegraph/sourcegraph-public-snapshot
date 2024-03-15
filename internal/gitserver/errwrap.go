@@ -285,4 +285,9 @@ func (r *errorTranslatingClient) GetCommit(ctx context.Context, in *proto.GetCom
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 
+func (r *errorTranslatingClient) ResolveRevision(ctx context.Context, in *proto.ResolveRevisionRequest, opts ...grpc.CallOption) (*proto.ResolveRevisionResponse, error) {
+	res, err := r.base.ResolveRevision(ctx, in, opts...)
+	return res, convertGRPCErrorToGitDomainError(err)
+}
+
 var _ proto.GitserverServiceClient = &errorTranslatingClient{}

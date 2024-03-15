@@ -12,96 +12,122 @@ afterAll(() => {
 
 describe('createPromiseStore', () => {
     describe('initial promise', () => {
-        it('correctly updates each store for resolved initial promises', async () => {
-            const { pending, value, error, set } = createPromiseStore<number>()
-            set(Promise.resolve(1))
+        it('correctly updates store for resolved initial promises', async () => {
+            const store = createPromiseStore<number>()
+            store.set(Promise.resolve(1))
 
-            expect(get(pending)).toBe(true)
-            expect(get(value)).toBe(null)
-            expect(get(error)).toBe(null)
+            expect(get(store)).toMatchObject({
+                pending: true,
+                value: null,
+                error: null,
+            })
 
             await vi.runOnlyPendingTimersAsync()
 
-            expect(get(pending)).toBe(false)
-            expect(get(value)).toBe(1)
-            expect(get(error)).toBe(null)
+            expect(get(store)).toMatchObject({
+                pending: false,
+                value: 1,
+                error: null,
+            })
         })
 
         it('correctly updates each store for rejected initial promises', async () => {
-            const { pending, value, error, set } = createPromiseStore<number>()
-            set(Promise.reject(1))
+            const store = createPromiseStore<number>()
+            store.set(Promise.reject(1))
 
-            expect(get(pending)).toBe(true)
-            expect(get(value)).toBe(null)
-            expect(get(error)).toBe(null)
+            expect(get(store)).toMatchObject({
+                pending: true,
+                value: null,
+                error: null,
+            })
 
             await vi.runOnlyPendingTimersAsync()
 
-            expect(get(pending)).toBe(false)
-            expect(get(value)).toBe(null)
-            expect(get(error)).toBe(1)
+            expect(get(store)).toMatchObject({
+                pending: false,
+                value: null,
+                error: 1,
+            })
         })
     })
 
     describe('updates', () => {
-        it('updates the store values when a new promise is set', async () => {
-            const { pending, value, error, set } = createPromiseStore<number>()
-            set(Promise.resolve(1))
+        it('updates the store when a new promise is set', async () => {
+            const store = createPromiseStore<number>()
+            store.set(Promise.resolve(1))
             await vi.runOnlyPendingTimersAsync()
-            expect(get(pending)).toBe(false)
+            expect(get(store).pending).toBe(false)
 
-            set(Promise.reject(2))
-            expect(get(pending)).toBe(true)
-
-            await vi.runOnlyPendingTimersAsync()
-
-            expect(get(pending)).toBe(false)
-            expect(get(value)).toBe(null)
-            expect(get(error)).toBe(2)
-
-            set(Promise.resolve(3))
-            expect(get(pending)).toBe(true)
+            store.set(Promise.reject(2))
+            expect(get(store).pending).toBe(true)
 
             await vi.runOnlyPendingTimersAsync()
 
-            expect(get(pending)).toBe(false)
-            expect(get(value)).toBe(3)
-            expect(get(error)).toBe(null)
+            expect(get(store)).toMatchObject({
+                pending: false,
+                value: null,
+                error: 2,
+            })
+
+            store.set(Promise.resolve(3))
+            expect(get(store).pending).toBe(true)
+
+            await vi.runOnlyPendingTimersAsync()
+
+            expect(get(store)).toMatchObject({
+                pending: false,
+                value: 3,
+                error: null,
+            })
         })
 
         it('updates the store with the latest resolved promise', async () => {
-            const { pending, value, set } = createPromiseStore<number>()
-            set(Promise.resolve(1))
-            set(Promise.resolve(2))
+            const store = createPromiseStore<number>()
+            store.set(Promise.resolve(1))
+            store.set(Promise.resolve(2))
 
             await vi.runOnlyPendingTimersAsync()
 
-            expect(get(pending)).toBe(false)
-            expect(get(value)).toBe(2)
+            expect(get(store)).toMatchObject({
+                pending: false,
+                value: 2,
+                error: null,
+            })
         })
 
         it('retains the old value while a new promise is resolved', async () => {
-            const { pending, value, latestValue, set } = createPromiseStore<number>()
-            set(Promise.resolve(1))
+            const store = createPromiseStore<number>()
+            store.set(Promise.resolve(1))
             await vi.runOnlyPendingTimersAsync()
 
-            set(Promise.resolve(2))
+            store.set(Promise.resolve(2))
 
-            expect(get(pending)).toBe(true)
-            expect(get(value)).toBe(null)
-            expect(get(latestValue)).toBe(1)
+            expect(get(store)).toMatchObject({
+                pending: true,
+                value: 1,
+                error: null,
+            })
         })
 
         it('retains the old error while a new promise is resolved', async () => {
-            const { pending, error, latestError, set } = createPromiseStore<number>()
-            set(Promise.reject(1))
+            const store = createPromiseStore<number>()
+            store.set(Promise.reject(1))
             await vi.runOnlyPendingTimersAsync()
 
-            set(Promise.resolve(2))
+            store.set(Promise.resolve(2))
 
-            expect(get(pending)).toBe(true)
-            expect(get(error)).toBe(null)
-            expect(get(latestError)).toBe(1)
+            expect(get(store)).toMatchObject({
+                pending: true,
+                value: null,
+                error: 1,
+            })
+
+            await vi.runOnlyPendingTimersAsync()
+            expect(get(store)).toMatchObject({
+                pending: false,
+                value: 2,
+                error: null,
+            })
         })
     })
 })

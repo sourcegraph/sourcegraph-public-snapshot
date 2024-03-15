@@ -20,7 +20,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
@@ -31,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	du "github.com/sourcegraph/sourcegraph/internal/diskusage"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -64,7 +64,7 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wre
 			// On customer instances, this worker is useless, because repos are always
 			// managed by an external service connection and they will be recloned
 			// ASAP.
-			if envvar.SourcegraphDotComMode() {
+			if dotcom.SourcegraphDotComMode() {
 				diskSizer := &StatDiskSizer{}
 				logger := logger.Scoped("dotcom-repo-cleaner")
 				start := time.Now()
@@ -350,6 +350,7 @@ func cleanupRepos(
 			return false, err
 		}
 
+		repoCorruptedCounter.Inc()
 		repoName := gitserverfs.RepoNameFromDir(reposDir, dir)
 		err = db.GitserverRepos().LogCorruption(ctx, repoName, fmt.Sprintf("sourcegraph detected corrupt repo: %s", reason), shardID)
 		if err != nil {
@@ -456,10 +457,8 @@ func cleanupRepos(
 			return false, nil
 		}
 
-		// name is the relative path to ReposDir, but without the .git suffix.
-		repo := gitserverfs.RepoNameFromDir(reposDir, dir)
 		recloneLogger := logger.With(
-			log.String("repo", string(repo)),
+			log.String("repo", string(repoName)),
 			log.Time("cloned", recloneTime),
 			log.String("reason", reason),
 		)
@@ -475,7 +474,7 @@ func cleanupRepos(
 
 		cmdCtx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 		defer cancel()
-		if _, err := cloneRepo(cmdCtx, repo, CloneOptions{Block: true, Overwrite: true}); err != nil {
+		if _, err := cloneRepo(cmdCtx, repoName, CloneOptions{Block: true, Overwrite: true}); err != nil {
 			return true, err
 		}
 		reposRecloned.Inc()
@@ -1019,7 +1018,7 @@ func sgMaintenance(logger log.Logger, dir common.GitDir) (err error) {
 		)
 		return nil
 	}
-	defer unlock()
+	defer func() { _ = unlock() }()
 
 	b, err := cmd.CombinedOutput()
 	if err != nil {

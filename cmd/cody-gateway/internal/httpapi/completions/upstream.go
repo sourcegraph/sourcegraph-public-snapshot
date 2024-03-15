@@ -54,6 +54,9 @@ var hopHeaders = map[string]struct{}{
 	"Upgrade":             {},
 }
 
+// Trim detected phrases to this many characters (to avoid storing too much repetitive data in BigQuery)
+const phrasePrefixLength = 5
+
 // upstreamHandlerMethods declares a set of methods that are used throughout the
 // lifecycle of a request to an upstream API. All methods are required, and called
 // in the order they are defined here.
@@ -127,12 +130,15 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	// Convert allowedModels to the Cody Gateway configuration format with the
 	// provider as a prefix. This aligns with the models returned when we query
 	// for rate limits from actor sources.
-	for i := range allowedModels {
-		allowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, allowedModels[i])
+	clonedAllowedModels := make([]string, len(allowedModels))
+	copy(clonedAllowedModels, allowedModels)
+	for i := range clonedAllowedModels {
+		clonedAllowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, clonedAllowedModels[i])
 	}
-	for i := range patternsToDetect {
-		patternsToDetect[i] = strings.ToLower(patternsToDetect[i])
-	}
+
+	// turn off sanitization for profanity detection
+	d := goaway.NewProfanityDetector().WithSanitizeAccents(false).WithSanitizeLeetSpeak(false).WithSanitizeSpaces(false).WithSanitizeSpecialCharacters(false)
+
 	if len(patternsToDetect) > 0 {
 		baseLogger.Debug("initializing pattern detector", log.Strings("patterns", patternsToDetect))
 	}
@@ -259,14 +265,18 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 
 			// Retrieve metadata from the initial request.
 			model, requestMetadata := methods.getRequestMetadata(body)
-			prompt := strings.ToLower(body.BuildPrompt())
-			if goaway.IsProfane(prompt) {
-				requestMetadata["is_profane"] = true
-			}
-			for _, p := range patternsToDetect {
-				if strings.Contains(prompt, p) {
-					requestMetadata["detected_phrases"] = true
-					break
+
+			if feature == codygateway.FeatureChatCompletions {
+				prompt := strings.ToLower(body.BuildPrompt())
+				prof := d.ExtractProfanity(prompt)
+				if prof != "" {
+					requestMetadata["profanity"] = prof
+				}
+				for _, p := range patternsToDetect {
+					if strings.Contains(prompt, p) {
+						requestMetadata["detected_phrase"] = truncateToPrefix(p)
+						break
+					}
 				}
 			}
 
@@ -276,7 +286,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			// the prefix yet when extracted - we need to add it back here. This
 			// full gatewayModel is also used in events tracking.
 			gatewayModel := fmt.Sprintf("%s/%s", upstreamName, model)
-			if allowed := intersection(allowedModels, rateLimit.AllowedModels); !isAllowedModel(allowed, gatewayModel) {
+			if allowed := intersection(clonedAllowedModels, rateLimit.AllowedModels); !isAllowedModel(allowed, gatewayModel) {
 				response.JSONError(logger, w, http.StatusBadRequest,
 					errors.Newf("model %q is not allowed, allowed: [%s]",
 						gatewayModel, strings.Join(allowed, ", ")))
@@ -447,6 +457,14 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		}))
 }
 
+func truncateToPrefix(p string) string {
+	pat := p
+	if len(p) > phrasePrefixLength {
+		pat = p[:phrasePrefixLength]
+	}
+	return pat
+}
+
 func getFlaggingMetadata(flaggingResult *flaggingResult, act *actor.Actor) map[string]any {
 	requestMetadata := map[string]any{}
 
@@ -454,6 +472,9 @@ func getFlaggingMetadata(flaggingResult *flaggingResult, act *actor.Actor) map[s
 	flaggingMetadata := map[string]any{
 		"reason":       flaggingResult.reasons,
 		"should_block": flaggingResult.shouldBlock,
+	}
+	if flaggingResult.blockedPhrase != nil {
+		flaggingMetadata["blocked_phrase"] = truncateToPrefix(*flaggingResult.blockedPhrase)
 	}
 
 	if act.IsDotComActor() {
@@ -470,7 +491,11 @@ func isAllowedModel(allowedModels []string, model string) bool {
 		}
 
 		// Expand virtual model names
-		if m == "fireworks/starcoder" && (model == "fireworks/"+fireworks.Starcoder7b || model == "fireworks/"+fireworks.Starcoder16b || model == "fireworks/"+fireworks.Starcoder16bSingleTenant) {
+		if m == "fireworks/starcoder" && (model == "fireworks/"+fireworks.Starcoder7b ||
+			model == "fireworks/"+fireworks.Starcoder16b ||
+			model == "fireworks/"+fireworks.Starcoder7b8bit ||
+			model == "fireworks/"+fireworks.Starcoder16b8bit ||
+			model == "fireworks/"+fireworks.Starcoder16bSingleTenant) {
 			return true
 		}
 	}
@@ -484,16 +509,4 @@ func intersection(a, b []string) (c []string) {
 		}
 	}
 	return c
-}
-
-type flaggingResult struct {
-	shouldBlock       bool
-	reasons           []string
-	promptPrefix      string
-	maxTokensToSample int
-	promptTokenCount  int
-}
-
-func (f *flaggingResult) IsFlagged() bool {
-	return f != nil
 }

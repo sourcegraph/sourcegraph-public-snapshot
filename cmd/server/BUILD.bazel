@@ -1,9 +1,8 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
-load("//dev:oci_defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("macro.bzl", "container_dependencies", "dependencies_tars")
-load("//dev:oci_defs.bzl", "image_repository")
 
 go_library(
     name = "server_lib",

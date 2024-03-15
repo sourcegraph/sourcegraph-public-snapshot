@@ -3,7 +3,7 @@
 package:
   name: prometheus-gcp
   version: 2.35.0-gmp.6
-  epoch: 1
+  epoch: 2
   description: "Prometheus for Google Cloud Platform metrics"
   target-architecture:
     - x86_64

@@ -4,14 +4,14 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/sourcegraph/conc/pool"
 	sgrun "github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
@@ -89,6 +89,10 @@ sg start -describe single-program
 			&cli.BoolFlag{
 				Name:  "sgtail",
 				Usage: "Connects to running sgtail instance",
+			},
+			&cli.BoolFlag{
+				Name:  "profile",
+				Usage: "Starts up pprof on port 6060",
 			},
 
 			&cli.StringSliceFlag{
@@ -177,8 +181,6 @@ func constructStartCmdLongHelp() string {
 
 	return out.String()
 }
-
-var sgOnce sync.Once
 
 func startExec(ctx *cli.Context) error {
 	config, err := getConfig()
@@ -282,6 +284,27 @@ func startExec(ctx *cli.Context) error {
 			update.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done checking dev-private changes"))
 		}
 	}
+	if ctx.Bool("profile") {
+		// start a pprof server
+		go func() {
+			err := http.ListenAndServe("127.0.0.1:6060", nil)
+			if err != nil {
+				std.Out.WriteAlertf("Failed to start pprof server: %s", err)
+			}
+		}()
+		std.Out.WriteAlertf(`pprof profiling started at 6060. Try some of the following to profile:
+# Start a web UI on port 6061 to view the current heap profile
+go tool pprof -http 127.0.0.1:6061 http://127.0.0.1:6060/debug/pprof/heap
+
+# Start a web UI on port 6061 to view a CPU profile of the next 30 seconds
+go tool pprof -http 127.0.0.1:6061 http://127.0.0.1:6060/debug/pprof/profile?seconds=30
+
+Find more here: https://pkg.go.dev/net/http/pprof
+or run
+
+go tool pprof -help
+`)
+	}
 
 	return startCommandSet(ctx.Context, set, config)
 }
@@ -305,6 +328,86 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		return err
 	}
 
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		return err
+	}
+
+	cmds, err := getCommands(set.Commands, set, conf.Commands)
+	if err != nil {
+		return err
+	}
+
+	bcmds, err := getCommands(set.BazelCommands, set, conf.BazelCommands)
+	if err != nil {
+		return err
+	}
+
+	dcmds, err := getCommands(set.DockerCommands, set, conf.DockerCommands)
+	if err != nil {
+		return err
+	}
+
+	if len(cmds)+len(bcmds)+len(dcmds) == 0 {
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "WARNING: no commands to run"))
+		return nil
+	}
+
+	env := conf.Env
+	for k, v := range set.Env {
+		env[k] = v
+	}
+
+	installers := make([]run.Installer, 0, len(cmds)+1)
+	for _, cmd := range cmds {
+		installers = append(installers, cmd)
+	}
+
+	var ibazel *run.IBazel
+	if len(bcmds)+len(dcmds) > 0 {
+		var targets []string
+		for _, cmd := range bcmds {
+			targets = append(targets, cmd.Target)
+		}
+		for _, cmd := range dcmds {
+			targets = append(targets, cmd.Target)
+		}
+
+		ibazel, err = run.NewIBazel(targets, repoRoot)
+		if err != nil {
+			return err
+		}
+		defer ibazel.Close()
+		installers = append(installers, ibazel)
+	}
+	if err := run.Install(ctx, env, verbose, installers...); err != nil {
+		return err
+	}
+
+	if ibazel != nil {
+		ibazel.StartOutput()
+	}
+
+	levelOverrides := logLevelOverrides()
+	configCmds := make([]run.SGConfigCommand, 0, len(bcmds)+len(cmds))
+	for _, cmd := range bcmds {
+		enrichWithLogLevels(&cmd.Config, levelOverrides)
+		configCmds = append(configCmds, cmd)
+	}
+
+	for _, cmd := range cmds {
+		enrichWithLogLevels(&cmd.Config, levelOverrides)
+		configCmds = append(configCmds, cmd)
+	}
+	for _, cmd := range dcmds {
+		enrichWithLogLevels(&cmd.Config, levelOverrides)
+		configCmds = append(configCmds, cmd)
+	}
+
+	return run.Commands(ctx, env, verbose, configCmds...)
+}
+
+func getCommands[T run.SGConfigCommand](commands []string, set *sgconf.Commandset, conf map[string]T) ([]T, error) {
 	exceptList := exceptServices.Value()
 	exceptSet := make(map[string]interface{}, len(exceptList))
 	for _, svc := range exceptList {
@@ -317,15 +420,15 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		onlySet[svc] = struct{}{}
 	}
 
-	cmds := make([]run.Command, 0, len(set.Commands))
-	for _, name := range set.Commands {
-		cmd, ok := conf.Commands[name]
+	cmds := make([]T, 0, len(commands))
+	for _, name := range commands {
+		cmd, ok := conf[name]
 		if !ok {
-			return errors.Errorf("command %q not found in commandset %q", name, set.Name)
+			return nil, errors.Errorf("command %q not found in commandset %q", name, set.Name)
 		}
 
 		if _, excluded := exceptSet[name]; excluded {
-			std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's in --except.", cmd.Name))
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's in --except.", name))
 			continue
 		}
 
@@ -336,50 +439,12 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 			if _, inSet := onlySet[name]; inSet {
 				cmds = append(cmds, cmd)
 			} else {
-				std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's not included in --only.", cmd.Name))
+				std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's not included in --only.", name))
 			}
 		}
 
 	}
-
-	bcmds := make([]run.BazelCommand, 0, len(set.BazelCommands))
-	for _, name := range set.BazelCommands {
-		bcmd, ok := conf.BazelCommands[name]
-		if !ok {
-			return errors.Errorf("command %q not found in commandset %q", name, set.Name)
-		}
-
-		bcmds = append(bcmds, bcmd)
-	}
-	if len(cmds) == 0 && len(bcmds) == 0 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "WARNING: no commands to run"))
-		return nil
-	}
-
-	levelOverrides := logLevelOverrides()
-	for _, cmd := range cmds {
-		enrichWithLogLevels(&cmd, levelOverrides)
-	}
-
-	env := conf.Env
-	for k, v := range set.Env {
-		env[k] = v
-	}
-
-	// First we build everything once, to ensure all binaries are present.
-	if err := run.BazelBuild(ctx, bcmds...); err != nil {
-		return err
-	}
-
-	p := pool.New().WithContext(ctx).WithCancelOnError()
-	p.Go(func(ctx context.Context) error {
-		return run.Commands(ctx, env, verbose, cmds...)
-	})
-	p.Go(func(ctx context.Context) error {
-		return run.BazelCommands(ctx, env, verbose, bcmds...)
-	})
-
-	return p.Wait()
+	return cmds, nil
 }
 
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.
@@ -402,16 +467,16 @@ func logLevelOverrides() map[string]string {
 }
 
 // enrichWithLogLevels will add any logger level overrides to a given command if they have been specified.
-func enrichWithLogLevels(cmd *run.Command, overrides map[string]string) {
+func enrichWithLogLevels(config *run.SGConfigCommandOptions, overrides map[string]string) {
 	logLevelVariable := "SRC_LOG_LEVEL"
 
-	if level, ok := overrides[cmd.Name]; ok {
-		std.Out.WriteLine(output.Styledf(output.StylePending, "Setting log level: %s for command %s.", level, cmd.Name))
-		if cmd.Env == nil {
-			cmd.Env = make(map[string]string, 1)
-			cmd.Env[logLevelVariable] = level
+	if level, ok := overrides[config.Name]; ok {
+		std.Out.WriteLine(output.Styledf(output.StylePending, "Setting log level: %s for command %s.", level, config.Name))
+		if config.Env == nil {
+			config.Env = make(map[string]string, 1)
+			config.Env[logLevelVariable] = level
 		}
-		cmd.Env[logLevelVariable] = level
+		config.Env[logLevelVariable] = level
 	}
 }
 

@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, Icon, Text, Link, Button, ErrorAlert, AnchorLink, Container } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -60,21 +60,8 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     )
 
     const shouldShowProvider = function (provider: AuthProvider): boolean {
-        const isSourcegraphAccountsDev = (provider: AuthProvider): boolean => {
-            if (provider.serviceType !== 'openidconnect') {
-                return false
-            }
-            if (!provider.displayName.includes('Sourcegraph Accounts (dev)')) {
-                return false
-            }
-            return true
-        }
-
         // Hide the Sourcegraph Operator authentication provider by default because it is
         // not useful to customer users and may even cause confusion.
-        if (isSourcegraphAccountsDev(provider)) {
-            return searchParams.has('sourcegraph-accounts-dev')
-        }
         if (provider.serviceType === 'sourcegraph-operator') {
             return searchParams.has('sourcegraph-operator')
         }
@@ -98,9 +85,9 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     // If there is only one auth provider that is going to be displayed on dotcom, we want to redirect to it directly.
     if (context.sourcegraphDotComMode && thirdPartyAuthProviders.length === 1) {
         // Add '?returnTo=' + encodeURIComponent(returnTo) to thirdPartyAuthProviders[0].authenticationURL in a safe way.
-        const redirectUrl = new URL(thirdPartyAuthProviders[0].authenticationURL)
+        const redirectUrl = new URL(thirdPartyAuthProviders[0].authenticationURL, window.location.href)
         if (returnTo) {
-            redirectUrl.searchParams.set('returnTo', returnTo)
+            redirectUrl.searchParams.set('returnTo', new URL(returnTo, window.location.href).toString())
         }
         window.location.replace(redirectUrl)
 

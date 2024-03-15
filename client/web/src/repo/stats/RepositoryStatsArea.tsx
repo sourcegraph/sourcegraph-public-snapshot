@@ -2,6 +2,7 @@ import { type FC, useMemo } from 'react'
 
 import { useSearchParams } from 'react-router-dom'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -51,6 +52,8 @@ export const RepositoryStatsArea: FC<Props> = props => {
                         filePath={filePath}
                         isDir={true}
                         telemetryService={telemetryService}
+                        // TODO (dadlerj): update to use a real telemetry recorder
+                        telemetryRecorder={noOpTelemetryRecorder}
                     />
                 ),
             }

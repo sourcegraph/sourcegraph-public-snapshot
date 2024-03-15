@@ -26,6 +26,9 @@ test.beforeEach(({ sg }) => {
                 isDirectory: true,
                 entries: [
                     {
+                        canonicalURL: `/${repoName}/-/tree/src`,
+                    },
+                    {
                         canonicalURL: `/${repoName}/-/blob/index.js`,
                     },
                     {
@@ -33,6 +36,19 @@ test.beforeEach(({ sg }) => {
                     },
                 ],
             },
+        },
+        {
+            __typename: 'GitTree',
+            path: 'src',
+            name: 'src',
+            canonicalURL: `/${repoName}/-/tree/src`,
+            isDirectory: true,
+            isRoot: false,
+            entries: [
+                {
+                    canonicalURL: `/${repoName}/-/blob/src/notes.txt`,
+                },
+            ],
         },
         {
             __typename: 'GitBlob',
@@ -52,10 +68,19 @@ test.beforeEach(({ sg }) => {
             isDirectory: false,
             richHTML: 'Example readme content',
         },
+        {
+            __typename: 'GitBlob',
+            canonicalURL: `/${repoName}/-/blob/src/notes.txt`,
+            name: 'notes.txt',
+            path: 'src/notes.txt',
+            isDirectory: false,
+            content: 'Some notes',
+            richHTML: '',
+        },
     ])
 
     sg.mockOperations({
-        ResolveRepoRevison: () => ({
+        ResolveRepoRevision: () => ({
             repositoryRedirect: {
                 id: '1',
             },
@@ -65,9 +90,9 @@ test.beforeEach(({ sg }) => {
                 id: '1',
             },
         }),
-        RepoPageReadmeQuery: ({ repoID, path }) => ({
-            node: {
-                id: repoID,
+        RepoPageReadmeQuery: ({ path }) => ({
+            repository: {
+                id: '1',
                 commit: {
                     blob: {
                         canonicalURL: `/${repoName}/-/blob/${path}`,
@@ -78,30 +103,86 @@ test.beforeEach(({ sg }) => {
     })
 })
 
-test('file sidebar', async ({ page }) => {
-    const readmeEntry = page.getByRole('treeitem', { name: 'README.md' })
+test.describe('file sidebar', () => {
+    test('basic functionality', async ({ page }) => {
+        const readmeEntry = page.getByRole('treeitem', { name: 'README.md' })
 
-    await page.goto(`/${repoName}`)
-    await expect(readmeEntry).toBeVisible()
+        await page.goto(`/${repoName}`)
+        await expect(readmeEntry).toBeVisible()
 
-    // Close file sidebar
-    await page.getByRole('button', { name: 'Hide sidebar' }).click()
-    await expect(readmeEntry).toBeHidden()
+        // Close file sidebar
+        await page.getByRole('button', { name: 'Hide sidebar' }).click()
+        await expect(readmeEntry).toBeHidden()
 
-    // Open sidebar
-    await page.getByRole('button', { name: 'Show sidebar' }).click()
+        // Open sidebar
+        await page.getByRole('button', { name: 'Show sidebar' }).click()
 
-    // Go to a file
-    await readmeEntry.click()
-    await expect(page).toHaveURL(`/${repoName}/-/blob/README.md`)
-    // Verify that entry is selected
-    await expect(page.getByRole('treeitem', { name: 'README.md', selected: true })).toBeVisible()
+        // Go to a file
+        await readmeEntry.click()
+        await expect(page).toHaveURL(`/${repoName}/-/blob/README.md`)
+        // Verify that entry is selected
+        await expect(page.getByRole('treeitem', { name: 'README.md', selected: true })).toBeVisible()
 
-    // Go other file
-    await page.getByRole('treeitem', { name: 'index.js' }).click()
-    await expect(page).toHaveURL(`/${repoName}/-/blob/index.js`)
-    // Verify that entry is selected
-    await expect(page.getByRole('treeitem', { name: 'index.js', selected: true })).toBeVisible()
+        // Go other file
+        await page.getByRole('treeitem', { name: 'index.js' }).click()
+        await expect(page).toHaveURL(`/${repoName}/-/blob/index.js`)
+        // Verify that entry is selected
+        await expect(page.getByRole('treeitem', { name: 'index.js', selected: true })).toBeVisible()
+    })
+
+    test('error handling root', async ({ page, sg }) => {
+        sg.mockOperations({
+            TreeEntries: () => {
+                throw new Error('Sidebar error')
+            },
+        })
+
+        await page.goto(`/${repoName}`)
+        await expect(page.getByText(/Sidebar error/)).toBeVisible()
+    })
+
+    test('error handling children', async ({ page, sg }) => {
+        await page.goto(`/${repoName}`)
+
+        const treeItem = page.getByRole('treeitem', { name: 'src' })
+        // For some reason we need to wait for the tree to be rendered
+        // before we mock the GraphQL response to throw an error
+        await expect(treeItem).toBeVisible()
+
+        sg.mockOperations({
+            TreeEntries: () => {
+                throw new Error('Child error')
+            },
+        })
+        // Clicks the toggle button next to the tree entry, to expand the tree
+        // and _not_ follow the link
+        await treeItem.getByRole('button').click()
+        await expect(page.getByText(/Child error/)).toBeVisible()
+    })
+
+    test('error handling non-existing directory -> root', async ({ page, sg }) => {
+        // Here we expect the sidebar to show an error message, and after navigigating
+        // to an existing directory, the directory contents
+        sg.mockOperations({
+            TreeEntries: () => {
+                throw new Error('Sidebar error')
+            },
+        })
+
+        await page.goto(`/${repoName}/-/tree/non-existing-directory`)
+        await expect(page.getByText(/Sidebar error/).first()).toBeVisible()
+
+        sg.mockOperations({
+            TreeEntries: () => ({
+                repository: {
+                    id: '1',
+                },
+            }),
+        })
+
+        await page.goto(`/${repoName}`)
+        await expect(page.getByRole('treeitem', { name: 'README.md' })).toBeVisible()
+    })
 })
 
 test('repo readme', async ({ page }) => {

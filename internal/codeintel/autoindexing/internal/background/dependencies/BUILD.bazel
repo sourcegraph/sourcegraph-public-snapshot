@@ -1,3 +1,4 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
@@ -16,7 +17,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background/dependencies",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/actor",
         "//internal/api",
         "//internal/codeintel/autoindexing/internal/inference",
@@ -27,6 +27,7 @@ go_library(
         "//internal/conf/reposource",
         "//internal/database",
         "//internal/database/dbutil",
+        "//internal/dotcom",
         "//internal/env",
         "//internal/errcode",
         "//internal/executor",
@@ -58,7 +59,6 @@ go_test(
     embed = [":dependencies"],
     tags = ["requires-network"],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/api",
         "//internal/codeintel/autoindexing/internal/store",
         "//internal/codeintel/autoindexing/shared",
@@ -69,6 +69,7 @@ go_test(
         "//internal/database/basestore",
         "//internal/database/dbtest",
         "//internal/database/dbutil",
+        "//internal/dotcom",
         "//internal/executor",
         "//internal/extsvc",
         "//internal/observation",
@@ -83,5 +84,21 @@ go_test(
         "@com_github_prometheus_statsd_exporter//pkg/clock",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
+    ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_test.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [
+        ":dependencies",
+        "//internal/codeintel/autoindexing/internal/store",
+        "//internal/codeintel/uploads/shared",
+        "//internal/workerutil/dbworker/store",
     ],
 )

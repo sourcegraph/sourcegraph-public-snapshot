@@ -307,6 +307,9 @@ type MockGitBackend struct {
 	// ReadFileFunc is an instance of a mock function object controlling the
 	// behavior of the method ReadFile.
 	ReadFileFunc *GitBackendReadFileFunc
+	// ResolveRevisionFunc is an instance of a mock function object
+	// controlling the behavior of the method ResolveRevision.
+	ResolveRevisionFunc *GitBackendResolveRevisionFunc
 	// RevParseHeadFunc is an instance of a mock function object controlling
 	// the behavior of the method RevParseHead.
 	RevParseHeadFunc *GitBackendRevParseHeadFunc
@@ -356,6 +359,11 @@ func NewMockGitBackend() *MockGitBackend {
 		},
 		ReadFileFunc: &GitBackendReadFileFunc{
 			defaultHook: func(context.Context, api.CommitID, string) (r0 io.ReadCloser, r1 error) {
+				return
+			},
+		},
+		ResolveRevisionFunc: &GitBackendResolveRevisionFunc{
+			defaultHook: func(context.Context, string) (r0 api.CommitID, r1 error) {
 				return
 			},
 		},
@@ -416,6 +424,11 @@ func NewStrictMockGitBackend() *MockGitBackend {
 				panic("unexpected invocation of MockGitBackend.ReadFile")
 			},
 		},
+		ResolveRevisionFunc: &GitBackendResolveRevisionFunc{
+			defaultHook: func(context.Context, string) (api.CommitID, error) {
+				panic("unexpected invocation of MockGitBackend.ResolveRevision")
+			},
+		},
 		RevParseHeadFunc: &GitBackendRevParseHeadFunc{
 			defaultHook: func(context.Context) (api.CommitID, error) {
 				panic("unexpected invocation of MockGitBackend.RevParseHead")
@@ -456,6 +469,9 @@ func NewMockGitBackendFrom(i GitBackend) *MockGitBackend {
 		},
 		ReadFileFunc: &GitBackendReadFileFunc{
 			defaultHook: i.ReadFile,
+		},
+		ResolveRevisionFunc: &GitBackendResolveRevisionFunc{
+			defaultHook: i.ResolveRevision,
 		},
 		RevParseHeadFunc: &GitBackendRevParseHeadFunc{
 			defaultHook: i.RevParseHead,
@@ -1343,6 +1359,114 @@ func (c GitBackendReadFileFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitBackendReadFileFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitBackendResolveRevisionFunc describes the behavior when the
+// ResolveRevision method of the parent MockGitBackend instance is invoked.
+type GitBackendResolveRevisionFunc struct {
+	defaultHook func(context.Context, string) (api.CommitID, error)
+	hooks       []func(context.Context, string) (api.CommitID, error)
+	history     []GitBackendResolveRevisionFuncCall
+	mutex       sync.Mutex
+}
+
+// ResolveRevision delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitBackend) ResolveRevision(v0 context.Context, v1 string) (api.CommitID, error) {
+	r0, r1 := m.ResolveRevisionFunc.nextHook()(v0, v1)
+	m.ResolveRevisionFunc.appendCall(GitBackendResolveRevisionFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ResolveRevision
+// method of the parent MockGitBackend instance is invoked and the hook
+// queue is empty.
+func (f *GitBackendResolveRevisionFunc) SetDefaultHook(hook func(context.Context, string) (api.CommitID, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ResolveRevision method of the parent MockGitBackend instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitBackendResolveRevisionFunc) PushHook(hook func(context.Context, string) (api.CommitID, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitBackendResolveRevisionFunc) SetDefaultReturn(r0 api.CommitID, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitBackendResolveRevisionFunc) PushReturn(r0 api.CommitID, r1 error) {
+	f.PushHook(func(context.Context, string) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitBackendResolveRevisionFunc) nextHook() func(context.Context, string) (api.CommitID, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitBackendResolveRevisionFunc) appendCall(r0 GitBackendResolveRevisionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitBackendResolveRevisionFuncCall objects
+// describing the invocations of this function.
+func (f *GitBackendResolveRevisionFunc) History() []GitBackendResolveRevisionFuncCall {
+	f.mutex.Lock()
+	history := make([]GitBackendResolveRevisionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitBackendResolveRevisionFuncCall is an object that describes an
+// invocation of method ResolveRevision on an instance of MockGitBackend.
+type GitBackendResolveRevisionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 api.CommitID
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitBackendResolveRevisionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitBackendResolveRevisionFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

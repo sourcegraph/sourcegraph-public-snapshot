@@ -5,8 +5,6 @@ import type { Settings, TemporarySettingsStorage } from '$lib/shared'
 
 import type { AuthenticatedUser, FeatureFlag } from '../routes/layout.gql'
 
-import type { GraphQLClient } from './graphql'
-
 export { isLightTheme } from './theme'
 
 export interface SourcegraphContext {
@@ -14,14 +12,13 @@ export interface SourcegraphContext {
     user: Readable<AuthenticatedUser | null>
     temporarySettingsStorage: Readable<TemporarySettingsStorage>
     featureFlags: Readable<FeatureFlag[]>
-    client: Readable<GraphQLClient>
 }
 
 export const KEY = '__sourcegraph__'
 
 export function getStores(): SourcegraphContext {
-    const { settings, user, temporarySettingsStorage, featureFlags, client } = getContext<SourcegraphContext>(KEY)
-    return { settings, user, temporarySettingsStorage, featureFlags, client }
+    const { settings, user, temporarySettingsStorage, featureFlags } = getContext<SourcegraphContext>(KEY)
+    return { settings, user, temporarySettingsStorage, featureFlags }
 }
 
 export const user = {
@@ -35,13 +32,6 @@ export const settings = {
     subscribe(subscriber: (settings: Settings | null) => void) {
         const { settings } = getStores()
         return settings.subscribe(subscriber)
-    },
-}
-
-export const graphqlClient = {
-    subscribe(subscriber: (client: GraphQLClient) => void) {
-        const { client } = getStores()
-        return client.subscribe(subscriber)
     },
 }
 

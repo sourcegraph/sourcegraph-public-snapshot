@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -60,6 +61,8 @@ type Config struct {
 	Attribution struct {
 		Enabled bool
 	}
+
+	Sourcegraph SourcegraphConfig
 }
 
 type OpenTelemetryConfig struct {
@@ -68,12 +71,23 @@ type OpenTelemetryConfig struct {
 }
 
 type AnthropicConfig struct {
-	AllowedModels          []string
-	AccessToken            string
-	MaxTokensToSample      int
-	AllowedPromptPatterns  []string
-	DetectedPromptPatterns []string
-	RequestBlockingEnabled bool
+	AllowedModels     []string
+	AccessToken       string
+	MaxTokensToSample int
+	// Phrases we look for in the prompt to consider it valid.
+	// Each phrase is lower case.
+	AllowedPromptPatterns []string
+	// Phrases we look for in a flagged request to consider blocking the response.
+	// Each phrase is lower case. Can be empty (to disable blocking).
+	BlockedPromptPatterns []string
+	// Phrases we look for in a request to collect data.
+	// Each phrase is lower case. Can be empty (to disable data collection).
+	DetectedPromptPatterns         []string
+	RequestBlockingEnabled         bool
+	PromptTokenFlaggingLimit       int
+	PromptTokenBlockingLimit       int
+	MaxTokensToSampleFlaggingLimit int
+	ResponseTokenBlockingLimit     int
 }
 
 type FireworksConfig struct {
@@ -81,12 +95,17 @@ type FireworksConfig struct {
 	AccessToken                            string
 	StarcoderCommunitySingleTenantPercent  int
 	StarcoderEnterpriseSingleTenantPercent int
+	StarcoderQuantizedPercent              int
 }
 
 type OpenAIConfig struct {
 	AllowedModels []string
 	AccessToken   string
 	OrgID         string
+}
+
+type SourcegraphConfig struct {
+	TritonURL string
 }
 
 func (c *Config) Load() {
@@ -129,15 +148,24 @@ func (c *Config) Load() {
 			"claude-instant-v1.2",
 			"claude-instant-1.2",
 			"claude-instant-1.2-cyan",
+			"claude-3-opus-20240229",
+			"claude-3-sonnet-20240229",
+			"claude-3-haiku-20240307",
 		}, ","),
 		"Anthropic models that can be used."))
 	if c.Anthropic.AccessToken != "" && len(c.Anthropic.AllowedModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for Anthropic"))
 	}
 	c.Anthropic.MaxTokensToSample = c.GetInt("CODY_GATEWAY_ANTHROPIC_MAX_TOKENS_TO_SAMPLE", "10000", "Maximum permitted value of maxTokensToSample")
-	c.Anthropic.AllowedPromptPatterns = splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_ALLOWED_PROMPT_PATTERNS", "Prompt patterns to allow."))
-	c.Anthropic.DetectedPromptPatterns = splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_DETECTED_PROMPT_PATTERNS", "Patterns to detect in prompt."))
+	c.Anthropic.AllowedPromptPatterns = toLower(splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_ALLOWED_PROMPT_PATTERNS", "Prompt patterns to allow.")))
+	c.Anthropic.BlockedPromptPatterns = toLower(splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_BLOCKED_PROMPT_PATTERNS", "Patterns to block in prompt.")))
+	c.Anthropic.DetectedPromptPatterns = toLower(splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_DETECTED_PROMPT_PATTERNS", "Patterns to detect in prompt.")))
 	c.Anthropic.RequestBlockingEnabled = c.GetBool("CODY_GATEWAY_ANTHROPIC_REQUEST_BLOCKING_ENABLED", "false", "Whether we should block requests that match our blocking criteria.")
+
+	c.Anthropic.PromptTokenBlockingLimit = c.GetInt("CODY_GATEWAY_ANTHROPIC_PROMPT_TOKEN_BLOCKING_LIMIT", "20000", "Maximum number of prompt tokens to allow without blocking.")
+	c.Anthropic.PromptTokenFlaggingLimit = c.GetInt("CODY_GATEWAY_ANTHROPIC_PROMPT_TOKEN_FLAGGING_LIMIT", "18000", "Maximum number of prompt tokens to allow without flagging.")
+	c.Anthropic.MaxTokensToSampleFlaggingLimit = c.GetInt("CODY_GATEWAY_ANTHROPIC_MAX_TOKENS_TO_SAMPLE_FLAGGING_LIMIT", "1000", "Maximum value of max_tokens_to_sample to allow without flagging.")
+	c.Anthropic.ResponseTokenBlockingLimit = c.GetInt("CODY_GATEWAY_ANTHROPIC_RESPONSE_TOKEN_BLOCKING_LIMIT", "1000", "Maximum number of completion tokens to allow without blocking.")
 
 	c.OpenAI.AccessToken = c.GetOptional("CODY_GATEWAY_OPENAI_ACCESS_TOKEN", "The OpenAI access token to be used.")
 	c.OpenAI.OrgID = c.GetOptional("CODY_GATEWAY_OPENAI_ORG_ID", "The OpenAI organization to count billing towards. Setting this ensures we always use the correct negotiated terms.")
@@ -158,6 +186,8 @@ func (c *Config) Load() {
 			// Fireworks multi-tenant models:
 			fireworks.Starcoder16b,
 			fireworks.Starcoder7b,
+			fireworks.Starcoder16b8bit,
+			fireworks.Starcoder7b8bit,
 			fireworks.Starcoder16bSingleTenant,
 			"accounts/fireworks/models/llama-v2-7b-code",
 			"accounts/fireworks/models/llama-v2-13b-code",
@@ -175,8 +205,9 @@ func (c *Config) Load() {
 	}
 	c.Fireworks.StarcoderCommunitySingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_COMMUNITY_SINGLE_TENANT_PERCENT", "0", "The percentage of community traffic for Starcoder to be redirected to the single-tenant deployment.")
 	c.Fireworks.StarcoderEnterpriseSingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_ENTERPRISE_SINGLE_TENANT_PERCENT", "100", "The percentage of Enterprise traffic for Starcoder to be redirected to the single-tenant deployment.")
+	c.Fireworks.StarcoderQuantizedPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_QUANTIZED_PERCENT", "100", "The percentage of multi-tenant traffic to be redirected to the quantized model.")
 
-	c.AllowedEmbeddingsModels = splitMaybe(c.Get("CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS", strings.Join([]string{"openai/text-embedding-ada-002"}, ","), "The models allowed for embeddings generation."))
+	c.AllowedEmbeddingsModels = splitMaybe(c.Get("CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS", strings.Join([]string{string(embeddings.ModelNameOpenAIAda), string(embeddings.ModelNameSourcegraphTriton)}, ","), "The models allowed for embeddings generation."))
 	if len(c.AllowedEmbeddingsModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for embeddings generation"))
 	}
@@ -209,6 +240,8 @@ func (c *Config) Load() {
 	c.AutoFlushStreamingResponses = c.GetBool("CODY_GATEWAY_AUTO_FLUSH_STREAMING_RESPONSES", "false", "Whether we should flush streaming responses after every write.")
 
 	c.Attribution.Enabled = c.GetBool("CODY_GATEWAY_ENABLE_ATTRIBUTION_SEARCH", "false", "Whether attribution search endpoint is available.")
+
+	c.Sourcegraph.TritonURL = c.Get("CODY_GATEWAY_SOURCEGRAPH_TRITON_URL", "https://embeddings-triton-direct.sgdev.org/v2/models/ensemble_model/infer", "URL of the Triton server.")
 }
 
 // splitMaybe splits on commas, but only returns at least one element if the input
@@ -218,4 +251,12 @@ func splitMaybe(input string) []string {
 		return nil
 	}
 	return strings.Split(input, ",")
+}
+
+func toLower(input []string) []string {
+	var res []string
+	for _, s := range input {
+		res = append(res, strings.ToLower(s))
+	}
+	return res
 }

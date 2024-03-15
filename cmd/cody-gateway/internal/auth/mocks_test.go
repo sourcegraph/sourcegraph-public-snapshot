@@ -9,38 +9,48 @@ package auth
 import (
 	"sync"
 
-	httpcache "github.com/gregjones/httpcache"
+	productsubscription "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription"
 )
 
-// MockCache is a mock implementation of the Cache interface (from the
-// package github.com/gregjones/httpcache) used for unit testing.
-type MockCache struct {
+// MockListingCache is a mock implementation of the ListingCache interface
+// (from the package
+// github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription)
+// used for unit testing.
+type MockListingCache struct {
 	// DeleteFunc is an instance of a mock function object controlling the
 	// behavior of the method Delete.
-	DeleteFunc *CacheDeleteFunc
+	DeleteFunc *ListingCacheDeleteFunc
 	// GetFunc is an instance of a mock function object controlling the
 	// behavior of the method Get.
-	GetFunc *CacheGetFunc
+	GetFunc *ListingCacheGetFunc
+	// ListAllKeysFunc is an instance of a mock function object controlling
+	// the behavior of the method ListAllKeys.
+	ListAllKeysFunc *ListingCacheListAllKeysFunc
 	// SetFunc is an instance of a mock function object controlling the
 	// behavior of the method Set.
-	SetFunc *CacheSetFunc
+	SetFunc *ListingCacheSetFunc
 }
 
-// NewMockCache creates a new mock of the Cache interface. All methods
-// return zero values for all results, unless overwritten.
-func NewMockCache() *MockCache {
-	return &MockCache{
-		DeleteFunc: &CacheDeleteFunc{
+// NewMockListingCache creates a new mock of the ListingCache interface. All
+// methods return zero values for all results, unless overwritten.
+func NewMockListingCache() *MockListingCache {
+	return &MockListingCache{
+		DeleteFunc: &ListingCacheDeleteFunc{
 			defaultHook: func(string) {
 				return
 			},
 		},
-		GetFunc: &CacheGetFunc{
+		GetFunc: &ListingCacheGetFunc{
 			defaultHook: func(string) (r0 []byte, r1 bool) {
 				return
 			},
 		},
-		SetFunc: &CacheSetFunc{
+		ListAllKeysFunc: &ListingCacheListAllKeysFunc{
+			defaultHook: func() (r0 []string) {
+				return
+			},
+		},
+		SetFunc: &ListingCacheSetFunc{
 			defaultHook: func(string, []byte) {
 				return
 			},
@@ -48,72 +58,81 @@ func NewMockCache() *MockCache {
 	}
 }
 
-// NewStrictMockCache creates a new mock of the Cache interface. All methods
-// panic on invocation, unless overwritten.
-func NewStrictMockCache() *MockCache {
-	return &MockCache{
-		DeleteFunc: &CacheDeleteFunc{
+// NewStrictMockListingCache creates a new mock of the ListingCache
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockListingCache() *MockListingCache {
+	return &MockListingCache{
+		DeleteFunc: &ListingCacheDeleteFunc{
 			defaultHook: func(string) {
-				panic("unexpected invocation of MockCache.Delete")
+				panic("unexpected invocation of MockListingCache.Delete")
 			},
 		},
-		GetFunc: &CacheGetFunc{
+		GetFunc: &ListingCacheGetFunc{
 			defaultHook: func(string) ([]byte, bool) {
-				panic("unexpected invocation of MockCache.Get")
+				panic("unexpected invocation of MockListingCache.Get")
 			},
 		},
-		SetFunc: &CacheSetFunc{
+		ListAllKeysFunc: &ListingCacheListAllKeysFunc{
+			defaultHook: func() []string {
+				panic("unexpected invocation of MockListingCache.ListAllKeys")
+			},
+		},
+		SetFunc: &ListingCacheSetFunc{
 			defaultHook: func(string, []byte) {
-				panic("unexpected invocation of MockCache.Set")
+				panic("unexpected invocation of MockListingCache.Set")
 			},
 		},
 	}
 }
 
-// NewMockCacheFrom creates a new mock of the MockCache interface. All
-// methods delegate to the given implementation, unless overwritten.
-func NewMockCacheFrom(i httpcache.Cache) *MockCache {
-	return &MockCache{
-		DeleteFunc: &CacheDeleteFunc{
+// NewMockListingCacheFrom creates a new mock of the MockListingCache
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockListingCacheFrom(i productsubscription.ListingCache) *MockListingCache {
+	return &MockListingCache{
+		DeleteFunc: &ListingCacheDeleteFunc{
 			defaultHook: i.Delete,
 		},
-		GetFunc: &CacheGetFunc{
+		GetFunc: &ListingCacheGetFunc{
 			defaultHook: i.Get,
 		},
-		SetFunc: &CacheSetFunc{
+		ListAllKeysFunc: &ListingCacheListAllKeysFunc{
+			defaultHook: i.ListAllKeys,
+		},
+		SetFunc: &ListingCacheSetFunc{
 			defaultHook: i.Set,
 		},
 	}
 }
 
-// CacheDeleteFunc describes the behavior when the Delete method of the
-// parent MockCache instance is invoked.
-type CacheDeleteFunc struct {
+// ListingCacheDeleteFunc describes the behavior when the Delete method of
+// the parent MockListingCache instance is invoked.
+type ListingCacheDeleteFunc struct {
 	defaultHook func(string)
 	hooks       []func(string)
-	history     []CacheDeleteFuncCall
+	history     []ListingCacheDeleteFuncCall
 	mutex       sync.Mutex
 }
 
 // Delete delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockCache) Delete(v0 string) {
+func (m *MockListingCache) Delete(v0 string) {
 	m.DeleteFunc.nextHook()(v0)
-	m.DeleteFunc.appendCall(CacheDeleteFuncCall{v0})
+	m.DeleteFunc.appendCall(ListingCacheDeleteFuncCall{v0})
 	return
 }
 
 // SetDefaultHook sets function that is called when the Delete method of the
-// parent MockCache instance is invoked and the hook queue is empty.
-func (f *CacheDeleteFunc) SetDefaultHook(hook func(string)) {
+// parent MockListingCache instance is invoked and the hook queue is empty.
+func (f *ListingCacheDeleteFunc) SetDefaultHook(hook func(string)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Delete method of the parent MockCache instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *CacheDeleteFunc) PushHook(hook func(string)) {
+// Delete method of the parent MockListingCache instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ListingCacheDeleteFunc) PushHook(hook func(string)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -121,20 +140,20 @@ func (f *CacheDeleteFunc) PushHook(hook func(string)) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CacheDeleteFunc) SetDefaultReturn() {
+func (f *ListingCacheDeleteFunc) SetDefaultReturn() {
 	f.SetDefaultHook(func(string) {
 		return
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CacheDeleteFunc) PushReturn() {
+func (f *ListingCacheDeleteFunc) PushReturn() {
 	f.PushHook(func(string) {
 		return
 	})
 }
 
-func (f *CacheDeleteFunc) nextHook() func(string) {
+func (f *ListingCacheDeleteFunc) nextHook() func(string) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -147,26 +166,26 @@ func (f *CacheDeleteFunc) nextHook() func(string) {
 	return hook
 }
 
-func (f *CacheDeleteFunc) appendCall(r0 CacheDeleteFuncCall) {
+func (f *ListingCacheDeleteFunc) appendCall(r0 ListingCacheDeleteFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of CacheDeleteFuncCall objects describing the
-// invocations of this function.
-func (f *CacheDeleteFunc) History() []CacheDeleteFuncCall {
+// History returns a sequence of ListingCacheDeleteFuncCall objects
+// describing the invocations of this function.
+func (f *ListingCacheDeleteFunc) History() []ListingCacheDeleteFuncCall {
 	f.mutex.Lock()
-	history := make([]CacheDeleteFuncCall, len(f.history))
+	history := make([]ListingCacheDeleteFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// CacheDeleteFuncCall is an object that describes an invocation of method
-// Delete on an instance of MockCache.
-type CacheDeleteFuncCall struct {
+// ListingCacheDeleteFuncCall is an object that describes an invocation of
+// method Delete on an instance of MockListingCache.
+type ListingCacheDeleteFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 string
@@ -174,44 +193,44 @@ type CacheDeleteFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c CacheDeleteFuncCall) Args() []interface{} {
+func (c ListingCacheDeleteFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c CacheDeleteFuncCall) Results() []interface{} {
+func (c ListingCacheDeleteFuncCall) Results() []interface{} {
 	return []interface{}{}
 }
 
-// CacheGetFunc describes the behavior when the Get method of the parent
-// MockCache instance is invoked.
-type CacheGetFunc struct {
+// ListingCacheGetFunc describes the behavior when the Get method of the
+// parent MockListingCache instance is invoked.
+type ListingCacheGetFunc struct {
 	defaultHook func(string) ([]byte, bool)
 	hooks       []func(string) ([]byte, bool)
-	history     []CacheGetFuncCall
+	history     []ListingCacheGetFuncCall
 	mutex       sync.Mutex
 }
 
 // Get delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockCache) Get(v0 string) ([]byte, bool) {
+func (m *MockListingCache) Get(v0 string) ([]byte, bool) {
 	r0, r1 := m.GetFunc.nextHook()(v0)
-	m.GetFunc.appendCall(CacheGetFuncCall{v0, r0, r1})
+	m.GetFunc.appendCall(ListingCacheGetFuncCall{v0, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Get method of the
-// parent MockCache instance is invoked and the hook queue is empty.
-func (f *CacheGetFunc) SetDefaultHook(hook func(string) ([]byte, bool)) {
+// parent MockListingCache instance is invoked and the hook queue is empty.
+func (f *ListingCacheGetFunc) SetDefaultHook(hook func(string) ([]byte, bool)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Get method of the parent MockCache instance invokes the hook at the front
-// of the queue and discards it. After the queue is empty, the default hook
-// function is invoked for any future action.
-func (f *CacheGetFunc) PushHook(hook func(string) ([]byte, bool)) {
+// Get method of the parent MockListingCache instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ListingCacheGetFunc) PushHook(hook func(string) ([]byte, bool)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -219,20 +238,20 @@ func (f *CacheGetFunc) PushHook(hook func(string) ([]byte, bool)) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CacheGetFunc) SetDefaultReturn(r0 []byte, r1 bool) {
+func (f *ListingCacheGetFunc) SetDefaultReturn(r0 []byte, r1 bool) {
 	f.SetDefaultHook(func(string) ([]byte, bool) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CacheGetFunc) PushReturn(r0 []byte, r1 bool) {
+func (f *ListingCacheGetFunc) PushReturn(r0 []byte, r1 bool) {
 	f.PushHook(func(string) ([]byte, bool) {
 		return r0, r1
 	})
 }
 
-func (f *CacheGetFunc) nextHook() func(string) ([]byte, bool) {
+func (f *ListingCacheGetFunc) nextHook() func(string) ([]byte, bool) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -245,26 +264,26 @@ func (f *CacheGetFunc) nextHook() func(string) ([]byte, bool) {
 	return hook
 }
 
-func (f *CacheGetFunc) appendCall(r0 CacheGetFuncCall) {
+func (f *ListingCacheGetFunc) appendCall(r0 ListingCacheGetFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of CacheGetFuncCall objects describing the
-// invocations of this function.
-func (f *CacheGetFunc) History() []CacheGetFuncCall {
+// History returns a sequence of ListingCacheGetFuncCall objects describing
+// the invocations of this function.
+func (f *ListingCacheGetFunc) History() []ListingCacheGetFuncCall {
 	f.mutex.Lock()
-	history := make([]CacheGetFuncCall, len(f.history))
+	history := make([]ListingCacheGetFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// CacheGetFuncCall is an object that describes an invocation of method Get
-// on an instance of MockCache.
-type CacheGetFuncCall struct {
+// ListingCacheGetFuncCall is an object that describes an invocation of
+// method Get on an instance of MockListingCache.
+type ListingCacheGetFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 string
@@ -278,44 +297,45 @@ type CacheGetFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c CacheGetFuncCall) Args() []interface{} {
+func (c ListingCacheGetFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c CacheGetFuncCall) Results() []interface{} {
+func (c ListingCacheGetFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// CacheSetFunc describes the behavior when the Set method of the parent
-// MockCache instance is invoked.
-type CacheSetFunc struct {
-	defaultHook func(string, []byte)
-	hooks       []func(string, []byte)
-	history     []CacheSetFuncCall
+// ListingCacheListAllKeysFunc describes the behavior when the ListAllKeys
+// method of the parent MockListingCache instance is invoked.
+type ListingCacheListAllKeysFunc struct {
+	defaultHook func() []string
+	hooks       []func() []string
+	history     []ListingCacheListAllKeysFuncCall
 	mutex       sync.Mutex
 }
 
-// Set delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockCache) Set(v0 string, v1 []byte) {
-	m.SetFunc.nextHook()(v0, v1)
-	m.SetFunc.appendCall(CacheSetFuncCall{v0, v1})
-	return
+// ListAllKeys delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockListingCache) ListAllKeys() []string {
+	r0 := m.ListAllKeysFunc.nextHook()()
+	m.ListAllKeysFunc.appendCall(ListingCacheListAllKeysFuncCall{r0})
+	return r0
 }
 
-// SetDefaultHook sets function that is called when the Set method of the
-// parent MockCache instance is invoked and the hook queue is empty.
-func (f *CacheSetFunc) SetDefaultHook(hook func(string, []byte)) {
+// SetDefaultHook sets function that is called when the ListAllKeys method
+// of the parent MockListingCache instance is invoked and the hook queue is
+// empty.
+func (f *ListingCacheListAllKeysFunc) SetDefaultHook(hook func() []string) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Set method of the parent MockCache instance invokes the hook at the front
-// of the queue and discards it. After the queue is empty, the default hook
-// function is invoked for any future action.
-func (f *CacheSetFunc) PushHook(hook func(string, []byte)) {
+// ListAllKeys method of the parent MockListingCache instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ListingCacheListAllKeysFunc) PushHook(hook func() []string) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -323,20 +343,20 @@ func (f *CacheSetFunc) PushHook(hook func(string, []byte)) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CacheSetFunc) SetDefaultReturn() {
-	f.SetDefaultHook(func(string, []byte) {
-		return
+func (f *ListingCacheListAllKeysFunc) SetDefaultReturn(r0 []string) {
+	f.SetDefaultHook(func() []string {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CacheSetFunc) PushReturn() {
-	f.PushHook(func(string, []byte) {
-		return
+func (f *ListingCacheListAllKeysFunc) PushReturn(r0 []string) {
+	f.PushHook(func() []string {
+		return r0
 	})
 }
 
-func (f *CacheSetFunc) nextHook() func(string, []byte) {
+func (f *ListingCacheListAllKeysFunc) nextHook() func() []string {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -349,26 +369,124 @@ func (f *CacheSetFunc) nextHook() func(string, []byte) {
 	return hook
 }
 
-func (f *CacheSetFunc) appendCall(r0 CacheSetFuncCall) {
+func (f *ListingCacheListAllKeysFunc) appendCall(r0 ListingCacheListAllKeysFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of CacheSetFuncCall objects describing the
-// invocations of this function.
-func (f *CacheSetFunc) History() []CacheSetFuncCall {
+// History returns a sequence of ListingCacheListAllKeysFuncCall objects
+// describing the invocations of this function.
+func (f *ListingCacheListAllKeysFunc) History() []ListingCacheListAllKeysFuncCall {
 	f.mutex.Lock()
-	history := make([]CacheSetFuncCall, len(f.history))
+	history := make([]ListingCacheListAllKeysFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// CacheSetFuncCall is an object that describes an invocation of method Set
-// on an instance of MockCache.
-type CacheSetFuncCall struct {
+// ListingCacheListAllKeysFuncCall is an object that describes an invocation
+// of method ListAllKeys on an instance of MockListingCache.
+type ListingCacheListAllKeysFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ListingCacheListAllKeysFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ListingCacheListAllKeysFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ListingCacheSetFunc describes the behavior when the Set method of the
+// parent MockListingCache instance is invoked.
+type ListingCacheSetFunc struct {
+	defaultHook func(string, []byte)
+	hooks       []func(string, []byte)
+	history     []ListingCacheSetFuncCall
+	mutex       sync.Mutex
+}
+
+// Set delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockListingCache) Set(v0 string, v1 []byte) {
+	m.SetFunc.nextHook()(v0, v1)
+	m.SetFunc.appendCall(ListingCacheSetFuncCall{v0, v1})
+	return
+}
+
+// SetDefaultHook sets function that is called when the Set method of the
+// parent MockListingCache instance is invoked and the hook queue is empty.
+func (f *ListingCacheSetFunc) SetDefaultHook(hook func(string, []byte)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Set method of the parent MockListingCache instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ListingCacheSetFunc) PushHook(hook func(string, []byte)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ListingCacheSetFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(string, []byte) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ListingCacheSetFunc) PushReturn() {
+	f.PushHook(func(string, []byte) {
+		return
+	})
+}
+
+func (f *ListingCacheSetFunc) nextHook() func(string, []byte) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ListingCacheSetFunc) appendCall(r0 ListingCacheSetFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ListingCacheSetFuncCall objects describing
+// the invocations of this function.
+func (f *ListingCacheSetFunc) History() []ListingCacheSetFuncCall {
+	f.mutex.Lock()
+	history := make([]ListingCacheSetFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ListingCacheSetFuncCall is an object that describes an invocation of
+// method Set on an instance of MockListingCache.
+type ListingCacheSetFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 string
@@ -379,12 +497,12 @@ type CacheSetFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c CacheSetFuncCall) Args() []interface{} {
+func (c ListingCacheSetFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c CacheSetFuncCall) Results() []interface{} {
+func (c ListingCacheSetFuncCall) Results() []interface{} {
 	return []interface{}{}
 }

@@ -4,7 +4,6 @@
     import { afterNavigate, disableScrollHandling, goto } from '$app/navigation'
     import { page } from '$app/stores'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import { fetchSidebarFileTree, FileTreeProvider, type FileTreeLoader } from '$lib/repo/api/tree'
     import HistoryPanel, { type Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
@@ -16,6 +15,10 @@
     import type { GitHistory_HistoryConnection } from './layout.gql'
     import Tabs from '$lib/Tabs.svelte'
     import TabPanel from '$lib/TabPanel.svelte'
+    import { createFileTreeStore } from './fileTreeStore'
+    import { isErrorLike } from '$lib/common'
+    import { Alert } from '$lib/wildcard'
+    import { fetchSidebarFileTree } from '$lib/repo/api/tree'
 
     interface Capture {
         selectedTab: number | null
@@ -49,49 +52,6 @@
         },
     }
 
-    const fileTreeLoader: FileTreeLoader = args =>
-        fetchSidebarFileTree(args).then(
-            ({ root, values }) =>
-                new FileTreeProvider({
-                    root,
-                    values,
-                    loader: fileTreeLoader,
-                    ...args,
-                })
-        )
-
-    async function updateFileTreeProvider(repoName: string, revision: string, parentPath: string) {
-        const result = await data.fileTree
-        if (!result) {
-            treeProvider = null
-            return
-        }
-        const { root, values } = result
-
-        // Do nothing if update was called with new arguments in the meantime
-        if (repoName !== data.repoName || revision !== (data.revision ?? '') || parentPath !== data.parentPath) {
-            return
-        }
-        treeProvider = new FileTreeProvider({
-            root,
-            values,
-            repoName,
-            revision,
-            loader: fileTreeLoader,
-        })
-    }
-
-    function fetchCommitHistory(afterCursor: string | null) {
-        // Only fetch more commits if there are more commits and if we are not already
-        // fetching more commits.
-        if ($commitHistoryQuery && !$commitHistoryQuery.loading && commitHistory?.pageInfo?.hasNextPage) {
-            data.commitHistory.fetchMore({
-                variables: {
-                    afterCursor: afterCursor,
-                },
-            })
-        }
-    }
     async function selectTab(event: { detail: number | null }) {
         if (event.detail === null) {
             const url = new URL($page.url)
@@ -101,18 +61,16 @@
         selectedTab = event.detail
     }
 
-    let treeProvider: FileTreeProvider | null = null
+    const fileTreeStore = createFileTreeStore({ fetchFileTreeData: fetchSidebarFileTree })
     let selectedTab: number | null = null
     let historyPanel: HistoryPanel
     let rootElement: HTMLElement | null = null
-
-    $: ({ revision = '', parentPath, repoName } = data)
-    // Only update the file tree provider (which causes the tree to rerender) when repo, revision/commit or file path
-    // update
-    $: updateFileTreeProvider(repoName, revision, parentPath)
-    $: commitHistoryQuery = data.commitHistory
     let commitHistory: GitHistory_HistoryConnection | null
-    $: if (commitHistoryQuery) {
+
+    $: ({ revision = '', parentPath, repoName, resolvedRevision } = data)
+    $: fileTreeStore.set({ repoName, revision: resolvedRevision.commitID, path: parentPath })
+    $: commitHistoryQuery = data.commitHistory
+    $: if (!!commitHistoryQuery) {
         // Reset commit history when the query observable changes. Without
         // this we are showing the commit history of the previously selected
         // file/folder until the new commit history is loaded.
@@ -157,8 +115,15 @@
         <h3>
             <SidebarToggleButton />&nbsp; Files
         </h3>
-        {#if treeProvider}
-            <FileTree revision={revision ?? ''} {treeProvider} selectedPath={$page.params.path ?? ''} />
+        {#if $fileTreeStore}
+            {#if isErrorLike($fileTreeStore)}
+                <Alert variant="danger">
+                    Unable to fetch file tree data:
+                    {$fileTreeStore.message}
+                </Alert>
+            {:else}
+                <FileTree {repoName} {revision} treeProvider={$fileTreeStore} selectedPath={$page.params.path ?? ''} />
+            {/if}
         {:else}
             <LoadingSpinner center={false} />
         {/if}
@@ -175,8 +140,8 @@
                         <HistoryPanel
                             bind:this={historyPanel}
                             history={commitHistory}
-                            loading={$commitHistoryQuery?.loading ?? true}
-                            fetchMore={fetchCommitHistory}
+                            loading={$commitHistoryQuery?.fetching ?? true}
+                            fetchMore={commitHistoryQuery.fetchMore}
                             enableInlineDiffs={$page.route.id?.includes('/blob/') ?? false}
                         />
                     {/key}

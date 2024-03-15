@@ -3,7 +3,7 @@ package guardrails
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 )
 
 type SnippetLowerBound struct {
@@ -17,7 +17,7 @@ func NewThreshold() SnippetLowerBound {
 	//   whether attribution search should run.
 	// - For autocomplete, attribution is turned off on dotcom,
 	//   so this is a no-op.
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		return SnippetLowerBound{
 			linesLowerBound: 0,
 		}
