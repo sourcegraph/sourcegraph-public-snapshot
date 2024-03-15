@@ -98,7 +98,7 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 
 	// If we're building an internal release, we push the final images to that specific registry instead.
 	// See also: release_operations.go
-	if c.RunType == runtype.InternalRelease {
+	if c.RunType.Is(runtype.InternalRelease) {
 		prodRegistry = images.SourcegraphInternalReleaseRegistry
 	}
 
