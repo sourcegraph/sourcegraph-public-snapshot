@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func UpdateImages(_ *cli.Context, updateImageName string) error {
+func UpdateImages(_ *cli.Context, updateImageName string, enableLocalPackageRepo bool) error {
 	// Loop over all images and run apko lock
 	if updateImageName != "" {
 		if !strings.HasSuffix(updateImageName, ".yaml") {
@@ -37,6 +37,11 @@ func UpdateImages(_ *cli.Context, updateImageName string) error {
 		return err
 	}
 
+	var extraRepo, extraKey string
+	if enableLocalPackageRepo {
+		// Currently not implemented as rules_apko doesn't support local filesystem repos
+	}
+
 	var updatedImage bool
 	for _, file := range files {
 		if !strings.HasSuffix(file.Name(), ".yaml") {
@@ -49,7 +54,7 @@ func UpdateImages(_ *cli.Context, updateImageName string) error {
 
 		// Update lockfile
 		std.Out.WriteLine(output.Linef("🗝️ ", output.StylePending, fmt.Sprintf("Updating apko lockfile for %s", file.Name())))
-		if err = ApkoLock(file.Name(), imageDir, "", ""); err != nil {
+		if err = ApkoLock(file.Name(), imageDir, extraRepo, extraKey); err != nil {
 			return err
 		}
 		updatedImage = true
@@ -64,7 +69,9 @@ func UpdateImages(_ *cli.Context, updateImageName string) error {
 
 func ApkoLock(imageFilename string, imageDir string, extraRepo string, extraKey string) error {
 
-	apkoFlags := []string{"lock", imageFilename}
+	apkoArgs := []string{"run", "@rules_apko//apko", "lock", "--", imageFilename}
+
+	apkoFlags := []string{}
 	if extraRepo != "" {
 		apkoFlags = append(apkoFlags, "--repository-append", extraRepo)
 	}
@@ -72,8 +79,7 @@ func ApkoLock(imageFilename string, imageDir string, extraRepo string, extraKey 
 		apkoFlags = append(apkoFlags, "--keyring-append", extraKey)
 	}
 
-	// TODO: Replace with bazel command
-	cmd := exec.Command("apko", apkoFlags...)
+	cmd := exec.Command("bazel", append(apkoArgs, apkoFlags...)...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Dir = imageDir
