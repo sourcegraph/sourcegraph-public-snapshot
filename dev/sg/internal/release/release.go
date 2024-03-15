@@ -10,7 +10,10 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var releaseRunFlags = []cli.Flag{
+// releaseBaseFlags are the flags that are common to all subcommands of the release command.
+// In particular, the version flag is not included in that list, because while it's required
+// for create and promote-to-public, it's not for the others (to allow --config-from-commit).
+var releaseBaseFlags = []cli.Flag{
 	&cli.StringFlag{
 		Name:  "workdir",
 		Value: ".",
@@ -31,11 +34,6 @@ var releaseRunFlags = []cli.Flag{
 		Usage: "Preview all the commands that would be performed",
 	},
 	&cli.StringFlag{
-		Name:     "version",
-		Usage:    "Force version",
-		Required: true,
-	},
-	&cli.StringFlag{
 		Name:  "inputs",
 		Usage: "Set inputs to use for a given release, ex: --input=server=v5.2.404040,foobar=ffefe",
 	},
@@ -45,6 +43,24 @@ var releaseRunFlags = []cli.Flag{
 		Usage: "Infer run configuration from last commit instead of flags.",
 	},
 }
+
+// releaseRunFlags are the flags for the release run * subcommands. Version is optional here, because
+// we can also use --infer-from-commit.
+var releaseRunFlags = append(releaseBaseFlags, &cli.StringFlag{
+	Name:  "version",
+	Usage: "Force version",
+})
+
+// releaseCreatePromoteFlags are the flags for the release create and promote-to-public subcommands, Version
+// is required here, because it makes no sense to create a release without one.
+//
+// TODO https://github.com/sourcegraph/sourcegraph/issues/61077 to add the "auto" value that ask
+// the releaseregistry to provide the version number.
+var releaseCreatePromoteFlags = append(releaseBaseFlags, &cli.StringFlag{
+	Name:     "version",
+	Usage:    "Force version (required)",
+	Required: true,
+})
 
 var Command = &cli.Command{
 	Name:     "release",
@@ -123,7 +139,7 @@ var Command = &cli.Command{
 			Description: "See https://go/releases",
 			UsageText:   "sg release create --workdir [path-to-folder-with-manifest] --version vX.Y.Z",
 			Category:    category.Util,
-			Flags:       releaseRunFlags,
+			Flags:       releaseCreatePromoteFlags,
 			Action: func(cctx *cli.Context) error {
 				r, err := newReleaseRunnerFromCliContext(cctx)
 				if err != nil {
@@ -137,7 +153,7 @@ var Command = &cli.Command{
 			Usage:     "Promote an internal release to the public",
 			UsageText: "sg release promote-to-public --workdir [path-to-folder-with-manifest] --version vX.Y.Z",
 			Category:  category.Util,
-			Flags:     releaseRunFlags,
+			Flags:     releaseCreatePromoteFlags,
 			Action: func(cctx *cli.Context) error {
 				r, err := newReleaseRunnerFromCliContext(cctx)
 				if err != nil {
@@ -150,6 +166,14 @@ var Command = &cli.Command{
 }
 
 func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
+	if cctx.Bool("config-from-commit") && cctx.String("version") != "" {
+		return nil, errors.New("You cannot use --config-from-commit and --version at the same time")
+	}
+
+	if !cctx.Bool("config-from-commit") && cctx.String("version") == "" {
+		return nil, errors.New("You must provide a version by specifying either --version or --config-from-commit")
+	}
+
 	workdir := cctx.String("workdir")
 	pretend := cctx.Bool("pretend")
 	// Normalize the version string, to prevent issues where this was given with the wrong convention
