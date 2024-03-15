@@ -334,6 +334,11 @@ commands:
       TELEMETRY_GATEWAY_EVENTS_PUBSUB_ENABLED: false
       SRC_LOG_LEVEL: info
       GRPC_WEB_UI_ENABLED: true
+      # Set for convenience - use real values in sg.config.overwrite.yaml if you
+      # are interacting with RPCs that enforce SAMS M2M auth. See
+      # https://github.com/sourcegraph/accounts.sourcegraph.com/wiki/Operators-Cheat-Sheet#create-a-new-idp-client
+      TELEMETRY_GATEWAY_SAMS_CLIENT_ID: "foo"
+      TELEMETRY_GATEWAY_SAMS_CLIENT_SECRET: "bar"
     watch:
       - lib
       - internal

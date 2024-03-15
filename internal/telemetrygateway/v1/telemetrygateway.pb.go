@@ -119,7 +119,12 @@ type Identifier_UnlicensedInstance struct {
 
 type Identifier_ManagedService struct {
 	// A service operated and managed by the Sourcegraph team, for example
-	// a service deployed by https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/
+	// a service deployed by MSP: https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/
+	//
+	// Valid SAMS client credentials are required to publish events under a
+	// managed service identifier. The required scope is
+	// 'telemetry_gateway::events::publish'. See go/sams-client-credentials and
+	// go/sams-token-scopes for more information.
 	ManagedService *Identifier_ManagedServiceIdentifier `protobuf:"bytes,3,opt,name=managed_service,json=managedService,proto3,oneof"`
 }
 

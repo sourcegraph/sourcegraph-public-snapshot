@@ -75,7 +75,8 @@ func (e *Env) validate() error {
 func (e *Env) Get(name, defaultValue, description string) string {
 	rawValue := e.get(name, defaultValue, description)
 	if rawValue == "" {
-		e.AddError(errors.Errorf("invalid value %q for %s: no value supplied", rawValue, name))
+		e.AddError(errors.Errorf("invalid value %q for %s: no value supplied, description: %s",
+			rawValue, name, description))
 		return ""
 	}
 

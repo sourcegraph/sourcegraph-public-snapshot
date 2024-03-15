@@ -31,7 +31,8 @@ service TelemeteryGatewayService {
   // RecordEvent records a single telemetry event to the Telemetry Gateway service.
   // If the RPC succeeds, then the event was successfully published.
   //
-  // This mechanism is intended for low-volume managed services. Higher-volume
+  // This RPC currently ONLY accepts events published by ManagedServiceIdentifier,
+  // as this mechanism is intended for low-volume managed services. Higher-volume
   // use cases should implement a batching mechanism and use the RecordEvents
   // RPC instead.
   //
@@ -71,7 +72,12 @@ message Identifier {
     // An unlicensed Sourcegraph instance.
     UnlicensedInstanceIdentifier unlicensed_instance = 2;
     // A service operated and managed by the Sourcegraph team, for example
-    // a service deployed by https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/
+    // a service deployed by MSP: https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/
+    //
+    // Valid SAMS client credentials are required to publish events under a
+    // managed service identifier. The required scope is
+    // 'telemetry_gateway::events::publish'. See go/sams-client-credentials and
+    // go/sams-token-scopes for more information.
     ManagedServiceIdentifier managed_service = 3;
   }
 }

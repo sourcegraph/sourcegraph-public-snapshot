@@ -21,6 +21,7 @@ import (
 
 type Publisher struct {
 	logger log.Logger
+	source string
 
 	topic pubsub.TopicPublisher
 	opts  PublishStreamOptions
@@ -50,12 +51,37 @@ func NewPublisherForStream(
 	if opts.ConcurrencyLimit <= 0 {
 		opts.ConcurrencyLimit = 250
 	}
+
+	var source string
+	switch identifier := metadata.GetIdentifier(); identifier.GetIdentifier().(type) {
+	case *telemetrygatewayv1.Identifier_LicensedInstance:
+		source = "licensed_instance"
+	case *telemetrygatewayv1.Identifier_UnlicensedInstance:
+		source = "unlicensed_instance"
+	case *telemetrygatewayv1.Identifier_ManagedService:
+		// Is a trusted client, so use the service ID directly as the source
+		source = identifier.GetManagedService().ServiceId
+	default:
+		source = "unknown"
+	}
+
 	return &Publisher{
-		logger:       logger,
+		logger:       logger.With(log.String("source", source)),
+		source:       source,
 		topic:        eventsTopic,
 		opts:         opts,
 		metadataJSON: metadataJSON,
 	}, nil
+}
+
+// GetSourceName returns a name inferred from metadata provided to
+// NewPublisherForStream, for use as a metric label. It is safe to call on a nil
+// publisher.
+func (p *Publisher) GetSourceName() string {
+	if p == nil {
+		return "invalid"
+	}
+	return p.source
 }
 
 type PublishEventResult struct {
@@ -74,6 +100,21 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 		event := event // capture range variable :(
 
 		doPublish := func(event *telemetrygatewayv1.Event) error {
+			// Ensure the most important fields are in place
+			if event.Id == "" {
+				return errors.New("event ID is required")
+			}
+			if event.Feature == "" {
+				return errors.New("event feature is required")
+			}
+			if event.Action == "" {
+				return errors.New("event action is required")
+			}
+			if event.Timestamp == nil {
+				return errors.New("event timestamp is required")
+			}
+
+			// Render JSON format for publishing
 			eventJSON, err := protojson.Marshal(event)
 			if err != nil {
 				return errors.Wrap(err, "marshalling event")
@@ -120,7 +161,7 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 			// Publish a single message in each callback to manage concurrency
 			// ourselves, and attach attributes for ease of routing the pub/sub
 			// message.
-			if err := p.topic.PublishMessage(ctx, payload, extractPubSubAttributes(event)); err != nil {
+			if err := p.topic.PublishMessage(ctx, payload, extractPubSubAttributes(p.source, event)); err != nil {
 				// Try to record the cancel cause as the primary error in case
 				// one is recorded.
 				if cancelCause := context.Cause(ctx); cancelCause != nil {
