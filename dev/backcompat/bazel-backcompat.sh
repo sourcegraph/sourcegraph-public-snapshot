@@ -31,10 +31,10 @@ else
   fi
 fi
 
-echo "--- :git: fetch v${tag}"
+echo "--- :git: fetch origin v${tag}"
 # For back-compat tests, the shared fetching code doesn't guarantee that
 # the tag has been fetched (because not all tests require tags), so fetch it here.
-git fetch "v${tag}"
+git fetch origin "v${tag}"
 
 echo "--- :git::rewind: checkout v${tag}"
 # --no-overlay makes so that git ensures the files match what is in the tree exactly, removing files that do not match
