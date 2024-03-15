@@ -96,9 +96,6 @@ func getSAMSAccountIDsForUser(ctx context.Context, db database.DB, dotcomUserID 
 		UserID:      dotcomUserID,
 		ServiceType: "openidconnect",
 		ServiceID:   fmt.Sprintf("https://%s", ssc.GetSAMSHostName()),
-		LimitOffset: &database.LimitOffset{
-			Limit: 1,
-		},
 	})
 	if err != nil {
 		return []string{}, errors.Wrap(err, "listing external accounts")

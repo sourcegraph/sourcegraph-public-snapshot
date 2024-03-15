@@ -343,14 +343,14 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		return err
 	}
 
-	if len(cmds) == 0 && len(bcmds) == 0 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "WARNING: no commands to run"))
-		return nil
+	dcmds, err := getCommands(set.DockerCommands, set, conf.DockerCommands)
+	if err != nil {
+		return err
 	}
 
-	levelOverrides := logLevelOverrides()
-	for _, cmd := range cmds {
-		enrichWithLogLevels(&cmd, levelOverrides)
+	if len(cmds)+len(bcmds)+len(dcmds) == 0 {
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "WARNING: no commands to run"))
+		return nil
 	}
 
 	env := conf.Env
@@ -364,8 +364,16 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 	}
 
 	var ibazel *run.IBazel
-	if len(bcmds) > 0 {
-		ibazel, err = run.NewIBazel(bcmds, repoRoot)
+	if len(bcmds)+len(dcmds) > 0 {
+		var targets []string
+		for _, cmd := range bcmds {
+			targets = append(targets, cmd.Target)
+		}
+		for _, cmd := range dcmds {
+			targets = append(targets, cmd.Target)
+		}
+
+		ibazel, err = run.NewIBazel(targets, repoRoot)
 		if err != nil {
 			return err
 		}
@@ -380,14 +388,22 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		ibazel.StartOutput()
 	}
 
+	levelOverrides := logLevelOverrides()
 	configCmds := make([]run.SGConfigCommand, 0, len(bcmds)+len(cmds))
 	for _, cmd := range bcmds {
+		enrichWithLogLevels(&cmd.Config, levelOverrides)
 		configCmds = append(configCmds, cmd)
 	}
 
 	for _, cmd := range cmds {
+		enrichWithLogLevels(&cmd.Config, levelOverrides)
 		configCmds = append(configCmds, cmd)
 	}
+	for _, cmd := range dcmds {
+		enrichWithLogLevels(&cmd.Config, levelOverrides)
+		configCmds = append(configCmds, cmd)
+	}
+
 	return run.Commands(ctx, env, verbose, configCmds...)
 }
 
@@ -412,7 +428,7 @@ func getCommands[T run.SGConfigCommand](commands []string, set *sgconf.Commandse
 		}
 
 		if _, excluded := exceptSet[name]; excluded {
-			std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's in --except.", cmd.GetName()))
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's in --except.", name))
 			continue
 		}
 
@@ -423,7 +439,7 @@ func getCommands[T run.SGConfigCommand](commands []string, set *sgconf.Commandse
 			if _, inSet := onlySet[name]; inSet {
 				cmds = append(cmds, cmd)
 			} else {
-				std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's not included in --only.", cmd.GetName()))
+				std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's not included in --only.", name))
 			}
 		}
 
@@ -451,16 +467,16 @@ func logLevelOverrides() map[string]string {
 }
 
 // enrichWithLogLevels will add any logger level overrides to a given command if they have been specified.
-func enrichWithLogLevels(cmd *run.Command, overrides map[string]string) {
+func enrichWithLogLevels(config *run.SGConfigCommandOptions, overrides map[string]string) {
 	logLevelVariable := "SRC_LOG_LEVEL"
 
-	if level, ok := overrides[cmd.Name]; ok {
-		std.Out.WriteLine(output.Styledf(output.StylePending, "Setting log level: %s for command %s.", level, cmd.Name))
-		if cmd.Env == nil {
-			cmd.Env = make(map[string]string, 1)
-			cmd.Env[logLevelVariable] = level
+	if level, ok := overrides[config.Name]; ok {
+		std.Out.WriteLine(output.Styledf(output.StylePending, "Setting log level: %s for command %s.", level, config.Name))
+		if config.Env == nil {
+			config.Env = make(map[string]string, 1)
+			config.Env[logLevelVariable] = level
 		}
-		cmd.Env[logLevelVariable] = level
+		config.Env[logLevelVariable] = level
 	}
 }
 

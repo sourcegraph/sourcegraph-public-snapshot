@@ -235,7 +235,7 @@ const businessGroup: SiteAdminSideBarGroup = {
             condition: () => SHOW_BUSINESS_FEATURES,
         },
         {
-            label: 'Enterprise licenses',
+            label: 'Enterprise subscriptions',
             to: '/site-admin/dotcom/product/subscriptions',
             condition: () => SHOW_BUSINESS_FEATURES,
         },

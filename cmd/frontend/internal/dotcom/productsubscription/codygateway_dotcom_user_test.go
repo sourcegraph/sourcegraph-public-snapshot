@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/audit/audittest"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/rbac"
 	"github.com/sourcegraph/sourcegraph/internal/ssc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -187,11 +188,30 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	adminUser, err := db.Users().Create(ctx, database.NewUser{Username: "admin", EmailIsVerified: true, Email: "admin@test.com"})
 	require.NoError(t, err)
 
-	// Not Admin with feature flag
+	// Not Admin with RBAC
 	notAdminUser, err := db.Users().Create(ctx, database.NewUser{Username: "verified", EmailIsVerified: true, Email: "verified@test.com"})
 	require.NoError(t, err)
+	ns, action, err := rbac.ParsePermissionDisplayName(rbac.ProductSubscriptionsReadPermission)
+	require.NoError(t, err)
+	perm, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
+		Namespace: ns,
+		Action:    action,
+	})
+	require.NoError(t, err)
+	role, err := db.Roles().Create(ctx, "SUBSCRIPTIONS_READER", false)
+	require.NoError(t, err)
+	err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
+		PermissionID: perm.ID,
+		RoleID:       role.ID,
+	})
+	require.NoError(t, err)
+	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
+		UserID: notAdminUser.ID,
+		RoleID: role.ID,
+	})
+	require.NoError(t, err)
 
-	// No admin, no feature flag
+	// No admin, no RBAC
 	noAccessUser, err := db.Users().Create(ctx, database.NewUser{Username: "nottheone", EmailIsVerified: true, Email: "nottheone@test.com"})
 	require.NoError(t, err)
 
@@ -204,16 +224,10 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	codyUserGatewayToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(codyUserApiToken)
 	require.NoError(t, err)
 
-	// Create a feature flag override entry for the notAdminUser.
-	_, err = db.FeatureFlags().CreateBool(context.Background(), "product-subscriptions-reader-service-account", false)
-	require.NoError(t, err)
-	_, err = db.FeatureFlags().CreateOverride(context.Background(), &featureflag.Override{FlagName: "product-subscriptions-reader-service-account", Value: true, UserID: &notAdminUser.ID})
-	require.NoError(t, err)
-
 	tests := []struct {
 		name    string
 		user    *types.User
-		wantErr error
+		wantErr autogold.Value
 	}{
 		{
 			name:    "admin user",
@@ -221,14 +235,14 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name:    "service account",
+			name:    "RBAC reader role",
 			user:    notAdminUser,
 			wantErr: nil,
 		},
 		{
-			name:    "not admin or service account user",
+			name:    "not admin or RBAC reader role user",
 			user:    noAccessUser,
-			wantErr: auth.ErrMustBeSiteAdmin,
+			wantErr: autogold.Expect("unauthorized"),
 		},
 	}
 
@@ -242,7 +256,12 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 			r := productsubscription.CodyGatewayDotcomUserResolver{Logger: logtest.Scoped(t), DB: db}
 			_, err := r.CodyGatewayDotcomUserByToken(userContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: codyUserGatewayToken})
 
-			require.ErrorIs(t, err, test.wantErr)
+			if test.wantErr != nil {
+				require.Error(t, err)
+				test.wantErr.Equal(t, err.Error())
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }

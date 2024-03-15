@@ -3,10 +3,12 @@ package result
 import (
 	"net/url"
 	"path"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -164,13 +166,17 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 	return nil
 }
 
-// AppendMatches appends the line matches from src as well as updating match
-// counts and limit.
 func (fm *FileMatch) AppendMatches(src *FileMatch) {
 	// TODO merge hunk matches smartly
 	fm.ChunkMatches = append(fm.ChunkMatches, src.ChunkMatches...)
-	fm.Symbols = append(fm.Symbols, src.Symbols...)
+	fm.mergeSymbols(src)
 	fm.LimitHit = fm.LimitHit || src.LimitHit
+}
+
+func (fm *FileMatch) mergeSymbols(src *FileMatch) {
+	fm.Symbols = append(fm.Symbols, src.Symbols...)
+	slices.SortFunc(fm.Symbols, compareSymbolMatches)
+	fm.Symbols = DedupSymbols(fm.Symbols)
 }
 
 // Limit will mutate fm such that it only has limit results. limit is a number

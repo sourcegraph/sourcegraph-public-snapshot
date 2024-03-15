@@ -154,7 +154,7 @@
         }
 
         &:hover {
-            background-color: var(--secondary-4);
+            background-color: var(--secondary-2);
         }
 
         &.selected {

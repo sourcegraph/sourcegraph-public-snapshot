@@ -1,9 +1,11 @@
 package completions
 
 import (
+	"context"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -98,4 +100,10 @@ func containsAny(prompt string, patterns []string) (bool, string) {
 		}
 	}
 	return false, ""
+}
+
+// requestBlockedError returns an error indicating that the request was blocked, including the trace ID.
+func requestBlockedError(ctx context.Context) error {
+	traceID := trace.FromContext(ctx).SpanContext().TraceID().String()
+	return errors.Errorf("request blocked - if you think this is a mistake, please contact support@sourcegraph.com and reference this ID: %s", traceID)
 }
