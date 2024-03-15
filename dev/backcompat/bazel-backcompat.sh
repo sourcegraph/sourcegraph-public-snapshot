@@ -32,6 +32,7 @@ else
 fi
 
 echo "--- :git::rewind: checkout v${tag}"
+git fetch -v origin "v${tag}"
 # --no-overlay makes so that git ensures the files match what is in the tree exactly, removing files that do not match
 git checkout --force "v${tag}"
 
