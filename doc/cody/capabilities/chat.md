@@ -67,7 +67,7 @@ You can provide a file context by using the @ symbol followed by a file name.
 
 For example:
 
-@main.py
+`@main.py`
 
 This will tell Cody that you want it to look at the main.py file when answering your next question.
 
@@ -77,19 +77,19 @@ You can provide a more specific context by using @# followed by a line number or
 
 For example: 
 
-@#main.py:5-10
+`@#main.py:5-10`
 
 This will tell Cody to look at lines 5-10 in main.py when answering the next question.
 
-You can also provide a function name (VS Code only currently, but coming to JetBrains soon):
+You can also provide a function name (VS Code only, but coming to JetBrains soon):
 
-@#main.py:my_function
+`@#main.py:my_function`
 
 This will tell Cody to look at the my_function function in main.py.
 
 Providing code block context allows Cody to give more precise, focused answers about specific parts of your code
 
-### Chat vs Commands
+## Chat vs Commands
 
 There could be scenarios when Cody's chat might not be able to answer your question. Or the answer lacks the context that you need. In these cases, it's recommended to use Cody **commands**. Cody's responses to commands might be better at times than responses to chats since they've been pre-packaged and prompt-engineered.
 
