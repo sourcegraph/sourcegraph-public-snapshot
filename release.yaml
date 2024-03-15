@@ -9,6 +9,8 @@ requirements:
     cmd: "curl --help"
   - name: "Buidkite access token"
     env: BUILDKITE_ACCESS_TOKEN
+  - name: "Slack Webhook URL"
+    env: SLACK_WEBHOOK_URL
 
 internal:
   create:
