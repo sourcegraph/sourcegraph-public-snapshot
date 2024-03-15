@@ -441,52 +441,25 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			ContentType: pointers.Ptr("application/gzip"),
 		})
 
+		// `<pipeline_uid>_deploy` bucket is normally created when the pipeline is first used
+		// We manually create it so we can provision IAM access
+		pipelineBucket := storagebucket.NewStorageBucket(stack, id.Group("pipeline").TerraformID("bucket"), &storagebucket.StorageBucketConfig{
+			Name:     pointers.Stringf("%s_deploy", deliveryPipeline.PipelineID),
+			Location: &GCPRegion,
+		})
+
 		// Provision Service Account IAM to create releases
-		sa := pointers.DerefZero(vars.RolloutPipeline.OriginalSpec.ServiceAccount)
-		if sa != "" {
-			id := id.Group("serviceaccount")
-			// Permission to create releases
-			_ = projectiammember.NewProjectIamMember(stack, id.TerraformID("releaser"), &projectiammember.ProjectIamMemberConfig{
-				Project: pointers.Ptr(vars.ProjectID),
-				Role:    pointers.Ptr("roles/clouddeploy.releaser"),
-				Member:  pointers.Stringf("serviceAccount:%s", sa),
-			})
-
-			// Needs access to `<pipeline_id>_clouddeploy` bucket
-			_ = storagebucketiammember.NewStorageBucketIamMember(stack, id.TerraformID("clouddeploy"), &storagebucketiammember.StorageBucketIamMemberConfig{
-				Bucket: pointers.Stringf("%s_clouddeploy", deliveryPipeline.PipelineID),
-				Role:   pointers.Ptr("roles/storage.admin"),
-				Member: pointers.Stringf("serviceAccount:%s", sa),
-			})
-
-			// Needs access to the skaffold source bucket
-			_ = storagebucketiammember.NewStorageBucketIamMember(stack, id.TerraformID("skaffold"), &storagebucketiammember.StorageBucketIamMemberConfig{
-				Bucket: skaffoldBucket.Name(),
-				Role:   pointers.Ptr("roles/storage.admin"),
-				Member: pointers.Stringf("serviceAccount:%s", sa),
-			})
-
-			// Needs to be able to list buckets
-			listbuckets := projectiamcustomrole.NewProjectIamCustomRole(stack, id.TerraformID("listbucketsrole"), &projectiamcustomrole.ProjectIamCustomRoleConfig{
-				Project:     pointers.Ptr(vars.ProjectID),
-				RoleId:      pointers.Ptr("clouddeploy_listbuckets"),
-				Title:       pointers.Ptr("Cloud Deploy: List buckets"),
-				Permissions: &[]*string{pointers.Ptr("storage.buckets.list")},
-			})
-
-			_ = projectiammember.NewProjectIamMember(stack, id.TerraformID("listbuckets"), &projectiammember.ProjectIamMemberConfig{
-				Project: pointers.Ptr(vars.ProjectID),
-				Role:    listbuckets.Id(),
-				Member:  pointers.Stringf("serviceAccount:%s", sa),
-			})
-
-			// Needs to be able to ActAs `clouddeply-executor` SA
-			_ = serviceaccountiammember.NewServiceAccountIamMember(stack, id.TerraformID("executor"), &serviceaccountiammember.ServiceAccountIamMemberConfig{
-				ServiceAccountId: pointers.Stringf("projects/%s/serviceAccounts/%s", vars.ProjectID, vars.IAM.CloudDeployExecutionServiceAccount.Email),
-				Role:             pointers.Ptr("roles/iam.serviceAccountUser"),
-				Member:           pointers.Stringf("serviceAccount:%s", sa),
-			})
+		serviceAccounts := []string{
+			vars.IAM.CloudDeployReleaserServiceAccount.Email,
 		}
+		if sa := pointers.DerefZero(vars.RolloutPipeline.OriginalSpec.ServiceAccount); sa != "" {
+			serviceAccounts = append(serviceAccounts, sa)
+		}
+		cloudDeployIAM(vars, id, stack, cloudDeployIAMConfig{
+			serviceAccounts:    serviceAccounts,
+			skaffoldBucketName: skaffoldBucket.Name(),
+			pipelineBucketName: pipelineBucket.Name(),
+		})
 	}
 
 	// Collect outputs
@@ -566,5 +539,59 @@ func makeContainerResourceLimits(r spec.EnvironmentInstancesResourcesSpec) map[s
 	return map[string]*string{
 		"cpu":    pointers.Ptr(strconv.Itoa(r.CPU)),
 		"memory": pointers.Ptr(r.Memory),
+	}
+}
+
+type cloudDeployIAMConfig struct {
+	serviceAccounts    []string
+	skaffoldBucketName *string
+	pipelineBucketName *string
+}
+
+func cloudDeployIAM(vars Variables, id resourceid.ID, stack cdktf.TerraformStack, config cloudDeployIAMConfig) {
+	// Create custom role to list buckets
+	listbuckets := projectiamcustomrole.NewProjectIamCustomRole(stack, id.TerraformID("listbucketsrole"), &projectiamcustomrole.ProjectIamCustomRoleConfig{
+		Project:     pointers.Ptr(vars.ProjectID),
+		RoleId:      pointers.Ptr("clouddeploy_listbuckets"),
+		Title:       pointers.Ptr("Cloud Deploy: List buckets"),
+		Permissions: &[]*string{pointers.Ptr("storage.buckets.list")},
+	})
+
+	for i, sa := range config.serviceAccounts {
+		id := id.Group("%d_serviceaccount", i)
+		// Permission to create releases
+		_ = projectiammember.NewProjectIamMember(stack, id.TerraformID("releaser"), &projectiammember.ProjectIamMemberConfig{
+			Project: pointers.Ptr(vars.ProjectID),
+			Role:    pointers.Ptr("roles/clouddeploy.releaser"),
+			Member:  pointers.Stringf("serviceAccount:%s", sa),
+		})
+
+		// Needs access to `<pipeline_id>_clouddeploy` bucket
+		_ = storagebucketiammember.NewStorageBucketIamMember(stack, id.TerraformID("clouddeploy"), &storagebucketiammember.StorageBucketIamMemberConfig{
+			Bucket: config.pipelineBucketName,
+			Role:   pointers.Ptr("roles/storage.admin"),
+			Member: pointers.Stringf("serviceAccount:%s", sa),
+		})
+
+		// Needs access to the skaffold source bucket
+		_ = storagebucketiammember.NewStorageBucketIamMember(stack, id.TerraformID("skaffold"), &storagebucketiammember.StorageBucketIamMemberConfig{
+			Bucket: config.skaffoldBucketName,
+			Role:   pointers.Ptr("roles/storage.admin"),
+			Member: pointers.Stringf("serviceAccount:%s", sa),
+		})
+
+		// // Needs to be able to list buckets
+		_ = projectiammember.NewProjectIamMember(stack, id.TerraformID("listbuckets"), &projectiammember.ProjectIamMemberConfig{
+			Project: pointers.Ptr(vars.ProjectID),
+			Role:    listbuckets.Id(),
+			Member:  pointers.Stringf("serviceAccount:%s", sa),
+		})
+
+		// Needs to be able to ActAs `clouddeply-executor` SA
+		_ = serviceaccountiammember.NewServiceAccountIamMember(stack, id.TerraformID("executor"), &serviceaccountiammember.ServiceAccountIamMemberConfig{
+			ServiceAccountId: pointers.Stringf("projects/%s/serviceAccounts/%s", vars.ProjectID, vars.IAM.CloudDeployExecutionServiceAccount.Email),
+			Role:             pointers.Ptr("roles/iam.serviceAccountUser"),
+			Member:           pointers.Stringf("serviceAccount:%s", sa),
+		})
 	}
 }
