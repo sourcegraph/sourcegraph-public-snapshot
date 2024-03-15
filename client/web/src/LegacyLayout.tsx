@@ -209,9 +209,9 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     authenticatedUser={
                         props.authenticatedUser
                             ? {
-                                username: props.authenticatedUser.username || '',
-                                email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
-                            }
+                                  username: props.authenticatedUser.username || '',
+                                  email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
+                              }
                             : null
                     }
                     onClose={() => setFeedbackModalOpen(false)}
