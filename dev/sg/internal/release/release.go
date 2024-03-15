@@ -171,7 +171,7 @@ func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
 	}
 
 	if !cctx.Bool("config-from-commit") && cctx.String("version") == "" {
-		return nil, errors.New("You must provide a version through --version or --config-from-commit")
+		return nil, errors.New("You must provide a version by specifying either --version or --config-from-commit")
 	}
 
 	workdir := cctx.String("workdir")
