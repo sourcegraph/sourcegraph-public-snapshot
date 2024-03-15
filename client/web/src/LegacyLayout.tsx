@@ -43,7 +43,7 @@ export interface LegacyLayoutProps
 
 /**
  * Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
- * htps://github.com/sourcegraph/sourcegraph/issues/36251
+ * https://github.com/sourcegraph/sourcegraph/issues/36251
  */
 const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighting'
 
