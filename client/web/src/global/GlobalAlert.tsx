@@ -32,7 +32,7 @@ export const GlobalAlert: React.FunctionComponent<React.PropsWithChildren<Props>
 }) => {
     React.useEffect(
         () =>
-            telemetryRecorder.recordEvent('alert.generic', 'view', {
+            telemetryRecorder.recordEvent('alert.global', 'view', {
                 metadata: { type: alert.type ? v2AlertTypes[alert.type] : 0 },
             }),
         [telemetryRecorder]
