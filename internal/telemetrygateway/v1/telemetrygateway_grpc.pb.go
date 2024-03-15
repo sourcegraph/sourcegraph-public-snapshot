@@ -49,7 +49,8 @@ type TelemeteryGatewayServiceClient interface {
 	// RecordEvent records a single telemetry event to the Telemetry Gateway service.
 	// If the RPC succeeds, then the event was successfully published.
 	//
-	// This mechanism is intended for low-volume managed services. Higher-volume
+	// This RPC currently ONLY accepts events published by ManagedServiceIdentifier,
+	// as this mechanism is intended for low-volume managed services. Higher-volume
 	// use cases should implement a batching mechanism and use the RecordEvents
 	// RPC instead.
 	//
@@ -125,7 +126,8 @@ type TelemeteryGatewayServiceServer interface {
 	// RecordEvent records a single telemetry event to the Telemetry Gateway service.
 	// If the RPC succeeds, then the event was successfully published.
 	//
-	// This mechanism is intended for low-volume managed services. Higher-volume
+	// This RPC currently ONLY accepts events published by ManagedServiceIdentifier,
+	// as this mechanism is intended for low-volume managed services. Higher-volume
 	// use cases should implement a batching mechanism and use the RecordEvents
 	// RPC instead.
 	//
