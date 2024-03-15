@@ -1,7 +1,6 @@
 import type { FC } from 'react'
 
 import { Routes, Route, Navigate } from 'react-router-dom'
-import type { SiteExternalServiceConfigResult, SiteExternalServiceConfigVariables } from '../graphql-operations'
 
 import { useQuery } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
@@ -13,6 +12,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { codeHostExternalServices, nonCodeHostExternalServices } from '../components/externalServices/externalServices'
+import type { SiteExternalServiceConfigResult, SiteExternalServiceConfigVariables } from '../graphql-operations'
 
 import { SITE_EXTERNAL_SERVICE_CONFIG } from './backend'
 

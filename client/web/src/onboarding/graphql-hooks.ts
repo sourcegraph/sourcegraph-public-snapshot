@@ -1,13 +1,14 @@
 import type { MutationTuple } from '@apollo/client'
 import { parse } from 'jsonc-parser'
+
+import { useQuery, useMutation } from '@sourcegraph/http-client'
+
 import type {
     SiteConfigResult,
     SiteConfigVariables,
     UpdateSiteConfigurationResult,
     UpdateSiteConfigurationVariables,
 } from '../graphql-operations'
-
-import { useQuery, useMutation } from '@sourcegraph/http-client'
 
 import { SITE_CONFIG_QUERY, LICENSE_KEY_MUTATION } from './queries'
 import type { UseOnboardingChecklistResult, OnboardingChecklistResult, EffectiveContent, LicenseInfo } from './types'

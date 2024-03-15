@@ -7,8 +7,7 @@ import { combineLatest, from, ReplaySubject } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
-import type { Contributions, Evaluated } from '@sourcegraph/client-api'
-import type { ContributableMenu } from '@sourcegraph/client-api'
+import type { Contributions, Evaluated, ContributableMenu } from '@sourcegraph/client-api'
 import type { Context } from '@sourcegraph/template-parser'
 import { useObservable } from '@sourcegraph/wildcard'
 
