@@ -34,11 +34,6 @@ export interface NavigationEntry {
      * An optional status to display next to the label. See {@link Status}.
      */
     status?: Status
-    /**
-     * An optional flag to indicate that the link should be marked as external.
-     * Currently this is used to show an external link icon next to the label.
-     */
-    external?: true // type is 'true' to make it easier to use with data-sveltekit-reload
 }
 
 /**
@@ -88,27 +83,22 @@ export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
             {
                 label: 'Contexts',
                 href: '/contexts',
-                external: true,
             },
             {
                 label: 'Notebooks',
                 href: '/notebooks',
-                external: true,
             },
             {
                 label: 'Monitoring',
                 href: '/code-monitoring',
-                external: true,
             },
             {
                 label: 'Code Ownership',
                 href: '/own',
-                external: true,
             },
             {
                 label: 'Search Jobs',
                 href: '/search-jobs',
-                external: true,
                 status: Status.BETA,
             },
         ],
@@ -128,12 +118,10 @@ export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
             {
                 label: 'Dashboard',
                 href: '/cody',
-                external: true,
             },
             {
                 label: 'Web Chat',
                 href: '/cody/chat',
-                external: true,
             },
         ],
     },
@@ -141,12 +129,10 @@ export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
         label: 'Batch Changes',
         icon: BatchChangesIcon,
         href: '/batch-changes',
-        external: true,
     },
     {
         label: 'Insights',
         icon: mdiChartBar,
         href: '/insights',
-        external: true,
     },
 ]

@@ -110,7 +110,7 @@ func runExec(ctx *cli.Context) error {
 			if err != nil {
 				return err
 			}
-			if err = std.Out.WriteMarkdown(fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", cmd.GetName(), string(out))); err != nil {
+			if err = std.Out.WriteMarkdown(fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", cmd.GetConfig().Name, string(out))); err != nil {
 				return err
 			}
 		}
@@ -144,8 +144,8 @@ func constructRunCmdLongHelp() string {
 
 	var names []string
 	for name, command := range config.Commands {
-		if command.Description != "" {
-			name = fmt.Sprintf("%s: %s", name, command.Description)
+		if command.Config.Description != "" {
+			name = fmt.Sprintf("%s: %s", name, command.Config.Description)
 		}
 		names = append(names, name)
 	}

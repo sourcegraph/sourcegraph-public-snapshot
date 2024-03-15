@@ -48,6 +48,7 @@ export {
     type Progress,
     type Range,
     type Filter,
+    type SearchEvent,
 } from '@sourcegraph/shared/src/search/stream'
 export {
     type MatchItem,

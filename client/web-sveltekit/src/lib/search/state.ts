@@ -1,6 +1,5 @@
 import { writable, type Readable } from 'svelte/store'
 
-import { goto } from '$app/navigation'
 import { SearchPatternType } from '$lib/graphql-operations'
 import { buildSearchURLQuery, type Settings } from '$lib/shared'
 import { defaultSearchModeFromSettings, defaultPatternTypeFromSettings } from '$lib/web'

@@ -5,6 +5,7 @@
     interface ResultStateCache {
         count: number
         expanded: Set<SearchMatch>
+        preview: ContentMatch | SymbolMatch | PathMatch | null
     }
     const cache = new Map<string, ResultStateCache>()
 
@@ -16,23 +17,31 @@
     import { mdiCloseOctagonOutline } from '@mdi/js'
     import type { Observable } from 'rxjs'
     import { tick } from 'svelte'
+    import { writable } from 'svelte/store'
 
     import { beforeNavigate, goto } from '$app/navigation'
+    import { limitHit } from '$lib/branded'
     import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import type { URLQueryFilter } from '$lib/search/dynamicFilters'
     import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
+    import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { getQueryURL, type QueryStateStore } from '$lib/search/state'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
-    import { type AggregateStreamingSearchResults, type SearchMatch } from '$lib/shared'
+    import {
+        type AggregateStreamingSearchResults,
+        type PathMatch,
+        type SearchMatch,
+        type SymbolMatch,
+        type ContentMatch,
+    } from '$lib/shared'
 
+    import PreviewPanel from './PreviewPanel.svelte'
     import { getSearchResultComponent } from './searchResultFactory'
     import { setSearchResultsContext } from './searchResultsContext'
     import StreamingProgress from './StreamingProgress.svelte'
-    import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
-    import { limitHit } from '@sourcegraph/branded'
 
     export let stream: Observable<AggregateStreamingSearchResults>
     export let queryFromURL: string
@@ -52,8 +61,8 @@
     let resultContainer: HTMLElement | null = null
 
     const recentSearches = createRecentSearchesStore()
-    const sidebarSize = getSeparatorPosition('search-results-sidebar', 0.2)
-    $: sidebarWidth = `clamp(14rem, ${$sidebarSize * 100}%, 50%)`
+    const filtersSidebarPosition = getSeparatorPosition('search-results-sidebar', 0.2)
+    const previewSidebarPosition = getSeparatorPosition('preview-sidebar', 0.2)
 
     $: loading = $stream.state === 'loading'
     $: results = $stream.results
@@ -72,6 +81,8 @@
     $: resultsToShow = results.slice(0, count)
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
 
+    $: previewResult = writable(cacheEntry?.preview ?? null)
+
     setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
             return expandedSet.has(match)
@@ -83,10 +94,13 @@
                 expandedSet.delete(match)
             }
         },
+        setPreview(result: ContentMatch | SymbolMatch | PathMatch | null): void {
+            previewResult.set(result)
+        },
         queryState,
     })
     beforeNavigate(() => {
-        cache.set(queryFromURL, { count, expanded: expandedSet })
+        cache.set(queryFromURL, { count, expanded: expandedSet, preview: $previewResult })
     })
 
     function loadMore(event: { detail: boolean }) {
@@ -118,10 +132,10 @@
 </div>
 
 <div class="search-results">
-    <div style:width={sidebarWidth}>
+    <div style:width={`clamp(14rem, ${$filtersSidebarPosition * 100}%, 35%)`}>
         <DynamicFiltersSidebar {selectedFilters} streamFilters={$stream.filters} searchQuery={queryFromURL} {loading} />
     </div>
-    <Separator currentPosition={sidebarSize} />
+    <Separator currentPosition={filtersSidebarPosition} />
     <div class="results">
         <aside class="actions">
             {#if loading}
@@ -152,6 +166,12 @@
             {/if}
         </div>
     </div>
+    {#if $previewResult}
+        <Separator currentPosition={previewSidebarPosition} />
+        <div style:width={`clamp(10rem, ${100 - $previewSidebarPosition * 100}%, 50%)`}>
+            <PreviewPanel result={$previewResult} />
+        </div>
+    {/if}
 </div>
 
 <style lang="scss">

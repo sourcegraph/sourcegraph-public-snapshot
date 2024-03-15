@@ -128,8 +128,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
-	dotcom.MockSourcegraphDotComMode(true)
-	defer dotcom.MockSourcegraphDotComMode(false)
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	confGet := func() *conf.Unified { return &conf.Unified{} }
 
@@ -289,8 +288,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	now := timeutil.Now()
 	codeHostURL := "https://github.com/"
 
-	dotcom.MockSourcegraphDotComMode(true)
-	defer dotcom.MockSourcegraphDotComMode(false)
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	// Create a new external service
 	confGet := func() *conf.Unified {
@@ -670,8 +668,7 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 		t.Fatal(err)
 	}
 
-	dotcom.MockSourcegraphDotComMode(true)
-	defer dotcom.MockSourcegraphDotComMode(false)
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
@@ -2620,9 +2617,7 @@ func Test_validateOtherExternalServiceConnection(t *testing.T) {
 	require.Error(t, err)
 
 	// On DotCom, no error should be returned
-	orig := dotcom.SourcegraphDotComMode()
-	dotcom.MockSourcegraphDotComMode(true)
-	defer dotcom.MockSourcegraphDotComMode(orig)
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	err = validateOtherExternalServiceConnection(conn)
 	require.NoError(t, err)

@@ -6,20 +6,12 @@ import (
 	"os/exec"
 
 	"github.com/rjeczalik/notify"
-
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 )
 
 type SGConfigCommand interface {
-	// Getters for common fields
-	GetName() string
-	GetContinueWatchOnExit() bool
-	GetIgnoreStdout() bool
-	GetIgnoreStderr() bool
-	GetPreamble() string
-	GetEnv() map[string]string
+	// Extracts common config and options, allowing the implementation any final overrides
+	GetConfig() SGConfigCommandOptions
 	GetBinaryLocation() (string, error)
-	GetExternalSecrets() map[string]secrets.ExternalSecret
 	GetExecCmd(context.Context) (*exec.Cmd, error)
 
 	// Start a file watcher on the relevant filesystem sub-tree for this command

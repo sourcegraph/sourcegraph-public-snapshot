@@ -1,4 +1,11 @@
 import { test, expect } from '../../testing/integration'
+import {
+    createDoneEvent,
+    createProgressEvent,
+    createCommitMatch,
+    createContentMatch,
+    createPathMatch,
+} from '../../testing/search-testdata'
 
 test('search input is autofocused', async ({ page }) => {
     await page.goto('/search')
@@ -62,10 +69,50 @@ test('fills search query from URL', async ({ page }) => {
 })
 
 test('main navbar menus are visible above search input', async ({ page, sg }) => {
-    const dispatch = sg.mockSearchResults()
+    const stream = sg.mockSearchStream()
     await page.goto('/search?q=test')
-    await dispatch()
+    await stream.publish(createProgressEvent(), createDoneEvent())
+    await stream.close()
     await page.getByRole('button', { name: 'Code Search' }).click()
     await page.getByRole('link', { name: 'Search Home' }).click()
     await expect(page).toHaveURL(/\/search$/)
+})
+
+test('preview can be opened and closed', async ({ page, sg }) => {
+    const stream = sg.mockSearchStream()
+    await page.goto('/search?q=test')
+    await page.getByRole('heading', { name: 'Filter results' }).waitFor()
+    await stream.publish(
+        {
+            type: 'matches',
+            data: [createContentMatch(), createCommitMatch(), createPathMatch()],
+        },
+        createProgressEvent(),
+        createDoneEvent()
+    )
+    await stream.close()
+
+    // 2 preview buttons: one for content match and one for path match
+    const previewButtons = await page.getByRole('button', { name: 'Preview' }).all()
+    expect(previewButtons).toHaveLength(2)
+
+    sg.mockOperations({
+        BlobPageQuery: () => ({
+            repository: {
+                commit: {
+                    blob: {
+                        content: 'lorem\nipsum\ndolor\n',
+                    },
+                },
+            },
+        }),
+    })
+
+    // Open preview panel
+    await previewButtons[0].click()
+    await expect(page.getByRole('heading', { name: 'File Preview' })).toBeVisible()
+
+    // Close preview panel
+    await page.getByTestId('preview-close').click()
+    await expect(page.getByRole('heading', { name: 'File Preview' })).toBeHidden()
 })

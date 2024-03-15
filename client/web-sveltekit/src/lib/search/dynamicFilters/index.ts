@@ -1,11 +1,4 @@
-import {
-    mdiCodeTags,
-    mdiFileCodeOutline,
-    mdiPlusMinus,
-    mdiShapeOutline,
-    mdiSourceCommit,
-    mdiSourceRepository,
-} from '@mdi/js'
+import { mdiCodeBraces, mdiFileOutline, mdiFunction, mdiPlusMinus, mdiSourceCommit, mdiSourceFork } from '@mdi/js'
 
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 
@@ -90,10 +83,10 @@ export const staticTypeFilters: URLQueryFilter[] = [
 ]
 
 export const typeFilterIcons: Record<string, string> = {
-    Code: mdiCodeTags,
-    Repositories: mdiSourceRepository,
-    Paths: mdiFileCodeOutline,
-    Symbols: mdiShapeOutline,
+    Code: mdiCodeBraces,
+    Repositories: mdiSourceFork,
+    Paths: mdiFileOutline,
+    Symbols: mdiFunction,
     Commits: mdiSourceCommit,
     Diffs: mdiPlusMinus,
 }
