@@ -61,33 +61,9 @@ During the chat, if Cody needs additional context, it can ask you to provide mor
 
 Cody's chat allows you to add files and symbols as context in your messages.
 
-### @ File Context
+- Type `@` and then a filename to include a file as context.  
+- Type `@#` and then a symbol name to include the symbol's definition as context. Functions, methods, classes, types, etc., are all symbols.  
 
-You can provide a file context by using the @ symbol followed by a file name. 
-
-For example:
-
-`@main.py`
-
-This will tell Cody that you want it to look at the main.py file when answering your next question.
-
-### @# Code Block Context  
-
-You can provide a more specific context by using @# followed by a line number or code block.
-
-For example: 
-
-`@#main.py:5-10`
-
-This will tell Cody to look at lines 5-10 in main.py when answering the next question.
-
-You can also provide a function name (VS Code only, but coming to JetBrains soon):
-
-`@#main.py:my_function`
-
-This will tell Cody to look at the my_function function in main.py.
-
-Providing code block context allows Cody to give more precise, focused answers about specific parts of your code
 
 ## Chat vs Commands
 
