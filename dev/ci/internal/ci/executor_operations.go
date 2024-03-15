@@ -5,6 +5,8 @@ import (
 	"strconv"
 
 	"github.com/Masterminds/semver"
+
+	"github.com/sourcegraph/sourcegraph/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/operations"
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
@@ -148,19 +150,23 @@ func executorImageFamilyForConfig(c Config) string {
 	return imageFamily
 }
 
-func executorsE2E(candidateTag string) operations.Operation {
+func executorsE2E(c Config) operations.Operation {
+	opts := []bk.StepOpt{
+		bk.DependsOn("bazel-push-images-candidate"),
+		bk.Agent("queue", AspectWorkflows.QueueDefault),
+		bk.Env("CANDIDATE_VERSION", c.candidateImageTag()),
+		bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+		bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+		bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+		bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+		bk.Cmd("dev/ci/integration/executors/run.sh"),
+		bk.ArtifactPaths("./*.log"),
+	}
+
+	if c.RunType.Is(runtype.MainDryRun) {
+		opts = append(opts, bk.Env("REGISTRY", images.SourcegraphCloudEphemeral))
+	}
 	return func(p *bk.Pipeline) {
-		p.AddStep(":bazel::docker::packer: Executors E2E",
-			// Run tests against the candidate server image
-			bk.DependsOn("bazel-push-images-candidate"),
-			bk.Agent("queue", AspectWorkflows.QueueDefault),
-			bk.Env("CANDIDATE_VERSION", candidateTag),
-			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
-			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
-			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
-			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-			bk.Cmd("dev/ci/integration/executors/run.sh"),
-			bk.ArtifactPaths("./*.log"),
-		)
+		p.AddStep(":bazel::docker::packer: Executors E2E", opts...) // Run tests against the candidate server image
 	}
 }

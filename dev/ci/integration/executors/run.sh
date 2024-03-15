@@ -33,7 +33,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-registry="us.gcr.io/sourcegraph-dev"
+registry=${REGISTRY:-"us.gcr.io/sourcegraph-dev"}
 export POSTGRES_IMAGE="${registry}/postgres-12-alpine:${CANDIDATE_VERSION}"
 export SERVER_IMAGE="${registry}/server:${CANDIDATE_VERSION}"
 export EXECUTOR_IMAGE="${registry}/executor:${CANDIDATE_VERSION}"
