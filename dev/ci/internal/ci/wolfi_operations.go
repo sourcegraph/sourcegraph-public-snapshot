@@ -303,7 +303,7 @@ func addWolfiOps(c Config) (packageOps, baseImageOps *operations.Set) {
 	return packageOps, baseImageOps
 }
 
-// wolfiRebuildAllBaseImages adds operations to rebuild all Wolfi base images and push to registry
+// wolfiRebuildAllBaseImages [deprecated] adds operations to rebuild all Wolfi base images and push to registry
 func wolfiRebuildAllBaseImages(c Config) *operations.Set {
 	// List all YAML files in wolfi-images/
 	dir := "wolfi-images"
@@ -333,16 +333,15 @@ func wolfiRebuildAllBaseImages(c Config) *operations.Set {
 	return baseImageOps
 }
 
-// wolfiGenerateBaseImagePR updates base image hashes and creates a PR in GitHub
-func wolfiGenerateBaseImagePR() *operations.Set {
-	ops := operations.NewNamedSet("Base Image Update PR")
+// wolfiBaseImageLockAndCreatePR updates base image hashes and creates a PR in GitHub
+func wolfiBaseImageLockAndCreatePR() *operations.Set {
+	ops := operations.NewNamedSet("Base Image Package Update PR")
 
 	ops.Append(
 		func(pipeline *bk.Pipeline) {
-			pipeline.AddStep(":whale::hash: Update Base Image Hashes",
-				bk.Cmd("./dev/ci/scripts/wolfi/update-base-image-hashes.sh"),
+			pipeline.AddStep(":whale::hash: Lock Base Image Packages",
+				bk.Cmd("./dev/ci/scripts/wolfi/update-base-image-lockfiles.sh"),
 				bk.Agent("queue", "bazel"),
-				bk.DependsOn("buildAllBaseImages"),
 				bk.Key("updateBaseImageHashes"),
 			)
 		},
