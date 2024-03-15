@@ -87,20 +87,22 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 	stepKey := "bazel-push-images"
 	candidate := ""
 
-	// Default registries.
-	devRegistry := images.SourcegraphDockerDevRegistry
-	prodRegistry := images.SourcegraphDockerPublishRegistry
-
 	if isCandidate {
 		stepName = ":bazel::docker: Push candidate Images"
 		stepKey = stepKey + "-candidate"
 		candidate = "true"
 	}
 
+	// Default registries.
+	devRegistry := images.SourcegraphDockerDevRegistry
+	prodRegistry := images.SourcegraphDockerPublishRegistry
+	switch c.RunType {
 	// If we're building an internal release, we push the final images to that specific registry instead.
 	// See also: release_operations.go
-	if c.RunType.Is(runtype.InternalRelease) {
+	case runtype.InternalRelease:
 		prodRegistry = images.SourcegraphInternalReleaseRegistry
+	case runtype.MainDryRun:
+		prodRegistry = images.SourcegraphCloudEphemeral
 	}
 
 	_, bazelRC := aspectBazelRC()
