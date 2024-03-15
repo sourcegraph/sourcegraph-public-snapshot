@@ -13,6 +13,7 @@ import (
 )
 
 var (
+	checkLock   bool
 	buildLegacy bool
 )
 
@@ -101,44 +102,46 @@ It can also be used for local development by updating its path and hash in the '
 
 					baseImageName := args[0]
 
-					c, err := wolfi.InitLocalPackageRepo()
+					pc, err := wolfi.InitLocalPackageRepo()
 					if err != nil {
 						return err
 					}
 
-					manifestBaseName, buildDir, err := c.SetupBaseImageBuild(baseImageName)
+					bc, err := wolfi.SetupBaseImageBuild(baseImageName, pc)
 					if err != nil {
 						return err
 					}
+
+					// TODO: Add a check for - .*@local in the manifest and use legacy build if present
 
 					if !buildLegacy {
-						isMatch, err := wolfi.CheckApkoLockHash(manifestBaseName, false)
+						isMatch, err := bc.CheckApkoLockHash(false)
 						if err != nil {
 							return err
 						}
 						if !isMatch {
 							std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "%s.yaml does not match %s.lock.json - regenerating lockfile (run manually with `sg wolfi update-images %s`)", baseImageName, baseImageName, baseImageName))
-							if err = wolfi.UpdateImages(ctx, manifestBaseName, false); err != nil {
+							if err = bc.UpdateImage(ctx, false); err != nil {
 								return err
 							}
 						}
 
 						fmt.Printf("Using bazel build process\n")
-						if err = c.DoBaseImageBuild(manifestBaseName, buildDir); err != nil {
+						if err = bc.DoBaseImageBuild(); err != nil {
 							return err
 						}
 
-						std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Run base image locally using:\n\n\tdocker run -it --entrypoint /bin/sh %s\n", wolfi.DockerImageName(manifestBaseName)))
+						std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Run base image locally using:\n\n\tdocker run -it --entrypoint /bin/sh %s\n", wolfi.DockerImageName(bc.ImageName)))
 					} else {
-						if err = c.DoBaseImageBuildLegacy(manifestBaseName, buildDir); err != nil {
+						if err = bc.DoBaseImageBuildLegacy(); err != nil {
 							return err
 						}
 
-						if err = c.LoadBaseImage(baseImageName); err != nil {
+						if err = bc.LoadBaseImage(); err != nil {
 							return err
 						}
 
-						if err = c.CleanupBaseImageBuild(baseImageName); err != nil {
+						if err = bc.CleanupBaseImageBuild(); err != nil {
 							return err
 						}
 					}
@@ -194,6 +197,14 @@ If no <base-image-name> is provided, the lockfile for all base images will be up
 
 Lockfiles can be found at wolfi-images/<image>.lock.json
 `,
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:        "check",
+						Aliases:     []string{"c"},
+						Usage:       "Check if the lockfile is up to date",
+						Destination: &checkLock,
+					},
+				},
 				Action: func(ctx *cli.Context) error {
 					args := ctx.Args().Slice()
 					var imageName string
@@ -201,7 +212,19 @@ Lockfiles can be found at wolfi-images/<image>.lock.json
 						imageName = args[0]
 					}
 
-					return wolfi.UpdateImages(ctx, imageName)
+					if checkLock {
+						// I need a version of CheckApkoLockHash that can be called with an image or that can iterate over everything
+					}
+
+					if imageName != "" {
+						bc, err := wolfi.SetupBaseImageBuild(imageName, wolfi.PackageRepoConfig{})
+						if err != nil {
+							return err
+						}
+						return bc.UpdateImage(ctx, false)
+					} else {
+						return wolfi.UpdateAllImages(ctx, false)
+					}
 				},
 			},
 		},

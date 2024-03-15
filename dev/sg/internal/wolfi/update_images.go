@@ -18,58 +18,57 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func UpdateImages(_ *cli.Context, updateImageName string, enableLocalPackageRepo bool) error {
-	// Loop over all images and run apko lock
-	if updateImageName != "" {
-		if !strings.HasSuffix(updateImageName, ".yaml") {
-			updateImageName = updateImageName + ".yaml"
-		}
-	}
-
+// UpdateAllImages runs UpdateImage for all images in the baseImageDir
+func UpdateAllImages(ctx *cli.Context, enableLocalPackageRepo bool) error {
 	// Iterate over *.yaml files in wolfi-images/
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return err
 	}
-	imageDir := filepath.Join(repoRoot, "wolfi-images")
+	imageDir := filepath.Join(repoRoot, baseImageDir)
 	files, err := os.ReadDir(imageDir)
 	if err != nil {
 		return err
 	}
+
+	for _, file := range files {
+		if !strings.HasSuffix(file.Name(), ".yaml") {
+			continue
+		}
+
+		imageName := strings.TrimSuffix(file.Name(), ".yaml")
+
+		bc, err := SetupBaseImageBuild(imageName, PackageRepoConfig{})
+		if err != nil {
+			return err
+		}
+
+		bc.UpdateImage(ctx, enableLocalPackageRepo)
+	}
+
+	return nil
+}
+
+func (bc BaseImageConfig) UpdateImage(_ *cli.Context, enableLocalPackageRepo bool) error {
 
 	var extraRepo, extraKey string
 	if enableLocalPackageRepo {
 		// Currently not implemented as rules_apko doesn't support local filesystem repos
 	}
 
-	var updatedImage bool
-	for _, file := range files {
-		if !strings.HasSuffix(file.Name(), ".yaml") {
-			continue
-		}
-
-		if updateImageName != "" && file.Name() != updateImageName {
-			continue
-		}
-
-		// Update lockfile
-		std.Out.WriteLine(output.Linef("🗝️ ", output.StylePending, fmt.Sprintf("Updating apko lockfile for %s", file.Name())))
-		if err = ApkoLock(file.Name(), imageDir, extraRepo, extraKey); err != nil {
-			return err
-		}
-		updatedImage = true
-	}
-
-	if updateImageName != "" && !updatedImage {
-		return errors.New(fmt.Sprintf("no such image '%s'", updateImageName))
+	// Update lockfile
+	std.Out.WriteLine(output.Linef("🗝️ ", output.StylePending, fmt.Sprintf("Updating apko lockfile for %s", bc.ImageName)))
+	if err := bc.ApkoLock(extraRepo, extraKey); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func ApkoLock(imageFilename string, imageDir string, extraRepo string, extraKey string) error {
+func (bc BaseImageConfig) ApkoLock(extraRepo string, extraKey string) error {
+	localImageConfigPath := strings.TrimPrefix(bc.ImageConfigPath, bc.ImageConfigDir+"/")
 
-	apkoArgs := []string{"run", "@rules_apko//apko", "lock", "--", imageFilename}
+	apkoArgs := []string{"run", "@rules_apko//apko", "lock", "--", localImageConfigPath}
 
 	apkoFlags := []string{}
 	if extraRepo != "" {
@@ -82,16 +81,14 @@ func ApkoLock(imageFilename string, imageDir string, extraRepo string, extraKey 
 	cmd := exec.Command("bazel", append(apkoArgs, apkoFlags...)...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Dir = imageDir
+	cmd.Dir = bc.ImageConfigDir
 	err := cmd.Run()
 	if err != nil {
 		return errors.Wrap(err, "failed to build base image")
 	}
 
 	// Update hash in lockfile
-	// TODO: Improve this handling
-	imageName := strings.TrimSuffix(imageFilename, ".yaml")
-	_, err = CheckApkoLockHash(imageName, true)
+	_, err = bc.CheckApkoLockHash(true)
 	if err != nil {
 		return err
 	}
@@ -99,43 +96,21 @@ func ApkoLock(imageFilename string, imageDir string, extraRepo string, extraKey 
 	return nil
 }
 
-func getImageConfigFilename(imageName string) (string, error) {
-	return getApkoConfigFile(imageName, ".yaml")
-}
-func getImageLockFilename(imageName string) (string, error) {
-	return getApkoConfigFile(imageName, ".lock.json")
-}
-func getApkoConfigFile(imageName string, suffix string) (string, error) {
-	repoRoot, err := root.RepositoryRoot()
-	if err != nil {
-		return "", err
-	}
-	imageConfigDir := "wolfi-images"
-	imageConfigFile := filepath.Join(repoRoot, imageConfigDir, imageName+suffix)
-
-	return imageConfigFile, nil
-}
-
 // CheckApkoLockHash checks whether the hash of an image's YAML file matches the hash stored in the corresponding lockfile
 // This allows us to detect changes to the YAML file and re-run apko lock if necessary
-func CheckApkoLockHash(imageName string, update bool) (isMatch bool, err error) {
-	apkoConfigFile, err := getImageConfigFilename(imageName)
-	if err != nil {
-		return false, err
-	}
-
-	apkoConfig, err := os.ReadFile(apkoConfigFile)
+func (bc BaseImageConfig) CheckApkoLockHash(update bool) (isMatch bool, err error) {
+	apkoConfig, err := os.ReadFile(bc.ImageConfigPath)
 	if err != nil {
 		return false, err
 	}
 
 	apkoConfigHash := sha256.Sum256([]byte(apkoConfig))
 	apkoConfigHashHex := hex.EncodeToString(apkoConfigHash[:])
-	fmt.Printf("apkoConfigHashHex: %s\n", apkoConfigHashHex)
+	fmt.Printf("apkoConfigHashHex: %s\n", apkoConfigHashHex) // TODO: Remove
 
 	// Now we have the hash, we need to add it to the json
-	imageLockFile, err := getImageLockFilename(imageName)
-	imageLock, err := os.ReadFile(imageLockFile)
+	// TODO: What about the case where the lockfile doesn't exist? That's a valid false, not an error
+	imageLock, err := os.ReadFile(bc.LockfilePath)
 	if err != nil {
 		return false, err
 	}
@@ -147,12 +122,12 @@ func CheckApkoLockHash(imageName string, update bool) (isMatch bool, err error) 
 	}
 
 	if val, exists := imageLockData["configHash"]; exists {
-		fmt.Println("configHash before:", val)
+		fmt.Println("configHash before:", val) // TODO: Remove
 		if val == apkoConfigHashHex {
 			isMatch = true
 		}
 	} else {
-		fmt.Println("configHash key not found")
+		fmt.Println("configHash key not found") // TODO: Remove
 	}
 
 	if !update {
@@ -168,7 +143,7 @@ func CheckApkoLockHash(imageName string, update bool) (isMatch bool, err error) 
 	}
 
 	// Write the updated json back to the file
-	err = os.WriteFile(imageLockFile, updatedFile, 0644)
+	err = os.WriteFile(bc.LockfilePath, updatedFile, 0644)
 	if err != nil {
 		return false, err
 	}
