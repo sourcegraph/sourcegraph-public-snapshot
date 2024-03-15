@@ -60,21 +60,8 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     )
 
     const shouldShowProvider = function (provider: AuthProvider): boolean {
-        const isSourcegraphAccountsDev = (provider: AuthProvider): boolean => {
-            if (provider.serviceType !== 'openidconnect') {
-                return false
-            }
-            if (!provider.displayName.includes('Sourcegraph Accounts (dev)')) {
-                return false
-            }
-            return true
-        }
-
         // Hide the Sourcegraph Operator authentication provider by default because it is
         // not useful to customer users and may even cause confusion.
-        if (isSourcegraphAccountsDev(provider)) {
-            return searchParams.has('sourcegraph-accounts-dev')
-        }
         if (provider.serviceType === 'sourcegraph-operator') {
             return searchParams.has('sourcegraph-operator')
         }
