@@ -20,7 +20,7 @@ import { submitSearch } from '../search/helpers'
 import { useNavbarQueryState } from '../stores'
 import { SearchPageInput } from '../storm/pages/SearchPage/SearchPageInput'
 
-import { CommunitySearchContextMetadata, CommunitySearchContextSpecs } from './types'
+import type { CommunitySearchContextMetadata, CommunitySearchContextSpecs } from './types'
 
 import styles from './CommunitySearchContextPage.module.scss'
 

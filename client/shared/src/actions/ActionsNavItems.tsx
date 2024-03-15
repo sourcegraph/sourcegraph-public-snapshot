@@ -1,23 +1,22 @@
 import React, { useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
+import type * as H from 'history'
 import { identity } from 'lodash'
 import { combineLatest, from, ReplaySubject } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
-import type { Contributions, Evaluated } from '@sourcegraph/client-api'
-import { ContributableMenu } from '@sourcegraph/client-api'
+import type { Contributions, Evaluated, ContributableMenu } from '@sourcegraph/client-api'
 import type { Context } from '@sourcegraph/template-parser'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../api/client/api/common'
 import type { ContributionScope } from '../api/extension/api/context/context'
-import { ContributionOptions } from '../api/extension/extensionHostApi'
+import type { ContributionOptions } from '../api/extension/extensionHostApi'
 import { getContributedActionItems } from '../contributions/contributions'
-import { RequiredExtensionsControllerProps } from '../extensions/controller'
-import { PlatformContextProps } from '../platform/context'
+import type { RequiredExtensionsControllerProps } from '../extensions/controller'
+import type { PlatformContextProps } from '../platform/context'
 import type { TelemetryProps } from '../telemetry/telemetryService'
 
 import { ActionItem, type ActionItemProps } from './ActionItem'

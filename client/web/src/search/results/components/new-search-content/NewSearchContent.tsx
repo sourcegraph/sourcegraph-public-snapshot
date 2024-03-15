@@ -1,7 +1,7 @@
 import {
-    FC,
-    HTMLAttributes,
-    PropsWithChildren,
+    type FC,
+    type HTMLAttributes,
+    type PropsWithChildren,
     Suspense,
     useCallback,
     useEffect,
@@ -12,14 +12,14 @@ import {
 
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
 import { StreamingProgress, StreamingSearchResultsList, useSearchResultState } from '@sourcegraph/branded'
-import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
-import { HighlightResponseFormat, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import {
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import type { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
+import { HighlightResponseFormat, type SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type {
     QueryState,
     QueryStateUpdate,
     QueryUpdate,
@@ -28,19 +28,19 @@ import {
     SearchPatternTypeProps,
 } from '@sourcegraph/shared/src/search'
 import {
-    AggregateStreamingSearchResults,
-    ContentMatch,
+    type AggregateStreamingSearchResults,
+    type ContentMatch,
     getFileMatchUrl,
-    PathMatch,
-    StreamSearchOptions,
+    type PathMatch,
+    type StreamSearchOptions,
 } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
-import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { NOOP_TELEMETRY_SERVICE, type TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Button, H2, H4, Icon, Link, Panel, useLocalStorage, useScrollManager } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../auth'
+import type { AuthenticatedUser } from '../../../../auth'
 import { useKeywordSearch } from '../../../../featureFlags/useFeatureFlag'
 import { fetchBlob } from '../../../../repo/blob/backend'
 import { isSearchJobsEnabled } from '../../../../search-jobs/utility'

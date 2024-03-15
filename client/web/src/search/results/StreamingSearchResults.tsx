@@ -10,7 +10,7 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import type { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, type StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import type { SearchAggregationProps, SearchStreamingProps } from '..'

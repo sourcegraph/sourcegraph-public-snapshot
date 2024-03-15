@@ -1,22 +1,22 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import classNames from 'classnames'
 
-import { Position } from '@sourcegraph/extension-api-classes'
+import type { Position } from '@sourcegraph/extension-api-classes'
 import { useQuery } from '@sourcegraph/http-client'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Code, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import {
     HighlightResponseFormat,
-    ReferencesPanelHighlightedBlobResult,
-    ReferencesPanelHighlightedBlobVariables,
+    type ReferencesPanelHighlightedBlobResult,
+    type ReferencesPanelHighlightedBlobVariables,
 } from '../graphql-operations'
-import { SearchPanelConfig } from '../repo/blob/codemirror/search'
-import { Range } from '../repo/blob/codemirror/static-highlights'
+import type { SearchPanelConfig } from '../repo/blob/codemirror/search'
+import type { Range } from '../repo/blob/codemirror/static-highlights'
 import { CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
