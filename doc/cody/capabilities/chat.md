@@ -59,7 +59,7 @@ During the chat, if Cody needs additional context, it can ask you to provide mor
 
 ## Selecting Context
 
-Cody Chat allows you to provide context to your questions by selecting specific files, functions, or code blocks.
+Cody's chat allows you to add files and symbols as context in your messages.
 
 ### @ File Context
 
