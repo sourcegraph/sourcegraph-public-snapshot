@@ -87,3 +87,25 @@ promoteToPublic:
       - name: "Register on release registry"
         cmd: |
           echo "pretending to call release registry api"
+      - name: "Slack notification (#announce-engineering)"
+        cmd: |
+          echo "Posting slack notification for release"
+            body=$(curl -s --fail-with-body -X POST "$SLACK_WEBHOOK_URL" -H "Content-Type: application/json" -d '{
+                "text": |
+                  "*Sourcegraph 5.3.2 has been published*
+
+                  * [Changelog](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#5-3-2)
+                  * [GitHub release](https://github.com/sourcegraph/sourcegraph/releases/tag/v5.3.2)"
+              }')
+            exit_code=$?
+
+            if [ $exit_code != 0 ]; then
+              echo "❌ Failed to create build on Buildkite, got:"
+              echo "--- raw body ---"
+              echo $body
+              echo "--- raw body ---"
+              exit $exit_code
+            else
+              echo "Build created, see:"
+              echo $body | jq .web_url
+            fi
