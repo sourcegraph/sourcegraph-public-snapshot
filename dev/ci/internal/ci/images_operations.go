@@ -102,7 +102,7 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 	case runtype.InternalRelease:
 		prodRegistry = images.SourcegraphInternalReleaseRegistry
 	case runtype.CloudEphemeral:
-		devRegistry = images.SourcegraphCloudEphemeralRegistry
+		devRegistry = images.CloudEphemeralRegistry
 	}
 
 	_, bazelRC := aspectBazelRC()
