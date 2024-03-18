@@ -13,7 +13,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 <!-- START CHANGELOG -->
 
-## Unreleased (5.4.0 - Release Date TBD)
+## Unreleased (Monthly Release - April 5th, 2024)
 
 ### Added
 
@@ -32,10 +32,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed a bug where clicking "Exclude Repo" on Azure DevOps or Gerrit repositories would not work. [#60509](https://github.com/sourcegraph/sourcegraph/pull/60509)
 - Links in codeintel popovers respect the revision from the URL. [#60545](https://github.com/sourcegraph/sourcegraph/pull/60545)
 - Fixed a bug where permission syncs could be scheduled for repositories or users even when a sync is already scheduled or in progress, leading to significant delays in the permissions sync system as a whole. [#61024](https://github.com/sourcegraph/sourcegraph/pull/61024)
-
-### Removed
-
--
 
 ## Unreleased
 
@@ -57,10 +53,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 5.3.2
 
-### Added
-
-### Changed
-
 ### Fixed
 
 - A bug in search that could trigger a panic
@@ -70,15 +62,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 5.3.1
 
-### Added
-
-### Changed
-
 ### Fixed
 
 - Updated container images to fix CVE-2023-4408, CVE-2023-50387, CVE-2023-50868, CVE-2023-5517, CVE-2023-5679, CVE-2023-6516
-
-### Removed
 
 ## 5.3.0
 
@@ -150,16 +136,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 5.2.7
 
-### Added
-
 ### Fixed
 
 - The reference panel correctly shows definition and reference information instead of a "Could not find token" error for MATLAB. [#59636](https://github.com/sourcegraph/sourcegraph/pull/59636)
 - The auto-index configuration page correctly shows any auto-inference errors instead of a nil pointer exception. [#59756](https://github.com/sourcegraph/sourcegraph/pull/59756)
-
-### Removed
-
-### Changed
 
 ## 5.2.6
 
@@ -187,8 +167,6 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Improved the admin page for search indexing. [#58866](https://github.com/sourcegraph/sourcegraph/pull/58866)
-
-### Removed
 
 ## 5.2.4
 
