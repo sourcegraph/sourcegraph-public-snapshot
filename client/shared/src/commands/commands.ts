@@ -1,5 +1,5 @@
 import type { Remote } from 'comlink'
-import { firstValueFrom, from, lastValueFrom, Subscription, type Unsubscribable } from 'rxjs'
+import { firstValueFrom, lastValueFrom, Subscription, type Unsubscribable } from 'rxjs'
 
 import type { ActionContributionClientCommandUpdateConfiguration, Evaluated, KeyPath } from '@sourcegraph/client-api'
 import { SourcegraphURL } from '@sourcegraph/common'
