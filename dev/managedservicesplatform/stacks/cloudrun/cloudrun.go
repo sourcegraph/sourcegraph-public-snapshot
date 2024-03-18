@@ -548,7 +548,7 @@ type cloudDeployIAMConfig struct {
 	pipelineBucketName *string
 }
 
-func cloudDeployIAM(vars Variables, id resourceid.ID, stack cdktf.TerraformStack, config cloudDeployIAMConfig) {
+func addCloudDeployIAM(vars Variables, id resourceid.ID, stack cdktf.TerraformStack, config cloudDeployIAMConfig) {
 	// Create custom role to list buckets
 	listbuckets := projectiamcustomrole.NewProjectIamCustomRole(stack, id.TerraformID("listbucketsrole"), &projectiamcustomrole.ProjectIamCustomRoleConfig{
 		Project:     pointers.Ptr(vars.ProjectID),
