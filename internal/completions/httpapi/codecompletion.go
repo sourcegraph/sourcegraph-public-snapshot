@@ -52,8 +52,6 @@ func allowedCustomModel(model string) string {
 		"fireworks/starcoder2-7b",
 		"fireworks/" + fireworks.Starcoder16b,
 		"fireworks/" + fireworks.Starcoder7b,
-		"fireworks/" + fireworks.StarcoderTwo15b,
-		"fireworks/" + fireworks.StarcoderTwo7b,
 		"fireworks/" + fireworks.Llama27bCode,
 		"fireworks/" + fireworks.Llama213bCode,
 		"fireworks/" + fireworks.Llama213bCodeInstruct,
