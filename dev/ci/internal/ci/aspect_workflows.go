@@ -1,7 +1,5 @@
 package ci
 
-import "fmt"
-
 var AspectWorkflows = struct {
 	// TestStepKey is the key of the primary test step
 	TestStepKey string
@@ -20,16 +18,11 @@ var AspectWorkflows = struct {
 	IntegrationTestStepKey: "__main__::test_2",
 	QueueDefault:           "aspect-default",
 	QueueSmall:             "aspect-small",
-	AgentHealthCheckScript: "/etc/aspect/workflows/bin/agent_health_check",
-}
-
-func withAspectHealthCheck(cmd string) string {
-	return fmt.Sprintf("%s; %s", AspectWorkflows.AgentHealthCheckScript, cmd)
 }
 
 func aspectBazelRC() (string, string) {
 	path := "/tmp/aspect-generated.bazelrc"
 	bazelRCCmd := "rosetta bazelrc > " + path
 
-	return withAspectHealthCheck(bazelRCCmd), path
+	return bazelRCCmd, path
 }
