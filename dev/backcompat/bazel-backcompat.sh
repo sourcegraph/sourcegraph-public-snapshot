@@ -18,6 +18,9 @@ if [[ $EXIT_CODE -ne 0 ]]; then
 fi
 
 if [[ ${CI:-} == "true" ]]; then
+  echo "~~~ :aspect: :stethoscope: Agent Health check"
+  /etc/aspect/workflows/bin/agent_health_check
+
   aspectRC="/tmp/aspect-generated.bazelrc"
   rosetta bazelrc > "${aspectRC}"
   echo -e "\ntry-import %workspace%/.aspect/bazelrc/ci.sourcegraph.bazelrc\n"  >> "$aspectRC"
