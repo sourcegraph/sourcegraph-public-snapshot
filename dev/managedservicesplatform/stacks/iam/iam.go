@@ -32,6 +32,7 @@ type CrossStackOutput struct {
 	// CloudDeployExecutionServiceAccount is only provisioned if
 	// IsFinalStageOfRollout is true for this environment.
 	CloudDeployExecutionServiceAccount *serviceaccount.Output
+	CloudDeployReleaserServiceAccount  *serviceaccount.Output
 }
 
 type Variables struct {
@@ -223,6 +224,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	// Only referenced if vars.IsFinalStageOfRollout is true anyway, so safe
 	// to leave as nil.
 	var cloudDeployExecutorServiceAccount *serviceaccount.Output
+	var cloudDeployReleaserServiceAccount *serviceaccount.Output
 	if vars.IsFinalStageOfRollout {
 		cloudDeployExecutorServiceAccount = serviceaccount.New(stack,
 			id.Group("clouddeploy-executor"),
@@ -239,18 +241,14 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			},
 		)
 
-		cloudDeployReleaserServiceAccount := serviceaccount.New(stack,
+		cloudDeployReleaserServiceAccount = serviceaccount.New(stack,
 			id.Group("clouddeploy-releaser"),
 			serviceaccount.Config{
 				ProjectID:   vars.ProjectID,
 				AccountID:   "clouddeploy-releaser",
 				DisplayName: fmt.Sprintf("%s Cloud Deploy Releases Service Account", vars.Service.GetName()),
-				Roles: []serviceaccount.Role{
-					{
-						ID:   resourceid.New("role_clouddeploy_releaser"),
-						Role: "roles/clouddeploy.releaser",
-					},
-				},
+				// Roles are configured in the cloudrun stack to scope access to required resources
+				Roles: nil,
 			},
 		)
 
@@ -272,6 +270,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		CloudRunWorkloadServiceAccount:     workloadServiceAccount,
 		OperatorAccessServiceAccount:       operatorAccessServiceAccount,
 		CloudDeployExecutionServiceAccount: cloudDeployExecutorServiceAccount,
+		CloudDeployReleaserServiceAccount:  cloudDeployReleaserServiceAccount,
 	}, nil
 }
 
