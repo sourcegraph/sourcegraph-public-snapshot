@@ -309,10 +309,10 @@ const getRepoDetailsFromRepoPHID = memoizeObservable(
                 return from(convertConduitRepoToRepoDetails(repo)).pipe(
                     switchMap((details: PhabricatorRepoDetails | null) => {
                         if (!details) {
-                            return throwError(new Error('could not parse repo details'))
+                            return throwError(() => new Error('could not parse repo details'))
                         }
                         if (!repo.fields?.callsign) {
-                            return throwError(new Error('callsign not found'))
+                            return throwError(() => new Error('callsign not found'))
                         }
                         return createPhabricatorRepo({
                             callsign: repo.fields.callsign,
