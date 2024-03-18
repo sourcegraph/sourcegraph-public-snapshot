@@ -455,7 +455,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		if sa := pointers.DerefZero(vars.RolloutPipeline.OriginalSpec.ServiceAccount); sa != "" {
 			serviceAccounts = append(serviceAccounts, sa)
 		}
-		cloudDeployIAM(vars, id, stack, cloudDeployIAMConfig{
+		addCloudDeployIAM(vars, id, stack, cloudDeployIAMConfig{
 			serviceAccounts:    serviceAccounts,
 			skaffoldBucketName: skaffoldBucket.Name(),
 			pipelineBucketName: pipelineBucket.Name(),
@@ -548,6 +548,8 @@ type cloudDeployIAMConfig struct {
 	pipelineBucketName *string
 }
 
+// addCloudDeployIAM needs to be done here rather than the IAM stack as
+// the Delivery Pipeline needs to be created first
 func addCloudDeployIAM(vars Variables, id resourceid.ID, stack cdktf.TerraformStack, config cloudDeployIAMConfig) {
 	// Create custom role to list buckets
 	listbuckets := projectiamcustomrole.NewProjectIamCustomRole(stack, id.TerraformID("listbucketsrole"), &projectiamcustomrole.ProjectIamCustomRoleConfig{
