@@ -143,7 +143,9 @@ type SymbolsParameters struct {
 
 type SymbolsResponse struct {
 	Symbols result.Symbols `json:"symbols,omitempty"`
-	Err     string         `json:"error,omitempty"`
+	// Prefer using grpc errors with error codes instead. See
+	// https://grpc.io/docs/guides/error/
+	Err string `json:"error,omitempty"`
 }
 
 type IndexedRequestType string

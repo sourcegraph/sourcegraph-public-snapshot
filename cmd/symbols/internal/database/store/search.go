@@ -8,10 +8,13 @@ import (
 
 	"github.com/grafana/regexp/syntax"
 	"github.com/keegancsmith/sqlf"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -50,8 +53,11 @@ func scanSymbols(rows *sql.Rows, queryErr error) (symbols []result.Symbol, err e
 const maxSymbolLimit = 50_000
 
 func (s *store) Search(ctx context.Context, args search.SymbolsParameters) ([]result.Symbol, error) {
-	if args.First < 0 || args.First > maxSymbolLimit {
-		return nil, errors.Newf("limit %d out of bounds [0, %d]", args.First, maxSymbolLimit)
+	// We check against limit + 1 because frontend will ask for limit + 1. This way
+	// we can communicate a nicer number to the user.
+	if args.First < 0 || args.First > maxSymbolLimit+1 {
+		p := message.NewPrinter(language.English)
+		return nil, &symbols.OutOfBoundsErr{Description: p.Sprintf("Unindexed symbol search only supports returning up to %d results at a time. Use the \"count:\" filter to adjust the number of requested results.", maxSymbolLimit)}
 	}
 
 	return scanSymbols(s.Query(ctx, sqlf.Sprintf(

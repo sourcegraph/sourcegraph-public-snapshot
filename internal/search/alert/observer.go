@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -239,6 +240,7 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		mErr *searchrepos.MissingRepoRevsError
 		oErr *errOverRepoLimit
 		lErr *ErrLuckyQueries
+		sErr *symbols.OutOfBoundsErr
 	)
 
 	if errors.HasType(err, authz.ErrStalePermissions{}) {
@@ -286,6 +288,14 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 			Kind:            kind,
 			Description:     description,
 			ProposedQueries: lErr.ProposedQueries,
+		}, nil
+	}
+
+	if errors.As(err, &sErr) {
+		return &search.Alert{
+			Title:       "Unindexed symbol search failed",
+			Description: sErr.Description,
+			Priority:    1,
 		}, nil
 	}
 

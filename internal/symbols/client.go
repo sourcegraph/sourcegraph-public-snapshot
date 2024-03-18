@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -59,6 +60,14 @@ type Client struct {
 	SubRepoPermsChecker func() authz.SubRepoPermissionChecker
 }
 
+type OutOfBoundsErr struct {
+	Description string
+}
+
+func (e *OutOfBoundsErr) Error() string {
+	return e.Description
+}
+
 // Search performs a symbol search on the symbols service.
 func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (symbols result.Symbols, err error) {
 	tr, ctx := trace.New(ctx, "symbols.Search",
@@ -68,7 +77,20 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 
 	response, err := c.searchGRPC(ctx, args)
 	if err != nil {
-		return nil, errors.Wrap(err, "executing symbols search request")
+		switch status.Code(err) {
+		case codes.OutOfRange:
+			s := status.Convert(err)
+			for _, d := range s.Details() {
+				if e, ok := d.(*errdetails.BadRequest_FieldViolation); ok {
+					return nil, &OutOfBoundsErr{Description: e.Description}
+				}
+			}
+		default:
+			return nil, errors.Wrap(err, "executing symbols search request")
+		}
+	}
+	if response.Err != "" {
+		return nil, errors.New(response.Err)
 	}
 
 	symbols = response.Symbols
