@@ -7,6 +7,7 @@ go_library(
         "package.go",
         "scan_images.go",
         "update_hashes.go",
+        "update_images.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/wolfi",
     visibility = ["//dev/sg:__subpackages__"],
