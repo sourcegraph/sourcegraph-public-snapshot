@@ -407,8 +407,8 @@ importers:
         specifier: ^1.5.1
         version: 1.5.1
       rxjs:
-        specifier: ^6.6.3
-        version: 6.6.7
+        specifier: ^7.8.1
+        version: 7.8.1
       semver:
         specifier: ^7.3.2
         version: 7.6.0
@@ -22898,6 +22898,7 @@ packages:
     engines: {npm: '>=2.0.0'}
     dependencies:
       tslib: 2.1.0
+    dev: true
 
   /rxjs@7.8.1:
     resolution: {integrity: sha512-AA3TVj+0A2iuIoQkWEK/tqFjBq2j+6PO6Y0zJcvzLAFhEFIO3HL0vls9hWLncZbAAbK0mar7oZ4V079I/qPMxg==}

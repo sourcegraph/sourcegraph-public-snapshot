@@ -396,7 +396,7 @@
     "recharts": "^1.8.5",
     "regexpp": "^3.1.0",
     "resize-observer-polyfill": "^1.5.1",
-    "rxjs": "^6.6.3",
+    "rxjs": "^7.8.1",
     "semver": "^7.3.2",
     "stream-http": "^3.2.0",
     "stream-json": "^1.7.5",
