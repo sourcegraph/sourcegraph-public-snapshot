@@ -10,12 +10,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// UploadState is the database equivalent of 'PreciseIndexState'
+// in the GraphQL API. The lifecycle of an upload is described
+// in https://docs.sourcegraph.com/code_navigation/explanations/uploads
+// using 'PreciseIndexState'.
+//
+// The State values in the database don't map 1:1 with the GraphQL API.
+type UploadState string
+
+const (
+	StateQueued     UploadState = "queued"
+	StateUploading  UploadState = "uploading"
+	StateProcessing UploadState = "processing"
+	StateErrored    UploadState = "errored"
+	StateFailed     UploadState = "failed"
+	StateCompleted  UploadState = "completed"
+	StateDeleted    UploadState = "deleted"
+	StateDeleting   UploadState = "deleting"
+)
+
 type Upload struct {
-	ID                int
-	Commit            string
-	Root              string
-	VisibleAtTip      bool
-	UploadedAt        time.Time
+	ID           int
+	Commit       string
+	Root         string
+	VisibleAtTip bool
+	UploadedAt   time.Time
+	// TODO(id: state-refactoring) Use UploadState type here.
 	State             string
 	FailureMessage    *string
 	StartedAt         *time.Time
@@ -118,10 +138,22 @@ type UploadLog struct {
 	Operation         string
 }
 
+type IndexState UploadState
+
+const (
+	IndexStateQueued     = IndexState(StateQueued)
+	IndexStateProcessing = IndexState(StateProcessing)
+	IndexStateFailed     = IndexState(StateFailed)
+	IndexStateErrored    = IndexState(StateErrored)
+	IndexStateCompleted  = IndexState(StateCompleted)
+)
+
 type Index struct {
-	ID                 int                          `json:"id"`
-	Commit             string                       `json:"commit"`
-	QueuedAt           time.Time                    `json:"queuedAt"`
+	ID       int       `json:"id"`
+	Commit   string    `json:"commit"`
+	QueuedAt time.Time `json:"queuedAt"`
+	// TODO(id: state-refactoring) Use IndexState type here.
+	// IMPORTANT: IndexState must transitively wrap 'string' for back-compat
 	State              string                       `json:"state"`
 	FailureMessage     *string                      `json:"failureMessage"`
 	StartedAt          *time.Time                   `json:"startedAt"`
