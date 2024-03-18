@@ -10,14 +10,14 @@ GCP_CLOUDRUN_SKAFFOLD_SOURCE="gs://msp-testbed-robert-7be9-cloudrun-skaffold/sou
 REPOSITORY="us.gcr.io/sourcegraph-dev/msp-example"
 
 # -=Env Variable Defaults=-
-BUILDKITE_BUILD_NUMBER="${BUILDKITE_BUILD_NUMBER:-9425}"
-BUILDKITE_COMMIT="${BUILDKITE_COMMIT:-f8a6c059c1b0}"
+: ${BUILDKITE_BUILD_NUMBER:?"BUILDKITE_BUILD_NUMBER is required"}
+: ${BUILDKITE_COMMIT:?"BUILDKITE_COMMIT is required"}
 
 # TODO: figure out a good way to capture author details
 # can contain only lowercase letters, numeric characters, underscores, and dashes.
 # All characters must use UTF-8 encoding, and international characters are allowed.
 # Keys must start with a lowercase letter or international character
-# BUILDKITE_BUILD_AUTHOR_EMAIL="${BUILDKITE_BUILD_AUTHOR_EMAIL:-foo.bar@example.com}"
+# : ${BUILDKITE_BUILD_AUTHOR_EMAIL:?"BUILDKITE_BUILD_AUTHOR_EMAIL is required"}
 
 # -=Computed Variables=-
 SHORT_SHA="${BUILDKITE_COMMIT:0:12}"
