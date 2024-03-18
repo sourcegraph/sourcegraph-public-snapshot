@@ -17,8 +17,8 @@ steps:
           rosetta steps | buildkite-agent pipeline upload
         agents:
           queue: aspect-small
-      # - label: ":pipeline: Generate pipeline"
-      #   commands:
-      #     - "./dev/ci/gen-pipeline.sh"
-      #   agents:
-      #     queue: aspect-default
+      - label: ":pipeline: Generate pipeline"
+        commands:
+          - "./dev/ci/gen-pipeline.sh"
+        agents:
+          queue: aspect-default

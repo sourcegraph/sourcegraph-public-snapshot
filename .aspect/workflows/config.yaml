@@ -37,6 +37,6 @@ tasks:
         - deliverable: 'attr(tags, "\bmsp-deliverable\b", //cmd/...)'
           condition:
             branches:
-              - 'jcjh/msp-bazel-delivery'
+              - '^main$'
   - finalization:
       queue: aspect-small
