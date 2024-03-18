@@ -486,6 +486,7 @@ go_test(
         "//internal/binary",
         "//internal/codeintel",
         "//internal/conf",
+        "//internal/conf/conftypes",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbmocks",
