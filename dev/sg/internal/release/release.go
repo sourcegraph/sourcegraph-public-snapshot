@@ -156,6 +156,7 @@ var Command = &cli.Command{
 			UsageText: "sg release promote-to-public --workdir [path-to-folder-with-manifest] --version vX.Y.Z",
 			Category:  category.Util,
 			Flags:     releaseCreatePromoteFlags,
+			Action: func(ctx context.Context, cmd *cli.Command) error {
 				r, err := newReleaseRunnerFromCliContext(ctx, cmd)
 				if err != nil {
 					return err
@@ -166,7 +167,7 @@ var Command = &cli.Command{
 	},
 }
 
-func newReleaseRunnerFromCliContext(ctx context.Context, cmd *cli.Command)  (*releaseRunner, error) {
+func newReleaseRunnerFromCliContext(ctx context.Context, cmd *cli.Command) (*releaseRunner, error) {
 	if cmd.Bool("config-from-commit") && cmd.String("version") != "" {
 		return nil, errors.New("You cannot use --config-from-commit and --version at the same time")
 	}
@@ -185,9 +186,9 @@ func newReleaseRunnerFromCliContext(ctx context.Context, cmd *cli.Command)  (*re
 	branch := cmd.String("branch")
 
 	if cmd.Bool("config-from-commit") {
-		exe := run.Cmd(ctx, "git", "log", "-1")
-		exe.Dir(workdir)
-		lines, err := exe.Run().Lines()
+		cmd := run.Cmd(ctx, "git", "log", "-1")
+		cmd.Dir(workdir)
+		lines, err := cmd.Run().Lines()
 		if err != nil {
 			return nil, err
 		}

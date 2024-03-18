@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/urfave/cli/v3"
 
@@ -23,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -34,10 +32,6 @@ func main() {
 	if os.Args[len(os.Args)-1] == "--generate-bash-completion" {
 		bashCompletionsMode = true
 	}
-	println("bashCompletionsMode", bashCompletionsMode)
-	println("\n\n")
-	println("args are: ", strings.Join(os.Args, " "))
-	println("\n\n")
 
 	if err := sg.Run(context.Background(), os.Args); err != nil { // We want to prefer an already-initialized std.Out no matter what happens,
 		// because that can be configured (e.g. with '--disable-output-detection'). Only
@@ -290,14 +284,7 @@ var sg = &cli.Command{
 
 	Suggest: true,
 
-	EnableShellCompletion: true,
-	ShellComplete: completions.CompleteArgs(func() []string {
-		names := []string{}
-		for _, cmd := range commands {
-			names = append(names, cmd.Name)
-		}
-		return names
-	}),
+	EnableShellCompletion:  true,
 	UseShortOptionHandling: true,
 
 	HideVersion:     true,

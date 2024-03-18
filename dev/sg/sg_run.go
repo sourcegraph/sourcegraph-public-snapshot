@@ -83,7 +83,7 @@ func runExec(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
-	legacy := ctx.Bool("legacy")
+	legacy := cmd.Bool("legacy")
 
 	args := cmd.Args().Slice()
 	if len(args) == 0 {
@@ -117,7 +117,7 @@ func runExec(ctx context.Context, cmd *cli.Command) error {
 		return nil
 	}
 
-	p := pool.New().WithContext(ctx.Context).WithCancelOnError()
+	p := pool.New().WithContext(ctx).WithCancelOnError()
 	p.Go(func(ctx context.Context) error {
 		return run.Commands(ctx, config.Env, verbose, cmds...)
 	})

@@ -187,7 +187,7 @@ func startExec(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	args := ctx.Args().Slice()
+	args := cmd.Args().Slice()
 	if len(args) > 2 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
@@ -407,9 +407,8 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 }
 
 func getCommands[T run.SGConfigCommand](commands []string, set *sgconf.Commandset, conf map[string]T) ([]T, error) {
-	exceptList := exceptServices.Value()
-	exceptSet := make(map[string]interface{}, len(exceptList))
-	for _, svc := range exceptList {
+	exceptSet := make(map[string]interface{}, len(exceptServices))
+	for _, svc := range exceptServices {
 		exceptSet[svc] = struct{}{}
 	}
 
