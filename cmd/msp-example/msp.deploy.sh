@@ -3,10 +3,10 @@
 set -eux -o pipefail
 
 # -=Service Specific Parameters=-
-GCP_PROJECT="msp-testbed-test-77589aae45d0"
+GCP_PROJECT="msp-testbed-robert-7be9"
 GCP_REGION="us-central1"
 GCP_DELIVERY_PIPELINE="msp-testbed-us-central1-rollout"
-GCP_CLOUDRUN_SKAFFOLD_SOURCE="gs://msp-testbed-test-77589aae45d0-cloudrun-skaffold/source.tar.gz"
+GCP_CLOUDRUN_SKAFFOLD_SOURCE="gs://msp-testbed-robert-7be9-cloudrun-skaffold/source.tar.gz"
 REPOSITORY="us.gcr.io/sourcegraph-dev/msp-example"
 
 # -=Env Variable Defaults=-
