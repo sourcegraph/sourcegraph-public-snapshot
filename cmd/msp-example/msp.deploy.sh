@@ -10,8 +10,8 @@ GCP_CLOUDRUN_SKAFFOLD_SOURCE="gs://msp-testbed-robert-7be9-cloudrun-skaffold/sou
 REPOSITORY="us.gcr.io/sourcegraph-dev/msp-example"
 
 # -=Env Variable Defaults=-
-: ${BUILDKITE_BUILD_NUMBER:?"BUILDKITE_BUILD_NUMBER is required"}
-: ${BUILDKITE_COMMIT:?"BUILDKITE_COMMIT is required"}
+: "${BUILDKITE_BUILD_NUMBER:?"BUILDKITE_BUILD_NUMBER is required"}"
+: "${BUILDKITE_COMMIT:?"BUILDKITE_COMMIT is required"}"
 
 # TODO: figure out a good way to capture author details
 # can contain only lowercase letters, numeric characters, underscores, and dashes.
