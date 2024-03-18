@@ -18,17 +18,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-// UpdateAllImages runs UpdateImage for all images in the baseImageDir
-func UpdateAllImages(ctx *cli.Context, enableLocalPackageRepo bool) error {
+
+func GetAllImages() (imageNames []string, err error) {
 	// Iterate over *.yaml files in wolfi-images/
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	imageDir := filepath.Join(repoRoot, baseImageDir)
 	files, err := os.ReadDir(imageDir)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, file := range files {
@@ -37,7 +37,20 @@ func UpdateAllImages(ctx *cli.Context, enableLocalPackageRepo bool) error {
 		}
 
 		imageName := strings.TrimSuffix(file.Name(), ".yaml")
+		imageNames = append(imageNames, imageName)
+	}
 
+	return imageNames, nil
+}
+
+// UpdateAllImages runs UpdateImage for all images in the baseImageDir
+func UpdateAllImages(ctx *cli.Context, enableLocalPackageRepo bool) error {
+	imageNames, err := GetAllImages()
+	if err != nil {
+		return err
+	}
+
+	for _, imageName := range imageNames {
 		bc, err := SetupBaseImageBuild(imageName, PackageRepoConfig{})
 		if err != nil {
 			return err
