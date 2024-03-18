@@ -51,6 +51,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fixes a bug where the reference panel would not show any definitions or references for Protocol Buffers (and other languages where the name contained a space). [#60987](https://github.com/sourcegraph/sourcegraph/pull/60987)
 
+- Fixes a bug where the reference panel would not show any definitions or references for Protocol Buffers (and other languages where the name contained a space). [#60987](https://github.com/sourcegraph/sourcegraph/pull/60987)
+
 ### Removed
 
 ## 5.3.2
@@ -64,7 +66,7 @@ All notable changes to Sourcegraph are documented in this file.
 - A bug in search that could trigger a panic
 - An unintentional change to the search results when using the LineMatch API which would include surrounding lines with no matches
 - Autoupgrade only looks for open db connections from the Sourcegraph application services, and disregards other applications connected to the postgres instance. [#60771](https://github.com/sourcegraph/sourcegraph/pull/60771)
-- Fixes a bug where the reference panel would not show any definitions or references for Protocol Buffers (and other languages where the name contained a space). [#60987](https://github.com/sourcegraph/sourcegraph/pull/60987)
+- Fixes a bug where hovers would not show up in C++ headers with the `.hxx` extension. [#60662](https://github.com/sourcegraph/sourcegraph/pull/60662)
 
 ## 5.3.1
 
@@ -75,7 +77,6 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Updated container images to fix CVE-2023-4408, CVE-2023-50387, CVE-2023-50868, CVE-2023-5517, CVE-2023-5679, CVE-2023-6516
-- Fixes a bug where hovers would not show up in C++ headers with the `.hxx` extension. [#60662](https://github.com/sourcegraph/sourcegraph/pull/60662)
 
 ### Removed
 
