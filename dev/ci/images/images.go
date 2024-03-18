@@ -21,6 +21,9 @@ const (
 	SourcegraphInternalReleaseRegistry = "us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal"
 	// SourcegraphPublicReleaseRegistry is a currently private registry for storing public releases.
 	SourcegraphPublicReleaseRegistry = "us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-public"
+
+	// SourcegraphCloudEphemeral is a private registry used to store images that Cloud uses to deploy ephemeral cloud environments
+	SourcegraphCloudEphemeral = "us-central1-docker.pkg.dev/sourcegraph-ci/cloud-ephemeral"
 )
 
 // DevRegistryImage returns the name of the image for the given app and tag on the
