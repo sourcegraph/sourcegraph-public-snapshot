@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	sgservice "github.com/sourcegraph/sourcegraph/internal/service"
@@ -84,9 +83,6 @@ func run(
 	oobConfig *OutOfBandConfiguration,
 ) {
 	defer liblog.Sync()
-
-	// Initialize log15. Even though it's deprecated, it's still fairly widely used.
-	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
 
 	// If no oobConfig is provided, we're in conf mode
 	if oobConfig == nil {

@@ -15,7 +15,6 @@ go_library(
         "//cmd/executor/internal/util",
         "//internal/env",
         "//internal/hostname",
-        "//internal/logging",
         "//internal/sanitycheck",
         "//internal/version",
         "@com_github_sourcegraph_log//:log",
