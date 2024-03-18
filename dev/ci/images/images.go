@@ -23,7 +23,7 @@ const (
 	SourcegraphPublicReleaseRegistry = "us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-public"
 
 	// CloudEphemeralRegistry is the registry where images get published too which should be used for Cloud Ephemeral deployments
-	CloudEphemeralRegistry = "us.gcr.io/sourcegraph-dev/sourcegraph-ci/cloud-ephemeral"
+	CloudEphemeralRegistry = "us-central1-docker.pkg.dev/sourcegraph-ci/cloud-ephemeral"
 )
 
 // DevRegistryImage returns the name of the image for the given app and tag on the
