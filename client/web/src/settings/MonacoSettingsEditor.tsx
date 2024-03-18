@@ -7,7 +7,7 @@ import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, distinctUntilKeyChanged, map, startWith } from 'rxjs/operators'
 
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
-import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import jsonSchemaMetaSchema from '../../../../schema/json-schema-draft-07.schema.json'

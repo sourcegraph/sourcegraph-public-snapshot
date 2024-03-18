@@ -41,6 +41,8 @@ type Variables struct {
 
 	// SecretEnv should be the environment config that sources from secrets.
 	SecretEnv map[string]string
+	// SecretVolumes should be the environment config that mounts volumes from secrets.
+	SecretVolumes map[string]spec.EnvironmentSecretVolume
 
 	// IsFinalStageOfRollout should be true if BuildRolloutPipelineConfiguration
 	// provides a non-nil configuration for an environment.
@@ -202,7 +204,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 
 	// If any secret env secrets are external to this project, grant access to
 	// the referenced secrets.
-	if externalSecrets, err := extractExternalSecrets(vars.SecretEnv); err != nil {
+	if externalSecrets, err := extractExternalSecrets(vars.SecretEnv, vars.SecretVolumes); err != nil {
 		return nil, errors.Wrap(err, "extracting secret projects")
 	} else {
 		secretAccessID := id.Group("external_secret_access")
@@ -300,44 +302,70 @@ type externalSecret struct {
 	secretID  string
 }
 
-func extractExternalSecrets(secrets map[string]string) ([]externalSecret, error) {
+func extractExternalSecrets(secretEnv map[string]string, secretVolumes map[string]spec.EnvironmentSecretVolume) ([]externalSecret, error) {
 	var externalSecrets []externalSecret
 
-	// Sort for stability
-	secretKeys := maps.Keys(secrets)
+	// Add secretEnv
+	secretKeys := maps.Keys(secretEnv)
 	sort.Strings(secretKeys)
 	for _, k := range secretKeys {
-		secretName := secrets[k]
-		// Error on easy-to-make oopsies
-		if strings.HasPrefix(secretName, "project/") {
-			return nil, errors.Newf("invalid secret name %q: 'project/'-prefixed name provided, did you mean 'projects/'?",
-				secretName)
+		secretName := secretEnv[k]
+		es, err := getExternalSecretFromSecretName(k, secretName)
+		if err != nil {
+			return nil, err
 		}
-		// Crude check to tell users that they shouldn't include versions in their secrets
-		if strings.Contains(secretName, "/versions/") {
-			return nil, errors.Newf("invalid secret name %q: secrets should not be versioned with '/version/'",
-				secretName)
+		if es != nil {
+			externalSecrets = append(externalSecrets, *es)
 		}
-		// Check for 'projects/{project}/secrets/{secretName}'
-		if strings.HasPrefix(secretName, "projects/") {
-			secretNameParts := strings.SplitN(secretName, "/", 4)
-			if len(secretNameParts) != 4 {
-				return nil, errors.Newf("invalid secret name %q: expected 'projects/'-prefixed name to have 4 '/'-delimited parts",
-					secretName)
-			}
-			// Error on easy-to-make oopsies
-			if secretNameParts[2] != "secrets" {
-				return nil, errors.Newf("invalid secret name %q: found '/secret/' segment, did you mean '/secrets/'?",
-					secretName)
-			}
+	}
 
-			externalSecrets = append(externalSecrets, externalSecret{
-				key:       strings.ToLower(k),
-				projectID: secretNameParts[1],
-				secretID:  secretNameParts[3],
-			})
+	// Add secretVolumes
+	secretKeys = maps.Keys(secretVolumes)
+	sort.Strings(secretKeys)
+	for _, k := range secretKeys {
+		secretName := secretVolumes[k].Secret
+		es, err := getExternalSecretFromSecretName(fmt.Sprintf("volume_%s", k), secretName)
+		if err != nil {
+			return nil, err
+		}
+		if es != nil {
+			externalSecrets = append(externalSecrets, *es)
 		}
 	}
 
 	return externalSecrets, nil
+}
+
+func getExternalSecretFromSecretName(key, secretName string) (*externalSecret, error) {
+	// Error on easy-to-make oopsies
+	if strings.HasPrefix(secretName, "project/") {
+		return nil, errors.Newf("invalid secret name %q: 'project/'-prefixed name provided, did you mean 'projects/'?",
+			secretName)
+	}
+	// Crude check to tell users that they shouldn't include versions in their secrets
+	if strings.Contains(secretName, "/versions/") {
+		return nil, errors.Newf("invalid secret name %q: secrets should not be versioned with '/version/'",
+			secretName)
+	}
+	// Check for 'projects/{project}/secrets/{secretName}'
+	if strings.HasPrefix(secretName, "projects/") {
+		secretNameParts := strings.SplitN(secretName, "/", 4)
+		if len(secretNameParts) != 4 {
+			return nil, errors.Newf("invalid secret name %q: expected 'projects/'-prefixed name to have 4 '/'-delimited parts",
+				secretName)
+		}
+		// Error on easy-to-make oopsies
+		if secretNameParts[2] != "secrets" {
+			return nil, errors.Newf("invalid secret name %q: found '/secret/' segment, did you mean '/secrets/'?",
+				secretName)
+		}
+
+		return &externalSecret{
+			key:       strings.ToLower(key),
+			projectID: secretNameParts[1],
+			secretID:  secretNameParts[3],
+		}, nil
+	}
+
+	return nil, nil
 }

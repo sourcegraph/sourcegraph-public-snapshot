@@ -4,7 +4,7 @@ import { mdiPlus } from '@mdi/js'
 
 import { Button, Container, Icon, Link, PageHeader } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../auth'
+import type { AuthenticatedUser } from '../../../../auth'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import type { SiteAdminProductSubscriptionFields } from '../../../../graphql-operations'

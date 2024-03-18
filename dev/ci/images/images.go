@@ -106,7 +106,6 @@ var DeploySourcegraphDockerImages = []string{
 	"gitserver",
 	"grafana",
 	"indexed-searcher",
-	"jaeger",
 	"jaeger-all-in-one",
 	"migrator",
 	"node-exporter",

@@ -157,6 +157,9 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		return nil, errors.Wrap(err, "add user env vars")
 	}
 
+	// Add user-configured secret volumes
+	addContainerSecretVolumes(cloudRunBuilder, vars.Environment.SecretVolumes)
+
 	// Load image tag from tfvars.
 	imageTag := tfvar.New(stack, id, tfvar.Config{
 		VariableKey: tfVarKeyResolvedImageTag,
@@ -489,6 +492,24 @@ func addContainerEnvVars(
 	}
 
 	return nil
+}
+
+func addContainerSecretVolumes(
+	b builder.Builder,
+	volumes map[string]spec.EnvironmentSecretVolume,
+) {
+	keys := maps.Keys(volumes)
+	slices.Sort(keys)
+	for _, k := range keys {
+		v := volumes[k]
+		b.AddSecretVolume(k, v.MountPath,
+			builder.SecretRef{
+				Name:    v.Secret,
+				Version: "latest",
+			},
+			292, // 0444 read-only
+		)
+	}
 }
 
 func makeContainerResourceLimits(r spec.EnvironmentInstancesResourcesSpec) map[string]*string {
