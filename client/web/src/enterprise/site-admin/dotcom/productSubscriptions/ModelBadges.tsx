@@ -52,6 +52,8 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             case 'fireworks/starcoder':
             // Bespoke alternative models hosted for us by Fireworks. These are also allowed on the
             // Cody Gateway side
+            case 'accounts/sourcegraph/models/starcoder2-15b':
+            case 'accounts/sourcegraph/models/starcoder2-7b':
             case 'fireworks/accounts/fireworks/models/llama-v2-7b-code':
             case 'fireworks/accounts/fireworks/models/llama-v2-13b-code':
             case 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct':
