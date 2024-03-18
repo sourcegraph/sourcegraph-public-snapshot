@@ -151,11 +151,16 @@ func executorImageFamilyForConfig(c Config) string {
 }
 
 func executorsE2E(c Config) operations.Operation {
+	registry := images.SourcegraphDockerDevRegistry
+	if c.RunType.Is(runtype.CloudEphemeral) {
+		registry = images.CloudEphemeralRegistry
+	}
+
 	return func(p *bk.Pipeline) {
 		p.AddStep(":bazel::docker::packer: Executors E2E",
 			bk.DependsOn("bazel-push-images-candidate"),
 			bk.Agent("queue", AspectWorkflows.QueueDefault),
-			bk.Env("REGISTRY", images.SourcegraphDockerDevRegistry),
+			bk.Env("REGISTRY", registry),
 			bk.Env("CANDIDATE_VERSION", c.candidateImageTag()),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
