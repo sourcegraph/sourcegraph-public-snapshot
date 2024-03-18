@@ -7,13 +7,14 @@ import (
 	"strings"
 
 	"github.com/urfave/cli/v2"
-	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 )
+
+var deprecationNotice = "sg run is deprecated. Use 'sg start -cmd' instead.\n"
 
 func init() {
 	postInitHooks = append(postInitHooks,
@@ -34,9 +35,9 @@ func init() {
 
 var runCommand = &cli.Command{
 	Name:      "run",
-	Usage:     "Run the given commands",
+	Usage:     deprecationNotice,
 	ArgsUsage: "[command]",
-	UsageText: `
+	UsageText: deprecationNotice + `
 # Run specific commands
 sg run gitserver
 sg run frontend
@@ -51,17 +52,13 @@ sg run gitserver frontend repo-updater
 sg run -describe jaeger
 `,
 	Category: category.Dev,
+	Action:   runExec,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:  "describe",
 			Usage: "Print details about selected run target",
 		},
-		&cli.BoolFlag{
-			Name:  "legacy",
-			Usage: "Force run to pick the non-bazel variant of the command",
-		},
 	},
-	Action: runExec,
 	BashComplete: completions.CompleteArgs(func() (options []string) {
 		config, _ := getConfig()
 		if config == nil {
@@ -79,7 +76,6 @@ func runExec(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
 	cmds, err := listToCommands(config, ctx.Args().Slice())
 	if err != nil {
 		return err
@@ -104,6 +100,8 @@ func runExec(ctx *cli.Context) error {
 
 func constructRunCmdLongHelp() string {
 	var out strings.Builder
+
+	fmt.Fprint(&out, deprecationNotice)
 
 	fmt.Fprintf(&out, "Runs the given command. If given a whitespace-separated list of commands it runs the set of commands.\n")
 

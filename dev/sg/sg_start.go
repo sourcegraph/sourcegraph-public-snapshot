@@ -99,8 +99,9 @@ sg start --commands frontend gitserver
 				Usage: "Starts up pprof on port 6060",
 			},
 			&cli.BoolFlag{
-				Name:  "commands",
-				Usage: "Signifies that you will be passing in individual commands to run, instead of a set of commands",
+				Name:    "commands",
+				Aliases: []string{"cmd", "cmds"},
+				Usage:   "Signifies that you will be passing in individual commands to run, instead of a set of commands",
 			},
 			&cli.StringSliceFlag{
 				Name:        "debug",
