@@ -13,29 +13,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 <!-- START CHANGELOG -->
 
-## Unreleased (5.4.0 - Release Date TBD)
-
-### Added
-
-- GitHub app installations can now be refreshed from the Batch Changes Site Admin page. [#60125](https://github.com/sourcegraph/sourcegraph/pull/60125)
-- Added the GraphQL query `User.evaluateFeatureFlag` to show if a feature flag is enabled or disabled for a user. [#60828](https://github.com/sourcegraph/sourcegraph/pull/60828)
-- Search Jobs now supports diff, commit and path searches. Before, only file searches were supported. [#60883](https://github.com/sourcegraph/sourcegraph/pull/60883)
-
-### Changed
-
-- GitHub apps installation records will only be deleted from the database if the GitHub App has been uninstalled or if the GitHub app has been deleted. [#60460](https://github.com/sourcegraph/sourcegraph/pull/60460)
-
-### Fixed
-
-- Code Monitors now properly ignores monitors associated with soft-deleted users, which previously would have led to an error on the overview page. [#60405](https://github.com/sourcegraph/sourcegraph/pull/60405)
-- Fixed a bug where clicking "Exclude Repo" on Azure DevOps or Gerrit repositories would not work. [#60509](https://github.com/sourcegraph/sourcegraph/pull/60509)
-- Links in codeintel popovers respect the revision from the URL. [#60545](https://github.com/sourcegraph/sourcegraph/pull/60545)
-- Fixed a bug where permission syncs could be scheduled for repositories or users even when a sync is already scheduled or in progress, leading to significant delays in the permissions sync system as a whole. [#61024](https://github.com/sourcegraph/sourcegraph/pull/61024)
-
-### Removed
-
--
-
 ## Unreleased
 
 ### Added
