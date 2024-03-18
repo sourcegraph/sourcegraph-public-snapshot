@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
-import { map, mapTo } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike } from '@sourcegraph/common'
@@ -51,7 +51,10 @@ function deleteAccessToken(tokenID: Scalars['ID']): Promise<void> {
         `,
         { tokenID }
     )
-        .pipe(map(dataOrThrowErrors), mapTo(undefined))
+        .pipe(
+            map(dataOrThrowErrors),
+            map(() => undefined)
+        )
         .toPromise()
 }
 

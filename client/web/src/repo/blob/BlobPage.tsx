@@ -239,7 +239,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
         useCallback(
             (clicks: Observable<void>) =>
                 clicks.pipe(
-                    mapTo(true),
+                    map(() => true),
                     startWith(false),
                     switchMap(disableTimeout =>
                         fetchBlob({

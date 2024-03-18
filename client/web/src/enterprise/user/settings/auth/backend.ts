@@ -1,5 +1,5 @@
 import type { Observable } from 'rxjs'
-import { mapTo, map, tap } from 'rxjs/operators'
+import { map, tap } from 'rxjs/operators'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
@@ -24,7 +24,7 @@ export function scheduleUserPermissionsSync(args: { user: Scalars['ID'] }): Obse
     ).pipe(
         map(dataOrThrowErrors),
         tap(() => resetAllMemoizationCaches()),
-        mapTo(undefined)
+        map(() => undefined)
     )
 }
 

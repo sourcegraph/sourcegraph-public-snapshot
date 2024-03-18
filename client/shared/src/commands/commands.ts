@@ -1,6 +1,5 @@
 import type { Remote } from 'comlink'
-import { concat, from, of, Subscription, type Unsubscribable } from 'rxjs'
-import { first } from 'rxjs/operators'
+import { firstValueFrom, from, Subscription, type Unsubscribable } from 'rxjs'
 
 import type { ActionContributionClientCommandUpdateConfiguration, Evaluated, KeyPath } from '@sourcegraph/client-api'
 import { SourcegraphURL } from '@sourcegraph/common'
@@ -66,14 +65,10 @@ export function registerBuiltinClientCommands(
         registerCommand({
             command: 'executeLocationProvider',
             run: (id: string, uri: string, position: Position) =>
-                concat(
+                firstValueFrom(
                     wrapRemoteObservable(extensionHost.getLocations(id, { textDocument: { uri }, position })),
-                    // Concat with [] to avoid undefined promise value when the getLocation observable completes
-                    // without emitting. See https://github.com/ReactiveX/rxjs/issues/1736.
-                    of([])
-                )
-                    .pipe(first())
-                    .toPromise(),
+                    { defaultValue: [] }
+                ),
         })
     )
 

@@ -1,7 +1,7 @@
 import type { QueryResult } from '@apollo/client'
 import { parse as parseJSONC } from 'jsonc-parser'
 import type { Observable } from 'rxjs'
-import { map, mapTo, tap } from 'rxjs/operators'
+import { map, tap } from 'rxjs/operators'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
@@ -330,7 +330,7 @@ export function scheduleRepositoryPermissionsSync(args: { repository: Scalars['I
     ).pipe(
         map(dataOrThrowErrors),
         tap(() => resetAllMemoizationCaches()),
-        mapTo(undefined)
+        map(() => undefined)
     )
 }
 
