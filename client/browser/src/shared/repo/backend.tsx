@@ -168,12 +168,7 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
     return (maybeErrors: Observable<T>) =>
         maybeErrors.pipe(
             retry({
-                delay: error => {
-                    if (!isCloneInProgressErrorLike(error)) {
-                        return throwError(() => error)
-                    }
-                    return timer(1000)
-                },
+                delay: error => (isCloneInProgressErrorLike(error) ? timer(1000) : throwError(() => error)),
             })
         )
 }

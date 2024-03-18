@@ -1,5 +1,5 @@
 import type { Remote } from 'comlink'
-import { firstValueFrom, from, Subscription, type Unsubscribable } from 'rxjs'
+import { firstValueFrom, from, lastValueFrom, Subscription, type Unsubscribable } from 'rxjs'
 
 import type { ActionContributionClientCommandUpdateConfiguration, Evaluated, KeyPath } from '@sourcegraph/client-api'
 import { SourcegraphURL } from '@sourcegraph/common'
@@ -96,13 +96,13 @@ export function registerBuiltinClientCommands(
                 // is set to `true`. It is up to the client (e.g. browser
                 // extension) to check that parameter and prevent the request
                 // from being sent to Sourcegraph.com.
-                from(
+                lastValueFrom(
                     context.requestGraphQL({
                         request: query,
                         variables,
                         mightContainPrivateInfo: true,
                     })
-                ).toPromise(),
+                ),
         })
     )
 

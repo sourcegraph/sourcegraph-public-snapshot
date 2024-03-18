@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
+import { lastValueFrom } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -41,21 +42,21 @@ export const accessTokenFragment = gql`
 `
 
 function deleteAccessToken(tokenID: Scalars['ID']): Promise<void> {
-    return requestGraphQL<DeleteAccessTokenResult, DeleteAccessTokenVariables>(
-        gql`
-            mutation DeleteAccessToken($tokenID: ID!) {
-                deleteAccessToken(byID: $tokenID) {
-                    alwaysNil
+    return lastValueFrom(
+        requestGraphQL<DeleteAccessTokenResult, DeleteAccessTokenVariables>(
+            gql`
+                mutation DeleteAccessToken($tokenID: ID!) {
+                    deleteAccessToken(byID: $tokenID) {
+                        alwaysNil
+                    }
                 }
-            }
-        `,
-        { tokenID }
-    )
-        .pipe(
+            `,
+            { tokenID }
+        ).pipe(
             map(dataOrThrowErrors),
             map(() => undefined)
         )
-        .toPromise()
+    )
 }
 
 export interface AccessTokenNodeProps {

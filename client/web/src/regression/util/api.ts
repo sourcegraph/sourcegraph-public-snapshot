@@ -491,24 +491,26 @@ export function getViewerSettings({
 export function deleteOrganization(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     organization: Scalars['ID']
-): Observable<void> {
-    return requestGraphQL<DeleteOrganizationResult, DeleteOrganizationVariables>({
-        request: gql`
-            mutation DeleteOrganization($organization: ID!) {
-                deleteOrganization(organization: $organization) {
-                    alwaysNil
+): Promise<void> {
+    return lastValueFrom(
+        requestGraphQL<DeleteOrganizationResult, DeleteOrganizationVariables>({
+            request: gql`
+                mutation DeleteOrganization($organization: ID!) {
+                    deleteOrganization(organization: $organization) {
+                        alwaysNil
+                    }
                 }
-            }
-        `,
-        variables: { organization },
-        mightContainPrivateInfo: true,
-    }).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.deleteOrganization) {
-                throw createInvalidGraphQLMutationResponseError('DeleteOrganization')
-            }
-        })
+            `,
+            variables: { organization },
+            mightContainPrivateInfo: true,
+        }).pipe(
+            map(dataOrThrowErrors),
+            map(data => {
+                if (!data.deleteOrganization) {
+                    throw createInvalidGraphQLMutationResponseError('DeleteOrganization')
+                }
+            })
+        )
     )
 }
 
@@ -609,20 +611,22 @@ export function createUser(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     username: string,
     email: string | null
-): Observable<CreateUserResult['createUser']> {
-    return requestGraphQL<CreateUserResult, CreateUserVariables>({
-        request: gql`
-            mutation CreateUser($username: String!, $email: String) {
-                createUser(username: $username, email: $email) {
-                    resetPasswordURL
+): Promise<CreateUserResult['createUser']> {
+    return lastValueFrom(
+        requestGraphQL<CreateUserResult, CreateUserVariables>({
+            request: gql`
+                mutation CreateUser($username: String!, $email: String) {
+                    createUser(username: $username, email: $email) {
+                        resetPasswordURL
+                    }
                 }
-            }
-        `,
-        variables: { username, email },
-        mightContainPrivateInfo: true,
-    }).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.createUser)
+            `,
+            variables: { username, email },
+            mightContainPrivateInfo: true,
+        }).pipe(
+            map(dataOrThrowErrors),
+            map(data => data.createUser)
+        )
     )
 }
 
@@ -878,17 +882,19 @@ export function updateSiteConfiguration(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     lastID: number,
     input: string
-): Observable<boolean> {
-    return requestGraphQL<UpdateSiteConfigurationResult, UpdateSiteConfigurationVariables>({
-        request: gql`
-            mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
-                updateSiteConfiguration(lastID: $lastID, input: $input)
-            }
-        `,
-        variables: { lastID, input },
-        mightContainPrivateInfo: true,
-    }).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.updateSiteConfiguration)
+): Promise<boolean> {
+    return lastValueFrom(
+        requestGraphQL<UpdateSiteConfigurationResult, UpdateSiteConfigurationVariables>({
+            request: gql`
+                mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
+                    updateSiteConfiguration(lastID: $lastID, input: $input)
+                }
+            `,
+            variables: { lastID, input },
+            mightContainPrivateInfo: true,
+        }).pipe(
+            map(dataOrThrowErrors),
+            map(data => data.updateSiteConfiguration)
+        )
     )
 }

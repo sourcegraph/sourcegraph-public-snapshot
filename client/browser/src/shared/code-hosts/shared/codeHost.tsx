@@ -679,7 +679,7 @@ const isSafeToContinueCodeIntel = async ({
             // Show "Configure Sourcegraph" button
             console.warn('Repository is not cloned.', error)
 
-            const settingsURL = await observeUserSettingsURL(requestGraphQL).toPromise()
+            const settingsURL = await lastValueFrom(observeUserSettingsURL(requestGraphQL), { defaultValue: undefined })
 
             if (rawRepoName && settingsURL) {
                 render(

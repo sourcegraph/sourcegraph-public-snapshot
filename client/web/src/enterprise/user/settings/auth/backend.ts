@@ -1,4 +1,4 @@
-import type { Observable } from 'rxjs'
+import { lastValueFrom } from 'rxjs'
 import { map, tap } from 'rxjs/operators'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
@@ -11,20 +11,22 @@ import type {
     ScheduleUserPermissionsSyncVariables,
 } from '../../../../graphql-operations'
 
-export function scheduleUserPermissionsSync(args: { user: Scalars['ID'] }): Observable<void> {
-    return requestGraphQL<ScheduleUserPermissionsSyncResult, ScheduleUserPermissionsSyncVariables>(
-        gql`
-            mutation ScheduleUserPermissionsSync($user: ID!) {
-                scheduleUserPermissionsSync(user: $user) {
-                    alwaysNil
+export function scheduleUserPermissionsSync(args: { user: Scalars['ID'] }): Promise<void> {
+    return lastValueFrom(
+        requestGraphQL<ScheduleUserPermissionsSyncResult, ScheduleUserPermissionsSyncVariables>(
+            gql`
+                mutation ScheduleUserPermissionsSync($user: ID!) {
+                    scheduleUserPermissionsSync(user: $user) {
+                        alwaysNil
+                    }
                 }
-            }
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        tap(() => resetAllMemoizationCaches()),
-        map(() => undefined)
+            `,
+            args
+        ).pipe(
+            map(dataOrThrowErrors),
+            tap(() => resetAllMemoizationCaches()),
+            map(() => undefined)
+        )
     )
 }
 
