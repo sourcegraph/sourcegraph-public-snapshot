@@ -40,6 +40,7 @@ const (
 	ImagePatchNoTest    // build a patched image without testing
 	ExecutorPatchNoTest // build executor image without testing
 	CandidatesNoTest    // build one or all candidate images without testing
+	CloudEphemeral      // build all images and push to cloud ephemeral registry for use with cloud deployment
 
 	BazelDo // run a specific bazel command
 
@@ -159,6 +160,10 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		return &RunTypeMatcher{
 			Branch: "bazel-do/",
 		}
+	case CloudEphemeral:
+		return &RunTypeMatcher{
+			Branch: "cloud-ephemeral/",
+		}
 
 	}
 
@@ -201,6 +206,8 @@ func (t RunType) String() string {
 		return "Internal release"
 	case PromoteRelease:
 		return "Public release"
+	case CloudEphemeral:
+		return "Cloud ephemeral"
 	}
 	return "None"
 }
