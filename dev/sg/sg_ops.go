@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/images"
@@ -21,7 +21,7 @@ var opsCommand = &cli.Command{
 	Usage:       "Commands used by operations teams to perform common tasks",
 	Description: "Supports internal deploy-sourcegraph repos (non-customer facing)",
 	Category:    category.Company,
-	Subcommands: []*cli.Command{
+	Commands: []*cli.Command{
 		opsTagDetailsCommand,
 		OpsUpdateImagesCommand,
 	},
@@ -72,9 +72,9 @@ var OpsUpdateImagesCommand = &cli.Command{
 			Usage: "List of comma separated images to update, ex: --only 'gitserver,indexed-server'. If not specified, all images will be updated. Cannot be combined with --skip",
 		},
 	},
-	Action: func(ctx *cli.Context) error {
+	Action: func(ctx context.Context, cmd *cli.Command) error {
 		// Ensure args are correct.
-		args := ctx.Args().Slice()
+		args := cmd.Args().Slice()
 		if len(args) == 0 {
 			std.Out.WriteLine(output.Styled(output.StyleWarning, "No path provided"))
 			return flag.ErrHelp
@@ -85,11 +85,11 @@ var OpsUpdateImagesCommand = &cli.Command{
 		}
 
 		var skip, only []string
-		if s := ctx.String("skip"); s != "" {
-			skip = strings.Split(ctx.String("skip"), ",")
+		if s := cmd.String("skip"); s != "" {
+			skip = strings.Split(cmd.String("skip"), ",")
 		}
-		if s := ctx.String("only"); s != "" {
-			only = strings.Split(ctx.String("only"), ",")
+		if s := cmd.String("only"); s != "" {
+			only = strings.Split(cmd.String("only"), ",")
 		}
 
 		if len(skip) != 0 && len(only) != 0 {
@@ -98,13 +98,13 @@ var OpsUpdateImagesCommand = &cli.Command{
 		}
 
 		return opsUpdateImages(
-			ctx.Context,
+			ctx,
 			args[0],
-			ctx.String("registry"),
-			ctx.String("kind"),
-			ctx.String("pin-tag"),
-			ctx.String("docker-username"),
-			ctx.String("docker-password"),
+			cmd.String("registry"),
+			cmd.String("kind"),
+			cmd.String("pin-tag"),
+			cmd.String("docker-username"),
+			cmd.String("docker-password"),
 			skip,
 			only,
 		)
@@ -132,7 +132,7 @@ sg ops inspect-tag -p build 159625_2022-07-11_225c8ae162cc
 			Usage:   "only output a specific `property` (one of: 'build', 'date', 'commit')",
 		},
 	},
-	Action: func(cmd *cli.Context) error {
+	Action: func(ctx context.Context, cmd *cli.Command) error {
 		input := cmd.Args().First()
 		// trim out leading image
 		parts := strings.SplitN(input, ":", 2)

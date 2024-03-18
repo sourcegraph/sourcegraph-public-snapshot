@@ -1,10 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/rfc"
@@ -55,47 +56,47 @@ sg rfc --private create --type <type> "title"
 			Value:    false,
 		},
 	},
-	Subcommands: []*cli.Command{
+	Commands: []*cli.Command{
 		{
 			Name:      "list",
 			ArgsUsage: " ",
 			Usage:     "List Sourcegraph RFCs",
-			Action: func(c *cli.Context) error {
+			Action: func(ctx context.Context, cmd *cli.Command) error {
 				driveSpec := rfc.PublicDrive
-				if c.Bool("private") {
+				if cmd.Bool("private") {
 					driveSpec = rfc.PrivateDrive
 				}
-				return rfc.List(c.Context, driveSpec, std.Out)
+				return rfc.List(ctx, driveSpec, std.Out)
 			},
 		},
 		{
 			Name:      "search",
 			ArgsUsage: "[query]",
 			Usage:     "Search Sourcegraph RFCs",
-			Action: func(c *cli.Context) error {
+			Action: func(ctx context.Context, cmd *cli.Command) error {
 				driveSpec := rfc.PublicDrive
-				if c.Bool("private") {
+				if cmd.Bool("private") {
 					driveSpec = rfc.PrivateDrive
 				}
-				if c.Args().Len() == 0 {
+				if cmd.Args().Len() == 0 {
 					return errors.New("no search query given")
 				}
-				return rfc.Search(c.Context, strings.Join(c.Args().Slice(), " "), driveSpec, std.Out)
+				return rfc.Search(ctx, strings.Join(cmd.Args().Slice(), " "), driveSpec, std.Out)
 			},
 		},
 		{
 			Name:      "open",
 			ArgsUsage: "[number]",
 			Usage:     "Open a Sourcegraph RFC - find and list RFC numbers with 'sg rfc list' or 'sg rfc search'",
-			Action: func(c *cli.Context) error {
+			Action: func(ctx context.Context, cmd *cli.Command) error {
 				driveSpec := rfc.PublicDrive
-				if c.Bool("private") {
+				if cmd.Bool("private") {
 					driveSpec = rfc.PrivateDrive
 				}
-				if c.Args().Len() == 0 {
+				if cmd.Args().Len() == 0 {
 					return errors.New("no RFC given")
 				}
-				return rfc.Open(c.Context, c.Args().First(), driveSpec, std.Out)
+				return rfc.Open(ctx, cmd.Args().First(), driveSpec, std.Out)
 			},
 		},
 		{
@@ -109,13 +110,13 @@ sg rfc --private create --type <type> "title"
 				},
 			},
 			Usage: "Create Sourcegraph RFCs",
-			Action: func(c *cli.Context) error {
+			Action: func(ctx context.Context, cmd *cli.Command) error {
 				driveSpec := rfc.PublicDrive
-				if c.Bool("private") {
+				if cmd.Bool("private") {
 					driveSpec = rfc.PrivateDrive
 				}
 
-				rfcType := c.String("type")
+				rfcType := cmd.String("type")
 
 				var template rfc.Template
 				// Search for the rfcType and assign it to template
@@ -129,10 +130,10 @@ sg rfc --private create --type <type> "title"
 					return errors.New(fmt.Sprintf("Unknown RFC type: %s", rfcType))
 				}
 
-				if c.Args().Len() == 0 {
+				if cmd.Args().Len() == 0 {
 					return errors.New("no title given")
 				}
-				return rfc.Create(c.Context, template, strings.Join(c.Args().Slice(), " "),
+				return rfc.Create(ctx, template, strings.Join(cmd.Args().Slice(), " "),
 					driveSpec, std.Out)
 			},
 		},

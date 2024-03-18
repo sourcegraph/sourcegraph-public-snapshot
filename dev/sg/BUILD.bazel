@@ -114,7 +114,7 @@ go_library(
         "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_run//:run",
-        "@com_github_urfave_cli_v2//:cli",
+        "@com_github_urfave_cli_v3//:cli",
         "@in_gopkg_yaml_v3//:yaml_v3",
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel_trace//:trace",
@@ -160,6 +160,6 @@ go_test(
         "//lib/output/outputtest",
         "@com_github_google_go_cmp//cmp",
         "@com_github_stretchr_testify//assert",
-        "@com_github_urfave_cli_v2//:cli",
+        "@com_github_urfave_cli_v3//:cli",
     ],
 )

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/run"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -28,13 +28,13 @@ var cloudCommand = &cli.Command{
 - Handbook: https://handbook.sourcegraph.com/departments/cloud/
 `,
 	Category: category.Company,
-	Subcommands: []*cli.Command{
+	Commands: []*cli.Command{
 		{
 			Name:        "install",
 			Usage:       "Install or upgrade local `mi2` CLI (for Cloud V2)",
 			Description: "To learn more about Cloud V2, see https://handbook.sourcegraph.com/departments/cloud/technical-docs/v2.0/",
-			Action: func(c *cli.Context) error {
-				if err := installCloudCLI(c.Context); err != nil {
+			Action: func(ctx context.Context, cmd *cli.Command) error {
+				if err := installCloudCLI(ctx); err != nil {
 					return err
 				}
 				if err := checkGKEAuthPlugin(); err != nil {

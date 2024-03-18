@@ -12,7 +12,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/google/go-github/v55/github"
 	"github.com/jackc/pgx/v4"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
@@ -67,7 +67,7 @@ sg db add-user -username=foo
 sg db add-access-token -username=foo
 `,
 		Category: category.Dev,
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			{
 				Name:   "delete-test-dbs",
 				Usage:  "Drops all databases that have the prefix `sourcegraph-test-`",
@@ -184,8 +184,7 @@ sg db add-access-token -username=foo
 	}
 )
 
-func dbAddUserAction(cmd *cli.Context) error {
-	ctx := cmd.Context
+func dbAddUserAction(ctx context.Context, cmd *cli.Command) error {
 	logger := log.Scoped("dbAddUserAction")
 
 	// Read the configuration.
@@ -239,8 +238,7 @@ func dbAddUserAction(cmd *cli.Context) error {
 	})
 }
 
-func dbAddAccessTokenAction(cmd *cli.Context) error {
-	ctx := cmd.Context
+func dbAddAccessTokenAction(ctx context.Context, cmd *cli.Command) error {
 	logger := log.Scoped("dbAddAccessTokenAction")
 
 	// Read the configuration.
@@ -284,9 +282,8 @@ func dbAddAccessTokenAction(cmd *cli.Context) error {
 	})
 }
 
-func dbUpdateUserExternalAccount(cmd *cli.Context) error {
+func dbUpdateUserExternalAccount(ctx context.Context, cmd *cli.Command) error {
 	logger := log.Scoped("dbUpdateUserExternalAccount")
-	ctx := cmd.Context
 	username := cmd.String("sg.username")
 	serviceName := cmd.String("extsvc.display-name")
 	ghUsername := cmd.String("github.username")
@@ -420,7 +417,7 @@ func githubClient(ctx context.Context, baseurl string, token string) (*github.Cl
 	return gh, nil
 }
 
-func dbResetRedisExec(ctx *cli.Context) error {
+func dbResetRedisExec(ctx context.Context, cmd *cli.Command) error {
 	// Read the configuration.
 	config, _ := getConfig()
 	if config == nil {
@@ -443,7 +440,7 @@ func dbResetRedisExec(ctx *cli.Context) error {
 	return nil
 }
 
-func deleteTestDBsExec(ctx *cli.Context) error {
+func deleteTestDBsExec(ctx context.Context, cmd *cli.Command) error {
 	config, err := dbtest.GetDSN()
 	if err != nil {
 		return err
@@ -462,13 +459,13 @@ func deleteTestDBsExec(ctx *cli.Context) error {
 		}
 	}()
 
-	names, err := basestore.ScanStrings(db.QueryContext(ctx.Context, `SELECT datname FROM pg_database WHERE datname LIKE 'sourcegraph-test-%'`))
+	names, err := basestore.ScanStrings(db.QueryContext(ctx, `SELECT datname FROM pg_database WHERE datname LIKE 'sourcegraph-test-%'`))
 	if err != nil {
 		return err
 	}
 
 	for _, name := range names {
-		_, err := db.ExecContext(ctx.Context, fmt.Sprintf(`DROP DATABASE %q`, name))
+		_, err := db.ExecContext(ctx, fmt.Sprintf(`DROP DATABASE %q`, name))
 		if err != nil {
 			return err
 		}
@@ -480,7 +477,7 @@ func deleteTestDBsExec(ctx *cli.Context) error {
 	return nil
 }
 
-func dbResetPGExec(ctx *cli.Context) error {
+func dbResetPGExec(ctx context.Context, cmd *cli.Command) error {
 	// Read the configuration.
 	config, _ := getConfig()
 	if config == nil {
@@ -518,18 +515,18 @@ func dbResetPGExec(ctx *cli.Context) error {
 			err error
 		)
 
-		db, err = pgx.Connect(ctx.Context, dsn)
+		db, err = pgx.Connect(ctx, dsn)
 		if err != nil {
 			return errors.Wrap(err, "failed to connect to Postgres database")
 		}
 
-		_, err = db.Exec(ctx.Context, "DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
+		_, err = db.Exec(ctx, "DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
 		if err != nil {
 			std.Out.WriteFailuref("Failed to drop schema 'public': %s", err)
 			return err
 		}
 
-		if err := db.Close(ctx.Context); err != nil {
+		if err := db.Close(ctx); err != nil {
 			return err
 		}
 	}
@@ -550,7 +547,7 @@ func dbResetPGExec(ctx *cli.Context) error {
 		})
 	}
 
-	if err := r.Run(ctx.Context, runner.Options{
+	if err := r.Run(ctx, runner.Options{
 		Operations: operations,
 	}); err != nil {
 		return err

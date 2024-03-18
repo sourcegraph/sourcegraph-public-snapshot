@@ -390,6 +390,7 @@ require (
 	github.com/skeema/knownhosts v1.2.1 // indirect
 	github.com/smartystreets/assertions v1.13.0 // indirect
 	github.com/tetratelabs/wazero v1.3.0 // indirect
+	github.com/urfave/cli/v3 v3.0.0-alpha9 // indirect
 	github.com/vbatts/tar-split v0.11.3 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect

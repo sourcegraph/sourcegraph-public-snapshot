@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/multiversion"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
@@ -74,7 +74,7 @@ func Downgrade(
 		Required: false,
 	}
 
-	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Command, out *output.Output) error {
 		airgapped := isAirgapped(ctx)
 		if airgapped != nil {
 			out.WriteLine(output.Line(output.EmojiWarningSign, output.StyleYellow, airgapped.Error()))
@@ -127,7 +127,7 @@ func Downgrade(
 			return err
 		}
 
-		privilegedMode, err := getPivilegedModeFromFlags(cmd, out, unprivilegedOnlyFlag, noopPrivilegedFlag)
+		privilegedMode, err := getPivilegedModeFromFlags(ctx, cmd, out, unprivilegedOnlyFlag, noopPrivilegedFlag)
 		if err != nil {
 			return err
 		}

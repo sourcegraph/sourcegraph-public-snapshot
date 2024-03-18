@@ -2,13 +2,14 @@
 package msp
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/run"
@@ -53,7 +54,7 @@ sg msp tfc sync $SERVICE $ENVIRONMENT
 sg msp generate $SERVICE $ENVIRONMENT
 `,
 	Category: category.Company,
-	Subcommands: []*cli.Command{
+	Commands: []*cli.Command{
 		{
 			Name:      "init",
 			ArgsUsage: "<service ID>",
@@ -86,7 +87,7 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 				},
 			},
 			Before: msprepo.UseManagedServicesRepo,
-			Action: func(c *cli.Context) error {
+			Action: func(ctx context.Context, c *cli.Command) error {
 				if c.Args().Len() != 1 {
 					return errors.New("exactly 1 argument required: service ID")
 				}
@@ -97,7 +98,7 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 					Owner: c.String("owner"),
 					Dev:   c.Bool("dev"),
 
-					ProjectIDSuffixLength: c.Int("project-id-suffix-length"),
+					ProjectIDSuffixLength: int(c.Int("project-id-suffix-length")),
 				}
 
 				var exampleSpec []byte
@@ -142,16 +143,16 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 				},
 			},
 			Before: msprepo.UseManagedServicesRepo,
-			BashComplete: completions.CompleteArgs(func() (options []string) {
+			ShellComplete: completions.CompleteArgs(func() (options []string) {
 				ss, _ := msprepo.ListServices()
 				return ss
 			}),
-			Action: func(c *cli.Context) error {
+			Action: func(ctx context.Context, c *cli.Command) error {
 				if c.Args().Len() != 2 {
 					return errors.Newf("exactly 2 arguments required, '<service ID>' and '<env ID>' - " +
 						" this command is for adding an environment to an existing service, did you mean to use 'sg msp init' instead?")
 				}
-				svc, err := useServiceArgument(c)
+				svc, err := useServiceArgument(ctx, c)
 				if err != nil {
 					return err
 				}
@@ -163,7 +164,7 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 				envNode, err := example.NewEnvironment(example.EnvironmentTemplate{
 					ServiceID:             svc.Service.ID,
 					EnvironmentID:         envID,
-					ProjectIDSuffixLength: c.Int("project-id-suffix-length"),
+					ProjectIDSuffixLength: int(c.Int("project-id-suffix-length")),
 				})
 				if err != nil {
 					return errors.Wrap(err, "example.NewEnvironment")
@@ -218,8 +219,8 @@ sg msp generate -all <service>
 					Value: true,
 				},
 			},
-			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
-			Action: func(c *cli.Context) error {
+			ShellComplete: msprepo.ServicesAndEnvironmentsCompletion(),
+			Action: func(ctx context.Context, c *cli.Command) error {
 				var (
 					generateAll    = c.Bool("all")
 					stableGenerate = c.Bool("stable")
@@ -267,7 +268,7 @@ sg msp generate -all <service>
 			Aliases: []string{"ops"},
 			Usage:   "Generate operational reference for a service",
 			Before:  msprepo.UseManagedServicesRepo,
-			BashComplete: completions.CompleteArgs(func() (options []string) {
+			ShellComplete: completions.CompleteArgs(func() (options []string) {
 				ss, _ := msprepo.ListServices()
 				return ss
 			}),
@@ -278,13 +279,13 @@ sg msp generate -all <service>
 					Value: true,
 				},
 			},
-			Action: func(c *cli.Context) error {
-				svc, err := useServiceArgument(c)
+			Action: func(ctx context.Context, c *cli.Command) error {
+				svc, err := useServiceArgument(ctx, c)
 				if err != nil {
 					return err
 				}
 
-				repoRev, err := msprepo.GitRevision(c.Context)
+				repoRev, err := msprepo.GitRevision(ctx)
 				if err != nil {
 					return errors.Wrap(err, "msprepo.GitRevision")
 				}
@@ -301,7 +302,7 @@ sg msp generate -all <service>
 				std.Out.Write(doc)
 				return nil
 			},
-			Subcommands: []*cli.Command{
+			Commands: []*cli.Command{
 				{
 					Name:   "generate-handbook-pages",
 					Usage:  "Generate operations handbook pages for all services",
@@ -318,7 +319,7 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 							Name:  "handbook-path",
 							Usage: "Path to the directory in which sourcegraph/handbook is cloned",
 							Value: "../handbook",
-							Action: func(_ *cli.Context, v string) error {
+							Action: func(_ context.Context, _ *cli.Command, v string) error {
 								// 'Required: true' will error out even if a default
 								// value is set, so do our own validation here.
 								if v == "" {
@@ -328,7 +329,7 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 							},
 						},
 					},
-					Action: func(c *cli.Context) error {
+					Action: func(ctx context.Context, c *cli.Command) error {
 						handbookPath := c.String("handbook-path")
 						if err := isHandbookRepo(handbookPath); err != nil {
 							return errors.Wrapf(err, "expecting github.com/sourcegraph/handbook at %q", handbookPath)
@@ -339,7 +340,7 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 							return err
 						}
 
-						repoRev, err := msprepo.GitRevision(c.Context)
+						repoRev, err := msprepo.GitRevision(ctx)
 						if err != nil {
 							return errors.Wrap(err, "msprepo.GitRevision")
 						}
@@ -403,9 +404,9 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 					Value:   "service",
 				},
 			},
-			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
-			Action: func(c *cli.Context) error {
-				svc, env, err := useServiceAndEnvironmentArguments(c)
+			ShellComplete: msprepo.ServicesAndEnvironmentsCompletion(),
+			Action: func(ctx context.Context, c *cli.Command) error {
+				svc, env, err := useServiceAndEnvironmentArguments(ctx, c)
 				if err != nil {
 					return err
 				}
@@ -425,7 +426,7 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 			Aliases: []string{"pg"},
 			Usage:   "Interact with PostgreSQL instances provisioned by MSP",
 			Before:  msprepo.UseManagedServicesRepo,
-			Subcommands: []*cli.Command{
+			Commands: []*cli.Command{
 				{
 					Name:  "connect",
 					Usage: "Connect to the PostgreSQL instance",
@@ -463,9 +464,9 @@ full access, use the '-write-access' flag.
 							Value: 300,
 						},
 					},
-					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
-					Action: func(c *cli.Context) error {
-						_, env, err := useServiceAndEnvironmentArguments(c)
+					ShellComplete: msprepo.ServicesAndEnvironmentsCompletion(),
+					Action: func(ctx context.Context, c *cli.Command) error {
+						_, env, err := useServiceAndEnvironmentArguments(ctx, c)
 						if err != nil {
 							return err
 						}
@@ -478,7 +479,7 @@ full access, use the '-write-access' flag.
 							return err
 						}
 
-						secretStore, err := secrets.FromContext(c.Context)
+						secretStore, err := secrets.FromContext(ctx)
 						if err != nil {
 							return err
 						}
@@ -486,7 +487,7 @@ full access, use the '-write-access' flag.
 						var serviceAccountEmail string
 						if c.Bool("write-access") {
 							// Use the workload identity if all access is requested
-							serviceAccountEmail, err = secretStore.GetExternal(c.Context, secrets.ExternalSecret{
+							serviceAccountEmail, err = secretStore.GetExternal(ctx, secrets.ExternalSecret{
 								Name:    stacks.OutputSecretID(iam.StackName, iam.OutputCloudRunServiceAccount),
 								Project: env.ProjectID,
 							})
@@ -497,7 +498,7 @@ full access, use the '-write-access' flag.
 						} else {
 							// Otherwise, use the operator access account which
 							// is a bit more limited.
-							serviceAccountEmail, err = secretStore.GetExternal(c.Context, secrets.ExternalSecret{
+							serviceAccountEmail, err = secretStore.GetExternal(ctx, secrets.ExternalSecret{
 								Name:    stacks.OutputSecretID(iam.StackName, iam.OutputOperatorServiceAccount),
 								Project: env.ProjectID,
 							})
@@ -507,7 +508,7 @@ full access, use the '-write-access' flag.
 							std.Out.WriteSuggestionf("Preparing a connection with read-only access - for write access, use the '-write-access' flag.")
 						}
 
-						connectionName, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
+						connectionName, err := secretStore.GetExternal(ctx, secrets.ExternalSecret{
 							Name:    stacks.OutputSecretID(cloudrun.StackName, cloudrun.OutputCloudSQLConnectionName),
 							Project: env.ProjectID,
 						})
@@ -515,7 +516,7 @@ full access, use the '-write-access' flag.
 							return errors.Wrap(err, "find Cloud Run output")
 						}
 
-						proxyPort := c.Int("port")
+						proxyPort := int(c.Int("port"))
 						proxy, err := cloudsqlproxy.NewCloudSQLProxy(
 							connectionName,
 							serviceAccountEmail,
@@ -539,7 +540,7 @@ full access, use the '-write-access' flag.
 						}
 
 						// Run proxy until stopped
-						return proxy.Start(c.Context, c.Int("session.timeout"))
+						return proxy.Start(ctx, int(c.Int("session.timeout")))
 					},
 				},
 			},
@@ -549,7 +550,7 @@ full access, use the '-write-access' flag.
 			Aliases: []string{"tfc"},
 			Usage:   "Manage Terraform Cloud workspaces for a service",
 			Before:  msprepo.UseManagedServicesRepo,
-			Subcommands: []*cli.Command{
+			Commands: []*cli.Command{
 				{
 					Name:        "view",
 					Usage:       "View MSP Terraform Cloud workspaces",
@@ -564,16 +565,16 @@ sg msp tfc view <service>
 # View all workspaces for a specific MSP service environment
 sg msp tfc view <service> <environment>
 `,
-					ArgsUsage:    "[service ID] [environment ID]",
-					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
-					Action: func(c *cli.Context) error {
+					ArgsUsage:     "[service ID] [environment ID]",
+					ShellComplete: msprepo.ServicesAndEnvironmentsCompletion(),
+					Action: func(ctx context.Context, c *cli.Command) error {
 						if c.Args().Len() == 0 {
 							std.Out.WriteNoticef("Opening link to all MSP Terraform Cloud workspaces in browser...")
 							return open.URL(fmt.Sprintf("https://app.terraform.io/app/sourcegraph/workspaces?tag=%s",
 								terraformcloud.MSPWorkspaceTag))
 						}
 
-						service, err := useServiceArgument(c)
+						service, err := useServiceArgument(ctx, c)
 						if err != nil {
 							return err
 						}
@@ -616,25 +617,25 @@ Supports completions on services and environments.`,
 							Value: false,
 						},
 					},
-					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
-					Action: func(c *cli.Context) error {
-						service, err := useServiceArgument(c)
+					ShellComplete: msprepo.ServicesAndEnvironmentsCompletion(),
+					Action: func(ctx context.Context, c *cli.Command) error {
+						service, err := useServiceArgument(ctx, c)
 						if err != nil {
 							return err
 						}
 
-						secretStore, err := secrets.FromContext(c.Context)
+						secretStore, err := secrets.FromContext(ctx)
 						if err != nil {
 							return err
 						}
-						tfcAccessToken, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
+						tfcAccessToken, err := secretStore.GetExternal(ctx, secrets.ExternalSecret{
 							Name:    googlesecretsmanager.SecretTFCOrgToken,
 							Project: googlesecretsmanager.SharedSecretsProjectID,
 						})
 						if err != nil {
 							return errors.Wrap(err, "get AccessToken")
 						}
-						tfcOAuthClient, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
+						tfcOAuthClient, err := secretStore.GetExternal(ctx, secrets.ExternalSecret{
 							Name:    googlesecretsmanager.SecretTFCOAuthClientID,
 							Project: googlesecretsmanager.SharedSecretsProjectID,
 						})
@@ -656,7 +657,7 @@ Supports completions on services and environments.`,
 								return errors.Newf("environment %q not found in service spec", targetEnv)
 							}
 
-							if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, *env); err != nil {
+							if err := syncEnvironmentWorkspaces(ctx, c, tfcClient, service.Service, *env); err != nil {
 								return errors.Wrapf(err, "sync env %q", env.ID)
 							}
 						} else {
@@ -664,7 +665,7 @@ Supports completions on services and environments.`,
 								return errors.New("second argument environment ID is required without the '-all' flag")
 							}
 							for _, env := range service.Environments {
-								if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, env); err != nil {
+								if err := syncEnvironmentWorkspaces(ctx, c, tfcClient, service.Service, env); err != nil {
 									return errors.Wrapf(err, "sync env %q", env.ID)
 								}
 							}
@@ -683,13 +684,13 @@ Supports completions on services and environments.`,
 							Usage: "Dump dot graph configuration instead of rendering the image with 'dot'",
 						},
 					},
-					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(
+					ShellComplete: msprepo.ServicesAndEnvironmentsCompletion(
 						func(cli.Args) (options []string) {
 							return managedservicesplatform.StackNames()
 						},
 					),
-					Action: func(c *cli.Context) error {
-						service, env, err := useServiceAndEnvironmentArguments(c)
+					Action: func(ctx context.Context, c *cli.Command) error {
+						service, env, err := useServiceAndEnvironmentArguments(ctx, c)
 						if err != nil {
 							return err
 						}
@@ -699,7 +700,7 @@ Supports completions on services and environments.`,
 							return errors.New("third argument <stack ID> is required")
 						}
 
-						dotgraph, err := msprepo.TerraformGraph(c.Context, service.Service.ID, env.ID, stack)
+						dotgraph, err := msprepo.TerraformGraph(ctx, service.Service.ID, env.ID, stack)
 						if err != nil {
 							return err
 						}
@@ -715,7 +716,7 @@ Supports completions on services and environments.`,
 							return errors.Wrapf(err, "open %q", output)
 						}
 						defer f.Close()
-						if err := run.Cmd(c.Context, "dot -Tpng").
+						if err := run.Cmd(ctx, "dot -Tpng").
 							Input(strings.NewReader(dotgraph + "\n")).
 							Environ(os.Environ()).
 							Run().
@@ -732,7 +733,7 @@ Supports completions on services and environments.`,
 			Name:   "fleet",
 			Usage:  "Summarize aspects of the MSP fleet",
 			Before: msprepo.UseManagedServicesRepo,
-			Action: func(c *cli.Context) error {
+			Action: func(ctx context.Context, c *cli.Command) error {
 				services, err := msprepo.ListServices()
 				if err != nil {
 					return err
@@ -779,7 +780,7 @@ Supports completions on services and environments.`,
 					Usage:   "Output path for generated schema",
 				},
 			},
-			Action: func(c *cli.Context) error {
+			Action: func(ctx context.Context, c *cli.Command) error {
 				jsonSchema, err := schema.Render()
 				if err != nil {
 					return err

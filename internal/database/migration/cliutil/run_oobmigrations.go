@@ -3,7 +3,7 @@ package cliutil
 import (
 	"context"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/multiversion"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -35,7 +35,7 @@ func RunOutOfBandMigrations(
 		Required: false,
 	}
 
-	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Command, out *output.Output) error {
 		r, err := runnerFactory(schemas.SchemaNames)
 		if err != nil {
 			return err
@@ -46,6 +46,10 @@ func RunOutOfBandMigrations(
 		}
 		registerMigrators := registerMigratorsWithStore(store.BasestoreExtractor{Runner: r})
 
+		var ids []int
+		for _, id := range idsFlag.Get(cmd) {
+			ids = append(ids, int(id))
+		}
 		if err := multiversion.RunOutOfBandMigrations(
 			ctx,
 			db,
@@ -54,7 +58,7 @@ func RunOutOfBandMigrations(
 			!disableAnimation.Get(cmd),
 			registerMigrators,
 			out,
-			idsFlag.Get(cmd),
+			ids,
 		); err != nil {
 			return err
 		}

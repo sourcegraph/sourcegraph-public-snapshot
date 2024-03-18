@@ -1,6 +1,7 @@
 package msp
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -8,7 +9,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/clouddeploy"
@@ -24,8 +25,8 @@ import (
 
 // useServiceArgument retrieves the service spec corresponding to the first
 // argument.
-func useServiceArgument(c *cli.Context) (*spec.Spec, error) {
-	serviceID := c.Args().First()
+func useServiceArgument(_ context.Context, cmd *cli.Command) (*spec.Spec, error) {
+	serviceID := cmd.Args().First()
 	if serviceID == "" {
 		return nil, errors.New("argument service is required")
 	}
@@ -41,13 +42,13 @@ func useServiceArgument(c *cli.Context) (*spec.Spec, error) {
 // useServiceAndEnvironmentArguments retrieves the service and environment specs
 // corresponding to the first and second arguments respectively. It should only
 // be used if both arguments are required.
-func useServiceAndEnvironmentArguments(c *cli.Context) (*spec.Spec, *spec.EnvironmentSpec, error) {
-	svc, err := useServiceArgument(c)
+func useServiceAndEnvironmentArguments(ctx context.Context, cmd *cli.Command) (*spec.Spec, *spec.EnvironmentSpec, error) {
+	svc, err := useServiceArgument(ctx, cmd)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	environmentID := c.Args().Get(1)
+	environmentID := cmd.Args().Get(1)
 	if environmentID == "" {
 		return svc, nil, errors.New("second argument <environment ID> is required")
 	}
@@ -61,8 +62,8 @@ func useServiceAndEnvironmentArguments(c *cli.Context) (*spec.Spec, *spec.Enviro
 	return svc, env, nil
 }
 
-func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, service spec.ServiceSpec, env spec.EnvironmentSpec) error {
-	if c.Bool("delete") {
+func syncEnvironmentWorkspaces(ctx context.Context, cmd *cli.Command, tfc *terraformcloud.Client, service spec.ServiceSpec, env spec.EnvironmentSpec) error {
+	if cmd.Bool("delete") {
 		if !pointers.DerefZero(env.AllowDestroys) {
 			return errors.Newf("environments[%s].allowDestroys must be 'true' to delete workspaces", env.ID)
 		}
@@ -83,7 +84,7 @@ func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, servi
 		// Destroy stacks in reverse order
 		stacks := managedservicesplatform.StackNames()
 		slices.Reverse(stacks)
-		if errs := tfc.DeleteWorkspaces(c.Context, service, env, stacks); len(errs) > 0 {
+		if errs := tfc.DeleteWorkspaces(ctx, service, env, stacks); len(errs) > 0 {
 			for _, err := range errs {
 				std.Out.WriteWarningf(err.Error())
 			}
@@ -97,7 +98,7 @@ func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, servi
 
 	pending := std.Out.Pending(output.Styledf(output.StylePending,
 		"[%s] Synchronizing Terraform Cloud workspaces for environment %q", service.ID, env.ID))
-	workspaces, err := tfc.SyncWorkspaces(c.Context, service, env, managedservicesplatform.StackNames())
+	workspaces, err := tfc.SyncWorkspaces(ctx, service, env, managedservicesplatform.StackNames())
 	if err != nil {
 		return errors.Wrap(err, "sync Terraform Cloud workspace")
 	}

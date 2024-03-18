@@ -1,7 +1,9 @@
 package main
 
 import (
-	"github.com/urfave/cli/v2"
+	"context"
+
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/cmd/embeddings/qa"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
@@ -21,8 +23,8 @@ var contextCommand = &cli.Command{
 			Usage:   "Run the evaluation against this endpoint",
 		},
 	},
-	Action: func(ctx *cli.Context) error {
-		url := ctx.String("url")
+	Action: func(ctx context.Context, cmd *cli.Command) error {
+		url := cmd.String("url")
 		if url == "" {
 			return errors.New("url is empty")
 		}

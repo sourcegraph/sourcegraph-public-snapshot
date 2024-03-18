@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -48,8 +48,8 @@ func DownTo(commandName string, factory RunnerFactory, outFactory OutputFactory,
 		Value: development,
 	}
 
-	makeOptions := func(cmd *cli.Context, out *output.Output, versions []int) (runner.Options, error) {
-		privilegedMode, err := getPivilegedModeFromFlags(cmd, out, unprivilegedOnlyFlag, noopPrivilegedFlag)
+	makeOptions := func(ctx context.Context, cmd *cli.Command, out *output.Output, versions []int) (runner.Options, error) {
+		privilegedMode, err := getPivilegedModeFromFlags(ctx, cmd, out, unprivilegedOnlyFlag, noopPrivilegedFlag)
 		if err != nil {
 			return runner.Options{}, err
 		}
@@ -69,7 +69,7 @@ func DownTo(commandName string, factory RunnerFactory, outFactory OutputFactory,
 		}, nil
 	}
 
-	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Command, out *output.Output) error {
 		versions, err := parseTargets(targetFlag.Get(cmd))
 		if err != nil {
 			return err
@@ -83,7 +83,7 @@ func DownTo(commandName string, factory RunnerFactory, outFactory OutputFactory,
 			return err
 		}
 
-		options, err := makeOptions(cmd, out, versions)
+		options, err := makeOptions(ctx, cmd, out, versions)
 		if err != nil {
 			return err
 		}

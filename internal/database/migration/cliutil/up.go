@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgerrcode"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/multiversion"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
@@ -22,7 +22,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 	schemaNamesFlag := &cli.StringSliceFlag{
 		Name:    "schema",
 		Usage:   "The target `schema(s)` to modify. Comma-separated values are accepted. Possible values are 'frontend', 'codeintel', 'codeinsights' and 'all'.",
-		Value:   cli.NewStringSlice("all"),
+		Value:   []string{"all"},
 		Aliases: []string{"db"},
 	}
 	unprivilegedOnlyFlag := &cli.BoolFlag{
@@ -63,7 +63,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 		Value: development,
 	}
 
-	makeOptions := func(cmd *cli.Context, out *output.Output, schemaNames []string) (runner.Options, error) {
+	makeOptions := func(ctx context.Context, cmd *cli.Command, out *output.Output, schemaNames []string) (runner.Options, error) {
 		operations := make([]runner.MigrationOperation, 0, len(schemaNames))
 		for _, schemaName := range schemaNames {
 			operations = append(operations, runner.MigrationOperation{
@@ -72,7 +72,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			})
 		}
 
-		privilegedMode, err := getPivilegedModeFromFlags(cmd, out, unprivilegedOnlyFlag, noopPrivilegedFlag)
+		privilegedMode, err := getPivilegedModeFromFlags(ctx, cmd, out, unprivilegedOnlyFlag, noopPrivilegedFlag)
 		if err != nil {
 			return runner.Options{}, err
 		}
@@ -94,7 +94,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 		}, nil
 	}
 
-	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Command, out *output.Output) error {
 		schemaNames := sanitizeSchemaNames(schemaNamesFlag.Get(cmd), out)
 		if len(schemaNames) == 0 {
 			return flagHelp(out, "supply a schema via -db")
@@ -105,7 +105,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			return err
 		}
 
-		options, err := makeOptions(cmd, out, schemaNames)
+		options, err := makeOptions(ctx, cmd, out, schemaNames)
 		if err != nil {
 			return err
 		}

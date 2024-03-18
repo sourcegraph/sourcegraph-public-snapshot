@@ -13,7 +13,7 @@ import (
 	"time"
 
 	sgrun "github.com/sourcegraph/run"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
@@ -30,18 +30,17 @@ import (
 
 func init() {
 	postInitHooks = append(postInitHooks,
-		func(cmd *cli.Context) {
+		func(ctx context.Context, cmd *cli.Command) {
 			// Create 'sg start' help text after flag (and config) initialization
 			startCommand.Description = constructStartCmdLongHelp()
 		},
-		func(cmd *cli.Context) {
-			ctx, cancel := context.WithCancel(cmd.Context)
+		func(ctx context.Context, cmd *cli.Command) {
+			_, cancel := context.WithCancel(ctx)
 			interrupt.Register(func() {
 				cancel()
 				// TODO wait for stuff properly.
 				time.Sleep(1 * time.Second)
 			})
-			cmd.Context = ctx
 		},
 	)
 }
@@ -49,13 +48,13 @@ func init() {
 const devPrivateDefaultBranch = "master"
 
 var (
-	debugStartServices cli.StringSlice
-	infoStartServices  cli.StringSlice
-	warnStartServices  cli.StringSlice
-	errorStartServices cli.StringSlice
-	critStartServices  cli.StringSlice
-	exceptServices     cli.StringSlice
-	onlyServices       cli.StringSlice
+	debugStartServices []string
+	infoStartServices  []string
+	warnStartServices  []string
+	errorStartServices []string
+	critStartServices  []string
+	exceptServices     []string
+	onlyServices       []string
 
 	startCommand = &cli.Command{
 		Name:      "start",
@@ -136,7 +135,7 @@ sg start -describe single-program
 				Destination: &onlyServices,
 			},
 		},
-		BashComplete: completions.CompleteArgs(func() (options []string) {
+		ShellComplete: completions.CompleteArgs(func() (options []string) {
 			config, _ := getConfig()
 			if config == nil {
 				return
@@ -182,7 +181,7 @@ func constructStartCmdLongHelp() string {
 	return out.String()
 }
 
-func startExec(ctx *cli.Context) error {
+func startExec(ctx context.Context, cmd *cli.Command) error {
 	config, err := getConfig()
 	if err != nil {
 		return err
@@ -213,7 +212,7 @@ func startExec(ctx *cli.Context) error {
 		return errors.New("no concurrent sg start with same arguments allowed")
 	}
 
-	if ctx.Bool("sgtail") {
+	if cmd.Bool("sgtail") {
 		if err := run.OpenUnixSocket(); err != nil {
 			return errors.Wrapf(err, "Did you forget to run sgtail first?")
 		}
@@ -226,7 +225,7 @@ func startExec(ctx *cli.Context) error {
 		return flag.ErrHelp
 	}
 
-	if ctx.Bool("describe") {
+	if cmd.Bool("describe") {
 		out, err := yaml.Marshal(set)
 		if err != nil {
 			return err
@@ -270,7 +269,7 @@ func startExec(ctx *cli.Context) error {
 
 		// dev-private exists, let's see if there are any changes
 		update := std.Out.Pending(output.Styled(output.StylePending, "Checking for dev-private changes..."))
-		shouldUpdate, err := shouldUpdateDevPrivate(ctx.Context, devPrivatePath, devPrivateDefaultBranch)
+		shouldUpdate, err := shouldUpdateDevPrivate(ctx, devPrivatePath, devPrivateDefaultBranch)
 		if shouldUpdate {
 			update.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "We found some changes in dev-private that you're missing out on! If you want the new changes, 'cd ../dev-private' and then do a 'git stash' and a 'git pull'!"))
 		}
@@ -284,7 +283,7 @@ func startExec(ctx *cli.Context) error {
 			update.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done checking dev-private changes"))
 		}
 	}
-	if ctx.Bool("profile") {
+	if cmd.Bool("profile") {
 		// start a pprof server
 		go func() {
 			err := http.ListenAndServe("127.0.0.1:6060", nil)
@@ -306,7 +305,7 @@ go tool pprof -help
 `)
 	}
 
-	return startCommandSet(ctx.Context, set, config)
+	return startCommandSet(ctx, set, config)
 }
 
 func shouldUpdateDevPrivate(ctx context.Context, path, branch string) (bool, error) {
@@ -414,9 +413,8 @@ func getCommands[T run.SGConfigCommand](commands []string, set *sgconf.Commandse
 		exceptSet[svc] = struct{}{}
 	}
 
-	onlyList := onlyServices.Value()
-	onlySet := make(map[string]interface{}, len(onlyList))
-	for _, svc := range onlyList {
+	onlySet := make(map[string]interface{}, len(onlyServices))
+	for _, svc := range onlyServices {
 		onlySet[svc] = struct{}{}
 	}
 
@@ -450,11 +448,11 @@ func getCommands[T run.SGConfigCommand](commands []string, set *sgconf.Commandse
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.
 func logLevelOverrides() map[string]string {
 	levelServices := make(map[string][]string)
-	levelServices["debug"] = debugStartServices.Value()
-	levelServices["info"] = infoStartServices.Value()
-	levelServices["warn"] = warnStartServices.Value()
-	levelServices["error"] = errorStartServices.Value()
-	levelServices["crit"] = critStartServices.Value()
+	levelServices["debug"] = debugStartServices
+	levelServices["info"] = infoStartServices
+	levelServices["warn"] = warnStartServices
+	levelServices["error"] = errorStartServices
+	levelServices["crit"] = critStartServices
 
 	overrides := make(map[string]string)
 	for level, services := range levelServices {

@@ -2,13 +2,14 @@ package main
 
 import (
 	"cmp"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"slices"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
@@ -51,19 +52,19 @@ var bazelCommand = &cli.Command{
 	HideHelpCommand: true,
 	Usage:           "Proxies the bazel CLI with custom commands for local dev convenience",
 	Category:        category.Dev,
-	Action: func(ctx *cli.Context) error {
-		if slices.Equal(ctx.Args().Slice(), []string{"help"}) || slices.Equal(ctx.Args().Slice(), []string{"--help"}) || slices.Equal(ctx.Args().Slice(), []string{"-h"}) {
+	Action: func(ctx context.Context, cmd *cli.Command) error {
+		if slices.Equal(cmd.Args().Slice(), []string{"help"}) || slices.Equal(cmd.Args().Slice(), []string{"--help"}) || slices.Equal(cmd.Args().Slice(), []string{"-h"}) {
 			fmt.Println("Additional commands from sg:")
 			fmt.Println("  configure           Wrappers around some commands to generate various files required by Bazel")
 		}
 
-		cmd := exec.CommandContext(ctx.Context, "bazel", ctx.Args().Slice()...)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
-		return cmd.Run()
+		exe := exec.CommandContext(ctx, "bazel", cmd.Args().Slice()...)
+		exe.Stdout = os.Stdout
+		exe.Stderr = os.Stderr
+		exe.Stdin = os.Stdin
+		return exe.Run()
 	},
-	Subcommands: []*cli.Command{
+	Commands: []*cli.Command{
 		{
 			Name:  "configure",
 			Usage: "Wrappers around some commands to generate various files required by Bazel",
@@ -76,32 +77,32 @@ Available categories:
 	- all: catch-all for all of the above
 
 If no categories are referenced, then 'builds' is assumed as the default.`,
-			BashComplete: completions.CompleteArgs(func() (options []string) {
+			ShellComplete: completions.CompleteArgs(func() (options []string) {
 				return append(maps.Keys(bzlgenTargets), "all")
 			}),
-			Before: func(ctx *cli.Context) error {
-				for _, arg := range ctx.Args().Slice() {
+			Before: func(ctx context.Context, cmd *cli.Command) error {
+				for _, arg := range cmd.Args().Slice() {
 					if _, ok := bzlgenTargets[arg]; !ok && arg != "all" {
 						cli.HandleExitCoder(errors.Errorf("category doesn't exist %q, run `sg bazel configure --help` for full info.", arg))
-						cli.ShowSubcommandHelpAndExit(ctx, 1)
+						cli.ShowSubcommandHelpAndExit(cmd, 1)
 						return nil
 					}
 				}
 				return nil
 			},
-			Action: func(ctx *cli.Context) error {
+			Action: func(ctx context.Context, cmd *cli.Command) error {
 				var categories []bzlgenTarget
 				var categoryNames []string
-				if slices.Contains(ctx.Args().Slice(), "all") {
+				if slices.Contains(cmd.Args().Slice(), "all") {
 					categories = maps.Values(bzlgenTargets)
 					categoryNames = maps.Keys(bzlgenTargets)
-				} else if ctx.NArg() == 0 {
+				} else if cmd.NArg() == 0 {
 					categories = []bzlgenTarget{bzlgenTargets["builds"]}
 					categoryNames = []string{"builds"}
 				} else {
-					for i := range ctx.NArg() {
-						categories = append(categories, bzlgenTargets[ctx.Args().Get(i)])
-						categoryNames = append(categoryNames, ctx.Args().Get(i))
+					for i := range cmd.NArg() {
+						categories = append(categories, bzlgenTargets[cmd.Args().Get(i)])
+						categoryNames = append(categoryNames, cmd.Args().Get(i))
 					}
 				}
 
@@ -118,7 +119,7 @@ If no categories are referenced, then 'builds' is assumed as the default.`,
 					}
 
 					args := append([]string{c.cmd, "--noshow_progress"}, c.args...)
-					cmd := exec.CommandContext(ctx.Context, "bazel", args...)
+					cmd := exec.CommandContext(ctx, "bazel", args...)
 					cmd.Stdout = os.Stdout
 					cmd.Stderr = os.Stderr
 					cmd.Env = c.env

@@ -3,7 +3,7 @@ package cliutil
 import (
 	"context"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -14,7 +14,7 @@ func Validate(commandName string, factory RunnerFactory, outFactory OutputFactor
 	schemaNamesFlag := &cli.StringSliceFlag{
 		Name:    "schema",
 		Usage:   "The target `schema(s)` to validate. Comma-separated values are accepted. Possible values are 'frontend', 'codeintel', 'codeinsights' and 'all'.",
-		Value:   cli.NewStringSlice("all"),
+		Value:   []string{"all"},
 		Aliases: []string{"db"},
 	}
 	skipOutOfBandMigrationsFlag := &cli.BoolFlag{
@@ -23,7 +23,7 @@ func Validate(commandName string, factory RunnerFactory, outFactory OutputFactor
 		Value: false,
 	}
 
-	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Command, out *output.Output) error {
 		schemaNames := sanitizeSchemaNames(schemaNamesFlag.Get(cmd), out)
 		if len(schemaNames) == 0 {
 			return flagHelp(out, "supply a schema via -db")

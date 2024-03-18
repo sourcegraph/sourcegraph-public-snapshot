@@ -10,7 +10,7 @@ import (
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/gen2brain/beeep"
 	sgrun "github.com/sourcegraph/run"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
@@ -50,7 +50,7 @@ type targetBuild struct {
 // Buildkite build.
 //
 // Requires ciBranchFlag and ciBuildFlag to be registered on the command.
-func getBuildTarget(cmd *cli.Context) (target targetBuild, err error) {
+func getBuildTarget(ctx context.Context, cmd *cli.Command) (target targetBuild, err error) {
 	target.pipeline = ciPipelineFlag.Get(cmd)
 	if target.pipeline == "" {
 		target.pipeline = "sourcegraph"
@@ -77,7 +77,7 @@ func getBuildTarget(cmd *cli.Context) (target targetBuild, err error) {
 
 	case commit != "":
 		// get the full commit
-		target.target, err = root.Run(sgrun.Cmd(cmd.Context, "git rev-parse", commit)).String()
+		target.target, err = root.Run(sgrun.Cmd(ctx, "git rev-parse", commit)).String()
 		if err != nil {
 			return
 		}

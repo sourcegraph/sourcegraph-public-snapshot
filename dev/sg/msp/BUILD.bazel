@@ -32,7 +32,7 @@ go_library(
         "//lib/output",
         "//lib/pointers",
         "@com_github_sourcegraph_run//:run",
-        "@com_github_urfave_cli_v2//:cli",
+        "@com_github_urfave_cli_v3//:cli",
         "@org_golang_x_exp//maps",
     ],
 )

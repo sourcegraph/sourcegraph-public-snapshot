@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -10,7 +11,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -45,9 +46,7 @@ Can also be used to install a custom build of 'sg' globally, for example:
 	Action: installAction,
 }
 
-func installAction(cmd *cli.Context) error {
-	ctx := cmd.Context
-
+func installAction(ctx context.Context, cmd *cli.Command) error {
 	probeCmdOut, err := exec.CommandContext(ctx, "sg", "help").CombinedOutput()
 	if err == nil && outputLooksLikeSG(string(probeCmdOut)) {
 		path, err := exec.LookPath("sg")

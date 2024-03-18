@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
@@ -30,9 +30,9 @@ var updateCommand = &cli.Command{
 
     sg version changelog -next`,
 	Category: category.Util,
-	Action: func(cmd *cli.Context) error {
+	Action: func(ctx context.Context, cmd *cli.Command) error {
 		p := std.Out.Pending(output.Styled(output.StylePending, "Downloading latest sg release..."))
-		if _, err := updateToPrebuiltSG(cmd.Context); err != nil {
+		if _, err := updateToPrebuiltSG(ctx); err != nil {
 			p.Destroy()
 			return err
 		}

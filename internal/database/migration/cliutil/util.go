@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
@@ -20,17 +20,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-type actionFunction func(ctx context.Context, cmd *cli.Context, out *output.Output) error
+type actionFunction func(ctx context.Context, cmd *cli.Command, out *output.Output) error
 
 // makeAction creates a new migration action function. It is expected that these
 // commands accept zero arguments and define their own flags.
-func makeAction(outFactory OutputFactory, f actionFunction) func(cmd *cli.Context) error {
-	return func(cmd *cli.Context) error {
+func makeAction(outFactory OutputFactory, f actionFunction) func(ctx context.Context, cmd *cli.Command) error {
+	return func(ctx context.Context, cmd *cli.Command) error {
 		if cmd.NArg() != 0 {
 			return flagHelp(outFactory(), "too many arguments")
 		}
 
-		return f(cmd.Context, cmd, outFactory())
+		return f(ctx, cmd, outFactory())
 	}
 }
 
@@ -122,7 +122,7 @@ func parseTargets(targets []string) ([]int, error) {
 
 // getPivilegedModeFromFlags transforms the given flags into an equivalent PrivilegedMode value. A user error is
 // returned if the supplied flags form an invalid state.
-func getPivilegedModeFromFlags(cmd *cli.Context, out *output.Output, unprivilegedOnlyFlag, noopPrivilegedFlag *cli.BoolFlag) (runner.PrivilegedMode, error) {
+func getPivilegedModeFromFlags(_ context.Context, cmd *cli.Command, out *output.Output, unprivilegedOnlyFlag, noopPrivilegedFlag *cli.BoolFlag) (runner.PrivilegedMode, error) {
 	unprivilegedOnly := unprivilegedOnlyFlag.Get(cmd)
 	noopPrivileged := noopPrivilegedFlag.Get(cmd)
 	if unprivilegedOnly && noopPrivileged {

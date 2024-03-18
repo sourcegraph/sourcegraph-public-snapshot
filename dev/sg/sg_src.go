@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
@@ -30,13 +30,13 @@ var srcInstanceCommand = &cli.Command{
 	UsageText: "sg src-instance [command]",
 	Usage:     "Interact with Sourcegraph instances that 'sg src' will use",
 	Category:  category.Dev,
-	Subcommands: []*cli.Command{
+	Commands: []*cli.Command{
 		{
 			Name:      "register",
 			Usage:     "Register (or edit an existing) Sourcegraph instance to target with src-cli",
 			UsageText: "sg src instance register [name] [endpoint]",
-			Action: func(cmd *cli.Context) error {
-				store, sc, err := getSrcInstances(cmd.Context)
+			Action: func(ctx context.Context, cmd *cli.Command) error {
+				store, sc, err := getSrcInstances(ctx)
 				if err != nil {
 					return errors.Wrap(err, "failed to read existing instances")
 				}
@@ -79,8 +79,8 @@ var srcInstanceCommand = &cli.Command{
 		{
 			Name:  "use",
 			Usage: "Set current src-cli instance to use with 'sg src'",
-			Action: func(cmd *cli.Context) error {
-				store, sc, err := getSrcInstances(cmd.Context)
+			Action: func(ctx context.Context, cmd *cli.Command) error {
+				store, sc, err := getSrcInstances(ctx)
 				if err != nil {
 					return err
 				}
@@ -101,8 +101,8 @@ var srcInstanceCommand = &cli.Command{
 		{
 			Name:  "list",
 			Usage: "List registered instances for src-cli",
-			Action: func(cmd *cli.Context) error {
-				_, sc, err := getSrcInstances(cmd.Context)
+			Action: func(ctx context.Context, cmd *cli.Command) error {
+				_, sc, err := getSrcInstances(ctx)
 				if err != nil {
 					return err
 				}
@@ -125,8 +125,8 @@ var srcCommand = &cli.Command{
 	UsageText: "sg src [src-cli args]\nsg src help # get src-cli help",
 	Usage:     "Run src-cli on a given instance defined with 'sg src-instance'",
 	Category:  category.Dev,
-	Action: func(cmd *cli.Context) error {
-		_, sc, err := getSrcInstances(cmd.Context)
+	Action: func(ctx context.Context, cmd *cli.Command) error {
+		_, sc, err := getSrcInstances(ctx)
 		if err != nil {
 			return err
 		}
@@ -141,7 +141,7 @@ var srcCommand = &cli.Command{
 			return errors.New("instance not found")
 		}
 
-		c := exec.CommandContext(cmd.Context, "src", cmd.Args().Slice()...)
+		c := exec.CommandContext(ctx, "src", cmd.Args().Slice()...)
 		c.Env = append(c.Environ(), "SRC_ACCESS_TOKEN="+instance.AccessToken, "SRC_ENDPOINT="+instance.Endpoint)
 		c.Stdout = os.Stdout
 		c.Stderr = os.Stderr

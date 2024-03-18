@@ -1,12 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
@@ -20,14 +21,14 @@ var analyticsCommand = &cli.Command{
 	Name:     "analytics",
 	Usage:    "Manage analytics collected by sg",
 	Category: category.Util,
-	Subcommands: []*cli.Command{
+	Commands: []*cli.Command{
 		{
 			Name:        "submit",
 			ArgsUsage:   " ",
 			Usage:       "Make sg better by submitting all analytics stored locally!",
 			Description: "Requires HONEYCOMB_ENV_TOKEN or OTEL_EXPORTER_OTLP_ENDPOINT to be set.",
-			Action: func(cmd *cli.Context) error {
-				sec, err := secrets.FromContext(cmd.Context)
+			Action: func(ctx context.Context, cmd *cli.Command) error {
+				sec, err := secrets.FromContext(ctx)
 				if err != nil {
 					return err
 				}
@@ -35,7 +36,7 @@ var analyticsCommand = &cli.Command{
 				// we leave OTEL_EXPORTER_OTLP_ENDPOINT configuration a bit of a
 				// hidden thing, most users will want to just send to Honeycomb
 				//
-				honeyToken, err := sec.GetExternal(cmd.Context, secrets.ExternalSecret{
+				honeyToken, err := sec.GetExternal(ctx, secrets.ExternalSecret{
 					Project: "sourcegraph-local-dev",
 					Name:    "SG_ANALYTICS_HONEYCOMB_TOKEN",
 				})
@@ -44,7 +45,7 @@ var analyticsCommand = &cli.Command{
 				}
 
 				pending := std.Out.Pending(output.Line(output.EmojiHourglass, output.StylePending, "Hang tight! We're submitting your analytics"))
-				if err := analytics.Submit(cmd.Context, honeyToken); err != nil {
+				if err := analytics.Submit(ctx, honeyToken); err != nil {
 					pending.Destroy()
 					return err
 				}
@@ -55,7 +56,7 @@ var analyticsCommand = &cli.Command{
 		{
 			Name:  "reset",
 			Usage: "Delete all analytics stored locally",
-			Action: func(cmd *cli.Context) error {
+			Action: func(ctx context.Context, cmd *cli.Command) error {
 				if err := analytics.Reset(); err != nil {
 					return err
 				}
@@ -72,7 +73,7 @@ var analyticsCommand = &cli.Command{
 					Usage: "view raw data",
 				},
 			},
-			Action: func(cmd *cli.Context) error {
+			Action: func(ctx context.Context, cmd *cli.Command) error {
 				spans, err := analytics.Load()
 				if err != nil {
 					std.Out.Writef("No analytics found: %s", err.Error())

@@ -2,12 +2,13 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"math/rand"
 	"time"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -69,8 +70,8 @@ func printLogo(out io.Writer) {
 	fmt.Fprintf(out, "%s", output.StyleReset)
 }
 
-func logoExec(ctx *cli.Context) error {
-	args := ctx.Args().Slice()
+func logoExec(ctx context.Context, cmd *cli.Command) error {
+	args := cmd.Args().Slice()
 	if len(args) == 1 && args[0] == "classic" {
 		var logoOut bytes.Buffer
 		printLogo(&logoOut)

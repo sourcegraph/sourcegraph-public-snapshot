@@ -1,10 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
@@ -67,15 +68,15 @@ sg lint --help
 		lintFailFast,
 		lintSkipFormatCheck,
 	},
-	Before: func(cmd *cli.Context) error {
+	Before: func(ctx context.Context, cmd *cli.Command) error {
 		// If more than 1 target is requested, hijack subcommands by setting it to nil
 		// so that the main lint command can handle it the run.
 		if cmd.Args().Len() > 1 {
-			cmd.Command.Subcommands = nil
+			cmd.Commands = nil
 		}
 		return nil
 	},
-	Action: func(cmd *cli.Context) error {
+	Action: func(ctx context.Context, cmd *cli.Command) error {
 		var lintTargets []linters.Target
 		targets := cmd.Args().Slice()
 
@@ -118,7 +119,7 @@ sg lint --help
 			}
 		}
 
-		repoState, err := repo.GetState(cmd.Context)
+		repoState, err := repo.GetState(ctx)
 		if err != nil {
 			return errors.Wrap(err, "repo.GetState")
 		}
@@ -126,13 +127,13 @@ sg lint --help
 		runner := linters.NewRunner(std.Out, generateAnnotations.Get(cmd), lintTargets...)
 		if cmd.Bool("fix") {
 			std.Out.WriteNoticef("Fixing checks from targets: %s", strings.Join(targets, ", "))
-			return runner.Fix(cmd.Context, repoState)
+			return runner.Fix(ctx, repoState)
 		}
 		runner.FailFast = lintFailFast.Get(cmd)
 		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
-		return runner.Check(cmd.Context, repoState)
+		return runner.Check(ctx, repoState)
 	},
-	Subcommands: lintTargets(append(linters.Targets, linters.Formatting)).Commands(),
+	Commands: lintTargets(append(linters.Targets, linters.Formatting)).Commands(),
 }
 
 type lintTargets []linters.Target
@@ -144,13 +145,13 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 		cmds = append(cmds, &cli.Command{
 			Name:  target.Name,
 			Usage: target.Description,
-			Action: func(cmd *cli.Context) error {
+			Action: func(ctx context.Context, cmd *cli.Command) error {
 				if cmd.NArg() > 0 {
 					std.Out.WriteFailuref("unrecognized argument %q provided", cmd.Args().First())
 					return flag.ErrHelp
 				}
 
-				repoState, err := repo.GetState(cmd.Context)
+				repoState, err := repo.GetState(ctx)
 				if err != nil {
 					return errors.Wrap(err, "repo.GetState")
 				}
@@ -167,14 +168,14 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 				runner := linters.NewRunner(std.Out, generateAnnotations.Get(cmd), lintTargets...)
 				if lintFix.Get(cmd) {
 					std.Out.WriteNoticef("Fixing checks from target: %s", strings.Join(targets, ", "))
-					return runner.Fix(cmd.Context, repoState)
+					return runner.Fix(ctx, repoState)
 				}
 				runner.FailFast = lintFailFast.Get(cmd)
 				std.Out.WriteNoticef("Running checks from target: %s", strings.Join(targets, ", "))
-				return runner.Check(cmd.Context, repoState)
+				return runner.Check(ctx, repoState)
 			},
 			// Completions to chain multiple commands
-			BashComplete: completions.CompleteArgs(func() (options []string) {
+			ShellComplete: completions.CompleteArgs(func() (options []string) {
 				for _, c := range lt {
 					options = append(options, c.Name)
 				}

@@ -2,6 +2,7 @@ package wolfi
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/grafana/regexp"
-	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -102,7 +102,7 @@ func getImageManifest(image string, tag string) (string, error) {
 	return digest, nil
 }
 
-func UpdateHashes(_ *cli.Context, updateImageName string) error {
+func UpdateHashes(_ context.Context, updateImageName string) error {
 	if updateImageName != "" {
 		updateImageName = strings.ReplaceAll(updateImageName, "-", "_")
 		updateImageName = fmt.Sprintf("wolfi_%s_base", updateImageName)

@@ -1,18 +1,19 @@
 package backport
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os/exec"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Run(cmd *cli.Context, prNumber int64, version string) error {
+func Run(ctx context.Context, cmd *cli.Command, prNumber int64, version string) error {
 	p := std.Out.Pending(output.Styled(output.StylePending, "Checking for GitHub CLI..."))
 	ghPath, err := exec.LookPath("gh")
 	if err != nil {
@@ -22,7 +23,7 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Using GitHub CLI at %q", ghPath))
 
 	p = std.Out.Pending(output.Styled(output.StylePending, "Checking GH auth status..."))
-	_, err = ghExec(cmd.Context, "auth", "status")
+	_, err = ghExec(ctx, "auth", "status")
 	if err != nil {
 		p.Destroy()
 		return errors.Wrap(err, "GitHub CLI is not authenticated. Please run 'gh auth login' to authenticate")
@@ -30,7 +31,7 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "GH auth is authenticated"))
 
 	p = std.Out.Pending(output.Styledf(output.StylePending, "Checking the existence of %q in remote...", version))
-	_, err = ghExec(cmd.Context, "api", fmt.Sprintf("/repos/sourcegraph/sourcegraph/branches/%s", version))
+	_, err = ghExec(ctx, "api", fmt.Sprintf("/repos/sourcegraph/sourcegraph/branches/%s", version))
 	if err != nil {
 		p.Destroy()
 		return errors.Wrapf(err, "%q does not exist in sourcegraph/sourcegraph", version)
@@ -38,7 +39,7 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Found %q in remote", version))
 
 	p = std.Out.Pending(output.Styled(output.StylePending, "Getting PR info ...."))
-	rawPrInfo, err := ghExec(cmd.Context, "pr", "view", fmt.Sprintf("%d", prNumber), "--json", "mergeCommit,state,body,title")
+	rawPrInfo, err := ghExec(ctx, "pr", "view", fmt.Sprintf("%d", prNumber), "--json", "mergeCommit,state,body,title")
 	if err != nil {
 		p.Destroy()
 		return errors.Wrapf(err, "Unable to fetch information for pull request: %d", prNumber)
@@ -57,7 +58,7 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 	// prefixed with "sg/backport-" to avoid conflicts with other branches
 	backportBranch := fmt.Sprintf("sg/backport-%d-to-%s", prNumber, version)
 	p = std.Out.Pending(output.Styledf(output.StylePending, "Creating backport branch %q...", backportBranch))
-	if err := gitExec(cmd.Context, "checkout", "-b", backportBranch, fmt.Sprintf("origin/%s", version)); err != nil {
+	if err := gitExec(ctx, "checkout", "-b", backportBranch, fmt.Sprintf("origin/%s", version)); err != nil {
 		p.Destroy()
 		return errors.Wrapf(err, "Unable to create backport branch: %q", backportBranch)
 	}
@@ -65,29 +66,29 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 
 	// Fetch latest change from remote
 	p = std.Out.Pending(output.Styled(output.StylePending, "Fetching latest changes from remote..."))
-	if err := gitExec(cmd.Context, "fetch", "-a"); err != nil {
+	if err := gitExec(ctx, "fetch", "-a"); err != nil {
 		p.Destroy()
 		return err
 	}
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Fetched latest changes from remote"))
 
 	p = std.Out.Pending(output.Styledf(output.StylePending, "Cherry-picking merge commit for PR %d into backport branch...", prNumber))
-	if err := gitExec(cmd.Context, "cherry-pick", mergeCommit); err != nil {
+	if err := gitExec(ctx, "cherry-pick", mergeCommit); err != nil {
 		p.Destroy()
 
 		// If this fails looool, nothing we much we can do here lol.
-		_ = gitExec(cmd.Context, "cherry-pick", "--abort")
+		_ = gitExec(ctx, "cherry-pick", "--abort")
 		// checkout the last branch you were on before we tried to cherry-pick
-		_ = gitExec(cmd.Context, "checkout", "-")
+		_ = gitExec(ctx, "checkout", "-")
 		// delete the branch we created
-		_ = gitExec(cmd.Context, "branch", "-D", backportBranch)
+		_ = gitExec(ctx, "branch", "-D", backportBranch)
 
 		return errors.Wrapf(err, "Unable to cherry-pick merge commit: %q. This might be the result of a merge conflict. Manually run `git cherry-pick %s` and fix on your machine.", mergeCommit, mergeCommit)
 	}
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Cherry-picked merge commit for PR %d into backport branch", prNumber))
 
 	p = std.Out.Pending(output.Styledf(output.StylePending, "Pushing backport branch %q to remote...", backportBranch))
-	if err := gitExec(cmd.Context, "push", "--set-upstream", "origin", backportBranch); err != nil {
+	if err := gitExec(ctx, "push", "--set-upstream", "origin", backportBranch); err != nil {
 		p.Destroy()
 		return errors.Wrapf(err, "Unable to push backport branch: %q", backportBranch)
 	}
@@ -97,7 +98,7 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 	prTitle := generatePRTitle(pr.Title, version)
 	p = std.Out.Pending(output.Styledf(output.StylePending, "Creating pull request for backport branch %q...", backportBranch))
 	out, err := ghExec(
-		cmd.Context,
+		ctx,
 		"pr",
 		"create",
 		"--fill",
@@ -117,7 +118,7 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Pull request for backport branch %q created.\n%s", backportBranch, string(out)))
 
 	// checkout the last branch you were on before we tried to cherry-pick
-	if err = gitExec(cmd.Context, "checkout", "-"); err != nil {
+	if err = gitExec(ctx, "checkout", "-"); err != nil {
 		std.Out.WriteWarningf("Unable to checkout last branch: %q", backportBranch)
 	}
 

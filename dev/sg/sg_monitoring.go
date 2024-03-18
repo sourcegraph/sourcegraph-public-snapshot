@@ -1,11 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/grafana/regexp"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -27,7 +28,7 @@ Also refer to the generated reference documentation available for site admins:
 - https://docs.sourcegraph.com/admin/observability/alerts
 `,
 	Category: category.Dev,
-	Subcommands: []*cli.Command{
+	Commands: []*cli.Command{
 		monitoringcmd.Generate("sg monitoring", func() string {
 			root, _ := root.RepositoryRoot()
 			return root
@@ -46,14 +47,14 @@ Also refer to the generated reference documentation available for site admins:
 					Usage: "Show row groups",
 				},
 			},
-			Action: func(c *cli.Context) error {
-				dashboards, err := dashboardsFromArgs(c.Args())
+			Action: func(ctx context.Context, cmd *cli.Command) error {
+				dashboards, err := dashboardsFromArgs(cmd.Args())
 				if err != nil {
 					return err
 				}
 
 				metrics := make(map[*monitoring.Dashboard][]string)
-				if c.Bool("metrics") {
+				if cmd.Bool("metrics") {
 					var err error
 					metrics, err = monitoring.ListMetrics(dashboards...)
 					if err != nil {
@@ -66,14 +67,14 @@ Also refer to the generated reference documentation available for site admins:
 					summary.WriteString(fmt.Sprintf("* **%s** (`%s`): %s\n",
 						d.Title, d.Name, d.Description))
 
-					if c.Bool("metrics") {
+					if cmd.Bool("metrics") {
 						summary.WriteString("  * Metrics used:\n")
 						for _, m := range metrics[d] {
 							summary.WriteString(fmt.Sprintf("    * `%s`\n", m))
 						}
 					}
 
-					if c.Bool("groups") {
+					if cmd.Bool("groups") {
 						for _, g := range d.Groups {
 							summary.WriteString(fmt.Sprintf("  * %s (%d rows)\n",
 								g.Title, len(g.Rows)))
@@ -96,8 +97,8 @@ Also refer to the generated reference documentation available for site admins:
 					Value:   "markdown",
 				},
 			},
-			Action: func(c *cli.Context) error {
-				dashboards, err := dashboardsFromArgs(c.Args())
+			Action: func(ctx context.Context, cmd *cli.Command) error {
+				dashboards, err := dashboardsFromArgs(cmd.Args())
 				if err != nil {
 					return err
 				}
@@ -118,7 +119,7 @@ Also refer to the generated reference documentation available for site admins:
 					}
 				}
 
-				switch format := c.String("format"); format {
+				switch format := cmd.String("format"); format {
 				case "markdown":
 					var md strings.Builder
 					for _, m := range uniqueMetrics {

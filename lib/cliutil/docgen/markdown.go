@@ -8,13 +8,13 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 // Markdown renders a Markdown reference for the app.
 //
 // It is adapted from https://sourcegraph.com/github.com/urfave/cli@v2.4.0/-/blob/docs.go?L16
-func Markdown(app *cli.App) (string, error) {
+func Markdown(app *cli.Command) (string, error) {
 	var w bytes.Buffer
 	if err := writeDocTemplate(app, &w); err != nil {
 		return "", err
@@ -23,12 +23,12 @@ func Markdown(app *cli.App) (string, error) {
 }
 
 type cliTemplate struct {
-	App        *cli.App
+	App        *cli.Command
 	Commands   []string
 	GlobalArgs []string
 }
 
-func writeDocTemplate(app *cli.App, w io.Writer) error {
+func writeDocTemplate(app *cli.Command, w io.Writer) error {
 	const name = "cli"
 	t, err := template.New(name).Parse(markdownDocTemplate)
 	if err != nil {
@@ -73,10 +73,10 @@ func prepareCommands(lineage string, commands []*cli.Command, level int) []strin
 		coms = append(coms, commandDoc.String())
 
 		// recursevly iterate subcommands
-		if len(command.Subcommands) > 0 {
+		if len(command.Commands) > 0 {
 			coms = append(
 				coms,
-				prepareCommands(lineage+" "+command.Name, command.Subcommands, level+1)...,
+				prepareCommands(lineage+" "+command.Name, command.Commands, level+1)...,
 			)
 		}
 	}
@@ -88,6 +88,11 @@ func prepareArgsWithValues(flags []cli.Flag) []string {
 	return prepareFlags(flags, ", ", "`", "`", `"<value>"`, true)
 }
 
+type Flag interface {
+	cli.DocGenerationFlag
+	cli.Flag
+}
+
 func prepareFlags(
 	flags []cli.Flag,
 	sep, opener, closer, value string,
@@ -95,7 +100,7 @@ func prepareFlags(
 ) []string {
 	args := []string{}
 	for _, f := range flags {
-		flag, ok := f.(cli.DocGenerationFlag)
+		flag, ok := f.(Flag)
 		if !ok {
 			continue
 		}

@@ -1,11 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
@@ -21,8 +22,8 @@ import (
 func addAnalyticsHooks(commandPath []string, commands []*cli.Command) {
 	for _, command := range commands {
 		fullCommandPath := append(commandPath, command.Name)
-		if len(command.Subcommands) > 0 {
-			addAnalyticsHooks(fullCommandPath, command.Subcommands)
+		if len(command.Commands) > 0 {
+			addAnalyticsHooks(fullCommandPath, command.Commands)
 		}
 
 		// No action to perform analytics on
@@ -35,9 +36,9 @@ func addAnalyticsHooks(commandPath []string, commands []*cli.Command) {
 
 		// Wrap action with analytics
 		wrappedAction := command.Action
-		command.Action = func(cmd *cli.Context) (actionErr error) {
+		command.Action = func(ctx context.Context, cmd *cli.Command) (actionErr error) {
 			var span *analytics.Span
-			cmd.Context, span = analytics.StartSpan(cmd.Context, fullCommand, "action",
+			ctx, span = analytics.StartSpan(ctx, fullCommand, "action",
 				trace.WithAttributes(
 					attribute.StringSlice("flags", cmd.FlagNames()),
 					attribute.Int("args", cmd.NArg()),
@@ -63,7 +64,7 @@ func addAnalyticsHooks(commandPath []string, commands []*cli.Command) {
 			})
 
 			// Call the underlying action
-			actionErr = wrappedAction(cmd)
+			actionErr = wrappedAction(ctx, cmd)
 
 			// Capture analytics post-run
 			if actionErr != nil {

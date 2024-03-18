@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -18,7 +18,7 @@ func Undo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 		Aliases:  []string{"db"},
 	}
 
-	makeOptions := func(cmd *cli.Context, out *output.Output) runner.Options {
+	makeOptions := func(_ context.Context, cmd *cli.Command, out *output.Output) runner.Options {
 		return runner.Options{
 			Operations: []runner.MigrationOperation{
 				{
@@ -31,13 +31,13 @@ func Undo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 		}
 	}
 
-	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Command, out *output.Output) error {
 		r, err := setupRunner(factory, TranslateSchemaNames(schemaNameFlag.Get(cmd), out))
 		if err != nil {
 			return err
 		}
 
-		return r.Run(ctx, makeOptions(cmd, out))
+		return r.Run(ctx, makeOptions(ctx, cmd, out))
 	})
 
 	return &cli.Command{

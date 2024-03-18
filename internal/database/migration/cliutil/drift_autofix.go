@@ -27,6 +27,7 @@ func attemptAutofix(
 	summaries []drift.Summary,
 	compareDescriptionAgainstTarget func(descriptions.SchemaDescription) []drift.Summary,
 ) (_ []drift.Summary, err error) {
+	var schemas map[string]descriptions.SchemaDescription
 	for attempts := maxAutofixAttempts; attempts > 0 && len(summaries) > 0 && err == nil; attempts-- {
 		if !runAutofix(ctx, out, store, summaries) {
 			out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "No autofix to apply"))
@@ -35,7 +36,7 @@ func attemptAutofix(
 
 		out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Re-checking drift"))
 
-		schemas, err := store.Describe(ctx)
+		schemas, err = store.Describe(ctx)
 		if err != nil {
 			return nil, err
 		}

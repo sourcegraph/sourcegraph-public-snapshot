@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/Masterminds/semver"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/run"
 
@@ -39,7 +39,7 @@ var (
 		Value:       db.DefaultDatabase.Name,
 		Destination: &migrateTargetDatabase,
 		Aliases:     []string{"db"},
-		Action: func(ctx *cli.Context, val string) error {
+		Action: func(ctx context.Context, cmd *cli.Command, val string) error {
 			migrateTargetDatabase = cliutil.TranslateSchemaNames(val, std.Out.Output)
 			return nil
 		},
@@ -191,7 +191,7 @@ sg migration add --db codeintel 'add missing index'
 sg migration squash
 `,
 		Category: category.Dev,
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			addCommand,
 			revertCommand,
 			upCommand,
@@ -319,8 +319,8 @@ func resolveSchema(name string) (*schemas.Schema, error) {
 	return schema, nil
 }
 
-func addExec(ctx *cli.Context) error {
-	args := ctx.Args().Slice()
+func addExec(ctx context.Context, cmd *cli.Command) error {
+	args := cmd.Args().Slice()
 	if len(args) == 0 {
 		return cli.Exit("no migration name specified", 1)
 	}
@@ -339,8 +339,8 @@ func addExec(ctx *cli.Context) error {
 	return migration.Add(database, args[0])
 }
 
-func revertExec(ctx *cli.Context) error {
-	args := ctx.Args().Slice()
+func revertExec(ctx context.Context, cmd *cli.Command) error {
+	args := cmd.Args().Slice()
 	if len(args) == 0 {
 		return cli.Exit("no commit specified", 1)
 	}
@@ -351,8 +351,8 @@ func revertExec(ctx *cli.Context) error {
 	return migration.Revert(db.Databases(), args[0])
 }
 
-func squashExec(ctx *cli.Context) (err error) {
-	args := ctx.Args().Slice()
+func squashExec(ctx context.Context, cmd *cli.Command) (err error) {
+	args := cmd.Args().Slice()
 	if len(args) == 0 {
 		return cli.Exit("no current-version specified", 1)
 	}
@@ -378,8 +378,8 @@ func squashExec(ctx *cli.Context) (err error) {
 	return migration.Squash(database, commit, squashInContainer || squashInTimescaleDBContainer, squashInTimescaleDBContainer, skipTeardown, skipSquashData)
 }
 
-func visualizeExec(ctx *cli.Context) (err error) {
-	args := ctx.Args().Slice()
+func visualizeExec(ctx context.Context, cmd *cli.Command) (err error) {
+	args := cmd.Args().Slice()
 	if len(args) != 0 {
 		return cli.Exit("too many arguments", 1)
 	}
@@ -400,8 +400,8 @@ func visualizeExec(ctx *cli.Context) (err error) {
 	return migration.Visualize(database, outputFilepath)
 }
 
-func rewriteExec(ctx *cli.Context) (err error) {
-	args := ctx.Args().Slice()
+func rewriteExec(ctx context.Context, cmd *cli.Command) (err error) {
+	args := cmd.Args().Slice()
 	if len(args) != 0 {
 		return cli.Exit("too many arguments", 1)
 	}
@@ -422,8 +422,8 @@ func rewriteExec(ctx *cli.Context) (err error) {
 	return migration.Rewrite(database, targetRevision)
 }
 
-func squashAllExec(ctx *cli.Context) (err error) {
-	args := ctx.Args().Slice()
+func squashAllExec(ctx context.Context, cmd *cli.Command) (err error) {
+	args := cmd.Args().Slice()
 	if len(args) != 0 {
 		return cli.Exit("too many arguments", 1)
 	}
@@ -444,8 +444,8 @@ func squashAllExec(ctx *cli.Context) (err error) {
 	return migration.SquashAll(database, squashInContainer || squashInTimescaleDBContainer, squashInTimescaleDBContainer, skipTeardown, skipSquashData, outputFilepath)
 }
 
-func leavesExec(ctx *cli.Context) (err error) {
-	args := ctx.Args().Slice()
+func leavesExec(ctx context.Context, cmd *cli.Command) (err error) {
+	args := cmd.Args().Slice()
 	if len(args) == 0 {
 		return cli.Exit("no commit specified", 1)
 	}

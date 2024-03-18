@@ -1,13 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"runtime"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/dependencies"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -36,14 +38,14 @@ var setupCommand = &cli.Command{
 			Usage: "Skip overwriting pre-commit.com installation",
 		},
 	},
-	Subcommands: []*cli.Command{{
+	Commands: []*cli.Command{{
 		Name:  "disable-pre-commit",
 		Usage: "Disable pre-commit hooks",
-		Action: func(cmd *cli.Context) error {
-			return root.Run(run.Bash(cmd.Context, "rm .git/hooks/pre-commit || echo \"no pre-commit hook was found.\"")).Stream(os.Stdout)
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			return root.Run(run.Bash(ctx, "rm .git/hooks/pre-commit || echo \"no pre-commit hook was found.\"")).Stream(os.Stdout)
 		},
 	}},
-	Action: func(cmd *cli.Context) error {
+	Action: func(ctx context.Context, cmd *cli.Command) error {
 		if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
 			std.Out.WriteLine(output.Styled(output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
 			return exit.NewEmptyExitErr(1)
@@ -54,7 +56,7 @@ var setupCommand = &cli.Command{
 			currentOS = overridesOS
 		}
 
-		setup := dependencies.Setup(cmd.App.Reader, std.Out, dependencies.OS(currentOS))
+		setup := dependencies.Setup(cmd.Reader, std.Out, dependencies.OS(currentOS))
 		setup.AnalyticsCategory = "setup"
 		setup.RenderDescription = func(out *std.Output) {
 			printSgSetupWelcomeScreen(out)
@@ -71,17 +73,17 @@ var setupCommand = &cli.Command{
 
 		switch {
 		case cmd.Bool("check"):
-			err := setup.Check(cmd.Context, args)
+			err := setup.Check(ctx, args)
 			if err != nil {
 				std.Out.WriteSuggestionf("Run 'sg setup -fix' to try and automatically fix issues!")
 			}
 			return err
 
 		case cmd.Bool("fix"):
-			return setup.Fix(cmd.Context, args)
+			return setup.Fix(ctx, args)
 
 		default:
-			return setup.Interactive(cmd.Context, args)
+			return setup.Interactive(ctx, args)
 		}
 	},
 }
