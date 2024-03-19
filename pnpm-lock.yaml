@@ -1068,21 +1068,6 @@ importers:
         specifier: ^2.10.0
         version: 2.10.0
 
-  client/app-shell:
-    devDependencies:
-      '@sourcegraph/build-config':
-        specifier: workspace:*
-        version: link:../build-config
-      '@sourcegraph/common':
-        specifier: workspace:*
-        version: link:../common
-      esbuild:
-        specifier: ^0.17.7
-        version: 0.17.14
-      ts-node:
-        specifier: ^10.9.1
-        version: 10.9.2(@types/node@20.8.0)(typescript@5.4.2)
-
   client/branded:
     dependencies:
       '@sourcegraph/common':
