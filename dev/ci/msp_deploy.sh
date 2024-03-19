@@ -38,7 +38,7 @@ gcloud=$2
 1>&2 "${gcloud}" deploy releases create "${RELEASE_NAME}" \
     --project="${GCP_PROJECT}" \
     --region="${GCP_REGION}" \
-    --delivery-pipeline=${GCP_DELIVERY_PIPELINE} \
+    --delivery-pipeline="${GCP_DELIVERY_PIPELINE}" \
     --source="${GCP_CLOUDRUN_SKAFFOLD_SOURCE}" \
     --labels="commit=${BUILDKITE_COMMIT}" \
     --deploy-parameters="customTarget/tag=${TAG}"
