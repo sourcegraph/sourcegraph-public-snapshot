@@ -40,3 +40,10 @@ tasks:
               - '^main$'
   - finalization:
       queue: aspect-small
+  - delivery:
+      auto_deliver: true
+      rules:
+        - deliverable: 'attr(tags, "docs-deliverable", //doc/...)'
+          condition:
+            # only_on_change: true
+            branches: ['jh/bzl/gh']
