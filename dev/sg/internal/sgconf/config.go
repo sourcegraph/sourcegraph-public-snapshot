@@ -140,6 +140,7 @@ func (c *Commandset) Merge(other *Commandset) *Commandset {
 	return merged
 }
 
+// If you add an entry here, remember to add it to the merge function.
 type Config struct {
 	Env               map[string]string             `yaml:"env"`
 	Commands          map[string]*run.Command       `yaml:"commands"`
@@ -157,20 +158,38 @@ func (c *Config) Merge(other *Config) {
 		c.Env[k] = v
 	}
 
-	for k, v := range other.Commands {
-		if original, ok := c.Commands[k]; ok {
-			merged := original.Merge(*v)
-			c.Commands[k] = &merged
+	for name, override := range other.Commands {
+		if original, ok := c.Commands[name]; ok {
+			merged := original.Merge(*override)
+			c.Commands[name] = &merged
 		} else {
-			c.Commands[k] = v
+			c.Commands[name] = override
 		}
 	}
 
-	for k, v := range other.Commandsets {
-		if original, ok := c.Commandsets[k]; ok {
-			c.Commandsets[k] = original.Merge(v)
+	for name, override := range other.BazelCommands {
+		if original, ok := c.BazelCommands[name]; ok {
+			merged := original.Merge(*override)
+			c.BazelCommands[name] = &merged
 		} else {
-			c.Commandsets[k] = v
+			c.BazelCommands[name] = override
+		}
+	}
+
+	for name, override := range other.DockerCommands {
+		if original, ok := c.DockerCommands[name]; ok {
+			merged := original.Merge(*override)
+			c.DockerCommands[name] = &merged
+		} else {
+			c.DockerCommands[name] = override
+		}
+	}
+
+	for name, override := range other.Commandsets {
+		if original, ok := c.Commandsets[name]; ok {
+			c.Commandsets[name] = original.Merge(override)
+		} else {
+			c.Commandsets[name] = override
 		}
 	}
 
@@ -178,12 +197,12 @@ func (c *Config) Merge(other *Config) {
 		c.DefaultCommandset = other.DefaultCommandset
 	}
 
-	for k, v := range other.Tests {
-		if original, ok := c.Tests[k]; ok {
-			merged := original.Merge(*v)
-			c.Tests[k] = &merged
+	for name, override := range other.Tests {
+		if original, ok := c.Tests[name]; ok {
+			merged := original.Merge(*override)
+			c.Tests[name] = &merged
 		} else {
-			c.Tests[k] = v
+			c.Tests[name] = override
 		}
 	}
 }
