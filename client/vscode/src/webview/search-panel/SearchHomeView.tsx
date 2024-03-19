@@ -184,7 +184,6 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
                         fetchSearchContexts={fetchSearchContexts}
                         getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                         fetchStreamSuggestions={fetchStreamSuggestions}
-                        settingsCascade={settingsCascade}
                         telemetryService={platformContext.telemetryService}
                         platformContext={platformContext}
                         className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}

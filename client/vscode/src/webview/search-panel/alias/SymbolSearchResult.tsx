@@ -6,23 +6,25 @@ import { map } from 'rxjs/operators'
 
 import {
     SymbolSearchResultStyles as styles,
-    SearchResultStyles as searchResultStyles,
-    CodeExcerpt,
     navigateToFileOnMiddleMouseButtonClick,
-    ResultContainer,
+    OldResultContainer,
     CopyPathAction,
 } from '@sourcegraph/branded'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { getFileMatchUrl, getRepositoryUrl, getRevision, type SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 
 import { type HighlightLineRange, HighlightResponseFormat } from '../../../graphql-operations'
+import { CodeExcerpt } from '../components/CodeExcerpt'
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
 import { RepoFileLink } from './RepoFileLink'
+
+import searchResultStyles from './SearchResultsStyles.module.scss'
 
 export interface SymbolSearchResultProps extends TelemetryProps, SettingsCascadeProps {
     result: SymbolMatch
@@ -70,6 +72,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
             <CopyPathAction
                 filePath={result.path}
                 className={searchResultStyles.copyButton}
+                telemetryRecorder={noOpTelemetryRecorder}
                 telemetryService={telemetryService}
             />
         </span>
@@ -124,7 +127,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
     )
 
     return (
-        <ResultContainer
+        <OldResultContainer
             index={index}
             title={title}
             resultType={result.type}
@@ -132,7 +135,6 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
             repoName={result.repository}
             repoStars={result.repoStars}
             className={classNames(searchResultStyles.copyButtonContainer, containerClassName)}
-            resultClassName={styles.symbolsOverride}
             repoLastFetched={result.repoLastFetched}
         >
             <div className={styles.symbols}>
@@ -178,6 +180,6 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                     </div>
                 ))}
             </div>
-        </ResultContainer>
+        </OldResultContainer>
     )
 }

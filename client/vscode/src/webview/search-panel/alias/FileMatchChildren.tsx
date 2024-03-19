@@ -5,13 +5,13 @@ import type * as H from 'history'
 import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { FileMatchChildrenStyles as styles, CodeExcerpt } from '@sourcegraph/branded'
+import { FileMatchChildrenStyles as styles } from '@sourcegraph/branded'
 import type { HoverMerged } from '@sourcegraph/client-api'
 import type { Hoverifier } from '@sourcegraph/codeintellify'
 import { appendLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
 import type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import type { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
+import type { MatchGroupMatch } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import type { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import type { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import {
@@ -26,7 +26,27 @@ import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetry
 import { Button, Code } from '@sourcegraph/wildcard'
 
 import type { HighlightLineRange } from '../../../graphql-operations'
+import { CodeExcerpt } from '../components/CodeExcerpt'
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
+
+export interface MatchGroup {
+    blobLines?: string[]
+
+    // The matches in this group to display.
+    matches: MatchGroupMatch[]
+
+    // The 1-based position of where the first match in the group.
+    position: {
+        line: number
+        character: number
+    }
+
+    // The 0-based start line of the group (inclusive.)
+    startLine: number
+
+    // The 0-based end line of the group (exclusive.)
+    endLine: number
+}
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     location?: H.Location

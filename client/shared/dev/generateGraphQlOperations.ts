@@ -41,7 +41,7 @@ const GLOBS: Record<string, string[]> = {
     JetBrainsGraphQlOperations: JETBRAINS_DOCUMENTS_GLOB,
     SharedGraphQlOperations: SHARED_DOCUMENTS_GLOB,
     WebGraphQlOperations: WEB_DOCUMENTS_GLOB,
-    VsCodeGraphQlOperations: VSCODE_DOCUMENTS_GLOB,
+    VSCodeGraphQlOperations: VSCODE_DOCUMENTS_GLOB,
 }
 
 const EXTRA_PLUGINS: Record<string, string[]> = {
@@ -77,7 +77,7 @@ export const ALL_INPUTS: Input[] = [
         outputPath: path.join(JETBRAINS_FOLDER, './webview/src/graphql-operations.ts'),
     },
     {
-        interfaceNameForOperations: 'VsCodeGraphQlOperations',
+        interfaceNameForOperations: 'VSCodeGraphQlOperations',
         outputPath: path.join(VSCODE_FOLDER, './src/graphql-operations.ts'),
     },
 ]

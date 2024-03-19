@@ -11,8 +11,9 @@ import {
     getRepoFilterLinks,
     getSearchReferenceFactory,
     getSearchSnippetLinks,
-    SearchSidebar,
+    StickySearchSidebar,
     SearchSidebarSection,
+    PersistSidebarStoreProvider,
 } from '@sourcegraph/branded'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import {
@@ -165,53 +166,55 @@ export const SearchSidebarView: FC<SearchSidebarViewProps> = React.memo(function
     const repoFilters = useMemo(() => getFiltersOfKind(filters, FilterType.repo), [filters])
 
     return (
-        <SearchSidebar onClose={() => setCollapsed(true)} className={styles.sidebarContainer}>
-            <SearchSidebarSection sectionId={SectionID.DYNAMIC_FILTERS} header="Dynamic Filters">
-                {getDynamicFilterLinks(
-                    filters,
-                    ['lang', 'file', 'utility'],
-                    onDynamicFilterClicked,
-                    (label, value) => `Filter by ${value}`,
-                    (label, value) => value
-                )}
-            </SearchSidebarSection>
+        <StickySearchSidebar onClose={() => setCollapsed(true)} className={styles.sidebarContainer}>
+            <PersistSidebarStoreProvider>
+                <SearchSidebarSection sectionId={SectionID.DYNAMIC_FILTERS} header="Dynamic Filters">
+                    {getDynamicFilterLinks(
+                        filters,
+                        ['lang', 'file', 'utility'],
+                        onDynamicFilterClicked,
+                        (label, value) => `Filter by ${value}`,
+                        (label, value) => value
+                    )}
+                </SearchSidebarSection>
 
-            <SearchSidebarSection
-                sectionId={SectionID.REPOSITORIES}
-                header="Repositories"
-                searchOptions={{
-                    ariaLabel: 'Find repositories',
-                    noResultText: getRepoFilterNoResultText,
-                }}
-                minItems={1}
-            >
-                {getRepoFilterLinks(repoFilters, onDynamicFilterClicked)}
-            </SearchSidebarSection>
+                <SearchSidebarSection
+                    sectionId={SectionID.REPOSITORIES}
+                    header="Repositories"
+                    searchOptions={{
+                        ariaLabel: 'Find repositories',
+                        noResultText: getRepoFilterNoResultText,
+                    }}
+                    minItems={1}
+                >
+                    {getRepoFilterLinks(repoFilters, onDynamicFilterClicked)}
+                </SearchSidebarSection>
 
-            <SearchSidebarSection
-                sectionId={SectionID.SEARCH_REFERENCE}
-                header="Search reference"
-                searchOptions={{
-                    ariaLabel: 'Find filters',
-                    // search reference should always preserve the filter
-                    // (false is just an arbitrary but static value)
-                    clearSearchOnChange: false,
-                }}
-            >
-                {getSearchReferenceFactory({
-                    telemetryService: platformContext.telemetryService,
-                    setQueryState,
-                })}
-            </SearchSidebarSection>
+                <SearchSidebarSection
+                    sectionId={SectionID.SEARCH_REFERENCE}
+                    header="Search reference"
+                    searchOptions={{
+                        ariaLabel: 'Find filters',
+                        // search reference should always preserve the filter
+                        // (false is just an arbitrary but static value)
+                        clearSearchOnChange: false,
+                    }}
+                >
+                    {getSearchReferenceFactory({
+                        telemetryService: platformContext.telemetryService,
+                        setQueryState,
+                    })}
+                </SearchSidebarSection>
 
-            <SearchSidebarSection sectionId={SectionID.SEARCH_SNIPPETS} header="Search snippets">
-                {getSearchSnippetLinks(settingsCascade, onSnippetClicked)}
-            </SearchSidebarSection>
+                <SearchSidebarSection sectionId={SectionID.SEARCH_SNIPPETS} header="Search snippets">
+                    {getSearchSnippetLinks(settingsCascade, onSnippetClicked)}
+                </SearchSidebarSection>
 
-            <SearchSidebarSection sectionId={SectionID.QUICK_LINKS} header="Quicklinks">
-                {getQuickLinks(settingsCascade)}
-            </SearchSidebarSection>
-        </SearchSidebar>
+                <SearchSidebarSection sectionId={SectionID.QUICK_LINKS} header="Quicklinks">
+                    {getQuickLinks(settingsCascade)}
+                </SearchSidebarSection>
+            </PersistSidebarStoreProvider>
+        </StickySearchSidebar>
     )
 })
 
