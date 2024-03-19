@@ -40,8 +40,8 @@ done
 
 cd ..
 
-find docs/admin/observability -name "*.bazel" -print0 | xargs --null rm
-find docs/cli -name "*.bazel" -print0 | xargs --null rm
+find docs/admin/observability -name "*.bazel" -print0 | xargs --null --no-run-if-empty rm
+find docs/cli -name "*.bazel" -print0 | xargs --null --no-run-if-empty rm
 
 git add .
 git diff
