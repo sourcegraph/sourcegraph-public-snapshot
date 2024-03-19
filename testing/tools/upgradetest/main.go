@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/run"
+	"github.com/sourcegraph/log"
 )
 
 // These commands are meant to be executed with a VERSION env var with a hypothetical stamped release version
