@@ -1,4 +1,8 @@
-<article data-testid="search-result">
+<script>
+    import { focusContainerClass } from './FileSearchResultHeader.svelte'
+</script>
+
+<article data-testid="search-result" class={focusContainerClass}>
     <div class="header">
         <div class="icon">
             <slot name="icon" />
