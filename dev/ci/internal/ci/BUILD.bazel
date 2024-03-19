@@ -43,6 +43,7 @@ go_library(
 go_test(
     name = "ci_test",
     srcs = [
+        "aspect_workflows_test.go",
         "bazel_operations_test.go",
         "wolfi_operations_test.go",
     ],
