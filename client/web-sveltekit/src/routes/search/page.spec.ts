@@ -5,6 +5,7 @@ import {
     createCommitMatch,
     createContentMatch,
     createPathMatch,
+    createSymbolMatch,
 } from '../../testing/search-testdata'
 
 test('search input is autofocused', async ({ page }) => {
@@ -76,6 +77,36 @@ test('main navbar menus are visible above search input', async ({ page, sg }) =>
     await page.getByRole('button', { name: 'Code Search' }).click()
     await page.getByRole('link', { name: 'Search Home' }).click()
     await expect(page).toHaveURL(/\/search$/)
+})
+
+test.use({
+    permissions: ['clipboard-write', 'clipboard-read'],
+})
+test('copy path button appears and copies path', async ({ page, sg }) => {
+    const stream = sg.mockSearchStream()
+    await page.goto('/search?q=test')
+    await page.getByRole('heading', { name: 'Filter results' }).waitFor()
+
+    const contentMatch = createContentMatch()
+    const pathMatch = createPathMatch()
+    const symbolMatch = createSymbolMatch()
+
+    await stream.publish(
+        { type: 'matches', data: [contentMatch, pathMatch, symbolMatch] },
+        createProgressEvent(),
+        createDoneEvent()
+    )
+    await stream.close()
+
+    const copyPathButton = page.getByRole('button', { name: 'Copy path to clipboard' })
+
+    for (const match of [contentMatch, pathMatch, symbolMatch]) {
+        await page.getByRole('link', { name: match.path }).hover()
+        expect(copyPathButton).toBeVisible()
+        await copyPathButton.click()
+        let clipboardText = await page.evaluate('navigator.clipboard.readText()')
+        expect(clipboardText).toBe(match.path)
+    }
 })
 
 test('preview can be opened and closed', async ({ page, sg }) => {

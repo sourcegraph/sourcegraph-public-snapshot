@@ -1417,6 +1417,9 @@ importers:
       '@urql/core':
         specifier: ^4.2.3
         version: 4.2.3(graphql@15.4.0)
+      copy-to-clipboard:
+        specifier: ^3.3.1
+        version: 3.3.1
       highlight.js:
         specifier: ^10.0.0
         version: 10.7.3
