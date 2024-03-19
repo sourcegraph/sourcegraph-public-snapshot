@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -43,7 +44,45 @@ var cloudCommand = &cli.Command{
 				return nil
 			},
 		},
+		{
+			Name:        "deploy",
+			Usage:       "sg could deploy --branch <branch> --tag <tag>",
+			Description: "Deploy the specified branch or tag to an ephemeral Sourcegraph Cloud environment",
+			Action:      deployCloudEphemeral,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name: "branch",
+					Action: func(ctx *cli.Context, value string) error {
+						if value == "" {
+							repoRoot, err := root.RepositoryRoot()
+							if err != nil {
+								return err
+							}
+							branch, err := run.Cmd(ctx.Context, "git", "rev-parse", "--abbrev-ref", "HEAD").Dir(repoRoot).Run().String()
+							ctx.Set("branch", branch)
+						}
+						return nil
+					},
+				},
+				&cli.StringFlag{
+					Name: "tag",
+				},
+			},
+		},
 	},
+}
+
+func deployCloudEphemeral(ctx *cli.Context) error {
+	tag := ctx.String("tag")
+	branch := ctx.String("branch")
+
+	ci.
+
+	// 1. kick of a build so that we can get the images
+	// 2. Once the build is kicked off we will need the build number so taht we can generate the version locally
+	// 3. Once we have the version we can kick off the cloud deploy so that it can start provisioning the environment
+
+	return nil
 }
 
 func checkGKEAuthPlugin() error {
