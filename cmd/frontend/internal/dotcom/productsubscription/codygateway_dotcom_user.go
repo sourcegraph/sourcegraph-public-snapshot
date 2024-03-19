@@ -383,6 +383,8 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"anthropic/claude-instant-1.2",
 			"fireworks/starcoder",
 			"fireworks/" + fireworks.Llama213bCode,
+			"fireworks/" + fireworks.StarcoderTwo15b,
+			"fireworks/" + fireworks.StarcoderTwo7b,
 		}
 	default:
 		return []string{}

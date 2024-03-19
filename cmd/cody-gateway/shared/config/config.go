@@ -185,6 +185,8 @@ func (c *Config) Load() {
 			// and allows Cody Gateway to decide which specific model to route the request to.
 			"starcoder",
 			// Fireworks multi-tenant models:
+			fireworks.StarcoderTwo15b,
+			fireworks.StarcoderTwo7b,
 			fireworks.Starcoder16b,
 			fireworks.Starcoder7b,
 			fireworks.Starcoder16b8bit,
