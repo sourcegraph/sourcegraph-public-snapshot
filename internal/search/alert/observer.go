@@ -240,7 +240,7 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		mErr *searchrepos.MissingRepoRevsError
 		oErr *errOverRepoLimit
 		lErr *ErrLuckyQueries
-		sErr *symbols.OutOfBoundsErr
+		sErr *symbols.OutOfBoundsError
 	)
 
 	if errors.HasType(err, authz.ErrStalePermissions{}) {

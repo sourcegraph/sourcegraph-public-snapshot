@@ -60,11 +60,11 @@ type Client struct {
 	SubRepoPermsChecker func() authz.SubRepoPermissionChecker
 }
 
-type OutOfBoundsErr struct {
+type OutOfBoundsError struct {
 	Description string
 }
 
-func (e *OutOfBoundsErr) Error() string {
+func (e *OutOfBoundsError) Error() string {
 	return e.Description
 }
 
@@ -82,7 +82,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 			s := status.Convert(err)
 			for _, d := range s.Details() {
 				if e, ok := d.(*errdetails.BadRequest_FieldViolation); ok {
-					return nil, &OutOfBoundsErr{Description: e.Description}
+					return nil, &OutOfBoundsError{Description: e.Description}
 				}
 			}
 		default:

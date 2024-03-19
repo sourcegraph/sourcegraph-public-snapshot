@@ -57,7 +57,7 @@ func (s *store) Search(ctx context.Context, args search.SymbolsParameters) ([]re
 	// we can communicate a nicer number to the user.
 	if args.First < 0 || args.First > maxSymbolLimit+1 {
 		p := message.NewPrinter(language.English)
-		return nil, &symbols.OutOfBoundsErr{Description: p.Sprintf("Unindexed symbol search only supports returning up to %d results at a time. Use the \"count:\" filter to adjust the number of requested results.", maxSymbolLimit)}
+		return nil, &symbols.OutOfBoundsError{Description: p.Sprintf("Unindexed symbol search only supports returning up to %d results at a time. Use the \"count:\" filter to adjust the number of requested results.", maxSymbolLimit)}
 	}
 
 	return scanSymbols(s.Query(ctx, sqlf.Sprintf(
