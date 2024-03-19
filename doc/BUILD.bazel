@@ -30,3 +30,16 @@ sh_binary(
         ["test.sh"],
     ),
 )
+
+sh_binary(
+    name = "generated.push",
+    srcs = ["_generated.push.sh"],
+    args = [
+        "$(location //dev/tools:gh)",
+    ],
+    data = [
+        "//dev/tools:gh",
+        "//doc/admin/observability:doc_files",
+        "//doc/cli/references:doc_files",
+    ],
+)
