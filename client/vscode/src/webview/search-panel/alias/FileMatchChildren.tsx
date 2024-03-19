@@ -5,7 +5,6 @@ import type * as H from 'history'
 import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { FileMatchChildrenStyles as styles } from '@sourcegraph/branded'
 import type { HoverMerged } from '@sourcegraph/client-api'
 import type { Hoverifier } from '@sourcegraph/codeintellify'
 import { appendLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
@@ -28,6 +27,8 @@ import { Button, Code } from '@sourcegraph/wildcard'
 import type { HighlightLineRange } from '../../../graphql-operations'
 import { CodeExcerpt } from '../components/CodeExcerpt'
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
+
+import styles from './FileMatchChildren.module.scss'
 
 export interface MatchGroup {
     blobLines?: string[]
