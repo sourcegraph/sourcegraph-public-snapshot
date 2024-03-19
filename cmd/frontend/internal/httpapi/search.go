@@ -288,6 +288,7 @@ func (h *searchIndexerServer) doSearchConfiguration(ctx context.Context, paramet
 	}
 
 	indexOptions := searchbackend.GetIndexOptions(
+		h.logger,
 		&siteConfig,
 		getRepoIndexOptions,
 		getSearchContextRevisions,

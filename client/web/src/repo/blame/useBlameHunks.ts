@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { EventStreamContentType, fetchEventSource } from '@microsoft/fetch-event-source'
 import { formatDistanceStrict } from 'date-fns'
 import { truncate } from 'lodash'
-import { Observable, of } from 'rxjs'
+import { Observable, lastValueFrom, of } from 'rxjs'
 import { catchError, map, throttleTime } from 'rxjs/operators'
 
 import { type ErrorLike, memoizeObservable } from '@sourcegraph/common'
@@ -192,25 +192,25 @@ const fetchBlameViaStreaming = memoizeObservable(
 )
 
 async function fetchRepositoryData(repoName: string): Promise<Omit<BlameHunkData, 'current'>> {
-    return requestGraphQL<FirstCommitDateResult, FirstCommitDateVariables>(
-        gql`
-            query FirstCommitDate($repo: String!) {
-                repository(name: $repo) {
-                    firstEverCommit {
-                        author {
-                            date
+    return lastValueFrom(
+        requestGraphQL<FirstCommitDateResult, FirstCommitDateVariables>(
+            gql`
+                query FirstCommitDate($repo: String!) {
+                    repository(name: $repo) {
+                        firstEverCommit {
+                            author {
+                                date
+                            }
+                        }
+                        externalURLs {
+                            url
+                            serviceKind
                         }
                     }
-                    externalURLs {
-                        url
-                        serviceKind
-                    }
                 }
-            }
-        `,
-        { repo: repoName }
-    )
-        .pipe(
+            `,
+            { repo: repoName }
+        ).pipe(
             map(dataOrThrowErrors),
             map(({ repository }) => {
                 const firstCommitDate = repository?.firstEverCommit?.author?.date
@@ -220,7 +220,7 @@ async function fetchRepositoryData(repoName: string): Promise<Omit<BlameHunkData
                 }
             })
         )
-        .toPromise()
+    )
 }
 
 /**

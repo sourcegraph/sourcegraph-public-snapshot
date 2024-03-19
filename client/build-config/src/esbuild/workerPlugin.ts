@@ -1,6 +1,6 @@
 import type * as esbuild from 'esbuild'
 
-import { packageResolutionPlugin, RXJS_RESOLUTIONS } from './packageResolutionPlugin'
+import { packageResolutionPlugin } from './packageResolutionPlugin'
 
 /**
  * Starts a new esbuild build to create a bundle for a Web Worker.
@@ -21,7 +21,6 @@ async function buildWorker(
         plugins: [
             packageResolutionPlugin({
                 path: require.resolve('path-browserify'),
-                ...RXJS_RESOLUTIONS,
             }),
         ],
         // Use the minify option as an indicator for running in dev mode.

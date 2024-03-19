@@ -82,12 +82,12 @@ export interface ActionsNavItemsProps
 export const ActionsNavItems: React.FunctionComponent<React.PropsWithChildren<ActionsNavItemsProps>> = props => {
     const { scope, extraContext, extensionsController, menu, wrapInList, transformContributions = identity } = props
 
-    const scopeChanges = useMemo(() => new ReplaySubject<ContributionScope>(1), [])
+    const scopeChanges = useMemo(() => new ReplaySubject<ContributionScope | undefined>(1), [])
     useDeepCompareEffectNoCheck(() => {
         scopeChanges.next(scope)
     }, [scope])
 
-    const extraContextChanges = useMemo(() => new ReplaySubject<Context<unknown>>(1), [])
+    const extraContextChanges = useMemo(() => new ReplaySubject<Context<unknown> | undefined>(1), [])
     useDeepCompareEffectNoCheck(() => {
         extraContextChanges.next(extraContext)
     }, [extraContext])

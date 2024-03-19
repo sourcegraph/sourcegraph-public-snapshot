@@ -42,6 +42,14 @@ func (bc BazelCommand) GetConfig() SGConfigCommandOptions {
 	return bc.Config
 }
 
+func (bc BazelCommand) UpdateConfig(f func(*SGConfigCommandOptions)) SGConfigCommand {
+	f(&bc.Config)
+	return bc
+}
+
+func (bc BazelCommand) GetBazelTarget() string {
+	return bc.Target
+}
 func (bc BazelCommand) watchPaths() ([]string, error) {
 	// If no target is defined, there is nothing to be built and watched
 	if bc.Target == "" {

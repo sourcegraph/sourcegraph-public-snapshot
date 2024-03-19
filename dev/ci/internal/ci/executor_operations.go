@@ -5,6 +5,8 @@ import (
 	"strconv"
 
 	"github.com/Masterminds/semver"
+
+	"github.com/sourcegraph/sourcegraph/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/operations"
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
@@ -85,6 +87,7 @@ func bazelPublishExecutorDockerMirror(c Config) operations.Operation {
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease, runtype.InternalRelease))),
+			bk.Env("RELEASE_INTERNAL", strconv.FormatBool(c.RunType.Is(runtype.InternalRelease))),
 			bk.Cmd(bazelStampedCmd("run //cmd/executor/docker-mirror:ami.push")),
 		}
 		pipeline.AddStep(":bazel::packer: :white_check_mark: Publish docker registry mirror image", stepOpts...)
@@ -121,7 +124,7 @@ func executorDockerMirrorImageFamilyForConfig(c Config) string {
 		if err != nil {
 			panic("cannot parse version")
 		}
-		imageFamily = fmt.Sprintf("sourcegraph-executors-docker-mirror-%d-%d-%d", ver.Major(), ver.Minor(), ver.Patch())
+		imageFamily = fmt.Sprintf("sourcegraph-executors-internal-docker-mirror-%d-%d-%d", ver.Major(), ver.Minor(), ver.Patch())
 	}
 	return imageFamily
 }
@@ -148,19 +151,23 @@ func executorImageFamilyForConfig(c Config) string {
 	return imageFamily
 }
 
-func executorsE2E(candidateTag string) operations.Operation {
+func executorsE2E(c Config) operations.Operation {
+	registry := images.SourcegraphDockerDevRegistry
+	if c.RunType.Is(runtype.CloudEphemeral) {
+		registry = images.CloudEphemeralRegistry
+	}
+
 	return func(p *bk.Pipeline) {
 		p.AddStep(":bazel::docker::packer: Executors E2E",
-			// Run tests against the candidate server image
 			bk.DependsOn("bazel-push-images-candidate"),
 			bk.Agent("queue", AspectWorkflows.QueueDefault),
-			bk.Env("CANDIDATE_VERSION", candidateTag),
+			bk.Env("REGISTRY", registry),
+			bk.Env("CANDIDATE_VERSION", c.candidateImageTag()),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Cmd("dev/ci/integration/executors/run.sh"),
-			bk.ArtifactPaths("./*.log"),
-		)
+			bk.ArtifactPaths("./*.log")) // Run tests against the candidate server image
 	}
 }

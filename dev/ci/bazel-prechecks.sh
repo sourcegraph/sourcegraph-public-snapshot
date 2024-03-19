@@ -3,6 +3,9 @@
 set -eu
 EXIT_CODE=0
 
+echo "~~~ :aspect: :stethoscope: Agent Health check"
+/etc/aspect/workflows/bin/agent_health_check
+
 aspectRC="/tmp/aspect-generated.bazelrc"
 rosetta bazelrc > "$aspectRC"
 bazelrc=(--bazelrc="$aspectRC")

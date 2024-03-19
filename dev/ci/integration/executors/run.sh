@@ -33,10 +33,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
-registry="us.gcr.io/sourcegraph-dev"
-export POSTGRES_IMAGE="${registry}/postgres-12-alpine:${CANDIDATE_VERSION}"
-export SERVER_IMAGE="${registry}/server:${CANDIDATE_VERSION}"
-export EXECUTOR_IMAGE="${registry}/executor:${CANDIDATE_VERSION}"
+export REGISTRY=${REGISTRY:-"us.gcr.io/sourcegraph-dev"}
+export POSTGRES_IMAGE="${REGISTRY}/postgres-12-alpine:${CANDIDATE_VERSION}"
+export SERVER_IMAGE="${REGISTRY}/server:${CANDIDATE_VERSION}"
+export EXECUTOR_IMAGE="${REGISTRY}/executor:${CANDIDATE_VERSION}"
 export EXECUTOR_FRONTEND_PASSWORD="hunter2hunter2hunter2"
 export SOURCEGRAPH_LICENSE_GENERATION_KEY="${SOURCEGRAPH_LICENSE_GENERATION_KEY:-""}"
 export TMP_DIR
@@ -56,7 +56,7 @@ fi
 
 # Need to pull this image pre-execution as the docker executor doesn't have a
 # credential to pull this image.
-BATCHESHELPER_IMAGE="${registry}/batcheshelper:${CANDIDATE_VERSION}"
+BATCHESHELPER_IMAGE="${REGISTRY}/batcheshelper:${CANDIDATE_VERSION}"
 docker pull "${BATCHESHELPER_IMAGE}"
 
 echo "--- :terminal: Start server with executor"
