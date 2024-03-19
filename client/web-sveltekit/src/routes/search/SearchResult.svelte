@@ -1,8 +1,4 @@
-<script>
-    import { focusContainerClass } from './FileSearchResultHeader.svelte'
-</script>
-
-<article data-testid="search-result" class={focusContainerClass}>
+<article data-testid="search-result">
     <div class="header">
         <div class="icon">
             <slot name="icon" />
@@ -24,6 +20,19 @@
 </article>
 
 <style lang="scss">
+    article {
+        :global([data-visible-on-focus]) {
+            visibility: hidden;
+        }
+
+        &:hover,
+        &:focus-within {
+            :global([data-visible-on-focus]) {
+                visibility: visible;
+            }
+        }
+    }
+
     .header {
         display: flex;
         align-items: center;
