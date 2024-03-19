@@ -3,13 +3,12 @@
 set -eux -o pipefail
 
 # Service Specific Parameters
-GCP_PROJECT="msp-testbed-robert-7be9"
-GCP_REGION="us-central1"
-GCP_DELIVERY_PIPELINE="msp-testbed-us-central1-rollout"
-GCP_CLOUDRUN_SKAFFOLD_SOURCE="gs://msp-testbed-robert-7be9-cloudrun-skaffold/source.tar.gz"
-REPOSITORY="us.gcr.io/sourcegraph-dev/msp-example"
+: "${GCP_PROJECT:?"GCP_PROJECT is required"}"
+: "${GCP_REGION:?"GCP_REGION is required"}"
+: "${GCP_DELIVERY_PIPELINE:?"GCP_DELIVERY_PIPELINE is required"}"
+: "${REPOSITORY:?"REPOSITORY is required"}"
 
-# Env Variable Defaults
+# CI Variables
 : "${BUILDKITE_BUILD_NUMBER:?"BUILDKITE_BUILD_NUMBER is required"}"
 : "${BUILDKITE_COMMIT:?"BUILDKITE_COMMIT is required"}"
 
@@ -20,6 +19,7 @@ REPOSITORY="us.gcr.io/sourcegraph-dev/msp-example"
 # : ${BUILDKITE_BUILD_AUTHOR_EMAIL:?"BUILDKITE_BUILD_AUTHOR_EMAIL is required"}
 
 # Computed Variables
+GCP_CLOUDRUN_SKAFFOLD_SOURCE="gs://${GCP_PROJECT}-cloudrun-skaffold/source.tar.gz"
 SHORT_SHA="${BUILDKITE_COMMIT:0:12}"
 TAG="${SHORT_SHA}_${BUILDKITE_BUILD_NUMBER}"
 # resource ids must be lower-case letters, numbers, and hyphens,
