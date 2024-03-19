@@ -113,6 +113,17 @@ test.describe('preview panel', async () => {
     test('can be opened and closed', async ({ page, sg }) => {
         const stream = sg.mockSearchStream()
         await page.goto('/search?q=test')
+        sg.mockOperations({
+            BlobPageQuery: () => ({
+                repository: {
+                    commit: {
+                        blob: {
+                            content: 'lorem\nipsum\ndolor\n',
+                        },
+                    },
+                },
+            }),
+        })
         await page.getByRole('heading', { name: 'Filter results' }).waitFor()
         await stream.publish(
             {
@@ -127,18 +138,6 @@ test.describe('preview panel', async () => {
         // 2 preview buttons: one for content match and one for path match
         const previewButtons = await page.getByRole('button', { name: 'Preview' }).all()
         expect(previewButtons).toHaveLength(2)
-
-        sg.mockOperations({
-            BlobPageQuery: () => ({
-                repository: {
-                    commit: {
-                        blob: {
-                            content: 'lorem\nipsum\ndolor\n',
-                        },
-                    },
-                },
-            }),
-        })
 
         // Open preview panel
         await previewButtons[0].click()
