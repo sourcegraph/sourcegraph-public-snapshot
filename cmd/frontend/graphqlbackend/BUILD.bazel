@@ -465,6 +465,7 @@ go_test(
     # graphqlbackend_test.go opens itself during its test, so we need to make it available.
     data = ["graphqlbackend_test.go"],
     embed = [":graphqlbackend"],
+    shard_count = 2,
     tags = [
         # Test requires localhost database
         "requires-network",
