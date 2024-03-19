@@ -1,13 +1,13 @@
 import type * as Comlink from 'comlink'
 import * as uuid from 'uuid'
 
-import {EventSource, type Event as EventType} from '@sourcegraph/shared/src/graphql-operations'
+import { EventSource, type Event as EventType } from '@sourcegraph/shared/src/graphql-operations'
 
-import {version} from '../../../package.json'
-import type {ExtensionCoreAPI} from '../../contract'
-import {ANONYMOUS_USER_ID_KEY} from '../../settings/LocalStorageService'
+import { version } from '../../../package.json'
+import type { ExtensionCoreAPI } from '../../contract'
+import { ANONYMOUS_USER_ID_KEY } from '../../settings/LocalStorageService'
 
-import type {VsceTelemetryService} from './telemetryService'
+import type { VsceTelemetryService } from './telemetryService'
 
 // Event Logger for VS Code Extension
 export class EventLogger implements VsceTelemetryService {
@@ -17,15 +17,13 @@ export class EventLogger implements VsceTelemetryService {
     private listeners: Set<(eventName: string) => void> = new Set()
     private vsceAPI: Comlink.Remote<ExtensionCoreAPI>
     private newInstall = false
-    private editorInfo = {editor: 'vscode', version}
+    private editorInfo = { editor: 'vscode', version }
 
     constructor(extensionAPI: Comlink.Remote<ExtensionCoreAPI>) {
         this.vsceAPI = extensionAPI
         this.initializeLogParameters()
-            .then(() => {
-            })
-            .catch(() => {
-            })
+            .then(() => {})
+            .catch(() => {})
     }
 
     /**
@@ -37,8 +35,8 @@ export class EventLogger implements VsceTelemetryService {
         if (pageTitle) {
             this.tracker(
                 `View${pageTitle}`,
-                {...eventProperties, ...this.editorInfo},
-                {...publicArgument, ...this.editorInfo},
+                { ...eventProperties, ...this.editorInfo },
+                { ...publicArgument, ...this.editorInfo },
                 url
             )
         }
@@ -52,8 +50,8 @@ export class EventLogger implements VsceTelemetryService {
         if (eventName) {
             this.tracker(
                 `${eventName}Viewed`,
-                {...eventProperties, ...this.editorInfo},
-                {...publicArgument, ...this.editorInfo},
+                { ...eventProperties, ...this.editorInfo },
+                { ...publicArgument, ...this.editorInfo },
                 url
             )
         }
@@ -93,8 +91,8 @@ export class EventLogger implements VsceTelemetryService {
         }
         this.tracker(
             eventLabel,
-            {...eventProperties, ...this.editorInfo},
-            {...publicArgument, ...this.editorInfo},
+            { ...eventProperties, ...this.editorInfo },
+            { ...publicArgument, ...this.editorInfo },
             uri
         )
     }
@@ -166,8 +164,7 @@ export class EventLogger implements VsceTelemetryService {
         }
         this.vsceAPI
             .logEvents(userEventVariables)
-            .then(() => {
-            })
+            .then(() => {})
             .catch(error => console.log(error))
     }
 }

@@ -1,6 +1,6 @@
-import vscode, {env} from 'vscode'
+import vscode, { env } from 'vscode'
 
-import {generateSourcegraphBlobLink} from './initialize'
+import { generateSourcegraphBlobLink } from './initialize'
 
 /**
  * browser Actions for Web does not run node modules to get git info

@@ -1,10 +1,10 @@
 import * as React from 'react'
 
-import {displayRepoName} from '@sourcegraph/shared/src/components/RepoLink'
-import {parseRepoRevision} from '@sourcegraph/shared/src/util/url'
-import {Button, Tooltip, useIsTruncated} from '@sourcegraph/wildcard'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
+import { parseRepoRevision } from '@sourcegraph/shared/src/util/url'
+import { Button, Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
 
-import {useOpenSearchResultsContext} from '../MatchHandlersContext'
+import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
 /**
  * Splits the repository name into the dir and base components.
@@ -28,12 +28,12 @@ interface Props {
  * absolutely need breadcrumb-like behavior, use this instead of FilePathBreadcrumb.
  */
 export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-                                                                                          repoDisplayName,
-                                                                                          repoName,
-                                                                                          repoURL,
-                                                                                          filePath,
-                                                                                          className,
-                                                                                      }) => {
+    repoDisplayName,
+    repoName,
+    repoURL,
+    filePath,
+    className,
+}) => {
     /**
      * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
      * We want to do it on mouse enter as browser window size might change after the element has been
@@ -43,7 +43,7 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
 
     const [fileBase, fileName] = splitPath(filePath)
 
-    const {openRepo, openFile} = useOpenSearchResultsContext()
+    const { openRepo, openFile } = useOpenSearchResultsContext()
 
     const getRepoAndRevision = (): { repoName: string; revision: string | undefined } => {
         // Example: `/github.com/sourcegraph/sourcegraph@main`
@@ -54,16 +54,16 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
         } else {
             repoRevision = repoURL.slice(0, indexOfSeparator) // the whole string leading up to the separator (allows revision to be multiple path parts)
         }
-        let {repoName, revision} = parseRepoRevision(repoRevision)
+        let { repoName, revision } = parseRepoRevision(repoRevision)
         // Remove leading slash
         if (repoName.startsWith('/')) {
             repoName = repoName.slice(1)
         }
-        return {repoName, revision}
+        return { repoName, revision }
     }
 
     const onRepoClick = (): void => {
-        const {repoName, revision} = getRepoAndRevision()
+        const { repoName, revision } = getRepoAndRevision()
 
         openRepo({
             repository: repoName,
@@ -72,8 +72,8 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
     }
 
     const onFileClick = (): void => {
-        const {repoName, revision} = getRepoAndRevision()
-        openFile(repoName, {path: filePath, revision})
+        const { repoName, revision } = getRepoAndRevision()
+        openFile(repoName, { path: filePath, revision })
     }
 
     return (

@@ -1,13 +1,13 @@
 import type net from 'net'
 
-import type {ClientRequest, RequestOptions} from 'agent-base'
+import type { ClientRequest, RequestOptions } from 'agent-base'
 import HttpProxyAgent from 'http-proxy-agent'
 import HttpsProxyAgent from 'https-proxy-agent'
-import fetch, {Headers} from 'node-fetch'
+import fetch, { Headers } from 'node-fetch'
 import vscode from 'vscode'
 
-export {fetch, Headers}
-export type {BodyInit, Response, HeadersInit} from 'node-fetch'
+export { fetch, Headers }
+export type { BodyInit, Response, HeadersInit } from 'node-fetch'
 
 interface HttpsProxyAgentInterface {
     callback(req: ClientRequest, opts: RequestOptions): Promise<net.Socket>
@@ -49,9 +49,9 @@ export function getProxyAgent(): ((url: URL | string) => HttpsProxyAgentInterfac
                 : HttpsProxyAgent) as unknown as HttpsProxyAgentConstructor
             return new ProxyAgent({
                 protocol: proxyProtocol === 'http' || proxyProtocol === 'https' ? proxyProtocol : 'https',
-                ...(proxyHost ? {host: proxyHost} : null),
-                ...(proxyPort ? {port: proxyPort} : null),
-                ...(proxyPath ? {path: proxyPath} : null),
+                ...(proxyHost ? { host: proxyHost } : null),
+                ...(proxyPort ? { port: proxyPort } : null),
+                ...(proxyPath ? { path: proxyPath } : null),
             })
         }
     }

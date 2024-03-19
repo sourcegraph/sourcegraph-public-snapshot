@@ -1,24 +1,24 @@
-import {of, type Subscription} from 'rxjs'
-import {map, switchMap, throttleTime} from 'rxjs/operators'
+import { of, type Subscription } from 'rxjs'
+import { map, switchMap, throttleTime } from 'rxjs/operators'
 import type * as vscode from 'vscode'
 
-import {SearchMode} from '@sourcegraph/shared/src/search'
-import {appendContextFilter} from '@sourcegraph/shared/src/search/query/transformer'
-import {aggregateStreamingSearch} from '@sourcegraph/shared/src/search/stream'
+import { SearchMode } from '@sourcegraph/shared/src/search'
+import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 
-import type {ExtensionCoreAPI} from '../contract'
-import {SearchPatternType} from '../graphql-operations'
-import type {VSCEStateMachine} from '../state'
-import {focusSearchPanel} from '../webview/commands'
+import type { ExtensionCoreAPI } from '../contract'
+import { SearchPatternType } from '../graphql-operations'
+import type { VSCEStateMachine } from '../state'
+import { focusSearchPanel } from '../webview/commands'
 
-import {isOlderThan, observeInstanceVersionNumber} from './instanceVersion'
+import { isOlderThan, observeInstanceVersionNumber } from './instanceVersion'
 
 export function createStreamSearch({
-                                       context,
-                                       stateMachine,
-                                       sourcegraphURL,
-                                       session,
-                                   }: {
+    context,
+    stateMachine,
+    sourcegraphURL,
+    session,
+}: {
     context: vscode.ExtensionContext
     stateMachine: VSCEStateMachine
     sourcegraphURL: string
@@ -41,7 +41,7 @@ export function createStreamSearch({
         stateMachine.emit({
             type: 'submit_search_query',
             submittedSearchQueryState: {
-                queryState: {query},
+                queryState: { query },
                 searchCaseSensitivity: options.caseSensitive,
                 searchPatternType: options.patternType,
                 searchMode: options.searchMode || SearchMode.Precise,
@@ -59,7 +59,7 @@ export function createStreamSearch({
                     if (
                         patternType === SearchPatternType.standard &&
                         version &&
-                        isOlderThan(version, {major: 3, minor: 43})
+                        isOlderThan(version, { major: 3, minor: 43 })
                     ) {
                         /**
                          * SearchPatternType.standard support was added in Sourcegraph v3.43.0.
@@ -74,18 +74,18 @@ export function createStreamSearch({
                 switchMap(patternType =>
                     aggregateStreamingSearch(
                         of(appendContextFilter(query, stateMachine.state.context.selectedSearchContextSpec)),
-                        {...options, patternType, sourcegraphURL}
-                    ).pipe(throttleTime(500, undefined, {leading: true, trailing: true}))
+                        { ...options, patternType, sourcegraphURL }
+                    ).pipe(throttleTime(500, undefined, { leading: true, trailing: true }))
                 )
             )
             .subscribe(searchResults => {
                 if (searchResults.state === 'error') {
                     // Pass only primitive copied values because Error object is not cloneable
-                    const {name, message, stack} = searchResults.error
-                    searchResults.error = {name, message, stack}
+                    const { name, message, stack } = searchResults.error
+                    searchResults.error = { name, message, stack }
                 }
 
-                stateMachine.emit({type: 'received_search_results', searchResults})
+                stateMachine.emit({ type: 'received_search_results', searchResults })
             })
     }
 }

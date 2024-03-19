@@ -1,14 +1,14 @@
-import {createContext, useContext, useMemo} from 'react'
+import { createContext, useContext, useMemo } from 'react'
 
 import type * as Comlink from 'comlink'
-import {noop} from 'lodash'
+import { noop } from 'lodash'
 
-import type {AuthenticatedUser} from '@sourcegraph/shared/src/auth'
-import type {RepositoryMatch} from '@sourcegraph/shared/src/search/stream'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 
-import type {ExtensionCoreAPI} from '../../contract'
-import {SourcegraphUri, type SourcegraphUriOptionals} from '../../file-system/SourcegraphUri'
-import type {VSCodePlatformContext} from '../platform/context'
+import type { ExtensionCoreAPI } from '../../contract'
+import { SourcegraphUri, type SourcegraphUriOptionals } from '../../file-system/SourcegraphUri'
+import type { VSCodePlatformContext } from '../platform/context'
 
 type MinimalRepositoryMatch = Pick<RepositoryMatch, 'repository' | 'branches' | 'description'>
 
@@ -30,12 +30,12 @@ export const MatchHandlersContext = createContext<MatchHandlersContext>({
 })
 
 export function useMatchHandlers({
-                                     platformContext,
-                                     extensionCoreAPI,
-                                     onRepoSelected,
-                                     authenticatedUser,
-                                     instanceURL,
-                                 }: {
+    platformContext,
+    extensionCoreAPI,
+    onRepoSelected,
+    authenticatedUser,
+    instanceURL,
+}: {
     platformContext: VSCodePlatformContext
     extensionCoreAPI: Comlink.Remote<ExtensionCoreAPI>
     onRepoSelected: (repositoryMatch: MinimalRepositoryMatch) => void
@@ -96,9 +96,9 @@ export function useMatchHandlers({
                     path,
                     position: position
                         ? {
-                            line: position.line - 1, // Convert to 1-based
-                            character: position.character - 1,
-                        }
+                              line: position.line - 1, // Convert to 1-based
+                              character: position.character - 1,
+                          }
                         : undefined,
                 })
                 const uri = sourcegraphUri.uri + sourcegraphUri.positionSuffix()

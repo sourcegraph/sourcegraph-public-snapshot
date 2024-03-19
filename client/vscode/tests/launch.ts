@@ -1,9 +1,9 @@
 import childProcess from 'child_process'
-import {mkdtempSync} from 'fs'
-import {tmpdir} from 'os'
+import { mkdtempSync } from 'fs'
+import { tmpdir } from 'os'
 import path from 'path'
 
-import puppeteer, {type Page} from 'puppeteer'
+import puppeteer, { type Page } from 'puppeteer'
 import rimraf from 'rimraf'
 
 const PORT = 29378
@@ -20,7 +20,7 @@ export async function launchVsCode(vscodeExecutablePath: string): Promise<VSCode
     const userDataDirectory = mkdtempSync(path.join(tmpdir(), 'vsce'))
     const extensionsDirectory = mkdtempSync(path.join(tmpdir(), 'vsce'))
 
-    console.log('Starting VS Code', {verbose, vscodeExecutablePath, userDataDirectory, extensionsDirectory})
+    console.log('Starting VS Code', { verbose, vscodeExecutablePath, userDataDirectory, extensionsDirectory })
 
     const vsCodeProcess = childProcess.spawn(
         vscodeExecutablePath,

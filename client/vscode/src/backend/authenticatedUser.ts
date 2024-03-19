@@ -1,13 +1,13 @@
-import {type Observable, ReplaySubject} from 'rxjs'
+import { type Observable, ReplaySubject } from 'rxjs'
 import type * as vscode from 'vscode'
 
-import {gql} from '@sourcegraph/http-client'
-import type {AuthenticatedUser} from '@sourcegraph/shared/src/auth'
-import type {CurrentAuthStateResult, CurrentAuthStateVariables} from '@sourcegraph/shared/src/graphql-operations'
+import { gql } from '@sourcegraph/http-client'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
 
-import {scretTokenKey} from '../webview/platform/AuthProvider'
+import { scretTokenKey } from '../webview/platform/AuthProvider'
 
-import {requestGraphQLFromVSCode} from './requestGraphQl'
+import { requestGraphQLFromVSCode } from './requestGraphQl'
 
 // Minimal auth state for the VS Code extension.
 // Uses only old fields for backwards compatibility with old GraphQL API versions.

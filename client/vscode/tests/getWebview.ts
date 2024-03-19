@@ -82,10 +82,10 @@ async function findSearchWebview(
             const className = await (await body.getProperty('className')).jsonValue()
             if (typeof className === 'string') {
                 if (className.includes('search-sidebar')) {
-                    return {frame, type: 'sidebar'}
+                    return { frame, type: 'sidebar' }
                 }
                 if (className.includes('search-panel')) {
-                    return {frame, type: 'panel'}
+                    return { frame, type: 'panel' }
                 }
             }
         }

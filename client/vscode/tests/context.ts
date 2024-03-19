@@ -1,16 +1,16 @@
 import type puppeteer from 'puppeteer'
 
-import type {SharedGraphQlOperations} from '@sourcegraph/shared/src/graphql-operations'
-import type {SearchEvent} from '@sourcegraph/shared/src/search/stream'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import type { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import {
     createSharedIntegrationTestContext,
     type IntegrationTestContext,
     type IntegrationTestOptions,
 } from '@sourcegraph/shared/src/testing/integration/context'
 
-import type {VSCodeGraphQlOperations} from '../src/graphql-operations'
+import type { VSCodeGraphQlOperations } from '../src/graphql-operations'
 
-import {commonVSCodeGraphQlResults} from './graphql'
+import { commonVSCodeGraphQlResults } from './graphql'
 
 export interface VSCodeIntegrationTestContext
     extends IntegrationTestContext<
@@ -26,7 +26,7 @@ export interface VSCodeIntegrationTestContext
 }
 
 export async function createVSCodeIntegrationTestContext(
-    {currentTest, directory}: Omit<IntegrationTestOptions, 'driver'>,
+    { currentTest, directory }: Omit<IntegrationTestOptions, 'driver'>,
     vsCodeFrontendPage: puppeteer.Page,
     sourcegraphBaseUrl = 'https://sourcegraph.com'
 ): Promise<VSCodeIntegrationTestContext> {

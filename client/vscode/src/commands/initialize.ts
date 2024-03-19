@@ -1,13 +1,13 @@
 import vscode from 'vscode'
 
-import type {EventSource} from '@sourcegraph/shared/src/graphql-operations'
+import type { EventSource } from '@sourcegraph/shared/src/graphql-operations'
 
-import {version} from '../../package.json'
-import {logEvent} from '../backend/eventLogger'
-import {SourcegraphUri} from '../file-system/SourcegraphUri'
-import {type LocalStorageService, ANONYMOUS_USER_ID_KEY} from '../settings/LocalStorageService'
+import { version } from '../../package.json'
+import { logEvent } from '../backend/eventLogger'
+import { SourcegraphUri } from '../file-system/SourcegraphUri'
+import { type LocalStorageService, ANONYMOUS_USER_ID_KEY } from '../settings/LocalStorageService'
 
-import {browserActions} from './browserActionsNode'
+import { browserActions } from './browserActionsNode'
 
 export function initializeCodeSharingCommands(
     context: vscode.ExtensionContext,
@@ -51,7 +51,7 @@ export function initializeCodeSharingCommands(
             referrer: 'VSCE',
             url: sourcegraphUrl,
             source: eventSourceType,
-            argument: JSON.stringify({editor: 'vscode', version}),
+            argument: JSON.stringify({ editor: 'vscode', version }),
         }
         logEvent(userEventVariables)
     }

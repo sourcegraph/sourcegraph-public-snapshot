@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import {readConfiguration} from './readConfiguration'
+import { readConfiguration } from './readConfiguration'
 
 export function endpointSetting(): string {
     const url = vscode.workspace.getConfiguration().get<string>('sourcegraph.url') || 'https://sourcegraph.com'

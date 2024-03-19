@@ -1,10 +1,10 @@
-import {type Observable, of, ReplaySubject, Subject} from 'rxjs'
-import {catchError, map, switchMap, throttleTime} from 'rxjs/operators'
+import { type Observable, of, ReplaySubject, Subject } from 'rxjs'
+import { catchError, map, switchMap, throttleTime } from 'rxjs/operators'
 import type * as vscode from 'vscode'
 
-import {createAggregateError} from '@sourcegraph/common'
-import {viewerSettingsQuery} from '@sourcegraph/shared/src/backend/settings'
-import type {ViewerSettingsResult, ViewerSettingsVariables} from '@sourcegraph/shared/src/graphql-operations'
+import { createAggregateError } from '@sourcegraph/common'
+import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
+import type { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
 import {
     EMPTY_SETTINGS_CASCADE,
     gqlToCascade,
@@ -12,9 +12,9 @@ import {
     type SettingsCascadeOrError,
 } from '@sourcegraph/shared/src/settings/settings'
 
-import {requestGraphQLFromVSCode} from './requestGraphQl'
+import { requestGraphQLFromVSCode } from './requestGraphQl'
 
-export function initializeSourcegraphSettings({context}: { context: vscode.ExtensionContext }): {
+export function initializeSourcegraphSettings({ context }: { context: vscode.ExtensionContext }): {
     settings: Observable<SettingsCascadeOrError<Settings>>
     refreshSettings: () => void
 } {
@@ -27,11 +27,11 @@ export function initializeSourcegraphSettings({context}: { context: vscode.Exten
 
     const subscription = refreshes
         .pipe(
-            throttleTime(ONE_HOUR_MS, undefined, {leading: true, trailing: true}),
+            throttleTime(ONE_HOUR_MS, undefined, { leading: true, trailing: true }),
             switchMap(() =>
                 requestGraphQLFromVSCode<ViewerSettingsResult, ViewerSettingsVariables>(viewerSettingsQuery, {})
             ),
-            map(({data, errors}) => {
+            map(({ data, errors }) => {
                 if (!data?.viewerSettings) {
                     throw createAggregateError(errors)
                 }
@@ -43,7 +43,7 @@ export function initializeSourcegraphSettings({context}: { context: vscode.Exten
         .subscribe(settingsCascade => {
             settings.next(settingsCascade)
         })
-    context.subscriptions.push({dispose: () => subscription.unsubscribe()})
+    context.subscriptions.push({ dispose: () => subscription.unsubscribe() })
 
     // Initial settings
     refreshes.next()

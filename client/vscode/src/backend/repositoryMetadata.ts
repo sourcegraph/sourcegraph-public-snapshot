@@ -1,8 +1,8 @@
-import {gql} from '@sourcegraph/http-client'
+import { gql } from '@sourcegraph/http-client'
 
-import type {RepositoryMetadataResult, RepositoryMetadataVariables} from '../graphql-operations'
+import type { RepositoryMetadataResult, RepositoryMetadataVariables } from '../graphql-operations'
 
-import {requestGraphQLFromVSCode} from './requestGraphQl'
+import { requestGraphQLFromVSCode } from './requestGraphQl'
 
 const repositoryMetadataQuery = gql`
     query RepositoryMetadata($repositoryName: String!) {

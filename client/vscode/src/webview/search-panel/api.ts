@@ -1,8 +1,8 @@
-import {of} from 'rxjs'
+import { of } from 'rxjs'
 
-import {proxySubscribable} from '@sourcegraph/shared/src/api/extension/api/common'
+import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 
-import type {SearchPanelAPI} from '../../contract'
+import type { SearchPanelAPI } from '../../contract'
 
 export const searchPanelAPI: SearchPanelAPI = {
     ping: () => {
@@ -20,6 +20,5 @@ let focusSearchBox = (): void => {
 
 // TODO move to api.ts file
 export const setFocusSearchBox = (replacementFocusSearchBox: (() => void) | null): void => {
-    focusSearchBox = replacementFocusSearchBox || (() => {
-    })
+    focusSearchBox = replacementFocusSearchBox || (() => {})
 }

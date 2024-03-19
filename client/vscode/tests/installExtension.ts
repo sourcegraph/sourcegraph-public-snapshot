@@ -1,8 +1,8 @@
-import {mkdirSync, type WriteStream, createWriteStream} from 'fs'
+import { mkdirSync, type WriteStream, createWriteStream } from 'fs'
 import path from 'path'
-import type {Readable} from 'stream'
+import type { Readable } from 'stream'
 
-import {type Entry, open as _openZip, type ZipFile} from 'yauzl'
+import { type Entry, open as _openZip, type ZipFile } from 'yauzl'
 
 export function installExtension(extensionPath: string, extensionDirectory: string): Promise<void> {
     return openZip(extensionPath, true).then(zipfile => extractZip(zipfile, extensionDirectory))
@@ -10,7 +10,7 @@ export function installExtension(extensionPath: string, extensionDirectory: stri
 
 function openZip(zipFile: string, lazy: boolean = false): Promise<ZipFile> {
     return new Promise<ZipFile>((resolve, reject) => {
-        _openZip(zipFile, lazy ? {lazyEntries: true} : {}, (error?: Error | null, zipfile?: ZipFile) => {
+        _openZip(zipFile, lazy ? { lazyEntries: true } : {}, (error?: Error | null, zipfile?: ZipFile) => {
             if (error || zipfile === undefined) {
                 reject(error)
             } else {
@@ -57,7 +57,7 @@ function extractZip(zipfile: ZipFile, targetPath: string): Promise<void> {
             // directory file names end with '/'
             if (fileName.endsWith('/')) {
                 const targetFileName = path.join(targetPath, fileName)
-                mkdirSync(targetFileName, {recursive: true})
+                mkdirSync(targetFileName, { recursive: true })
                 readNextEntry()
                 return
             }
@@ -82,11 +82,11 @@ function extractEntry(stream: Readable, fileName: string, mode: number, targetPa
 
     let istream: WriteStream
 
-    mkdirSync(targetDirectoryName, {recursive: true})
+    mkdirSync(targetDirectoryName, { recursive: true })
 
     return new Promise<void>((resolve, reject) => {
         try {
-            istream = createWriteStream(targetFileName, {mode})
+            istream = createWriteStream(targetFileName, { mode })
             istream.once('close', () => resolve())
             istream.once('error', reject)
             stream.once('error', reject)

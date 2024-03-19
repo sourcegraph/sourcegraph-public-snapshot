@@ -22,7 +22,7 @@ export const VSCE_SIDEBAR_PARAMS = '?utm_medium=VSCODE&utm_source=sidebar&utm_ca
 const VSCE_LINK_PARAMS_TOKEN_REDIRECT = {
     returnTo: 'user/settings/tokens/new',
 }
-const VSCE_LINK_PARAMS_EDITOR = {editor: 'vscode'}
+const VSCE_LINK_PARAMS_EDITOR = { editor: 'vscode' }
 // UTM for Sidebar actions
 const VSCE_LINK_PARAMS_UTM_SIDEBAR = {
     utm_campaign: 'vsce-sign-up',

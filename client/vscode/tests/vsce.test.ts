@@ -1,15 +1,15 @@
-import {downloadAndUnzipVSCode} from '@vscode/test-electron'
-import {beforeEach, describe, it} from 'mocha'
+import { downloadAndUnzipVSCode } from '@vscode/test-electron'
+import { beforeEach, describe, it } from 'mocha'
 
 import {
     mixedSearchStreamEvents,
     highlightFileResult,
 } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
-import type {Settings} from '@sourcegraph/shared/src/settings/settings'
+import type { Settings } from '@sourcegraph/shared/src/settings/settings'
 
-import {createVSCodeIntegrationTestContext, type VSCodeIntegrationTestContext} from './context'
-import {getVSCodeWebviewFrames} from './getWebview'
-import {launchVsCode, type VSCodeTestDriver} from './launch'
+import { createVSCodeIntegrationTestContext, type VSCodeIntegrationTestContext } from './context'
+import { getVSCodeWebviewFrames } from './getWebview'
+import { launchVsCode, type VSCodeTestDriver } from './launch'
 
 describe('VS Code extension', () => {
     let vsCodeDriver: VSCodeTestDriver
@@ -88,7 +88,7 @@ describe('VS Code extension', () => {
 
         testContext.overrideSearchStreamEvents([...mixedSearchStreamEvents])
 
-        const {searchPanelFrame, sidebarFrame} = await getVSCodeWebviewFrames(vsCodeDriver.page)
+        const { searchPanelFrame, sidebarFrame } = await getVSCodeWebviewFrames(vsCodeDriver.page)
 
         // Focus search box
         await searchPanelFrame.waitForSelector('..cm-editor')
@@ -98,40 +98,40 @@ describe('VS Code extension', () => {
             delay: 50,
         })
         // Submit search
-        await searchPanelFrame.waitForSelector('.test-search-button', {visible: true})
-        await searchPanelFrame.click('.test-search-button', {delay: 50})
+        await searchPanelFrame.waitForSelector('.test-search-button', { visible: true })
+        await searchPanelFrame.click('.test-search-button', { delay: 50 })
 
         try {
-            await searchPanelFrame.waitForSelector('.test-search-result', {visible: true})
+            await searchPanelFrame.waitForSelector('.test-search-result', { visible: true })
         } catch {
             throw new Error('Timeout waiting for search results to render')
         }
 
         // Submit new search from sidebar filter
         try {
-            await sidebarFrame.waitForSelector('.search-sidebar .search-filter-keyword', {visible: true})
-            await sidebarFrame.click('.search-sidebar .search-filter-keyword', {delay: 50})
-            await searchPanelFrame.waitForSelector('.test-search-result', {visible: true})
+            await sidebarFrame.waitForSelector('.search-sidebar .search-filter-keyword', { visible: true })
+            await sidebarFrame.click('.search-sidebar .search-filter-keyword', { delay: 50 })
+            await searchPanelFrame.waitForSelector('.test-search-result', { visible: true })
         } catch {
             throw new Error('Timeout waiting for filtered search results to render')
         }
 
         // Open Repo page from search results
-        await searchPanelFrame.waitForSelector('.test-search-result button', {visible: true})
-        await searchPanelFrame.click('.test-search-result button', {delay: 50})
+        await searchPanelFrame.waitForSelector('.test-search-result button', { visible: true })
+        await searchPanelFrame.click('.test-search-result button', { delay: 50 })
 
         // Redirect back to search results from Repo Page
         try {
-            await searchPanelFrame.waitForSelector('.test-back-to-search-view-btn', {visible: true})
-            await searchPanelFrame.click('.test-back-to-search-view-btn', {delay: 50})
+            await searchPanelFrame.waitForSelector('.test-back-to-search-view-btn', { visible: true })
+            await searchPanelFrame.click('.test-back-to-search-view-btn', { delay: 50 })
         } catch {
             throw new Error('Timeout waiting for search results to render after viewing repo page')
         }
 
         // Open remote file from search results
         try {
-            await searchPanelFrame.waitForSelector('.test-search-result strong', {visible: true})
-            await searchPanelFrame.click('.test-search-result strong', {delay: 100})
+            await searchPanelFrame.waitForSelector('.test-search-result strong', { visible: true })
+            await searchPanelFrame.click('.test-search-result strong', { delay: 100 })
         } catch {
             throw new Error('Timeout waiting for search results to render after nevigating back from repo display page')
         }

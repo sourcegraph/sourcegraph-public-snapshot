@@ -1,8 +1,8 @@
-import React, {useCallback} from 'react'
+import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
-import type {Observable} from 'rxjs'
-import {map} from 'rxjs/operators'
+import type { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
 
 import {
     SymbolSearchResultStyles as styles,
@@ -12,17 +12,17 @@ import {
     ResultContainer,
     CopyPathAction,
 } from '@sourcegraph/branded'
-import type {FetchFileParameters} from '@sourcegraph/shared/src/backend/file'
-import {getFileMatchUrl, getRepositoryUrl, getRevision, type SymbolMatch} from '@sourcegraph/shared/src/search/stream'
-import {isSettingsValid, type SettingsCascadeProps} from '@sourcegraph/shared/src/settings/settings'
-import {SymbolKind} from '@sourcegraph/shared/src/symbols/SymbolKind'
-import type {TelemetryProps} from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {codeCopiedEvent} from '@sourcegraph/shared/src/tracking/event-log-creators'
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import { getFileMatchUrl, getRepositoryUrl, getRevision, type SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import { isSettingsValid, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 
-import {type HighlightLineRange, HighlightResponseFormat} from '../../../graphql-operations'
-import {useOpenSearchResultsContext} from '../MatchHandlersContext'
+import { type HighlightLineRange, HighlightResponseFormat } from '../../../graphql-operations'
+import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
-import {RepoFileLink} from './RepoFileLink'
+import { RepoFileLink } from './RepoFileLink'
 
 export interface SymbolSearchResultProps extends TelemetryProps, SettingsCascadeProps {
     result: SymbolMatch
@@ -35,15 +35,15 @@ export interface SymbolSearchResultProps extends TelemetryProps, SettingsCascade
 }
 
 export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps> = ({
-                                                                                         result,
-                                                                                         repoDisplayName,
-                                                                                         onSelect,
-                                                                                         containerClassName,
-                                                                                         index,
-                                                                                         telemetryService,
-                                                                                         settingsCascade,
-                                                                                         fetchHighlightedFileLineRanges,
-                                                                                     }) => {
+    result,
+    repoDisplayName,
+    onSelect,
+    containerClassName,
+    index,
+    telemetryService,
+    settingsCascade,
+    fetchHighlightedFileLineRanges,
+}) => {
     const enableLazyFileResultSyntaxHighlighting =
         isSettingsValid(settingsCascade) &&
         settingsCascade.final.experimentalFeatures?.enableLazyFileResultSyntaxHighlighting
@@ -51,7 +51,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
 
-    const {openSymbol} = useOpenSearchResultsContext()
+    const { openSymbol } = useOpenSearchResultsContext()
 
     const title = (
         <span className="d-flex align-items-center">
@@ -99,12 +99,12 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                     const endTime = Date.now()
                     telemetryService.log(
                         'search.latencies.frontend.code-load',
-                        {durationMs: endTime - startTime},
-                        {durationMs: endTime - startTime}
+                        { durationMs: endTime - startTime },
+                        { durationMs: endTime - startTime }
                     )
                     return lines[
                         result.symbols.findIndex(symbol => symbol.line - 1 === startLine && symbol.line === endLine)
-                        ]
+                    ]
                 })
             )
         },

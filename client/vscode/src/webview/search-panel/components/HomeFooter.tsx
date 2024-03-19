@@ -1,15 +1,15 @@
-import React, {useCallback} from 'react'
+import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import {SyntaxHighlightedSearchQuery} from '@sourcegraph/branded'
-import type {QueryState} from '@sourcegraph/shared/src/search'
-import type {TelemetryProps} from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {Card, Text} from '@sourcegraph/wildcard'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
+import type { QueryState } from '@sourcegraph/shared/src/search'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Card, Text } from '@sourcegraph/wildcard'
 
-import {ModalVideo} from '../alias/ModalVideo'
+import { ModalVideo } from '../alias/ModalVideo'
 
-import {type SearchExample, exampleQueries} from './SearchExamples'
+import { type SearchExample, exampleQueries } from './SearchExamples'
 
 import styles from './HomeFooter.module.scss'
 
@@ -26,16 +26,16 @@ interface SearchExamplesProps extends TelemetryProps {
 }
 
 const SearchExamples: React.FunctionComponent<React.PropsWithChildren<SearchExamplesProps>> = ({
-                                                                                                   title,
-                                                                                                   subtitle,
-                                                                                                   examples,
-                                                                                                   icon,
-                                                                                                   telemetryService,
-                                                                                                   setQuery,
-                                                                                               }) => {
+    title,
+    subtitle,
+    examples,
+    icon,
+    telemetryService,
+    setQuery,
+}) => {
     const searchExampleClicked = useCallback(
         (trackEventName: string, fullQuery: string) => (): void => {
-            setQuery({query: fullQuery})
+            setQuery({ query: fullQuery })
             telemetryService.log(trackEventName)
         },
         [setQuery, telemetryService]
@@ -59,7 +59,7 @@ const SearchExamples: React.FunctionComponent<React.PropsWithChildren<SearchExam
                             </div>
                             <div className={styles.searchExampleQueryWrapper}>
                                 <div className={styles.searchExampleQuery}>
-                                    <SyntaxHighlightedSearchQuery query={example.queryPreview}/>
+                                    <SyntaxHighlightedSearchQuery query={example.queryPreview} />
                                 </div>
                             </div>
                         </Card>
@@ -79,7 +79,7 @@ export const HomeFooter: React.FunctionComponent<React.PropsWithChildren<HomeFoo
                     title="Search examples"
                     subtitle="Find answers faster with code search across multiple repos and commits"
                     examples={exampleQueries}
-                    icon={<MagnifyingGlassSearchIcon/>}
+                    icon={<MagnifyingGlassSearchIcon />}
                     {...props}
                 />
                 <div className={styles.thumbnailWrapper}>

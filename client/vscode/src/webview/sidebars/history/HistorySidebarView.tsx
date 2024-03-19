@@ -2,13 +2,13 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import type {AuthenticatedUser} from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 
-import type {WebviewPageProps} from '../../platform/context'
+import type { WebviewPageProps } from '../../platform/context'
 
-import {RecentFilesSection} from './components/RecentFilesSection'
-import {RecentRepositoriesSection} from './components/RecentRepositoriesSection'
-import {RecentSearchesSection} from './components/RecentSearchesSection'
+import { RecentFilesSection } from './components/RecentFilesSection'
+import { RecentRepositoriesSection } from './components/RecentRepositoriesSection'
+import { RecentSearchesSection } from './components/RecentSearchesSection'
 
 import styles from '../search/SearchSidebarView.module.scss'
 

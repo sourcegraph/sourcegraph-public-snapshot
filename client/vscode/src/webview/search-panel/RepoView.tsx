@@ -1,17 +1,17 @@
-import React, {useMemo, useState} from 'react'
+import React, { useMemo, useState } from 'react'
 
-import {mdiArrowLeft, mdiFileDocumentOutline, mdiFolderOutline, mdiSourceRepository} from '@mdi/js'
-import {VSCodeProgressRing} from '@vscode/webview-ui-toolkit/react'
+import { mdiArrowLeft, mdiFileDocumentOutline, mdiFolderOutline, mdiSourceRepository } from '@mdi/js'
+import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
-import {catchError} from 'rxjs/operators'
+import { catchError } from 'rxjs/operators'
 
-import {fetchTreeEntries} from '@sourcegraph/shared/src/backend/repo'
-import {displayRepoName} from '@sourcegraph/shared/src/components/RepoLink'
-import type {QueryState} from '@sourcegraph/shared/src/search'
-import type {RepositoryMatch} from '@sourcegraph/shared/src/search/stream'
-import {Icon, PageHeader, useObservable, H4, Text, Button} from '@sourcegraph/wildcard'
+import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
+import type { QueryState } from '@sourcegraph/shared/src/search'
+import type { RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
+import { Icon, PageHeader, useObservable, H4, Text, Button } from '@sourcegraph/wildcard'
 
-import type {WebviewPageProps} from '../platform/context'
+import type { WebviewPageProps } from '../platform/context'
 
 import styles from './RepoView.module.scss'
 
@@ -24,13 +24,13 @@ interface RepoViewProps extends Pick<WebviewPageProps, 'extensionCoreAPI' | 'pla
 }
 
 export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewProps>> = ({
-                                                                                              extensionCoreAPI,
-                                                                                              platformContext,
-                                                                                              repositoryMatch,
-                                                                                              onBackToSearchResults,
-                                                                                              instanceURL,
-                                                                                              setQueryState,
-                                                                                          }) => {
+    extensionCoreAPI,
+    platformContext,
+    repositoryMatch,
+    onBackToSearchResults,
+    instanceURL,
+    setQueryState,
+}) => {
     const [directoryStack, setDirectoryStack] = useState<string[]>([])
 
     // File tree results are memoized, so going back isn't expensive.
@@ -45,7 +45,7 @@ export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewP
                     requestGraphQL: platformContext.requestGraphQL,
                 }).pipe(
                     catchError(error => {
-                        console.error(error, {repositoryMatch})
+                        console.error(error, { repositoryMatch })
                         // TODO: remove and add error boundary in searchresultsview
                         return []
                     })
@@ -67,7 +67,7 @@ export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewP
     const onSelect = (isDirectory: boolean, path: string, url: string): void => {
         const host = new URL(instanceURL).host
         if (isDirectory) {
-            setQueryState({query: `repo:^${repositoryMatch.repository}$ file:^${path}`})
+            setQueryState({ query: `repo:^${repositoryMatch.repository}$ file:^${path}` })
             setDirectoryStack([...directoryStack, path])
         } else {
             extensionCoreAPI.openSourcegraphFile(`sourcegraph://${host}${url}`).catch(error => {
@@ -85,24 +85,24 @@ export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewP
                 onClick={onBackToSearchResults}
                 className="test-back-to-search-view-btn shadow-none"
             >
-                <Icon aria-hidden={true} className="mr-1" svgPath={mdiArrowLeft}/>
+                <Icon aria-hidden={true} className="mr-1" svgPath={mdiArrowLeft} />
                 Back to search view
             </Button>
             {directoryStack.length > 0 && (
                 <Button variant="link" outline={true} size="sm" onClick={onPreviousDirectory} className="shadow-none">
-                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiArrowLeft}/>
+                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiArrowLeft} />
                     Back to previous directory
                 </Button>
             )}
             <PageHeader
-                path={[{icon: mdiSourceRepository, text: displayRepoName(repositoryMatch.repository)}]}
+                path={[{ icon: mdiSourceRepository, text: displayRepoName(repositoryMatch.repository) }]}
                 className="mb-1 mt-3 test-tree-page-title"
             />
             {repositoryMatch.description && <Text className="mt-0 text-muted">{repositoryMatch.description}</Text>}
             <div className={classNames(styles.section)}>
                 <H4>Files and directories</H4>
                 {treeEntries === undefined ? (
-                    <VSCodeProgressRing/>
+                    <VSCodeProgressRing />
                 ) : (
                     <div className={classNames('pr-2', styles.treeEntriesSectionColumns)}>
                         {treeEntries.entries.map(entry => (

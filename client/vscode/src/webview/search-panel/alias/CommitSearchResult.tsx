@@ -2,14 +2,14 @@ import React from 'react'
 
 import VisuallyHidden from '@reach/visually-hidden'
 
-import {SearchResultStyles as styles, LegacyResultContainer, CommitSearchResultMatch} from '@sourcegraph/branded'
-import {Timestamp} from '@sourcegraph/branded/src/components/Timestamp'
-import {displayRepoName} from '@sourcegraph/shared/src/components/RepoLink'
-import type {PlatformContextProps} from '@sourcegraph/shared/src/platform/context'
-import {type CommitMatch, getCommitMatchUrl} from '@sourcegraph/shared/src/search/stream'
-import {Button, Code} from '@sourcegraph/wildcard'
+import { SearchResultStyles as styles, LegacyResultContainer, CommitSearchResultMatch } from '@sourcegraph/branded'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { type CommitMatch, getCommitMatchUrl } from '@sourcegraph/shared/src/search/stream'
+import { Button, Code } from '@sourcegraph/wildcard'
 
-import {useOpenSearchResultsContext} from '../MatchHandlersContext'
+import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
 interface Props extends PlatformContextProps<'requestGraphQL'> {
     result: CommitMatch
@@ -23,21 +23,21 @@ interface Props extends PlatformContextProps<'requestGraphQL'> {
 }
 
 export const CommitSearchResult: React.FunctionComponent<Props> = ({
-                                                                       result,
-                                                                       icon,
-                                                                       platformContext,
-                                                                       onSelect,
-                                                                       openInNewTab,
-                                                                       containerClassName,
-                                                                       as,
-                                                                       index,
-                                                                   }) => {
+    result,
+    icon,
+    platformContext,
+    onSelect,
+    openInNewTab,
+    containerClassName,
+    as,
+    index,
+}) => {
     /**
      * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
      * We want to do it on mouse enter as browser window size might change after the element has been
      * loaded initially
      */
-    const {openRepo, openCommit, instanceURL} = useOpenSearchResultsContext()
+    const { openRepo, openCommit, instanceURL } = useOpenSearchResultsContext()
 
     const renderTitle = (): JSX.Element => (
         <div className={styles.title}>
@@ -64,7 +64,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                     </Button>
                 </>
             </span>
-            <span className={styles.spacer}/>
+            <span className={styles.spacer} />
             {result.type === 'commit' && (
                 <Button className="btn-text-link" onClick={() => openCommit(getCommitMatchUrl(result))}>
                     <Code className={styles.commitOid}>
@@ -73,10 +73,10 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                         <VisuallyHidden>,</VisuallyHidden>
                     </Code>{' '}
                     <VisuallyHidden>Committed</VisuallyHidden>
-                    <Timestamp date={result.authorDate} noAbout={true} strict={true}/>
+                    <Timestamp date={result.authorDate} noAbout={true} strict={true} />
                 </Button>
             )}
-            {result.repoStars && <div className={styles.divider}/>}
+            {result.repoStars && <div className={styles.divider} />}
         </div>
     )
 

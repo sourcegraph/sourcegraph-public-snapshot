@@ -1,21 +1,21 @@
-import {from, type Observable, of} from 'rxjs'
-import {catchError} from 'rxjs/operators'
+import { from, type Observable, of } from 'rxjs'
+import { catchError } from 'rxjs/operators'
 import type * as vscode from 'vscode'
 
-import type {GraphQLResult} from '@sourcegraph/http-client'
-import {getAvailableSearchContextSpecOrFallback} from '@sourcegraph/shared/src/search'
+import type { GraphQLResult } from '@sourcegraph/http-client'
+import { getAvailableSearchContextSpecOrFallback } from '@sourcegraph/shared/src/search'
 
-import {type LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY} from '../settings/LocalStorageService'
-import type {VSCEStateMachine} from '../state'
+import { type LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from '../settings/LocalStorageService'
+import type { VSCEStateMachine } from '../state'
 
-import {requestGraphQLFromVSCode} from './requestGraphQl'
+import { requestGraphQLFromVSCode } from './requestGraphQl'
 
 // Returns an Observable so webviews can easily block rendering on init.
 export function initializeSearchContexts({
-                                             localStorageService,
-                                             stateMachine,
-                                             context,
-                                         }: {
+    localStorageService,
+    stateMachine,
+    context,
+}: {
     localStorageService: LocalStorageService
     stateMachine: VSCEStateMachine
     context: vscode.ExtensionContext
@@ -28,7 +28,7 @@ export function initializeSearchContexts({
         spec: initialSearchContextSpec || fallbackSpec,
         fallbackSpec,
         platformContext: {
-            requestGraphQL: ({request, variables}) =>
+            requestGraphQL: ({ request, variables }) =>
                 from(requestGraphQLFromVSCode(request, variables)) as Observable<GraphQLResult<any>>,
         },
     })
@@ -39,7 +39,7 @@ export function initializeSearchContexts({
             })
         )
         .subscribe(availableSearchContextSpecOrDefault => {
-            stateMachine.emit({type: 'set_selected_search_context_spec', spec: availableSearchContextSpecOrDefault})
+            stateMachine.emit({ type: 'set_selected_search_context_spec', spec: availableSearchContextSpecOrDefault })
         })
 
     context.subscriptions.push({

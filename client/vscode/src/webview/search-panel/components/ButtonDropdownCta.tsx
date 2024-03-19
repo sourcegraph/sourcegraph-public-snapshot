@@ -1,12 +1,12 @@
-import React, {useCallback, useEffect, useState} from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
-import {VSCodeButton} from '@vscode/webview-ui-toolkit/react'
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import type {TelemetryProps} from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {Button, Popover, PopoverContent, PopoverTrigger, Position} from '@sourcegraph/wildcard'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
-import type {WebviewPageProps} from '../../platform/context'
+import type { WebviewPageProps } from '../../platform/context'
 
 import styles from './ButtonDropdownCta.module.scss'
 
@@ -26,18 +26,18 @@ export interface ButtonDropdownCtaProps extends TelemetryProps, Pick<WebviewPage
 }
 
 export const ButtonDropdownCta: React.FunctionComponent<React.PropsWithChildren<ButtonDropdownCtaProps>> = ({
-                                                                                                                button,
-                                                                                                                icon,
-                                                                                                                title,
-                                                                                                                copyText,
-                                                                                                                telemetryService,
-                                                                                                                source,
-                                                                                                                viewEventName,
-                                                                                                                returnTo,
-                                                                                                                onToggle,
-                                                                                                                className,
-                                                                                                                extensionCoreAPI,
-                                                                                                            }) => {
+    button,
+    icon,
+    title,
+    copyText,
+    telemetryService,
+    source,
+    viewEventName,
+    returnTo,
+    onToggle,
+    className,
+    extensionCoreAPI,
+}) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
     const toggleDropdownOpen = useCallback(() => {

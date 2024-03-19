@@ -12,8 +12,8 @@ import {
 
 import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 
-import {getProxyAgent} from '../../backend/fetch'
-import {endpointRequestHeadersSetting, endpointSetting, setEndpoint} from '../../settings/endpointSetting'
+import { getProxyAgent } from '../../backend/fetch'
+import { endpointRequestHeadersSetting, endpointSetting, setEndpoint } from '../../settings/endpointSetting'
 
 export const scretTokenKey = 'SOURCEGRAPH_AUTH'
 
@@ -25,8 +25,7 @@ class SourcegraphAuthSession implements AuthenticationSession {
     public readonly id = SourcegraphAuthProvider.id
     public readonly scopes = []
 
-    constructor(public readonly accessToken: string) {
-    }
+    constructor(public readonly accessToken: string) {}
 }
 
 export class SourcegraphAuthProvider implements AuthenticationProvider, Disposable {
@@ -42,8 +41,7 @@ export class SourcegraphAuthProvider implements AuthenticationProvider, Disposab
         return this._onDidChangeSessions.event
     }
 
-    constructor(private readonly secretStorage: SecretStorage) {
-    }
+    constructor(private readonly secretStorage: SecretStorage) {}
 
     public dispose(): void {
         this.initializedDisposable?.dispose()
@@ -87,11 +85,11 @@ export class SourcegraphAuthProvider implements AuthenticationProvider, Disposab
         // Update the polyfillEventSource on token changes
         polyfillEventSource(
             this.currentToken
-                ? {Authorization: `token ${this.currentToken}`, ...endpointRequestHeadersSetting()}
+                ? { Authorization: `token ${this.currentToken}`, ...endpointRequestHeadersSetting() }
                 : {},
             getProxyAgent()
         )
-        this._onDidChangeSessions.fire({added, removed, changed})
+        this._onDidChangeSessions.fire({ added, removed, changed })
     }
 
     // Get token from Storage
@@ -134,8 +132,7 @@ export class SourcegraphAuthProvider implements AuthenticationProvider, Disposab
 export class SourcegraphAuthActions {
     private currentEndpoint = endpointSetting()
 
-    constructor(private readonly secretStorage: SecretStorage) {
-    }
+    constructor(private readonly secretStorage: SecretStorage) {}
 
     public async login(newtoken: string, newuri: string): Promise<void> {
         try {

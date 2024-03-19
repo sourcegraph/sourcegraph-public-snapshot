@@ -1,12 +1,12 @@
-import React, {useMemo, useState} from 'react'
+import React, { useMemo, useState } from 'react'
 
-import {mdiChevronDown, mdiChevronLeft} from '@mdi/js'
+import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 
-import {type EventLogResult, fetchRecentFileViews} from '@sourcegraph/shared/src/search'
-import {Icon, Link, H5, useObservable, Button} from '@sourcegraph/wildcard'
+import { type EventLogResult, fetchRecentFileViews } from '@sourcegraph/shared/src/search'
+import { Icon, Link, H5, useObservable, Button } from '@sourcegraph/wildcard'
 
-import type {HistorySidebarProps} from '../HistorySidebarView'
+import type { HistorySidebarProps } from '../HistorySidebarView'
 
 import styles from '../../search/SearchSidebarView.module.scss'
 
@@ -18,10 +18,10 @@ interface RecentFile {
 }
 
 export const RecentFilesSection: React.FunctionComponent<React.PropsWithChildren<HistorySidebarProps>> = ({
-                                                                                                              platformContext,
-                                                                                                              authenticatedUser,
-                                                                                                              extensionCoreAPI,
-                                                                                                          }) => {
+    platformContext,
+    authenticatedUser,
+    extensionCoreAPI,
+}) => {
     const itemsToLoad = 15
     const [collapsed, setCollapsed] = useState(false)
 
@@ -61,7 +61,7 @@ export const RecentFilesSection: React.FunctionComponent<React.PropsWithChildren
                 aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent files`}
             >
                 <H5 className="flex-grow-1">Recent Files</H5>
-                <Icon aria-hidden={true} className="mr-1" svgPath={collapsed ? mdiChevronLeft : mdiChevronDown}/>
+                <Icon aria-hidden={true} className="mr-1" svgPath={collapsed ? mdiChevronLeft : mdiChevronDown} />
             </Button>
 
             {!collapsed && (
@@ -101,7 +101,7 @@ function processRecentFiles(eventLogResult?: EventLogResult): RecentFile[] | nul
             let filePath = parsedArguments?.filePath as string
 
             if (!repoName || !filePath) {
-                ;({repoName, filePath} = extractFileInfoFromUrl(node.url))
+                ;({ repoName, filePath } = extractFileInfoFromUrl(node.url))
             }
 
             if (
@@ -128,7 +128,7 @@ function extractFileInfoFromUrl(url: string): { repoName: string; filePath: stri
     // Remove first character as it's a '/'
     const [repoName, filePath] = parsedUrl.pathname.slice(1).split('/-/blob/')
     if (!repoName || !filePath) {
-        return {repoName: '', filePath: ''}
+        return { repoName: '', filePath: '' }
     }
-    return {repoName, filePath}
+    return { repoName, filePath }
 }

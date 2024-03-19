@@ -1,11 +1,11 @@
 import * as Comlink from 'comlink'
-import {isObject} from 'lodash'
+import { isObject } from 'lodash'
 
-import type {EndpointPair} from '@sourcegraph/shared/src/platform/context'
+import type { EndpointPair } from '@sourcegraph/shared/src/platform/context'
 
-import type {VsCodeApi} from '../../vsCodeApi'
+import type { VsCodeApi } from '../../vsCodeApi'
 
-import {generateUUID, isNestedConnection, type NestedConnectionData, type RelationshipType} from '.'
+import { generateUUID, isNestedConnection, type NestedConnectionData, type RelationshipType } from '.'
 
 const panelId = self.document ? self.document.documentElement.dataset.panelId! : 'web-worker'
 
@@ -27,7 +27,7 @@ const vscodeWebviewProxyTransferHandler: Comlink.TransferHandler<
         const nestedConnectionId = generateUUID()
 
         // Add relationshipType in `postMessage`
-        return [{nestedConnectionId, proxyMarkedValue, panelId}, []]
+        return [{ nestedConnectionId, proxyMarkedValue, panelId }, []]
     },
     deserialize: serialized => {
         // Get endpoint factory based on relationship type
@@ -89,7 +89,7 @@ export function createEndpointsForWebToWeb(target: Comlink.Endpoint): {
                     }
                 }
 
-                target.postMessage({...message, connectionId, panelId})
+                target.postMessage({ ...message, connectionId, panelId })
             },
 
             addEventListener: (type, listener) => {
@@ -163,7 +163,7 @@ export function createEndpointsForWebToNode(vscodeApi: VsCodeApi): EndpointPair 
                     }
                 }
 
-                vscodeApi.postMessage({...message, connectionId, panelId})
+                vscodeApi.postMessage({ ...message, connectionId, panelId })
             },
 
             addEventListener: (type, listener) => {

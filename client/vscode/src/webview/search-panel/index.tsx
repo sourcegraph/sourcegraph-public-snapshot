@@ -1,26 +1,26 @@
 import '../platform/polyfills'
 
-import React, {useMemo} from 'react'
+import React, { useMemo } from 'react'
 
-import {VSCodeProgressRing} from '@vscode/webview-ui-toolkit/react'
+import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
-import {createRoot} from 'react-dom/client'
-import {MemoryRouter} from 'react-router-dom'
+import { createRoot } from 'react-dom/client'
+import { MemoryRouter } from 'react-router-dom'
 
-import {wrapRemoteObservable} from '@sourcegraph/shared/src/api/client/api/common'
-import {ShortcutProvider} from '@sourcegraph/shared/src/react-shortcuts'
-import {ThemeSetting, ThemeContext} from '@sourcegraph/shared/src/theme'
-import {AnchorLink, setLinkComponent, useObservable, WildcardThemeContext} from '@sourcegraph/wildcard'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
+import { ThemeSetting, ThemeContext } from '@sourcegraph/shared/src/theme'
+import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
-import type {ExtensionCoreAPI} from '../../contract'
-import type {VsCodeApi} from '../../vsCodeApi'
-import {createEndpointsForWebToNode} from '../comlink/webviewEndpoint'
-import {createPlatformContext, WebviewPageContext, type WebviewPageProps} from '../platform/context'
-import {adaptSourcegraphThemeToEditorTheme} from '../theming/sourcegraphTheme'
+import type { ExtensionCoreAPI } from '../../contract'
+import type { VsCodeApi } from '../../vsCodeApi'
+import { createEndpointsForWebToNode } from '../comlink/webviewEndpoint'
+import { createPlatformContext, WebviewPageContext, type WebviewPageProps } from '../platform/context'
+import { adaptSourcegraphThemeToEditorTheme } from '../theming/sourcegraphTheme'
 
-import {searchPanelAPI} from './api'
-import {SearchHomeView} from './SearchHomeView'
-import {SearchResultsView} from './SearchResultsView'
+import { searchPanelAPI } from './api'
+import { SearchHomeView } from './SearchHomeView'
+import { SearchResultsView } from './SearchResultsView'
 
 import './index.module.scss'
 
@@ -28,7 +28,7 @@ declare const acquireVsCodeApi: () => VsCodeApi
 
 const vsCodeApi = acquireVsCodeApi()
 
-const {proxy, expose} = createEndpointsForWebToNode(vsCodeApi)
+const { proxy, expose } = createEndpointsForWebToNode(vsCodeApi)
 
 Comlink.expose(searchPanelAPI, expose)
 
@@ -68,12 +68,12 @@ const Main: React.FC<React.PropsWithChildren<unknown>> = () => {
         settingsCascade !== undefined
 
     const themeSetting = useMemo(
-        () => ({themeSetting: theme === 'theme-light' ? ThemeSetting.Light : ThemeSetting.Dark}),
+        () => ({ themeSetting: theme === 'theme-light' ? ThemeSetting.Light : ThemeSetting.Dark }),
         [theme]
     )
 
     if (!initialized) {
-        return <VSCodeProgressRing/>
+        return <VSCodeProgressRing />
     }
 
     const webviewPageProps: WebviewPageProps = {
@@ -94,7 +94,7 @@ const Main: React.FC<React.PropsWithChildren<unknown>> = () => {
         return (
             <WebviewPageContext.Provider value={webviewPageProps}>
                 <ThemeContext.Provider value={themeSetting}>
-                    <SearchHomeView {...webviewPageProps} context={state.context}/>
+                    <SearchHomeView {...webviewPageProps} context={state.context} />
                 </ThemeContext.Provider>
             </WebviewPageContext.Provider>
         )
@@ -119,10 +119,10 @@ const root = createRoot(document.querySelector('#root')!)
 
 root.render(
     <ShortcutProvider>
-        <WildcardThemeContext.Provider value={{isBranded: true}}>
+        <WildcardThemeContext.Provider value={{ isBranded: true }}>
             {/* Required for shared components that depend on `location`. */}
             <MemoryRouter>
-                <Main/>
+                <Main />
             </MemoryRouter>
         </WildcardThemeContext.Provider>
     </ShortcutProvider>

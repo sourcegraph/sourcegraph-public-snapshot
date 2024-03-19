@@ -44,13 +44,13 @@ using the `vscode-extension` & `team/integrations` label.
     └────────────────────────────┘
 
 - See below for documentation on state management.
-    - One state machine that lives in Core
+  - One state machine that lives in Core
 - See './contract.ts' to see the APIs for the three main components:
-    - Core, search sidebar, and search panel.
-    - The extension host API is exposed through the search sidebar.
+  - Core, search sidebar, and search panel.
+  - The extension host API is exposed through the search sidebar.
 - See './webview/comlink' for documentation on _how_ communication between contexts works.
-    - It is _not_ important to understand this layer to add features to the VS Code extension (that's why it exists,
-      after all).
+  - It is _not_ important to understand this layer to add features to the VS Code extension (that's why it exists,
+    after all).
 
 ## State Management
 
@@ -146,8 +146,8 @@ To run integration tests:
 
 1. In the Sourcegraph repository root, run `pnpm install`
 2. In the `client/vscode` directory:
-    1. `pnpm build:test` or `pnpm watch:test`
-    2. `pnpm test-integration`
+   1. `pnpm build:test` or `pnpm watch:test`
+   2. `pnpm test-integration`
 
 ## GitPod
 
@@ -173,7 +173,7 @@ extension from your local machine as suggested in the following steps:
 1. Start an HTTP server inside the extension’s path to host the extension locally: `pnpx serve --cors -l 8988`
 1. In another terminal, generate a publicly-accessible URL from your locally running HTTP server using the localtunnel
    tool: `pnpx localtunnel -p 8988`
-    1. A publicly-accessible URL will be generated for you in the output followed by “your url is:”
+   1. A publicly-accessible URL will be generated for you in the output followed by “your url is:”
 1. Copy and then open the newly generated URL in a browser and then select “Click to Continue”
 1. Open the Command Palette in GitPod Web (a GitPod Workspace using the Open in Browser setting)
 1. Select “Developer: Install Web Extension…”
@@ -214,20 +214,20 @@ The release process for the VS Code Extension for Sourcegraph is currently autom
 1. Create a new branch when the main branch is ready for release, or use your current working branch if it is ready for
    release
 2. Run `pnpm --filter @sourcegraph/vscode run release:$RELEASE_TYPE` in the root directory
-    - $RELEASE_TYPE: major, minor, patch, pre
-        - Example: `pnpm --filter @sourcegraph/vscode run release:patch`
-    - This command will:
-        - Update the package.json file with the next version number
-        - Update the changelog format by listing everything under `Unreleased` to the updated version number
-        - Make a commit for the release and push to the current branch
+   - $RELEASE_TYPE: major, minor, patch, pre
+     - Example: `pnpm --filter @sourcegraph/vscode run release:patch`
+   - This command will:
+     - Update the package.json file with the next version number
+     - Update the changelog format by listing everything under `Unreleased` to the updated version number
+     - Make a commit for the release and push to the current branch
 3. Open a PR to merge the current branch into main
 4. Once the main branch has the updated version number and changelog, run `git push origin main:vsce/release`
-    - This will trigger the build pipeline for publishing the extension using the `pnpm release` command
-    - Publish release
-      to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph)
-    - Publish release to [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/sourcegraph)
-    - The extension will be published with the correct package name via
-      the [vsce CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
+   - This will trigger the build pipeline for publishing the extension using the `pnpm release` command
+   - Publish release
+     to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph)
+   - Publish release to [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/sourcegraph)
+   - The extension will be published with the correct package name via
+     the [vsce CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
 5. Visit
    the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=vsce%2Frelease)
    to watch the build process

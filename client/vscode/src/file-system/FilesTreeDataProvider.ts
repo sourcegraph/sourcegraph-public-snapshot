@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 
-import {log} from '../log'
+import { log } from '../log'
 
-import type {SourcegraphFileSystemProvider} from './SourcegraphFileSystemProvider'
-import {SourcegraphUri} from './SourcegraphUri'
+import type { SourcegraphFileSystemProvider } from './SourcegraphFileSystemProvider'
+import { SourcegraphUri } from './SourcegraphUri'
 
 export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
     constructor(public readonly fs: SourcegraphFileSystemProvider) {
@@ -219,11 +219,11 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
     ): vscode.TreeItem {
         const command = uri.isFile()
             ? {
-                command: 'sourcegraph.openFile',
-                title: 'Open file',
-                toolbar: 'test',
-                arguments: [uri.uri],
-            }
+                  command: 'sourcegraph.openFile',
+                  title: 'Open file',
+                  toolbar: 'test',
+                  arguments: [uri.uri],
+              }
             : undefined
         // Check if this is a currently selected file
         let selectedFile = false
@@ -240,8 +240,8 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
             collapsibleState: uri.isFile()
                 ? vscode.TreeItemCollapsibleState.None
                 : parentChildrenCount === 0
-                    ? vscode.TreeItemCollapsibleState.Expanded
-                    : vscode.TreeItemCollapsibleState.Collapsed,
+                ? vscode.TreeItemCollapsibleState.Expanded
+                : vscode.TreeItemCollapsibleState.Collapsed,
             command,
             resourceUri: vscode.Uri.parse(uri.uri),
             contextValue: !uri.isFile() ? 'directory' : selectedFile ? 'selected' : 'file',

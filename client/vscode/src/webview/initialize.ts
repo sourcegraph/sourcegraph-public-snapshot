@@ -1,12 +1,12 @@
 import * as Comlink from 'comlink'
-import type {Observable} from 'rxjs'
-import {filter, first} from 'rxjs/operators'
+import type { Observable } from 'rxjs'
+import { filter, first } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
-import type {ExtensionCoreAPI, HelpSidebarAPI, SearchPanelAPI, SearchSidebarAPI} from '../contract'
-import {endpointSetting} from '../settings/endpointSetting'
+import type { ExtensionCoreAPI, HelpSidebarAPI, SearchPanelAPI, SearchSidebarAPI } from '../contract'
+import { endpointSetting } from '../settings/endpointSetting'
 
-import {createEndpointsForWebview} from './comlink/extensionEndpoint'
+import { createEndpointsForWebview } from './comlink/extensionEndpoint'
 
 interface SourcegraphWebviewConfig {
     extensionUri: vscode.Uri
@@ -14,10 +14,10 @@ interface SourcegraphWebviewConfig {
 }
 
 export async function initializeSearchPanelWebview({
-                                                       extensionUri,
-                                                       extensionCoreAPI,
-                                                       initializedPanelIDs,
-                                                   }: SourcegraphWebviewConfig & {
+    extensionUri,
+    extensionCoreAPI,
+    initializedPanelIDs,
+}: SourcegraphWebviewConfig & {
     initializedPanelIDs: Observable<string>
 }): Promise<{
     searchPanelAPI: Comlink.Remote<SearchPanelAPI>
@@ -38,7 +38,7 @@ export async function initializeSearchPanelWebview({
     const cssModuleSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchPanel.css'))
     const styleSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'style.css'))
 
-    const {proxy, expose, panelId} = createEndpointsForWebview(panel)
+    const { proxy, expose, panelId } = createEndpointsForWebview(panel)
 
     // Wait for the webview to initialize or else messages will be dropped
     const hasInitialized = initializedPanelIDs
@@ -64,8 +64,8 @@ export async function initializeSearchPanelWebview({
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; child-src data: ${
-        panel.webview.cspSource
-    }; img-src data: vscode-resource: https:; script-src ${panel.webview.cspSource}; style-src data: ${
+            panel.webview.cspSource
+        }; img-src data: vscode-resource: https:; script-src ${panel.webview.cspSource}; style-src data: ${
         panel.webview.cspSource
     } vscode-resource: 'unsafe-inline' http: https: data:; connect-src 'self' http: https:; frame-src https:; font-src ${
         panel.webview.cspSource
@@ -90,10 +90,10 @@ export async function initializeSearchPanelWebview({
 
 // TODO expand CSP for Sourcegraph extension loading
 export function initializeSearchSidebarWebview({
-                                                   extensionUri,
-                                                   extensionCoreAPI,
-                                                   webviewView,
-                                               }: SourcegraphWebviewConfig & {
+    extensionUri,
+    extensionCoreAPI,
+    webviewView,
+}: SourcegraphWebviewConfig & {
     webviewView: vscode.WebviewView
 }): {
     searchSidebarAPI: Comlink.Remote<SearchSidebarAPI>
@@ -111,7 +111,7 @@ export function initializeSearchSidebarWebview({
     const cssModuleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchSidebar.css'))
     const styleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'style.css'))
 
-    const {proxy, expose, panelId} = createEndpointsForWebview(webviewView)
+    const { proxy, expose, panelId } = createEndpointsForWebview(webviewView)
 
     // Get a proxy for the Sourcegraph Webview API to communicate with the Webview.
     const searchSidebarAPI = Comlink.wrap<SearchSidebarAPI>(proxy)
@@ -126,8 +126,8 @@ export function initializeSearchSidebarWebview({
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; child-src data: ${
-        webviewView.webview.cspSource
-    }; worker-src blob: data:; img-src data: https:; script-src blob: https:; style-src 'unsafe-inline' ${
+            webviewView.webview.cspSource
+        }; worker-src blob: data:; img-src data: https:; script-src blob: https:; style-src 'unsafe-inline' ${
         webviewView.webview.cspSource
     } http: https: data:; connect-src 'self' http: https:; font-src vscode-resource: blob: https:;">
         <title>Sourcegraph Search</title>
@@ -146,10 +146,10 @@ export function initializeSearchSidebarWebview({
 }
 
 export function initializeHelpSidebarWebview({
-                                                 extensionUri,
-                                                 extensionCoreAPI,
-                                                 webviewView,
-                                             }: SourcegraphWebviewConfig & {
+    extensionUri,
+    extensionCoreAPI,
+    webviewView,
+}: SourcegraphWebviewConfig & {
     webviewView: vscode.WebviewView
 }): {
     helpSidebarAPI: Comlink.Remote<HelpSidebarAPI>
@@ -165,7 +165,7 @@ export function initializeHelpSidebarWebview({
     const cssModuleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'helpSidebar.css'))
     const styleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'style.css'))
 
-    const {proxy, expose, panelId} = createEndpointsForWebview(webviewView)
+    const { proxy, expose, panelId } = createEndpointsForWebview(webviewView)
 
     // Get a proxy for the Sourcegraph Webview API to communicate with the Webview.
     const helpSidebarAPI = Comlink.wrap<HelpSidebarAPI>(proxy)
@@ -180,8 +180,8 @@ export function initializeHelpSidebarWebview({
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: https:; font-src ${
-        webviewView.webview.cspSource
-    }; style-src ${webviewView.webview.cspSource}; script-src ${webviewView.webview.cspSource};">
+            webviewView.webview.cspSource
+        }; style-src ${webviewView.webview.cspSource}; script-src ${webviewView.webview.cspSource};">
         <title>Help and Feedback</title>
         <link rel="stylesheet" href="${styleSource.toString()}" />
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />

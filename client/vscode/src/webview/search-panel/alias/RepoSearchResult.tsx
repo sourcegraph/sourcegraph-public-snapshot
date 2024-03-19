@@ -1,15 +1,15 @@
 import React from 'react'
 
-import {mdiSourceFork, mdiArchive, mdiLock} from '@mdi/js'
+import { mdiSourceFork, mdiArchive, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
-import {SearchResultStyles as styles, LegacyResultContainer} from '@sourcegraph/branded'
-import {displayRepoName} from '@sourcegraph/shared/src/components/RepoLink'
-import {getRepoMatchLabel, type RepositoryMatch} from '@sourcegraph/shared/src/search/stream'
-import {Button, Icon} from '@sourcegraph/wildcard'
+import { SearchResultStyles as styles, LegacyResultContainer } from '@sourcegraph/branded'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
+import { getRepoMatchLabel, type RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
-import {useOpenSearchResultsContext} from '../MatchHandlersContext'
+import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
 export interface RepoSearchResultProps {
     result: RepositoryMatch
@@ -21,18 +21,18 @@ export interface RepoSearchResultProps {
 }
 
 export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = ({
-                                                                                     result,
-                                                                                     onSelect,
-                                                                                     containerClassName,
-                                                                                     as,
-                                                                                     index,
-                                                                                 }) => {
+    result,
+    onSelect,
+    containerClassName,
+    as,
+    index,
+}) => {
     /**
      * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
      * We want to do it on mouse enter as browser window size might change after the element has been
      * loaded initially
      */
-    const {openRepo} = useOpenSearchResultsContext()
+    const { openRepo } = useOpenSearchResultsContext()
 
     const renderTitle = (): JSX.Element => (
         <div className={styles.title}>
@@ -53,7 +53,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                     </div>
                     {result.fork && (
                         <>
-                            <div className={styles.divider}/>
+                            <div className={styles.divider} />
                             <div>
                                 <Icon
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
@@ -68,7 +68,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                     )}
                     {result.archived && (
                         <>
-                            <div className={styles.divider}/>
+                            <div className={styles.divider} />
                             <div>
                                 <Icon
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
@@ -83,7 +83,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                     )}
                     {result.private && (
                         <>
-                            <div className={styles.divider}/>
+                            <div className={styles.divider} />
                             <div>
                                 <Icon
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
@@ -99,7 +99,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                 </div>
                 {result.description && (
                     <>
-                        <div className={styles.dividerVertical}/>
+                        <div className={styles.dividerVertical} />
                         <div>
                             <small>
                                 <em>{result.description}</em>

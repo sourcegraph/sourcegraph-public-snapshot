@@ -5,7 +5,7 @@ import fs from 'fs'
 
 import * as semver from 'semver'
 
-import {version} from '../package.json'
+import { version } from '../package.json'
 
 /**
  * This script is used by the CI to publish the extension to the VS Code Marketplace
@@ -38,7 +38,7 @@ const commands = {
 }
 // Publish the extension with the correct extension name "sourcegraph"
 try {
-    childProcess.execSync('pnpm build-inline-extensions && pnpm build', {stdio: 'inherit'})
+    childProcess.execSync('pnpm build-inline-extensions && pnpm build', { stdio: 'inherit' })
     // Get the latest release version nubmer of the last release from VS Code Marketplace using the vsce cli tool
     const response = childProcess.execSync(commands.vscode_info).toString()
     /*
@@ -63,11 +63,11 @@ try {
     fs.writeFileSync('package.json', packageJson)
     if (hasTokens) {
         // Run the publish commands
-        childProcess.execSync(commands.vscode_publish, {stdio: 'inherit'})
-        childProcess.execSync(commands.openvsx_publish, {stdio: 'inherit'})
+        childProcess.execSync(commands.vscode_publish, { stdio: 'inherit' })
+        childProcess.execSync(commands.openvsx_publish, { stdio: 'inherit' })
     } else {
         // Use vsce package command instead without publishing the extension for testing
-        childProcess.execSync(commands.vscode_package, {stdio: 'inherit'})
+        childProcess.execSync(commands.vscode_package, { stdio: 'inherit' })
     }
     console.log(`The extension has been ${hasTokens ? 'published' : 'packaged'} successfully.`)
 } catch (error) {

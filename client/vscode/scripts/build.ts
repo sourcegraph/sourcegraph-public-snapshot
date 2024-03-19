@@ -1,8 +1,8 @@
-import {existsSync} from 'fs'
+import { existsSync } from 'fs'
 import path from 'path'
 
 import * as esbuild from 'esbuild'
-import {rm} from 'shelljs'
+import { rm } from 'shelljs'
 
 import {
     packageResolutionPlugin,
@@ -34,12 +34,12 @@ export async function build(): Promise<void> {
     if (TARGET_TYPE === 'node' || !TARGET_TYPE) {
         buildPromises.push(
             esbuild.context({
-                entryPoints: {extension: path.join(__dirname, '/../src/extension.ts')},
+                entryPoints: { extension: path.join(__dirname, '/../src/extension.ts') },
                 bundle: true,
                 format: 'cjs',
                 platform: 'node',
                 external: ['vscode'],
-                banner: {js: 'global.Buffer = require("buffer").Buffer'},
+                banner: { js: 'global.Buffer = require("buffer").Buffer' },
                 define: {
                     'process.env.IS_TEST': isTest ? 'true' : 'false',
                 },
@@ -52,7 +52,7 @@ export async function build(): Promise<void> {
     if (TARGET_TYPE === 'webworker' || !TARGET_TYPE) {
         buildPromises.push(
             esbuild.context({
-                entryPoints: {extension: path.join(__dirname, '/../src/extension.ts')},
+                entryPoints: { extension: path.join(__dirname, '/../src/extension.ts') },
                 bundle: true,
                 format: 'cjs',
                 platform: 'browser',
@@ -142,8 +142,7 @@ export async function build(): Promise<void> {
 
     if (process.env.WATCH) {
         await Promise.all(ctxs.map(ctx => ctx.watch()))
-        await new Promise(() => {
-        }) // wait forever
+        await new Promise(() => {}) // wait forever
     }
 
     await Promise.all(ctxs.map(ctx => ctx.dispose()))

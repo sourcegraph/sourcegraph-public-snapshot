@@ -1,5 +1,5 @@
-import type {Position} from '@sourcegraph/extension-api-types'
-import {parseQueryAndHash, parseRepoRevision} from '@sourcegraph/shared/src/util/url'
+import type { Position } from '@sourcegraph/extension-api-types'
+import { parseQueryAndHash, parseRepoRevision } from '@sourcegraph/shared/src/util/url'
 
 export interface SourcegraphUriOptionals {
     revision?: string
@@ -29,8 +29,7 @@ export class SourcegraphUri {
         public readonly path: string | undefined,
         public readonly position: Position | undefined,
         public readonly compareRange: CompareRange | undefined
-    ) {
-    }
+    ) {}
 
     public withRevision(newRevision: string | undefined): SourcegraphUri {
         const newRevisionPath = newRevision ? `@${newRevision}` : ''
@@ -107,17 +106,17 @@ export class SourcegraphUri {
         const directoryPart = optional?.isDirectory
             ? 'tree'
             : optional?.isCommit
-                ? 'commit'
-                : optional?.compareRange
-                    ? 'compare'
-                    : 'blob'
+            ? 'commit'
+            : optional?.compareRange
+            ? 'compare'
+            : 'blob'
         const pathPart = optional?.compareRange
             ? `/-/compare/${optional.compareRange.base}...${optional.compareRange.head}`
             : optional?.isCommit && optional.revision
-                ? `/-/commit/${optional.revision}`
-                : optional?.path
-                    ? `/-/${directoryPart}/${optional?.path}`
-                    : ''
+            ? `/-/commit/${optional.revision}`
+            : optional?.path
+            ? `/-/${directoryPart}/${optional?.path}`
+            : ''
         const uri = `sourcegraph://${host}/${repositoryName}${revisionPart}${pathPart}`
         return new SourcegraphUri(
             uri,
@@ -178,7 +177,7 @@ export class SourcegraphUri {
         } else {
             repoRevision = pathname.slice(0, indexOfSeparator) // the whole string leading up to the separator (allows revision to be multiple path parts)
         }
-        let {repoName, revision} = parseRepoRevision(repoRevision)
+        let { repoName, revision } = parseRepoRevision(repoRevision)
 
         let path: string | undefined
         let compareRange: CompareRange | undefined
@@ -200,7 +199,7 @@ export class SourcegraphUri {
             const parts = range.split('...')
             if (parts.length === 2) {
                 const [base, head] = parts
-                compareRange = {base, head}
+                compareRange = { base, head }
             }
         }
         let position: Position | undefined

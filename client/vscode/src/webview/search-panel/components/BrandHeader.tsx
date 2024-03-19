@@ -8,7 +8,7 @@ interface BrandHeaderProps {
     isLightTheme: boolean
 }
 
-export const BrandHeader: React.FunctionComponent<BrandHeaderProps> = ({isLightTheme}) => (
+export const BrandHeader: React.FunctionComponent<BrandHeaderProps> = ({ isLightTheme }) => (
     <>
         <img
             className={classNames(styles.logo)}

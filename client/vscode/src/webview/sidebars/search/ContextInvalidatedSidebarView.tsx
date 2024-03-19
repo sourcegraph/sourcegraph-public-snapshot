@@ -1,15 +1,14 @@
 import React from 'react'
 
-import {Button, H5, Text} from '@sourcegraph/wildcard'
+import { Button, H5, Text } from '@sourcegraph/wildcard'
 
-import type {WebviewPageProps} from '../../platform/context'
+import type { WebviewPageProps } from '../../platform/context'
 
-export interface ContextInvalidatedSidebarViewProps extends WebviewPageProps {
-}
+export interface ContextInvalidatedSidebarViewProps extends WebviewPageProps {}
 
 export const ContextInvalidatedSidebarView: React.FunctionComponent<
     React.PropsWithChildren<ContextInvalidatedSidebarViewProps>
-> = ({extensionCoreAPI}) => (
+> = ({ extensionCoreAPI }) => (
     <div>
         <H5 className="mt-3 mb-2">New URL detected</H5>
         <Text>Your Sourcegraph instance URL has changed.</Text>

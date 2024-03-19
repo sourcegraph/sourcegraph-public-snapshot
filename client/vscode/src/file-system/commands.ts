@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
-import type {SourcegraphFileSystemProvider} from './SourcegraphFileSystemProvider'
-import type {SourcegraphUri} from './SourcegraphUri'
+import type { SourcegraphFileSystemProvider } from './SourcegraphFileSystemProvider'
+import type { SourcegraphUri } from './SourcegraphUri'
 
 /**
  * Try to find local copy of the search result file first
@@ -44,8 +44,8 @@ async function getLocalCopy(remoteUri: SourcegraphUri): Promise<vscode.TextDocum
     const absolutePath = basePath
         ? vscode.Uri.file(vscode.Uri.joinPath(vscode.Uri.parse(basePath), repoName, filePath).path)
         : workspaceFilePath
-            ? vscode.Uri.file(workspaceFilePath)
-            : null
+        ? vscode.Uri.file(workspaceFilePath)
+        : null
     // if both basePath and workspaceFilePath are null, the operation will fail
     if (!absolutePath) {
         throw new Error('Try to configure your basePath to open this file.')

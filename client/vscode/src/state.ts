@@ -1,11 +1,11 @@
-import {cloneDeep} from 'lodash'
-import {BehaviorSubject, type Observable} from 'rxjs'
+import { cloneDeep } from 'lodash'
+import { BehaviorSubject, type Observable } from 'rxjs'
 
-import type {AuthenticatedUser} from '@sourcegraph/shared/src/auth'
-import type {SearchQueryState} from '@sourcegraph/shared/src/search'
-import type {AggregateStreamingSearchResults} from '@sourcegraph/shared/src/search/stream'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { SearchQueryState } from '@sourcegraph/shared/src/search'
+import type { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 
-import {type LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY} from './settings/LocalStorageService'
+import { type LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
 
 /**
  * One state machine that lives in Core
@@ -81,7 +81,7 @@ interface CommonContext {
     selectedSearchContextSpec: string | undefined
 }
 
-function createInitialState({localStorageService}: { localStorageService: LocalStorageService }): VSCEState {
+function createInitialState({ localStorageService }: { localStorageService: LocalStorageService }): VSCEState {
     return {
         status: 'search-home',
         context: {
@@ -104,9 +104,9 @@ export type VSCEEvent = SearchEvent | TabsEvent | SettingsEvent
 type SearchEvent =
     | { type: 'set_query_state' }
     | {
-    type: 'submit_search_query'
-    submittedSearchQueryState: NonNullable<CommonContext['submittedSearchQueryState']>
-}
+          type: 'submit_search_query'
+          submittedSearchQueryState: NonNullable<CommonContext['submittedSearchQueryState']>
+      }
     | { type: 'received_search_results'; searchResults: AggregateStreamingSearchResults }
     | { type: 'set_selected_search_context_spec'; spec: string } // TODO see how this handles instance change
     | { type: 'sidebar_query_update'; proposedQueryState: VSCEQueryState; currentQueryState: VSCEQueryState }
@@ -123,11 +123,11 @@ interface SettingsEvent {
 }
 
 export function createVSCEStateMachine({
-                                           localStorageService,
-                                       }: {
+    localStorageService,
+}: {
     localStorageService: LocalStorageService
 }): VSCEStateMachine {
-    const states = new BehaviorSubject<VSCEState>(createInitialState({localStorageService}))
+    const states = new BehaviorSubject<VSCEState>(createInitialState({ localStorageService }))
 
     function reducer(state: VSCEState, event: VSCEEvent): VSCEState {
         // End state.
@@ -140,7 +140,7 @@ export function createVSCEStateMachine({
             return {
                 status: 'context-invalidated',
                 context: {
-                    ...createInitialState({localStorageService}).context,
+                    ...createInitialState({ localStorageService }).context,
                 },
             }
         }

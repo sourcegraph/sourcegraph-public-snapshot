@@ -1,14 +1,14 @@
 import * as vscode from 'vscode'
 
-import {getBlobContent} from '../backend/blobContent'
-import {getFiles} from '../backend/files'
-import {getRepositoryMetadata, type RepositoryMetadata} from '../backend/repositoryMetadata'
-import type {LocationNode} from '../code-intel/location'
-import {log} from '../log'
-import {endpointHostnameSetting} from '../settings/endpointSetting'
+import { getBlobContent } from '../backend/blobContent'
+import { getFiles } from '../backend/files'
+import { getRepositoryMetadata, type RepositoryMetadata } from '../backend/repositoryMetadata'
+import type { LocationNode } from '../code-intel/location'
+import { log } from '../log'
+import { endpointHostnameSetting } from '../settings/endpointSetting'
 
-import {FileTree} from './FileTree'
-import {SourcegraphUri} from './SourcegraphUri'
+import { FileTree } from './FileTree'
+import { SourcegraphUri } from './SourcegraphUri'
 
 export interface RepositoryFileNames {
     repositoryUri: string
@@ -29,8 +29,7 @@ export interface Blob {
 }
 
 export class SourcegraphFileSystemProvider implements vscode.FileSystemProvider {
-    constructor(private instanceURL: string) {
-    }
+    constructor(private instanceURL: string) {}
 
     private fileNamesByRepository: Map<string, Promise<string[]>> = new Map()
     private metadata: Map<string, RepositoryMetadata> = new Map()
@@ -48,7 +47,7 @@ export class SourcegraphFileSystemProvider implements vscode.FileSystemProvider 
         const uri = this.sourcegraphUri(vscodeUri)
         const now = Date.now()
         if (uri.uri === this.emptyFileUri()) {
-            return {mtime: now, ctime: now, size: 0, type: vscode.FileType.File}
+            return { mtime: now, ctime: now, size: 0, type: vscode.FileType.File }
         }
         const files = await this.downloadFiles(uri)
         const isFile = uri.path && files.includes(uri.path)
@@ -198,7 +197,7 @@ export class SourcegraphFileSystemProvider implements vscode.FileSystemProvider 
         if (!defaultBranch) {
             log.errorAndThrow(`repository '${repositoryName}' has no default branch`)
         }
-        const uri = SourcegraphUri.fromParts(endpointHostnameSetting(), repositoryName, {revision: defaultBranch})
+        const uri = SourcegraphUri.fromParts(endpointHostnameSetting(), repositoryName, { revision: defaultBranch })
         const files = await this.downloadFiles(uri)
         const readmes = files.filter(name => name.match(/readme/i))
         const candidates = readmes.length > 0 ? readmes : files
@@ -248,10 +247,8 @@ export class SourcegraphFileSystemProvider implements vscode.FileSystemProvider 
 
             // Start downloading the repository files in the background.
             this.downloadFiles(uri).then(
-                () => {
-                },
-                () => {
-                }
+                () => {},
+                () => {}
             )
 
             return toCacheResult
@@ -264,7 +261,7 @@ export class SourcegraphFileSystemProvider implements vscode.FileSystemProvider 
         if (metadata) {
             return metadata
         }
-        metadata = await getRepositoryMetadata({repositoryName})
+        metadata = await getRepositoryMetadata({ repositoryName })
         if (metadata) {
             this.metadata.set(repositoryName, metadata)
         }
@@ -276,7 +273,7 @@ export class SourcegraphFileSystemProvider implements vscode.FileSystemProvider 
         const fileNamesByRepository = this.fileNamesByRepository
         let downloadingFiles = this.fileNamesByRepository.get(key)
         if (!downloadingFiles) {
-            downloadingFiles = getFiles({repository: uri.repositoryName, revision: uri.revision})
+            downloadingFiles = getFiles({ repository: uri.repositoryName, revision: uri.revision })
             vscode.window
                 .withProgress(
                     {
@@ -291,14 +288,12 @@ export class SourcegraphFileSystemProvider implements vscode.FileSystemProvider 
                             log.error(`downloadFiles(${key})`, error)
                             fileNamesByRepository.delete(key)
                         }
-                        progress.report({increment: 100})
+                        progress.report({ increment: 100 })
                     }
                 )
                 .then(
-                    () => {
-                    },
-                    () => {
-                    }
+                    () => {},
+                    () => {}
                 )
 
             this.fileNamesByRepository.set(key, downloadingFiles)
@@ -311,10 +306,8 @@ export class SourcegraphFileSystemProvider implements vscode.FileSystemProvider 
         if (sourcegraphUri.host !== new URL(this.instanceURL).host) {
             const message = 'Sourcegraph instance URL has changed. Close files opened through the previous instance.'
             vscode.window.showWarningMessage(message).then(
-                () => {
-                },
-                () => {
-                }
+                () => {},
+                () => {}
             )
             throw new Error(message)
         }

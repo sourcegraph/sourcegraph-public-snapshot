@@ -1,7 +1,7 @@
 import * as Comlink from 'comlink'
 import type vscode from 'vscode'
 
-import type {EndpointPair} from '@sourcegraph/shared/src/platform/context'
+import type { EndpointPair } from '@sourcegraph/shared/src/platform/context'
 
 import {
     generateUUID,
@@ -29,7 +29,7 @@ const vscodeExtensionProxyTransferHandler: Comlink.TransferHandler<
         const nestedConnectionId = generateUUID()
         // Defer endpoint creation/object exposition to `postMessage` (to scope it to panel)
 
-        return [{nestedConnectionId, proxyMarkedValue, relationshipType: 'webToNode'}, []]
+        return [{ nestedConnectionId, proxyMarkedValue, relationshipType: 'webToNode' }, []]
     },
     deserialize: serialized => {
         // Create endpoint, return wrapped proxy.
@@ -92,9 +92,8 @@ export function createEndpointsForWebview(
                 }
 
                 if (!disposed) {
-                    panel.webview.postMessage({...message, connectionId, panelId}).then(
-                        () => {
-                        },
+                    panel.webview.postMessage({ ...message, connectionId, panelId }).then(
+                        () => {},
                         error => console.error('postMessage error', error)
                     )
                 }

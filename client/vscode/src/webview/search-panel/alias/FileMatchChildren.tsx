@@ -1,32 +1,32 @@
-import React, {type MouseEvent, type KeyboardEvent, useCallback} from 'react'
+import React, { type MouseEvent, type KeyboardEvent, useCallback } from 'react'
 
 import classNames from 'classnames'
 import type * as H from 'history'
-import type {Observable} from 'rxjs'
-import {map} from 'rxjs/operators'
+import type { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
 
-import {FileMatchChildrenStyles as styles, CodeExcerpt} from '@sourcegraph/branded'
-import type {HoverMerged} from '@sourcegraph/client-api'
-import type {Hoverifier} from '@sourcegraph/codeintellify'
-import {appendLineRangeQueryParameter, toPositionOrRangeQueryParameter} from '@sourcegraph/common'
-import type {ActionItemAction} from '@sourcegraph/shared/src/actions/ActionItem'
-import type {FetchFileParameters} from '@sourcegraph/shared/src/backend/file'
-import type {MatchGroup} from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
-import type {Controller as ExtensionsController} from '@sourcegraph/shared/src/extensions/controller'
-import type {HoverContext} from '@sourcegraph/shared/src/hover/HoverOverlay.types'
+import { FileMatchChildrenStyles as styles, CodeExcerpt } from '@sourcegraph/branded'
+import type { HoverMerged } from '@sourcegraph/client-api'
+import type { Hoverifier } from '@sourcegraph/codeintellify'
+import { appendLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
+import type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import type { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
+import type { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import type { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import {
     type ContentMatch,
     type SymbolMatch,
     type PathMatch,
     getFileMatchUrl,
 } from '@sourcegraph/shared/src/search/stream'
-import {isSettingsValid, type SettingsCascadeProps} from '@sourcegraph/shared/src/settings/settings'
-import {SymbolKind} from '@sourcegraph/shared/src/symbols/SymbolKind'
-import type {TelemetryProps} from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {Button, Code} from '@sourcegraph/wildcard'
+import { isSettingsValid, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Button, Code } from '@sourcegraph/wildcard'
 
-import type {HighlightLineRange} from '../../../graphql-operations'
-import {useOpenSearchResultsContext} from '../MatchHandlersContext'
+import type { HighlightLineRange } from '../../../graphql-operations'
+import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     location?: H.Location
@@ -142,9 +142,9 @@ function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>):
 }
 
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
-    const {result, grouped, fetchHighlightedFileLineRanges, telemetryService} = props
+    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService } = props
 
-    const {openFile, openSymbol} = useOpenSearchResultsContext()
+    const { openFile, openSymbol } = useOpenSearchResultsContext()
 
     const fetchHighlightedFileRangeLines = React.useCallback(
         (startLine: number, endLine: number) => {
@@ -167,8 +167,8 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                 map(lines => {
                     telemetryService.log(
                         'search.latencies.frontend.code-load',
-                        {durationMs: Date.now() - startTime},
-                        {durationMs: Date.now() - startTime}
+                        { durationMs: Date.now() - startTime },
+                        { durationMs: Date.now() - startTime }
                     )
                     return lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
                 })
@@ -178,7 +178,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
     )
 
     const createCodeExcerptLink = (group: MatchGroup): string => {
-        const positionOrRangeQueryParameter = toPositionOrRangeQueryParameter({position: group.position})
+        const positionOrRangeQueryParameter = toPositionOrRangeQueryParameter({ position: group.position })
         return appendLineRangeQueryParameter(getFileMatchUrl(result), positionOrRangeQueryParameter)
     }
 
@@ -201,7 +201,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
     const navigateToFile = useCallback(
         (
             event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>,
-            {line, character}: { line: number; character: number }
+            { line, character }: { line: number; character: number }
         ): void => {
             // Testing for text selection is only necessary for mouse/click
             // events. Middle-click (event.button === 1) is already handled in the `onMouseUp` callback.

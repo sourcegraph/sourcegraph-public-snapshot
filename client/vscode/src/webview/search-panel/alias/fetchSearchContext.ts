@@ -1,8 +1,8 @@
-import type {Observable} from 'rxjs'
-import {map} from 'rxjs/operators'
+import type { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
 
-import {gql, dataOrThrowErrors} from '@sourcegraph/http-client'
-import type {PlatformContext} from '@sourcegraph/shared/src/platform/context'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] }
 export type Maybe<T> = T | null
@@ -68,14 +68,14 @@ const searchContextFragment = gql`
 `
 
 export function fetchSearchContexts({
-                                        first,
-                                        namespaces,
-                                        query,
-                                        after,
-                                        orderBy,
-                                        descending,
-                                        platformContext,
-                                    }: {
+    first,
+    namespaces,
+    query,
+    after,
+    orderBy,
+    descending,
+    platformContext,
+}: {
     first: number
     query?: string
     namespaces?: Maybe<Scalars['ID']>[]
@@ -85,50 +85,50 @@ export function fetchSearchContexts({
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
 }): Observable<ListSearchContextsResult['searchContexts']> {
     return platformContext
-    .requestGraphQL<ListSearchContextsResult, ListSearchContextsVariables>({
-        request: gql`
-            query ListSearchContexts(
-                $first: Int!
-                $after: String
-                $query: String
-                $namespaces: [ID]
-                $orderBy: SearchContextsOrderBy
-                $descending: Boolean
-            ) {
-                searchContexts(
-                    first: $first
-                    after: $after
-                    query: $query
-                    namespaces: $namespaces
-                    orderBy: $orderBy
-                    descending: $descending
+        .requestGraphQL<ListSearchContextsResult, ListSearchContextsVariables>({
+            request: gql`
+                query ListSearchContexts(
+                    $first: Int!
+                    $after: String
+                    $query: String
+                    $namespaces: [ID]
+                    $orderBy: SearchContextsOrderBy
+                    $descending: Boolean
                 ) {
-                    nodes {
-                        ...SearchContextFields
+                    searchContexts(
+                        first: $first
+                        after: $after
+                        query: $query
+                        namespaces: $namespaces
+                        orderBy: $orderBy
+                        descending: $descending
+                    ) {
+                        nodes {
+                            ...SearchContextFields
+                        }
+                        pageInfo {
+                            hasNextPage
+                            endCursor
+                        }
+                        totalCount
                     }
-                    pageInfo {
-                        hasNextPage
-                        endCursor
-                    }
-                    totalCount
                 }
-            }
-            ${searchContextFragment}
-        `,
-        variables: {
-            first,
-            after: after ?? null,
-            query: query ?? null,
-            namespaces: namespaces ?? [],
-            orderBy: orderBy ?? SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
-            descending: descending ?? false,
-        },
-        mightContainPrivateInfo: true,
-    })
-    .pipe(
-        map(dataOrThrowErrors),
-        map(data => data.searchContexts)
-    )
+                ${searchContextFragment}
+            `,
+            variables: {
+                first,
+                after: after ?? null,
+                query: query ?? null,
+                namespaces: namespaces ?? [],
+                orderBy: orderBy ?? SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
+                descending: descending ?? false,
+            },
+            mightContainPrivateInfo: true,
+        })
+        .pipe(
+            map(dataOrThrowErrors),
+            map(data => data.searchContexts)
+        )
 }
 
 export interface SearchContextFields {

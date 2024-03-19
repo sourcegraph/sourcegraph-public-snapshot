@@ -1,7 +1,7 @@
-import vscode, {env} from 'vscode'
+import vscode, { env } from 'vscode'
 
-import {getSourcegraphFileUrl, repoInfo} from './git-helpers'
-import {generateSourcegraphBlobLink} from './initialize'
+import { getSourcegraphFileUrl, repoInfo } from './git-helpers'
+import { generateSourcegraphBlobLink } from './initialize'
 
 /**
  * Open active file in the browser on the configured Sourcegraph instance.
@@ -30,7 +30,7 @@ export async function browserActions(action: string, logRedirectEvent: (uri: str
             await vscode.window.showErrorMessage('Cannot get git info for this repository.')
             return
         }
-        let {remoteURL, branch, fileRelative} = repositoryInfo
+        let { remoteURL, branch, fileRelative } = repositoryInfo
         // construct sourcegraph url for current file
         // Ask if user want to open file in HEAD instead if set current branch or default branch
         // do not exist on Sourcegraph

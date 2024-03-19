@@ -1,8 +1,8 @@
-import {gql} from '@sourcegraph/http-client'
+import { gql } from '@sourcegraph/http-client'
 
-import type {BlobContentResult, BlobContentVariables} from '../graphql-operations'
+import type { BlobContentResult, BlobContentVariables } from '../graphql-operations'
 
-import {requestGraphQLFromVSCode} from './requestGraphQl'
+import { requestGraphQLFromVSCode } from './requestGraphQl'
 
 const blobContentQuery = gql`
     query BlobContent($repository: String!, $revision: String!, $path: String!) {

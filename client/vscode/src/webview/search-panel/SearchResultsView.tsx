@@ -1,31 +1,31 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import type {Observable} from 'rxjs'
-import {useDeepCompareEffectNoCheck} from 'use-deep-compare-effect'
+import type { Observable } from 'rxjs'
+import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
-import {type IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList} from '@sourcegraph/branded'
-import {wrapRemoteObservable} from '@sourcegraph/shared/src/api/client/api/common'
-import {type FetchFileParameters, fetchHighlightedFileLineRanges} from '@sourcegraph/shared/src/backend/file'
-import {getUserSearchContextNamespaces, type QueryState, type SearchMode} from '@sourcegraph/shared/src/search'
-import {collectMetrics} from '@sourcegraph/shared/src/search/query/metrics'
+import { type IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { type FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { getUserSearchContextNamespaces, type QueryState, type SearchMode } from '@sourcegraph/shared/src/search'
+import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import {
     appendContextFilter,
     sanitizeQueryForTelemetry,
     updateFilters,
 } from '@sourcegraph/shared/src/search/query/transformer'
-import {LATEST_VERSION, type RepositoryMatch, type SearchMatch} from '@sourcegraph/shared/src/search/stream'
-import {buildSearchURLQuery} from '@sourcegraph/shared/src/util/url'
+import { LATEST_VERSION, type RepositoryMatch, type SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import type {SearchPatternType} from '../../graphql-operations'
-import type {SearchResultsState} from '../../state'
-import type {WebviewPageProps} from '../platform/context'
+import type { SearchPatternType } from '../../graphql-operations'
+import type { SearchResultsState } from '../../state'
+import type { WebviewPageProps } from '../platform/context'
 
-import {fetchSearchContexts} from './alias/fetchSearchContext'
-import {setFocusSearchBox} from './api'
-import {SearchResultsInfoBar} from './components/SearchResultsInfoBar'
-import {MatchHandlersContext, useMatchHandlers} from './MatchHandlersContext'
-import {RepoView} from './RepoView'
+import { fetchSearchContexts } from './alias/fetchSearchContext'
+import { setFocusSearchBox } from './api'
+import { SearchResultsInfoBar } from './components/SearchResultsInfoBar'
+import { MatchHandlersContext, useMatchHandlers } from './MatchHandlersContext'
+import { RepoView } from './RepoView'
 
 import styles from './index.module.scss'
 
@@ -34,13 +34,13 @@ export interface SearchResultsViewProps extends WebviewPageProps {
 }
 
 export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<SearchResultsViewProps>> = ({
-                                                                                                                extensionCoreAPI,
-                                                                                                                authenticatedUser,
-                                                                                                                platformContext,
-                                                                                                                settingsCascade,
-                                                                                                                context,
-                                                                                                                instanceURL,
-                                                                                                            }) => {
+    extensionCoreAPI,
+    authenticatedUser,
+    platformContext,
+    settingsCascade,
+    context,
+    instanceURL,
+}) => {
     const [userQueryState, setUserQueryState] = useState<QueryState>(context.submittedSearchQueryState.queryState)
     const [repoToShow, setRepoToShow] = useState<Pick<
         RepositoryMatch,
@@ -154,7 +154,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
 
             extensionCoreAPI
                 .setSidebarQueryState({
-                    queryState: {query},
+                    queryState: { query },
                     searchCaseSensitivity: caseSensitive,
                     searchPatternType: patternType,
                     searchMode,
@@ -220,7 +220,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     // Submit new search on change
     const setCaseSensitivity = useCallback(
         (caseSensitive: boolean) => {
-            onSubmit({caseSensitive})
+            onSubmit({ caseSensitive })
         },
         [onSubmit]
     )
@@ -228,20 +228,20 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     // Submit new search on change
     const setPatternType = useCallback(
         (patternType: SearchPatternType) => {
-            onSubmit({patternType})
+            onSubmit({ patternType })
         },
         [onSubmit]
     )
 
     const setSearchMode = useCallback(
         (searchMode: SearchMode) => {
-            onSubmit({searchMode})
+            onSubmit({ searchMode })
         },
         [onSubmit]
     )
 
     const fetchHighlightedFileLineRangesWithContext = useCallback(
-        (parameters: FetchFileParameters) => fetchHighlightedFileLineRanges({...parameters, platformContext}),
+        (parameters: FetchFileParameters) => fetchHighlightedFileLineRanges({ ...parameters, platformContext }),
         [platformContext]
     )
 
@@ -361,7 +361,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                             <StreamingProgress
                                 query={context.submittedSearchQueryState.queryState.query}
                                 progress={
-                                    context.searchResults?.progress || {durationMs: 0, matchCount: 0, skipped: []}
+                                    context.searchResults?.progress || { durationMs: 0, matchCount: 0, skipped: [] }
                                 }
                                 state={context.searchResults?.state || 'loading'}
                                 onSearchAgain={onSearchAgain}
@@ -374,7 +374,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                         instanceURL={instanceURL}
                         fullQuery={fullQuery}
                     />
-                    <MatchHandlersContext.Provider value={{...matchHandlers, instanceURL}}>
+                    <MatchHandlersContext.Provider value={{ ...matchHandlers, instanceURL }}>
                         <StreamingSearchResultsList
                             settingsCascade={settingsCascade}
                             telemetryService={platformContext.telemetryService}

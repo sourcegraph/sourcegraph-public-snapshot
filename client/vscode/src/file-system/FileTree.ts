@@ -1,4 +1,4 @@
-import {SourcegraphUri} from './SourcegraphUri'
+import { SourcegraphUri } from './SourcegraphUri'
 
 /**
  * Helper class to represent a flat list of relative file paths (type `string[]`) as a hierarchical file tree.
@@ -70,7 +70,7 @@ export class FileTree {
             return 0
         }
         return this.binarySearch(
-            {low: 0, high: this.files.length},
+            { low: 0, high: this.files.length },
             midpoint => this.files[midpoint].localeCompare(directory) > 0
         )
     }
@@ -80,12 +80,12 @@ export class FileTree {
             low++
         }
         return this.binarySearch(
-            {low, high: this.files.length},
+            { low, high: this.files.length },
             midpoint => !this.files[midpoint].startsWith(directory)
         )
     }
 
-    private binarySearch({low, high}: SearchRange, isGreater: (midpoint: number) => boolean): number {
+    private binarySearch({ low, high }: SearchRange, isGreater: (midpoint: number) => boolean): number {
         while (low < high) {
             const midpoint = Math.floor(low + (high - low) / 2)
             if (isGreater(midpoint)) {

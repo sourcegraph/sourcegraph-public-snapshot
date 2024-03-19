@@ -101,7 +101,7 @@ Code.
 ## Keyboard Shortcuts:
 
 | Description                                  | Mac                                          | Linux / Windows                               |
-|----------------------------------------------|----------------------------------------------|-----------------------------------------------|
+| -------------------------------------------- | -------------------------------------------- | --------------------------------------------- |
 | Open Sourcegraph Search Tab/Search Selection | <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>8</kbd> | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>8</kbd> |
 | Open File in Sourcegraph Cloud               | <kbd>Option</kbd>+<kbd>A</kbd>               | <kbd>Alt</kbd>+<kbd>A</kbd>                   |
 | Search Selected Text in Sourcegraph Cloud    | <kbd>Option</kbd>+<kbd>S</kbd>               | <kbd>Alt</kbd>+<kbd>S</kbd>                   |
@@ -111,7 +111,7 @@ Code.
 This extension contributes the following settings:
 
 | Setting                           | Description                                                                                                                                                                                                                     | Example                                                      |
-|-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------|
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | sourcegraph.url                   | Specify your on-premises Sourcegraph instance here, if applicable. The extension is connected to Sourcegraph Cloud by default.                                                                                                  | "https://your-sourcegraph.com"                               |
 | sourcegraph.accessToken           | [Depreciated after 2.2.12] The access token to query the Sourcegraph API. Required to use this extension with private instances. Create a new access token at `${SOURCEGRAPH_URL}/users/<sourcegraph-username>/settings/tokens` | null                                                         |
 | sourcegraph.remoteUrlReplacements | Object, where each `key` is replaced by `value` in the remote url.                                                                                                                                                              | {"github": "gitlab", "master": "main"}                       |

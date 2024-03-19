@@ -1,11 +1,11 @@
-import {EMPTY, Subject} from 'rxjs'
-import {bufferTime, catchError, concatMap} from 'rxjs/operators'
+import { EMPTY, Subject } from 'rxjs'
+import { bufferTime, catchError, concatMap } from 'rxjs/operators'
 
-import {gql} from '@sourcegraph/http-client'
+import { gql } from '@sourcegraph/http-client'
 
-import type {LogEventsResult, LogEventsVariables, Event} from '../graphql-operations'
+import type { LogEventsResult, LogEventsVariables, Event } from '../graphql-operations'
 
-import {requestGraphQLFromVSCode} from './requestGraphQl'
+import { requestGraphQLFromVSCode } from './requestGraphQl'
 
 // Log events in batches.
 const events = new Subject<Event>()

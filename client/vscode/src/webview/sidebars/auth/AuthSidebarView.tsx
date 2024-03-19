@@ -1,11 +1,11 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import {VSCodeButton, VSCodeLink} from '@vscode/webview-ui-toolkit/react'
+import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import {currentAuthStateQuery} from '@sourcegraph/shared/src/auth'
-import type {CurrentAuthStateResult, CurrentAuthStateVariables} from '@sourcegraph/shared/src/graphql-operations'
-import {Alert, Text, Link, Input, H5, Form} from '@sourcegraph/wildcard'
+import { currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
+import type { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
+import { Alert, Text, Link, Input, H5, Form } from '@sourcegraph/wildcard'
 
 import {
     VSCE_LINK_DOTCOM,
@@ -16,26 +16,24 @@ import {
     VSCE_LINK_USER_DOCS,
     VSCE_SIDEBAR_PARAMS,
 } from '../../../common/links'
-import type {WebviewPageProps} from '../../platform/context'
+import type { WebviewPageProps } from '../../platform/context'
 
 import styles from './AuthSidebarView.module.scss'
 
 interface AuthSidebarViewProps
-    extends Pick<WebviewPageProps, 'extensionCoreAPI' | 'platformContext' | 'instanceURL' | 'authenticatedUser'> {
-}
+    extends Pick<WebviewPageProps, 'extensionCoreAPI' | 'platformContext' | 'instanceURL' | 'authenticatedUser'> {}
 
-interface AuthSidebarCtaProps extends Pick<WebviewPageProps, 'platformContext'> {
-}
+interface AuthSidebarCtaProps extends Pick<WebviewPageProps, 'platformContext'> {}
 
 /**
  * Rendered by sidebar in search-home state when user doesn't have a valid access token.
  */
 export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<AuthSidebarViewProps>> = ({
-                                                                                                            instanceURL,
-                                                                                                            extensionCoreAPI,
-                                                                                                            platformContext,
-                                                                                                            authenticatedUser,
-                                                                                                        }) => {
+    instanceURL,
+    extensionCoreAPI,
+    platformContext,
+    authenticatedUser,
+}) => {
     const [state, setState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
     const [hasAccount, setHasAccount] = useState(authenticatedUser?.username !== undefined)
     const [usePrivateInstance, setUsePrivateInstance] = useState(true)
@@ -72,8 +70,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                                 setAccessToken('REMOVED')
                                 setState('failure')
                             })
-                            .catch(() => {
-                            })
+                            .catch(() => {})
                     }
                 })
                 .catch(error => console.error(error))
@@ -121,7 +118,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                     .requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>(authStateVariables)
                     .toPromise()
                 currentAuthStateResult
-                    .then(async ({data}) => {
+                    .then(async ({ data }) => {
                         if (data?.currentUser) {
                             await extensionCoreAPI.setEndpointUri(accessToken, endpointUrl)
                             setState('success')
@@ -297,8 +294,8 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
 }
 
 export const AuthSidebarCta: React.FunctionComponent<React.PropsWithChildren<AuthSidebarCtaProps>> = ({
-                                                                                                          platformContext,
-                                                                                                      }) => {
+    platformContext,
+}) => {
     const onLinkClick = (type: 'Sourcegraph' | 'Extension'): void =>
         platformContext.telemetryService.log(`VSCESidebarLearn${type}Click`)
 
@@ -318,7 +315,7 @@ export const AuthSidebarCta: React.FunctionComponent<React.PropsWithChildren<Aut
                 <VSCodeLink href={VSCE_LINK_DOTCOM + VSCE_SIDEBAR_PARAMS} onClick={() => onLinkClick('Sourcegraph')}>
                     Sourcegraph.com
                 </VSCodeLink>
-                <br/>
+                <br />
                 <VSCodeLink href={VSCE_LINK_MARKETPLACE} onClick={() => onLinkClick('Extension')}>
                     Sourcegraph VS Code extension
                 </VSCodeLink>

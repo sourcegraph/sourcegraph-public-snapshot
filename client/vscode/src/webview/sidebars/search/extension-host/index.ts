@@ -1,23 +1,21 @@
-import {from} from 'rxjs'
-import {switchMap} from 'rxjs/operators'
-import type {Intersection} from 'utility-types'
+import { from } from 'rxjs'
+import { switchMap } from 'rxjs/operators'
+import type { Intersection } from 'utility-types'
 
-import {wrapRemoteObservable} from '@sourcegraph/shared/src/api/client/api/common'
-import type {FlatExtensionHostAPI} from '@sourcegraph/shared/src/api/contract'
-import {proxySubscribable} from '@sourcegraph/shared/src/api/extension/api/common'
-import {
-    createController as createExtensionsController
-} from '@sourcegraph/shared/src/extensions/createSyncLoadedController'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import type { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
+import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createSyncLoadedController'
 
-import type {SearchSidebarAPI} from '../../../../contract'
-import type {WebviewPageProps} from '../../../platform/context'
+import type { SearchSidebarAPI } from '../../../../contract'
+import type { WebviewPageProps } from '../../../platform/context'
 
-import {createExtensionHost} from './worker'
+import { createExtensionHost } from './worker'
 
 export function createVSCodeExtensionsController({
-                                                     platformContext,
-                                                     instanceURL,
-                                                 }: Pick<WebviewPageProps, 'platformContext' | 'instanceURL'>): Intersection<SearchSidebarAPI, FlatExtensionHostAPI> {
+    platformContext,
+    instanceURL,
+}: Pick<WebviewPageProps, 'platformContext' | 'instanceURL'>): Intersection<SearchSidebarAPI, FlatExtensionHostAPI> {
     const extensionsController = createExtensionsController({
         ...platformContext,
         sourcegraphURL: instanceURL,

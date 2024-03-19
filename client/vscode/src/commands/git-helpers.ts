@@ -1,13 +1,13 @@
 import * as path from 'path'
 
 import execa from 'execa'
-import vscode, {type TextEditor} from 'vscode'
+import vscode, { type TextEditor } from 'vscode'
 
-import {gql} from '@sourcegraph/http-client'
+import { gql } from '@sourcegraph/http-client'
 
-import {version} from '../../package.json'
-import {requestGraphQLFromVSCode} from '../backend/requestGraphQl'
-import {log} from '../log'
+import { version } from '../../package.json'
+import { requestGraphQLFromVSCode } from '../backend/requestGraphQl'
+import { log } from '../log'
 
 interface RepositoryInfo extends Branch, RemoteName {
     /** Git repository remote URL */
@@ -47,11 +47,11 @@ export async function repoInfo(filePath: string): Promise<RepositoryInfo | undef
         // Determine file path relative to repository root, then replace slashes
         // as \\ does not work in Sourcegraphl links
         const fileRelative = filePath.slice(repoRoot.length + 1).replaceAll('\\', '/')
-        let {branch, remoteName} = await gitRemoteNameAndBranch(repoRoot, gitHelpers, log)
+        let { branch, remoteName } = await gitRemoteNameAndBranch(repoRoot, gitHelpers, log)
         const remoteURL = await gitRemoteUrlWithReplacements(repoRoot, remoteName, gitHelpers, log)
         // check if the default branch or branch exist remotely
         branch = (await isOnSourcegraph(remoteURL, getDefaultBranch() || branch)) ? getDefaultBranch() || branch : ''
-        return {remoteURL, branch, fileRelative, remoteName}
+        return { remoteURL, branch, fileRelative, remoteName }
     } catch {
         return undefined
     }
@@ -109,7 +109,7 @@ export async function gitRemoteNameAndBranch(
         throw new Error('no configured git remotes')
     }
 
-    return {remoteName, branch}
+    return { remoteName, branch }
 }
 
 export const gitHelpers = {
@@ -118,7 +118,7 @@ export const gitHelpers = {
      * repository.
      */
     async rootDirectory(repoDirectory: string): Promise<string> {
-        const {stdout} = await execa('git', ['rev-parse', '--show-toplevel'], {cwd: repoDirectory})
+        const { stdout } = await execa('git', ['rev-parse', '--show-toplevel'], { cwd: repoDirectory })
         return stdout
     },
 
@@ -126,7 +126,7 @@ export const gitHelpers = {
      * Returns the names of all git remotes, e.g. ["origin", "foobar"]
      */
     async remotes(repoDirectory: string): Promise<string[]> {
-        const {stdout} = await execa('git', ['remote'], {cwd: repoDirectory})
+        const { stdout } = await execa('git', ['remote'], { cwd: repoDirectory })
         return stdout.split('\n')
     },
 
@@ -135,7 +135,7 @@ export const gitHelpers = {
      * e.g. `origin` -> `git@github.com:foo/bar`
      */
     async remoteUrl(remoteName: string, repoDirectory: string): Promise<string> {
-        const {stdout} = await execa('git', ['remote', 'get-url', remoteName], {cwd: repoDirectory})
+        const { stdout } = await execa('git', ['remote', 'get-url', remoteName], { cwd: repoDirectory })
         return stdout
     },
 
@@ -144,7 +144,7 @@ export const gitHelpers = {
      * other cases (e.g. detached HEAD state), it returns "HEAD".
      */
     async branch(repoDirectory: string): Promise<string> {
-        const {stdout} = await execa('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {cwd: repoDirectory})
+        const { stdout } = await execa('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: repoDirectory })
         return stdout
     },
 
@@ -152,7 +152,7 @@ export const gitHelpers = {
      * Returns a string in the format $UPSTREAM_REMOTE/$BRANCH_NAME, e.g. "origin/branch-name", throws if not found
      */
     async upstreamAndBranch(repoDirectory: string): Promise<string> {
-        const {stdout} = await execa('git', ['rev-parse', '--abbrev-ref', 'HEAD@{upstream}'], {cwd: repoDirectory})
+        const { stdout } = await execa('git', ['rev-parse', '--abbrev-ref', 'HEAD@{upstream}'], { cwd: repoDirectory })
         return stdout
     },
 }
@@ -204,7 +204,7 @@ export function getSourcegraphFileUrl(
         end_col: encodeURIComponent(String(editor.selection.end.character)),
     }
     const uri = new URL('/-/editor', SourcegraphUrl)
-    const parametersString = new URLSearchParams({...parameters}).toString()
+    const parametersString = new URLSearchParams({ ...parameters }).toString()
     uri.search = parametersString
     return uri.href
 }

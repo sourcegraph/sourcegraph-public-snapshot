@@ -1,25 +1,25 @@
-import React, {useMemo, useState} from 'react'
+import React, { useMemo, useState } from 'react'
 
-import {mdiChevronDown, mdiChevronLeft} from '@mdi/js'
+import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 
-import {SyntaxHighlightedSearchQuery} from '@sourcegraph/branded'
-import {type EventLogResult, fetchRecentSearches} from '@sourcegraph/shared/src/search'
-import {scanSearchQuery} from '@sourcegraph/shared/src/search/query/scanner'
-import {isRepoFilter} from '@sourcegraph/shared/src/search/query/validate'
-import {LATEST_VERSION} from '@sourcegraph/shared/src/search/stream'
-import {Icon, H5, useObservable, Button} from '@sourcegraph/wildcard'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
+import { type EventLogResult, fetchRecentSearches } from '@sourcegraph/shared/src/search'
+import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
+import { Icon, H5, useObservable, Button } from '@sourcegraph/wildcard'
 
-import {SearchPatternType} from '../../../../graphql-operations'
-import type {HistorySidebarProps} from '../HistorySidebarView'
+import { SearchPatternType } from '../../../../graphql-operations'
+import type { HistorySidebarProps } from '../HistorySidebarView'
 
 import styles from '../../search/SearchSidebarView.module.scss'
 
 export const RecentRepositoriesSection: React.FunctionComponent<React.PropsWithChildren<HistorySidebarProps>> = ({
-                                                                                                                     platformContext,
-                                                                                                                     authenticatedUser,
-                                                                                                                     extensionCoreAPI,
-                                                                                                                 }) => {
+    platformContext,
+    authenticatedUser,
+    extensionCoreAPI,
+}) => {
     const itemsToLoad = 15
     const [collapsed, setCollapsed] = useState(false)
 
@@ -67,7 +67,7 @@ export const RecentRepositoriesSection: React.FunctionComponent<React.PropsWithC
                 aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent files`}
             >
                 <H5 className="flex-grow-1">Recent Repositories</H5>
-                <Icon aria-hidden={true} className="mr-1" svgPath={collapsed ? mdiChevronLeft : mdiChevronDown}/>
+                <Icon aria-hidden={true} className="mr-1" svgPath={collapsed ? mdiChevronLeft : mdiChevronDown} />
             </Button>
 
             {!collapsed && (
@@ -82,7 +82,7 @@ export const RecentRepositoriesSection: React.FunctionComponent<React.PropsWithC
                                         className="p-0 text-left text-decoration-none"
                                         onClick={() => onRecentRepositoryClick(`repo:${repository}`)}
                                     >
-                                        <SyntaxHighlightedSearchQuery query={`r:${repository}`}/>
+                                        <SyntaxHighlightedSearchQuery query={`r:${repository}`} />
                                     </Button>
                                 </small>
                             </div>

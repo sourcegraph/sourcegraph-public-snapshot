@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
 
-import {isOlderThan, observeInstanceVersionNumber} from '../backend/instanceVersion'
-import {scretTokenKey} from '../webview/platform/AuthProvider'
+import { isOlderThan, observeInstanceVersionNumber } from '../backend/instanceVersion'
+import { scretTokenKey } from '../webview/platform/AuthProvider'
 
-import {endpointHostnameSetting, endpointProtocolSetting} from './endpointSetting'
-import {readConfiguration} from './readConfiguration'
+import { endpointHostnameSetting, endpointProtocolSetting } from './endpointSetting'
+import { readConfiguration } from './readConfiguration'
 
 // IMPORTANT: Call this function only once when extention is first activated
 export async function processOldToken(secretStorage: vscode.SecretStorage): Promise<void> {
@@ -42,7 +42,7 @@ export async function handleAccessTokenError(badToken: string, endpointURL: stri
             : `Connection to ${endpointURL} failed. Please try reloading VS Code if your Sourcegraph instance URL has been updated.`
 
         const version = await observeInstanceVersionNumber(badToken, endpointURL).toPromise()
-        const supportsTokenCallback = version && isOlderThan(version, {major: 3, minor: 41})
+        const supportsTokenCallback = version && isOlderThan(version, { major: 3, minor: 41 })
         const action = await vscode.window.showErrorMessage(message, 'Get Token', 'Reload Window')
 
         if (action === 'Reload Window') {

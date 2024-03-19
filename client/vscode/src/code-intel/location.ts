@@ -1,4 +1,4 @@
-import type {Range} from '@sourcegraph/extension-api-types'
+import type { Range } from '@sourcegraph/extension-api-types'
 
 export interface LocationNode {
     resource: {

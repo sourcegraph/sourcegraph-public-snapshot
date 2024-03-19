@@ -1,4 +1,4 @@
-import {BehaviorSubject, type Observable} from 'rxjs'
+import { BehaviorSubject, type Observable } from 'rxjs'
 
 /**
  * Adds correct theme class to <body> element,
@@ -31,7 +31,7 @@ export function adaptSourcegraphThemeToEditorTheme(): Observable<'theme-dark' | 
         applyVSCodeThemeToSourcegraph()
     })
 
-    mutationObserver.observe(body!, {childList: false, attributes: true})
+    mutationObserver.observe(body!, { childList: false, attributes: true })
 
     return themes.asObservable()
 }

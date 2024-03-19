@@ -1,21 +1,21 @@
 import type * as Comlink from 'comlink'
 import vscode from 'vscode'
 
-import {makeRepoURI} from '@sourcegraph/shared/src/util/url'
+import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
-import type {SearchSidebarAPI} from '../contract'
-import type {SourcegraphFileSystemProvider} from '../file-system/SourcegraphFileSystemProvider'
+import type { SearchSidebarAPI } from '../contract'
+import type { SourcegraphFileSystemProvider } from '../file-system/SourcegraphFileSystemProvider'
 
-import {toSourcegraphLanguage} from './languages'
-import {SourcegraphDefinitionProvider} from './SourcegraphDefinitionProvider'
-import {SourcegraphHoverProvider} from './SourcegraphHoverProvider'
-import {SourcegraphReferenceProvider} from './SourcegraphReferenceProvider'
+import { toSourcegraphLanguage } from './languages'
+import { SourcegraphDefinitionProvider } from './SourcegraphDefinitionProvider'
+import { SourcegraphHoverProvider } from './SourcegraphHoverProvider'
+import { SourcegraphReferenceProvider } from './SourcegraphReferenceProvider'
 
 export function initializeCodeIntel({
-                                        context,
-                                        fs,
-                                        searchSidebarAPI,
-                                    }: {
+    context,
+    fs,
+    searchSidebarAPI,
+}: {
     context: vscode.ExtensionContext
     fs: SourcegraphFileSystemProvider
     searchSidebarAPI: Comlink.Remote<SearchSidebarAPI>
@@ -23,19 +23,19 @@ export function initializeCodeIntel({
     // Register language-related features (they depend on Sourcegraph extensions).
     context.subscriptions.push(
         vscode.languages.registerDefinitionProvider(
-            {scheme: 'sourcegraph'},
+            { scheme: 'sourcegraph' },
             new SourcegraphDefinitionProvider(fs, searchSidebarAPI)
         )
     )
     context.subscriptions.push(
         vscode.languages.registerReferenceProvider(
-            {scheme: 'sourcegraph'},
+            { scheme: 'sourcegraph' },
             new SourcegraphReferenceProvider(fs, searchSidebarAPI)
         )
     )
     context.subscriptions.push(
         vscode.languages.registerHoverProvider(
-            {scheme: 'sourcegraph'},
+            { scheme: 'sourcegraph' },
             new SourcegraphHoverProvider(fs, searchSidebarAPI)
         )
     )

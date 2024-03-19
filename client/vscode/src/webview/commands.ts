@@ -1,36 +1,36 @@
-import type {Observable} from 'rxjs'
+import type { Observable } from 'rxjs'
 import * as vscode from 'vscode'
 
 import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
-import {LATEST_VERSION} from '@sourcegraph/shared/src/search/stream'
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 
-import {getProxyAgent} from '../backend/fetch'
-import type {initializeSourcegraphSettings} from '../backend/sourcegraphSettings'
-import {initializeCodeIntel} from '../code-intel/initialize'
-import type {ExtensionCoreAPI} from '../contract'
-import type {SourcegraphFileSystemProvider} from '../file-system/SourcegraphFileSystemProvider'
-import {SearchPatternType} from '../graphql-operations'
-import {endpointRequestHeadersSetting, endpointSetting} from '../settings/endpointSetting'
+import { getProxyAgent } from '../backend/fetch'
+import type { initializeSourcegraphSettings } from '../backend/sourcegraphSettings'
+import { initializeCodeIntel } from '../code-intel/initialize'
+import type { ExtensionCoreAPI } from '../contract'
+import type { SourcegraphFileSystemProvider } from '../file-system/SourcegraphFileSystemProvider'
+import { SearchPatternType } from '../graphql-operations'
+import { endpointRequestHeadersSetting, endpointSetting } from '../settings/endpointSetting'
 
 import {
     initializeHelpSidebarWebview,
     initializeSearchPanelWebview,
     initializeSearchSidebarWebview,
 } from './initialize'
-import {scretTokenKey} from './platform/AuthProvider'
+import { scretTokenKey } from './platform/AuthProvider'
 
 // Track current active webview panel to make sure only one panel exists at a time
 let currentSearchPanel: vscode.WebviewPanel | 'initializing' | undefined
 let searchSidebarWebviewView: vscode.WebviewView | 'initializing' | undefined
 
 export function registerWebviews({
-                                     context,
-                                     extensionCoreAPI,
-                                     initializedPanelIDs,
-                                     sourcegraphSettings,
-                                     fs,
-                                     instanceURL,
-                                 }: {
+    context,
+    extensionCoreAPI,
+    initializedPanelIDs,
+    sourcegraphSettings,
+    fs,
+    instanceURL,
+}: {
     context: vscode.ExtensionContext
     extensionCoreAPI: ExtensionCoreAPI
     initializedPanelIDs: Observable<string>
@@ -62,11 +62,11 @@ export function registerWebviews({
     // It will also be changed when the token has been changed --handled by Auth Provider
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(async config => {
-            const session = await vscode.authentication.getSession(endpointSetting(), [], {forceNewSession: false})
+            const session = await vscode.authentication.getSession(endpointSetting(), [], { forceNewSession: false })
             if (config.affectsConfiguration('sourcegraph.requestHeaders') && session) {
                 const newCustomHeaders = endpointRequestHeadersSetting()
                 polyfillEventSource(
-                    session.accessToken ? {Authorization: `token ${session.accessToken}`, ...newCustomHeaders} : {},
+                    session.accessToken ? { Authorization: `token ${session.accessToken}`, ...newCustomHeaders } : {},
                     getProxyAgent()
                 )
             }
@@ -94,7 +94,7 @@ export function registerWebviews({
 
                 currentSearchPanel = 'initializing'
 
-                const {webviewPanel, searchPanelAPI} = await initializeSearchPanelWebview({
+                const { webviewPanel, searchPanelAPI } = await initializeSearchPanelWebview({
                     extensionUri: context.extensionUri,
                     extensionCoreAPI,
                     initializedPanelIDs,
@@ -104,20 +104,18 @@ export function registerWebviews({
 
                 webviewPanel.onDidChangeViewState(() => {
                     if (webviewPanel.active) {
-                        extensionCoreAPI.emit({type: 'search_panel_focused'})
+                        extensionCoreAPI.emit({ type: 'search_panel_focused' })
                         focusSearchSidebar()
-                        searchPanelAPI.focusSearchBox().catch(() => {
-                        })
+                        searchPanelAPI.focusSearchBox().catch(() => {})
                     }
 
                     if (webviewPanel.visible) {
-                        searchPanelAPI.focusSearchBox().catch(() => {
-                        })
+                        searchPanelAPI.focusSearchBox().catch(() => {})
                     }
 
                     if (!webviewPanel.visible) {
                         // TODO emit event (should go to idle state if not remote browsing)
-                        extensionCoreAPI.emit({type: 'search_panel_unfocused'})
+                        extensionCoreAPI.emit({ type: 'search_panel_unfocused' })
                     }
                 })
 
@@ -129,7 +127,7 @@ export function registerWebviews({
                         focusFileExplorer()
                     }
                     // Clear search result
-                    extensionCoreAPI.emit({type: 'search_panel_disposed'})
+                    extensionCoreAPI.emit({ type: 'search_panel_disposed' })
                 })
             }
 
@@ -151,7 +149,7 @@ export function registerWebviews({
             {
                 // This typically will be called only once since `retainContextWhenHidden` is set to `true`.
                 resolveWebviewView: (webviewView, _context, _token) => {
-                    const {searchSidebarAPI} = initializeSearchSidebarWebview({
+                    const { searchSidebarAPI } = initializeSearchSidebarWebview({
                         extensionUri: context.extensionUri,
                         extensionCoreAPI,
                         webviewView,
@@ -160,7 +158,7 @@ export function registerWebviews({
                     // Initialize search panel.
                     openSearchPanelCommand()
 
-                    initializeCodeIntel({context, fs, searchSidebarAPI})
+                    initializeCodeIntel({ context, fs, searchSidebarAPI })
 
                     // Bring search panel back if it was previously closed on sidebar visibility change
                     webviewView.onDidChangeVisibility(() => {
@@ -170,7 +168,7 @@ export function registerWebviews({
                     })
                 },
             },
-            {webviewOptions: {retainContextWhenHidden: true}}
+            { webviewOptions: { retainContextWhenHidden: true } }
         )
     )
 
@@ -187,7 +185,7 @@ export function registerWebviews({
                     })
                 },
             },
-            {webviewOptions: {retainContextWhenHidden: true}}
+            { webviewOptions: { retainContextWhenHidden: true } }
         )
     )
 
@@ -210,8 +208,7 @@ export function registerWebviews({
 
 function openSearchPanelCommand(): void {
     vscode.commands.executeCommand('sourcegraph.search').then(
-        () => {
-        },
+        () => {},
         error => {
             console.error(error)
         }
@@ -220,8 +217,7 @@ function openSearchPanelCommand(): void {
 
 function focusSearchSidebar(): void {
     vscode.commands.executeCommand('sourcegraph.searchSidebar.focus').then(
-        () => {
-        },
+        () => {},
         error => {
             console.error(error)
         }
@@ -236,8 +232,7 @@ export function focusSearchPanel(): void {
 
 function focusFileExplorer(): void {
     vscode.commands.executeCommand('workbench.view.explorer').then(
-        () => {
-        },
+        () => {},
         error => {
             console.error(error)
         }

@@ -1,8 +1,8 @@
-import {gql} from '@sourcegraph/http-client'
+import { gql } from '@sourcegraph/http-client'
 
-import type {FileNamesResult, FileNamesVariables} from '../graphql-operations'
+import type { FileNamesResult, FileNamesVariables } from '../graphql-operations'
 
-import {requestGraphQLFromVSCode} from './requestGraphQl'
+import { requestGraphQLFromVSCode } from './requestGraphQl'
 
 const fileNamesQuery = gql`
     query FileNames($repository: String!, $revision: String!) {

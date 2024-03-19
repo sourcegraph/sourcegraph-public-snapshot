@@ -1,21 +1,21 @@
 import vscode from 'vscode'
 
-import {log} from '../log'
+import { log } from '../log'
 
-import {openSourcegraphUriCommand} from './commands'
-import {FilesTreeDataProvider} from './FilesTreeDataProvider'
-import {SourcegraphFileSystemProvider} from './SourcegraphFileSystemProvider'
-import {SourcegraphUri} from './SourcegraphUri'
+import { openSourcegraphUriCommand } from './commands'
+import { FilesTreeDataProvider } from './FilesTreeDataProvider'
+import { SourcegraphFileSystemProvider } from './SourcegraphFileSystemProvider'
+import { SourcegraphUri } from './SourcegraphUri'
 
 export function initializeSourcegraphFileSystem({
-                                                    context,
-                                                    initialInstanceURL,
-                                                }: {
+    context,
+    initialInstanceURL,
+}: {
     context: vscode.ExtensionContext
     initialInstanceURL: string
 }): { fs: SourcegraphFileSystemProvider } {
     const fs = new SourcegraphFileSystemProvider(initialInstanceURL)
-    context.subscriptions.push(vscode.workspace.registerFileSystemProvider('sourcegraph', fs, {isReadonly: true}))
+    context.subscriptions.push(vscode.workspace.registerFileSystemProvider('sourcegraph', fs, { isReadonly: true }))
 
     const files = new FilesTreeDataProvider(fs)
 
@@ -44,5 +44,5 @@ export function initializeSourcegraphFileSystem({
         })
     )
 
-    return {fs}
+    return { fs }
 }

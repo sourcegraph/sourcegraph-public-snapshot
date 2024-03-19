@@ -2,22 +2,18 @@
   "extends": "../tsconfig.json",
   "references": [
     {
-      "path": "../"
+      "path": "../",
     },
     {
-      "path": "../../shared/src/testing"
-    }
+      "path": "../../shared/src/testing",
+    },
   ],
   "compilerOptions": {
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "module": "commonjs",
     "rootDir": ".",
-    "outDir": "../out/src/tests"
+    "outDir": "../out/src/tests",
   },
-  "include": [
-    "**/*"
-  ],
-  "exclude": []
+  "include": ["**/*"],
+  "exclude": [],
 }

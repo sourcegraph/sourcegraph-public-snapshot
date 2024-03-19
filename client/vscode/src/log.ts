@@ -28,7 +28,7 @@ function errorMessage(what: string, error?: any): string {
         error instanceof Error
             ? ` ${error.message} ${error.stack || ''}`
             : error !== undefined
-                ? ` ${JSON.stringify(error)}`
-                : ''
+            ? ` ${JSON.stringify(error)}`
+            : ''
     return what + errorMessage
 }

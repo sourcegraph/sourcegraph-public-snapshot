@@ -1,26 +1,26 @@
 import '../../platform/polyfills'
 
-import React, {useMemo} from 'react'
+import React, { useMemo } from 'react'
 
-import {VSCodeProgressRing} from '@vscode/webview-ui-toolkit/react'
+import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
-import {createRoot} from 'react-dom/client'
+import { createRoot } from 'react-dom/client'
 
-import {wrapRemoteObservable} from '@sourcegraph/shared/src/api/client/api/common'
-import {AnchorLink, setLinkComponent, useObservable} from '@sourcegraph/wildcard'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { AnchorLink, setLinkComponent, useObservable } from '@sourcegraph/wildcard'
 
-import type {ExtensionCoreAPI, HelpSidebarAPI} from '../../../contract'
-import type {VsCodeApi} from '../../../vsCodeApi'
-import {createEndpointsForWebToNode} from '../../comlink/webviewEndpoint'
-import {createPlatformContext} from '../../platform/context'
+import type { ExtensionCoreAPI, HelpSidebarAPI } from '../../../contract'
+import type { VsCodeApi } from '../../../vsCodeApi'
+import { createEndpointsForWebToNode } from '../../comlink/webviewEndpoint'
+import { createPlatformContext } from '../../platform/context'
 
-import {HelpSidebarView} from './HelpSidebarView'
+import { HelpSidebarView } from './HelpSidebarView'
 
 declare const acquireVsCodeApi: () => VsCodeApi
 
 const vsCodeApi = acquireVsCodeApi()
 
-const {proxy, expose} = createEndpointsForWebToNode(vsCodeApi)
+const { proxy, expose } = createEndpointsForWebToNode(vsCodeApi)
 
 export const extensionCoreAPI: Comlink.Remote<ExtensionCoreAPI> = Comlink.wrap(proxy)
 
@@ -41,7 +41,7 @@ const Main: React.FC<React.PropsWithChildren<unknown>> = () => {
 
     const instanceURL = useObservable(useMemo(() => wrapRemoteObservable(extensionCoreAPI.getInstanceURL()), []))
     if (authenticatedUser === undefined || instanceURL === undefined || state === undefined) {
-        return <VSCodeProgressRing/>
+        return <VSCodeProgressRing />
     }
 
     return (
@@ -56,4 +56,4 @@ const Main: React.FC<React.PropsWithChildren<unknown>> = () => {
 
 const root = createRoot(document.querySelector('#root')!)
 
-root.render(<Main/>)
+root.render(<Main />)

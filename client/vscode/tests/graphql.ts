@@ -1,7 +1,7 @@
-import type {SharedGraphQlOperations} from '@sourcegraph/shared/src/graphql-operations'
-import {sharedGraphQlResults} from '@sourcegraph/shared/src/testing/integration/graphQlResults'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { sharedGraphQlResults } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
-import type {VSCodeGraphQlOperations} from '../src/graphql-operations'
+import type { VSCodeGraphQlOperations } from '../src/graphql-operations'
 
 /**
  * Predefined results for GraphQL requests that are made on almost every user flow.
@@ -20,7 +20,7 @@ export const commonVSCodeGraphQlResults: Partial<VSCodeGraphQlOperations & Share
         searchContexts: {
             nodes: [],
             totalCount: 0,
-            pageInfo: {hasNextPage: false, endCursor: null},
+            pageInfo: { hasNextPage: false, endCursor: null },
         },
     }),
     IsSearchContextAvailable: () => ({

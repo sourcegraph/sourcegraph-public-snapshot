@@ -1,7 +1,7 @@
-import React, {type FC, type ReactElement, type ReactNode, useCallback, useMemo} from 'react'
+import React, { type FC, type ReactElement, type ReactNode, useCallback, useMemo } from 'react'
 
-import {useLocation, useNavigate} from 'react-router-dom'
-import {useDeepCompareEffectNoCheck} from 'use-deep-compare-effect'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 import create from 'zustand'
 
 import {
@@ -14,7 +14,7 @@ import {
     SearchSidebar,
     SearchSidebarSection,
 } from '@sourcegraph/branded'
-import {wrapRemoteObservable} from '@sourcegraph/shared/src/api/client/api/common'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import {
     InitialParametersSource,
     type QueryUpdate,
@@ -23,14 +23,14 @@ import {
     type SearchQueryStateStore,
     updateQuery,
 } from '@sourcegraph/shared/src/search'
-import {FilterType} from '@sourcegraph/shared/src/search/query/filters'
-import {type Filter, LATEST_VERSION} from '@sourcegraph/shared/src/search/stream'
-import {SectionID} from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
-import {useTemporarySetting} from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import {Code, useObservable} from '@sourcegraph/wildcard'
+import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { type Filter, LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
+import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { Code, useObservable } from '@sourcegraph/wildcard'
 
-import {SearchPatternType} from '../../../graphql-operations'
-import type {WebviewPageProps} from '../../platform/context'
+import { SearchPatternType } from '../../../graphql-operations'
+import type { WebviewPageProps } from '../../platform/context'
 
 import styles from './SearchSidebarView.module.scss'
 
@@ -40,11 +40,11 @@ interface SearchSidebarViewProps
 }
 
 export const SearchSidebarView: FC<SearchSidebarViewProps> = React.memo(function SearchSidebarView({
-                                                                                                       settingsCascade,
-                                                                                                       platformContext,
-                                                                                                       extensionCoreAPI,
-                                                                                                       filters,
-                                                                                                   }) {
+    settingsCascade,
+    platformContext,
+    extensionCoreAPI,
+    filters,
+}) {
     const navigate = useNavigate()
     const location = useLocation()
     const [, setCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
@@ -54,7 +54,7 @@ export const SearchSidebarView: FC<SearchSidebarViewProps> = React.memo(function
         () =>
             create<SearchQueryState>((set, get) => ({
                 parametersSource: InitialParametersSource.DEFAULT,
-                queryState: {query: ''},
+                queryState: { query: '' },
                 searchCaseSensitivity: false,
                 searchPatternType: SearchPatternType.standard,
                 searchQueryFromURL: '',
@@ -148,8 +148,8 @@ export const SearchSidebarView: FC<SearchSidebarViewProps> = React.memo(function
 
     const onDynamicFilterClicked = useCallback(
         (value: string, kind?: string) => {
-            platformContext.telemetryService.log('DynamicFilterClicked', {search_filter: {kind}})
-            handleSidebarSearchSubmit([{type: 'toggleSubquery', value}])
+            platformContext.telemetryService.log('DynamicFilterClicked', { search_filter: { kind } })
+            handleSidebarSearchSubmit([{ type: 'toggleSubquery', value }])
         },
         [handleSidebarSearchSubmit, platformContext.telemetryService]
     )
@@ -157,7 +157,7 @@ export const SearchSidebarView: FC<SearchSidebarViewProps> = React.memo(function
     const onSnippetClicked = useCallback(
         (value: string) => {
             platformContext.telemetryService.log('SearchSnippetClicked')
-            handleSidebarSearchSubmit([{type: 'toggleSubquery', value}])
+            handleSidebarSearchSubmit([{ type: 'toggleSubquery', value }])
         },
         [handleSidebarSearchSubmit, platformContext.telemetryService]
     )

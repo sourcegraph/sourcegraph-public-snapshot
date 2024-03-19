@@ -1,23 +1,23 @@
-import React, {useMemo, useState} from 'react'
+import React, { useMemo, useState } from 'react'
 
-import {mdiChevronDown, mdiChevronLeft} from '@mdi/js'
+import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 
-import {SyntaxHighlightedSearchQuery} from '@sourcegraph/branded'
-import {type EventLogResult, fetchRecentSearches} from '@sourcegraph/shared/src/search'
-import {LATEST_VERSION} from '@sourcegraph/shared/src/search/stream'
-import {Icon, H5, useObservable, Button} from '@sourcegraph/wildcard'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
+import { type EventLogResult, fetchRecentSearches } from '@sourcegraph/shared/src/search'
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
+import { Icon, H5, useObservable, Button } from '@sourcegraph/wildcard'
 
-import {SearchPatternType} from '../../../../graphql-operations'
-import type {HistorySidebarProps} from '../HistorySidebarView'
+import { SearchPatternType } from '../../../../graphql-operations'
+import type { HistorySidebarProps } from '../HistorySidebarView'
 
 import styles from '../../search/SearchSidebarView.module.scss'
 
 export const RecentSearchesSection: React.FunctionComponent<React.PropsWithChildren<HistorySidebarProps>> = ({
-                                                                                                                 platformContext,
-                                                                                                                 extensionCoreAPI,
-                                                                                                                 authenticatedUser,
-                                                                                                             }) => {
+    platformContext,
+    extensionCoreAPI,
+    authenticatedUser,
+}) => {
     const itemsToLoad = 15
     const [collapsed, setCollapsed] = useState(false)
 
@@ -63,7 +63,7 @@ export const RecentSearchesSection: React.FunctionComponent<React.PropsWithChild
                 aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent searches`}
             >
                 <H5 className="flex-grow-1">Recent Searches</H5>
-                <Icon className="mr-1" svgPath={collapsed ? mdiChevronLeft : mdiChevronDown} aria-hidden={true}/>
+                <Icon className="mr-1" svgPath={collapsed ? mdiChevronLeft : mdiChevronDown} aria-hidden={true} />
             </Button>
 
             {!collapsed && (
@@ -78,7 +78,7 @@ export const RecentSearchesSection: React.FunctionComponent<React.PropsWithChild
                                         className="p-0 text-left text-decoration-none"
                                         onClick={() => onSearchClick(search.searchText)}
                                     >
-                                        <SyntaxHighlightedSearchQuery query={search.searchText}/>
+                                        <SyntaxHighlightedSearchQuery query={search.searchText} />
                                     </Button>
                                 </small>
                             </div>

@@ -1,16 +1,16 @@
-import React, {useCallback, useMemo} from 'react'
+import React, { useCallback, useMemo } from 'react'
 
-import {mdiLink} from '@mdi/js'
+import { mdiLink } from '@mdi/js'
 import classNames from 'classnames'
 
-import {FilterKind, findFilter} from '@sourcegraph/shared/src/search/query/query'
-import {Button, Icon, Tooltip} from '@sourcegraph/wildcard'
+import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
+import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import type {SearchPatternType} from '../../../graphql-operations'
-import type {WebviewPageProps} from '../../platform/context'
+import type { SearchPatternType } from '../../../graphql-operations'
+import type { WebviewPageProps } from '../../platform/context'
 
-import {ButtonDropdownCta, type ButtonDropdownCtaProps} from './ButtonDropdownCta'
-import {BookmarkRadialGradientIcon, CodeMonitoringLogo} from './icons'
+import { ButtonDropdownCta, type ButtonDropdownCtaProps } from './ButtonDropdownCta'
+import { BookmarkRadialGradientIcon, CodeMonitoringLogo } from './icons'
 
 import styles from './SearchResultsInfoBar.module.scss'
 
@@ -116,11 +116,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         className="test-save-search-link"
                         button={
                             <>
-                                <Icon aria-hidden={true} className="mr-1" as={CodeMonitoringLogo}/>
+                                <Icon aria-hidden={true} className="mr-1" as={CodeMonitoringLogo} />
                                 Monitor
                             </>
                         }
-                        icon={<BookmarkRadialGradientIcon/>}
+                        icon={<BookmarkRadialGradientIcon />}
                         title="Monitor code for changes"
                         copyText="Create a monitor and get notified when your code changes. Free for registered users."
                         source="CodeMonitor"
@@ -149,7 +149,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             <Tooltip content="Share results link">
                 <li className={classNames('mr-2', styles.navItem)}>
                     <Button variant="secondary" outline={true} size="sm" onClick={onShareResultsClick}>
-                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiLink}/>
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiLink} />
                         Share
                     </Button>
                 </li>
@@ -162,7 +162,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         <div className={classNames('flex-grow-1 my-2', styles.searchResultsInfoBar)} data-testid="results-info-bar">
             <div className={styles.row}>
                 {stats}
-                <div className={styles.expander}/>
+                <div className={styles.expander} />
                 <ul className="nav align-items-center">
                     {createCodeMonitorButton}
                     {ShareLinkButton}

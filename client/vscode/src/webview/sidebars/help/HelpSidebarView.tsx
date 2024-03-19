@@ -1,11 +1,11 @@
-import React, {useEffect, useState} from 'react'
+import React, { useEffect, useState } from 'react'
 
-import {VSCodeButton} from '@vscode/webview-ui-toolkit/react'
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import {Button, Text} from '@sourcegraph/wildcard'
+import { Button, Text } from '@sourcegraph/wildcard'
 
-import {version} from '../../../../package.json'
+import { version } from '../../../../package.json'
 import {
     VSCE_LINK_FEEDBACK,
     VSCE_LINK_ISSUES,
@@ -14,24 +14,23 @@ import {
     VSCE_SG_LOGOMARK_LIGHT,
     VSCE_LINK_SIGNUP,
 } from '../../../common/links'
-import type {WebviewPageProps} from '../../platform/context'
-import {AuthSidebarView} from '../auth/AuthSidebarView'
+import type { WebviewPageProps } from '../../platform/context'
+import { AuthSidebarView } from '../auth/AuthSidebarView'
 
 import styles from './HelpSidebarView.module.scss'
 
 interface HelpSidebarViewProps
-    extends Pick<WebviewPageProps, 'extensionCoreAPI' | 'platformContext' | 'authenticatedUser' | 'instanceURL'> {
-}
+    extends Pick<WebviewPageProps, 'extensionCoreAPI' | 'platformContext' | 'authenticatedUser' | 'instanceURL'> {}
 
 /**
  * Rendered by sidebar in search-home state when user doesn't have a valid access token.
  */
 export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<HelpSidebarViewProps>> = ({
-                                                                                                            platformContext,
-                                                                                                            extensionCoreAPI,
-                                                                                                            authenticatedUser,
-                                                                                                            instanceURL,
-                                                                                                        }) => {
+    platformContext,
+    extensionCoreAPI,
+    authenticatedUser,
+    instanceURL,
+}) => {
     const [openAuthPanel, setOpenAuthPanel] = useState(false)
     const [isLightTheme, setIsLightTheme] = useState<boolean | undefined>(undefined)
 
