@@ -115,19 +115,19 @@ func (c *Commandset) Merge(other *Commandset) *Commandset {
 		merged.Name = other.Name
 	}
 
-	if !equal(merged.Commands, other.Commands) && len(other.Commands) != 0 {
+	if len(other.Commands) != 0 {
 		merged.Commands = other.Commands
 	}
 
-	if !equal(merged.Checks, other.Checks) && len(other.Checks) != 0 {
+	if len(other.Checks) != 0 {
 		merged.Checks = other.Checks
 	}
 
-	if !equal(merged.BazelCommands, other.BazelCommands) && len(other.BazelCommands) != 0 {
+	if len(other.BazelCommands) != 0 {
 		merged.BazelCommands = other.BazelCommands
 	}
 
-	if !equal(merged.DockerCommands, other.DockerCommands) && len(other.DockerCommands) != 0 {
+	if len(other.DockerCommands) != 0 {
 		merged.DockerCommands = other.DockerCommands
 	}
 
@@ -151,74 +151,59 @@ type Config struct {
 	Tests             map[string]*run.Command       `yaml:"tests"`
 }
 
-// Merges merges the top-level entries of two Config objects, with the receiver
-// being modified.
-func (c *Config) Merge(other *Config) {
+// Merges merges the top-level entries of two Config objects, using the
+// values from `other` if they are set as overrides and returns a new config
+func (c *Config) Merge(other *Config) *Config {
+	merged := *c
 	for k, v := range other.Env {
-		c.Env[k] = v
+		merged.Env[k] = v
 	}
 
 	for name, override := range other.Commands {
-		if original, ok := c.Commands[name]; ok {
-			merged := original.Merge(*override)
-			c.Commands[name] = &merged
+		if original, ok := merged.Commands[name]; ok {
+			merged.Commands[name] = ptr(original.Merge(*override))
 		} else {
-			c.Commands[name] = override
+			merged.Commands[name] = override
 		}
 	}
 
 	for name, override := range other.BazelCommands {
-		if original, ok := c.BazelCommands[name]; ok {
-			merged := original.Merge(*override)
-			c.BazelCommands[name] = &merged
+		if original, ok := merged.BazelCommands[name]; ok {
+			merged.BazelCommands[name] = ptr(original.Merge(*override))
 		} else {
-			c.BazelCommands[name] = override
+			merged.BazelCommands[name] = override
 		}
 	}
 
 	for name, override := range other.DockerCommands {
-		if original, ok := c.DockerCommands[name]; ok {
-			merged := original.Merge(*override)
-			c.DockerCommands[name] = &merged
+		if original, ok := merged.DockerCommands[name]; ok {
+			merged.DockerCommands[name] = ptr(original.Merge(*override))
 		} else {
-			c.DockerCommands[name] = override
+			merged.DockerCommands[name] = override
 		}
 	}
 
 	for name, override := range other.Commandsets {
-		if original, ok := c.Commandsets[name]; ok {
-			c.Commandsets[name] = original.Merge(override)
+		if original, ok := merged.Commandsets[name]; ok {
+			merged.Commandsets[name] = original.Merge(override)
 		} else {
-			c.Commandsets[name] = override
+			merged.Commandsets[name] = override
 		}
 	}
 
 	if other.DefaultCommandset != "" {
-		c.DefaultCommandset = other.DefaultCommandset
+		merged.DefaultCommandset = other.DefaultCommandset
 	}
 
 	for name, override := range other.Tests {
-		if original, ok := c.Tests[name]; ok {
-			merged := original.Merge(*override)
-			c.Tests[name] = &merged
+		if original, ok := merged.Tests[name]; ok {
+			merged.Tests[name] = ptr(original.Merge(*override))
 		} else {
-			c.Tests[name] = override
-		}
-	}
-}
-
-func equal(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	for i, v := range a {
-		if v != b[i] {
-			return false
+			merged.Tests[name] = override
 		}
 	}
 
-	return true
+	return &merged
 }
 
 func (c *Config) GetEnv(key string) string {
@@ -239,4 +224,8 @@ func (c *Config) GetEnv(key string) string {
 		}
 		return os.Getenv(lookup)
 	})
+}
+
+func ptr[T any](expr T) *T {
+	return &expr
 }

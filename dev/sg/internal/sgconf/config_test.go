@@ -164,7 +164,7 @@ dockerCommands:
 		t.Errorf("unexpected error: %s", err)
 	}
 
-	config.Merge(overwrite)
+	merged := config.Merge(overwrite)
 
 	want := &Config{
 		Env: map[string]string{
@@ -232,7 +232,7 @@ dockerCommands:
 		},
 	}
 
-	if diff := cmp.Diff(want, config); diff != "" {
+	if diff := cmp.Diff(want, merged); diff != "" {
 		t.Fatalf("wrong config. (-want +got):\n%s", diff)
 	}
 }
