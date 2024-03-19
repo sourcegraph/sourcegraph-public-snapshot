@@ -4,6 +4,7 @@ go_library(
     name = "cliutil",
     srcs = [
         "addlog.go",
+        "bug_versions.go",
         "describe.go",
         "describe_util.go",
         "downgrade.go",
