@@ -1,12 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path"
 	"text/template"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
@@ -67,14 +68,14 @@ dns: dave-app.sgdev.org
 			Destination: &infraRepo,
 		},
 	},
-	Before: func(c *cli.Context) error {
+	Before: func(ctx context.Context, cmd *cli.Command) error {
 		if dryRun && infraRepo != "" {
 			return errors.New("cannot specify both --infra-repo and --dry-run")
 		}
 
 		return nil
 	},
-	Action: func(c *cli.Context) error {
+	Action: func(ctx context.Context, cmd *cli.Command) error {
 		err := generateConfig(valuesFile, dryRun, infraRepo)
 		if err != nil {
 			return errors.Wrap(err, "generate manifest")

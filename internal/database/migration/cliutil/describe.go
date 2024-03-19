@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -38,7 +38,7 @@ func Describe(commandName string, factory RunnerFactory, outFactory OutputFactor
 		Required: false,
 	}
 
-	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) (err error) {
+	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Command, out *output.Output) (err error) {
 		w, shouldDecorate, err := getOutput(out, outFlag.Get(cmd), forceFlag.Get(cmd), noColorFlag.Get(cmd))
 		if err != nil {
 			return err

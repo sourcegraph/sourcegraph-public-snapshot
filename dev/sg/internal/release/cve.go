@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/grafana/regexp"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -66,13 +66,13 @@ func downloadUrl(uri string, w io.Writer) (err error) {
 	}
 	return nil
 }
-func cveCheck(cmd *cli.Context) error {
+func cveCheck(ctx context.Context, cmd *cli.Command) error {
 	std.Out.WriteLine(output.Styledf(output.StylePending, "Checking release for approved CVEs..."))
 
 	referenceUrl := referenceUriFlag.Get(cmd)
 	buildNumber := buildNumberFlag.Get(cmd)
 
-	return CveCheck(cmd.Context, buildNumber, referenceUrl, false) // TODO(@jhchabran)
+	return CveCheck(ctx, buildNumber, referenceUrl, false) // TODO(@jhchabran)
 }
 
 func CveCheck(ctx context.Context, buildNumber, referenceUrl string, verbose bool) error {

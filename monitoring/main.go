@@ -7,10 +7,11 @@
 package main
 
 import (
+	"context"
 	"os"
 
 	"github.com/sourcegraph/log"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/command"
 )
@@ -29,14 +30,14 @@ func main() {
 	logger := log.Scoped("monitoring")
 
 	// Create an app that only runs the generate command
-	app := &cli.App{
+	app := &cli.Command{
 		Name: "monitoring-generator",
 		Commands: []*cli.Command{
 			command.Generate("", "../"),
 		},
 		DefaultCommand: "generate",
 	}
-	if err := app.Run(os.Args); err != nil {
+	if err := app.Run(context.Background(), os.Args); err != nil {
 		// Render in plain text for human readability
 		println(err.Error())
 		logger.Fatal("error encountered")

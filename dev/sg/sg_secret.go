@@ -1,10 +1,11 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
@@ -29,13 +30,13 @@ sg secret list
 sg secret reset buildkite
 `,
 		Category: category.Env,
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			{
-				Name:         "reset",
-				ArgsUsage:    "<...key>",
-				Usage:        "Remove a specific secret from secrets file",
-				Action:       resetSecretExec,
-				BashComplete: completions.CompleteArgs(bashCompleteSecrets),
+				Name:          "reset",
+				ArgsUsage:     "<...key>",
+				Usage:         "Remove a specific secret from secrets file",
+				Action:        resetSecretExec,
+				ShellComplete: completions.CompleteArgs(bashCompleteSecrets),
 			},
 			{
 				Name:  "list",
@@ -55,13 +56,13 @@ sg secret reset buildkite
 	}
 )
 
-func resetSecretExec(ctx *cli.Context) error {
-	args := ctx.Args().Slice()
+func resetSecretExec(ctx context.Context, cmd *cli.Command) error {
+	args := cmd.Args().Slice()
 	if len(args) == 0 {
 		return errors.New("no key provided to reset")
 	}
 
-	secretsStore, err := secrets.FromContext(ctx.Context)
+	secretsStore, err := secrets.FromContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -79,8 +80,8 @@ func resetSecretExec(ctx *cli.Context) error {
 	return nil
 }
 
-func listSecretExec(ctx *cli.Context) error {
-	secretsStore, err := secrets.FromContext(ctx.Context)
+func listSecretExec(ctx context.Context, cmd *cli.Command) error {
+	secretsStore, err := secrets.FromContext(ctx)
 	if err != nil {
 		return err
 	}

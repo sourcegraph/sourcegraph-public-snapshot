@@ -32,6 +32,7 @@ require (
 	github.com/sourcegraph/scip v0.3.1-0.20230627154934-45df7f6d33fc
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.23.7
+	github.com/urfave/cli/v3 v3.0.0-alpha9
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/sys v0.17.0
 	golang.org/x/term v0.17.0

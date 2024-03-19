@@ -1,6 +1,7 @@
 package ci
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -14,7 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/grafana/regexp"
 	sgrun "github.com/sourcegraph/run"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
@@ -43,11 +44,11 @@ var previewCommand = &cli.Command{
 			Value: "markdown",
 		},
 	},
-	Action: func(cmd *cli.Context) error {
+	Action: func(ctx context.Context, cmd *cli.Command) error {
 		std.Out.WriteLine(output.Styled(output.StyleSuggestion,
 			"If the current branch were to be pushed, the following pipeline would be run:"))
 
-		target, err := getBuildTarget(cmd)
+		target, err := getBuildTarget(ctx, cmd)
 		if err != nil {
 			return err
 		}
@@ -68,7 +69,7 @@ var previewCommand = &cli.Command{
 		}
 		switch cmd.String("format") {
 		case "markdown":
-			previewCmd = usershell.Command(cmd.Context, "go run ./dev/ci/gen-pipeline.go -preview").
+			previewCmd = usershell.Command(ctx, "go run ./dev/ci/gen-pipeline.go -preview").
 				Env(env)
 			out, err := root.Run(previewCmd).String()
 			if err != nil {
@@ -76,7 +77,7 @@ var previewCommand = &cli.Command{
 			}
 			return std.Out.WriteMarkdown(out)
 		case "json":
-			previewCmd = usershell.Command(cmd.Context, "go run ./dev/ci/gen-pipeline.go").
+			previewCmd = usershell.Command(ctx, "go run ./dev/ci/gen-pipeline.go").
 				Env(env)
 			out, err := root.Run(previewCmd).String()
 			if err != nil {
@@ -84,7 +85,7 @@ var previewCommand = &cli.Command{
 			}
 			return std.Out.WriteCode("json", out)
 		case "yaml":
-			previewCmd = usershell.Command(cmd.Context, "go run ./dev/ci/gen-pipeline.go -yaml").
+			previewCmd = usershell.Command(ctx, "go run ./dev/ci/gen-pipeline.go -yaml").
 				Env(env)
 			out, err := root.Run(previewCmd).String()
 			if err != nil {
@@ -118,7 +119,7 @@ var bazelCommand = &cli.Command{
 			Value: false,
 		},
 	},
-	Action: func(cmd *cli.Context) (err error) {
+	Action: func(ctx context.Context, cmd *cli.Command) (err error) {
 		args := cmd.Args().Slice()
 
 		if !cmd.Bool("staged") {
@@ -170,11 +171,11 @@ var bazelCommand = &cli.Command{
 
 		// give buildkite some time to kick off the build so that we can find it later on
 		time.Sleep(10 * time.Second)
-		client, err := bk.NewClient(cmd.Context, std.Out)
+		client, err := bk.NewClient(ctx, std.Out)
 		if err != nil {
 			return err
 		}
-		build, err := client.TriggerBuild(cmd.Context, "sourcegraph", branch, commit, bk.WithEnvVar("DISABLE_ASPECT_WORKFLOWS", "true"))
+		build, err := client.TriggerBuild(ctx, "sourcegraph", branch, commit, bk.WithEnvVar("DISABLE_ASPECT_WORKFLOWS", "true"))
 		if err != nil {
 			return err
 		}
@@ -187,7 +188,7 @@ var bazelCommand = &cli.Command{
 
 		if cmd.Bool("wait") {
 			pending := std.Out.Pending(output.Styledf(output.StylePending, "Waiting for %d jobs...", len(build.Jobs)))
-			err = statusTicker(cmd.Context, fetchJobs(cmd.Context, client, &build, pending))
+			err = statusTicker(ctx, fetchJobs(ctx, client, &build, pending))
 			if err != nil {
 				return err
 			}
@@ -196,7 +197,7 @@ var bazelCommand = &cli.Command{
 			options := bk.ExportLogsOpts{
 				JobStepKey: "bazel-do",
 			}
-			logs, err := client.ExportLogs(cmd.Context, "sourcegraph", *build.Number, options)
+			logs, err := client.ExportLogs(ctx, "sourcegraph", *build.Number, options)
 			if err != nil {
 				return err
 			}
@@ -234,18 +235,18 @@ var statusCommand = &cli.Command{
 			Aliases: []string{"view", "w"},
 			Usage:   "Open build page in web browser (--view is DEPRECATED and will be removed in the future)",
 		}),
-	Action: func(cmd *cli.Context) error {
-		client, err := bk.NewClient(cmd.Context, std.Out)
+	Action: func(ctx context.Context, cmd *cli.Command) error {
+		client, err := bk.NewClient(ctx, std.Out)
 		if err != nil {
 			return err
 		}
-		target, err := getBuildTarget(cmd)
+		target, err := getBuildTarget(ctx, cmd)
 		if err != nil {
 			return err
 		}
 
 		// Just support main pipeline for now
-		build, err := target.GetBuild(cmd.Context, client)
+		build, err := target.GetBuild(ctx, client)
 		if err != nil {
 			return err
 		}
@@ -265,7 +266,7 @@ var statusCommand = &cli.Command{
 			}
 
 			pending := std.Out.Pending(output.Styledf(output.StylePending, "Waiting for %d jobs...", len(build.Jobs)))
-			err := statusTicker(cmd.Context, fetchJobs(cmd.Context, client, &build, pending))
+			err := statusTicker(ctx, fetchJobs(ctx, client, &build, pending))
 			pending.Destroy()
 			if err != nil {
 				return err
@@ -274,7 +275,7 @@ var statusCommand = &cli.Command{
 
 		// lets get annotations (if any) for the build
 		var annotations bk.JobAnnotations
-		annotations, err = client.GetJobAnnotationsByBuildNumber(cmd.Context, "sourcegraph", strconv.Itoa(*build.Number))
+		annotations, err = client.GetJobAnnotationsByBuildNumber(ctx, "sourcegraph", strconv.Itoa(*build.Number))
 		if err != nil {
 			return errors.Newf("failed to get annotations for build %d: %w", *build.Number, err)
 		}
@@ -339,7 +340,7 @@ sg ci build docker-images-patch-notest prometheus
 # Publish all images without testing
 sg ci build docker-images-candidates-notest
 `,
-	BashComplete: completions.CompleteArgs(getAllowedBuildTypeArgs),
+	ShellComplete: completions.CompleteArgs(getAllowedBuildTypeArgs),
 	Flags: []cli.Flag{
 		&ciPipelineFlag,
 		&cli.StringFlag{
@@ -348,8 +349,7 @@ sg ci build docker-images-candidates-notest
 			Usage:   "`commit` from the current branch to build (defaults to current commit)",
 		},
 	},
-	Action: func(cmd *cli.Context) error {
-		ctx := cmd.Context
+	Action: func(ctx context.Context, cmd *cli.Command) error {
 		client, err := bk.NewClient(ctx, std.Out)
 		if err != nil {
 			return err
@@ -488,14 +488,13 @@ From there, you can start exploring logs with the Grafana explore panel.
 			Usage: "`state` to overwrite the job state metadata",
 		},
 	),
-	Action: func(cmd *cli.Context) error {
-		ctx := cmd.Context
+	Action: func(ctx context.Context, cmd *cli.Command) error {
 		client, err := bk.NewClient(ctx, std.Out)
 		if err != nil {
 			return err
 		}
 
-		target, err := getBuildTarget(cmd)
+		target, err := getBuildTarget(ctx, cmd)
 		if err != nil {
 			return err
 		}
@@ -632,9 +631,9 @@ From there, you can start exploring logs with the Grafana explore panel.
 var docsCommand = &cli.Command{
 	Name:  "docs",
 	Usage: "Render reference documentation for build pipeline types",
-	Action: func(ctx *cli.Context) error {
-		cmd := exec.Command("go", "run", "./dev/ci/gen-pipeline.go", "-docs")
-		out, err := run.InRoot(cmd)
+	Action: func(ctx context.Context, cmd *cli.Command) error {
+		exe := exec.Command("go", "run", "./dev/ci/gen-pipeline.go", "-docs")
+		out, err := run.InRoot(exe)
 		if err != nil {
 			return err
 		}
@@ -646,9 +645,9 @@ var openCommand = &cli.Command{
 	Name:      "open",
 	ArgsUsage: "[pipeline]",
 	Usage:     "Open Sourcegraph's Buildkite page in browser",
-	Action: func(ctx *cli.Context) error {
+	Action: func(ctx context.Context, cmd *cli.Command) error {
 		buildkiteURL := fmt.Sprintf("https://buildkite.com/%s", bk.BuildkiteOrg)
-		args := ctx.Args().Slice()
+		args := cmd.Args().Slice()
 		if len(args) > 0 && args[0] != "" {
 			pipeline := args[0]
 			buildkiteURL += fmt.Sprintf("/%s", pipeline)

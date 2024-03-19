@@ -3,14 +3,14 @@ package docgen
 import (
 	"bytes"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 // Default renders help text for the app using urfave/cli's default help format.
-func Default(app *cli.App) (string, error) {
-	tpl := app.CustomAppHelpTemplate
+func Default(app *cli.Command) (string, error) {
+	tpl := app.CustomRootCommandHelpTemplate
 	if tpl == "" {
-		tpl = cli.AppHelpTemplate
+		tpl = cli.RootCommandHelpTemplate
 	}
 
 	var w bytes.Buffer

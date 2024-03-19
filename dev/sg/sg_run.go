@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/conc/pool"
@@ -22,16 +22,15 @@ import (
 
 func init() {
 	postInitHooks = append(postInitHooks,
-		func(cmd *cli.Context) {
+		func(ctx context.Context, cmd *cli.Command) {
 			// Create 'sg run' help text after flag (and config) initialization
 			runCommand.Description = constructRunCmdLongHelp()
 		},
-		func(cmd *cli.Context) {
-			ctx, cancel := context.WithCancel(cmd.Context)
+		func(ctx context.Context, cmd *cli.Command) {
+			_, cancel := context.WithCancel(ctx)
 			interrupt.Register(func() {
 				cancel()
 			})
-			cmd.Context = ctx
 		},
 	)
 
@@ -67,7 +66,7 @@ sg run -describe jaeger
 		},
 	},
 	Action: runExec,
-	BashComplete: completions.CompleteArgs(func() (options []string) {
+	ShellComplete: completions.CompleteArgs(func() (options []string) {
 		config, _ := getConfig()
 		if config == nil {
 			return
@@ -79,14 +78,14 @@ sg run -describe jaeger
 	}),
 }
 
-func runExec(ctx *cli.Context) error {
+func runExec(ctx context.Context, cmd *cli.Command) error {
 	config, err := getConfig()
 	if err != nil {
 		return err
 	}
-	legacy := ctx.Bool("legacy")
+	legacy := cmd.Bool("legacy")
 
-	args := ctx.Args().Slice()
+	args := cmd.Args().Slice()
 	if len(args) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "No command specified"))
 		return flag.ErrHelp
@@ -104,7 +103,7 @@ func runExec(ctx *cli.Context) error {
 		}
 	}
 
-	if ctx.Bool("describe") {
+	if cmd.Bool("describe") {
 		for _, cmd := range cmds {
 			out, err := yaml.Marshal(cmd)
 			if err != nil {
@@ -118,7 +117,7 @@ func runExec(ctx *cli.Context) error {
 		return nil
 	}
 
-	p := pool.New().WithContext(ctx.Context).WithCancelOnError()
+	p := pool.New().WithContext(ctx).WithCancelOnError()
 	p.Go(func(ctx context.Context) error {
 		return run.Commands(ctx, config.Env, verbose, cmds...)
 	})

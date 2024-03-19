@@ -1,12 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
@@ -17,14 +18,14 @@ import (
 
 var (
 	versionChangelogNext    bool
-	versionChangelogEntries int
+	versionChangelogEntries int64
 
 	versionCommand = &cli.Command{
 		Name:     "version",
 		Usage:    "View details for this installation of sg",
 		Action:   versionExec,
 		Category: category.Util,
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			{
 				Name:    "changelog",
 				Aliases: []string{"c"},
@@ -48,12 +49,12 @@ var (
 	}
 )
 
-func versionExec(ctx *cli.Context) error {
+func versionExec(ctx context.Context, cmd *cli.Command) error {
 	std.Out.Write(BuildCommit)
 	return nil
 }
 
-func changelogExec(ctx *cli.Context) error {
+func changelogExec(ctx context.Context, cmd *cli.Command) error {
 	if _, err := run.GitCmd("fetch", "origin", "main"); err != nil {
 		return errors.Newf("failed to update main: %s", err)
 	}

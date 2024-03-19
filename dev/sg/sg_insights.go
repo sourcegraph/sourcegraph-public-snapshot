@@ -1,11 +1,12 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/log"
 
@@ -23,7 +24,7 @@ var insightsCommand = &cli.Command{
 	Name:     "insights",
 	Usage:    "Tools to interact with Code Insights data",
 	Category: category.Dev,
-	Subcommands: []*cli.Command{
+	Commands: []*cli.Command{
 		{
 			Name:        "decode-id",
 			Usage:       "Decodes an encoded insight ID found on the frontend into a view unique_id",
@@ -39,7 +40,7 @@ var insightsCommand = &cli.Command{
 	},
 }
 
-func decodeInsightIDAction(cmd *cli.Context) error {
+func decodeInsightIDAction(ctx context.Context, cmd *cli.Command) error {
 	ids := cmd.Args().Slice()
 	if len(ids) == 0 {
 		return errors.New("expected at least 1 id to decode")
@@ -55,14 +56,13 @@ func decodeInsightIDAction(cmd *cli.Context) error {
 	return nil
 }
 
-func getInsightSeriesIDsAction(cmd *cli.Context) error {
+func getInsightSeriesIDsAction(ctx context.Context, cmd *cli.Command) error {
 	ids := cmd.Args().Slice()
 	if len(ids) != 1 {
 		return errors.New("expected 1 id to decode")
 	}
 	std.Out.WriteNoticef("Finding the Series IDs for %s", ids[0])
 
-	ctx := cmd.Context
 	logger := log.Scoped("getInsightSeriesIDsAction")
 
 	// Read the configuration.

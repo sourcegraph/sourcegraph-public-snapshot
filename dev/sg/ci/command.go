@@ -1,8 +1,9 @@
 package ci
 
 import (
+	"github.com/urfave/cli/v3"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/urfave/cli/v2"
 )
 
 var (
@@ -24,7 +25,7 @@ var (
 	ciPipelineFlag = cli.StringFlag{
 		Name:    "pipeline",
 		Aliases: []string{"p"},
-		EnvVars: []string{"SG_CI_PIPELINE"},
+		Sources: cli.EnvVars("SG_CI_PIPELINE"),
 		Usage:   "Select a custom Buildkite `pipeline` in the Sourcegraph org",
 		Value:   "sourcegraph",
 	}
@@ -77,7 +78,7 @@ sg ci build --force --commit my-commit main-dry-run
 sg ci build --help
 `,
 	Category: category.Dev,
-	Subcommands: []*cli.Command{
+	Commands: []*cli.Command{
 		previewCommand,
 		bazelCommand,
 		statusCommand,

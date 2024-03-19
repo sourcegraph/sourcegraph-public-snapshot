@@ -1,7 +1,9 @@
 package main
 
 import (
-	"github.com/urfave/cli/v2"
+	"context"
+
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/log"
 
@@ -25,7 +27,7 @@ var pageCommand = &cli.Command{
 			Name:     "opsgenie.token",
 			Usage:    "OpsGenie token",
 			Required: true,
-			EnvVars:  []string{"SG_OPSGENIE_TOKEN"},
+			Sources:  cli.EnvVars("SG_OPSGENIE_TOKEN"),
 		},
 		&cli.StringFlag{
 			Name:     "message",
@@ -55,7 +57,7 @@ var pageCommand = &cli.Command{
 	},
 }
 
-func pageExec(cmd *cli.Context) error {
+func pageExec(ctx context.Context, cmd *cli.Command) error {
 	logger := log.Scoped("pager")
 
 	priority, err := parseOpsGeniePriority(cmd.String("priority"))
@@ -102,7 +104,7 @@ func pageExec(cmd *cli.Context) error {
 		req.Responders = append(req.Responders, opsgeniealert.Responder{Type: opsgeniealert.EscalationResponder, Name: schedule})
 	}
 
-	createResult, err := alertClient.Create(cmd.Context, req)
+	createResult, err := alertClient.Create(ctx, req)
 	if err != nil {
 		if createResult != nil {
 			logger.Error("got error result from posting alert to opsgenie", log.Error(err), log.String("result", createResult.Result))

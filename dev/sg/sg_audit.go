@@ -12,7 +12,7 @@ import (
 
 	"github.com/google/go-github/v55/github"
 	"github.com/slack-go/slack"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
@@ -33,7 +33,7 @@ var auditCommand = &cli.Command{
 	ArgsUsage: "[target]",
 	Hidden:    true,
 	Category:  category.Company,
-	Subcommands: []*cli.Command{{
+	Commands: []*cli.Command{{
 		Name:  "pr",
 		Usage: "Display audit trail for pull requests",
 		Flags: []cli.Flag{
@@ -51,23 +51,23 @@ var auditCommand = &cli.Command{
 				Value:       os.Getenv("GITHUB_TOKEN"),
 			},
 		},
-		Action: func(ctx *cli.Context) error {
-			ghc := github.NewClient(oauth2.NewClient(ctx.Context, oauth2.StaticTokenSource(
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 				&oauth2.Token{AccessToken: auditPRGitHubToken},
 			)))
 
 			logger := log.Scoped("auditPR")
 			logger.Debug("fetching issues")
-			issues, err := fetchIssues(ctx.Context, logger, ghc)
+			issues, err := fetchIssues(ctx, logger, ghc)
 			if err != nil {
 				return err
 			}
-			slack, err := sgslack.NewClient(ctx.Context, std.Out)
+			slack, err := sgslack.NewClient(ctx, std.Out)
 			if err != nil {
 				return err
 			}
 			logger.Debug("formatting results")
-			prAuditIssues, err := presentIssues(ctx.Context, ghc, slack, issues)
+			prAuditIssues, err := presentIssues(ctx, ghc, slack, issues)
 			if err != nil {
 				return err
 			}

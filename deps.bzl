@@ -5588,11 +5588,25 @@ def go_dependencies():
         version = "v1.22.12",
     )
     go_repository(
+        name = "com_github_urfave_cli_altsrc_v3",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/urfave/cli-altsrc/v3",
+        sum = "h1:j4SaBpPB8++L0c0KuTnz/Yus3UQoWJ54hQjhIMW8rCM=",
+        version = "v3.0.0-alpha2",
+    )
+    go_repository(
         name = "com_github_urfave_cli_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/urfave/cli/v2",
         sum = "h1:VAzn5oq403l5pHjc4OhD54+XGO9cdKVL/7lDjF+iKUs=",
         version = "v2.25.7",
+    )
+    go_repository(
+        name = "com_github_urfave_cli_v3",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/urfave/cli/v3",
+        sum = "h1:P0RMy5fQm1AslQS+XCmy9UknDXctOmG/q/FZkUFnJSo=",
+        version = "v3.0.0-alpha9",
     )
     go_repository(
         name = "com_github_urfave_negroni",

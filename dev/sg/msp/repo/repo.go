@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/run"
 
@@ -18,7 +18,7 @@ import (
 // UseManagedServicesRepo is a cli.BeforeFunc that enforces that we are in the
 // sourcegraph/managed-services repository by setting the current working
 // directory.
-func UseManagedServicesRepo(*cli.Context) error {
+func UseManagedServicesRepo(_ context.Context, _ *cli.Command) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -67,7 +67,7 @@ func ListServices() ([]string, error) {
 
 // ServicesAndEnvironmentsCompletion provides completions capabilities for
 // commands that accept '<service ID> <environment ID>' positional arguments.
-func ServicesAndEnvironmentsCompletion(additionalArgs ...func(args cli.Args) (options []string)) cli.BashCompleteFunc {
+func ServicesAndEnvironmentsCompletion(additionalArgs ...func(args cli.Args) (options []string)) cli.ShellCompleteFunc {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return nil

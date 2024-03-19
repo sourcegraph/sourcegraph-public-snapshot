@@ -1,13 +1,15 @@
 package release
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/run"
+	"github.com/urfave/cli/v3"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/urfave/cli/v2"
 )
 
 // releaseBaseFlags are the flags that are common to all subcommands of the release command.
@@ -66,7 +68,7 @@ var Command = &cli.Command{
 	Name:     "release",
 	Usage:    "Sourcegraph release utilities",
 	Category: category.Util,
-	Subcommands: []*cli.Command{
+	Commands: []*cli.Command{
 		{
 			Name:     "cve-check",
 			Usage:    "Check all CVEs found in a buildkite build against a set of preapproved CVEs for a release",
@@ -82,33 +84,33 @@ var Command = &cli.Command{
 			Name:     "run",
 			Usage:    "Run steps defined in release manifest. Those are meant to be run in CI",
 			Category: category.Util,
-			Subcommands: []*cli.Command{
+			Commands: []*cli.Command{
 				{
 					Name:  "test",
 					Flags: releaseRunFlags,
 					Usage: "Run test steps as defined in the release manifest",
-					Action: func(cctx *cli.Context) error {
-						r, err := newReleaseRunnerFromCliContext(cctx)
+					Action: func(ctx context.Context, cmd *cli.Command) error {
+						r, err := newReleaseRunnerFromCliContext(ctx, cmd)
 						if err != nil {
 							return err
 						}
-						return r.Test(cctx.Context)
+						return r.Test(ctx)
 					},
 				},
 				{
 					Name:  "internal",
 					Usage: "Run manifest defined steps (internal releases)",
-					Subcommands: []*cli.Command{
+					Commands: []*cli.Command{
 						{
 							Name:  "finalize",
 							Usage: "Run manifest defined finalize step for internal releases",
 							Flags: releaseRunFlags,
-							Action: func(cctx *cli.Context) error {
-								r, err := newReleaseRunnerFromCliContext(cctx)
+							Action: func(ctx context.Context, cmd *cli.Command) error {
+								r, err := newReleaseRunnerFromCliContext(ctx, cmd)
 								if err != nil {
 									return err
 								}
-								return r.InternalFinalize(cctx.Context)
+								return r.InternalFinalize(ctx)
 							},
 						},
 					},
@@ -116,17 +118,17 @@ var Command = &cli.Command{
 				{
 					Name:  "promote-to-public",
 					Usage: "Run manifest defined steps (public releases)",
-					Subcommands: []*cli.Command{
+					Commands: []*cli.Command{
 						{
 							Name:  "finalize",
 							Usage: "Run manifest defined finalize step for public releases",
 							Flags: releaseRunFlags,
-							Action: func(cctx *cli.Context) error {
-								r, err := newReleaseRunnerFromCliContext(cctx)
+							Action: func(ctx context.Context, cmd *cli.Command) error {
+								r, err := newReleaseRunnerFromCliContext(ctx, cmd)
 								if err != nil {
 									return err
 								}
-								return r.PromoteFinalize(cctx.Context)
+								return r.PromoteFinalize(ctx)
 							},
 						},
 					},
@@ -140,12 +142,12 @@ var Command = &cli.Command{
 			UsageText:   "sg release create --workdir [path-to-folder-with-manifest] --version vX.Y.Z",
 			Category:    category.Util,
 			Flags:       releaseCreatePromoteFlags,
-			Action: func(cctx *cli.Context) error {
-				r, err := newReleaseRunnerFromCliContext(cctx)
+			Action: func(ctx context.Context, cmd *cli.Command) error {
+				r, err := newReleaseRunnerFromCliContext(ctx, cmd)
 				if err != nil {
 					return err
 				}
-				return r.CreateRelease(cctx.Context)
+				return r.CreateRelease(ctx)
 			},
 		},
 		{
@@ -154,37 +156,37 @@ var Command = &cli.Command{
 			UsageText: "sg release promote-to-public --workdir [path-to-folder-with-manifest] --version vX.Y.Z",
 			Category:  category.Util,
 			Flags:     releaseCreatePromoteFlags,
-			Action: func(cctx *cli.Context) error {
-				r, err := newReleaseRunnerFromCliContext(cctx)
+			Action: func(ctx context.Context, cmd *cli.Command) error {
+				r, err := newReleaseRunnerFromCliContext(ctx, cmd)
 				if err != nil {
 					return err
 				}
-				return r.Promote(cctx.Context)
+				return r.Promote(ctx)
 			},
 		},
 	},
 }
 
-func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
-	if cctx.Bool("config-from-commit") && cctx.String("version") != "" {
+func newReleaseRunnerFromCliContext(ctx context.Context, cmd *cli.Command) (*releaseRunner, error) {
+	if cmd.Bool("config-from-commit") && cmd.String("version") != "" {
 		return nil, errors.New("You cannot use --config-from-commit and --version at the same time")
 	}
 
-	if !cctx.Bool("config-from-commit") && cctx.String("version") == "" {
+	if !cmd.Bool("config-from-commit") && cmd.String("version") == "" {
 		return nil, errors.New("You must provide a version by specifying either --version or --config-from-commit")
 	}
 
-	workdir := cctx.String("workdir")
-	pretend := cctx.Bool("pretend")
+	workdir := cmd.String("workdir")
+	pretend := cmd.Bool("pretend")
 	// Normalize the version string, to prevent issues where this was given with the wrong convention
 	// which requires a full rebuild.
-	version := fmt.Sprintf("v%s", strings.TrimPrefix(cctx.String("version"), "v"))
-	typ := cctx.String("type")
-	inputs := cctx.String("inputs")
-	branch := cctx.String("branch")
+	version := fmt.Sprintf("v%s", strings.TrimPrefix(cmd.String("version"), "v"))
+	typ := cmd.String("type")
+	inputs := cmd.String("inputs")
+	branch := cmd.String("branch")
 
-	if cctx.Bool("config-from-commit") {
-		cmd := run.Cmd(cctx.Context, "git", "log", "-1")
+	if cmd.Bool("config-from-commit") {
+		cmd := run.Cmd(ctx, "git", "log", "-1")
 		cmd.Dir(workdir)
 		lines, err := cmd.Run().Lines()
 		if err != nil {
@@ -206,5 +208,5 @@ func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
 		inputs = rc.Inputs
 	}
 
-	return NewReleaseRunner(cctx.Context, workdir, version, inputs, typ, branch, pretend)
+	return NewReleaseRunner(ctx, workdir, version, inputs, typ, branch, pretend)
 }

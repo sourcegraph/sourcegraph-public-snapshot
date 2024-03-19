@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/v55/github"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
@@ -43,20 +43,20 @@ sg teammate time thorsten ball
 sg teammate handbook asdine
 `,
 		Category: category.Company,
-		Subcommands: []*cli.Command{{
+		Commands: []*cli.Command{{
 			Name:      "time",
 			ArgsUsage: "<nickname>",
 			Usage:     "Get the current time of a Sourcegraph teammate",
-			Action: func(ctx *cli.Context) error {
-				args := ctx.Args().Slice()
+			Action: func(ctx context.Context, cmd *cli.Command) error {
+				args := cmd.Args().Slice()
 				if len(args) == 0 {
 					return errors.New("no nickname provided")
 				}
-				resolver, err := getTeamResolver(ctx.Context)
+				resolver, err := getTeamResolver(ctx)
 				if err != nil {
 					return err
 				}
-				teammate, err := resolver.ResolveByName(ctx.Context, strings.Join(args, " "))
+				teammate, err := resolver.ResolveByName(ctx, strings.Join(args, " "))
 				if err != nil {
 					return err
 				}
@@ -68,16 +68,16 @@ sg teammate handbook asdine
 			Name:      "handbook",
 			ArgsUsage: "<nickname>",
 			Usage:     "Open the handbook page of a Sourcegraph teammate",
-			Action: func(ctx *cli.Context) error {
-				args := ctx.Args().Slice()
+			Action: func(ctx context.Context, cmd *cli.Command) error {
+				args := cmd.Args().Slice()
 				if len(args) == 0 {
 					return errors.New("no nickname provided")
 				}
-				resolver, err := getTeamResolver(ctx.Context)
+				resolver, err := getTeamResolver(ctx)
 				if err != nil {
 					return err
 				}
-				teammate, err := resolver.ResolveByName(ctx.Context, strings.Join(args, " "))
+				teammate, err := resolver.ResolveByName(ctx, strings.Join(args, " "))
 				if err != nil {
 					return err
 				}

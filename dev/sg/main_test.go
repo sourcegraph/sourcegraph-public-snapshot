@@ -2,15 +2,16 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 // testSG creates a copy of the sg app for testing.
-func testSG() *cli.App {
+func testSG() *cli.Command {
 	tsg := *sg
 	return &tsg
 }
@@ -23,7 +24,7 @@ func TestAppRun(t *testing.T) {
 	sg.Writer = &out
 	sg.ErrWriter = &err
 	// Check app starts up correctly
-	assert.NoError(t, sg.Run([]string{
+	assert.NoError(t, sg.Run(context.Background(), []string{
 		"help",
 		// Use a fixed output configuration for consistency, and to avoid issues with
 		// detection.
@@ -52,12 +53,12 @@ func testCommandFormatting(t *testing.T, cmd *cli.Command) {
 		assert.NotEmpty(t, cmd.Name, "Name should be set")
 		assert.NotEmpty(t, cmd.Usage, "Usage should be set")
 		assert.False(t, strings.HasSuffix(cmd.Usage, "."), "Usage should not end with period")
-		if len(cmd.Subcommands) == 0 {
+		if len(cmd.Commands) == 0 {
 			assert.NotNil(t, cmd.Action, "Action must be provided for command without subcommands")
 		}
 		assert.Nil(t, cmd.After, "After should not be used for simplicity")
 
-		for _, subCmd := range cmd.Subcommands {
+		for _, subCmd := range cmd.Commands {
 			testCommandFormatting(t, subCmd)
 		}
 	})

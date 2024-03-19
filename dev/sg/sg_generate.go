@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
@@ -40,7 +40,7 @@ sg --verbose generate ... # Enable verbose output
 			Destination: &generateQuiet,
 		},
 	},
-	Before: func(cmd *cli.Context) error {
+	Before: func(ctx context.Context, cmd *cli.Command) error {
 		if verbose && generateQuiet {
 			return errors.Errorf("-q and --verbose flags are exclusive")
 		}
@@ -58,14 +58,14 @@ sg --verbose generate ... # Enable verbose output
 		}
 		return nil
 	},
-	Action: func(cmd *cli.Context) error {
+	Action: func(ctx context.Context, cmd *cli.Command) error {
 		if cmd.NArg() > 0 {
 			std.Out.WriteFailuref("unrecognized command %q provided", cmd.Args().First())
 			return flag.ErrHelp
 		}
-		return allGenerateTargets.RunAll(cmd.Context)
+		return allGenerateTargets.RunAll(ctx)
 	},
-	Subcommands: allGenerateTargets.Commands(),
+	Commands: allGenerateTargets.Commands(),
 }
 
 func runGenerateAndReport(ctx context.Context, t generate.Target, args []string) error {
@@ -94,12 +94,12 @@ func (gt generateTargets) RunAll(ctx context.Context) error {
 // Commands converts all lint targets to CLI commands
 func (gt generateTargets) Commands() (cmds []*cli.Command) {
 	actionFactory := func(c generate.Target) cli.ActionFunc {
-		return func(cmd *cli.Context) error {
+		return func(ctx context.Context, cmd *cli.Command) error {
 			_, err := root.RepositoryRoot()
 			if err != nil {
 				return err
 			}
-			report := c.Runner(cmd.Context, cmd.Args().Slice())
+			report := c.Runner(ctx, cmd.Args().Slice())
 			if report.Err != nil {
 				return report.Err
 			}
@@ -112,15 +112,15 @@ func (gt generateTargets) Commands() (cmds []*cli.Command) {
 		}
 	}
 	for _, c := range gt {
-		var complete cli.BashCompleteFunc
+		var complete cli.ShellCompleteFunc
 		if c.Completer != nil {
 			complete = completions.CompleteArgs(c.Completer)
 		}
 		cmds = append(cmds, &cli.Command{
-			Name:         c.Name,
-			Usage:        c.Help,
-			Action:       actionFactory(c),
-			BashComplete: complete,
+			Name:          c.Name,
+			Usage:         c.Help,
+			Action:        actionFactory(c),
+			ShellComplete: complete,
 		})
 	}
 	return cmds

@@ -1,10 +1,11 @@
 package main
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -33,7 +34,7 @@ var helpCommand = &cli.Command{
 			Usage:     "write reference to `file`",
 		},
 	},
-	Action: func(cmd *cli.Context) error {
+	Action: func(ctx context.Context, cmd *cli.Command) error {
 		if cmd.NArg() != 0 {
 			return errors.Newf("unexpected argument %s", cmd.Args().First())
 		}
@@ -45,9 +46,9 @@ var helpCommand = &cli.Command{
 		var doc string
 		var err error
 		if cmd.Bool("full") {
-			doc, err = docgen.Markdown(cmd.App)
+			doc, err = docgen.Markdown(cmd)
 		} else {
-			doc, err = docgen.Default(cmd.App)
+			doc, err = docgen.Default(cmd)
 		}
 		if err != nil {
 			return err

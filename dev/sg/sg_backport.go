@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
+
 	"github.com/Masterminds/semver"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/backport"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
@@ -11,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var pullRequestIDFlag = cli.Int64Flag{
+var pullRequestIDFlag = cli.IntFlag{
 	Name:     "pullRequestID",
 	Usage:    "The pull request ID to backport into the release branch",
 	Required: true,
@@ -29,7 +31,7 @@ var backportCommand = &cli.Command{
 	Name:     "backport",
 	Category: category.Dev,
 	Usage:    "Backport commits from main to release branches.\nsg backport -r 5.3 -p 60932",
-	Action: func(cmd *cli.Context) error {
+	Action: func(ctx context.Context, cmd *cli.Command) error {
 		prNumber := pullRequestIDFlag.Get(cmd)
 		releaseBranch := releaseBranchFlag.Get(cmd)
 
@@ -43,7 +45,7 @@ var backportCommand = &cli.Command{
 			return errors.New("invalid release branch name")
 		}
 		std.Out.WriteLine(output.Styledf(output.StylePending, "Backporting commits from main to release branch %q for PR %d...", releaseBranch, prNumber))
-		return backport.Run(cmd, prNumber, releaseBranch)
+		return backport.Run(ctx, cmd, prNumber, releaseBranch)
 	},
 	Flags: []cli.Flag{&pullRequestIDFlag, &releaseBranchFlag},
 }

@@ -1,11 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -45,7 +46,7 @@ sg live -n 50 s2
 			Usage:   "Number of commits to check for live version",
 		},
 	},
-	BashComplete: completions.CompleteArgs(func() (options []string) {
+	ShellComplete: completions.CompleteArgs(func() (options []string) {
 		return append(environmentNames(), `https\://...`)
 	}),
 }
@@ -68,8 +69,8 @@ func constructLiveCmdLongHelp() string {
 	return out.String()
 }
 
-func liveExec(ctx *cli.Context) error {
-	args := ctx.Args().Slice()
+func liveExec(ctx context.Context, cmd *cli.Command) error {
+	args := cmd.Args().Slice()
 	if len(args) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: No environment specified"))
 		return exit.NewEmptyExitErr(1)
@@ -89,5 +90,5 @@ func liveExec(ctx *cli.Context) error {
 		}
 	}
 
-	return printDeployedVersion(e, ctx.Int("commits"))
+	return printDeployedVersion(e, int(cmd.Int("commits")))
 }

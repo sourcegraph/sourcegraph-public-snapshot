@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/drift"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/multiversion"
@@ -57,7 +57,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		Aliases:  []string{"autofix"},
 	}
 
-	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Command, out *output.Output) error {
 		airgapped := isAirgapped(ctx)
 		if airgapped != nil {
 			out.WriteLine(output.Line(output.EmojiWarningSign, output.StyleYellow, airgapped.Error()))

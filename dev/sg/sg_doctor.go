@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
@@ -66,7 +66,7 @@ func (r DiagnosticReport) Add(group string, result *DiagnosticResult) {
 	}
 }
 
-func runDoctorDiagnostics(cmd *cli.Context) error {
+func runDoctorDiagnostics(ctx context.Context, cmd *cli.Command) error {
 	diagnostics, err := readDiagnosticDefinitions(doctorYaml)
 	if err != nil {
 		return errors.Newf("failed to load diagnostics from embedded yaml:", err)
@@ -81,7 +81,7 @@ func runDoctorDiagnostics(cmd *cli.Context) error {
 	}
 
 	diagOut.WriteLine(output.Emoji("🥼", "Gathering diagnostics"))
-	report := runner.Run(cmd.Context)
+	report := runner.Run(ctx)
 	diagOut.WriteLine(output.Emoji("💉", "Gathering of diagnostics complete!"))
 	markdown := buildMarkdownReport(report)
 

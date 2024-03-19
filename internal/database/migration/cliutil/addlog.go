@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/log"
 
@@ -30,10 +30,10 @@ func AddLog(commandName string, factory RunnerFactory, outFactory OutputFactory)
 		Value: true,
 	}
 
-	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Command, out *output.Output) error {
 		var (
 			schemaName  = TranslateSchemaNames(schemaNameFlag.Get(cmd), out)
-			versionFlag = versionFlag.Get(cmd)
+			versionFlag = int(versionFlag.Get(cmd))
 			upFlag      = upFlag.Get(cmd)
 			logger      = log.Scoped("up")
 		)

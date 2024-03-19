@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -8,7 +9,7 @@ import (
 
 	"github.com/hashicorp/hcl/hcl/strconv"
 	"github.com/prometheus/prometheus/model/labels"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/log"
 
@@ -38,12 +39,12 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-prune",
-				EnvVars: []string{"NO_PRUNE"},
+				Sources: cli.EnvVars("NO_PRUNE"),
 				Usage:   "Toggles pruning of dangling generated assets through simple heuristic - should be disabled during builds.",
 			},
 			&cli.BoolFlag{
 				Name:    "reload",
-				EnvVars: []string{"RELOAD"},
+				Sources: cli.EnvVars("RELOAD"),
 				Usage:   "Trigger reload of active Prometheus or Grafana instance (requires respective output directories)",
 			},
 
@@ -54,7 +55,7 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 
 			&cli.StringFlag{
 				Name:    "grafana.dir",
-				EnvVars: []string{"GRAFANA_DIR"},
+				Sources: cli.EnvVars("GRAFANA_DIR"),
 				Value:   "$SG_ROOT/docker-images/grafana/config/provisioning/dashboards/sourcegraph/",
 				Usage:   "Output directory for generated Grafana assets",
 			},
@@ -70,7 +71,7 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 			},
 			&cli.StringSliceFlag{
 				Name:    "grafana.headers",
-				EnvVars: []string{"GRAFANA_HEADERS"},
+				Sources: cli.EnvVars("GRAFANA_HEADERS"),
 				Usage:   "Additional headers for HTTP requests to the Grafana instance",
 			},
 			&cli.StringFlag{
@@ -80,7 +81,7 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 
 			&cli.StringFlag{
 				Name:    "prometheus.dir",
-				EnvVars: []string{"PROMETHEUS_DIR"},
+				Sources: cli.EnvVars("PROMETHEUS_DIR"),
 				Value:   "$SG_ROOT/docker-images/prometheus/config/",
 				Usage:   "Output directory for generated Prometheus assets",
 			},
@@ -92,26 +93,26 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 
 			&cli.StringFlag{
 				Name:    "docs.dir",
-				EnvVars: []string{"DOCS_DIR"},
+				Sources: cli.EnvVars("DOCS_DIR"),
 				Value:   "$SG_ROOT/doc/admin/observability/",
 				Usage:   "Output directory for generated documentation",
 			},
 			&cli.StringSliceFlag{
 				Name:    "inject-label-matcher",
-				EnvVars: []string{"INJECT_LABEL_MATCHERS"},
+				Sources: cli.EnvVars("INJECT_LABEL_MATCHERS"),
 				Usage:   "Labels to inject into all selectors in Prometheus expressions: observable queries, dashboard template variables, etc.",
 			},
 			&cli.StringSliceFlag{
 				Name:    "multi-instance-groupings",
-				EnvVars: []string{"MULTI_INSTANCE_GROUPINGS"},
+				Sources: cli.EnvVars("MULTI_INSTANCE_GROUPINGS"),
 				Usage:   "If non-empty, indicates whether or not to generate multi-instance assets with the provided labels to group on. The standard per-instance monitoring assets will NOT be generated.",
 			},
 		},
-		BashComplete: completions.CompleteArgs(func() (options []string) {
+		ShellComplete: completions.CompleteArgs(func() (options []string) {
 			return definitions.Default().Names()
 		}),
-		Action: func(c *cli.Context) error {
-			logger := log.Scoped(c.Command.Name)
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			logger := log.Scoped(cmd.Name)
 
 			// expandErr is set from within expandWithSgRoot
 			var expandErr error
@@ -130,16 +131,16 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 			}
 
 			options := monitoring.GenerateOptions{
-				DisablePrune: c.Bool("no-prune"),
-				Reload:       c.Bool("reload"),
+				DisablePrune: cmd.Bool("no-prune"),
+				Reload:       cmd.Bool("reload"),
 
-				GrafanaDir:         os.Expand(c.String("grafana.dir"), expandWithSgRoot),
-				GrafanaURL:         c.String("grafana.url"),
-				GrafanaCredentials: c.String("grafana.creds"),
-				GrafanaFolder:      c.String("grafana.folder"),
+				GrafanaDir:         os.Expand(cmd.String("grafana.dir"), expandWithSgRoot),
+				GrafanaURL:         cmd.String("grafana.url"),
+				GrafanaCredentials: cmd.String("grafana.creds"),
+				GrafanaFolder:      cmd.String("grafana.folder"),
 				GrafanaHeaders: func() map[string]string {
 					h := make(map[string]string)
-					for _, entry := range c.StringSlice("grafana.headers") {
+					for _, entry := range cmd.StringSlice("grafana.headers") {
 						if len(entry) == 0 {
 							continue
 						}
@@ -160,14 +161,14 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 					return h
 				}(),
 
-				PrometheusDir: os.Expand(c.String("prometheus.dir"), expandWithSgRoot),
-				PrometheusURL: c.String("prometheus.url"),
+				PrometheusDir: os.Expand(cmd.String("prometheus.dir"), expandWithSgRoot),
+				PrometheusURL: cmd.String("prometheus.url"),
 
-				DocsDir: os.Expand(c.String("docs.dir"), expandWithSgRoot),
+				DocsDir: os.Expand(cmd.String("docs.dir"), expandWithSgRoot),
 
 				InjectLabelMatchers: func() []*labels.Matcher {
 					var matchers []*labels.Matcher
-					for _, entry := range c.StringSlice("inject-label-matcher") {
+					for _, entry := range cmd.StringSlice("inject-label-matcher") {
 						if len(entry) == 0 {
 							continue
 						}
@@ -196,12 +197,12 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 					return matchers
 				}(),
 
-				MultiInstanceDashboardGroupings: c.StringSlice("multi-instance-groupings"),
+				MultiInstanceDashboardGroupings: cmd.StringSlice("multi-instance-groupings"),
 			}
 
 			// If 'all.dir' is set, override all other '*.dir' flags and ignore expansion
 			// errors.
-			if allDir := c.String("all.dir"); allDir != "" {
+			if allDir := cmd.String("all.dir"); allDir != "" {
 				logger.Info("overriding all directory flags with 'all.dir'", log.String("all.dir", allDir))
 				options.GrafanaDir = filepath.Join(allDir, "grafana")
 				options.PrometheusDir = filepath.Join(allDir, "prometheus")
@@ -212,11 +213,11 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 
 			// Decide which dashboards to generate
 			var dashboards definitions.Dashboards
-			if c.Args().Len() == 0 {
+			if cmd.Args().Len() == 0 {
 				dashboards = definitions.Default()
 			} else {
-				for _, arg := range c.Args().Slice() {
-					d := definitions.Default().GetByName(c.Args().First())
+				for _, arg := range cmd.Args().Slice() {
+					d := definitions.Default().GetByName(cmd.Args().First())
 					if d == nil {
 						return errors.Newf("Dashboard %q not found", arg)
 					}

@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
@@ -18,7 +18,7 @@ import (
 )
 
 func init() {
-	postInitHooks = append(postInitHooks, func(cmd *cli.Context) {
+	postInitHooks = append(postInitHooks, func(ctx context.Context, cmd *cli.Command) {
 		// Create 'sg test' help text after flag (and config) initialization
 		testCommand.Description = constructTestCmdLongHelp()
 	})
@@ -42,7 +42,7 @@ sg test -help
 sg test backend-integration -run TestSearch
 `,
 	Category: category.Dev,
-	BashComplete: completions.CompleteArgs(func() (options []string) {
+	ShellComplete: completions.CompleteArgs(func() (options []string) {
 		config, _ := getConfig()
 		if config == nil {
 			return
@@ -55,25 +55,25 @@ sg test backend-integration -run TestSearch
 	Action: testExec,
 }
 
-func testExec(ctx *cli.Context) error {
+func testExec(ctx context.Context, cmd *cli.Command) error {
 	config, err := getConfig()
 	if err != nil {
 		return err
 	}
 
-	args := ctx.Args().Slice()
+	args := cmd.Args().Slice()
 	if len(args) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "No test suite specified"))
 		return flag.ErrHelp
 	}
 
-	cmd, ok := config.Tests[args[0]]
+	test, ok := config.Tests[args[0]]
 	if !ok {
 		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: test suite %q not found :(", args[0]))
 		return flag.ErrHelp
 	}
 
-	return run.Test(ctx.Context, newSGTestCommand(*cmd, args[1:]), config.Env)
+	return run.Test(ctx, newSGTestCommand(*test, args[1:]), config.Env)
 }
 
 func constructTestCmdLongHelp() string {
