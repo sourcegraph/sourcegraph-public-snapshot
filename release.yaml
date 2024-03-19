@@ -103,7 +103,7 @@ promoteToPublic:
           changelog_version="${tag//./}"
           body=$(curl -s --fail-with-body -X POST "$SLACK_WEBHOOK_URL" -H "Content-Type: application/json" -d '{
             "type": "mrkdwn"
-            "text": "*Sourcegraph {{tag}} has been published*\n\n• [Changelog](https://sourcegraph.com/docs/CHANGELOG#${changelog_version})\n• [GitHub release](https://github.com/sourcegraph/sourcegraph/releases/tag/{{version}})"
+            "text": "*Sourcegraph {{tag}} has been published*\n\n• <https://sourcegraph.com/docs/CHANGELOG#${changelog_version} | Changelog>\n• <https://github.com/sourcegraph/sourcegraph/releases/tag/{{version}} | GitHub release>"
           }')
           exit_code=$?
 
