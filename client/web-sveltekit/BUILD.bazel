@@ -73,6 +73,7 @@ BUILD_DEPS = [
     ":node_modules/vite",
     ":node_modules/vite-plugin-inspect",
     ":node_modules/wonka",
+    ":node_modules/hotkey-js",
     "//:node_modules/@apollo/client",
     "//:node_modules/@codemirror/autocomplete",
     "//:node_modules/@codemirror/commands",
