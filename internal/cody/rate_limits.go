@@ -24,11 +24,12 @@ import (
 // RefreshGatewayRateLimits refreshes the rate limits for the user on Cody Gateway.
 func RefreshGatewayRateLimits(ctx context.Context, userID int32, db database.DB) (error, int) {
 	logger := log.Scoped("RefreshGatewayRateLimits")
-	resp, err := newGatewayRequestForUser(ctx, userID, db, http.MethodPost, "/v1/limits/refresh", nil)
+	resp, err := requestGatewayWithUserCreds(ctx, userID, db, http.MethodPost, "/v1/limits/refresh", nil)
 	if err != nil {
 		logger.Error("failed request to Cody Gateway to refresh rate limits", log.Error(err))
 		return err, http.StatusInternalServerError
 	}
+	// Both resp and err are nil if cody gateway is not configured as the completions provider.
 	if resp == nil {
 		return nil, http.StatusOK
 	}
@@ -47,12 +48,12 @@ func RefreshGatewayRateLimits(ctx context.Context, userID int32, db database.DB)
 func GetGatewayRateLimits(ctx context.Context, userID int32, db database.DB) ([]codygateway.LimitStatus, error) {
 	logger := log.Scoped("GetGatewayRateLimits")
 
-	resp, err := newGatewayRequestForUser(ctx, userID, db, http.MethodGet, "/v1/limits", nil)
+	resp, err := requestGatewayWithUserCreds(ctx, userID, db, http.MethodGet, "/v1/limits", nil)
 	if err != nil {
 		logger.Error("failed request to Cody Gateway to fetch rate limits", log.Error(err))
 		return []codygateway.LimitStatus{}, err
 	}
-
+	// Both resp and err are nil if cody gateway is not configured as the completions provider.
 	if resp == nil {
 		return []codygateway.LimitStatus{}, nil
 	}
@@ -89,7 +90,7 @@ func GetGatewayRateLimits(ctx context.Context, userID int32, db database.DB) ([]
 	return rateLimits, nil
 }
 
-func newGatewayRequestForUser(ctx context.Context, userID int32, db database.DB, method string, pathname string, body io.Reader) (*http.Response, error) {
+func requestGatewayWithUserCreds(ctx context.Context, userID int32, db database.DB, method string, pathname string, body io.Reader) (*http.Response, error) {
 	completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 	// We don't need to do anything if the target is not Cody Gateway, but it's not an error either.
 	if completionsConfig.Provider != conftypes.CompletionsProviderNameSourcegraph {
