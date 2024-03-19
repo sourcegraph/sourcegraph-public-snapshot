@@ -169,7 +169,7 @@ func (a *AnthropicHandlerMethods) shouldFlagRequest(ctx context.Context, logger 
 		}
 		result.shouldBlock = result.shouldBlock && a.config.RequestBlockingEnabled
 	}
-	return nil, nil
+	return result, nil
 }
 
 func (a *AnthropicHandlerMethods) transformBody(body *anthropicRequest, identifier string) {
