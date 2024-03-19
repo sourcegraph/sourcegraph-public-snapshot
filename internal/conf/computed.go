@@ -1235,7 +1235,9 @@ func openaiDefaultMaxPromptTokens(model string) int {
 		return 16_000
 	case "gpt-4-1106-preview",
 		"gpt-4-turbo-preview":
-		return 128_000
+		// TODO: Technically, GPT 4 Turbo uses a 128k window, but we should validate
+		// that returning 128k here is the right thing to do.
+		return 16_000
 	default:
 		return 4_000
 	}
