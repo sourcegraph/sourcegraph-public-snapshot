@@ -287,6 +287,7 @@ commands:
         export GCFLAGS='all=-N -l'
       fi
       go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/cmd/worker
+    checkBinary: .bin/worker
     watch:
       - lib
       - internal
