@@ -21,7 +21,7 @@
 
 <section>
     <div class="content">
-        <Hotkey hotkey="Alt+D" onHotkeyPress={() => alert('test')} />
+        <Hotkey key="Alt+T" run={() => alert('test')} />
         <img class="logo" src={$isLightTheme ? logoLight : logoDark} alt="Sourcegraph Logo" />
         <div class="search">
             <SearchInput {queryState} autoFocus />
