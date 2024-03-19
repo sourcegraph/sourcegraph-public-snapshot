@@ -42,4 +42,5 @@ sh_binary(
         "//doc/admin/observability:doc_files",
         "//doc/cli/references:doc_files",
     ],
+    tags = ["docs-deliverable"],
 )
