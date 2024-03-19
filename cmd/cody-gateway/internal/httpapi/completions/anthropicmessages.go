@@ -23,8 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-const anthropicMessagesAPIURL = "https://api.anthropic.com/v1/messages"
-
 // This implements the newer `/messages` API by Anthropic
 // https://docs.anthropic.com/claude/reference/messages_post
 func NewAnthropicMessagesHandler(
@@ -49,7 +47,6 @@ func NewAnthropicMessagesHandler(
 		rateLimitNotifier,
 		httpClient,
 		string(conftypes.CompletionsProviderNameAnthropic),
-		func(_ codygateway.Feature) string { return anthropicMessagesAPIURL },
 		config.AllowedModels,
 		&AnthropicMessagesHandlerMethods{config: config, tokenizer: tokenizer, promptRecorder: promptRecorder},
 
@@ -165,6 +162,10 @@ type AnthropicMessagesHandlerMethods struct {
 	config         config.AnthropicConfig
 }
 
+func (a *AnthropicMessagesHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) string {
+	return "https://api.anthropic.com/v1/messages"
+}
+
 func (a *AnthropicMessagesHandlerMethods) validateRequest(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicMessagesRequest) (int, *flaggingResult, error) {
 	if ar.MaxTokens > int32(a.config.MaxTokensToSample) {
 		return http.StatusBadRequest, nil, errors.Errorf("max_tokens exceeds maximum allowed value of %d: %d", a.config.MaxTokensToSample, ar.MaxTokens)
@@ -203,17 +204,20 @@ func (a *AnthropicMessagesHandlerMethods) transformBody(body *anthropicMessagesR
 		body.Messages = body.Messages[1:]
 	}
 }
+
 func (a *AnthropicMessagesHandlerMethods) getRequestMetadata(body anthropicMessagesRequest) (model string, additionalMetadata map[string]any) {
 	return body.Model, map[string]any{
 		"stream":     body.Stream,
 		"max_tokens": body.MaxTokens,
 	}
 }
+
 func (a *AnthropicMessagesHandlerMethods) transformRequest(r *http.Request) {
 	r.Header.Set("Content-Type", "application/json")
 	r.Header.Set("X-API-Key", a.config.AccessToken)
 	r.Header.Set("anthropic-version", "2023-06-01")
 }
+
 func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logger, body anthropicMessagesRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	for _, m := range body.Messages {
