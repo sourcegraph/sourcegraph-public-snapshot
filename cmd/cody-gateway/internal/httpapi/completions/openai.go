@@ -120,13 +120,16 @@ func (*OpenAIHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) str
 	return "https://api.openai.com/v1/chat/completions"
 }
 
-func (*OpenAIHandlerMethods) validateRequest(_ context.Context, _ log.Logger, feature codygateway.Feature, _ openaiRequest) (int, *flaggingResult, error) {
+func (*OpenAIHandlerMethods) validateRequest(_ context.Context, _ log.Logger, feature codygateway.Feature, _ openaiRequest) error {
 	if feature == codygateway.FeatureCodeCompletions {
-		return http.StatusNotImplemented, nil,
-			errors.Newf("feature %q is currently not supported for OpenAI",
-				feature)
+		return errors.Newf("feature %q is currently not supported for OpenAI", feature)
 	}
-	return 0, nil, nil
+	return nil
+}
+
+func (*OpenAIHandlerMethods) shouldFlagRequest(_ context.Context, _ log.Logger, _ openaiRequest) (*flaggingResult, error) {
+	// TODO[#61278]: Add missing request validation for all LLM providers in Cody Gateway.
+	return nil, nil
 }
 
 func (*OpenAIHandlerMethods) transformBody(body *openaiRequest, identifier string) {
