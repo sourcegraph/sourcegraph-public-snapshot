@@ -34,16 +34,13 @@ tasks:
       auto_deliver: true
       icon: 'ship'
       rules:
+        - deliverable: 'attr(tags, "docs-deliverable", //doc/...)'
+          condition:
+            # only_on_change: true
+            branches: ['jh/bzl/gh']
         - deliverable: 'attr(tags, "msp-deliverable", //cmd/...)'
           condition:
             branches:
               - '^main$'
   - finalization:
       queue: aspect-small
-  - delivery:
-      auto_deliver: true
-      rules:
-        - deliverable: 'attr(tags, "docs-deliverable", //doc/...)'
-          condition:
-            # only_on_change: true
-            branches: ['jh/bzl/gh']
