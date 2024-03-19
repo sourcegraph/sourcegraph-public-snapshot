@@ -1,8 +1,4 @@
-<script context="module">
-    export const focusContainerClass = 'copy-button-focus-container'
-</script>
-
-<script lang="ts">
+f<script lang="ts">
     import { highlightRanges } from '$lib/dom'
     import {
         displayRepoName,
