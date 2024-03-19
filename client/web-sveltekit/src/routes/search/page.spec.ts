@@ -1,3 +1,5 @@
+import type { ContentMatch } from '$lib/shared'
+
 import { test, expect } from '../../testing/integration'
 import {
     createDoneEvent,
@@ -110,25 +112,47 @@ test('copy path button appears and copies path', async ({ page, sg }) => {
 })
 
 test.describe('preview panel', async () => {
+    const chunkMatch: ContentMatch = {
+        type: 'content',
+        path: 'README.md',
+        pathMatches: [],
+        repository: 'github.com/sourcegraph/conc',
+        repoStars: 9001,
+        commit: 'abcde12345',
+        chunkMatches: [
+            {
+                content: 'lorem ipsum\ndolor sit\namet',
+                contentStart: { offset: 0, line: 1, column: 1 },
+                ranges: [
+                    {
+                        // "lorem"
+                        start: { offset: 0, line: 0, column: 0 },
+                        end: { offset: 5, line: 0, column: 5 },
+                    },
+                    {
+                        // "sit"
+                        start: { offset: 18, line: 1, column: 6 },
+                        end: { offset: 21, line: 1, column: 9 },
+                    },
+                ],
+            },
+        ],
+        language: 'text',
+    }
     test('can be opened and closed', async ({ page, sg }) => {
         const stream = sg.mockSearchStream()
         await page.goto('/search?q=test')
+        await page.getByRole('heading', { name: 'Filter results' }).waitFor()
         sg.mockOperations({
             BlobPageQuery: () => ({
-                repository: {
-                    commit: {
-                        blob: {
-                            content: 'lorem\nipsum\ndolor\n',
-                        },
-                    },
-                },
+                repository: { commit: { blob: { content: chunkMatch.chunkMatches![0].content } } },
             }),
         })
-        await page.getByRole('heading', { name: 'Filter results' }).waitFor()
+
         await stream.publish(
             {
                 type: 'matches',
-                data: [createContentMatch(), createCommitMatch(), createPathMatch()],
+                data: [chunkMatch, createCommitMatch(), createPathMatch()],
             },
             createProgressEvent(),
             createDoneEvent()
@@ -155,39 +179,7 @@ test.describe('preview panel', async () => {
         await stream.publish(
             {
                 type: 'matches',
-                data: [
-                    {
-                        type: 'content',
-                        path: 'README.md',
-                        pathMatches: [],
-                        repository: 'github.com/sourcegraph/conc',
-                        repoStars: 9001,
-                        commit: 'abcde12345',
-                        chunkMatches: [
-                            {
-                                content: 'lorem ipsum\ndolor sit\namet',
-                                contentStart: {
-                                    offset: 0,
-                                    line: 1,
-                                    column: 1,
-                                },
-                                ranges: [
-                                    {
-                                        // "lorem"
-                                        start: { offset: 0, line: 0, column: 0 },
-                                        end: { offset: 5, line: 0, column: 5 },
-                                    },
-                                    {
-                                        // "sit"
-                                        start: { offset: 18, line: 1, column: 6 },
-                                        end: { offset: 21, line: 1, column: 9 },
-                                    },
-                                ],
-                            },
-                        ],
-                        language: 'text',
-                    },
-                ],
+                data: [chunkMatch],
             },
             createProgressEvent(),
             createDoneEvent()
@@ -196,13 +188,7 @@ test.describe('preview panel', async () => {
 
         sg.mockOperations({
             BlobPageQuery: () => ({
-                repository: {
-                    commit: {
-                        blob: {
-                            content: 'lorem ipsum\ndolor sit\namet\n',
-                        },
-                    },
-                },
+                repository: { commit: { blob: { content: chunkMatch.chunkMatches![0].content } } },
             }),
         })
 
