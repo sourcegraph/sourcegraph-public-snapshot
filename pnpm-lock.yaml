@@ -1068,21 +1068,6 @@ importers:
         specifier: ^2.10.0
         version: 2.10.0
 
-  client/app-shell:
-    devDependencies:
-      '@sourcegraph/build-config':
-        specifier: workspace:*
-        version: link:../build-config
-      '@sourcegraph/common':
-        specifier: workspace:*
-        version: link:../common
-      esbuild:
-        specifier: ^0.17.7
-        version: 0.17.14
-      ts-node:
-        specifier: ^10.9.1
-        version: 10.9.2(@types/node@20.8.0)(typescript@5.4.2)
-
   client/branded:
     dependencies:
       '@sourcegraph/common':
@@ -1435,6 +1420,9 @@ importers:
       highlight.js:
         specifier: ^10.0.0
         version: 10.7.3
+      hotkeys-js:
+        specifier: ^3.13.7
+        version: 3.13.7
       prismjs:
         specifier: ^1.29.0
         version: 1.29.0
@@ -17507,6 +17495,10 @@ packages:
     dependencies:
       lru-cache: 6.0.0
     dev: true
+
+  /hotkeys-js@3.13.7:
+    resolution: {integrity: sha512-ygFIdTqqwG4fFP7kkiYlvayZppeIQX2aPpirsngkv1xM1lP0piDY5QEh68nQnIKvz64hfocxhBaD/uK3sSK1yQ==}
+    dev: false
 
   /html-encoding-sniffer@3.0.0:
     resolution: {integrity: sha512-oWv4T4yJ52iKrufjnyZPkrN0CH3QnrUqdB6In1g5Fe1mia8GmF36gnfNySxoZtxD5+NmYw1EElVXiBk93UeskA==}

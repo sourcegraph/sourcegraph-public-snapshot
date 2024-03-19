@@ -6,6 +6,7 @@
     import type { QueryStateStore } from '$lib/search/state'
     import type { SearchPageContext } from '$lib/search/utils'
     import { isLightTheme } from '$lib/stores'
+    import Hotkey from '$lib/Hotkey.svelte'
 
     import SearchHomeNotifications from './SearchHomeNotifications.svelte'
 
@@ -20,6 +21,7 @@
 
 <section>
     <div class="content">
+        <Hotkey hotkey="Alt+D" onHotkeyPress={() => alert('test')} />
         <img class="logo" src={$isLightTheme ? logoLight : logoDark} alt="Sourcegraph Logo" />
         <div class="search">
             <SearchInput {queryState} autoFocus />
