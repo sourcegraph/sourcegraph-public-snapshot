@@ -175,7 +175,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                                     }
 
                                     if (isCloneInProgressErrorLike(error)) {
-                                        return of<ErrorLike>(asError(error))
+                                        return of(asError(error))
                                     }
 
                                     throw error
@@ -185,7 +185,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                     )
                     .pipe(
                         repeatUntil(value => !isCloneInProgressErrorLike(value), { delay: 1000 }),
-                        catchError(error => of<ErrorLike>(asError(error)))
+                        catchError(error => of(asError(error)))
                     ),
             [repoName, revision]
         )

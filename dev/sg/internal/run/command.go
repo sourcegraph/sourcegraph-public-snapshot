@@ -55,6 +55,11 @@ func (cmd Command) GetConfig() SGConfigCommandOptions {
 	return cmd.Config
 }
 
+func (cmd Command) UpdateConfig(f func(*SGConfigCommandOptions)) SGConfigCommand {
+	f(&cmd.Config)
+	return cmd
+}
+
 func (cmd Command) GetName() string {
 	return cmd.Config.Name
 }
@@ -64,6 +69,10 @@ func (cmd Command) GetBinaryLocation() (string, error) {
 		return filepath.Join(cmd.Config.RepositoryRoot, cmd.CheckBinary), nil
 	}
 	return "", noBinaryError{name: cmd.Config.Name}
+}
+
+func (cmd Command) GetBazelTarget() string {
+	return ""
 }
 
 func (cmd Command) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {

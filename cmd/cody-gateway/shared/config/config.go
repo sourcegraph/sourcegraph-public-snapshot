@@ -105,7 +105,8 @@ type OpenAIConfig struct {
 }
 
 type SourcegraphConfig struct {
-	TritonURL string
+	TritonURL           string
+	UnlimitedEmbeddings bool
 }
 
 func (c *Config) Load() {
@@ -184,6 +185,8 @@ func (c *Config) Load() {
 			// and allows Cody Gateway to decide which specific model to route the request to.
 			"starcoder",
 			// Fireworks multi-tenant models:
+			fireworks.StarcoderTwo15b,
+			fireworks.StarcoderTwo7b,
 			fireworks.Starcoder16b,
 			fireworks.Starcoder7b,
 			fireworks.Starcoder16b8bit,
@@ -241,7 +244,9 @@ func (c *Config) Load() {
 
 	c.Attribution.Enabled = c.GetBool("CODY_GATEWAY_ENABLE_ATTRIBUTION_SEARCH", "false", "Whether attribution search endpoint is available.")
 
-	c.Sourcegraph.TritonURL = c.Get("CODY_GATEWAY_SOURCEGRAPH_TRITON_URL", "https://embeddings-triton.sgdev.org/v2/models/ensemble_model/infer", "URL of the Triton server.")
+	c.Sourcegraph.TritonURL = c.Get("CODY_GATEWAY_SOURCEGRAPH_TRITON_URL", "https://embeddings-triton-direct.sgdev.org/v2/models/ensemble_model/infer", "URL of the Triton server.")
+	c.Sourcegraph.UnlimitedEmbeddings = c.GetBool("CODY_GATEWAY_SOURCEGRAPH_UNLIMITED_EMBEDDINGS", "false", "Enable unlimited embeddings.")
+
 }
 
 // splitMaybe splits on commas, but only returns at least one element if the input
