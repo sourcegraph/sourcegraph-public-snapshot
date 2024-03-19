@@ -11,6 +11,7 @@
     import { Button } from '$lib/wildcard'
 
     export let progress: Progress
+    export let state: 'complete' | 'error' | 'loading'
 
     const icons: Record<string, string> = {
         info: mdiInformationOutline,
@@ -37,7 +38,13 @@
     <Button variant="secondary" size="sm" outline>
         <svelte:fragment slot="custom" let:buttonClass>
             <button use:registerTrigger class="{buttonClass} progress-button" on:click={() => toggle()}>
-                <ResultsIndicator {hasSkippedItems} {sortedItems} {hasSuggestedItems} searchProgress={progress} />
+                <ResultsIndicator
+                    {state}
+                    {hasSkippedItems}
+                    {sortedItems}
+                    {hasSuggestedItems}
+                    searchProgress={progress}
+                />
             </button>
         </svelte:fragment>
     </Button>
