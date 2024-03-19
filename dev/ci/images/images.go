@@ -8,6 +8,7 @@ package images
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -151,6 +152,7 @@ func CandidateImageTag(commit string, buildNumber int) string {
 // - latest tag omitted if empty
 // - branch name omitted when `main`
 func BranchImageTag(now time.Time, commit string, buildNumber int, branchName, latestTag string) string {
+	branchName = sanitizeBranchForDockerTag(branchName)
 	commitSuffix := fmt.Sprintf("%.12s", commit)
 	if latestTag != "" {
 		commitSuffix = latestTag + "-" + commitSuffix
@@ -162,4 +164,10 @@ func BranchImageTag(now time.Time, commit string, buildNumber int, branchName, l
 	}
 
 	return tag
+}
+
+func sanitizeBranchForDockerTag(branch string) string {
+	branch = strings.ReplaceAll(branch, "/", "-")
+	branch = strings.ReplaceAll(branch, "+", "-")
+	return branch
 }
