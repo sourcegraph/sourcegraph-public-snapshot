@@ -469,7 +469,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 				ChatModel:                "gpt-4",
 				ChatModelMaxTokens:       7000,
 				FastChatModel:            "gpt-3.5-turbo",
-				FastChatModelMaxTokens:   4000,
+				FastChatModelMaxTokens:   16000,
 				CompletionModel:          "gpt-3.5-turbo-instruct",
 				CompletionModelMaxTokens: 4000,
 				AccessToken:              "asdf",

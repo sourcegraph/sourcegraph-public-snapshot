@@ -229,14 +229,6 @@ func pickStarCoderModel(model string, config config.FireworksConfig) string {
 		model = fireworks.StarcoderTwo7b
 	}
 
-	// Resolve to the legacy quantized versions if necessary.
-	// TODO: Remove this as soon as the migration to the unquantized models is complete.
-	if model == fireworks.Starcoder16b {
-		model = pickModelBasedOnTrafficSplit(config.StarcoderQuantizedPercent, fireworks.Starcoder16b8bit, fireworks.Starcoder16b)
-	} else if model == fireworks.Starcoder7b {
-		model = pickModelBasedOnTrafficSplit(config.StarcoderQuantizedPercent, fireworks.Starcoder7b8bit, fireworks.Starcoder7b)
-	}
-
 	return model
 }
 

@@ -1,4 +1,4 @@
-<script lang="ts">
+f<script lang="ts">
     import { highlightRanges } from '$lib/dom'
     import {
         displayRepoName,
@@ -9,6 +9,8 @@
         type PathMatch,
         type SymbolMatch,
     } from '$lib/shared'
+
+    import CopyPathButton from './CopyPathButton.svelte'
 
     export let result: ContentMatch | PathMatch | SymbolMatch
 
@@ -26,8 +28,19 @@
 <a href={repoAtRevisionURL}>{repoName}</a>
 <span aria-hidden={true}>&nbsp;›&nbsp;</span>
 <!-- #key is needed here to recreate the link because use:highlightNode changes the DOM -->
-{#key result}
-    <a href={fileURL} use:highlightRanges={{ ranges: matches }}>
-        {#if fileBase}{fileBase}/{/if}<strong>{fileName}</strong>
-    </a>
-{/key}
+<span class="root">
+    {#key result}
+        <a href={fileURL} use:highlightRanges={{ ranges: matches }}>
+            {#if fileBase}{fileBase}/{/if}<strong>{fileName}</strong>
+        </a>
+    {/key}
+    <CopyPathButton path={result.path} />
+</span>
+
+<style lang="scss">
+    .root {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+</style>
