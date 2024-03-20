@@ -1,4 +1,4 @@
-f<script lang="ts">
+<script lang="ts">
     import { highlightRanges } from '$lib/dom'
     import {
         displayRepoName,
