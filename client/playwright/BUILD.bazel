@@ -40,7 +40,10 @@ playwright_test_bin.playwright_test(
         "//client/playwright:node_modules/@playwright/test",
     ],
     local = True,
-    tags = ["requires-network"],
+    tags = [
+        "no-sandbox",
+        "requires-network",
+    ],
 )
 
 ts_project(
