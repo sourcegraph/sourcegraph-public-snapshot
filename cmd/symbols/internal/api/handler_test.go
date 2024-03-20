@@ -158,11 +158,13 @@ func TestHandler(t *testing.T) {
 
 	for label, testCase := range testCases {
 		t.Run(label, func(t *testing.T) {
-			resultSymbols, _, err := client.Search(context.Background(), testCase.args)
+			resultSymbols, repoLimited, err := client.Search(context.Background(), testCase.args)
 			if err != nil {
 				t.Fatalf("unexpected error performing search: %s", err)
 			}
-
+			if repoLimited {
+				t.Fatalf("unexpected repoLimited")
+			}
 			if resultSymbols == nil {
 				if testCase.expected != nil {
 					t.Errorf("unexpected search result. want=%+v, have=nil", testCase.expected)
