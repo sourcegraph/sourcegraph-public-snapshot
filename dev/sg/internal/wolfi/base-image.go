@@ -62,11 +62,17 @@ func resolveImagePath(name string) (string, error) {
 		return "wolfi-images", nil
 	}
 
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		return "", errors.Wrap(err, "unable to get repository root")
+	}
+
 	// Search for requested image in standard locations
 	imageDirs := []string{"cmd", "docker-images"}
 	for _, dir := range imageDirs {
 		imagePath := filepath.Join(dir, name)
-		if _, err := os.Stat(imagePath); !os.IsNotExist(err) {
+		fullImagePath := filepath.Join(repoRoot, imagePath)
+		if _, err := os.Stat(fullImagePath); !os.IsNotExist(err) {
 			return imagePath, nil
 		}
 	}
