@@ -4,18 +4,20 @@
 
     export let searchProgress: Progress
     export let state: 'error' | 'complete' | 'loading'
+
+    $: isError = state === 'error'
 </script>
 
-<div class={`progress-message ${state === 'error' && 'error-text'}`}>
+<div class={`progress-message ${isError && 'error-text'}`}>
     {getProgressText(searchProgress).visibleText}
 </div>
 
 <style lang="scss">
-    .progress-message {
-        font-size: 0.9rem;
-    }
-
     .error-text {
         color: var(--danger);
+    }
+
+    .progress-message {
+        font-size: 0.9rem;
     }
 </style>

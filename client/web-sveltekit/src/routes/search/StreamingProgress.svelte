@@ -5,7 +5,7 @@
     import { renderMarkdown, pluralize } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
-    import ResultsIndicator from '$lib/search/ResultsIndicator.svelte'
+    import ResultsIndicator from '$lib/search/resultsIndicator/ResultsIndicator.svelte'
     import SyntaxHighlightedQuery from '$lib/search/SyntaxHighlightedQuery.svelte'
     import type { Progress, Skipped } from '$lib/shared'
     import { Button } from '$lib/wildcard'
@@ -118,7 +118,26 @@
 </Popover>
 
 <style lang="scss">
-    div.streaming-popover {
+    .chevron > :global(svg) {
+        fill: currentColor !important;
+    }
+
+    label {
+        display: block;
+    }
+
+    .message {
+        border-left: 2px solid var(--primary);
+        padding-left: 0.5rem;
+        margin: 0 1rem 1rem 1rem;
+    }
+
+    .progress-button {
+        border: none;
+        padding: 0.5rem 0.5rem 0.5rem 0.25rem;
+    }
+
+    .streaming-popover {
         width: 24rem;
 
         p,
@@ -126,24 +145,5 @@
         form {
             margin: 1rem;
         }
-    }
-
-    .chevron > :global(svg) {
-        fill: currentColor !important;
-    }
-
-    div.message {
-        border-left: 2px solid var(--primary);
-        padding-left: 0.5rem;
-        margin: 0 1rem 1rem 1rem;
-    }
-
-    label {
-        display: block;
-    }
-
-    .progress-button {
-        border: none;
-        padding: 0.5rem 0.5rem 0.5rem 0.25rem;
     }
 </style>

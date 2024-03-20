@@ -4,9 +4,9 @@
 
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import ProgressMessage from '$lib/search/ProgressMessage.svelte'
-    import SuggestedAction from '$lib/search/SuggestedAction.svelte'
-    import TimeoutMessage from '$lib/search/TimeoutMessage.svelte'
+    import ProgressMessage from '$lib/search/resultsIndicator/ProgressMessage.svelte'
+    import SuggestedAction from '$lib/search/resultsIndicator/SuggestedAction.svelte'
+    import TimeoutMessage from '$lib/search/resultsIndicator/TimeoutMessage.svelte'
     import type { Progress, Skipped } from '$lib/shared'
 
     export let hasSkippedItems: boolean
@@ -53,7 +53,9 @@
 
     <div class="messages">
         <ProgressMessage {searchProgress} {loading} {isError} {elapsedDuration} />
-        <TimeoutMessage {isError} {loading} {takingTooLong} {isComplete} />
+        {#if loading && takingTooLong}
+            <TimeoutMessage {isError} />
+        {/if}
         <SuggestedAction
             {isError}
             {loading}
@@ -71,14 +73,14 @@
 </div>
 
 <style lang="scss">
-    .indicator {
-        display: flex;
-        flex-flow: row nowrap;
-        align-items: center;
-    }
-
     .dropdown-icon {
         margin-left: 2rem;
+    }
+
+    .indicator {
+        align-items: center;
+        display: flex;
+        flex-flow: row nowrap;
     }
 
     .messages {

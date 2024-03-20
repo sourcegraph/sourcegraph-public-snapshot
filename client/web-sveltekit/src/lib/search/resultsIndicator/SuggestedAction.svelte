@@ -11,12 +11,17 @@
     export let mostSevere: Skipped
 
     const CENTER_DOT = '\u00B7' // interpunct
+
+    $: isComplete = isComplete
+    $: isError = isError
+    $: loading = loading
+    $: progress = progress
 </script>
 
 {#if !loading && progress}
     <div class={`action-container ${isError && 'error-text'}`}>
         <div class="suggested-action">
-            {#if isComplete && !hasSkippedItems}
+            {#if !loading && isComplete && !hasSkippedItems}
                 <div class="more-details">See more details</div>
             {/if}
 
@@ -47,16 +52,22 @@
         margin-top: 0.3rem;
     }
 
-    .info-badge {
-        background-color: var(--primary);
-        color: white;
+    .code-font {
+        background-color: var(--gray-06);
         border-radius: 3px;
+        color: white;
+        font-family: var(--code-font-family);
+        font-size: 0.8rem;
         padding-left: 0.2rem;
         padding-right: 0.2rem;
     }
 
-    .info-badge.error {
-        background: var(--danger);
+    .info-badge {
+        background-color: var(--primary);
+        border-radius: 3px;
+        color: white;
+        padding-left: 0.2rem;
+        padding-right: 0.2rem;
     }
 
     .info-badge.duration {
@@ -64,9 +75,8 @@
         color: black;
     }
 
-    .suggested-action {
-        display: flex;
-        flex-flow: row nowrap;
+    .info-badge.error {
+        background: var(--danger);
     }
 
     .more-details {
@@ -74,17 +84,13 @@
     }
 
     .separator {
-        margin-right: 0.4rem;
         margin-left: 0.4rem;
+        margin-right: 0.4rem;
     }
 
-    .code-font {
-        font-family: var(--code-font-family);
-        font-size: 0.8rem;
-        color: white;
-        background-color: var(--gray-06);
-        border-radius: 3px;
-        padding-left: 0.2rem;
-        padding-right: 0.2rem;
+    .suggested-action {
+        display: flex;
+        flex-flow: row nowrap;
+        margin-left: 0.2rem;
     }
 </style>
