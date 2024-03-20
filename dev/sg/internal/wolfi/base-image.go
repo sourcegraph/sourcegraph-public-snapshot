@@ -81,8 +81,8 @@ func resolveImagePath(name string) (string, error) {
 }
 
 func (bc BaseImageConfig) DoBaseImageBuild() error {
-	std.Out.WriteLine(output.Linef("📦", output.StylePending, "Building base image %s...", bc.ImageName))
-	std.Out.WriteLine(output.Linef("🤖", output.StylePending, "Apko build output:\n"))
+	std.Out.WriteLine(output.Linef("📦", output.StylePending, "Building base image %s using Bazel...", bc.ImageName))
+	std.Out.WriteLine(output.Linef("🤖", output.StylePending, "rules_apko build output:\n"))
 
 	if bc.BazelBuildPath == "" {
 		return errors.Newf("no Bazel build path found for image", bc.ImageName)
