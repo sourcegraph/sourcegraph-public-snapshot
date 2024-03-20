@@ -177,7 +177,6 @@ func (bc BaseImageConfig) CheckApkoLockHash() (isMatch bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	fmt.Printf("apkoConfigHashHex: %s\n", apkoConfigHashHex) // TODO: Remove
 
 	imageLockData, err := bc.readLockFile()
 	if err != nil {
@@ -189,12 +188,9 @@ func (bc BaseImageConfig) CheckApkoLockHash() (isMatch bool, err error) {
 	}
 
 	if val, exists := imageLockData["configHash"]; exists {
-		fmt.Println("configHash before:", val) // TODO: Remove
 		if val == apkoConfigHashHex {
 			isMatch = true
 		}
-	} else {
-		fmt.Println("configHash key not found") // TODO: Remove
 	}
 
 	return isMatch, nil
@@ -212,8 +208,6 @@ func (bc BaseImageConfig) updateApkoLockHash() (err error) {
 	if err != nil {
 		return err
 	}
-
-	fmt.Printf("updating lockfile hash:\nwas: %s\nnow: %s\n", apkoConfigHashHex, imageLockData["configHash"]) // TODO: Remove
 
 	imageLockData["configHash"] = apkoConfigHashHex
 
