@@ -75,6 +75,7 @@ func convert(r io.Reader, path string) (string, error) {
 		}
 
 		line = htmlCommentsRe.ReplaceAllString(line, `{/* $1 */}`)
+
 		line = replaceTagsOrLtGt(line)
 		line = replaceLinks(line, parentFolder, isIndex)
 		line = replaceCurlies(line)
@@ -144,8 +145,10 @@ var tagsRe = regexp.MustCompile(`<([^>]+)>`)
 
 // replaceTagsOrLtGt replaces all tags with their HTML entity equivalents, and all < with &lt; and all > with &gt;.
 // This is quite fragile, and it's surely not going to work if you mix both.
+//
+// We also have a special case for <extID> from src-cli (see tests).
 func replaceTagsOrLtGt(line string) string {
-	if !tagsRe.MatchString(line) {
+	if !tagsRe.MatchString(line) || strings.Contains(line, "<extID>") {
 		line = strings.ReplaceAll(line, "<", "&lt;")
 		line = strings.ReplaceAll(line, ">", "&gt;")
 	}

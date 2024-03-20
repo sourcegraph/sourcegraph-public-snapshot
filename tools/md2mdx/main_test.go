@@ -66,6 +66,11 @@ func TestConversion(t *testing.T) {
 			want:  `<p class="subtitle">Hard error search API responses every 5m</p>`,
 		},
 		{
+			name:  "extid tag from src-cli usage",
+			input: "| `-extension-id` | The <extID> in https://sourcegraph.com/extensions/<extID> (e.g. sourcegraph/java) |  |",
+			want:  "| `-extension-id` | The &lt;extID&gt; in https://sourcegraph.com/extensions/&lt;extID&gt; (e.g. sourcegraph/java) |  |",
+		},
+		{
 			name:  "latency is >50ms",
 			input: `latency is >50ms but <50s`,
 			want:  `latency is &gt;50ms but &lt;50s`,
