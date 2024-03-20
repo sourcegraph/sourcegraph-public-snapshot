@@ -87,6 +87,8 @@ In this example `C` now has an upload for `I1`, which means it sees the upload a
 `E` sees the upload for `I2` at `D` at a distance of 1, rather than `B` because the upload at `B` has a distance of 2.
 The notion of shadowing can be a bit unintuitive here, as `D` does _not_ need to be on the path from `B` to `E` in order to shadow `B`.
 
+In practice, this means that if a codebase uses merge commits and also indexes commits not on the `main` branch, it is possible to fall back to uploads on commits that aren't on the `main` branch.
+
 _Implementation note: If there are two uploads at the same depth we pick the smaller upload_id. This choice is arbitrary but deterministic._
 
 ### Algorithm for computing the visibility graph
