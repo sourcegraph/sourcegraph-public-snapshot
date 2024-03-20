@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/urfave/cli/v2"
 
@@ -213,40 +214,17 @@ Lockfiles can be found at wolfi-images/<image>.lock.json
 					}
 
 					if checkLock {
-						// I need a version of CheckApkoLockHash that can be called with an image or that can iterate over everything
-						var imageNames []string
-						if imageName == "" {
-							allImageNames, err := wolfi.GetAllImages()
-							if err != nil {
-								return err
-							}
-							imageNames = allImageNames
-						} else {
-							imageNames = []string{imageName}
+						allImagesMatch, mismatchedImages, err := wolfi.CheckApkoLockHashes([]string{imageName})
+						if err != nil {
+							return err
 						}
 
-						allImagesSynced := true
-
-						for _, imageName := range imageNames {
-							bc, err := wolfi.SetupBaseImageBuild(imageName, wolfi.PackageRepoConfig{})
-							if err != nil {
-								return err
-							}
-
-							imageSynced, err := bc.CheckApkoLockHash(false)
-							if err != nil {
-								return err
-							}
-
-							if !imageSynced {
-								allImagesSynced = false
-								std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "%s.yaml needs to be updated with `sg wolfi lock %s`", imageName, imageName))
-							}
-
-						}
-
-						if !allImagesSynced {
-							std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Lockfiles need to be updated"))
+						if !allImagesMatch {
+							std.Out.WriteLine(
+								output.Linef(
+									"🛠️ ",
+									output.StyleBold, "Lockfiles for the following images need to be updated: "+strings.Join(mismatchedImages, "\n")),
+							)
 							return errors.New("lockfiles are not up to date - run `sg wolfi lock` to update them")
 						} else {
 							std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Lockfiles all up to date"))

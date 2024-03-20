@@ -109,6 +109,34 @@ func (bc BaseImageConfig) ApkoLock(extraRepo string, extraKey string) error {
 	return nil
 }
 
+func CheckApkoLockHashes(imageNames []string) (allImagesMatch bool, mismatchedImages []string, err error) {
+	if len(imageNames) == 0 {
+		imageNames, err = GetAllImages()
+		if err != nil {
+			return false, nil, err
+		}
+	}
+
+	for _, imageName := range imageNames {
+		bc, err := SetupBaseImageBuild(imageName, PackageRepoConfig{})
+		if err != nil {
+			return false, nil, err
+		}
+
+		imageSynced, err := bc.CheckApkoLockHash(false)
+		if err != nil {
+			return false, nil, err
+		}
+
+		if !imageSynced {
+			allImagesMatch = false
+			mismatchedImages = append(mismatchedImages, imageName)
+		}
+	}
+
+	return allImagesMatch, mismatchedImages, nil
+}
+
 // CheckApkoLockHash checks whether the hash of an image's YAML file matches the hash stored in the corresponding lockfile
 // This allows us to detect changes to the YAML file and re-run apko lock if necessary
 func (bc BaseImageConfig) CheckApkoLockHash(update bool) (isMatch bool, err error) {
