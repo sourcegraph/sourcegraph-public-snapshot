@@ -33,7 +33,6 @@ go_library(
         "@com_github_dustin_go_humanize//:go-humanize",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
-        "@org_golang_google_genproto_googleapis_rpc//errdetails",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
     ],

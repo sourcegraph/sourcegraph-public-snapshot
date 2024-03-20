@@ -53,14 +53,20 @@ func scanSymbols(rows *sql.Rows, queryErr error) (symbols []result.Symbol, err e
 const maxSymbolLimit = 50_000
 
 func (s *store) Search(ctx context.Context, args search.SymbolsParameters) ([]result.Symbol, error) {
-	// We check against limit + 1 because frontend will ask for limit + 1. This way
-	// we can communicate a nicer number to the user.
-	if args.First < 0 || args.First > maxSymbolLimit+1 {
-		p := message.NewPrinter(language.English)
-		return nil, &symbols.OutOfBoundsError{Description: p.Sprintf("Unindexed symbol search only supports returning up to %d results at a time. Use the \"count:\" filter to adjust the number of requested results.", maxSymbolLimit)}
+	if args.First < 0 {
+		return nil, errors.New("limit must be greater than or equal to 0")
 	}
 
-	return scanSymbols(s.Query(ctx, sqlf.Sprintf(
+	limit := args.First
+	outOfBounds := false
+	// We check against limit + 1 because frontend will ask for limit + 1. This way
+	// we can communicate a nicer number to the user.
+	if limit > maxSymbolLimit+1 {
+		outOfBounds = true
+		limit = maxSymbolLimit
+	}
+
+	res, err1 := scanSymbols(s.Query(ctx, sqlf.Sprintf(
 		`
 			SELECT
 				name,
@@ -78,8 +84,19 @@ func (s *store) Search(ctx context.Context, args search.SymbolsParameters) ([]re
 			LIMIT %s
 		`,
 		sqlf.Join(makeSearchConditions(args), "AND"),
-		args.First,
+		limit,
 	)))
+	if err1 != nil {
+		return nil, err1
+	}
+
+	var err error
+	if outOfBounds && len(res) == limit {
+		p := message.NewPrinter(language.English)
+		err = &symbols.OutOfBoundsError{Description: p.Sprintf("unindexed symbol search out of bounds. Expected args.First to be within [0, %d], got %d", maxSymbolLimit, args.First)}
+	}
+
+	return res, err
 }
 
 func makeSearchConditions(args search.SymbolsParameters) []*sqlf.Query {

@@ -143,9 +143,11 @@ type SymbolsParameters struct {
 
 type SymbolsResponse struct {
 	Symbols result.Symbols `json:"symbols,omitempty"`
-	// Prefer using grpc errors with error codes instead. See
-	// https://grpc.io/docs/guides/error/
-	Err string `json:"error,omitempty"`
+	Err     string         `json:"error,omitempty"`
+
+	// RepoLimited is true if the search results are incomplete due to limits
+	// imposed by the service.
+	RepoLimited bool `json:"repoLimited"`
 }
 
 type IndexedRequestType string

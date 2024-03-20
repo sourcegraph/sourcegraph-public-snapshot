@@ -983,15 +983,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query:      `repo:^github\.com/sgtest/go-diff file:^diff/print\.go func and doesnotexist838338`,
 				zeroResult: true,
 			},
-			{
-				name:       `Unindexed symbol search out of bounds`,
-				query:      `foo index:no count:all type:symbol`,
-				zeroResult: true,
-				wantAlert: &gqltestutil.SearchAlert{
-					Title:       "Unindexed symbol search failed",
-					Description: "Unindexed symbol search only supports returning up to 50,000 results at a time. Use the \"count:\" filter to adjust the number of requested results.",
-				},
-			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
