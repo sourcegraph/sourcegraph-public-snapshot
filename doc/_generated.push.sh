@@ -4,9 +4,24 @@ set -eu
 
 cwd="$(pwd)"
 _gh="${cwd}/$1"
+_md2mdx="${cwd}/$2"
 
 # Ensure we leave the output tree clean.
 trap 'rm -Rf ${cwd}/_clone' EXIT
+
+# function convert {
+#   local file
+#   file="$1"
+#   local _sed
+#   _sed="sed"
+#
+#   if command -v gsed >/dev/null 2>&1; then
+#     _sed="gsed"
+#   fi
+#
+#   "$_sed" -i -re 's|<!-- (.*) -->|{/* \1 */}|g' "$file"
+#   "$_sed" -i -re 's|(<([0-9]+))|\&lt;\2|g' "$file"
+# }
 
 mkdir -p _clone/
 git clone --quiet git@github.com:sourcegraph/docs.git _clone/
@@ -29,19 +44,23 @@ cd docs/
 # Rename unstaged changes (for if the file exists in the docs)
 for f in $(git ls-files --modified | grep '.md' | grep -v '.mdx'); do
   # Turn .md into .mdx
-  mv "$f" "${f}x"
+  "$_md2mdx" "${f}" > "${f}x"
 done
 
 # Rename untracked changes (for if the file doesn't exists yet in the docs)
 for f in $(git ls-files --others | grep '.md' | grep -v '.mdx'); do
   # Turn .md into .mdx
-  mv "$f" "${f}x"
+  "$_md2mdx" "${f}" > "${f}x"
 done
 
 cd ..
 
 find docs/admin/observability -name "*.bazel" -print0 | xargs --null --no-run-if-empty rm
 find docs/cli -name "*.bazel" -print0 | xargs --null --no-run-if-empty rm
+
+# Remove the markdown files we generated in favour of their mdx counterpart
+find docs/admin/observability -name "*.md" -print0 | xargs --null --no-run-if-empty rm
+find docs/cli -name "*.md" -print0 | xargs --null --no-run-if-empty rm
 
 git add .
 git diff
