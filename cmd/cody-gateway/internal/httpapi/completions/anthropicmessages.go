@@ -166,27 +166,45 @@ func (a *AnthropicMessagesHandlerMethods) getAPIURLByFeature(feature codygateway
 	return "https://api.anthropic.com/v1/messages"
 }
 
-func (a *AnthropicMessagesHandlerMethods) validateRequest(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicMessagesRequest) (int, *flaggingResult, error) {
+func (a *AnthropicMessagesHandlerMethods) validateRequest(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicMessagesRequest) error {
 	if ar.MaxTokens > int32(a.config.MaxTokensToSample) {
-		return http.StatusBadRequest, nil, errors.Errorf("max_tokens exceeds maximum allowed value of %d: %d", a.config.MaxTokensToSample, ar.MaxTokens)
+		return errors.Errorf("max_tokens exceeds maximum allowed value of %d: %d", a.config.MaxTokensToSample, ar.MaxTokens)
+	}
+	return nil
+}
+
+func (a *AnthropicMessagesHandlerMethods) shouldFlagRequest(ctx context.Context, logger log.Logger, ar anthropicMessagesRequest) (*flaggingResult, error) {
+	cfg := a.config
+	result, err := isFlaggedRequest(a.tokenizer,
+		flaggingRequest{
+			FlattenedPrompt: ar.BuildPrompt(),
+			MaxTokens:       int(ar.MaxTokens),
+		},
+		flaggingConfig{
+			AllowedPromptPatterns:          cfg.AllowedPromptPatterns,
+			BlockedPromptPatterns:          cfg.BlockedPromptPatterns,
+			PromptTokenFlaggingLimit:       cfg.PromptTokenFlaggingLimit,
+			PromptTokenBlockingLimit:       cfg.PromptTokenBlockingLimit,
+			MaxTokensToSampleFlaggingLimit: cfg.MaxTokensToSampleFlaggingLimit,
+			ResponseTokenBlockingLimit:     cfg.ResponseTokenBlockingLimit,
+		})
+	if err != nil {
+		return nil, err
 	}
 
-	if result, err := isFlaggedAnthropicMessagesRequest(a.tokenizer, ar, a.config); err != nil {
-		logger.Error("error checking AnthropicMessages request - treating as non-flagged",
-			log.Error(err))
-	} else if result.IsFlagged() {
-		// Record flagged prompts in hotpath - they usually take a long time on the backend side, so this isn't going to make things meaningfully worse
+	if result.IsFlagged() {
+		// Record flagged prompts. The prompt recorder's implementation has a short TTL for
+		// this data, but is made available to troubleshoot ongoing abuse waves. This does
+		// incur some additional latency, but so this isn't going to make things meaningfully worse
+		// since flagged abuse requests take longer to process on the LLM-provider side.
 		if err := a.promptRecorder.Record(ctx, ar.BuildPrompt()); err != nil {
 			logger.Warn("failed to record flagged prompt", log.Error(err))
 		}
-		if a.config.RequestBlockingEnabled && result.shouldBlock {
-			return http.StatusBadRequest, result, requestBlockedError(ctx)
-		}
-		return 0, result, nil
+		result.shouldBlock = result.shouldBlock && a.config.RequestBlockingEnabled
 	}
-
-	return 0, nil, nil
+	return result, nil
 }
+
 func (a *AnthropicMessagesHandlerMethods) transformBody(body *anthropicMessagesRequest, identifier string) {
 	// Overwrite the metadata field, we don't want to allow users to specify it:
 	body.Metadata = &anthropicMessagesRequestMetadata{
@@ -282,21 +300,4 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 	}
 
 	return promptUsage, completionUsage
-}
-
-func isFlaggedAnthropicMessagesRequest(tk *tokenizer.Tokenizer, r anthropicMessagesRequest, cfg config.AnthropicConfig) (*flaggingResult, error) {
-	return isFlaggedRequest(tk,
-		flaggingRequest{
-			FlattenedPrompt: r.BuildPrompt(),
-			MaxTokens:       int(r.MaxTokens),
-		},
-		flaggingConfig{
-			AllowedPromptPatterns:          cfg.AllowedPromptPatterns,
-			BlockedPromptPatterns:          cfg.BlockedPromptPatterns,
-			PromptTokenFlaggingLimit:       cfg.PromptTokenFlaggingLimit,
-			PromptTokenBlockingLimit:       cfg.PromptTokenBlockingLimit,
-			MaxTokensToSampleFlaggingLimit: cfg.MaxTokensToSampleFlaggingLimit,
-			ResponseTokenBlockingLimit:     cfg.ResponseTokenBlockingLimit,
-		},
-	)
 }

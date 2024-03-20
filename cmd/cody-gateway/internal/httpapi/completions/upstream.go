@@ -67,11 +67,24 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] interface {
 	getAPIURLByFeature(codygateway.Feature) string
 
 	// validateRequest can be used to validate the HTTP request before it is sent upstream.
-	// Returning a non-nil error will stop further processing and return the given error
-	// code. Defaulting to 400.
+	// This is where we enforce things like character/token limits, etc. Any non-nil errors
+	// will block the processing of the request, and serve the error directly to the end
+	// user along with an HTTP status code 400 Bad Request.
 	//
 	// The provided logger already contains actor context.
-	validateRequest(context.Context, log.Logger, codygateway.Feature, ReqT) (int, *flaggingResult, error)
+	validateRequest(context.Context, log.Logger, codygateway.Feature, ReqT) error
+
+	// shouldFlagRequest is called after the request has been validated, and is where we
+	// run various heuristics to check if the request is abusive in nature. (e.g. suspiciously
+	// long, contains words/phrases from a blocklist, etc.)
+	//
+	// All implementations of this function should call isFlaggedRequest(...), along with
+	// any LLM or provider-specific logic.
+	//
+	// Any errors returned from shouldFlagRequest will be swallowed, and the request will be
+	// considered unflagged. (So implementations should return errors rather than swallowing
+	// them directly.)
+	shouldFlagRequest(context.Context, log.Logger, ReqT) (*flaggingResult, error)
 	// transformBody can be used to modify the request body before it is sent
 	// upstream. To manipulate the HTTP request, use transformRequest.
 	//
@@ -204,10 +217,24 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "failed to parse request body"))
 			return
 		}
-		status, flaggingResult, err := methods.validateRequest(ctx, logger, feature, body)
+		// Validate the request. (e.g. hard-caps on maximum token size, a known model, etc.)
+		if err := methods.validateRequest(ctx, logger, feature, body); err != nil {
+			response.JSONError(logger, w, http.StatusBadRequest, err)
+			return
+		}
+
+		// Check the request to see if it should be flagged for abuse, or additional inspection.
+		flaggingResult, err := methods.shouldFlagRequest(ctx, logger, body)
 		if err != nil {
-			// Log that the request was outright blocked.
-			if flaggingResult != nil && flaggingResult.IsFlagged() && flaggingResult.shouldBlock {
+			logger.Error("error checking if request should be flagged, treating as non-flagged", log.Error(err))
+		}
+		if flaggingResult != nil && flaggingResult.IsFlagged() {
+			// Requests that are flagged but not outright blocked, will have some of the
+			// metadata from flaggingResult attached to the request event telemetry. That's
+			// how the data flows into other backend systems for downstream analysis.
+			if !flaggingResult.shouldBlock {
+				logger.Info("request was flagged, but not blocked. Proceeding.", log.Strings("reasons", flaggingResult.reasons))
+			} else {
 				requestMetadata := getFlaggingMetadata(flaggingResult, act)
 				err := eventLogger.LogEvent(
 					ctx,
@@ -219,9 +246,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 							codygateway.CompletionsEventFeatureMetadataField: feature,
 							"model":    fmt.Sprintf("%s/%s", upstreamName, body.GetModel()),
 							"provider": upstreamName,
-
-							// Response details
-							"resolved_status_code": status,
 
 							// Request metadata
 							"prompt_token_count":   flaggingResult.promptTokenCount,
@@ -236,15 +260,9 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				if err != nil {
 					logger.Error("failed to log event", log.Error(err))
 				}
+				response.JSONError(logger, w, http.StatusBadRequest, requestBlockedError(ctx))
+				return
 			}
-
-			// Ensure that we return a meaningful error to the client for validation failures.
-			if status < 400 {
-				status = http.StatusBadRequest
-				err = errors.Wrap(err, "invalid request")
-			}
-			response.JSONError(logger, w, status, err)
-			return
 		}
 
 		// identifier that can be provided to upstream for abuse detection
