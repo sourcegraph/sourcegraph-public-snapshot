@@ -32,17 +32,17 @@ playwright_bin.playwright_core_test(
 
 playwright_test_bin.playwright_test(
     name = "e2e_test",
-    # outs = ["test-results"],
-    args = ["test"],
+    args = [
+        "test",
+        "--config ./client/playwright/playwright.config.ts",
+    ],
     data = [
-        # "playwright.config.ts",
+        "playwright.config.ts",
         ":playwright",
         ":playwright_install",
         "//client/playwright:node_modules/@playwright/test",
+        "//client/playwright:node_modules/playwright-core",
     ],
-    env = {
-        "SOURCEGRAPH_BASE_URL": "http://sourcegraph.test:3443",
-    },
     local = True,
     log_level = "debug",
     tags = [
@@ -51,14 +51,16 @@ playwright_test_bin.playwright_test(
     ],
 )
 
+# We might be able to drop this since playwright can work with TS files
 ts_project(
     name = "playwright",
-    srcs = ["playwright.config.ts"] + glob([
+    srcs = glob([
         "src/playwright/*.spec.ts",
     ]),
     tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@playwright/test",
         ":node_modules/@types/node",
+        ":node_modules/playwright-core",
     ],
 )
