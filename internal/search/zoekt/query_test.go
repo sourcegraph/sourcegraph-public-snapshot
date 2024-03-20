@@ -5,6 +5,7 @@ import (
 	"slices"
 	"testing"
 
+	gpCmp "github.com/google/go-cmp/cmp"
 	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -16,77 +17,83 @@ import (
 
 func TestQueryToZoektQuery(t *testing.T) {
 	cases := []struct {
-		Name           string
-		Type           search.IndexedRequestType
-		Query          string
-		Features       search.Features
-		WantZoektQuery string
+		Name            string
+		Type            search.IndexedRequestType
+		Query           string
+		Features        search.Features
+		WantZoektOutput string
 	}{
 		{
-			Name:           "substr",
-			Type:           search.TextRequest,
-			Query:          `foo patterntype:regexp`,
-			WantZoektQuery: "foo case:no",
+			Name:            "substr",
+			Type:            search.TextRequest,
+			Query:           `foo patterntype:regexp`,
+			WantZoektOutput: `substr:"foo"`,
 		},
 		{
-			Name:           "symbol substr",
-			Type:           search.SymbolRequest,
-			Query:          `foo patterntype:regexp type:symbol`,
-			WantZoektQuery: "sym:foo case:no",
+			Name:            "symbol substr",
+			Type:            search.SymbolRequest,
+			Query:           `foo patterntype:regexp type:symbol`,
+			WantZoektOutput: `sym:substr:"foo"`,
 		},
 		{
-			Name:           "regex",
-			Type:           search.TextRequest,
-			Query:          `(foo).*?(bar) patterntype:regexp`,
-			WantZoektQuery: "(foo).*?(bar) case:no",
+			Name:            "regex",
+			Type:            search.TextRequest,
+			Query:           `(foo).*?(bar) patterntype:regexp`,
+			WantZoektOutput: `regex:"(?-s:foo.*?bar)"`,
 		},
 		{
-			Name:           "path",
-			Type:           search.TextRequest,
-			Query:          `foo file:\.go$ file:\.yaml$ -file:\bvendor\b patterntype:regexp`,
-			WantZoektQuery: `foo case:no f:\.go$ f:\.yaml$ -f:\bvendor\b`,
+			Name:            "path",
+			Type:            search.TextRequest,
+			Query:           `foo file:\.go$ file:\.yaml$ -file:\bvendor\b patterntype:regexp`,
+			WantZoektOutput: `(and substr:"foo" file_regex:"(?m:\\.go$)" file_regex:"(?m:\\.yaml$)" (not file_regex:"\\bvendor\\b"))`,
 		},
 		{
-			Name:           "case",
-			Type:           search.TextRequest,
-			Query:          `foo case:yes patterntype:regexp file:\.go$ file:yaml`,
-			WantZoektQuery: `foo case:yes f:\.go$ f:yaml`,
+			Name:            "case",
+			Type:            search.TextRequest,
+			Query:           `foo case:yes patterntype:regexp file:\.go$ file:yaml`,
+			WantZoektOutput: `(and case_substr:"foo" case_file_regex:"(?m:\\.go$)" case_file_substr:"yaml")`,
 		},
 		{
-			Name:           "casepath",
-			Type:           search.TextRequest,
-			Query:          `foo case:yes file:\.go$ file:\.yaml$ -file:\bvendor\b patterntype:regexp`,
-			WantZoektQuery: `foo case:yes f:\.go$ f:\.yaml$ -f:\bvendor\b`,
+			Name:            "casepath",
+			Type:            search.TextRequest,
+			Query:           `foo case:yes file:\.go$ file:\.yaml$ -file:\bvendor\b patterntype:regexp`,
+			WantZoektOutput: `(and case_substr:"foo" case_file_regex:"(?m:\\.go$)" case_file_regex:"(?m:\\.yaml$)" (not case_file_regex:"\\bvendor\\b"))`,
 		},
 		{
-			Name:           "path matches only",
-			Type:           search.TextRequest,
-			Query:          `test type:path`,
-			WantZoektQuery: `f:test`,
+			Name:            "path matches only",
+			Type:            search.TextRequest,
+			Query:           `test type:path`,
+			WantZoektOutput: `file_substr:"test"`,
 		},
 		{
-			Name:           "content matches only",
-			Type:           search.TextRequest,
-			Query:          `test type:file patterntype:literal`,
-			WantZoektQuery: `c:test`,
+			Name:            "content matches only",
+			Type:            search.TextRequest,
+			Query:           `test type:file patterntype:literal`,
+			WantZoektOutput: `content_substr:"test"`,
 		},
 		{
-			Name:           "content and path matches",
-			Type:           search.TextRequest,
-			Query:          `test`,
-			WantZoektQuery: `test`,
+			Name:            "content and path matches",
+			Type:            search.TextRequest,
+			Query:           `test`,
+			WantZoektOutput: `substr:"test"`,
 		},
 		{
-			Name:           "Just file",
-			Type:           search.TextRequest,
-			Query:          `file:\.go$`,
-			WantZoektQuery: `file:"\\.go(?m:$)"`,
+			Name:            "Just file",
+			Type:            search.TextRequest,
+			Query:           `file:\.go$`,
+			WantZoektOutput: `file_regex:"(?m:\\.go$)"`,
 		},
 		{
-			Name:           "Languages get passed as file filter",
-			Type:           search.TextRequest,
-			Query:          `file:\.go$ lang:go`,
-			WantZoektQuery: `file:"\\.go(?m:$)" file:"\\.go(?m:$)"`,
+			Name:            "Languages get passed as file filter",
+			Type:            search.TextRequest,
+			Query:           `file:\.go$ lang:go`,
+			WantZoektOutput: `(and file_regex:"(?m:\\.go$)" file_regex:"(?im:\\.GO$)")`,
+		},
+		{
+			Name:            "Languages still use case_insensitive in case sensitivity mode",
+			Type:            search.TextRequest,
+			Query:           `file:\.go$ lang:go case:true`,
+			WantZoektOutput: `(and case_file_regex:"(?m:\\.go$)" case_file_regex:"(?im:\\.GO$)")`,
 		},
 		{
 			Name:  "Language get passed as lang: query",
@@ -95,7 +102,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 			Features: search.Features{
 				ContentBasedLangFilters: true,
 			},
-			WantZoektQuery: `lang:go`,
+			WantZoektOutput: `lang:Go`,
 		},
 		{
 			Name:  "Multiple languages get passed as lang queries",
@@ -104,7 +111,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 			Features: search.Features{
 				ContentBasedLangFilters: true,
 			},
-			WantZoektQuery: `lang:go lang:typescript`,
+			WantZoektOutput: `(and lang:Go lang:TypeScript)`,
 		},
 		{
 			Name:  "Excluded languages get passed as lang: query",
@@ -113,7 +120,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 			Features: search.Features{
 				ContentBasedLangFilters: true,
 			},
-			WantZoektQuery: `lang:go -lang:typescript -lang:markdown`,
+			WantZoektOutput: `(and lang:Go (not lang:TypeScript) (not lang:Markdown))`,
 		},
 		{
 			Name:  "Mixed file and lang filters",
@@ -122,7 +129,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 			Features: search.Features{
 				ContentBasedLangFilters: true,
 			},
-			WantZoektQuery: `file:"\\.go(?m:$)" lang:go lang:typescript`,
+			WantZoektOutput: `(and lang:Go lang:TypeScript file_regex:"(?m:\\.go$)")`,
 		},
 	}
 	for _, tt := range cases {
@@ -137,13 +144,9 @@ func TestQueryToZoektQuery(t *testing.T) {
 				t.Fatal("QueryToZoektQuery failed:", err)
 			}
 
-			zoektQuery, err := zoekt.Parse(tt.WantZoektQuery)
-			if err != nil {
-				t.Fatalf("failed to parse %q: %v", tt.WantZoektQuery, err)
-			}
-
-			if !queryEqual(got, zoektQuery) {
-				t.Fatalf("mismatched queries during [%s] \ngot  %s\nwant %s", tt.Name, got.String(), zoektQuery.String())
+			queryStr := got.String()
+			if diff := gpCmp.Diff(tt.WantZoektOutput, queryStr); diff != "" {
+				t.Errorf("mismatched queries during [%s] (-want +got):\n%s", tt.Name, diff)
 			}
 		})
 	}
