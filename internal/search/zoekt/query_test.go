@@ -143,7 +143,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 			}
 
 			if !queryEqual(got, zoektQuery) {
-				t.Fatalf("mismatched queries\ngot  %s\nwant %s", got.String(), zoektQuery.String())
+				t.Fatalf("mismatched queries during [%s] \ngot  %s\nwant %s", tt.Name, got.String(), zoektQuery.String())
 			}
 		})
 	}
