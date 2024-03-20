@@ -1061,6 +1061,9 @@ func TestRetryBasedOnStatusCode(t *testing.T) {
 		// Internal Server Error is hopefully transient, so retrying may be appropriate.
 		{http.StatusInternalServerError, true},
 
+		// No need to retry the status if the endpoint isn't implemented.
+		{http.StatusNotImplemented, false},
+
 		// Bad Gateway is in the 5xx rate, and can potentially be resolved automatically.
 		// So retrying may be appropriate.
 		{http.StatusBadGateway, true},
