@@ -119,9 +119,16 @@ func (f *FireworksHandlerMethods) getAPIURLByFeature(feature codygateway.Feature
 	}
 }
 
-func (f *FireworksHandlerMethods) validateRequest(_ context.Context, _ log.Logger, _ codygateway.Feature, _ fireworksRequest) (int, *flaggingResult, error) {
-	return 0, nil, nil
+func (f *FireworksHandlerMethods) validateRequest(_ context.Context, _ log.Logger, _ codygateway.Feature, _ fireworksRequest) error {
+	// TODO[#61278]: Add missing request validation for all LLM providers in Cody Gateway.
+	return nil
 }
+
+func (f *FireworksHandlerMethods) shouldFlagRequest(_ context.Context, _ log.Logger, _ fireworksRequest) (*flaggingResult, error) {
+	// TODO[#61278]: Add missing request validation for all LLM providers in Cody Gateway.
+	return nil, nil
+}
+
 func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string) {
 	// We don't want to let users generate multiple responses, as this would
 	// mess with rate limit counting.
@@ -131,13 +138,16 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 
 	body.Model = pickStarCoderModel(body.Model, f.config)
 }
+
 func (f *FireworksHandlerMethods) getRequestMetadata(body fireworksRequest) (model string, additionalMetadata map[string]any) {
 	return body.Model, map[string]any{"stream": body.Stream}
 }
+
 func (f *FireworksHandlerMethods) transformRequest(r *http.Request) {
 	r.Header.Set("Content-Type", "application/json")
 	r.Header.Set("Authorization", "Bearer "+f.config.AccessToken)
 }
+
 func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody fireworksRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	promptUsage.characters = len(reqBody.Prompt)
