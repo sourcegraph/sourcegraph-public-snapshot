@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/run"
-	"github.com/sourcegraph/log"
 )
 
 // These commands are meant to be executed with a VERSION env var with a hypothetical stamped release version
@@ -162,7 +161,8 @@ func main() {
 						}
 					}
 					if err := testPool.Wait(); err != nil {
-						log.Fatal(err)
+						fmt.Println("🚨 Error: failed to run tests in pool: ", err)
+						return err
 					}
 
 					// This is where we do the majority of our printing to stdout.
@@ -190,9 +190,8 @@ func main() {
 					},
 					&cli.IntFlag{
 						Name:    "max-routines",
-						Aliases: []string{"mr"},
-						Usage:   "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
-						Value:   10,
+						Aliases: []string{"mr"}, Usage: "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
+						Value: 10,
 					},
 					&cli.StringSliceFlag{
 						Name:    "standard-versions",
@@ -255,7 +254,8 @@ func main() {
 						})
 					}
 					if err := stdTestPool.Wait(); err != nil {
-						log.Fatal(err)
+						fmt.Println("🚨 Error: failed to run tests in pool: ", err)
+						return err
 					}
 
 					// This is where we do the majority of our printing to stdout.
@@ -346,7 +346,8 @@ func main() {
 						})
 					}
 					if err := mvuTestPool.Wait(); err != nil {
-						log.Fatal(err)
+						fmt.Println("🚨 Error: failed to run tests in pool: ", err)
+						return err
 					}
 
 					results.OrderByVersion()
@@ -436,7 +437,8 @@ func main() {
 						})
 					}
 					if err := autoTestPool.Wait(); err != nil {
-						log.Fatal(err)
+						fmt.Println("🚨 Error: failed to run tests in pool: ", err)
+						return err
 					}
 
 					results.OrderByVersion()
@@ -449,7 +451,7 @@ func main() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		fmt.Println("🚨 Error: failed to run tests: ", err)
 	}
 
 }

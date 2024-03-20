@@ -14,7 +14,6 @@ go_library(
         "@com_github_lib_pq//:pq",
         "@com_github_masterminds_semver//:semver",
         "@com_github_sourcegraph_conc//pool",
-        "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_run//:run",
         "@com_github_urfave_cli_v2//:cli",
         "@io_k8s_utils//strings/slices",
