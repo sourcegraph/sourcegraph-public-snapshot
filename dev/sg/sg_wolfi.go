@@ -116,7 +116,7 @@ It can also be used for local development by updating its path and hash in the '
 					// TODO: Add a check for - .*@local in the manifest and use legacy build if present
 
 					if !buildLegacy {
-						isMatch, err := bc.CheckApkoLockHash(false)
+						isMatch, err := bc.CheckApkoLockHash()
 						if err != nil {
 							return err
 						}

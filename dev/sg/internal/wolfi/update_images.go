@@ -18,8 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-
-func GetAllImages() (imageNames []string, err error) {
+// getAllImages returns a list of all image configs found in the baseImageDir
+func getAllImages() (imageNames []string, err error) {
 	// Iterate over *.yaml files in wolfi-images/
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
@@ -45,7 +45,7 @@ func GetAllImages() (imageNames []string, err error) {
 
 // UpdateAllImages runs UpdateImage for all images in the baseImageDir
 func UpdateAllImages(ctx *cli.Context, enableLocalPackageRepo bool) error {
-	imageNames, err := GetAllImages()
+	imageNames, err := getAllImages()
 	if err != nil {
 		return err
 	}
@@ -62,12 +62,13 @@ func UpdateAllImages(ctx *cli.Context, enableLocalPackageRepo bool) error {
 	return nil
 }
 
+// UpdateImage updates re-locks the set of packages for the given image by updating its lockfile
 func (bc BaseImageConfig) UpdateImage(_ *cli.Context, enableLocalPackageRepo bool) error {
 
 	var extraRepo, extraKey string
-	if enableLocalPackageRepo {
-		// Currently not implemented as rules_apko doesn't support local filesystem repos
-	}
+	// Currently not implemented as rules_apko doesn't support local filesystem repos
+	// if enableLocalPackageRepo {
+	// }
 
 	// Update lockfile
 	std.Out.WriteLine(output.Linef("🗝️ ", output.StylePending, fmt.Sprintf("Updating apko lockfile for %s", bc.ImageName)))
@@ -78,6 +79,7 @@ func (bc BaseImageConfig) UpdateImage(_ *cli.Context, enableLocalPackageRepo boo
 	return nil
 }
 
+// ApkoLock calls `apko lock` to generate a lockfile for the given image
 func (bc BaseImageConfig) ApkoLock(extraRepo string, extraKey string) error {
 	localImageConfigPath := strings.TrimPrefix(bc.ImageConfigPath, bc.ImageConfigDir+"/")
 
@@ -101,7 +103,7 @@ func (bc BaseImageConfig) ApkoLock(extraRepo string, extraKey string) error {
 	}
 
 	// Update hash in lockfile
-	_, err = bc.CheckApkoLockHash(true)
+	err = bc.updateApkoLockHash()
 	if err != nil {
 		return err
 	}
@@ -109,9 +111,38 @@ func (bc BaseImageConfig) ApkoLock(extraRepo string, extraKey string) error {
 	return nil
 }
 
+// getApkoConfigHash returns the SHA256 hash of an image's apko config file
+func (bc BaseImageConfig) getApkoConfigHash() (apkoConfigHashHex string, err error) {
+	apkoConfig, err := os.ReadFile(bc.ImageConfigPath)
+	if err != nil {
+		return "", err
+	}
+
+	apkoConfigHash := sha256.Sum256([]byte(apkoConfig))
+	apkoConfigHashHex = hex.EncodeToString(apkoConfigHash[:])
+
+	return apkoConfigHashHex, nil
+}
+
+// readLockFile returns the contents of an image's lockfile as a map
+func (bc BaseImageConfig) readLockFile() (imageLockData map[string]interface{}, err error) {
+	imageLock, err := os.ReadFile(bc.LockfilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(imageLock, &imageLockData)
+	if err != nil {
+		return nil, err
+	}
+
+	return imageLockData, nil
+}
+
+// CheckApkoLockHashes runs CheckApkoLockHash for all images in baseImageDir
 func CheckApkoLockHashes(imageNames []string) (allImagesMatch bool, mismatchedImages []string, err error) {
 	if len(imageNames) == 0 {
-		imageNames, err = GetAllImages()
+		imageNames, err = getAllImages()
 		if err != nil {
 			return false, nil, err
 		}
@@ -123,7 +154,7 @@ func CheckApkoLockHashes(imageNames []string) (allImagesMatch bool, mismatchedIm
 			return false, nil, err
 		}
 
-		imageSynced, err := bc.CheckApkoLockHash(false)
+		imageSynced, err := bc.CheckApkoLockHash()
 		if err != nil {
 			return false, nil, err
 		}
@@ -139,26 +170,19 @@ func CheckApkoLockHashes(imageNames []string) (allImagesMatch bool, mismatchedIm
 
 // CheckApkoLockHash checks whether the hash of an image's YAML file matches the hash stored in the corresponding lockfile
 // This allows us to detect changes to the YAML file and re-run apko lock if necessary
-func (bc BaseImageConfig) CheckApkoLockHash(update bool) (isMatch bool, err error) {
-	apkoConfig, err := os.ReadFile(bc.ImageConfigPath)
+func (bc BaseImageConfig) CheckApkoLockHash() (isMatch bool, err error) {
+	apkoConfigHashHex, err := bc.getApkoConfigHash()
 	if err != nil {
 		return false, err
 	}
-
-	apkoConfigHash := sha256.Sum256([]byte(apkoConfig))
-	apkoConfigHashHex := hex.EncodeToString(apkoConfigHash[:])
 	fmt.Printf("apkoConfigHashHex: %s\n", apkoConfigHashHex) // TODO: Remove
 
-	// Now we have the hash, we need to add it to the json
-	// TODO: What about the case where the lockfile doesn't exist? That's a valid false, not an error
-	imageLock, err := os.ReadFile(bc.LockfilePath)
+	imageLockData, err := bc.readLockFile()
 	if err != nil {
-		return false, err
-	}
-
-	var imageLockData map[string]interface{}
-	err = json.Unmarshal(imageLock, &imageLockData)
-	if err != nil {
+		// Lockfile doesn't exist
+		if os.IsNotExist(err) {
+			return false, nil
+		}
 		return false, err
 	}
 
@@ -171,23 +195,37 @@ func (bc BaseImageConfig) CheckApkoLockHash(update bool) (isMatch bool, err erro
 		fmt.Println("configHash key not found") // TODO: Remove
 	}
 
-	if !update {
-		return isMatch, nil
+	return isMatch, nil
+}
+
+// updateApkoLockHash updates the hash of the image's YAML file that's stored in the corresponding lockfile.
+// It should only be called after successfully calling ApkoLock()
+func (bc BaseImageConfig) updateApkoLockHash() (err error) {
+	apkoConfigHashHex, err := bc.getApkoConfigHash()
+	if err != nil {
+		return err
 	}
+
+	imageLockData, err := bc.readLockFile()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("updating lockfile hash:\nwas: %s\nnow: %s\n", apkoConfigHashHex, imageLockData["configHash"]) // TODO: Remove
 
 	imageLockData["configHash"] = apkoConfigHashHex
 
 	// Marshal the map back to json
 	updatedFile, err := json.MarshalIndent(imageLockData, "", "  ")
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	// Write the updated json back to the file
 	err = os.WriteFile(bc.LockfilePath, updatedFile, 0644)
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	return isMatch, nil
+	return nil
 }
