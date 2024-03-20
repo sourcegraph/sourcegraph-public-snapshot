@@ -60,7 +60,7 @@ A commit with multiple uploads will have additional colored outlines.
 
 Boxes with sharp corners record the set of visible uploads for a commit. An entry like `I1 : A(3)` means this commit sees an upload for `I1` made at commit `A` at a depth of 3.
 
-![commitgraph_0.png](img/commitgraph_0.png)
+![commitgraph_0.png](https://storage.googleapis.com/sourcegraph-assets/dev-docs/commitgraph/commitgraph_0.png)
 
 **Rule 1: If an index key is uploaded at a particular commit, that commit will consider it visible at depth 0**
 
@@ -69,14 +69,14 @@ According to our first rule both `I1` and `I2` are visible to B at depth 0.
 
 **Rule 2: An upload is visible to a commit at depth N + 1 if it's visible to its parent at depth N**
 
-![commitgraph_1.png](img/commitgraph_1.png)
+![commitgraph_1.png](https://storage.googleapis.com/sourcegraph-assets/dev-docs/commitgraph/commitgraph_1.png)
 
 Because there are no uploads at `A` and no uploads in `A`'s ancestors it does not have any visible uploads.
 There are no uploads for `C`, but because there are uploads at `B` and `C` is its child, it has visibility onto both uploads at `B` at depth 1.
 
 **Rule 3: Uploads for the same index key shadow uploads at greater depth**
 
-![commitgraph_2.png](img/commitgraph_2.png)
+![commitgraph_2.png](https://storage.googleapis.com/sourcegraph-assets/dev-docs/commitgraph/commitgraph_2.png)
 
 In this example `C` now has an upload for `I1`, which means it sees the upload at depth 0, rather than the one from `B` at depth 1.
 
