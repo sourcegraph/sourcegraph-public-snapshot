@@ -25,7 +25,7 @@ To solve this problem we build an [annotated copy of the git commit graph](#what
 
 For the marked as dirty repository:
 - Get full commit graph (non-annotated) from git server. All commits and their relationships
-- Get metadata for all uploaded indices (indexer name, commit, root directory)
+- Get metadata for all uploaded indexes (indexer name, commit, root directory)
 
 ### What is an annotated commit graph
 
@@ -53,7 +53,7 @@ We'll look at a couple of examples with increasing complexity to understand what
 
 Our examples will be drawings of commit graphs.
 
-We will use `I1`..`In` to denote indexer+root combinations or "index keys". For example `I1` could correspond to indices created by `"scip-go"` in the `"backend/"` root directory.
+We will use `I1`..`In` to denote indexer+root combinations or "index keys". For example `I1` could correspond to indexes created by `"scip-go"` in the `"backend/"` root directory.
 
 We will use single uppercase letters in boxes with rounded corners to denote commits.
 Colored boxes mark commits with uploads, and black boxes those with no uploads.
@@ -65,7 +65,7 @@ Boxes with sharp corners record the set of visible uploads for a commit. An entr
 
 **Rule 1: If an index key is uploaded at a particular commit, that commit will consider it visible at depth 0**
 
-For our first example we'll start with a graph of a single commit B, and indices for both `I1` and `I2` have been uploaded for `B`.
+For our first example we'll start with a graph of a single commit B, and indexes for both `I1` and `I2` have been uploaded for `B`.
 According to our first rule both `I1` and `I2` are visible to B at depth 0.
 
 **Rule 2: An upload is visible to a commit at depth N + 1 if it's visible to its parent at depth N**
@@ -90,7 +90,7 @@ _Implementation note: If there are two uploads at the same depth we pick the sma
 
 TODO: Input data
   - Topo-sorted list of commits and their relationships
-  - Full list of uploaded indices
+  - Full list of uploaded indexes
 
 TODO: "Relevant" commits
   - Commits with an upload
