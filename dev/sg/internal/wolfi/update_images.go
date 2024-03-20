@@ -148,6 +148,8 @@ func CheckApkoLockHashes(imageNames []string) (allImagesMatch bool, mismatchedIm
 		}
 	}
 
+	allImagesMatch = true
+
 	for _, imageName := range imageNames {
 		bc, err := SetupBaseImageBuild(imageName, PackageRepoConfig{})
 		if err != nil {
