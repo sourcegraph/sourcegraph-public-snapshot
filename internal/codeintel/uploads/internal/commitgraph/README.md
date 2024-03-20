@@ -8,28 +8,28 @@ There are various reasons for why a commit might not have associated indexes upl
 - The upload is in a queued, processing, or errored/failed state.
 - The index was deleted, by a retention policy or an explicit user action.
 
-To solve this problem we build an annotated copy of the git commit graph in Postgres, so that we can return so called "visibleUploads" quickly.
+To solve this problem we build an [annotated copy of the git commit graph](#what-is-an-annotated-commit-graph) in Postgres, so that we can return so called "visibleUploads" quickly.
 
 ## High-level architecture
 
 - repository listing (table `lsif_dirty_repositories`), isDirty flag is set whenever an upload is completed
-- Worker process updates commitgraph for dirty repositories and clears flag
-- TODO: When information is requested for an unknown commit in a repository we ask git server for a fragment of the commitgraph that includes the commit and "graft" it onto our existing graph
+- Worker process updates commit graph for dirty repositories and clears flag
+- TODO: When information is requested for an unknown commit in a repository we ask git server for a fragment of the commit graph that includes the commit and "graft" it onto our existing graph
 
-## Updating the commitgraph
+## Updating the commit graph
 1. Load data
-2. Compute new commitgraph
+2. Compute new commit graph
 3. Diff old vs new and do incremental updates
 
 ### Loading data
 
 For the marked as dirty repository:
-- Get full commitgraph (non-annotated) from git server. All commits and their relationships
+- Get full commit graph (non-annotated) from git server. All commits and their relationships
 - Get metadata for all uploaded indices (indexer name, commit, root directory)
 
-### What's an annotated commitgraph
+### What is an annotated commit graph
 
-A fully annotated commitgraph contains a set of visible uploads for every commit. We can never see multiple visible uploads from the same indexer _and_ root at the same commit.
+A fully annotated commit graph contains a set of visible uploads for every commit. We can never see multiple visible uploads from the same indexer _and_ root at the same commit.
 
 Conceptually:
 
@@ -51,7 +51,7 @@ We'll look at a couple of examples with increasing complexity to understand what
 
 #### Visibility rules
 
-Our examples will be drawings of commitgraphs.
+Our examples will be drawings of commit graphs.
 
 We will use `I1`..`In` to denote indexer+root combinations or "index keys". For example `I1` could correspond to indices created by `"scip-go"` in the `"backend/"` root directory.
 
@@ -101,6 +101,6 @@ TODO: Traversal
 
 ### Updating database tables
 
-TODO: Streaming data out of the computed annotated commitgraph
+TODO: Streaming data out of the computed annotated commit graph
 
 TODO: Temporary tables and diffing
