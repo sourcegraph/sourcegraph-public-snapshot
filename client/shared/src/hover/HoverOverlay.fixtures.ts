@@ -12,7 +12,6 @@ import type { HoverOverlayProps } from './HoverOverlay'
 const history = createMemoryHistory()
 const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve() }
 
-
 export const commonProps = (): HoverOverlayProps & SettingsCascadeProps => ({
     location: history.location,
     telemetryService: NOOP_TELEMETRY_SERVICE,
