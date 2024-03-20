@@ -3,6 +3,7 @@
 Problem: Given a repository id and a commit hash, find me the set of index uploads most relevant to that commit.
 
 There are various reasons for why a commit might not have associated indexes uploaded
+
 - It is a monorepo moving at high commit velocity relative to indexing speed
 - It's not covered by any indexing policy. For example, some customers only index commits on the `main` branch, or on release tags.
 - The upload is in a queued, processing, or errored/failed state.
@@ -17,6 +18,7 @@ To solve this problem we build an [annotated copy of the git commit graph](#what
 - TODO: When information is requested for an unknown commit in a repository we ask git server for a fragment of the commit graph that includes the commit and "graft" it onto our existing graph
 
 ## Updating the commit graph
+
 1. Load data
 2. Compute new commit graph
 3. Diff old vs new and do incremental updates
@@ -24,6 +26,7 @@ To solve this problem we build an [annotated copy of the git commit graph](#what
 ### Loading data
 
 For the marked as dirty repository:
+
 - Get full commit graph (non-annotated) from git server. All commits and their relationships
 - Get metadata for all uploaded indexes (indexer name, commit, root directory)
 
@@ -82,20 +85,22 @@ There are no uploads for `C`, but because there are uploads at `B` and `C` is it
 In this example `C` now has an upload for `I1`, which means it sees the upload at depth 0, rather than the one from `B` at depth 1.
 
 `E` sees the upload for `I2` at `D` at a distance of 1, rather than `B` because the upload at `B` has a distance of 2.
-The notion of shadowing can be a bit unintuitive here, as `D` does *not* need to be on the path from `B` to `E` in order to shadow `B`.
+The notion of shadowing can be a bit unintuitive here, as `D` does _not_ need to be on the path from `B` to `E` in order to shadow `B`.
 
 _Implementation note: If there are two uploads at the same depth we pick the smaller upload_id. This choice is arbitrary but deterministic._
 
 ### Algorithm for computing the visibility graph
 
 TODO: Input data
-  - Topo-sorted list of commits and their relationships
-  - Full list of uploaded indexes
+
+- Topo-sorted list of commits and their relationships
+- Full list of uploaded indexes
 
 TODO: "Relevant" commits
-  - Commits with an upload
-  - "Merge" commits
-  - All parents of "merge" commits
+
+- Commits with an upload
+- "Merge" commits
+- All parents of "merge" commits
 
 TODO: Traversal
 
