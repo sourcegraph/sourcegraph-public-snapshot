@@ -897,9 +897,12 @@ func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUs
 	if err := r.db.Users().SetChatCompletionsQuota(ctx, user.ID, quota); err != nil {
 		return nil, err
 	}
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
-		// Log an event when a user's Completions quota is updated
+	// Log that the user's completions quota was updated.
+	r.logger.Info("setting user completions quota",
+		log.Int("userID", int(user.ID)),
+		log.Int32p("quota", args.Quota))
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameUserCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", args); err != nil {
 			r.logger.Error("Error logging security event", log.Error(err))
 		}
