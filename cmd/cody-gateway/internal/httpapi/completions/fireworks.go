@@ -23,9 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-const fireworksAPIURL = "https://api.fireworks.ai/inference/v1/completions"
-const fireworksChatAPIURL = "https://api.fireworks.ai/inference/v1/chat/completions"
-
 func NewFireworksHandler(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
@@ -42,13 +39,6 @@ func NewFireworksHandler(
 		rateLimitNotifier,
 		httpClient,
 		string(conftypes.CompletionsProviderNameFireworks),
-		func(feature codygateway.Feature) string {
-			if feature == codygateway.FeatureChatCompletions {
-				return fireworksChatAPIURL
-			} else {
-				return fireworksAPIURL
-			}
-		},
 		config.AllowedModels,
 		&FireworksHandlerMethods{
 			baseLogger:  baseLogger,
@@ -119,6 +109,14 @@ type FireworksHandlerMethods struct {
 	baseLogger  log.Logger
 	eventLogger events.Logger
 	config      config.FireworksConfig
+}
+
+func (f *FireworksHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) string {
+	if feature == codygateway.FeatureChatCompletions {
+		return "https://api.fireworks.ai/inference/v1/chat/completions"
+	} else {
+		return "https://api.fireworks.ai/inference/v1/completions"
+	}
 }
 
 func (f *FireworksHandlerMethods) validateRequest(_ context.Context, _ log.Logger, _ codygateway.Feature, _ fireworksRequest) (int, *flaggingResult, error) {

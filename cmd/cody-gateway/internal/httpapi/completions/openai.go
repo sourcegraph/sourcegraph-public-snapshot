@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -20,8 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
-
-const openAIURL = "https://api.openai.com/v1/chat/completions"
 
 func NewOpenAIHandler(
 	baseLogger log.Logger,
@@ -39,7 +38,6 @@ func NewOpenAIHandler(
 		rateLimitNotifier,
 		httpClient,
 		string(conftypes.CompletionsProviderNameOpenAI),
-		func(_ codygateway.Feature) string { return openAIURL },
 		config.AllowedModels,
 		&OpenAIHandlerMethods{config: config},
 
@@ -118,7 +116,11 @@ type OpenAIHandlerMethods struct {
 	config config.OpenAIConfig
 }
 
-func (_ *OpenAIHandlerMethods) validateRequest(_ context.Context, _ log.Logger, feature codygateway.Feature, _ openaiRequest) (int, *flaggingResult, error) {
+func (*OpenAIHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) string {
+	return "https://api.openai.com/v1/chat/completions"
+}
+
+func (*OpenAIHandlerMethods) validateRequest(_ context.Context, _ log.Logger, feature codygateway.Feature, _ openaiRequest) (int, *flaggingResult, error) {
 	if feature == codygateway.FeatureCodeCompletions {
 		return http.StatusNotImplemented, nil,
 			errors.Newf("feature %q is currently not supported for OpenAI",
@@ -126,7 +128,8 @@ func (_ *OpenAIHandlerMethods) validateRequest(_ context.Context, _ log.Logger, 
 	}
 	return 0, nil, nil
 }
-func (_ *OpenAIHandlerMethods) transformBody(body *openaiRequest, identifier string) {
+
+func (*OpenAIHandlerMethods) transformBody(body *openaiRequest, identifier string) {
 	// We don't want to let users generate multiple responses, as this would
 	// mess with rate limit counting.
 	if body.N > 1 {
@@ -135,7 +138,8 @@ func (_ *OpenAIHandlerMethods) transformBody(body *openaiRequest, identifier str
 	// We forward the actor ID to support tracking.
 	body.User = identifier
 }
-func (_ *OpenAIHandlerMethods) getRequestMetadata(body openaiRequest) (model string, additionalMetadata map[string]any) {
+
+func (*OpenAIHandlerMethods) getRequestMetadata(body openaiRequest) (model string, additionalMetadata map[string]any) {
 	return body.Model, map[string]any{"stream": body.Stream}
 }
 
@@ -147,7 +151,7 @@ func (o *OpenAIHandlerMethods) transformRequest(r *http.Request) {
 	}
 }
 
-func (_ *OpenAIHandlerMethods) parseResponseAndUsage(logger log.Logger, body openaiRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+func (*OpenAIHandlerMethods) parseResponseAndUsage(logger log.Logger, body openaiRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	for _, m := range body.Messages {
 		promptUsage.characters += len(m.Content)

@@ -22,8 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const anthropicAPIURL = "https://api.anthropic.com/v1/complete"
-
 const (
 	logPromptPrefixLength = 250
 )
@@ -57,7 +55,6 @@ func NewAnthropicHandler(
 		rateLimitNotifier,
 		httpClient,
 		string(conftypes.CompletionsProviderNameAnthropic),
-		func(_ codygateway.Feature) string { return anthropicAPIURL },
 		config.AllowedModels,
 		&AnthropicHandlerMethods{config: config, anthropicTokenizer: anthropicTokenizer, promptRecorder: promptRecorder},
 
@@ -133,6 +130,10 @@ type AnthropicHandlerMethods struct {
 	anthropicTokenizer *tokenizer.Tokenizer
 	promptRecorder     PromptRecorder
 	config             config.AnthropicConfig
+}
+
+func (a *AnthropicHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) string {
+	return "https://api.anthropic.com/v1/complete"
 }
 
 func (a *AnthropicHandlerMethods) validateRequest(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicRequest) (int, *flaggingResult, error) {
