@@ -6,9 +6,9 @@
     import type { QueryStateStore } from '$lib/search/state'
     import type { SearchPageContext } from '$lib/search/utils'
     import { isLightTheme } from '$lib/stores'
-    import Hotkey from '$lib/Hotkey.svelte'
 
     import SearchHomeNotifications from './SearchHomeNotifications.svelte'
+    import ReactiveHotkey from '$lib/ReactiveHotkey.svelte';
 
     export let queryState: QueryStateStore
 
@@ -21,7 +21,8 @@
 
 <section>
     <div class="content">
-        <Hotkey key="Alt+T" run={() => alert('test')} />
+<!--        note: the override is not so reactive that it will auto-update this component when I only change the local storage value. i still need to refresh.-->
+        <ReactiveHotkey keyDefault="ctrl+u, command+u" keyOverride={localStorage.getItem("hotkey-override") ?? ""} run={() => alert('test')} />
         <img class="logo" src={$isLightTheme ? logoLight : logoDark} alt="Sourcegraph Logo" />
         <div class="search">
             <SearchInput {queryState} autoFocus />

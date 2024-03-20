@@ -4,19 +4,22 @@
 
     export let run: () => void;
     export let key: string;
-    export let preventDefault: boolean = true;
+    export let preventDefaultEffect: boolean = true;
 
-    function getEvaluatedKey() {
-        // Here we can look up custom mappings
-        return key;
-    }
-
-    hotkeys(getEvaluatedKey(), function(event, _handler){
-        if (preventDefault) {
+    hotkeys(key, function(event, _handler){
+        if (preventDefaultEffect) {
             event.preventDefault();
+        }
+
+        // we can check for modifiers and ignore hotkeys to avoid duplicate bindings
+        if (hotkeys.command) {
+            console.log('command is pressed!');
+            return;
         }
         run();
     });
+
+    console.log('registered key', {key})
 
     onDestroy(() => {
         hotkeys.unbind(key);
