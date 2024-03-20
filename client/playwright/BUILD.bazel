@@ -15,8 +15,6 @@ ts_config(
     visibility = ["//client:__subpackages__"],
     deps = [
         "//:tsconfig",
-        # ERROR: /.../client/playwright/BUILD.bazel:12:10: in ts_config rule //client/playwright:tsconfig: cycle in dependency graph
-        # "//client/playwright:tsconfig",
     ],
 )
 
@@ -25,9 +23,6 @@ playwright_bin.playwright_test(
     args = [
         "install",
     ],
-    # env = {
-    #     "PLAYWRIGHT_BROWSERS_PATH": "0",
-    # },
     local = True,
     tags = [
         "no-sandbox",
@@ -35,35 +30,15 @@ playwright_bin.playwright_test(
     ],
 )
 
-# filegroup(
-#     name = "test_files",
-#     srcs = glob([
-#         "src/playwright/*.spec.ts",
-#     ]),
-# )
-
-# ts_project(
-#     name = "p_project",
-#     srcs = glob(["src/playwright/*.spec.ts"]),
-#     deps = [":node_modules/@playwright/test"],
-# )
-
 playwright_test_bin.playwright_test(
     name = "e2e_test",
     args = ["test"],
     data = [
         "playwright.config.ts",
-        # "//:node_modules/@playwright/browser-chromium",
-        # "@npm//client/playwright:@playwright/test",
-        # "//:node_modules/playwright",
-        "//client/playwright:node_modules/@playwright/test",
         ":playwright",
-        # ":test_files",
         ":playwright_install",
+        "//client/playwright:node_modules/@playwright/test",
     ],
-    # env = {
-    #     "PLAYWRIGHT_BROWSERS_PATH": "0",
-    # },
     local = True,
     tags = ["requires-network"],
 )
