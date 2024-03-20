@@ -6,5 +6,8 @@
     "rootDir": ".",
     "outDir": "./out",
   },
-  "include": ["src"],
+  "include": [
+    "src",
+    "playwright.config.ts"
+  ],
 }

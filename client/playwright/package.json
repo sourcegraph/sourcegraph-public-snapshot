@@ -8,11 +8,8 @@
     "playwright:test": "pnpm exec playwright test"
   },
   "devDependencies": {
-    "@playwright/browser-chromium": "^1.42.1",
-    "@playwright/browser-firefox": "^1.42.1",
-    "@playwright/browser-webkit": "^1.42.1",
     "@playwright/test": "1.42.0",
-    "playwright": "^1.42.1",
+    "@types/node": "^20.11.19",
     "playwright-core": "^1.42.1"
   },
   "dependencies": {

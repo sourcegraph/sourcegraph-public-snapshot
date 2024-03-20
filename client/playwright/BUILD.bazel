@@ -1,7 +1,7 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@npm//client/playwright:@playwright/test/package_json.bzl", playwright_test_bin = "bin")
-load("@npm//client/playwright:playwright/package_json.bzl", playwright_bin = "bin")
+load("@npm//client/playwright:playwright-core/package_json.bzl", playwright_bin = "bin")
 load("//dev:defs.bzl", "ts_project")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
@@ -18,7 +18,7 @@ ts_config(
     ],
 )
 
-playwright_bin.playwright_test(
+playwright_bin.playwright_core_test(
     name = "playwright_install",
     args = [
         "install",
@@ -32,14 +32,19 @@ playwright_bin.playwright_test(
 
 playwright_test_bin.playwright_test(
     name = "e2e_test",
+    # outs = ["test-results"],
     args = ["test"],
     data = [
-        "playwright.config.ts",
+        # "playwright.config.ts",
         ":playwright",
         ":playwright_install",
         "//client/playwright:node_modules/@playwright/test",
     ],
+    env = {
+        "SOURCEGRAPH_BASE_URL": "http://sourcegraph.test:3443",
+    },
     local = True,
+    log_level = "debug",
     tags = [
         "no-sandbox",
         "requires-network",
@@ -48,9 +53,12 @@ playwright_test_bin.playwright_test(
 
 ts_project(
     name = "playwright",
-    srcs = glob([
+    srcs = ["playwright.config.ts"] + glob([
         "src/playwright/*.spec.ts",
     ]),
     tsconfig = ":tsconfig",
-    deps = [":node_modules/@playwright/test"],
+    deps = [
+        ":node_modules/@playwright/test",
+        ":node_modules/@types/node",
+    ],
 )
