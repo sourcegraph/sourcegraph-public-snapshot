@@ -49,7 +49,6 @@ func NewFireworksHandler(
 		// do any retries
 		30, // seconds
 		autoFlushStreamingResponses,
-		nil,
 	)
 }
 

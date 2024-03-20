@@ -58,7 +58,6 @@ func NewAnthropicMessagesHandler(
 		// user.
 		2, // seconds
 		autoFlushStreamingResponses,
-		nil,
 	), nil
 }
 
