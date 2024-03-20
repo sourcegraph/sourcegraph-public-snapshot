@@ -36,8 +36,9 @@ tasks:
       rules:
         - deliverable: 'attr(tags, "docs-deliverable", //doc/...)'
           condition:
-            # only_on_change: true
-            branches: ['jh/bzl/gh']
+            only_on_change: true
+            branches:
+              - '^main$'
         - deliverable: 'attr(tags, "msp-deliverable", //cmd/...)'
           condition:
             branches:
