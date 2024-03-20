@@ -13,7 +13,6 @@ import { useOpenCodeGraphExtension } from '@opencodegraph/codemirror-extension'
 import { isEqual } from 'lodash'
 import { createRoot } from 'react-dom/client'
 import { createPath, useLocation, useNavigate, type Location, type NavigateFunction } from 'react-router-dom'
-import { requestGraphQLAdapter } from 'src/platform/context'
 
 import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
 import {
@@ -45,6 +44,7 @@ import { isCodyEnabled } from '../../cody/isCodyEnabled'
 import { useCodySidebar } from '../../cody/sidebar/Provider'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type { ExternalLinkFields, Scalars } from '../../graphql-operations'
+import { requestGraphQLAdapter } from '../../platform/context'
 import type { BlameHunkData } from '../blame/useBlameHunks'
 import type { HoverThresholdProps } from '../RepoContainer'
 
