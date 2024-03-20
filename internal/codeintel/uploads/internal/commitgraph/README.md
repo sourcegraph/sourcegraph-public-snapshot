@@ -2,10 +2,11 @@
 
 Problem: Given a commit hash, find me the set of index uploads most relevant to that commit.
 
-There are various reasons for why a commit might not have associated indices uploaded
-- it's not covered by any indexing policy (eg. not on the `main` branch)
-- the index is still being built, or the commit is in the queue to be indexed
-- indices have been deleted, either by an explicit user action or retention policy
+There are various reasons for why a commit might not have associated indexes uploaded
+- It is a monorepo moving at high commit velocity relative to indexing speed
+- It's not covered by any indexing policy. For example, some customers only index commits on the `main` branch, or on release tags.
+- The upload is in a queued, processing, or errored/failed state.
+- The index was deleted, by a retention policy or an explicit user action.
 
 To solve this problem we build an annotated copy of the git commit graph in Postgres, so that we can return so called "visibleUploads" quickly.
 
