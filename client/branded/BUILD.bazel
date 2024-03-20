@@ -76,7 +76,7 @@ ts_project(
         "src/search-ui/components/SyntaxHighlightedSearchQuery.tsx",
         "src/search-ui/components/codeLinkNavigation.ts",
         "src/search-ui/components/index.ts",
-        "src/search-ui/components/legacy-result-container/ResultContainer.tsx",
+        "src/search-ui/components/old-result-container/OldResultContainer.tsx",
         "src/search-ui/components/useQueryExamples.tsx",
         "src/search-ui/documentation/ModalVideo.tsx",
         "src/search-ui/experimental.ts",
