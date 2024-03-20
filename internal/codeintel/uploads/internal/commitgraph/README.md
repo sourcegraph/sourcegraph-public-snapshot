@@ -1,6 +1,6 @@
 # commitgraph
 
-Problem: Given a commit hash, find me the set of index uploads most relevant to that commit.
+Problem: Given a repository id and a commit hash, find me the set of index uploads most relevant to that commit.
 
 There are various reasons for why a commit might not have associated indexes uploaded
 - It is a monorepo moving at high commit velocity relative to indexing speed
