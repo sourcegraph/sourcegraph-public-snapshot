@@ -28,64 +28,41 @@ go_binary(
     visibility = ["//visibility:public"],
 )
 
-go_cross_binary(
-    name = "upgradetest-darwin-arm64",
-    platform = "@io_bazel_rules_go//go/toolchain:darwin_arm64",
-    target = ":go_upgradetest",
-    visibility = ["//testing:__pkg__"],
-)
-
-# Run with bazel test //testing/tools/upgradetest:sh_upgradetest --config darwin-docker
+# Run with bazel test //testing/tools/upgradetest:sh_upgradetest
 sh_test(
     name = "sh_upgradetest",
     timeout = "eternal",
     srcs = ["test.sh"],
-    args = select({
-        "//:darwin_docker_e2e_go": [
-            "$(location :upgradetest-darwin-arm64)",
-            "$(location //cmd/migrator:image_tarball)",
-            "$(location //cmd/frontend:image_tarball)",
-            "$(locations //internal/database:generate_schemas)",
-        ],
-        "//conditions:default": [
-            "$(location :go_upgradetest)",
-            "$(location //cmd/migrator:image_tarball)",
-            "$(location //cmd/frontend:image_tarball)",
-            "$(locations //internal/database:generate_schemas)",
-        ],
-    }),
-    data = select({
-        "//:darwin_docker_e2e_go": [
-            ":upgradetest-darwin-arm64",
-            "//cmd/frontend:image_tarball",
-            "//cmd/migrator:image_tarball",
-            "//internal/database:generate_schemas",
-        ],
-        "//conditions:default": [
-            ":go_upgradetest",
-            "//cmd/frontend:image_tarball",
-            "//cmd/migrator:image_tarball",
-            "//internal/database:generate_schemas",
-        ],
-    }),
+    args = [
+        "$(location :go_upgradetest)",
+        "$(location //cmd/migrator:image_tarball)",
+        "$(location //cmd/frontend:image_tarball)",
+        "$(locations //internal/database:generate_schemas)",
+    ],
+    data = [
+        ":go_upgradetest",
+        "//cmd/frontend:image_tarball",
+        "//cmd/migrator:image_tarball",
+        "//internal/database:generate_schemas",
+    ],
     tags = [
         "no-sandbox",
         "requires-network",
     ],
 )
 
-# bazel run //testing/tools/upgradetest:sh_upgradetest_run --config=darwin-docker
+# bazel run //testing/tools/upgradetest:sh_upgradetest_run
 sh_binary(
     name = "sh_upgradetest_run",
     srcs = ["test.sh"],
     args = [
-        "$(location :upgradetest-darwin-arm64)",
+        "$(location :go_upgradetest)",
         "$(location //cmd/migrator:image_tarball)",
         "$(location //cmd/frontend:image_tarball)",
         "$(locations //internal/database:generate_schemas)",
     ],
     data = [
-        ":upgradetest-darwin-arm64",
+        ":go_upgradetest",
         "//cmd/frontend:image_tarball",
         "//cmd/migrator:image_tarball",
         "//internal/database:generate_schemas",
