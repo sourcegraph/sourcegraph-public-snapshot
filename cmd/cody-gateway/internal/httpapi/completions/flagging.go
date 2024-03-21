@@ -24,7 +24,7 @@ type flaggingConfig struct {
 	MaxTokensToSampleFlaggingLimit int
 	ResponseTokenBlockingLimit     int
 
-	// If false, the flaggingResult returned from isFlaggedRequest will never have shouldBlock set to true.
+	// If false, flaggingResult.shouldBlock will always be false when returned by isFlaggedRequest.
 	RequestBlockingEnabled bool
 }
 
