@@ -46,14 +46,14 @@ func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 		}
 
 		p.Go(func(ctx context.Context) error {
-			matches, repoLimited, err := searchInRepo(ctx, clients.Gitserver, repoRevs, s.Request, s.Limit)
-			limitHit := len(matches) > s.Limit || repoLimited
-			status, err := search.HandleRepoSearchResult(repoRevs.Repo.ID, repoRevs.Revs, limitHit, false, err)
+			matches, limitHit, err := searchInRepo(ctx, clients.Gitserver, repoRevs, s.Request, s.Limit)
+			isLimitHit := len(matches) > s.Limit || limitHit
+			status, err := search.HandleRepoSearchResult(repoRevs.Repo.ID, repoRevs.Revs, isLimitHit, false, err)
 			stream.Send(streaming.SearchEvent{
 				Results: matches,
 				Stats: streaming.Stats{
 					Status:     status,
-					IsLimitHit: limitHit,
+					IsLimitHit: isLimitHit,
 				},
 			})
 			if err != nil {
@@ -87,7 +87,7 @@ func (s *SymbolSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue)
 func (s *SymbolSearchJob) Children() []job.Describer       { return nil }
 func (s *SymbolSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
-func searchInRepo(ctx context.Context, gitserverClient gitserver.Client, repoRevs *search.RepositoryRevisions, request *SymbolSearchRequest, limit int) (res []result.Match, repoLimited bool, err error) {
+func searchInRepo(ctx context.Context, gitserverClient gitserver.Client, repoRevs *search.RepositoryRevisions, request *SymbolSearchRequest, limit int) (res []result.Match, limitHit bool, err error) {
 	inputRev := repoRevs.Revs[0]
 	tr, ctx := trace.New(ctx, "symbols.searchInRepo",
 		repoRevs.Repo.Name.Attr(),
@@ -104,7 +104,7 @@ func searchInRepo(ctx context.Context, gitserverClient gitserver.Client, repoRev
 	}
 	tr.SetAttributes(commitID.Attr())
 
-	symbols, repoLimited, err := symbols.DefaultClient.Search(ctx, search.SymbolsParameters{
+	symbols, limitHit, err := symbols.DefaultClient.Search(ctx, search.SymbolsParameters{
 		Repo:            repoRevs.Repo.Name,
 		CommitID:        commitID,
 		Query:           request.RegexpPattern,
@@ -127,7 +127,7 @@ func searchInRepo(ctx context.Context, gitserverClient gitserver.Client, repoRev
 
 	// All symbols are from the same repo, so we can just partition them by path
 	// to build file matches
-	return symbolsToMatches(symbols, repoRevs.Repo, commitID, inputRev), repoLimited, err
+	return symbolsToMatches(symbols, repoRevs.Repo, commitID, inputRev), limitHit, err
 }
 
 func symbolsToMatches(symbols []result.Symbol, repo types.MinimalRepo, commitID api.CommitID, inputRev string) result.Matches {
