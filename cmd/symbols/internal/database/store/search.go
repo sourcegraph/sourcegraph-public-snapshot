@@ -93,7 +93,7 @@ func (s *store) Search(ctx context.Context, args search.SymbolsParameters) ([]re
 	var err error
 	if outOfBounds && len(res) == limit {
 		p := message.NewPrinter(language.English)
-		err = &symbols.OutOfBoundsError{Description: p.Sprintf("unindexed symbol search out of bounds. Expected args.First to be within [0, %d], got %d", maxSymbolLimit, args.First)}
+		err = &symbols.LimitHitError{Description: p.Sprintf("unindexed symbol search out of bounds. Expected args.First to be within [0, %d], got %d", maxSymbolLimit, args.First)}
 	}
 
 	return res, err

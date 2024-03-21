@@ -59,11 +59,11 @@ type Client struct {
 	SubRepoPermsChecker func() authz.SubRepoPermissionChecker
 }
 
-type OutOfBoundsError struct {
+type LimitHitError struct {
 	Description string
 }
 
-func (e *OutOfBoundsError) Error() string { return e.Description }
+func (e *LimitHitError) Error() string { return e.Description }
 
 // Search performs a symbol search on the symbols service.
 func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (symbols result.Symbols, repoLimited bool, err error) {
@@ -81,7 +81,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 	}
 
 	symbols = response.Symbols
-	repoLimited = response.RepoLimited
+	repoLimited = response.LimitHit
 
 	// 🚨 SECURITY: We have valid results, so we need to apply sub-repo permissions
 	// filtering.

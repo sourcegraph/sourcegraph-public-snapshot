@@ -145,9 +145,9 @@ type SymbolsResponse struct {
 	Symbols result.Symbols `json:"symbols,omitempty"`
 	Err     string         `json:"error,omitempty"`
 
-	// RepoLimited is true if the search results are incomplete due to limits
+	// LimitHit is true if the search results are incomplete due to limits
 	// imposed by the service.
-	RepoLimited bool `json:"repoLimited"`
+	LimitHit bool `json:"limitHit,omitempty"`
 }
 
 type IndexedRequestType string

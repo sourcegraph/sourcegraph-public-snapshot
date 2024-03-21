@@ -82,7 +82,7 @@ func (s *ZoektSymbolsClient) Compute(ctx context.Context, repoName types.Minimal
 		searchArgs.Query = *query
 	}
 
-	// We ignore RepoLimited, which is consistent with how we treat stats coming
+	// We ignore LimitHit, which is consistent with how we treat stats coming
 	// from Zoekt in indexedSymbolsBranch.
 	symbols, _, err := s.symbols.Search(ctx, searchArgs)
 	if err != nil {

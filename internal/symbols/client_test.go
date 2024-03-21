@@ -40,7 +40,7 @@ func TestSearchWithFiltering(t *testing.T) {
 				Path: "file2",
 			},
 		},
-		RepoLimited: true,
+		LimitHit: true,
 	}
 
 	mockServer := &mockSymbolsServer{

@@ -36,9 +36,9 @@ func (s *grpcService) Search(ctx context.Context, r *proto.SearchRequest) (*prot
 			logger.Error(err),
 		)
 
-		var oobErr *symbols.OutOfBoundsError
-		if errors.As(err, &oobErr) {
-			response.FromInternal(&search.SymbolsResponse{Symbols: res, RepoLimited: true})
+		var limitErr *symbols.LimitHitError
+		if errors.As(err, &limitErr) {
+			response.FromInternal(&search.SymbolsResponse{Symbols: res, LimitHit: true})
 			return &response, nil
 		}
 
