@@ -110,11 +110,19 @@ type FlaggingConfig struct {
 	// A possible escape hatch if there is a sudden spike in false-positives.
 	RequestBlockingEnabled bool
 
-	MaxTokensToSample              int
-	PromptTokenFlaggingLimit       int
-	PromptTokenBlockingLimit       int
+	PromptTokenFlaggingLimit int
+	PromptTokenBlockingLimit int
+
+	// MaxTokensToSample is the hard-cap, used to block requests that are too long.
+	MaxTokensToSample int
+	// MaxTokensToSampleFlaggingLimit is a soft-cap, used to flag requests. (But not necessarily block.)
+	// So MaxTokensToSampleFlaggingLimit should be <= MaxTokensToSample.
 	MaxTokensToSampleFlaggingLimit int
-	ResponseTokenBlockingLimit     int
+
+	// ResponseTokenBlockingLimit is the maximum number of tokens we allow before outright blocking
+	// a response. e.g. the client sends a request desiring a response with 100 max tokens, we will
+	// block it IFF the ResponseTokenBlockingLimit is less than 100.
+	ResponseTokenBlockingLimit int
 }
 
 func (c *Config) Load() {
@@ -278,13 +286,14 @@ func (c *Config) loadFlaggingConfig(cfg *FlaggingConfig, envVarPrefix string) {
 	}
 
 	cfg.MaxTokensToSample = c.GetInt(envVarPrefix+"MAX_TOKENS_TO_SAMPLE", "10000", "Maximum permitted value of maxTokensToSample")
+	cfg.MaxTokensToSampleFlaggingLimit = c.GetInt(envVarPrefix+"MAX_TOKENS_TO_SAMPLE_FLAGGING_LIMIT", "1000", "Maximum value of max_tokens_to_sample to allow without flagging.")
+
 	cfg.AllowedPromptPatterns = maybeLoadLowercaseSlice("ALLOWED_PROMPT_PATTERNS", "Allowed prompt patterns")
 	cfg.BlockedPromptPatterns = maybeLoadLowercaseSlice(envVarPrefix+"BLOCKED_PROMPT_PATTERNS", "Patterns to block in prompt.")
 	cfg.RequestBlockingEnabled = c.GetBool(envVarPrefix+"REQUEST_BLOCKING_ENABLED", "false", "Whether we should block requests that match our blocking criteria.")
 
 	cfg.PromptTokenBlockingLimit = c.GetInt(envVarPrefix+"PROMPT_TOKEN_BLOCKING_LIMIT", "20000", "Maximum number of prompt tokens to allow without blocking.")
 	cfg.PromptTokenFlaggingLimit = c.GetInt(envVarPrefix+"PROMPT_TOKEN_FLAGGING_LIMIT", "18000", "Maximum number of prompt tokens to allow without flagging.")
-	cfg.MaxTokensToSampleFlaggingLimit = c.GetInt(envVarPrefix+"MAX_TOKENS_TO_SAMPLE_FLAGGING_LIMIT", "1000", "Maximum value of max_tokens_to_sample to allow without flagging.")
 	cfg.ResponseTokenBlockingLimit = c.GetInt(envVarPrefix+"RESPONSE_TOKEN_BLOCKING_LIMIT", "1000", "Maximum number of completion tokens to allow without blocking.")
 }
 

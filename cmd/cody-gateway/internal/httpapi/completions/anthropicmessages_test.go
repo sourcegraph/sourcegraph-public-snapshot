@@ -22,6 +22,7 @@ func TestIsFlaggedAnthropicMessagesRequest(t *testing.T) {
 	cfg := config.FlaggingConfig{
 		PromptTokenFlaggingLimit:       18000,
 		PromptTokenBlockingLimit:       20000,
+		MaxTokensToSample:              0, // Not used within isFlaggedRequest.
 		MaxTokensToSampleFlaggingLimit: 1000,
 		ResponseTokenBlockingLimit:     1000,
 		RequestBlockingEnabled:         true,
@@ -29,6 +30,7 @@ func TestIsFlaggedAnthropicMessagesRequest(t *testing.T) {
 	cfgWithPreamble := config.FlaggingConfig{
 		PromptTokenFlaggingLimit:       18000,
 		PromptTokenBlockingLimit:       20000,
+		MaxTokensToSample:              0, // Not used within isFlaggedRequest.
 		MaxTokensToSampleFlaggingLimit: 1000,
 		ResponseTokenBlockingLimit:     1000,
 		RequestBlockingEnabled:         true,
