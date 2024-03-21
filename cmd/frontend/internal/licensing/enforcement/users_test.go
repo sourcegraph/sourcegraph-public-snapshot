@@ -142,11 +142,7 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 		{
 			name: "dotcom mode should always do nothing",
 			setup: func(t *testing.T) {
-				orig := dotcom.SourcegraphDotComMode()
-				dotcom.MockSourcegraphDotComMode(true)
-				t.Cleanup(func() {
-					dotcom.MockSourcegraphDotComMode(orig)
-				})
+				dotcom.MockSourcegraphDotComMode(t, true)
 			},
 			setSiteAdmin: false,
 		},

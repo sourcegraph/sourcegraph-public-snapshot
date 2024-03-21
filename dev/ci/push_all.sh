@@ -2,6 +2,9 @@
 
 set -eu
 
+echo "~~~ :aspect: :stethoscope: Agent Health check"
+/etc/aspect/workflows/bin/agent_health_check
+
 aspectRC="/tmp/aspect-generated.bazelrc"
 rosetta bazelrc > "$aspectRC"
 bazelrc=(--bazelrc="$aspectRC" --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
@@ -100,37 +103,35 @@ CANDIDATE_ONLY=${CANDIDATE_ONLY:-""}
 
 push_prod=false
 
-if [[ "$BUILDKITE_BRANCH" =~ ^main$ ]] || [[ "$BUILDKITE_BRANCH" =~ ^docker-images-candidates-notest/.* ]]; then
-  dev_tags+=("insiders")
-  prod_tags+=("insiders")
-  push_prod=true
-fi
-
-# We only push on internal registries on a main-dry-run.
-if [[ "$BUILDKITE_BRANCH" =~ ^main-dry-run/.*  ]]; then
-  dev_tags+=("insiders")
-  prod_tags+=("insiders")
-  push_prod=false
-fi
-
 # If we're doing an internal release, we need to push to the prod registry too.
 # TODO(rfc795) this should be more granular than this, we're abit abusing the idea of the prod registry here.
 if [ "${RELEASE_INTERNAL:-}" == "true" ]; then
   push_prod=true
-fi
-
-# All release branch builds must be published to prod tags to support
-# format introduced by https://github.com/sourcegraph/sourcegraph/pull/48050
-# by release branch deployments.
-if [[ "$BUILDKITE_BRANCH" =~ ^[0-9]+\.[0-9]+$ ]]; then
+elif [[ "$BUILDKITE_BRANCH" =~ ^main$ ]] || [[ "$BUILDKITE_BRANCH" =~ ^docker-images-candidates-notest/.* ]]; then
+  dev_tags+=("insiders")
+  prod_tags+=("insiders")
   push_prod=true
-fi
+elif [[ "$BUILDKITE_BRANCH" =~ ^main-dry-run/.*  ]]; then
+  # We only push on internal registries on a main-dry-run.
+  dev_tags+=("insiders")
+  prod_tags+=("insiders")
+  push_prod=false
+elif [[ "$BUILDKITE_BRANCH" =~ ^cloud-ephemeral/.* ]]; then
+  # Cloud Ephemeral images need a proper semver version
+  dev_tags+=("insiders" "${PUSH_VERSION}")
+  prod_tags+=("insiders")
+  push_prod=false
 
-# ok: v5.1.0
-# ok: v5.1.0-rc.5
-# no: v5.1.0-beta.1
-# no: v5.1.0-rc5
-if [[ "$BUILDKITE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\-rc\.[0-9]+)?$ ]]; then
+elif [[ "$BUILDKITE_BRANCH" =~ ^[0-9]+\.[0-9]+$ ]]; then
+  # All release branch builds must be published to prod tags to support
+  # format introduced by https://github.com/sourcegraph/sourcegraph/pull/48050
+  # by release branch deployments.
+  push_prod=true
+elif [[ "$BUILDKITE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\-rc\.[0-9]+)?$ ]]; then
+  # ok: v5.1.0
+  # ok: v5.1.0-rc.5
+  # no: v5.1.0-beta.1
+  # no: v5.1.0-rc5
   dev_tags+=("${BUILDKITE_TAG:1}")
   prod_tags+=("${BUILDKITE_TAG:1}")
   push_prod=true

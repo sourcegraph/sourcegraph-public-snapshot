@@ -3,7 +3,7 @@
  * UI.
  */
 
-import { ApolloClient } from '@apollo/client'
+import type { ApolloClient } from '@apollo/client'
 import {
     findNext,
     findPrevious,

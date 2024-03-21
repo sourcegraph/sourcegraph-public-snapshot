@@ -1,6 +1,6 @@
 import { test, describe, expect } from 'vitest'
 
-import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
+import type { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 
 import { RecentSearchesManager } from './recentSearches'
 

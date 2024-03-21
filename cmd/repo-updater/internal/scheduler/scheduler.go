@@ -179,7 +179,7 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 				// if it doesn't exist or update it if it does. The timeout of this request depends
 				// on the value of conf.GitLongCommandTimeout() or if the passed context has a set
 				// deadline shorter than the value of this config.
-				resp, err := s.gitserverClient.RequestRepoUpdate(ctx, repo.Name, 1*time.Second)
+				resp, err := s.gitserverClient.RequestRepoUpdate(ctx, repo.Name)
 				if err != nil {
 					schedError.WithLabelValues("requestRepoUpdate").Inc()
 					subLogger.Error("error requesting repo update", log.Error(err), log.String("uri", string(repo.Name)))

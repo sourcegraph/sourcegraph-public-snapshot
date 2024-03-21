@@ -170,6 +170,16 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			wait,
 			addBrowserExtensionReleaseSteps)
 
+	case runtype.VsceReleaseBranch:
+		// If this is a vs code extension release branch, run the vscode-extension tests and release
+		ops = BazelOpsSet(buildOptions,
+			CoreTestOperationsOptions{
+				IsMainBranch: buildOptions.Branch == "main",
+			},
+			addVsceTests,
+			wait,
+			addVsceReleaseSteps)
+
 	case runtype.BextNightly, runtype.BextManualNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
@@ -180,6 +190,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			recordBrowserExtensionIntegrationTests,
 			wait,
 			addBrowserExtensionE2ESteps)
+
+	case runtype.VsceNightly:
+		ops = BazelOpsSet(buildOptions,
+			CoreTestOperationsOptions{
+				IsMainBranch: buildOptions.Branch == "main",
+			},
+			addVsceTests)
 
 	case runtype.WolfiBaseRebuild:
 		// If this is a Wolfi base image rebuild, rebuild all Wolfi base images
@@ -259,6 +276,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.PromoteRelease:
 		ops = operations.NewSet(
 			releasePromoteImages(c),
+			wait,
+			releaseTestOperation(c),
+			wait,
+			releaseFinalizeOperation(c),
 		)
 	default:
 		// Executor VM image
@@ -266,7 +287,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
 
-		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease) {
+		if c.RunType.Is(
+			runtype.MainDryRun,
+			runtype.MainBranch,
+			runtype.ReleaseBranch,
+			runtype.TaggedRelease,
+			runtype.InternalRelease,
+			runtype.CloudEphemeral,
+		) {
 			imageBuildOps.Append(bazelBuildExecutorVM(c, alwaysRebuild))
 			if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
 				imageBuildOps.Append(bazelBuildExecutorDockerMirror(c))
@@ -279,7 +307,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
-			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
+			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun, runtype.CloudEphemeral),
 			IsMainBranch:              true,
 		}))
 
@@ -295,7 +323,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// End-to-end tests
 		ops.Merge(operations.NewNamedSet("End-to-end tests",
-			executorsE2E(c.candidateImageTag()),
+			executorsE2E(c),
 			// testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
 		))
 
@@ -325,6 +353,17 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Final Bazel images
 		publishOps.Append(bazelPushImagesFinal(c))
 		ops.Merge(publishOps)
+
+		if c.RunType.Is(runtype.InternalRelease) {
+			releaseOps := operations.NewNamedSet("Release")
+			releaseOps.Append(
+				wait,
+				releaseTestOperation(c),
+				wait,
+				releaseFinalizeOperation(c),
+			)
+			ops.Merge(releaseOps)
+		}
 	}
 
 	// Construct pipeline

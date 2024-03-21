@@ -233,6 +233,32 @@ func (r *UserResolver) CodySubscription(ctx context.Context) (*CodySubscriptionR
 	return &CodySubscriptionResolver{subscription: subscription}, nil
 }
 
+func (r *UserResolver) CodyGatewayRateLimitStatus(ctx context.Context) (*[]RateLimitStatus, error) {
+	if !dotcom.SourcegraphDotComMode() {
+		return nil, errors.New("this feature is only available on sourcegraph.com")
+	}
+
+	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
+	// settings, because they may contain secrets or other sensitive data.
+	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
+		return nil, err
+	}
+
+	limits, err := cody.GetGatewayRateLimits(ctx, r.user.ID, r.db)
+	if err != nil {
+		return nil, err
+	}
+
+	rateLimits := make([]RateLimitStatus, 0, len(limits))
+	for _, limit := range limits {
+		rateLimits = append(rateLimits, &codyRateLimit{
+			rl: limit,
+		})
+	}
+
+	return &rateLimits, nil
+}
+
 func (r *UserResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.user.CreatedAt}
 }
@@ -375,18 +401,10 @@ func (r *UserResolver) settingsSubject() api.SettingsSubject {
 }
 
 func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	// 🚨 SECURITY: Only the authenticated user can view their settings on
-	// Sourcegraph.com.
-	if dotcom.SourcegraphDotComMode() {
-		if err := auth.CheckSameUserFromActor(r.actor, r.user.ID); err != nil {
-			return nil, err
-		}
-	} else {
-		// 🚨 SECURITY: Only the user and admins are allowed to access the user's
-		// settings, because they may contain secrets or other sensitive data.
-		if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
-			return nil, err
-		}
+	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
+	// settings, because they may contain secrets or other sensitive data.
+	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
+		return nil, err
 	}
 
 	settings, err := r.db.Settings().GetLatest(ctx, r.settingsSubject())
@@ -440,18 +458,9 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	if err != nil {
 		return nil, err
 	}
-
-	// 🚨 SECURITY: Only the authenticated user can update their properties on
-	// Sourcegraph.com.
-	if dotcom.SourcegraphDotComMode() {
-		if err := auth.CheckSameUser(ctx, userID); err != nil {
-			return nil, err
-		}
-	} else {
-		// 🚨 SECURITY: Only the user and site admins are allowed to update the user.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
-			return nil, err
-		}
+	// 🚨 SECURITY: Only the user and site admins are allowed to update the user.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		return nil, err
 	}
 
 	if args.Username != nil {
@@ -598,14 +607,8 @@ func (r *UserResolver) ViewerCanAdminister() (bool, error) {
 }
 
 func (r *UserResolver) viewerCanAdministerSettings() (bool, error) {
-	// 🚨 SECURITY: Only the authenticated user can administrate settings themselves on
-	// Sourcegraph.com.
-	var err error
-	if dotcom.SourcegraphDotComMode() {
-		err = auth.CheckSameUserFromActor(r.actor, r.user.ID)
-	} else {
-		err = auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID)
-	}
+	err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID)
+
 	if errcode.IsUnauthorized(err) {
 		return false, nil
 	} else if err != nil {

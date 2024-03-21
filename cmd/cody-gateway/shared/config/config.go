@@ -95,7 +95,6 @@ type FireworksConfig struct {
 	AccessToken                            string
 	StarcoderCommunitySingleTenantPercent  int
 	StarcoderEnterpriseSingleTenantPercent int
-	StarcoderQuantizedPercent              int
 }
 
 type OpenAIConfig struct {
@@ -105,7 +104,8 @@ type OpenAIConfig struct {
 }
 
 type SourcegraphConfig struct {
-	TritonURL string
+	TritonURL           string
+	UnlimitedEmbeddings bool
 }
 
 func (c *Config) Load() {
@@ -150,6 +150,7 @@ func (c *Config) Load() {
 			"claude-instant-1.2-cyan",
 			"claude-3-opus-20240229",
 			"claude-3-sonnet-20240229",
+			"claude-3-haiku-20240307",
 		}, ","),
 		"Anthropic models that can be used."))
 	if c.Anthropic.AccessToken != "" && len(c.Anthropic.AllowedModels) == 0 {
@@ -169,7 +170,7 @@ func (c *Config) Load() {
 	c.OpenAI.AccessToken = c.GetOptional("CODY_GATEWAY_OPENAI_ACCESS_TOKEN", "The OpenAI access token to be used.")
 	c.OpenAI.OrgID = c.GetOptional("CODY_GATEWAY_OPENAI_ORG_ID", "The OpenAI organization to count billing towards. Setting this ensures we always use the correct negotiated terms.")
 	c.OpenAI.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_OPENAI_ALLOWED_MODELS",
-		strings.Join([]string{"gpt-4", "gpt-3.5-turbo", "gpt-4-1106-preview"}, ","),
+		strings.Join([]string{"gpt-4", "gpt-3.5-turbo", "gpt-4-1106-preview", "gpt-4-turbo-preview"}, ","),
 		"OpenAI models that can to be used."),
 	)
 	if c.OpenAI.AccessToken != "" && len(c.OpenAI.AllowedModels) == 0 {
@@ -183,6 +184,8 @@ func (c *Config) Load() {
 			// and allows Cody Gateway to decide which specific model to route the request to.
 			"starcoder",
 			// Fireworks multi-tenant models:
+			fireworks.StarcoderTwo15b,
+			fireworks.StarcoderTwo7b,
 			fireworks.Starcoder16b,
 			fireworks.Starcoder7b,
 			fireworks.Starcoder16b8bit,
@@ -204,7 +207,6 @@ func (c *Config) Load() {
 	}
 	c.Fireworks.StarcoderCommunitySingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_COMMUNITY_SINGLE_TENANT_PERCENT", "0", "The percentage of community traffic for Starcoder to be redirected to the single-tenant deployment.")
 	c.Fireworks.StarcoderEnterpriseSingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_ENTERPRISE_SINGLE_TENANT_PERCENT", "100", "The percentage of Enterprise traffic for Starcoder to be redirected to the single-tenant deployment.")
-	c.Fireworks.StarcoderQuantizedPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_QUANTIZED_PERCENT", "100", "The percentage of multi-tenant traffic to be redirected to the quantized model.")
 
 	c.AllowedEmbeddingsModels = splitMaybe(c.Get("CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS", strings.Join([]string{string(embeddings.ModelNameOpenAIAda), string(embeddings.ModelNameSourcegraphTriton)}, ","), "The models allowed for embeddings generation."))
 	if len(c.AllowedEmbeddingsModels) == 0 {
@@ -240,7 +242,9 @@ func (c *Config) Load() {
 
 	c.Attribution.Enabled = c.GetBool("CODY_GATEWAY_ENABLE_ATTRIBUTION_SEARCH", "false", "Whether attribution search endpoint is available.")
 
-	c.Sourcegraph.TritonURL = c.Get("CODY_GATEWAY_SOURCEGRAPH_TRITON_URL", "https://embeddings-triton.sgdev.org/v2/models/ensemble_model/infer", "URL of the Triton server.")
+	c.Sourcegraph.TritonURL = c.Get("CODY_GATEWAY_SOURCEGRAPH_TRITON_URL", "https://embeddings-triton-direct.sgdev.org/v2/models/ensemble_model/infer", "URL of the Triton server.")
+	c.Sourcegraph.UnlimitedEmbeddings = c.GetBool("CODY_GATEWAY_SOURCEGRAPH_UNLIMITED_EMBEDDINGS", "false", "Enable unlimited embeddings.")
+
 }
 
 // splitMaybe splits on commas, but only returns at least one element if the input

@@ -23,7 +23,7 @@ import {
 } from '@sourcegraph/cody-ui/dist/Chat'
 import type { FileLinkProps } from '@sourcegraph/cody-ui/dist/chat/ContextFiles'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'

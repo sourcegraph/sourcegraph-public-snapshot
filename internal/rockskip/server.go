@@ -69,7 +69,7 @@ func NewService(
 		git:                     git,
 		fetcher:                 fetcher,
 		createParser:            createParser,
-		status:                  NewStatus(),
+		status:                  NewStatus(logger),
 		repoUpdates:             make(chan struct{}, 1),
 		maxRepos:                maxRepos,
 		logQueries:              logQueries,

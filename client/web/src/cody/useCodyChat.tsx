@@ -16,7 +16,7 @@ import {
 } from '@sourcegraph/cody-shared/dist/chat/useClient'
 import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../tracking/eventLogger'

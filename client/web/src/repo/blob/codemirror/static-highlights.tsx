@@ -2,9 +2,9 @@
  * This provides CodeMirror extension for highlighting a static set of ranges.
  */
 
-import { ApolloClient } from '@apollo/client'
-import { Extension, EditorState, StateField, Facet } from '@codemirror/state'
-import { Decoration, EditorView, showPanel, Panel, ViewUpdate } from '@codemirror/view'
+import type { ApolloClient } from '@apollo/client'
+import { type Extension, type EditorState, StateField, Facet } from '@codemirror/state'
+import { Decoration, EditorView, showPanel, type Panel, type ViewUpdate } from '@codemirror/view'
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { sortedIndexBy } from 'lodash'

@@ -58,13 +58,6 @@ func bazelStampedCmd(args ...string) string {
 	return strings.Join(cmd, " ")
 }
 
-func aspectBazelRC() (string, string) {
-	path := "/tmp/aspect-generated.bazelrc"
-	cmd := fmt.Sprintf("rosetta bazelrc > %s;", path)
-
-	return cmd, path
-}
-
 // TODO(burmudar): do we remove this?
 func bazelPrechecks() func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
