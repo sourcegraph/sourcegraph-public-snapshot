@@ -1,6 +1,5 @@
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("@npm//:vite/package_json.bzl", vite_bin = "bin")
+load("@npm//client/playwright:@playwright/test/package_json.bzl", playwright_test_bin = "bin")
 
 # gazelle:ignore
 
@@ -28,6 +27,7 @@ SRCS = [
         "**/*.gql",
     ]],
     [
+        "src/**/*.spec.ts",
         "src/lib/graphql-operations.ts",
         "src/lib/graphql-types.ts",
         "src/lib/graphql-type-mocks.ts",
@@ -104,25 +104,27 @@ CONFIGS = [
 
 npm_link_all_packages(name = "node_modules")
 
-vite_bin.vite(
-    name = "web-sveltekit",
-    srcs = SRCS + BUILD_DEPS + CONFIGS,
+playwright_test_bin.playwright_test(
+    name = "e2e_test",
     args = [
-        "build",
-        "--force",
-        "-c vite.config.ts",
+        "test",
+        "--config ./playwright.config.ts",
     ],
     chdir = package_name(),
+    data = glob(["src/**/*.spec.ts"]) + [
+        # ":playwright_install",  # removed this to speed up the feedback loop, will be brought back later
+        "playwright.config.ts",
+        ":node_modules/@playwright/test",
+        ":node_modules/playwright-core",
+        ":node_modules/vite",  # Doesn't matter if this is present or not, the build fails because the vite command is missing
+    ] + SRCS + BUILD_DEPS + CONFIGS,
     env = {
         "BAZEL": "1",
     },
-    out_dirs = ["build"],
-    visibility = ["//client/web/dist:__pkg__"],
-    # silent_on_success = False,
-)
-
-# TODO: remove this once we have some tests.
-build_test(
-    name = "vite_build_test",
-    targets = [":web-sveltekit"],
+    local = True,
+    log_level = "info",
+    tags = [
+        "no-sandbox",
+        "requires-network",
+    ],
 )
