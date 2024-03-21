@@ -227,7 +227,7 @@ Lockfiles can be found at wolfi-images/<image>.lock.json
 							std.Out.WriteLine(
 								output.Linef(
 									"🛠️ ",
-									output.StyleBold, "Lockfiles for the following images need to be updated: "+strings.Join(mismatchedImages, "\n")),
+									output.StyleBold, "Lockfiles for the following images need to be updated:\n - "+strings.Join(mismatchedImages, "\n - ")),
 							)
 							return errors.New("lockfiles are not up to date - run `sg wolfi lock` to update them")
 						} else {

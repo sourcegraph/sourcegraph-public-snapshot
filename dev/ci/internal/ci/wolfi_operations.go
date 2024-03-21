@@ -353,7 +353,7 @@ func WolfiCheckApkoLocks() *operations.Set {
 
 	ops.Append(
 		func(pipeline *bk.Pipeline) {
-			pipeline.AddStep(":locked: Check apko lockfiles",
+			pipeline.AddStep(":padlock: Check apko lockfiles",
 				bk.Cmd("./dev/ci/scripts/wolfi/apko-check-lock.sh"),
 				bk.Agent("queue", "bazel"),
 				bk.Key("apko-check-lock"),

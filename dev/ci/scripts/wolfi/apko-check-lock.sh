@@ -3,6 +3,7 @@
 set -euf -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
+REPO_DIR=$(pwd)
 
 BRANCH="${BUILDKITE_BRANCH:-'default-branch'}"
 MAIN_BRANCH="main"
