@@ -62,7 +62,6 @@ func NewAnthropicHandler(
 		// user.
 		2, // seconds
 		autoFlushStreamingResponses,
-		config.DetectedPromptPatterns,
 	), nil
 }
 
