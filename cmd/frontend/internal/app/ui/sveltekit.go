@@ -66,10 +66,10 @@ func useSvelteKit(r *http.Request) bool {
 func loadSvelteKitTemplate() (*template.Template, error) {
 	fileName := "_sk/index.html"
 	file, err := assets.Provider.Assets().Open(fileName)
-	defer file.Close()
 	if err != nil {
 		return nil, errors.Errorf("failed to open %s: %w", fileName, err)
 	}
+	defer file.Close()
 	buf := new(strings.Builder)
 	io.Copy(buf, file)
 
