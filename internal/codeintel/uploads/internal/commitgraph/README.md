@@ -90,6 +90,16 @@ The visible uploads for those commits can then be computed by retrieving the vis
 
 In this example both `B` and `C` are stored as links. `E` is not stored as a link, because its child `F` is a merge commit.
 
+### Potential drawbacks
+
+Purely relying on "commit depth" can cause outdated uploads to appear visible when using merge commits. For example:
+
+![commitgraph_drawback.png](https://storage.googleapis.com/sourcegraph-assets/dev-docs/commitgraph/commitgraph_drawback.png)
+
+`B` could be a documentation commit that was opened and forgotten for a while. Since then 1000 commits with various changes and uploads have happened.
+When `B` is now merged back without rebasing, it creates a "portal" into the past that makes the upload at `A` shadow the one at `C`.
+There's no immediate easy solution for this, but it's worth considering as a culprit if we're seeing outdated uploads used for code navigation.
+
 ## Architecture & operations
 
 At a high level the annotated commit graph is kept up-to-date by a worker that runs periodically. We maintain a table `lsif_dirty_repositories` that tracks what repositories have had new indexes uploaded or old ones deleted.
