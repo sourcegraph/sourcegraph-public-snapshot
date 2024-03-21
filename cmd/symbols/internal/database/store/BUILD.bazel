@@ -18,14 +18,11 @@ go_library(
         "//internal/observation",
         "//internal/search",
         "//internal/search/result",
-        "//internal/symbols",
         "//lib/errors",
         "@com_github_grafana_regexp//syntax",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@org_golang_x_sync//errgroup",
-        "@org_golang_x_text//language",
-        "@org_golang_x_text//message",
     ],
 )
 
