@@ -42,6 +42,7 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             case 'anthropic/claude-instant-1.2':
             case 'anthropic/claude-3-sonnet-20240229':
             case 'anthropic/claude-3-opus-20240229':
+            case 'anthropic/claude-3-haiku-20240307':
             // See here: https://platform.openai.com/docs/models/model-endpoint-compatibility
             // for currently available Anthropic models. Note that we also need to
             // allow list the models on the Cody Gateway side.

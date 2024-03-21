@@ -31,37 +31,12 @@ func linesToResponse(lines []string, separator string) []byte {
 	return responseBytes
 }
 
-func getMockClient(responseBody []byte, messagesApi bool) types.CompletionsClient {
-	apiURL := "https://api.anthropic.com/v1/complete"
-	if messagesApi {
-		apiURL = "https://api.anthropic.com/v1/messages"
-	}
+func getMockClient(responseBody []byte) types.CompletionsClient {
 	return NewClient(&mockDoer{
 		func(r *http.Request) (*http.Response, error) {
 			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewReader(responseBody))}, nil
 		},
-	}, apiURL, "", false)
-}
-
-func TestValidAnthropicStream(t *testing.T) {
-	var mockAnthropicResponseLines = []string{
-		`data: {"completion": "Sure!"}`,
-		`data: {"completion": "Sure! The Fibonacci sequence is defined as:\n\nF0 = 0\nF1 = 1\nFn = Fn-1 + Fn-2\n\nSo in Python, you can write it like this:\ndef fibonacci(n):\n    if n < 2:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)\n\nOr iteratively:\ndef fibonacci(n):\n    a, b = 0, 1\n    for i in range(n):\n        a, b = b, a + b\n    return a\n\nSo for example:\nprint(fibonacci(8))  # 21"}`,
-		`data: 2023.28.2 8:54`, // To test skipping over non-JSON data.
-		`data: {"completion": "Sure! The Fibonacci sequence is defined as:\n\nF0 = 0\nF1 = 1\nFn = Fn-1 + Fn-2\n\nSo in Python, you can write it like this:\ndef fibonacci(n):\n    if n < 2:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)\n\nOr iteratively:\ndef fibonacci(n):\n    a, b = 0, 1\n    for i in range(n):\n        a, b = b, a + b\n    return a\n\nSo for example:\nprint(fibonacci(8))  # 21\n\nThe iterative"}`,
-		"data: [DONE]",
-	}
-
-	mockClient := getMockClient(linesToResponse(mockAnthropicResponseLines, "\r\n\r\n"), false)
-	events := []types.CompletionResponse{}
-	err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {
-		events = append(events, event)
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	autogold.ExpectFile(t, events)
+	}, "", "", false)
 }
 
 func TestValidAnthropicMessagesStream(t *testing.T) {
@@ -86,13 +61,10 @@ func TestValidAnthropicMessagesStream(t *testing.T) {
 		data: {"type": "message_stop"}`,
 	}
 
-	mockClient := getMockClient(linesToResponse(mockAnthropicMessagesResponseLines, "\n\n"), true)
+	mockClient := getMockClient(linesToResponse(mockAnthropicMessagesResponseLines, "\n\n"))
 	events := []types.CompletionResponse{}
 	stream := true
 	err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{
-		Messages: []types.Message{
-			{Speaker: "human", Text: "Servus!"},
-		},
 		Stream: &stream,
 	}, func(event types.CompletionResponse) error {
 		events = append(events, event)
@@ -104,10 +76,10 @@ func TestValidAnthropicMessagesStream(t *testing.T) {
 	autogold.ExpectFile(t, events)
 }
 
-func TestInvalidAnthropicStream(t *testing.T) {
+func TestInvalidAnthropicMessagesStream(t *testing.T) {
 	var mockAnthropicInvalidResponseLines = []string{`data:{]`}
 
-	mockClient := getMockClient(linesToResponse(mockAnthropicInvalidResponseLines, "\r\n\r\n"), false)
+	mockClient := getMockClient(linesToResponse(mockAnthropicInvalidResponseLines, "\r\n\r\n"))
 	err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil })
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -155,7 +127,7 @@ func TestCompleteApiToMessages(t *testing.T) {
 				Body:       io.NopCloser(bytes.NewReader([]byte("oh no, please slow down!"))),
 			}, nil
 		},
-	}, "https://api.anthropic.com/v1/messages", "", false)
+	}, "", "", false)
 	messages := []types.Message{
 		{Speaker: "human", Text: "¡Hola!"},
 		// /complete prompts can have human messages without an assistant response. These should
@@ -188,48 +160,5 @@ func TestCompleteApiToMessages(t *testing.T) {
 		assert.NoError(t, err)
 
 		autogold.Expect(body).Equal(t, []byte(`{"messages":[{"role":"user","content":[{"type":"text","text":"Servus!"}]}],"model":"","stream":true}`))
-	})
-}
-
-func TestMessagesApiToComplete(t *testing.T) {
-	var response *http.Request
-	mockClient := NewClient(&mockDoer{
-		func(r *http.Request) (*http.Response, error) {
-			response = r
-			return &http.Response{
-				StatusCode: http.StatusTooManyRequests,
-				Body:       io.NopCloser(bytes.NewReader([]byte("oh no, please slow down!"))),
-			}, nil
-		},
-	}, "https://api.anthropic.com/v1/complete", "", false)
-	messages := []types.Message{
-		// /messages responses can have a system message
-		{Speaker: "system", Text: "You are an Austrian emperor."},
-		{Speaker: "human", Text: "Servus!"},
-		// No ending `assistant` message
-	}
-
-	t.Run("Complete", func(t *testing.T) {
-		resp, err := mockClient.Complete(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{Messages: messages})
-		require.Error(t, err)
-		assert.Nil(t, resp)
-
-		assert.NotNil(t, response)
-		body, err := io.ReadAll(response.Body)
-		assert.NoError(t, err)
-
-		autogold.Expect(body).Equal(t, []byte(`{"prompt":"\n\nHuman: You are an Austrian emperor.\n\nAssistant: Ok.\n\nHuman: Servus!\n\nAssistant:","temperature":0,"max_tokens_to_sample":0,"stop_sequences":["\n\nHuman:"],"top_k":0,"top_p":0,"model":"","stream":false}`))
-	})
-
-	t.Run("Stream", func(t *testing.T) {
-		stream := true
-		err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{Messages: messages, Stream: &stream}, func(event types.CompletionResponse) error { return nil })
-		require.Error(t, err)
-
-		assert.NotNil(t, response)
-		body, err := io.ReadAll(response.Body)
-		assert.NoError(t, err)
-
-		autogold.Expect(body).Equal(t, []byte(`{"prompt":"\n\nHuman: You are an Austrian emperor.\n\nAssistant: Ok.\n\nHuman: Servus!\n\nAssistant:","temperature":0,"max_tokens_to_sample":0,"stop_sequences":["\n\nHuman:"],"top_k":0,"top_p":0,"model":"","stream":true}`))
 	})
 }
