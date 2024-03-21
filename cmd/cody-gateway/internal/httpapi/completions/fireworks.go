@@ -23,9 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-const fireworksAPIURL = "https://api.fireworks.ai/inference/v1/completions"
-const fireworksChatAPIURL = "https://api.fireworks.ai/inference/v1/chat/completions"
-
 func NewFireworksHandler(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
