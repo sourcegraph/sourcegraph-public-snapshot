@@ -9,20 +9,6 @@ _md2mdx="${cwd}/$2"
 # Ensure we leave the output tree clean.
 trap 'rm -Rf ${cwd}/_clone' EXIT
 
-# function convert {
-#   local file
-#   file="$1"
-#   local _sed
-#   _sed="sed"
-#
-#   if command -v gsed >/dev/null 2>&1; then
-#     _sed="gsed"
-#   fi
-#
-#   "$_sed" -i -re 's|<!-- (.*) -->|{/* \1 */}|g' "$file"
-#   "$_sed" -i -re 's|(<([0-9]+))|\&lt;\2|g' "$file"
-# }
-
 mkdir -p _clone/
 git clone --quiet git@github.com:sourcegraph/docs.git _clone/
 
@@ -72,7 +58,6 @@ git push origin "$_branch"
 unset GH_TOKEN
 export GITHUB_TOKEN="$BUILDKITE_GITHUBDOTCOM_TOKEN"
 "$_gh" pr create \
-  --draft \
   --reviewer MaedahBatool \
   --title "🤖 Sync generated docs from sourcegraph/sourcegraph (${_current_date})" \
   --body "This is an automated pull request, created by //doc:generated:push on sourcegraph/sourcegraph"

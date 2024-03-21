@@ -1,5 +1,9 @@
 package main
 
+// This code is a hack, it could be improved a lot, but ideally we would fix the docsite rather than
+// having to do this. For example, the docsite could simply support normal markdown along mdx, as
+// generated docs are not going to have fancy components.
+
 import (
 	"bufio"
 	"fmt"
