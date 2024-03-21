@@ -3,39 +3,31 @@
     import type { Progress, Skipped } from '$lib/shared'
 
     export let isError: boolean
-    export let loading: boolean
     export let progress: Progress
-    export let isComplete: boolean
     export let hasSkippedItems: boolean
     export let hasSuggestedItems: boolean
     export let mostSevere: Skipped
 
-    const CENTER_DOT = '\u00B7' // interpunct
+    const INTERPUNCT = '\u00B7'
 
-    $: isComplete = isComplete
-    $: isError = isError
-    $: loading = loading
-    $: progress = progress
+    $: done = progress.done
 </script>
 
-{#if !loading && progress}
+{#if progress}
     <div class={`action-container ${isError && 'error-text'}`}>
         <div class="suggested-action">
-            {#if !loading && isComplete && !hasSkippedItems}
+            {#if done && !hasSkippedItems}
                 <div class="more-details">See more details</div>
             {/if}
 
-            {#if mostSevere}
-                <div class="info-badge">
+            {#if done && hasSkippedItems}
+                <div class={`info-badge ${isError && 'error-text'}`}>
                     {capitalizeFirstLetter(mostSevere?.title ? mostSevere.title : '')}&nbsp;
                 </div>
             {/if}
 
-            {#if hasSkippedItems && hasSuggestedItems}
-                <div class="separator">{CENTER_DOT}</div>
-            {/if}
-
-            {#if hasSuggestedItems}
+            {#if done && hasSuggestedItems}
+                <div class="separator">{INTERPUNCT}</div>
                 <div class="action-badge">
                     {capitalizeFirstLetter(mostSevere?.suggested ? mostSevere.suggested.title : '')}&nbsp;
                     <span class="code-font">

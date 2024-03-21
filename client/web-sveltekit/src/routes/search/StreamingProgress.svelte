@@ -38,13 +38,7 @@
     <Button variant="secondary" size="sm" outline>
         <svelte:fragment slot="custom" let:buttonClass>
             <button use:registerTrigger class="{buttonClass} progress-button" on:click={() => toggle()}>
-                <ResultsIndicator
-                    {state}
-                    {hasSkippedItems}
-                    {sortedItems}
-                    {hasSuggestedItems}
-                    searchProgress={progress}
-                />
+                <ResultsIndicator {state} {hasSkippedItems} {sortedItems} {hasSuggestedItems} {progress} />
             </button>
         </svelte:fragment>
     </Button>

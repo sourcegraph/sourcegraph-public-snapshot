@@ -12,7 +12,7 @@
     export let hasSkippedItems: boolean
     export let sortedItems: Skipped[]
     export let hasSuggestedItems: boolean
-    export let searchProgress: Progress
+    export let progress: Progress
     export let state: 'error' | 'complete' | 'loading'
 
     const MAX_SEARCH_DURATION = 15000
@@ -35,16 +35,16 @@
     $: takingTooLong = elapsedDuration >= MAX_SEARCH_DURATION
     $: mostSevere = sortedItems[0]
     $: isError = state === 'error'
-    $: isComplete = state === 'complete'
-    $: loading = state !== 'loading'
-    $: severity = searchProgress.skipped.some(skipped => skipped.severity === 'warn' || skipped.severity === 'error')
+    $: loading = state === 'loading'
+    $: severity = progress.skipped.some(skipped => skipped.severity === 'warn' || skipped.severity === 'error')
         ? 'error'
         : 'info'
+    $: done = progress.done
 </script>
 
 <div class="indicator">
     <div class="icon">
-        {#if loading && !searchProgress}
+        {#if loading && !done}
             <LoadingSpinner inline />
         {:else}
             <Icon svgPath={icons[severity]} size={18} />
@@ -52,19 +52,11 @@
     </div>
 
     <div class="messages">
-        <ProgressMessage {searchProgress} {loading} {isError} {elapsedDuration} />
-        {#if loading && takingTooLong}
+        <ProgressMessage {progress} {loading} {isError} {elapsedDuration} />
+        {#if !done && takingTooLong}
             <TimeoutMessage {isError} />
         {/if}
-        <SuggestedAction
-            {isError}
-            {loading}
-            progress={searchProgress}
-            {isComplete}
-            {hasSkippedItems}
-            {hasSuggestedItems}
-            {mostSevere}
-        />
+        <SuggestedAction {isError} {progress} {hasSkippedItems} {hasSuggestedItems} {mostSevere} />
     </div>
 
     <div class="dropdown-icon">
