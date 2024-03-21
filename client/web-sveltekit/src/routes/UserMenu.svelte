@@ -2,11 +2,12 @@
     import Icon from '$lib/Icon.svelte'
     import Avatar from '$lib/Avatar.svelte'
     import type { UserMenu_User } from './UserMenu.gql'
-    import { humanTheme } from '$lib/theme'
+    import { Theme } from '$lib/theme'
     import { DropdownMenu, MenuLink, MenuRadioGroup, MenuSeparator, Submenu } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
     import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
     import { writable } from 'svelte/store'
+    import { theme } from '$lib/stores'
 
     const MAX_VISIBLE_ORGS = 5
 
@@ -33,7 +34,7 @@
     <MenuSeparator />
     <Submenu>
         <svelte:fragment slot="trigger">Theme</svelte:fragment>
-        <MenuRadioGroup values={['Light', 'Dark', 'System']} value={humanTheme} />
+        <MenuRadioGroup values={[Theme.Light, Theme.Dark, Theme.System]} value={theme} />
     </Submenu>
     {#if organizations.length > 0}
         <MenuSeparator />
