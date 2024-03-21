@@ -201,15 +201,27 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "failed to parse request body"))
 			return
 		}
-		status, flaggingResult, err := methods.validateRequest(r.Context(), logger, feature, body)
+		// Validate the request. (e.g. hard-caps on maximum token size, a known model, etc.)
+		if err := methods.validateRequest(ctx, logger, feature, body); err != nil {
+			response.JSONError(logger, w, http.StatusBadRequest, err)
+			return
+		}
+
+		// Check the request to see if it should be flagged for abuse, or additional inspection.
+		flaggingResult, err := methods.shouldFlagRequest(ctx, logger, body)
 		if err != nil {
-			if status == 0 {
-				response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "invalid request"))
-			}
-			if flaggingResult.IsFlagged() && flaggingResult.shouldBlock {
+			logger.Error("error checking if request should be flagged, treating as non-flagged", log.Error(err))
+		}
+		if flaggingResult != nil && flaggingResult.IsFlagged() {
+			// Requests that are flagged but not outright blocked, will have some of the
+			// metadata from flaggingResult attached to the request event telemetry. That's
+			// how the data flows into other backend systems for downstream analysis.
+			if !flaggingResult.shouldBlock {
+				logger.Info("request was flagged, but not blocked. Proceeding.", log.Strings("reasons", flaggingResult.reasons))
+			} else {
 				requestMetadata := getFlaggingMetadata(flaggingResult, act)
 				err := eventLogger.LogEvent(
-					r.Context(),
+					ctx,
 					events.Event{
 						Name:       codygateway.EventNameRequestBlocked,
 						Source:     act.Source.Name(),
@@ -218,9 +230,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 							codygateway.CompletionsEventFeatureMetadataField: feature,
 							"model":    fmt.Sprintf("%s/%s", upstreamName, body.GetModel()),
 							"provider": upstreamName,
-
-							// Response details
-							"resolved_status_code": status,
 
 							// Request metadata
 							"prompt_token_count":   flaggingResult.promptTokenCount,
@@ -235,10 +244,9 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				if err != nil {
 					logger.Error("failed to log event", log.Error(err))
 				}
+				response.JSONError(logger, w, http.StatusBadRequest, requestBlockedError(ctx))
+				return
 			}
-
-			response.JSONError(logger, w, status, err)
-			return
 		}
 
 		// identifier that can be provided to upstream for abuse detection
@@ -268,20 +276,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 
 		// Retrieve metadata from the initial request.
 		model, requestMetadata := methods.getRequestMetadata(body)
-
-		if feature == codygateway.FeatureChatCompletions {
-			prompt := strings.ToLower(body.BuildPrompt())
-			prof := d.ExtractProfanity(prompt)
-			if prof != "" {
-				requestMetadata["profanity"] = prof
-			}
-			for _, p := range patternsToDetect {
-				if strings.Contains(prompt, p) {
-					requestMetadata["detected_phrase"] = truncateToPrefix(p)
-					break
-				}
-			}
-		}
 
 		// Match the model against the allowlist of models, which are configured
 		// with the Cody Gateway model format "$PROVIDER/$MODEL_NAME". Models
