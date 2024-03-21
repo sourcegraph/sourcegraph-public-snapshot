@@ -350,11 +350,18 @@ func wolfiBaseImageLockAndCreatePR() *operations.Set {
 // It should be run whenever a Wolfi YAML or lockfile is updated
 func WolfiCheckApkoLocks() *operations.Set {
 	ops := operations.NewNamedSet("Apko Lock")
+	cmd := "./dev/ci/scripts/wolfi/apko-check-lock.sh"
 
 	ops.Append(
 		func(pipeline *bk.Pipeline) {
-			pipeline.AddStep(":padlock: Check apko lockfiles",
-				bk.Cmd("./dev/ci/scripts/wolfi/apko-check-lock.sh"),
+			pipeline.AddStep(":whale::lock: Check apko lockfiles",
+				bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
+					Annotations: &bk.AnnotationOpts{
+						Type:            bk.AnnotationTypeInfo,
+						IncludeNames:    false,
+						MultiJobContext: "apko-check-lock",
+					},
+				}),
 				bk.Agent("queue", "bazel"),
 				bk.Key("apko-check-lock"),
 				bk.SoftFail(222),
