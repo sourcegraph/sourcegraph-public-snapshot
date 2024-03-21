@@ -102,15 +102,15 @@ There's no immediate easy solution for this, but it's worth considering as a cul
 
 ## Architecture & operations
 
-At a high level the annotated commit graph is kept up-to-date by a worker that runs periodically. We maintain a table `lsif_dirty_repositories` that tracks what repositories have had new indexes uploaded or old ones deleted.
+At a high level the annotated commit graph is kept up-to-date by a worker called `commitGraphUpdater`, that runs periodically. We maintain a table `lsif_dirty_repositories` that tracks what repositories have had new indexes uploaded or old ones deleted.
 When a repository is marked as dirty we update its annotated commit graph and remove its dirty flag.
 
 ### Loading data
 
 For a repository marked as dirty we fetch the following data before computing the annotated commit graph:
 
-- Get full commit graph (non-annotated) from git server. All commits and their relationships
-- Get metadata for all uploaded indexes (indexer name, commit, root directory)
+- The full non-annotated commit graph from git server. All commits and their relationships
+- Metadata for all uploaded indexes (indexer name, commit, root directory)
 
 ### Storage
 
