@@ -21,7 +21,7 @@ import (
 const wolfiImageDir = "wolfi-images"
 const wolfiPackageDir = "wolfi-packages"
 
-var baseImageRegex = lazyregexp.New(`wolfi-images\/([\w-]+)[.]yaml`)
+var baseImageRegex = lazyregexp.New(`wolfi-images\/([\w-]+)[.](?:yaml|lock[.]json)`)
 var packageRegex = lazyregexp.New(`wolfi-packages\/([\w-]+)[.]yaml`)
 
 // WolfiPackagesOperations rebuilds any packages whose configurations have changed
@@ -50,10 +50,17 @@ func WolfiBaseImagesOperations(changedFiles []string, tag string, packagesChange
 	ops := operations.NewNamedSet("Base image builds")
 	logger := log.Scoped("gen-pipeline")
 
+	builtImage := make(map[string]bool)
 	var buildStepKeys []string
 	for _, c := range changedFiles {
 		match := baseImageRegex.FindStringSubmatch(c)
 		if len(match) == 2 {
+			// Don't build the same image twice
+			if builtImage[match[1]] {
+				continue
+			}
+			builtImage[match[1]] = true
+
 			buildFunc, key := buildWolfiBaseImage(match[1], tag, packagesChanged)
 			ops.Append(buildFunc)
 			buildStepKeys = append(buildStepKeys, key)
