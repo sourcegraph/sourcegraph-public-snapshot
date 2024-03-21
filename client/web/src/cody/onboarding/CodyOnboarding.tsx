@@ -286,29 +286,21 @@ function PurposeStep({
     }
 
     return (
-        <>
-            <div className="border-bottom pb-3 mb-3">
-                <H2 className="mb-1">Would you like to learn more about Cody for enterprise?</H2>
-                <Text className="mb-0 text-muted" size="small">
-                    If you're not ready for a conversation, we'll stick to sharing Cody onboarding resources
-                </Text>
-            </div>
-            <div className="d-flex align-items-center border-bottom mb-3 pb-3 justify-content-center">
-                <HubSpotForm
-                    formId="19f34edd-1a98-4fc9-9b2b-c1edca727720"
-                    onFormSubmitted={() => {
-                        onNext()
-                    }}
-                    onFormLoadError={() => {
-                        onNext()
-                    }}
-                    userId={authenticatedUser.id}
-                    userEmail={primaryEmail}
-                    masterFormName="qualificationSurvey"
-                    onFormSubmit={handleFormSubmit}
-                />
-            </div>
-        </>
+        <div className="d-flex align-items-center border-bottom mb-3 pb-3 justify-content-center">
+            <HubSpotForm
+                formId="19f34edd-1a98-4fc9-9b2b-c1edca727720"
+                onFormSubmitted={() => {
+                    onNext()
+                }}
+                onFormLoadError={() => {
+                    onNext()
+                }}
+                userId={authenticatedUser.id}
+                userEmail={primaryEmail}
+                masterFormName="qualificationSurvey"
+                onFormSubmit={handleFormSubmit}
+            />
+        </div>
     )
 }
 
