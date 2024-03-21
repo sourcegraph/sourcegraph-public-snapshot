@@ -1,0 +1,51 @@
+<script lang="ts">
+    import { getContext, onDestroy } from 'svelte'
+    import classNames from 'classnames'
+    import type { PanelGroupContext } from './types'
+    import { getId } from './utils/common'
+
+    export let id: string | null = null
+    export let className: string = ''
+    export let minSize: number | undefined = undefined
+    export let maxSize: number | undefined = undefined
+    export let defaultSize: number | undefined = undefined
+
+    const panelId = id ?? getId()
+    let panelElement: HTMLElement
+
+    const { groupId, getPanelStyles, registerPanel } = getContext<PanelGroupContext>('panel-group-context')
+
+    onDestroy(
+        registerPanel({
+            id: panelId,
+            order: undefined,
+            constraints: { defaultSize, minSize, maxSize },
+            getPanelElement: () => panelElement,
+        })
+    )
+
+    $: styles = getPanelStyles(panelId)
+</script>
+
+<div
+    class={classNames('panel', className)}
+    style={$styles}
+    bind:this={panelElement}
+    {id}
+    data-panel
+    data-panel-id={panelId}
+    data-panel-group-id={groupId}
+>
+    <slot />
+</div>
+
+<style>
+    .panel {
+        flex-basis: 0;
+        flex-shrink: 0;
+
+        /* Without this, Panel sizes may be unintentionally overridden
+         by their content */
+        overflow: hidden;
+    }
+</style>
