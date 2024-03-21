@@ -275,7 +275,7 @@ func getPackagesFromBaseImageConfig(configFile string) ([]string, error) {
 }
 
 // addWolfiOps adds operations to rebuild modified Wolfi packages and base images.
-func addWolfiOps(c Config) (packageOps, baseImageOps *operations.Set) {
+func addWolfiOps(c Config) (packageOps, baseImageOps, apkoOps *operations.Set) {
 	// Rebuild Wolfi packages that have config changes
 	var updatedPackages []string
 	if c.Diff.Has(changed.WolfiPackages) {
@@ -293,10 +293,16 @@ func addWolfiOps(c Config) (packageOps, baseImageOps *operations.Set) {
 	imagesToRebuild = sortUniq(imagesToRebuild)
 
 	if len(imagesToRebuild) > 0 {
-		baseImageOps = WolfiCheckApkoLocks()
+		baseImageOps, _ = WolfiBaseImagesOperations(
+			imagesToRebuild,
+			c.Version,
+			(len(updatedPackages) > 0),
+		)
+
+		apkoOps = WolfiCheckApkoLocks()
 	}
 
-	return packageOps, baseImageOps
+	return packageOps, baseImageOps, apkoOps
 }
 
 // wolfiRebuildAllBaseImages [deprecated] adds operations to rebuild all Wolfi base images and push to registry
