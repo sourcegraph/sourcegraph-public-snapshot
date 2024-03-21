@@ -61,6 +61,7 @@ func allowedCustomModel(model string) string {
 		"anthropic/claude-instant-1.2",
 		"anthropic/claude-instant-v1",
 		"anthropic/claude-instant-1",
+		"anthropic/claude-3-haiku-20240307",
 		// Deprecated model identifiers
 		"fireworks/accounts/sourcegraph/models/starcoder-7b",
 		"fireworks/accounts/sourcegraph/models/starcoder-16b",
