@@ -94,6 +94,17 @@ func (bc BaseImageConfig) DoBaseImageBuild() error {
 	std.Out.WriteLine(output.Linef("📦", output.StylePending, "Building base image %s using Bazel...", bc.ImageName))
 	std.Out.WriteLine(output.Linef("🤖", output.StylePending, "rules_apko build output:\n"))
 
+	// If we're already running in Bazel, we can't run Bazel again inside its own builddir,
+	// so ensure we're running in the base repo
+	buildDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	bwd := os.Getenv("BUILD_WORKING_DIRECTORY")
+	if bwd != "" {
+		buildDir = bwd
+	}
+
 	if bc.BazelBuildPath == "" {
 		return errors.Newf("no Bazel build path found for image", bc.ImageName)
 	}
@@ -103,7 +114,8 @@ func (bc BaseImageConfig) DoBaseImageBuild() error {
 	)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err := cmd.Run()
+	cmd.Dir = buildDir
+	err = cmd.Run()
 	if err != nil {
 		return errors.Wrap(err, "failed to build base image")
 	}
