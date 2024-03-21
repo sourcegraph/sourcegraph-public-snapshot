@@ -45,6 +45,7 @@ type awsBedrockAnthropicCompletionStreamClient struct {
 func (c *awsBedrockAnthropicCompletionStreamClient) Complete(
 	ctx context.Context,
 	feature types.CompletionsFeature,
+	_ types.CompletionsVersion,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
 	resp, err := c.makeRequest(ctx, requestParams, false)
@@ -67,6 +68,7 @@ func (c *awsBedrockAnthropicCompletionStreamClient) Complete(
 func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 	ctx context.Context,
 	feature types.CompletionsFeature,
+	_ types.CompletionsVersion,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {

@@ -34,9 +34,10 @@ type anthropicClient struct {
 func (a *anthropicClient) Complete(
 	ctx context.Context,
 	feature types.CompletionsFeature,
+	version types.CompletionsVersion,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
-	resp, err := a.makeRequest(ctx, requestParams, false)
+	resp, err := a.makeRequest(ctx, requestParams, version, false)
 	if err != nil {
 		return nil, err
 	}
@@ -62,10 +63,11 @@ func (a *anthropicClient) Complete(
 func (a *anthropicClient) Stream(
 	ctx context.Context,
 	feature types.CompletionsFeature,
+	version types.CompletionsVersion,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
-	resp, err := a.makeRequest(ctx, requestParams, true)
+	resp, err := a.makeRequest(ctx, requestParams, version, true)
 	if err != nil {
 		return err
 	}
@@ -118,9 +120,14 @@ func (a *anthropicClient) Stream(
 	return dec.Err()
 }
 
-func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
+func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, stream bool) (*http.Response, error) {
+	convertedMessages := requestParams.Messages
+	if version == types.CompletionsVersionLegacy {
+		convertedMessages = convertFromLegacyMessages(convertedMessages)
+	}
+
 	var payload any
-	messages, err := ToAnthropicMessages(convertFromLegacyMessages(requestParams.Messages))
+	messages, err := ToAnthropicMessages(convertedMessages)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +233,7 @@ func pinModel(model string) string {
 		"claude-instant-v1":
 		return "claude-instant-1.2"
 	case "claude-2":
-		return "claude-2.1"
+		return "claude-2.0"
 	default:
 		return model
 	}

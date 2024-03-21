@@ -30,6 +30,7 @@ type openAIChatCompletionStreamClient struct {
 func (c *openAIChatCompletionStreamClient) Complete(
 	ctx context.Context,
 	feature types.CompletionsFeature,
+	_ types.CompletionsVersion,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
 	var resp *http.Response
@@ -69,6 +70,7 @@ func (c *openAIChatCompletionStreamClient) Complete(
 func (c *openAIChatCompletionStreamClient) Stream(
 	ctx context.Context,
 	feature types.CompletionsFeature,
+	_ types.CompletionsVersion,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {

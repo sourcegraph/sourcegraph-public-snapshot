@@ -168,11 +168,18 @@ func (b CompletionsFeature) ID() int {
 	}
 }
 
+type CompletionsVersion int
+
+const (
+	CompletionsVersionLegacy CompletionsVersion = 0
+	CompletionsV1            CompletionsVersion = 1
+)
+
 type CompletionsClient interface {
 	// Stream executions a completions request, streaming results to the callback.
 	// Callers should check for ErrStatusNotOK and handle the error appropriately.
-	Stream(context.Context, CompletionsFeature, CompletionRequestParameters, SendCompletionEvent) error
+	Stream(context.Context, CompletionsFeature, CompletionsVersion, CompletionRequestParameters, SendCompletionEvent) error
 	// Complete executions a completions request until done. Callers should check
 	// for ErrStatusNotOK and handle the error appropriately.
-	Complete(context.Context, CompletionsFeature, CompletionRequestParameters) (*CompletionResponse, error)
+	Complete(context.Context, CompletionsFeature, CompletionsVersion, CompletionRequestParameters) (*CompletionResponse, error)
 }
