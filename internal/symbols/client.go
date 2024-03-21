@@ -60,7 +60,7 @@ type Client struct {
 }
 
 // Search performs a symbol search on the symbols service.
-func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (symbols result.Symbols, repoLimited bool, err error) {
+func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (symbols result.Symbols, limitHit bool, err error) {
 	tr, ctx := trace.New(ctx, "symbols.Search",
 		args.Repo.Attr(),
 		args.CommitID.Attr())
@@ -75,17 +75,17 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 	}
 
 	symbols = response.Symbols
-	repoLimited = response.LimitHit
+	limitHit = response.LimitHit
 
 	// 🚨 SECURITY: We have valid results, so we need to apply sub-repo permissions
 	// filtering.
 	if c.SubRepoPermsChecker == nil {
-		return symbols, repoLimited, err
+		return symbols, limitHit, err
 	}
 
 	checker := c.SubRepoPermsChecker()
 	if !authz.SubRepoEnabled(checker) {
-		return symbols, repoLimited, err
+		return symbols, limitHit, err
 	}
 
 	a := actor.FromContext(ctx)
@@ -105,7 +105,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 		}
 	}
 
-	return filtered, repoLimited, nil
+	return filtered, limitHit, nil
 }
 
 func (c *Client) searchGRPC(ctx context.Context, args search.SymbolsParameters) (search.SymbolsResponse, error) {

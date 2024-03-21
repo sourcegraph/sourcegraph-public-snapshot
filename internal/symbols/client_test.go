@@ -65,7 +65,7 @@ func TestSearchWithFiltering(t *testing.T) {
 
 	DefaultClient.Endpoints = endpoint.Static(srv.URL)
 
-	results, repoLimited, err := DefaultClient.Search(ctx, search.SymbolsParameters{
+	results, limitHit, err := DefaultClient.Search(ctx, search.SymbolsParameters{
 		Repo:     "foo",
 		CommitID: "HEAD",
 		Query:    "abc",
@@ -73,8 +73,8 @@ func TestSearchWithFiltering(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if repoLimited != true {
-		t.Fatal("expected repoLimited to be true")
+	if limitHit != true {
+		t.Fatal("expected limitHit to be true")
 	}
 	if results == nil {
 		t.Fatal("nil result")
@@ -100,7 +100,7 @@ func TestSearchWithFiltering(t *testing.T) {
 	})
 	authz.DefaultSubRepoPermsChecker = checker
 
-	results, repoLimited, err = DefaultClient.Search(ctx, search.SymbolsParameters{
+	results, limitHit, err = DefaultClient.Search(ctx, search.SymbolsParameters{
 		Repo:     "foo",
 		CommitID: "HEAD",
 		Query:    "abc",
@@ -108,8 +108,8 @@ func TestSearchWithFiltering(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if repoLimited != true {
-		t.Fatal("expected repoLimited to be true")
+	if limitHit != true {
+		t.Fatal("expected limitHit to be true")
 	}
 	if results == nil {
 		t.Fatal("nil result")

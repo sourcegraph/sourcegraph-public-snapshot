@@ -177,7 +177,7 @@ type SearchResponse struct {
 	Symbols []*SearchResponse_Symbol `protobuf:"bytes,1,rep,name=symbols,proto3" json:"symbols,omitempty"`
 	// error is the error message if the search failed
 	Error *string `protobuf:"bytes,2,opt,name=error,proto3,oneof" json:"error,omitempty"` // TODO@ggilmore: Custom error type?
-	// repo_limited is true if search ran into a limit set by the service
+	// limit_hit is true if search ran into a limit set by the service
 	LimitHit bool `protobuf:"varint,3,opt,name=limit_hit,json=limitHit,proto3" json:"limit_hit,omitempty"`
 }
 
