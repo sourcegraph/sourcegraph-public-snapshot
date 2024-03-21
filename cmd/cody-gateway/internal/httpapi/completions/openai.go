@@ -47,7 +47,6 @@ func NewOpenAIHandler(
 		// help in a minute-long rate limit window.
 		30, // seconds
 		autoFlushStreamingResponses,
-		nil,
 	)
 }
 

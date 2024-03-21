@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	goaway "github.com/TwiN/go-away"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -53,9 +52,6 @@ var hopHeaders = map[string]struct{}{
 	"Transfer-Encoding":   {},
 	"Upgrade":             {},
 }
-
-// Trim detected phrases to this many characters (to avoid storing too much repetitive data in BigQuery)
-const phrasePrefixLength = 5
 
 // upstreamHandlerMethods declares a set of methods that are used throughout the
 // lifecycle of a request to an upstream API. All methods are required, and called
@@ -138,7 +134,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	// response.
 	defaultRetryAfterSeconds int,
 	autoFlushStreamingResponses bool,
-	patternsToDetect []string,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped(upstreamName)
 
@@ -149,17 +144,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	copy(clonedAllowedModels, allowedModels)
 	for i := range clonedAllowedModels {
 		clonedAllowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, clonedAllowedModels[i])
-	}
-
-	// Create a single profanity detector to be used for all requests.
-	profDetector := goaway.NewProfanityDetector().
-		WithSanitizeAccents(false).
-		WithSanitizeLeetSpeak(false).
-		WithSanitizeSpaces(false).
-		WithSanitizeSpecialCharacters(false)
-
-	if len(patternsToDetect) > 0 {
-		baseLogger.Debug("initializing pattern detector", log.Strings("patterns", patternsToDetect))
 	}
 
 	// upstreamHandler is the actual HTTP handle that will perform "all of the things"
@@ -292,20 +276,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 
 		// Retrieve metadata from the initial request.
 		model, requestMetadata := methods.getRequestMetadata(body)
-
-		if feature == codygateway.FeatureChatCompletions {
-			prompt := strings.ToLower(body.BuildPrompt())
-			profanity := profDetector.ExtractProfanity(prompt)
-			if profanity != "" {
-				requestMetadata["profanity"] = profanity
-			}
-			for _, p := range patternsToDetect {
-				if strings.Contains(prompt, p) {
-					requestMetadata["detected_phrase"] = truncateToPrefix(p)
-					break
-				}
-			}
-		}
 
 		// Match the model against the allowlist of models, which are configured
 		// with the Cody Gateway model format "$PROVIDER/$MODEL_NAME". Models
@@ -490,6 +460,9 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		rateLimitNotifier,
 		http.HandlerFunc(upstreamHandler))
 }
+
+// Trim detected phrases to this many characters (to avoid storing too much repetitive data in BigQuery)
+const phrasePrefixLength = 5
 
 func truncateToPrefix(p string) string {
 	pat := p
