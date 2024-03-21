@@ -5,10 +5,14 @@ go_library(
     srcs = [
         "client.go",
         "deploy_command.go",
+        "instance.go",
+        "list_command.go",
+        "printers.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/cloud",
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
+        "//dev/ci/gitops",
         "//dev/ci/images",
         "//dev/sg/internal/bk",
         "//dev/sg/internal/repo",
