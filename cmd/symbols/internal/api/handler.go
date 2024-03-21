@@ -11,7 +11,6 @@ import (
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -36,7 +35,7 @@ func (s *grpcService) Search(ctx context.Context, r *proto.SearchRequest) (*prot
 			logger.Error(err),
 		)
 
-		var limitErr *symbols.LimitHitError
+		var limitErr *limitHitError
 		if errors.As(err, &limitErr) {
 			response.FromInternal(&search.SymbolsResponse{Symbols: res, LimitHit: true})
 			return &response, nil

@@ -59,12 +59,6 @@ type Client struct {
 	SubRepoPermsChecker func() authz.SubRepoPermissionChecker
 }
 
-type LimitHitError struct {
-	Description string
-}
-
-func (e *LimitHitError) Error() string { return e.Description }
-
 // Search performs a symbol search on the symbols service.
 func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (symbols result.Symbols, repoLimited bool, err error) {
 	tr, ctx := trace.New(ctx, "symbols.Search",
