@@ -21,6 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The SAML auth provider configuration now supports a `usernameAttributeNames` field that can be used to specify a list of SAML attribute that should be used as the username. [#60603](https://github.com/sourcegraph/sourcegraph/pull/60603)
 - Added the GraphQL query `User.evaluateFeatureFlag` to show if a feature flag is enabled or disabled for a user. [#60828](https://github.com/sourcegraph/sourcegraph/pull/60828)
 - Search Jobs now supports diff, commit and path searches. Before, only file searches were supported. [#60883](https://github.com/sourcegraph/sourcegraph/pull/60883)
+- Auth providers now support a `noSignIn` option that, when set to true, will hide the auth provider from the sign in page, but still allow users to connect the external account from their Account Security page for permissions syncing. [#60722](https://github.com/sourcegraph/sourcegraph/pull/60722)
 
 ### Changed
 
