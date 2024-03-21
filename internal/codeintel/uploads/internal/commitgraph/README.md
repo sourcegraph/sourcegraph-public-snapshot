@@ -1,36 +1,17 @@
 # commitgraph
 
-Problem: Given a repository id and a commit hash, find me the set of index uploads most relevant to that commit.
+The problem this module is solving: Given a repository id and a commit hash, find me the set of index uploads most relevant to that commit.
 
-There are various reasons for why a commit might not have associated indexes uploaded
+We can't just look for uploads at the given commit, because there are various reasons for why a commit might not have associated indexes uploaded
 
 - It is a monorepo moving at high commit velocity relative to indexing speed
 - It's not covered by any indexing policy. For example, some customers only index commits on the `main` branch, or on release tags.
 - The upload is in a queued, processing, or errored/failed state.
 - The index was deleted, by a retention policy or an explicit user action.
 
-To solve this problem we build an [annotated copy of the git commit graph](#what-is-an-annotated-commit-graph) in Postgres, so that we can return so called "visibleUploads" quickly.
+To solve this problem we build an annotated copy of the git commit graph in Postgres, so that we can return so called "visibleUploads" quickly.
 
-## High-level architecture
-
-- repository listing (table `lsif_dirty_repositories`), isDirty flag is set whenever an upload is completed
-- Worker process updates commit graph for dirty repositories and clears flag
-- TODO: When information is requested for an unknown commit in a repository we ask git server for a fragment of the commit graph that includes the commit and "graft" it onto our existing graph
-
-## Updating the commit graph
-
-1. Load data
-2. Compute new commit graph
-3. Diff old vs new and do incremental updates
-
-### Loading data
-
-For the marked as dirty repository:
-
-- Get full commit graph (non-annotated) from git server. All commits and their relationships
-- Get metadata for all uploaded indexes (indexer name, commit, root directory)
-
-### What is an annotated commit graph
+## The annotated commit graph
 
 A fully annotated commit graph contains a set of visible uploads for every commit. We can never see multiple visible uploads from the same indexer _and_ root at the same commit.
 
@@ -52,7 +33,7 @@ commitgraph = {
 
 We'll look at a couple of examples with increasing complexity to understand what constitutes visibility.
 
-#### Visibility rules
+### Visibility rules
 
 Our examples will be drawings of commit graphs.
 
@@ -91,23 +72,45 @@ In practice, this means that if a codebase uses merge commits and also indexes c
 
 _Implementation note: If there are two uploads at the same depth we pick the smaller upload_id. This choice is arbitrary but deterministic._
 
-### Algorithm for computing the visibility graph
+### Linked commits
 
-TODO: Input data
+Because storing the full map of visible uploads per commit can be expensive, we store _links_ to ancestors were possible.
+This is purely an optimization to reduce the amount of storage we use.
 
-- Topo-sorted list of commits and their relationships
-- Full list of uploaded indexes
+A commit is stored as a link iff:
 
-TODO: "Relevant" commits
+- It does not have associated uploads
+- It is not a merge commit
+- It does not have a child that is a merge commit
 
-- Commits with an upload
-- "Merge" commits
-- All parents of "merge" commits
+For these commits we store the first ancestor commit that isn't a link, as well as the depth to that ancestor.
+The visible uploads for those commits can then be computed by retrieving the visible uploads for the linked commit and increasing all their depths by the depth between the linked commits.
 
-TODO: Traversal
+![commitgraph_3.png](https://storage.googleapis.com/sourcegraph-assets/dev-docs/commitgraph/commitgraph_3.png)
 
-### Updating database tables
+In this example both `B` and `C` are stored as links. `E` is not stored as a link, because its child `F` is a merge commit.
 
-TODO: Streaming data out of the computed annotated commit graph
+## Architecture & operations
 
-TODO: Temporary tables and diffing
+At a high level the annotated commit graph is kept up-to-date by a worker that runs periodically. We maintain a table `lsif_dirty_repositories` that tracks what repositories have had new indexes uploaded or old ones deleted.
+When a repository is marked as dirty we update its annotated commit graph and remove its dirty flag.
+
+### Loading data
+
+For a repository marked as dirty we fetch the following data before computing the annotated commit graph:
+
+- Get full commit graph (non-annotated) from git server. All commits and their relationships
+- Get metadata for all uploaded indexes (indexer name, commit, root directory)
+
+### Storage
+
+- Commits and their visible uploads are stored in `lsif_nearest_uploads`
+  - The visibility maps are stored as `jsonb` objects
+- Linked commits are stored in `lsif_nearest_uploads_links`
+
+These tables are updated via a diffing mechanism. We create temporary tables and insert the full graph into them.
+We then run a query to compare the actual table and the temporary table and insert/delete/update individual rows.
+
+### TODO: Queries for commits not yet in the annotated commit graph
+
+When information is requested for an unknown commit in a repository we ask git server for a fragment of the commit graph that includes the commit and "graft" it onto our existing graph
