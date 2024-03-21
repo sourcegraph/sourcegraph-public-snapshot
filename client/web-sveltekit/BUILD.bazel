@@ -116,7 +116,6 @@ playwright_test_bin.playwright_test(
         "playwright.config.ts",
         ":node_modules/@playwright/test",
         ":node_modules/playwright-core",
-        ":node_modules/vite",  # Doesn't matter if this is present or not, the build fails because the vite command is missing
     ] + SRCS + BUILD_DEPS + CONFIGS,
     env = {
         "BAZEL": "1",
