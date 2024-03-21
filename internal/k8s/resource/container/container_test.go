@@ -8,6 +8,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
+
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestNewContainer(t *testing.T) {
@@ -43,10 +45,10 @@ func TestNewContainer(t *testing.T) {
 					},
 				},
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser:                pointer.Int64(100),
-					RunAsGroup:               pointer.Int64(101),
-					AllowPrivilegeEscalation: pointer.Bool(false),
-					ReadOnlyRootFilesystem:   pointer.Bool(true),
+					RunAsUser:                pointers.Ptr[int64](100),
+					RunAsGroup:               pointers.Ptr[int64](101),
+					AllowPrivilegeEscalation: pointers.Ptr(false),
+					ReadOnlyRootFilesystem:   pointers.Ptr(true),
 				},
 			},
 		},
@@ -74,10 +76,10 @@ func TestNewContainer(t *testing.T) {
 					},
 				},
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser:                pointer.Int64(100),
-					RunAsGroup:               pointer.Int64(101),
-					AllowPrivilegeEscalation: pointer.Bool(false),
-					ReadOnlyRootFilesystem:   pointer.Bool(true),
+					RunAsUser:                pointers.Ptr[int64](100),
+					RunAsGroup:               pointers.Ptr[int64](101),
+					AllowPrivilegeEscalation: pointers.Ptr(false),
+					ReadOnlyRootFilesystem:   pointers.Ptr(true),
 				},
 			},
 		},
@@ -108,10 +110,10 @@ func TestNewContainer(t *testing.T) {
 					},
 				},
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser:                pointer.Int64(100),
-					RunAsGroup:               pointer.Int64(101),
-					AllowPrivilegeEscalation: pointer.Bool(false),
-					ReadOnlyRootFilesystem:   pointer.Bool(true),
+					RunAsUser:                pointers.Ptr[int64](100),
+					RunAsGroup:               pointers.Ptr[int64](101),
+					AllowPrivilegeEscalation: pointers.Ptr(false),
+					ReadOnlyRootFilesystem:   pointers.Ptr(true),
 				},
 			},
 		},
@@ -142,10 +144,10 @@ func TestNewContainer(t *testing.T) {
 					},
 				},
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser:                pointer.Int64(100),
-					RunAsGroup:               pointer.Int64(101),
-					AllowPrivilegeEscalation: pointer.Bool(false),
-					ReadOnlyRootFilesystem:   pointer.Bool(true),
+					RunAsUser:                pointers.Ptr[int64](100),
+					RunAsGroup:               pointers.Ptr[int64](101),
+					AllowPrivilegeEscalation: pointers.Ptr(false),
+					ReadOnlyRootFilesystem:   pointers.Ptr(true),
 				},
 			},
 		},
@@ -173,10 +175,10 @@ func TestNewContainer(t *testing.T) {
 					},
 				},
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser:                pointer.Int64(100),
-					RunAsGroup:               pointer.Int64(101),
-					AllowPrivilegeEscalation: pointer.Bool(false),
-					ReadOnlyRootFilesystem:   pointer.Bool(true),
+					RunAsUser:                pointers.Ptr[int64](100),
+					RunAsGroup:               pointers.Ptr[int64](101),
+					AllowPrivilegeEscalation: pointers.Ptr(false),
+					ReadOnlyRootFilesystem:   pointers.Ptr(true),
 				},
 			},
 		},
@@ -238,10 +240,10 @@ func TestNewContainer(t *testing.T) {
 					},
 				},
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser:                pointer.Int64(100),
-					RunAsGroup:               pointer.Int64(101),
-					AllowPrivilegeEscalation: pointer.Bool(false),
-					ReadOnlyRootFilesystem:   pointer.Bool(true),
+					RunAsUser:                pointers.Ptr[int64](100),
+					RunAsGroup:               pointers.Ptr[int64](101),
+					AllowPrivilegeEscalation: pointers.Ptr(false),
+					ReadOnlyRootFilesystem:   pointers.Ptr(true),
 				},
 			},
 		},
@@ -277,10 +279,10 @@ func TestNewContainer(t *testing.T) {
 					},
 				},
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser:                pointer.Int64(100),
-					RunAsGroup:               pointer.Int64(101),
-					AllowPrivilegeEscalation: pointer.Bool(false),
-					ReadOnlyRootFilesystem:   pointer.Bool(true),
+					RunAsUser:                pointers.Ptr[int64](100),
+					RunAsGroup:               pointers.Ptr[int64](101),
+					AllowPrivilegeEscalation: pointers.Ptr(false),
+					ReadOnlyRootFilesystem:   pointers.Ptr(true),
 				},
 				Env: []corev1.EnvVar{
 					{
@@ -323,10 +325,10 @@ func TestNewContainer(t *testing.T) {
 					},
 				},
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser:                pointer.Int64(100),
-					RunAsGroup:               pointer.Int64(101),
-					AllowPrivilegeEscalation: pointer.Bool(false),
-					ReadOnlyRootFilesystem:   pointer.Bool(true),
+					RunAsUser:                pointers.Ptr[int64](100),
+					RunAsGroup:               pointers.Ptr[int64](101),
+					AllowPrivilegeEscalation: pointers.Ptr(false),
+					ReadOnlyRootFilesystem:   pointers.Ptr(true),
 				},
 			},
 		},
@@ -369,10 +371,10 @@ func TestNewContainer(t *testing.T) {
 					},
 				},
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser:                pointer.Int64(100),
-					RunAsGroup:               pointer.Int64(101),
-					AllowPrivilegeEscalation: pointer.Bool(false),
-					ReadOnlyRootFilesystem:   pointer.Bool(true),
+					RunAsUser:                pointers.Ptr[int64](100),
+					RunAsGroup:               pointers.Ptr[int64](101),
+					AllowPrivilegeEscalation: pointers.Ptr(false),
+					ReadOnlyRootFilesystem:   pointers.Ptr(true),
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					// Notice the order here, volumes should be sorted
@@ -404,7 +406,7 @@ func TestNewContainer(t *testing.T) {
 							},
 						},
 						PeriodSeconds:                 5,
-						TerminationGracePeriodSeconds: pointer.Int64(10),
+						TerminationGracePeriodSeconds: pointers.Ptr[int64](10),
 					}),
 				},
 			},
@@ -423,10 +425,10 @@ func TestNewContainer(t *testing.T) {
 					},
 				},
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser:                pointer.Int64(100),
-					RunAsGroup:               pointer.Int64(101),
-					AllowPrivilegeEscalation: pointer.Bool(false),
-					ReadOnlyRootFilesystem:   pointer.Bool(true),
+					RunAsUser:                pointers.Ptr[int64](100),
+					RunAsGroup:               pointers.Ptr[int64](101),
+					AllowPrivilegeEscalation: pointers.Ptr(false),
+					ReadOnlyRootFilesystem:   pointers.Ptr(true),
 				},
 				LivenessProbe: &corev1.Probe{
 					ProbeHandler: corev1.ProbeHandler{
@@ -464,10 +466,10 @@ func TestNewContainer(t *testing.T) {
 					},
 				},
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser:                pointer.Int64(100),
-					RunAsGroup:               pointer.Int64(101),
-					AllowPrivilegeEscalation: pointer.Bool(false),
-					ReadOnlyRootFilesystem:   pointer.Bool(true),
+					RunAsUser:                pointers.Ptr[int64](100),
+					RunAsGroup:               pointers.Ptr[int64](101),
+					AllowPrivilegeEscalation: pointers.Ptr(false),
+					ReadOnlyRootFilesystem:   pointers.Ptr(true),
 				},
 				LivenessProbe: &corev1.Probe{
 					ProbeHandler: corev1.ProbeHandler{
@@ -519,10 +521,10 @@ func TestNewContainer(t *testing.T) {
 					},
 				},
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser:                pointer.Int64(100),
-					RunAsGroup:               pointer.Int64(101),
-					AllowPrivilegeEscalation: pointer.Bool(false),
-					ReadOnlyRootFilesystem:   pointer.Bool(true),
+					RunAsUser:                pointers.Ptr[int64](100),
+					RunAsGroup:               pointers.Ptr[int64](101),
+					AllowPrivilegeEscalation: pointers.Ptr(false),
+					ReadOnlyRootFilesystem:   pointers.Ptr(true),
 				},
 				ReadinessProbe: &corev1.Probe{
 					ProbeHandler: corev1.ProbeHandler{
@@ -564,10 +566,10 @@ func TestNewContainer(t *testing.T) {
 					},
 				},
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser:                pointer.Int64(100),
-					RunAsGroup:               pointer.Int64(101),
-					AllowPrivilegeEscalation: pointer.Bool(false),
-					ReadOnlyRootFilesystem:   pointer.Bool(true),
+					RunAsUser:                pointers.Ptr[int64](100),
+					RunAsGroup:               pointers.Ptr[int64](101),
+					AllowPrivilegeEscalation: pointers.Ptr(false),
+					ReadOnlyRootFilesystem:   pointers.Ptr(true),
 				},
 				ReadinessProbe: &corev1.Probe{
 					ProbeHandler: corev1.ProbeHandler{
@@ -588,11 +590,11 @@ func TestNewContainer(t *testing.T) {
 				name: "foo",
 				options: []Option{
 					WithSecurityContext(corev1.SecurityContext{
-						Privileged:               pointer.Bool(true),
-						RunAsUser:                pointer.Int64(5000),
-						RunAsGroup:               pointer.Int64(9000),
-						ReadOnlyRootFilesystem:   pointer.Bool(true),
-						AllowPrivilegeEscalation: pointer.Bool(false),
+						Privileged:               pointers.Ptr(true),
+						RunAsUser:                pointers.Ptr[int64](5000),
+						RunAsGroup:               pointers.Ptr[int64](9000),
+						ReadOnlyRootFilesystem:   pointers.Ptr(true),
+						AllowPrivilegeEscalation: pointers.Ptr(false),
 					}),
 				},
 			},
@@ -611,11 +613,11 @@ func TestNewContainer(t *testing.T) {
 					},
 				},
 				SecurityContext: &corev1.SecurityContext{
-					Privileged:               pointer.Bool(true),
-					RunAsUser:                pointer.Int64(5000),
-					RunAsGroup:               pointer.Int64(9000),
-					ReadOnlyRootFilesystem:   pointer.Bool(true),
-					AllowPrivilegeEscalation: pointer.Bool(false),
+					Privileged:               pointers.Ptr(true),
+					RunAsUser:                pointers.Ptr[int64](5000),
+					RunAsGroup:               pointers.Ptr[int64](9000),
+					ReadOnlyRootFilesystem:   pointers.Ptr(true),
+					AllowPrivilegeEscalation: pointers.Ptr(false),
 				},
 			},
 		},

@@ -6,7 +6,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
+
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // NewContainer creates a new k8s Container with default values.
@@ -35,10 +36,10 @@ func NewContainer(name string, options ...Option) (corev1.Container, error) {
 			},
 		},
 		SecurityContext: &corev1.SecurityContext{
-			RunAsUser:                pointer.Int64(100),
-			RunAsGroup:               pointer.Int64(101),
-			AllowPrivilegeEscalation: pointer.Bool(false),
-			ReadOnlyRootFilesystem:   pointer.Bool(true),
+			RunAsUser:                pointers.Ptr[int64](100),
+			RunAsGroup:               pointers.Ptr[int64](101),
+			AllowPrivilegeEscalation: pointers.Ptr(false),
+			ReadOnlyRootFilesystem:   pointers.Ptr(true),
 		},
 	}
 
