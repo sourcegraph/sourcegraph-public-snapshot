@@ -1,6 +1,8 @@
 import { type Writable, writable, type Updater, derived, type Readable } from 'svelte/store'
-import { temporarySetting, type TemporarySettingStore } from './temporarySettings'
+
 import { browser } from '$app/environment'
+
+import { temporarySetting, type TemporarySettingStore } from './temporarySettings'
 
 const LOCAL_STORAGE_THEME_KEY = 'sourcegraph-theme'
 
