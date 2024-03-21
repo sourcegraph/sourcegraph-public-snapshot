@@ -47,7 +47,7 @@
                     }
                 }
             } else {
-                state.set('inactive')
+                $state = 'inactive'
             }
         }
 
@@ -81,6 +81,7 @@
 
 <style lang="scss">
     .separator {
+        display: flex;
         touch-action: none;
         user-select: none;
     }

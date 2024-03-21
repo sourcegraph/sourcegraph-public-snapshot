@@ -50,12 +50,10 @@
 
             // Validate even saved layouts in case something has changed since last render
             // e.g. for pixel groups, this could be the size of the window
-            const nextLayout = validatePanelGroupLayout(
+            $layoutStore = validatePanelGroupLayout(
                 unsafeLayout,
                 panels.map(panelData => panelData.constraints)
             )
-
-            layoutStore.set(nextLayout)
         })
     )
 
@@ -143,7 +141,7 @@
             }
 
             if (layoutChanged) {
-                layoutStore.set(nextLayout)
+                $layoutStore = nextLayout
             }
         }
     }
@@ -155,16 +153,16 @@
 
         const initialCursorPosition = getResizeEventCursorPosition(direction as PanelGroupDirection, event)
 
-        dragStateStore.set({
+        $dragStateStore = {
             dragHandleId,
             dragHandleRect: handleElement.getBoundingClientRect(),
             initialCursorPosition,
             initialLayout: $layoutStore,
-        })
+        }
     }
 
     function stopDragging() {
-        dragStateStore.set(null)
+        $dragStateStore = null
     }
 
     function getPanelStyles(panelId: PanelId): Readable<string> {

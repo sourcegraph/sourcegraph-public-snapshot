@@ -27,10 +27,10 @@
 </script>
 
 <div
+    id={panelId}
     class="panel"
     style={$styles}
     bind:this={panelElement}
-    {id}
     data-panel
     data-panel-id={panelId}
     data-panel-group-id={groupId}
