@@ -34,12 +34,13 @@ if [[ $exitCode != 0 ]]; then
     file="apko-check-lock.md"
     cat <<-EOF >"${REPO_DIR}/annotations/${file}"
 
-<strong>:padlock: apko lock &bull; [View job output](#${BUILDKITE_JOB_ID})</strong>
+<strong>:lock: apko lock &bull; [View job output](#${BUILDKITE_JOB_ID})</strong>
 <br />
 <br />
 Wolfi image configuration and apko lockfiles are not in sync. Fix by running:
 
-\`\`\`sg wolfi lock
+\`\`\`bash
+sg wolfi lock
 \`\`\`
 
 EOF
