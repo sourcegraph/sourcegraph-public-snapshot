@@ -1,4 +1,5 @@
 load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@npm//:vite/package_json.bzl", vite_bin = "bin")
 load("@npm//client/playwright:@playwright/test/package_json.bzl", playwright_test_bin = "bin")
 
 # gazelle:ignore
@@ -104,6 +105,23 @@ CONFIGS = [
 
 npm_link_all_packages(name = "node_modules")
 
+vite_bin.vite(
+    name = "web-sveltekit",
+    srcs = SRCS + BUILD_DEPS + CONFIGS,
+    args = [
+        "build",
+        "--force",
+        "-c vite.config.ts",
+    ],
+    chdir = package_name(),
+    env = {
+        "BAZEL": "1",
+    },
+    out_dirs = ["build"],
+    visibility = ["//client/web/dist:__pkg__"],
+    # silent_on_success = False,
+)
+
 playwright_test_bin.playwright_test(
     name = "e2e_test",
     args = [
@@ -116,7 +134,8 @@ playwright_test_bin.playwright_test(
         "playwright.config.ts",
         ":node_modules/@playwright/test",
         ":node_modules/playwright-core",
-    ] + SRCS + BUILD_DEPS + CONFIGS,
+        ":web-sveltekit",
+    ],
     env = {
         "BAZEL": "1",
     },
