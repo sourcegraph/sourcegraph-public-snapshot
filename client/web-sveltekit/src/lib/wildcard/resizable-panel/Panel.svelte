@@ -9,6 +9,7 @@
     export let minSize: number | undefined = undefined
     export let maxSize: number | undefined = undefined
     export let defaultSize: number | undefined = undefined
+    export let order: number | undefined = undefined
 
     const panelId = id ?? getId()
     let panelElement: HTMLElement
@@ -18,7 +19,7 @@
     onDestroy(
         registerPanel({
             id: panelId,
-            order: undefined,
+            order,
             constraints: { defaultSize, minSize, maxSize },
             getPanelElement: () => panelElement,
         })
