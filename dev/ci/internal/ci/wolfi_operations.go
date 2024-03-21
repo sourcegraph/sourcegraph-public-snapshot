@@ -276,7 +276,6 @@ func getPackagesFromBaseImageConfig(configFile string) ([]string, error) {
 
 // addWolfiOps adds operations to rebuild modified Wolfi packages and base images.
 func addWolfiOps(c Config) (packageOps, baseImageOps *operations.Set) {
-	fmt.Printf("\n\nIn addWolfiOps\n")
 	// Rebuild Wolfi packages that have config changes
 	var updatedPackages []string
 	if c.Diff.Has(changed.WolfiPackages) {
