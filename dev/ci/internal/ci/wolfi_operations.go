@@ -276,6 +276,7 @@ func getPackagesFromBaseImageConfig(configFile string) ([]string, error) {
 
 // addWolfiOps adds operations to rebuild modified Wolfi packages and base images.
 func addWolfiOps(c Config) (packageOps, baseImageOps *operations.Set) {
+	fmt.Printf("\n\nIn addWolfiOps\n")
 	// Rebuild Wolfi packages that have config changes
 	var updatedPackages []string
 	if c.Diff.Has(changed.WolfiPackages) {
@@ -293,11 +294,7 @@ func addWolfiOps(c Config) (packageOps, baseImageOps *operations.Set) {
 	imagesToRebuild = sortUniq(imagesToRebuild)
 
 	if len(imagesToRebuild) > 0 {
-		baseImageOps, _ = WolfiBaseImagesOperations(
-			imagesToRebuild,
-			c.Version,
-			(len(updatedPackages) > 0),
-		)
+		baseImageOps = WolfiCheckApkoLocks()
 	}
 
 	return packageOps, baseImageOps
@@ -343,6 +340,25 @@ func wolfiBaseImageLockAndCreatePR() *operations.Set {
 				bk.Cmd("./dev/ci/scripts/wolfi/update-base-image-lockfiles.sh"),
 				bk.Agent("queue", "bazel"),
 				bk.Key("updateBaseImageHashes"),
+			)
+		},
+	)
+
+	return ops
+}
+
+// WolfiCheckApkoLocks checks that all apko YAML and Lockfiles are in sync
+// It should be run whenever a Wolfi YAML or lockfile is updated
+func WolfiCheckApkoLocks() *operations.Set {
+	ops := operations.NewNamedSet("Apko Lock")
+
+	ops.Append(
+		func(pipeline *bk.Pipeline) {
+			pipeline.AddStep(":locked: Check apko lockfiles",
+				bk.Cmd("./dev/ci/scripts/wolfi/apko-check-lock.sh"),
+				bk.Agent("queue", "bazel"),
+				bk.Key("apko-check-lock"),
+				bk.SoftFail(222),
 			)
 		},
 	)
