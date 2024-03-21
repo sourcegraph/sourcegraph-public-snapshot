@@ -46,10 +46,6 @@ fi
 
 tag=${2-latest}
 
-# Export date for apko (defaults to 0 for reproducibility)
-SOURCE_DATE_EPOCH="$(date +%s)"
-export SOURCE_DATE_EPOCH
-
 # On branches, if we modify a package then we'd like that modified version to be included in any base images built.
 # This is a bit hacky, but we do this by modifying the base image configs and passing the branch-specific repo to apko.
 add_custom_repo_cmd=()
@@ -102,6 +98,7 @@ docker push "${remote_image_name}:${tag}"
 docker tag "${local_image_name}" "${remote_image_name}:latest"
 docker push "${remote_image_name}:latest"
 
+# TODO: Update message to reflect that getting this result in main requires further work
 # Show image usage message on branches
 if [[ "$IS_MAIN" != "true" ]]; then
   if [[ -n "$BUILDKITE" ]]; then
