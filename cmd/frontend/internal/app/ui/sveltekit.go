@@ -63,40 +63,33 @@ func useSvelteKit(r *http.Request) bool {
 	return false
 }
 
-var (
-	loadSvelteKitTemplateMu sync.RWMutex
-	loadSvelteKitTemplateCache = map[string]*template.Template{}
-)
-
-func loadSvelteKitTemplate(name string) (*template.Template, error) {
-	loadSvelteKitTemplateMu.RLock()
-	tmpl, ok := loadSvelteKitTemplateCache[name]
-	loadSvelteKitTemplateMu.RUnlock()
-	if ok && !env.InsecureDev {
-		return tmpl, nil
-	}
-
-	file, err := assets.Provider.Assets().Open("_sk/" + name)
+func loadSvelteKitTemplate() (*template.Template, error) {
+	fileName := "_sk/index.html"
+	file, err := assets.Provider.Assets().Open(fileName)
 	defer file.Close()
 	if err != nil {
-		return nil, errors.Errorf("failed to open %s: %w", name, err)
+		return nil, errors.Errorf("failed to open %s: %w", fileName, err)
 	}
 	buf := new(strings.Builder)
 	io.Copy(buf, file)
 
-	tmpl, err = template.New(name).Parse(buf.String())
+	tmpl, err := template.New(fileName).Parse(buf.String())
 	if err != nil {
-		return nil, errors.Errorf("failed to parse template %s: %w", name, err)
+		return nil, errors.Errorf("failed to parse template %s: %w", fileName, err)
 	}
-	loadSvelteKitTemplateMu.Lock()
-	loadSvelteKitTemplateCache[name] = tmpl
-	loadSvelteKitTemplateMu.Unlock()
 	return tmpl, nil
+
 }
+
+var loadCachedSvelteKitTemplate = sync.OnceValues(loadSvelteKitTemplate)
 
 // renderSvelteKit writes SvelteKit's fallback page to the provided writer
 func renderSvelteKit(dst io.Writer, data any) error {
-	tmpl, err := loadSvelteKitTemplate("index.html")
+	tmpl, err := loadCachedSvelteKitTemplate()
+	if env.InsecureDev {
+		// Load "fresh" template in dev mode
+		tmpl, err = loadSvelteKitTemplate()
+	}
 	if err != nil {
 		return err
 	}
