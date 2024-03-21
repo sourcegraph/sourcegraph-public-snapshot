@@ -7,9 +7,11 @@ import type { AuthenticatedUser, FeatureFlag } from '../routes/layout.gql'
 
 export { theme, isLightTheme } from './theme'
 
-const KEY = '__sourcegraph__'
+// Only exported to be used for mocking tests
+// TODO (fkling): Find a better way to initialize mocked contexts and stores
+export const KEY = '__sourcegraph__'
 
-interface SourcegraphContext {
+export interface SourcegraphContext {
     settings: Readable<Settings | null>
     user: Readable<AuthenticatedUser | null>
     temporarySettingsStorage: Readable<TemporarySettingsStorage>

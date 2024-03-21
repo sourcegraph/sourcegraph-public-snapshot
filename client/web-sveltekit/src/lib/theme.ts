@@ -1,5 +1,6 @@
 import { type Writable, writable, type Updater, derived, type Readable } from 'svelte/store'
 import { temporarySetting, type TemporarySettingStore } from './temporarySettings'
+import { browser } from '$app/environment'
 
 const LOCAL_STORAGE_THEME_KEY = 'sourcegraph-theme'
 
@@ -14,7 +15,7 @@ export enum Theme {
  * to temporary settings.
  */
 export const theme: Writable<Theme> = (function () {
-    let theme: Theme = (localStorage.getItem(LOCAL_STORAGE_THEME_KEY) ?? Theme.System) as Theme
+    let theme: Theme = ((browser && localStorage.getItem(LOCAL_STORAGE_THEME_KEY)) || Theme.System) as Theme
     let themeSettingStore: TemporarySettingStore<'user.themePreference'> | undefined
 
     const { subscribe } = writable(theme, set => {

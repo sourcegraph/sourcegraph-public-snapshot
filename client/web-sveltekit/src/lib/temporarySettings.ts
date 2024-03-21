@@ -5,9 +5,7 @@ import { type TemporarySettings, TemporarySettingsStorage, migrateLocalStorageTo
 
 import { getStores } from './stores'
 
-const loggedOutUserStore = new TemporarySettingsStorage(null, false)
-
-export function createTemporarySettingsStorage(storage = loggedOutUserStore): Writable<TemporarySettingsStorage> {
+export function createTemporarySettingsStorage(storage: TemporarySettingsStorage): Writable<TemporarySettingsStorage> {
     const { subscribe, set } = writable(storage)
 
     function disposeAndSet(newStorage: TemporarySettingsStorage): void {

@@ -27,7 +27,10 @@
     // It's OK to set the temporary storage during initialization time because
     // sign-in/out currently performs a full page refresh
     const temporarySettingsStorage = createTemporarySettingsStorage(
-        data.user ? new TemporarySettingsStorage(getGraphQLClient(), true) : undefined
+        data.user
+            ? new TemporarySettingsStorage(getGraphQLClient(), true)
+            : // Logged out storage
+              new TemporarySettingsStorage(null, false)
     )
 
     setAppContext({
