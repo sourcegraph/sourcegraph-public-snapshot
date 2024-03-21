@@ -22,6 +22,15 @@ func HasCommit(ctx context.Context, commit string) bool {
 	return allLinesPrefixed(remoteBranches, "origin/")
 }
 
+func GetHeadCommit(ctx context.Context) (string, error) {
+	commit, err := run.Cmd(ctx, "git rev-parse HEAD").Run().String()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(commit), nil
+}
+
 func allLinesPrefixed(lines []string, match string) bool {
 	for _, l := range lines {
 		if !strings.HasPrefix(strings.TrimSpace(l), match) {

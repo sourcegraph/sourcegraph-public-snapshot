@@ -285,9 +285,3 @@ func parseMessageFlags(msg string) MessageFlags {
 		ForceReadyForReview: strings.Contains(msg, "[review-ready]"),
 	}
 }
-
-func sanitizeBranchForDockerTag(branch string) string {
-	branch = strings.ReplaceAll(branch, "/", "-")
-	branch = strings.ReplaceAll(branch, "+", "-")
-	return branch
-}

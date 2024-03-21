@@ -126,3 +126,12 @@ func parseDiff(diffOutput string) (map[string][]DiffHunk, error) {
 	}
 	return diffs, nil
 }
+
+func GetCurrentBranch(ctx context.Context) (string, error) {
+	branch, err := run.Cmd(ctx, "git branch --show-current").Run().String()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(branch), nil
+}
