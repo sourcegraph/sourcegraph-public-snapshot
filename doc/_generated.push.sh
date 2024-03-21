@@ -55,6 +55,8 @@ git commit -m "🤖 sync'ing generated docs"
 git push origin "$_branch"
 
 # For some reason, the GH_TOKEN takes precedence over GITHUB_TOKEN (RIP my dear sanity)
+# TODO(burmudar): fix this token in the agent image so that we don't have to do this.
+# https://github.com/sourcegraph/sourcegraph/issues/61315
 unset GH_TOKEN
 export GITHUB_TOKEN="$BUILDKITE_GITHUBDOTCOM_TOKEN"
 "$_gh" pr create \
