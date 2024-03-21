@@ -15,6 +15,9 @@ export interface DismissibleAlertProps extends AlertProps {
     partialStorageKey?: string
 
     testId?: string
+    backgroundColor?: string
+    textColor?: string
+    textCentered?: boolean
 }
 
 /**
@@ -30,6 +33,7 @@ export const DismissibleAlert: React.FunctionComponent<React.PropsWithChildren<D
     variant,
     backgroundColor,
     textColor,
+    textCentered,
 }) => {
     const [dismissed, setDismissed] = React.useState<boolean>(
         partialStorageKey ? isAlertDismissed(partialStorageKey) : false
@@ -54,7 +58,7 @@ export const DismissibleAlert: React.FunctionComponent<React.PropsWithChildren<D
             backgroundColor={backgroundColor}
             textColor={textColor}
         >
-            <div className={styles.content}>{children}</div>
+            <div className={classNames(styles.content, textCentered && 'justify-content-center')}>{children}</div>
             <Button aria-label="Dismiss alert" variant="icon" className={styles.closeButton} onClick={onDismiss}>
                 <Icon aria-hidden={true} svgPath={mdiClose} />
             </Button>

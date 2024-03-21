@@ -35,6 +35,7 @@ const NoticeAlert: React.FunctionComponent<React.PropsWithChildren<NoticeAlertPr
         className: classNames(notice.location !== 'top' && 'bg transparent border p-2', className),
         backgroundColor: notice.backgroundColor,
         textColor: notice.textColor,
+        textCentered: notice.textCentered,
     }
 
     return notice.dismissible ? (

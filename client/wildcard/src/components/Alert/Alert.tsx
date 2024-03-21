@@ -45,6 +45,7 @@ export const Alert = React.forwardRef(function Alert(
         role = 'alert',
         backgroundColor,
         textColor,
+        textCentered,
         ...attributes
     },
     reference
@@ -69,6 +70,7 @@ export const Alert = React.forwardRef(function Alert(
             style={{
                 ...(backgroundColor !== '' && { backgroundColor }),
                 ...(textColor !== '' && { color }),
+                ...(textCentered && { textAlign: 'center' }),
             }}
             {...attributes}
         >

@@ -1640,6 +1640,8 @@ type Notice struct {
 	Location string `json:"location"`
 	// Message description: The message to display. Markdown formatting is supported.
 	Message string `json:"message"`
+	// TextCentered description: Whether the notice text should be centered. Defaults to false.
+	TextCentered bool `json:"textCentered,omitempty"`
 	// TextColor description: The hex code of the text color for this notice. Defaults to the global notice text color if not specified.
 	TextColor string `json:"textColor,omitempty"`
 }

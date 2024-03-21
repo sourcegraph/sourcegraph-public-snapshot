@@ -493,6 +493,11 @@
             "description": "The hex code of the text color for this notice. Defaults to the global notice text color if not specified.",
             "type": "string",
             "default": ""
+          },
+          "textCentered": {
+            "description": "Whether the notice text should be centered. Defaults to false.",
+            "type": "boolean",
+            "default": false
           }
 
         }
