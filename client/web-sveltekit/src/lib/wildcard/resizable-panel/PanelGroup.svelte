@@ -1,15 +1,8 @@
 <script lang="ts">
-    import { setContext } from 'svelte'
-    import classNames from 'classnames'
-    import { writable, derived, type Writable, type Readable, type Unsubscriber } from 'svelte/store'
+    import { onDestroy, setContext } from 'svelte'
+    import { derived, type Readable, type Unsubscriber, writable, type Writable } from 'svelte/store'
 
-    import {
-        PanelResizeHandleRegistry,
-        EXCEEDED_HORIZONTAL_MIN,
-        EXCEEDED_HORIZONTAL_MAX,
-        EXCEEDED_VERTICAL_MAX,
-        EXCEEDED_VERTICAL_MIN,
-    } from './PanelResizeHandleRegistry'
+    import { Exceed, PanelResizeHandleRegistry } from './PanelResizeHandleRegistry'
     import { assert } from './utils/assert'
     import { findPanelDataIndex, getId, sortPanels } from './utils/common'
     import { calculateUnsafeDefaultLayout } from './utils/calculateUnsafeDefaultLayout'
@@ -19,22 +12,21 @@
     import { calculateDeltaPercentage } from './utils/calculateDeltaPercentage'
     import { adjustLayoutByDelta } from './utils/adjustLayoutByDelta'
     import { compareLayouts } from './utils/compareLayouts'
-    import { getResizeHandleElement } from './dom/getResizeHandleElement'
+    import { getResizeHandleElement } from './utils/dom'
     import { getResizeEventCursorPosition } from './event/getResizeEventCursorPosition'
     import { isKeyDown, isMouseEvent, isTouchEvent } from './event'
-    import { PanelGroupDirection } from './types'
     import type {
         Direction,
-        PanelsLayout,
-        PanelInfo,
-        PanelId,
-        PanelGroupContext,
-        ResizeEvent,
         DragState,
+        PanelGroupContext,
+        PanelId,
+        PanelInfo,
+        PanelsLayout,
+        ResizeEvent,
     } from './types'
+    import { PanelGroupDirection } from './types'
 
     // Props
-    export let className: string | undefined = ''
     export let direction: Direction = PanelGroupDirection.Horizontal
 
     // Local state
@@ -48,28 +40,24 @@
     const panelsStore: Writable<PanelInfo[]> = writable([])
     const dragStateStore: Writable<DragState | null> = writable(null)
 
-    // The most recent value from the data stream above
-    // Mostly used in event handlers to avoid stream complexity
-    $: layout = $layoutStore
-    $: panels = $panelsStore
-    $: dragState = $dragStateStore
+    onDestroy(
+        // Connect registered panels store with layout store
+        // set initial layout as we populate new panel elements
+        panelsStore.subscribe(panels => {
+            const unsafeLayout = calculateUnsafeDefaultLayout(panels)
 
-    // Connect registered panels store with layout store
-    // set initial layout as we populate new panel elements
-    panelsStore.subscribe(panels => {
-        const unsafeLayout = calculateUnsafeDefaultLayout(panels)
+            // TODO [VK]: Add auto saved layout support here.
 
-        // TODO [VK]: Add auto saved layout support here.
+            // Validate even saved layouts in case something has changed since last render
+            // e.g. for pixel groups, this could be the size of the window
+            const nextLayout = validatePanelGroupLayout(
+                unsafeLayout,
+                panels.map(panelData => panelData.constraints)
+            )
 
-        // Validate even saved layouts in case something has changed since last render
-        // e.g. for pixel groups, this could be the size of the window
-        const nextLayout = validatePanelGroupLayout(
-            unsafeLayout,
-            panels.map(panelData => panelData.constraints)
-        )
-
-        layoutStore.set(nextLayout)
-    })
+            layoutStore.set(nextLayout)
+        })
+    )
 
     function registerPanel(panel: PanelInfo): Unsubscriber {
         panelsStore.update(panels => {
@@ -96,13 +84,13 @@
                 return
             }
 
-            const { initialLayout } = dragState ?? {}
+            const { initialLayout } = $dragStateStore ?? {}
             const pivotIndices = determinePivotIndices(groupId, dragHandleId, groupElement)
             const delta = calculateDeltaPercentage(
                 event,
                 dragHandleId,
                 direction as PanelGroupDirection,
-                dragState,
+                $dragStateStore,
                 null,
                 groupElement
             )
@@ -112,18 +100,18 @@
             }
 
             const isHorizontal = direction === 'horizontal'
-            const panelConstraints = panels.map(panel => panel.constraints)
+            const panelConstraints = $panelsStore.map(panel => panel.constraints)
 
             const nextLayout = adjustLayoutByDelta({
                 delta,
-                initialLayout: initialLayout ?? layout,
+                initialLayout: initialLayout ?? $layoutStore,
                 panelConstraints,
                 pivotIndices,
-                prevLayout: layout,
+                prevLayout: $layoutStore,
                 trigger: isKeyDown(event) ? 'keyboard' : 'mouse-or-touch',
             })
 
-            const layoutChanged = !compareLayouts(layout, nextLayout)
+            const layoutChanged = !compareLayouts($layoutStore, nextLayout)
 
             // Only update the cursor for layout changes triggered by touch/mouse events (not keyboard)
             // Update the cursor even if the layout hasn't changed (we may need to show an invalid cursor state)
@@ -140,16 +128,16 @@
                         if (isHorizontal) {
                             PanelResizeHandleRegistry.reportConstraintsViolation(
                                 dragHandleId,
-                                delta < 0 ? EXCEEDED_HORIZONTAL_MIN : EXCEEDED_HORIZONTAL_MAX
+                                delta < 0 ? Exceed.HORIZONTAL_MIN : Exceed.HORIZONTAL_MAX
                             )
                         } else {
                             PanelResizeHandleRegistry.reportConstraintsViolation(
                                 dragHandleId,
-                                delta < 0 ? EXCEEDED_VERTICAL_MIN : EXCEEDED_VERTICAL_MAX
+                                delta < 0 ? Exceed.VERTICAL_MIN : Exceed.VERTICAL_MAX
                             )
                         }
                     } else {
-                        PanelResizeHandleRegistry.reportConstraintsViolation(dragHandleId, 0)
+                        PanelResizeHandleRegistry.reportConstraintsViolation(dragHandleId, Exceed.NO_CONSTRAINT)
                     }
                 }
             }
@@ -171,7 +159,7 @@
             dragHandleId,
             dragHandleRect: handleElement.getBoundingClientRect(),
             initialCursorPosition,
-            initialLayout: layout,
+            initialLayout: $layoutStore,
         })
     }
 
@@ -205,7 +193,7 @@
 </script>
 
 <div
-    class={classNames('root', className)}
+    class="root"
     bind:this={groupElement}
     style:flex-direction={direction === PanelGroupDirection.Horizontal ? 'row' : 'column'}
     data-panel-group

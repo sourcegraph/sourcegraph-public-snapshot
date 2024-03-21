@@ -270,7 +270,7 @@ describe('adjustLayoutByDelta', () => {
     })
 
     // Edge case
-    // Expanding from a collapsed state mimicking an keyboard event
+    // Expanding from a collapsed state mimicking a keyboard event
     it('[1++,2]', () => {
         expect(
             adjustLayoutByDelta({
@@ -295,7 +295,7 @@ describe('adjustLayoutByDelta', () => {
     })
 
     // Edge case
-    // Expanding from a collapsed state mimicking an keyboard event when there is no min size
+    // Expanding from a collapsed state mimicking a keyboard event when there is no min size
     it('[1++,2]', () => {
         expect(
             adjustLayoutByDelta({

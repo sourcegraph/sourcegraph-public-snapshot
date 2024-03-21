@@ -1,4 +1,4 @@
-import { getResizeHandleElementIndex } from '../dom/getResizeHandleElementIndex'
+import { getResizeHandleElementIndex } from '../utils/dom'
 
 export function determinePivotIndices(
     groupId: string,

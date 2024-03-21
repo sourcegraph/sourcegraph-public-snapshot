@@ -1,9 +1,4 @@
-import {
-    EXCEEDED_HORIZONTAL_MAX,
-    EXCEEDED_HORIZONTAL_MIN,
-    EXCEEDED_VERTICAL_MAX,
-    EXCEEDED_VERTICAL_MIN,
-} from '../PanelResizeHandleRegistry'
+import { Exceed } from '../PanelResizeHandleRegistry'
 
 export type CursorState = 'horizontal' | 'intersection' | 'vertical'
 
@@ -12,10 +7,10 @@ let styleElement: HTMLStyleElement | null = null
 
 export function getCursorStyle(state: CursorState, constraintFlags: number): string {
     if (constraintFlags) {
-        const horizontalMin = (constraintFlags & EXCEEDED_HORIZONTAL_MIN) !== 0
-        const horizontalMax = (constraintFlags & EXCEEDED_HORIZONTAL_MAX) !== 0
-        const verticalMin = (constraintFlags & EXCEEDED_VERTICAL_MIN) !== 0
-        const verticalMax = (constraintFlags & EXCEEDED_VERTICAL_MAX) !== 0
+        const horizontalMin = (constraintFlags & Exceed.HORIZONTAL_MIN) !== 0
+        const horizontalMax = (constraintFlags & Exceed.HORIZONTAL_MAX) !== 0
+        const verticalMin = (constraintFlags & Exceed.VERTICAL_MIN) !== 0
+        const verticalMax = (constraintFlags & Exceed.VERTICAL_MAX) !== 0
 
         if (horizontalMin) {
             if (verticalMin) {

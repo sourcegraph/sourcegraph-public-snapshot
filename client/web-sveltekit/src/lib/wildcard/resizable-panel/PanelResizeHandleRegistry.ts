@@ -19,20 +19,23 @@ export type ResizeHandlerData = {
     setResizeHandlerState: SetResizeHandlerState
 }
 
-export const EXCEEDED_HORIZONTAL_MIN = 0b0001
-export const EXCEEDED_HORIZONTAL_MAX = 0b0010
-export const EXCEEDED_VERTICAL_MIN = 0b0100
-export const EXCEEDED_VERTICAL_MAX = 0b1000
+export enum Exceed {
+    NO_CONSTRAINT = 0,
+    HORIZONTAL_MIN = 0b0001,
+    HORIZONTAL_MAX = 0b0010,
+    VERTICAL_MIN = 0b0100,
+    VERTICAL_MAX = 0b1000,
+}
 
 export class PanelResizeHandleRegistry {
     static isPointerDown = false
     static isCoarsePointer = getInputType() === 'coarse'
     static intersectingHandles: ResizeHandlerData[] = []
     static ownerDocumentCounts: Map<Document, number> = new Map()
-    static panelConstraintFlags: Map<string, number> = new Map()
+    static panelConstraintFlags: Map<string, Exceed> = new Map()
     static registeredResizeHandlers = new Set<ResizeHandlerData>()
 
-    static reportConstraintsViolation(resizeHandleId: string, flag: number) {
+    static reportConstraintsViolation(resizeHandleId: string, flag: Exceed) {
         PanelResizeHandleRegistry.panelConstraintFlags.set(resizeHandleId, flag)
     }
 

@@ -1,11 +1,9 @@
 <script lang="ts">
     import { getContext, onDestroy } from 'svelte'
-    import classNames from 'classnames'
     import type { PanelGroupContext } from './types'
     import { getId } from './utils/common'
 
     export let id: string | null = null
-    export let className: string = ''
     export let minSize: number | undefined = undefined
     export let maxSize: number | undefined = undefined
     export let defaultSize: number | undefined = undefined
@@ -29,7 +27,7 @@
 </script>
 
 <div
-    class={classNames('panel', className)}
+    class="panel"
     style={$styles}
     bind:this={panelElement}
     {id}

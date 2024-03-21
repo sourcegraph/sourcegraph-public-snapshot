@@ -16,11 +16,15 @@
             <Panel defaultSize={30} minSize={20}>
                 <div class="item">left</div>
             </Panel>
-            <PanelResizeHandle className="handle" />
+            <PanelResizeHandle>
+                <div class="handle" />
+            </PanelResizeHandle>
             <Panel minSize={30}>
                 <div class="item">middle</div>
             </Panel>
-            <PanelResizeHandle className="handle" />
+            <PanelResizeHandle>
+                <div class="handle" />
+            </PanelResizeHandle>
             <Panel defaultSize={30} minSize={20}>
                 <div class="item">right</div>
             </Panel>
@@ -34,7 +38,9 @@
             <Panel maxSize={75}>
                 <div class="item">Top</div>
             </Panel>
-            <PanelResizeHandle className="handle" />
+            <PanelResizeHandle>
+                <div class="handle" />
+            </PanelResizeHandle>
             <Panel maxSize={75}>
                 <div class="item">Bottom</div>
             </Panel>
@@ -48,19 +54,25 @@
             <Panel defaultSize={20} minSize={10}>
                 <div class="item">left</div>
             </Panel>
-            <PanelResizeHandle className="handle" />
+            <PanelResizeHandle>
+                <div class="handle" />
+            </PanelResizeHandle>
             <Panel minSize={35}>
                 <PanelGroup direction="vertical">
                     <Panel defaultSize={35} minSize={10}>
                         <div class="item">Top</div>
                     </Panel>
-                    <PanelResizeHandle className="handle" />
+                    <PanelResizeHandle>
+                        <div class="handle" />
+                    </PanelResizeHandle>
                     <Panel minSize={10}>
                         <PanelGroup direction="horizontal">
                             <Panel minSize={10}>
                                 <div class="item">left</div>
                             </Panel>
-                            <PanelResizeHandle className="handle" />
+                            <PanelResizeHandle>
+                                <div class="handle" />
+                            </PanelResizeHandle>
                             <Panel minSize={10}>
                                 <div class="item">right</div>
                             </Panel>
@@ -68,7 +80,9 @@
                     </Panel>
                 </PanelGroup>
             </Panel>
-            <PanelResizeHandle className="handle" />
+            <PanelResizeHandle>
+                <div class="handle" />
+            </PanelResizeHandle>
             <Panel defaultSize={20} minSize={10}>
                 <div class="item">right</div>
             </Panel>
@@ -96,16 +110,21 @@
         height: 100%;
     }
 
-    :global(.handle) {
+    :global([data-resize-handle]) {
         flex: 0 0 3px;
+    }
+
+    .handle {
+        width: 100%;
+        height: 100%;
         background: transparent;
     }
 
-    :global(.handle[data-resize-handle-state='drag']) {
+    :global([data-resize-handle-state='drag']) .handle {
         background: #4c6490;
     }
 
-    :global(.handle[data-resize-handle-state='hover']) {
+    :global([data-resize-handle-state='hover']) .handle {
         background: transparent;
     }
 </style>
