@@ -8,6 +8,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -79,6 +80,9 @@ sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterpr
 
 # View configuration for a commandset
 sg start -describe single-program
+
+# Run a set of commands instead of a commandset
+sg start --commands frontend gitserver
 `,
 		Category: category.Dev,
 		Flags: []cli.Flag{
@@ -94,7 +98,11 @@ sg start -describe single-program
 				Name:  "profile",
 				Usage: "Starts up pprof on port 6060",
 			},
-
+			&cli.BoolFlag{
+				Name:    "commands",
+				Aliases: []string{"cmd", "cmds"},
+				Usage:   "Signifies that you will be passing in individual commands to run, instead of a set of commands",
+			},
 			&cli.StringSliceFlag{
 				Name:        "debug",
 				Aliases:     []string{"d"},
@@ -188,21 +196,6 @@ func startExec(ctx *cli.Context) error {
 		return err
 	}
 
-	args := ctx.Args().Slice()
-	if len(args) > 2 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
-		return flag.ErrHelp
-	}
-
-	if len(args) != 1 {
-		if config.DefaultCommandset != "" {
-			args = append(args, config.DefaultCommandset)
-		} else {
-			std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: No commandset specified and no 'defaultCommandset' specified in sg.config.yaml\n"))
-			return flag.ErrHelp
-		}
-	}
-
 	pid, exists, err := run.PidExistsWithArgs(os.Args[1:])
 	if err != nil {
 		std.Out.WriteAlertf("Could not check if 'sg %s' is already running with the same arguments. Process: %d", strings.Join(os.Args[1:], " "), pid)
@@ -219,10 +212,19 @@ func startExec(ctx *cli.Context) error {
 		}
 	}
 
-	commandset := args[0]
-	set, ok := config.Commandsets[commandset]
-	if !ok {
-		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: commandset %q not found :(", commandset))
+	// If the commands flag is passed, we just extract the command line arguments as
+	// a list of commands to run.
+	if ctx.Bool("commands") {
+		cmds, err := listToCommands(config, ctx.Args().Slice())
+		if err != nil {
+			return err
+		}
+		return cmds.start(ctx.Context)
+	}
+
+	set, err := getCommandSet(config, ctx.Args().Slice())
+	if err != nil {
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: extracting commandset failed %q :(", err))
 		return flag.ErrHelp
 	}
 
@@ -232,7 +234,7 @@ func startExec(ctx *cli.Context) error {
 			return err
 		}
 
-		return std.Out.WriteMarkdown(fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", commandset, string(out)))
+		return std.Out.WriteMarkdown(fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", set.Name, string(out)))
 	}
 
 	// If the commandset requires the dev-private repository to be cloned, we
@@ -309,6 +311,15 @@ go tool pprof -help
 	return startCommandSet(ctx.Context, set, config)
 }
 
+func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.Config) error {
+	commands, err := commandSetToCommands(conf, set)
+	if err != nil {
+		return err
+	}
+
+	return commands.start(ctx)
+}
+
 func shouldUpdateDevPrivate(ctx context.Context, path, branch string) (bool, error) {
 	// git fetch so that we check whether there are any remote changes
 	if err := sgrun.Bash(ctx, fmt.Sprintf("git fetch origin %s", branch)).Dir(path).Run().Wait(); err != nil {
@@ -323,91 +334,157 @@ func shouldUpdateDevPrivate(ctx context.Context, path, branch string) (bool, err
 
 }
 
-func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.Config) error {
-	if err := runChecksWithName(ctx, set.Checks); err != nil {
+func getCommandSet(config *sgconf.Config, args []string) (*sgconf.Commandset, error) {
+	switch length := len(args); {
+	case length > 1:
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
+		return nil, flag.ErrHelp
+	case length == 1:
+		if set, ok := config.Commandsets[args[0]]; ok {
+			return set, nil
+		} else {
+			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: commandset %q not found :(", args[0]))
+			return nil, flag.ErrHelp
+		}
+
+	default:
+		if set, ok := config.Commandsets[config.DefaultCommandset]; ok {
+			return set, nil
+		} else {
+			std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: No commandset specified and no 'defaultCommandset' specified in sg.config.yaml\n"))
+			return nil, flag.ErrHelp
+		}
+	}
+}
+
+type Commands struct {
+	checks   []string
+	commands []run.SGConfigCommand
+	env      map[string]string
+	ibazel   *run.IBazel
+}
+
+func (cmds *Commands) add(cmd ...run.SGConfigCommand) {
+	cmds.commands = append(cmds.commands, cmd...)
+}
+
+func (cmds *Commands) getBazelTargets() (targets []string) {
+	for _, cmd := range cmds.commands {
+		target := cmd.GetBazelTarget()
+		if target != "" && !slices.Contains(targets, target) {
+			targets = append(targets, target)
+		}
+	}
+
+	return targets
+}
+
+func (cmds *Commands) getInstallers() (installers []run.Installer, err error) {
+	for _, cmd := range cmds.commands {
+		if installer, ok := cmd.(run.Installer); ok {
+			installers = append(installers, installer)
+		}
+	}
+	targets := cmds.getBazelTargets()
+	if len(targets) > 0 {
+		if cmds.ibazel, err = run.NewIBazel(targets); err != nil {
+			return nil, err
+		}
+		installers = append(installers, cmds.ibazel)
+	}
+	return
+}
+
+func (cmds *Commands) start(ctx context.Context) error {
+	if err := runChecksWithName(ctx, cmds.checks); err != nil {
 		return err
 	}
 
-	repoRoot, err := root.RepositoryRoot()
-	if err != nil {
-		return err
-	}
-
-	cmds, err := getCommands(set.Commands, set, conf.Commands)
-	if err != nil {
-		return err
-	}
-
-	bcmds, err := getCommands(set.BazelCommands, set, conf.BazelCommands)
-	if err != nil {
-		return err
-	}
-
-	dcmds, err := getCommands(set.DockerCommands, set, conf.DockerCommands)
-	if err != nil {
-		return err
-	}
-
-	if len(cmds)+len(bcmds)+len(dcmds) == 0 {
+	if len(cmds.commands) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "WARNING: no commands to run"))
 		return nil
 	}
 
-	env := conf.Env
-	for k, v := range set.Env {
-		env[k] = v
-	}
-
-	installers := make([]run.Installer, 0, len(cmds)+1)
-	for _, cmd := range cmds {
-		installers = append(installers, cmd)
-	}
-
-	var ibazel *run.IBazel
-	if len(bcmds)+len(dcmds) > 0 {
-		var targets []string
-		for _, cmd := range bcmds {
-			targets = append(targets, cmd.Target)
-		}
-		for _, cmd := range dcmds {
-			targets = append(targets, cmd.Target)
-		}
-
-		ibazel, err = run.NewIBazel(targets, repoRoot)
-		if err != nil {
-			return err
-		}
-		defer ibazel.Close()
-		installers = append(installers, ibazel)
-	}
-	if err := run.Install(ctx, env, verbose, installers...); err != nil {
+	installers, err := cmds.getInstallers()
+	if err != nil {
 		return err
 	}
 
-	if ibazel != nil {
-		ibazel.StartOutput()
+	if err := run.Install(ctx, cmds.env, verbose, installers); err != nil {
+		return err
 	}
 
-	levelOverrides := logLevelOverrides()
-	configCmds := make([]run.SGConfigCommand, 0, len(bcmds)+len(cmds))
-	for _, cmd := range bcmds {
-		enrichWithLogLevels(&cmd.Config, levelOverrides)
-		configCmds = append(configCmds, cmd)
+	if cmds.ibazel != nil {
+		cmds.ibazel.StartOutput()
+		defer cmds.ibazel.Close()
 	}
 
-	for _, cmd := range cmds {
-		enrichWithLogLevels(&cmd.Config, levelOverrides)
-		configCmds = append(configCmds, cmd)
-	}
-	for _, cmd := range dcmds {
-		enrichWithLogLevels(&cmd.Config, levelOverrides)
-		configCmds = append(configCmds, cmd)
-	}
-
-	return run.Commands(ctx, env, verbose, configCmds...)
+	return run.Commands(ctx, cmds.env, verbose, cmds.commands)
 }
 
-func getCommands[T run.SGConfigCommand](commands []string, set *sgconf.Commandset, conf map[string]T) ([]T, error) {
+func listToCommands(config *sgconf.Config, names []string) (*Commands, error) {
+	var cmds Commands
+	for _, arg := range names {
+		if cmd, ok := getCommand(config, arg); ok {
+			cmds.add(cmd)
+		} else {
+			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: command %q not found :(", arg))
+			return nil, flag.ErrHelp
+		}
+	}
+	cmds.env = config.Env
+
+	return &cmds, nil
+}
+
+func commandSetToCommands(config *sgconf.Config, set *sgconf.Commandset) (*Commands, error) {
+	cmds := Commands{}
+	if ccmds, err := getCommands(set.Commands, set, config.Commands); err != nil {
+		return nil, err
+	} else {
+		cmds.add(ccmds...)
+	}
+
+	if bcmds, err := getCommands(set.BazelCommands, set, config.BazelCommands); err != nil {
+		return nil, err
+	} else {
+		cmds.add(bcmds...)
+	}
+
+	if dcmds, err := getCommands(set.DockerCommands, set, config.DockerCommands); err != nil {
+		return nil, err
+	} else {
+		cmds.add(dcmds...)
+	}
+
+	cmds.env = config.Env
+	for k, v := range set.Env {
+		cmds.env[k] = v
+	}
+
+	addLogLevel := createLogLevelAdder(logLevelOverrides())
+	for i, cmd := range cmds.commands {
+		cmds.commands[i] = cmd.UpdateConfig(addLogLevel)
+	}
+
+	return &cmds, nil
+
+}
+
+func getCommand(config *sgconf.Config, name string) (run.SGConfigCommand, bool) {
+	if cmd, ok := config.BazelCommands[name]; ok {
+		return cmd, ok
+	}
+	if cmd, ok := config.DockerCommands[name]; ok {
+		return cmd, ok
+	}
+	if cmd, ok := config.Commands[name]; ok {
+		return cmd, ok
+	}
+	return nil, false
+}
+
+func getCommands[T run.SGConfigCommand](commands []string, set *sgconf.Commandset, conf map[string]T) ([]run.SGConfigCommand, error) {
 	exceptList := exceptServices.Value()
 	exceptSet := make(map[string]interface{}, len(exceptList))
 	for _, svc := range exceptList {
@@ -420,7 +497,7 @@ func getCommands[T run.SGConfigCommand](commands []string, set *sgconf.Commandse
 		onlySet[svc] = struct{}{}
 	}
 
-	cmds := make([]T, 0, len(commands))
+	cmds := make([]run.SGConfigCommand, 0, len(commands))
 	for _, name := range commands {
 		cmd, ok := conf[name]
 		if !ok {
@@ -467,16 +544,18 @@ func logLevelOverrides() map[string]string {
 }
 
 // enrichWithLogLevels will add any logger level overrides to a given command if they have been specified.
-func enrichWithLogLevels(config *run.SGConfigCommandOptions, overrides map[string]string) {
-	logLevelVariable := "SRC_LOG_LEVEL"
+func createLogLevelAdder(overrides map[string]string) func(*run.SGConfigCommandOptions) {
+	return func(config *run.SGConfigCommandOptions) {
+		logLevelVariable := "SRC_LOG_LEVEL"
 
-	if level, ok := overrides[config.Name]; ok {
-		std.Out.WriteLine(output.Styledf(output.StylePending, "Setting log level: %s for command %s.", level, config.Name))
-		if config.Env == nil {
-			config.Env = make(map[string]string, 1)
+		if level, ok := overrides[config.Name]; ok {
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Setting log level: %s for command %s.", level, config.Name))
+			if config.Env == nil {
+				config.Env = make(map[string]string, 1)
+			}
+
 			config.Env[logLevelVariable] = level
 		}
-		config.Env[logLevelVariable] = level
 	}
 }
 

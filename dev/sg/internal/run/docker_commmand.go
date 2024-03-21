@@ -83,6 +83,15 @@ func (dc DockerCommand) GetBinaryLocation() (string, error) {
 	return binaryLocation(dc.Target)
 }
 
+func (dc DockerCommand) GetBazelTarget() string {
+	return dc.Target
+}
+
+func (dc DockerCommand) UpdateConfig(f func(*SGConfigCommandOptions)) SGConfigCommand {
+	f(&dc.Config)
+	return dc
+}
+
 func (dc DockerCommand) StartWatch(ctx context.Context) (<-chan struct{}, error) {
 	if watchPaths, err := dc.watchPaths(); err != nil {
 		return nil, err

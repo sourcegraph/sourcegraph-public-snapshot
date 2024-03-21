@@ -116,6 +116,12 @@ elif [[ "$BUILDKITE_BRANCH" =~ ^main-dry-run/.*  ]]; then
   dev_tags+=("insiders")
   prod_tags+=("insiders")
   push_prod=false
+elif [[ "$BUILDKITE_BRANCH" =~ ^cloud-ephemeral/.* ]]; then
+  # Cloud Ephemeral images need a proper semver version
+  dev_tags+=("insiders" "${PUSH_VERSION}")
+  prod_tags+=("insiders")
+  push_prod=false
+
 elif [[ "$BUILDKITE_BRANCH" =~ ^[0-9]+\.[0-9]+$ ]]; then
   # All release branch builds must be published to prod tags to support
   # format introduced by https://github.com/sourcegraph/sourcegraph/pull/48050

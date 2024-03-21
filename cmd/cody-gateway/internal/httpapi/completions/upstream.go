@@ -63,11 +63,24 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] interface {
 	getAPIURLByFeature(codygateway.Feature) string
 
 	// validateRequest can be used to validate the HTTP request before it is sent upstream.
-	// Returning a non-nil error will stop further processing and return the given error
-	// code. Defaulting to 400.
+	// This is where we enforce things like character/token limits, etc. Any non-nil errors
+	// will block the processing of the request, and serve the error directly to the end
+	// user along with an HTTP status code 400 Bad Request.
 	//
 	// The provided logger already contains actor context.
-	validateRequest(context.Context, log.Logger, codygateway.Feature, ReqT) (int, *flaggingResult, error)
+	validateRequest(context.Context, log.Logger, codygateway.Feature, ReqT) error
+
+	// shouldFlagRequest is called after the request has been validated, and is where we
+	// run various heuristics to check if the request is abusive in nature. (e.g. suspiciously
+	// long, contains words/phrases from a blocklist, etc.)
+	//
+	// All implementations of this function should call isFlaggedRequest(...), along with
+	// any LLM or provider-specific logic.
+	//
+	// Any errors returned from shouldFlagRequest will be swallowed, and the request will be
+	// considered unflagged. (So implementations should return errors rather than swallowing
+	// them directly.)
+	shouldFlagRequest(context.Context, log.Logger, ReqT) (*flaggingResult, error)
 	// transformBody can be used to modify the request body before it is sent
 	// upstream. To manipulate the HTTP request, use transformRequest.
 	//
@@ -188,13 +201,15 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "failed to parse request body"))
 			return
 		}
-		status, flaggingResult, err := methods.validateRequest(ctx, logger, feature, body)
+		status, flaggingResult, err := methods.validateRequest(r.Context(), logger, feature, body)
 		if err != nil {
-			// Log that the request was outright blocked.
-			if flaggingResult != nil && flaggingResult.IsFlagged() && flaggingResult.shouldBlock {
+			if status == 0 {
+				response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "invalid request"))
+			}
+			if flaggingResult.IsFlagged() && flaggingResult.shouldBlock {
 				requestMetadata := getFlaggingMetadata(flaggingResult, act)
 				err := eventLogger.LogEvent(
-					ctx,
+					r.Context(),
 					events.Event{
 						Name:       codygateway.EventNameRequestBlocked,
 						Source:     act.Source.Name(),
@@ -222,11 +237,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				}
 			}
 
-			// Ensure that we return a meaningful error to the client for validation failures.
-			if status < 400 {
-				status = http.StatusBadRequest
-				err = errors.Wrap(err, "invalid request")
-			}
 			response.JSONError(logger, w, status, err)
 			return
 		}
@@ -258,6 +268,20 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 
 		// Retrieve metadata from the initial request.
 		model, requestMetadata := methods.getRequestMetadata(body)
+
+		if feature == codygateway.FeatureChatCompletions {
+			prompt := strings.ToLower(body.BuildPrompt())
+			prof := d.ExtractProfanity(prompt)
+			if prof != "" {
+				requestMetadata["profanity"] = prof
+			}
+			for _, p := range patternsToDetect {
+				if strings.Contains(prompt, p) {
+					requestMetadata["detected_phrase"] = truncateToPrefix(p)
+					break
+				}
+			}
+		}
 
 		// Match the model against the allowlist of models, which are configured
 		// with the Cody Gateway model format "$PROVIDER/$MODEL_NAME". Models

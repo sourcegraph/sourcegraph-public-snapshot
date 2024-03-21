@@ -1,5 +1,7 @@
 package ci
 
+import "fmt"
+
 var AspectWorkflows = struct {
 	// TestStepKey is the key of the primary test step
 	TestStepKey string
@@ -20,9 +22,10 @@ var AspectWorkflows = struct {
 	QueueSmall:             "aspect-small",
 }
 
-func aspectBazelRC() (string, string) {
-	path := "/tmp/aspect-generated.bazelrc"
-	bazelRCCmd := "rosetta bazelrc > " + path
+const AspectGeneratedBazelRCPath = "/tmp/aspect-generated.bazelrc"
 
-	return bazelRCCmd, path
+func aspectBazelRC() (string, string) {
+	bazelRCCmd := fmt.Sprintf("rosetta bazelrc > %s;", AspectGeneratedBazelRCPath)
+
+	return bazelRCCmd, AspectGeneratedBazelRCPath
 }

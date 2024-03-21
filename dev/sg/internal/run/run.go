@@ -24,7 +24,7 @@ type cmdRunner struct {
 	verbose   bool
 }
 
-func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cmds ...SGConfigCommand) (err error) {
+func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cmds []SGConfigCommand) (err error) {
 	if len(cmds) == 0 {
 		// Exit early if there are no commands to run.
 		return nil
