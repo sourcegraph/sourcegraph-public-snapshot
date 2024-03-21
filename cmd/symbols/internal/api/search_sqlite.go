@@ -6,6 +6,8 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"go.opentelemetry.io/otel/attribute"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -21,6 +23,12 @@ import (
 )
 
 const searchTimeout = 60 * time.Second
+
+type limitHitError struct {
+	Description string
+}
+
+func (e *limitHitError) Error() string { return e.Description }
 
 func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWriter writer.CachedDatabaseWriter, db database.DB) types.SearchFunc {
 	operations := sharedobservability.NewOperations(observationCtx)
@@ -87,9 +95,14 @@ func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWri
 		trace.AddEvent("databaseWriter", attribute.String("dbFile", dbFile))
 
 		var res result.Symbols
+		var limitHit bool
 		err = store.WithSQLiteStore(observationCtx, dbFile, func(db store.Store) (err error) {
-			if res, err = db.Search(ctx, args); err != nil {
+			if res, limitHit, err = db.Search(ctx, args); err != nil {
 				return errors.Wrap(err, "store.Search")
+			}
+			if limitHit {
+				p := message.NewPrinter(language.English)
+				return &limitHitError{Description: p.Sprintf("unindexed symbol search out of bounds. Expected args.First to be within [0, %d], got %d", store.MaxSymbolLimit, args.First)}
 			}
 
 			return nil

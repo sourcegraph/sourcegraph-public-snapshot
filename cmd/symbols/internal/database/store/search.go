@@ -8,13 +8,10 @@ import (
 
 	"github.com/grafana/regexp/syntax"
 	"github.com/keegancsmith/sqlf"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -47,26 +44,26 @@ func scanSymbols(rows *sql.Rows, queryErr error) (symbols []result.Symbol, err e
 	return symbols, nil
 }
 
-// This limit prevents users from accidentally running a query that returns an
+// MaxSymbolLimit prevents users from accidentally running a query that returns an
 // extremely large number of results. It is arbitrary, but it should be at least
 // as high as the default limit frontend sends to the symbol service.
-const maxSymbolLimit = 50_000
+const MaxSymbolLimit = 50
 
-func (s *store) Search(ctx context.Context, args search.SymbolsParameters) ([]result.Symbol, error) {
+func (s *store) Search(ctx context.Context, args search.SymbolsParameters) ([]result.Symbol, bool, error) {
 	if args.First < 0 {
-		return nil, errors.New("limit must be greater than or equal to 0")
+		return nil, false, errors.New("limit must be greater than or equal to 0")
 	}
 
 	limit := args.First
 	outOfBounds := false
 	// We check against limit + 1 because frontend will ask for limit + 1. This way
 	// we can communicate a nicer number to the user.
-	if limit > maxSymbolLimit+1 {
+	if limit > MaxSymbolLimit+1 {
 		outOfBounds = true
-		limit = maxSymbolLimit
+		limit = MaxSymbolLimit
 	}
 
-	res, err1 := scanSymbols(s.Query(ctx, sqlf.Sprintf(
+	res, err := scanSymbols(s.Query(ctx, sqlf.Sprintf(
 		`
 			SELECT
 				name,
@@ -86,17 +83,12 @@ func (s *store) Search(ctx context.Context, args search.SymbolsParameters) ([]re
 		sqlf.Join(makeSearchConditions(args), "AND"),
 		limit,
 	)))
-	if err1 != nil {
-		return nil, err1
+	if err != nil {
+		return nil, false, err
 	}
 
-	var err error
-	if outOfBounds && len(res) == limit {
-		p := message.NewPrinter(language.English)
-		err = &symbols.LimitHitError{Description: p.Sprintf("unindexed symbol search out of bounds. Expected args.First to be within [0, %d], got %d", maxSymbolLimit, args.First)}
-	}
-
-	return res, err
+	limitHit := outOfBounds && len(res) == limit
+	return res, limitHit, nil
 }
 
 func makeSearchConditions(args search.SymbolsParameters) []*sqlf.Query {
