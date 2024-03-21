@@ -1,17 +1,76 @@
-import { derived, writable, type Readable } from 'svelte/store'
+import { type Writable, writable, type Updater, derived, type Readable } from 'svelte/store'
 
-import { createMappingStore } from './utils'
+import { browser } from '$app/environment'
+
+import { temporarySetting, type TemporarySettingStore } from './temporarySettings'
+
+const LOCAL_STORAGE_THEME_KEY = 'sourcegraph-theme'
 
 export enum Theme {
-    Light,
-    Dark,
-    System,
+    Light = 'Light',
+    Dark = 'Dark',
+    System = 'System',
 }
 
 /**
- * The currently selected Theme.
+ * The currently selected theme. Writing to this store will persist the theme
+ * to temporary settings.
  */
-export const theme = writable(Theme.System)
+export const theme: Writable<Theme> = (function () {
+    let theme: Theme = ((browser && localStorage.getItem(LOCAL_STORAGE_THEME_KEY)) || Theme.System) as Theme
+    let themeSettingStore: TemporarySettingStore<'user.themePreference'> | undefined
+
+    const { subscribe } = writable(theme, set => {
+        if (!themeSettingStore) {
+            themeSettingStore = temporarySetting('user.themePreference')
+        }
+
+        return themeSettingStore.subscribe($themeSetting => {
+            if (!$themeSetting.loading && $themeSetting.data) {
+                switch ($themeSetting.data.toLowerCase()) {
+                    case 'light': {
+                        theme = Theme.Light
+                        break
+                    }
+                    case 'dark': {
+                        theme = Theme.Dark
+                        break
+                    }
+                    case 'system': {
+                        theme = Theme.System
+                        break
+                    }
+                }
+            }
+            localStorage.setItem(LOCAL_STORAGE_THEME_KEY, theme)
+            set(theme)
+        })
+    })
+
+    function getThemeStringValue(theme: Theme): string {
+        switch (theme) {
+            case Theme.Light: {
+                return 'light'
+            }
+            case Theme.Dark: {
+                return 'dark'
+            }
+            case Theme.System: {
+                return 'system'
+            }
+        }
+    }
+
+    return {
+        subscribe,
+        set: (value: Theme) => {
+            themeSettingStore?.setValue(getThemeStringValue(value))
+        },
+        update: (updater: Updater<Theme>) => {
+            themeSettingStore?.setValue(updater(theme))
+        },
+    }
+})()
 
 /**
  * This store returns true if the theme is set to light or if the user's system
@@ -31,57 +90,3 @@ export const isLightTheme = derived(theme, ($theme, set) => {
     set($theme === Theme.Light)
     return
 }) satisfies Readable<boolean>
-
-/**
- * A store that maps user friendly theme names to Theme.* values and vice versa.
- */
-export const humanTheme = createMappingStore(
-    theme,
-    theme => {
-        switch (theme) {
-            case Theme.Light: {
-                return 'Light'
-            }
-            case Theme.Dark: {
-                return 'Dark'
-            }
-            case Theme.System: {
-                return 'System'
-            }
-        }
-    },
-    value => {
-        switch (value) {
-            case 'Light': {
-                return Theme.Light
-            }
-            case 'Dark': {
-                return Theme.Dark
-            }
-            case 'System': {
-                return Theme.System
-            }
-        }
-    }
-)
-
-/**
- * Interprets a string as a theme and sets the theme accordingly.
- */
-export function setThemeFromString(value: string): void {
-    value = value.toLowerCase()
-    switch (value) {
-        case 'light': {
-            theme.set(Theme.Light)
-            break
-        }
-        case 'dark': {
-            theme.set(Theme.Dark)
-            break
-        }
-        case 'system': {
-            theme.set(Theme.System)
-            break
-        }
-    }
-}
