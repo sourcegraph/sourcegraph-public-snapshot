@@ -214,7 +214,11 @@ Lockfiles can be found at wolfi-images/<image>.lock.json
 					}
 
 					if checkLock {
-						allImagesMatch, mismatchedImages, err := wolfi.CheckApkoLockHashes([]string{imageName})
+						var imageNames []string
+						if imageName != "" {
+							imageNames = append(imageNames, imageName)
+						}
+						allImagesMatch, mismatchedImages, err := wolfi.CheckApkoLockHashes(imageNames)
 						if err != nil {
 							return err
 						}
