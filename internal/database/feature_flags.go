@@ -331,7 +331,18 @@ func (f *featureFlagStore) CreateOverride(ctx context.Context, override *ff.Over
 			%s,
 			%s,
 			%s
-		) RETURNING
+		)
+		-- NOTE: this only upserts for user overrides, not
+		-- org overrides. Postgres does not allow an ON CONFLICT
+		-- clause targeting two different unique constraints. Since
+		-- this just exists for convenience and an override can also
+		-- be explicitly updated, it should be okay.
+		ON CONFLICT (namespace_user_id, flag_name)
+		DO UPDATE SET
+			flag_value = EXCLUDED.flag_value,
+			updated_at = now(),
+			deleted_at = NULL
+		RETURNING
 			namespace_org_id,
 			namespace_user_id,
 			flag_name,
