@@ -14,8 +14,10 @@ import (
 )
 
 var (
-	checkLock   bool
-	buildLegacy bool
+	checkLock        bool
+	buildLegacy      bool
+	keyringAppend    string
+	repositoryAppend string
 )
 
 var (
@@ -108,7 +110,8 @@ It can also be used for local development by updating its path and hash in the '
 						return err
 					}
 
-					bc, err := wolfi.SetupBaseImageBuild(baseImageName, pc)
+					// Additional repos cannot be provided as they will not be used unless lockfile is outdated
+					bc, err := wolfi.SetupBaseImageBuild(baseImageName, pc, wolfi.BaseImageOpts{})
 					if err != nil {
 						return err
 					}
@@ -122,7 +125,7 @@ It can also be used for local development by updating its path and hash in the '
 						}
 						if !isMatch {
 							std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "%s.yaml does not match %s.lock.json - regenerating lockfile (run manually with `sg wolfi update-images %s`)", baseImageName, baseImageName, baseImageName))
-							if err = bc.UpdateImage(ctx, false); err != nil {
+							if err = bc.UpdateImage(ctx); err != nil {
 								return err
 							}
 						}
@@ -205,6 +208,18 @@ Lockfiles can be found at wolfi-images/<image>.lock.json
 						Usage:       "Check if the lockfile is up to date",
 						Destination: &checkLock,
 					},
+					&cli.StringFlag{
+						Name:        "repository-append",
+						Aliases:     []string{"r"},
+						Usage:       "Path to additional repositories to include",
+						Destination: &repositoryAppend,
+					},
+					&cli.StringFlag{
+						Name:        "keyring-append",
+						Aliases:     []string{"k"},
+						Usage:       "Path to additional keys to include in the keyring",
+						Destination: &keyringAppend,
+					},
 				},
 				Action: func(ctx *cli.Context) error {
 					args := ctx.Args().Slice()
@@ -212,6 +227,7 @@ Lockfiles can be found at wolfi-images/<image>.lock.json
 					if len(args) == 1 {
 						imageName = args[0]
 					}
+					fmt.Printf("args are %v\n", args)
 
 					if checkLock {
 						var imageNames []string
@@ -237,14 +253,22 @@ Lockfiles can be found at wolfi-images/<image>.lock.json
 						return nil
 					}
 
+					opts := wolfi.BaseImageOpts{
+						RepositoryAppend: repositoryAppend,
+						KeyringAppend:    keyringAppend,
+					}
+					fmt.Printf("Keyring append is %s\n\n", keyringAppend)
+
 					if imageName != "" {
-						bc, err := wolfi.SetupBaseImageBuild(imageName, wolfi.PackageRepoConfig{})
+						fmt.Printf("*** In lock section\n\n")
+						bc, err := wolfi.SetupBaseImageBuild(imageName, wolfi.PackageRepoConfig{}, opts)
+						fmt.Printf("Base image config: %+v\n\n", bc)
 						if err != nil {
 							return err
 						}
-						return bc.UpdateImage(ctx, false)
+						return bc.UpdateImage(ctx)
 					} else {
-						return wolfi.UpdateAllImages(ctx, false)
+						return wolfi.UpdateAllImages(ctx, opts)
 					}
 				},
 			},

@@ -44,35 +44,29 @@ func getAllImages() (imageNames []string, err error) {
 }
 
 // UpdateAllImages runs UpdateImage for all images in the baseImageDir
-func UpdateAllImages(ctx *cli.Context, enableLocalPackageRepo bool) error {
+func UpdateAllImages(ctx *cli.Context, opts BaseImageOpts) error {
 	imageNames, err := getAllImages()
 	if err != nil {
 		return err
 	}
 
 	for _, imageName := range imageNames {
-		bc, err := SetupBaseImageBuild(imageName, PackageRepoConfig{})
+		bc, err := SetupBaseImageBuild(imageName, PackageRepoConfig{}, opts)
 		if err != nil {
 			return err
 		}
 
-		bc.UpdateImage(ctx, enableLocalPackageRepo)
+		bc.UpdateImage(ctx)
 	}
 
 	return nil
 }
 
 // UpdateImage updates re-locks the set of packages for the given image by updating its lockfile
-func (bc BaseImageConfig) UpdateImage(_ *cli.Context, enableLocalPackageRepo bool) error {
-
-	var extraRepo, extraKey string
-	// Currently not implemented as rules_apko doesn't support local filesystem repos
-	// if enableLocalPackageRepo {
-	// }
-
+func (bc BaseImageConfig) UpdateImage(_ *cli.Context) error {
 	// Update lockfile
 	std.Out.WriteLine(output.Linef("🗝️ ", output.StylePending, fmt.Sprintf("Updating apko lockfile for %s", bc.ImageName)))
-	if err := bc.ApkoLock(extraRepo, extraKey); err != nil {
+	if err := bc.ApkoLock(); err != nil {
 		return err
 	}
 
@@ -80,18 +74,20 @@ func (bc BaseImageConfig) UpdateImage(_ *cli.Context, enableLocalPackageRepo boo
 }
 
 // ApkoLock calls `apko lock` to generate a lockfile for the given image
-func (bc BaseImageConfig) ApkoLock(extraRepo string, extraKey string) error {
+func (bc BaseImageConfig) ApkoLock() error {
 	localImageConfigPath := strings.TrimPrefix(bc.ImageConfigPath, bc.ImageConfigDir+"/")
 
 	apkoArgs := []string{"run", "@rules_apko//apko", "lock", "--", localImageConfigPath}
 
 	apkoFlags := []string{}
-	if extraRepo != "" {
-		apkoFlags = append(apkoFlags, "--repository-append", extraRepo)
+	if bc.RepositoryAppend != "" {
+		apkoFlags = append(apkoFlags, "--repository-append", bc.RepositoryAppend)
 	}
-	if extraKey != "" {
-		apkoFlags = append(apkoFlags, "--keyring-append", extraKey)
+	if bc.KeyringAppend != "" {
+		apkoFlags = append(apkoFlags, "--keyring-append", bc.KeyringAppend)
 	}
+
+	fmt.Printf("Running bazel %v %v\n", apkoArgs, apkoFlags)
 
 	cmd := exec.Command("bazel", append(apkoArgs, apkoFlags...)...)
 	cmd.Stdout = os.Stdout
@@ -151,7 +147,7 @@ func CheckApkoLockHashes(imageNames []string) (allImagesMatch bool, mismatchedIm
 	allImagesMatch = true
 
 	for _, imageName := range imageNames {
-		bc, err := SetupBaseImageBuild(imageName, PackageRepoConfig{})
+		bc, err := SetupBaseImageBuild(imageName, PackageRepoConfig{}, BaseImageOpts{})
 		if err != nil {
 			return false, nil, err
 		}

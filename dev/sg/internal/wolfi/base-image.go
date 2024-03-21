@@ -24,9 +24,16 @@ type BaseImageConfig struct {
 	ImageConfigPath   string // Full path e.g. wolfi-images/gitserver.yaml
 	LockfilePath      string // Path to lockfile e.g. wolfi-images/gitserver.lock.json
 	BazelBuildPath    string // Bazel build path for image e.g. //cmd/gitserver:wolfi_base_tarball
+	KeyringAppend     string // Path to additional keys to include in the keyring
+	RepositoryAppend  string // Path to additional repositories to include in the keyring
 }
 
-func SetupBaseImageBuild(name string, pc PackageRepoConfig) (bc BaseImageConfig, err error) {
+type BaseImageOpts struct {
+	KeyringAppend    string
+	RepositoryAppend string
+}
+
+func SetupBaseImageBuild(name string, pc PackageRepoConfig, opts BaseImageOpts) (bc BaseImageConfig, err error) {
 	bc.PackageRepoConfig = pc
 
 	// Get root of repo
@@ -51,6 +58,9 @@ func SetupBaseImageBuild(name string, pc PackageRepoConfig) (bc BaseImageConfig,
 	if err == nil {
 		bc.BazelBuildPath = fmt.Sprintf("//%s:wolfi_base_tarball", imagePath)
 	}
+
+	bc.KeyringAppend = opts.KeyringAppend
+	bc.RepositoryAppend = opts.RepositoryAppend
 
 	return bc, nil
 }
