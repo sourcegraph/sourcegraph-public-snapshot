@@ -128,7 +128,7 @@ func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.C
 		Messages:      messages,
 		Stream:        stream,
 		StopSequences: requestParams.StopSequences,
-		Model:         requestParams.Model,
+		Model:         pinModel(requestParams.Model),
 		Temperature:   requestParams.Temperature,
 		MaxTokens:     requestParams.MaxTokensToSample,
 		TopP:          requestParams.TopP,
@@ -217,4 +217,17 @@ type anthropicStreamingResponse struct {
 type anthropicStreamingResponseTextBucket struct {
 	Text       string `json:"text"`        // for event `content_block_delta`
 	StopReason string `json:"stop_reason"` // for event `message_delta`
+}
+
+// The /stream API does not support unpinned models
+func pinModel(model string) string {
+	switch model {
+	case "claude-instant-1",
+		"claude-instant-v1":
+		return "claude-instant-1.2"
+	case "claude-2":
+		return "claude-2.1"
+	default:
+		return model
+	}
 }

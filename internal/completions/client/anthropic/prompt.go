@@ -52,6 +52,9 @@ func convertFromLegacyMessages(messages []types.Message) []types.Message {
 		}
 
 		// 1. If the first message is "system prompt like" convert it to an actual system prompt
+		//
+		// Note: The prefix we scan for here is used in the current chat prompts for VS Code and the
+		//       old Web UI prompt.
 		if i == 0 && strings.HasPrefix(message.Text, "You are Cody, an AI") {
 			message.Speaker = types.SYSTEM_MESSAGE_SPEAKER
 			skipNext = true

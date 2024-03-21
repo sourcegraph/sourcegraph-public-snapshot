@@ -162,3 +162,14 @@ func TestCompleteApiToMessages(t *testing.T) {
 		autogold.Expect(body).Equal(t, []byte(`{"messages":[{"role":"user","content":[{"type":"text","text":"Servus!"}]}],"model":"","stream":true}`))
 	})
 }
+
+func TestPinModel(t *testing.T) {
+	t.Run("Claude Instant", func(t *testing.T) {
+		assert.Equal(t, pinModel("claude-instant-1"), "claude-instant-1.2")
+		assert.Equal(t, pinModel("claude-instant-v1"), "claude-instant-1.2")
+	})
+
+	t.Run("Claude 2", func(t *testing.T) {
+		assert.Equal(t, pinModel("claude-2"), "claude-2.1")
+	})
+}

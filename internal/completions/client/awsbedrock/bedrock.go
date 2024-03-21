@@ -19,7 +19,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -158,7 +157,7 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 		requestParams.TopP = 0
 	}
 
-	prompt, err := anthropic.GetPrompt(requestParams.Messages)
+	prompt, err := GetPrompt(requestParams.Messages)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +168,7 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 	}
 
 	if len(requestParams.StopSequences) == 0 {
-		requestParams.StopSequences = []string{anthropic.HUMAN_PROMPT}
+		requestParams.StopSequences = []string{HUMAN_PROMPT}
 	}
 
 	if requestParams.MaxTokensToSample == 0 {
