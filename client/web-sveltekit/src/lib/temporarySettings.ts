@@ -34,7 +34,7 @@ type LoadingData<D, E> =
 type TemporarySettingsKey = keyof TemporarySettings
 type TemporarySettingStatus<K extends TemporarySettingsKey> = LoadingData<TemporarySettings[K], unknown>
 
-interface TemporarySettingStore<K extends TemporarySettingsKey> extends Readable<TemporarySettingStatus<K>> {
+export interface TemporarySettingStore<K extends TemporarySettingsKey> extends Readable<TemporarySettingStatus<K>> {
     setValue(value: TemporarySettings[K]): void
 }
 
