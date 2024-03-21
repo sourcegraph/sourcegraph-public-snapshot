@@ -183,50 +183,6 @@ func (f *featureFlagStore) CreateBool(ctx context.Context, name string, value bo
 
 var ErrInvalidColumnState = errors.New("encountered column that is unexpectedly null based on column type")
 
-func scanFeatureFlagAndOverride(scanner dbutil.Scanner) (*ff.FeatureFlag, *bool, error) {
-	var (
-		res      ff.FeatureFlag
-		flagType string
-		boolVal  *bool
-		rollout  *int32
-		override *bool
-	)
-	err := scanner.Scan(
-		&res.Name,
-		&flagType,
-		&boolVal,
-		&rollout,
-		&res.CreatedAt,
-		&res.UpdatedAt,
-		&res.DeletedAt,
-		&override,
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	switch flagType {
-	case "bool":
-		if boolVal == nil {
-			return nil, nil, ErrInvalidColumnState
-		}
-		res.Bool = &ff.FeatureFlagBool{
-			Value: *boolVal,
-		}
-	case "rollout":
-		if rollout == nil {
-			return nil, nil, ErrInvalidColumnState
-		}
-		res.Rollout = &ff.FeatureFlagRollout{
-			Rollout: *rollout,
-		}
-	default:
-		return nil, nil, ErrInvalidColumnState
-	}
-
-	return &res, override, nil
-}
-
 func scanFeatureFlag(scanner dbutil.Scanner) (*ff.FeatureFlag, error) {
 	var (
 		res      ff.FeatureFlag
@@ -555,19 +511,16 @@ func (f *featureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[
 			ORDER BY flag_name, created_at desc
 		)
 		SELECT
-			ff.flag_name,
-			flag_type,
-			bool_value,
-			rollout,
-			created_at,
-			updated_at,
-			deleted_at,
+			COALESCE(ff.flag_name, uo.flag_name, oo.flag_name),
+			ff.flag_type,
+			ff.bool_value,
+			ff.rollout,
 			-- We prioritize user overrides over org overrides.
 			-- If neither exist override will be NULL.
 			COALESCE(uo.flag_value, oo.flag_value) AS override
 		FROM feature_flags ff
-		LEFT JOIN org_overrides oo ON ff.flag_name = oo.flag_name
-		LEFT JOIN user_overrides uo ON ff.flag_name = uo.flag_name
+		FULL JOIN org_overrides oo ON ff.flag_name = oo.flag_name
+		FULL JOIN user_overrides uo ON ff.flag_name = uo.flag_name
 		WHERE deleted_at IS NULL
 	`
 	rows, err := f.Query(ctx, sqlf.Sprintf(listUserOverridesFmtString, userID, userID))
@@ -576,17 +529,48 @@ func (f *featureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[
 	}
 	defer rows.Close()
 
+	scanRow := func(rows *sql.Rows) (string, bool, error) {
+		var (
+			flagName string
+			flagType *string
+			boolVal  *bool
+			rollout  *int32
+			override *bool
+		)
+		err := rows.Scan(&flagName, &flagType, &boolVal, &rollout, &override)
+		if err != nil {
+			return "", false, err
+		}
+		if override != nil {
+			return flagName, *override, nil
+		}
+		if flagType == nil {
+			return "", false, ErrInvalidColumnState
+		}
+		switch *flagType {
+		case "bool":
+			if boolVal == nil {
+				return "", false, ErrInvalidColumnState
+			}
+			return flagName, *boolVal, nil
+		case "rollout":
+			if rollout == nil {
+				return "", false, ErrInvalidColumnState
+			}
+			ffr := ff.FeatureFlagRollout{Rollout: *rollout}
+			return flagName, ffr.Evaluate(flagName, userID), nil
+		default:
+			return "", false, ErrInvalidColumnState
+		}
+	}
+
 	res := make(map[string]bool)
 	for rows.Next() {
-		flag, override, err := scanFeatureFlagAndOverride(rows)
+		flag, value, err := scanRow(rows)
 		if err != nil {
 			return nil, err
 		}
-		if override != nil {
-			res[flag.Name] = *override
-		} else {
-			res[flag.Name] = flag.EvaluateForUser(userID)
-		}
+		res[flag] = value
 	}
 	return res, rows.Err()
 }
