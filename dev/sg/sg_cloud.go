@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"go/version"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,7 +14,10 @@ import (
 	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/ci/images"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -75,8 +79,22 @@ var cloudCommand = &cli.Command{
 func deployCloudEphemeral(ctx *cli.Context) error {
 	tag := ctx.String("tag")
 	branch := ctx.String("branch")
+	commit, err := repo.GetHeadCommit(ctx.Context)
+	if err != nil {
+		return err
+	}
+	// Check that branch has been pushed
+	// offer to push branch
+	client, err := bk.NewClient(ctx.Context, std.Out)
+	build, err := client.TriggerBuild(ctx.Context, "sourcegraph", branch, commit, bk.WithEnvVar("CLOUD_EPHEMERAL", "true"))
+	if err != nil {
+		return err
+	}
 
-	ci.
+	version := ""
+	if tag != "" {
+		version := images.BranchImageTag(time.Now())
+	}
 
 	// 1. kick of a build so that we can get the images
 	// 2. Once the build is kicked off we will need the build number so taht we can generate the version locally
