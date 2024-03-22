@@ -321,7 +321,6 @@ func (s *scipWriter) flush(ctx context.Context) error {
 }
 
 func (s *scipWriter) writeSymbols(ctx context.Context, documents []bufferedDocument, documentLookupIDs []int) error {
-	// NOTE(Christoph): We don't write symbols for syntactic indices
 	if s.isSyntactic {
 		return nil
 	}
@@ -426,9 +425,8 @@ func (s *scipWriter) Flush(ctx context.Context) (uint32, error) {
 		return 0, err
 	}
 
-	// NOTE(Christoph): Only flush symbols for non-syntactic indices
 	if !s.isSyntactic {
-		// Flush all data into temp tables
+		// Flush all symbols data into temp tables
 		if err := s.symbolNameInserter.Flush(ctx); err != nil {
 			return 0, err
 		}
@@ -436,7 +434,7 @@ func (s *scipWriter) Flush(ctx context.Context) (uint32, error) {
 			return 0, err
 		}
 
-		// Move all data from temp tables into target tables
+		// Move all symbols data from temp tables into target tables
 		if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolNamesQuery, s.uploadID)); err != nil {
 			return 0, err
 		}
