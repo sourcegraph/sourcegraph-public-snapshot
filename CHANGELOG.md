@@ -29,7 +29,6 @@ All notable changes to Sourcegraph are documented in this file.
 - The Anthropic provider for Cody has been updated to use Anthropic's Messages API, bringing support for Claude 3 models if you use Cody Gateway or your own Anthropic license key. [#60953](https://github.com/sourcegraph/sourcegraph/pull/60953)
 - The AWS Bedrock provider for Cody has been updated to use Anthropic's Messages API, bringing support for Claude 3 models. [#61347](https://github.com/sourcegraph/sourcegraph/pull/61347)
 
-
 ### Fixed
 
 - Code Monitors now properly ignores monitors associated with soft-deleted users, which previously would have led to an error on the overview page. [#60405](https://github.com/sourcegraph/sourcegraph/pull/60405)
