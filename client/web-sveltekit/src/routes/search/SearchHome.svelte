@@ -10,6 +10,7 @@
     import SearchHomeNotifications from './SearchHomeNotifications.svelte'
     import HotkeyList from '$lib/HotkeyList.svelte';
     import Hotkey from '$lib/Hotkey.svelte';
+    import {createHotkey, evaluateKey} from '$lib/HotkeyFn';
 
     export let queryState: QueryStateStore
 
@@ -18,6 +19,9 @@
             queryState.setQuery(newQuery)
         },
     })
+
+    createHotkey('ctrl+i', () => alert('test-fn'));
+    createHotkey(evaluateKey({mac: 'command+o'}), () => alert('test-fn-mac'));
 </script>
 
 <section>
