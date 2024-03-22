@@ -373,7 +373,7 @@ func writeSCIPDocuments(
 				return err
 			}
 		} else {
-			scipWriter, err = tx.NewSCIPWriter(ctx, upload.ID)
+			scipWriter, err = tx.NewPreciseSCIPWriter(ctx, upload.ID)
 			if err != nil {
 				return err
 			}

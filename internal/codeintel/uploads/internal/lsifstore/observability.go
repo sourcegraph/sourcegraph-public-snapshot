@@ -38,7 +38,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 	return &operations{
 		insertMetadata:              op("InsertMetadata"),
-		newSCIPWriter:               op("NewSCIPWriter"),
+		newSCIPWriter:               op("NewPreciseSCIPWriter"),
 		idsWithMeta:                 op("IDsWithMeta"),
 		reconcileCandidates:         op("ReconcileCandidates"),
 		deleteLsifDataByUploadIds:   op("DeleteLsifDataByUploadIds"),

@@ -112,7 +112,7 @@ func (s *store) NewSyntacticSCIPWriter(ctx context.Context, uploadID int) (SCIPW
 	return scipWriter, nil
 }
 
-func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, error) {
+func (s *store) NewPreciseSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, error) {
 	if !s.db.InTransaction() {
 		return nil, errors.New("WriteSCIPSymbols must be called in a transaction")
 	}

@@ -8985,7 +8985,7 @@ func NewStrictMockLSIFStore() *MockLSIFStore {
 		},
 		NewSCIPWriterFunc: &LSIFStoreNewSCIPWriterFunc{
 			defaultHook: func(context.Context, int) (lsifstore.SCIPWriter, error) {
-				panic("unexpected invocation of MockLSIFStore.NewSCIPWriter")
+				panic("unexpected invocation of MockLSIFStore.NewPreciseSCIPWriter")
 			},
 		},
 		NewSyntacticSCIPWriterFunc: &LSIFStoreNewSyntacticSCIPWriterFunc{
@@ -9031,7 +9031,7 @@ func NewMockLSIFStoreFrom(i lsifstore.Store) *MockLSIFStore {
 			defaultHook: i.InsertMetadata,
 		},
 		NewSCIPWriterFunc: &LSIFStoreNewSCIPWriterFunc{
-			defaultHook: i.NewSCIPWriter,
+			defaultHook: i.NewPreciseSCIPWriter,
 		},
 		NewSyntacticSCIPWriterFunc: &LSIFStoreNewSyntacticSCIPWriterFunc{
 			defaultHook: i.NewSyntacticSCIPWriter,
@@ -9610,7 +9610,7 @@ func (c LSIFStoreInsertMetadataFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// LSIFStoreNewSCIPWriterFunc describes the behavior when the NewSCIPWriter
+// LSIFStoreNewSCIPWriterFunc describes the behavior when the NewPreciseSCIPWriter
 // method of the parent MockLSIFStore instance is invoked.
 type LSIFStoreNewSCIPWriterFunc struct {
 	defaultHook func(context.Context, int) (lsifstore.SCIPWriter, error)
@@ -9621,13 +9621,13 @@ type LSIFStoreNewSCIPWriterFunc struct {
 
 // NewSCIPWriter delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockLSIFStore) NewSCIPWriter(v0 context.Context, v1 int) (lsifstore.SCIPWriter, error) {
+func (m *MockLSIFStore) NewPreciseSCIPWriter(v0 context.Context, v1 int) (lsifstore.SCIPWriter, error) {
 	r0, r1 := m.NewSCIPWriterFunc.nextHook()(v0, v1)
 	m.NewSCIPWriterFunc.appendCall(LSIFStoreNewSCIPWriterFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the NewSCIPWriter method
+// SetDefaultHook sets function that is called when the NewPreciseSCIPWriter method
 // of the parent MockLSIFStore instance is invoked and the hook queue is
 // empty.
 func (f *LSIFStoreNewSCIPWriterFunc) SetDefaultHook(hook func(context.Context, int) (lsifstore.SCIPWriter, error)) {
@@ -9635,7 +9635,7 @@ func (f *LSIFStoreNewSCIPWriterFunc) SetDefaultHook(hook func(context.Context, i
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// NewSCIPWriter method of the parent MockLSIFStore instance invokes the
+// NewPreciseSCIPWriter method of the parent MockLSIFStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
 func (f *LSIFStoreNewSCIPWriterFunc) PushHook(hook func(context.Context, int) (lsifstore.SCIPWriter, error)) {
@@ -9690,7 +9690,7 @@ func (f *LSIFStoreNewSCIPWriterFunc) History() []LSIFStoreNewSCIPWriterFuncCall 
 }
 
 // LSIFStoreNewSCIPWriterFuncCall is an object that describes an invocation
-// of method NewSCIPWriter on an instance of MockLSIFStore.
+// of method NewPreciseSCIPWriter on an instance of MockLSIFStore.
 type LSIFStoreNewSCIPWriterFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
