@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
-import InfoBadge from '$lib/search/resultsIndicator/InfoBadge.svelte'
+
 import { render } from '@testing-library/svelte'
 import type { ComponentProps } from 'svelte'
 import { describe, test, expect } from 'vitest'
 
-describe("InfoBadge.svelte", () => {
+import InfoBadge from '$lib/search/resultsIndicator/InfoBadge.svelte'
+
+describe('InfoBadge.svelte', () => {
     function renderInfoBadge(options?: Partial<ComponentProps<InfoBadge>>): void {
         render(InfoBadge, { ...options })
     }
@@ -19,9 +21,9 @@ describe("InfoBadge.svelte", () => {
                         reason: 'error',
                         title: 'this is an error',
                         message: 'vv much an error',
-                        severity: 'error'
-                    }
-                ]
+                        severity: 'error',
+                    },
+                ],
             },
             state: 'error',
         })
@@ -30,7 +32,7 @@ describe("InfoBadge.svelte", () => {
         expect(errorClass).toHaveLength(1)
 
         const errorText = errorClass[0].textContent
-        expect(errorText).toBe("0 results in 3.80s")
+        expect(errorText).toBe('0 results in 3.80s')
     })
 
     test('render as info if severity === info', () => {
@@ -43,9 +45,9 @@ describe("InfoBadge.svelte", () => {
                         reason: 'info',
                         title: 'this is info',
                         message: 'vv much info',
-                        severity: 'info'
-                    }
-                ]
+                        severity: 'info',
+                    },
+                ],
             },
             state: 'info',
         })

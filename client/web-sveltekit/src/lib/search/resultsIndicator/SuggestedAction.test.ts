@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
+
+import { render } from '@testing-library/svelte'
 import type { ComponentProps } from 'svelte'
 import { describe, test, expect } from 'vitest'
-import { render } from '@testing-library/svelte'
 
 import SuggestedAction from '$lib/search/resultsIndicator/SuggestedAction.svelte'
 
-describe("SuggestedAction.svelte", () => {
+describe('SuggestedAction.svelte', () => {
     function renderSuggestedAction(options?: Partial<ComponentProps<SuggestedAction>>): void {
         render(SuggestedAction, { ...options })
     }
@@ -27,9 +28,9 @@ describe("SuggestedAction.svelte", () => {
                         suggested: {
                             title: "here's a title",
                             message: "here's a message",
-                        }
-                    }
-                ]
+                        },
+                    },
+                ],
             },
             isError: false,
             mostSevere: {
@@ -40,8 +41,8 @@ describe("SuggestedAction.svelte", () => {
                 suggested: {
                     title: "here's a title",
                     message: "here's a message",
-                }
-            }
+                },
+            },
         })
 
         const title = document.getElementsByClassName('info-badge')
@@ -68,8 +69,8 @@ describe("SuggestedAction.svelte", () => {
                         title: 'this is an error',
                         message: 'vv much an error',
                         severity: 'error',
-                    }
-                ]
+                    },
+                ],
             },
             isError: false,
             mostSevere: {
@@ -77,7 +78,7 @@ describe("SuggestedAction.svelte", () => {
                 title: 'info here',
                 message: 'vv much an info',
                 severity: 'info',
-            }
+            },
         })
 
         const title = document.getElementsByClassName('info-badge')
@@ -90,4 +91,3 @@ describe("SuggestedAction.svelte", () => {
         expect(action).toHaveLength(0)
     })
 })
-

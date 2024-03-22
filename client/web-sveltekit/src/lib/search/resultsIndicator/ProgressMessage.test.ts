@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
+
+import { render } from '@testing-library/svelte'
 import type { ComponentProps } from 'svelte'
 import { describe, test, expect } from 'vitest'
-import { render } from '@testing-library/svelte'
 
 import ProgressMessage from '$lib/search/resultsIndicator/ProgressMessage.svelte'
 
-describe("ProgressMessage.svelte", () => {
+describe('ProgressMessage.svelte', () => {
     function renderProgressMessage(options?: Partial<ComponentProps<ProgressMessage>>): void {
         render(ProgressMessage, { ...options })
     }
@@ -20,7 +21,7 @@ describe("ProgressMessage.svelte", () => {
             loading: true,
             isError: false,
             elapsedDuration: 5000,
-            maxSearchDuration: 10000
+            maxSearchDuration: 10000,
         })
 
         const progressMessage = document.getElementsByClassName('progress-message')
@@ -30,6 +31,6 @@ describe("ProgressMessage.svelte", () => {
         expect(runningSearch).toHaveLength(1)
 
         const runningSearchText = runningSearch[0].textContent
-        expect(runningSearchText).toBe("Running Search")
+        expect(runningSearchText).toBe('Running Search')
     })
 })
