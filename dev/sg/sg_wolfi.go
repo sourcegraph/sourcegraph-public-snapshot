@@ -126,7 +126,7 @@ It can also be used for local development by updating its path and hash in the '
 						return err
 					}
 					if hasLocalPackage {
-						std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "%s.yaml contains an `@local` package - falling back to legacy build method", baseImageName))
+						std.Out.WriteLine(output.Linef(output.EmojiWarning, output.StyleBold, "%s.yaml contains an `@local` package - falling back to legacy build method", baseImageName))
 						buildLegacy = true
 					}
 

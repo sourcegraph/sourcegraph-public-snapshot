@@ -139,6 +139,14 @@ func (bc BaseImageConfig) DoBaseImageBuildLegacy() error {
 	std.Out.WriteLine(output.Linef("📦", output.StylePending, "Building base image %s...", bc.ImageName))
 	std.Out.WriteLine(output.Linef("🤖", output.StylePending, "Apko build output:\n"))
 
+	fmt.Printf("*** Work dir is %s\n", bc.ImageConfigDir)
+	wd, _ := os.Getwd()
+	fmt.Printf("*** pwd is %s\n", wd)
+	lscmd := exec.Command("ls", "-al", bc.ImageConfigDir+"/")
+	lscmd.Stdout = os.Stdout
+	lscmd.Stderr = os.Stderr
+	lscmd.Run()
+
 	imageName := legacyDockerImageName(bc.ImageName)
 	imageFileName := imageFileName(bc.ImageName)
 
