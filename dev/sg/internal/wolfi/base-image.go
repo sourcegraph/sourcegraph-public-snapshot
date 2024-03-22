@@ -10,12 +10,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 // define a constant wolfi-images
 const baseImageDir = "wolfi-images"
+
+var localRepoRegex = lazyregexp.New(`(?m)^\s+-\s+.*@local`)
 
 type BaseImageConfig struct {
 	PackageRepoConfig PackageRepoConfig
@@ -165,7 +168,7 @@ func DockerImageName(name string) string {
 }
 
 func legacyDockerImageName(name string) string {
-	return fmt.Sprintf("sourcegraph-wolfi/%s-base:latest-amd64", name)
+	return fmt.Sprintf("sourcegraph-wolfi/%s-base:latest", name)
 }
 
 func imageFileName(name string) string {
@@ -193,7 +196,7 @@ func (bc BaseImageConfig) LoadBaseImage() error {
 	}
 
 	std.Out.Write("")
-	std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Run base image locally using:\n\n\tdocker run -it --entrypoint /bin/sh %s\n", legacyDockerImageName(bc.ImageName)))
+	std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Run base image locally using:\n\n\tdocker run -it --entrypoint /bin/sh %s-amd64\n", legacyDockerImageName(bc.ImageName)))
 
 	return nil
 }
@@ -209,4 +212,18 @@ func (bc BaseImageConfig) CleanupBaseImageBuild() error {
 	}
 
 	return nil
+}
+
+// ContainsLocalPackages checks if a BaseImageConfig contains a reference to a
+// @local package repository.
+func (bc BaseImageConfig) ContainsLocalPackages() (bool, error) {
+	imageConfigData, err := os.ReadFile(bc.ImageConfigPath)
+	if err != nil {
+		return false, err
+	}
+
+	imageConfig := string(imageConfigData)
+	localRepoMatch := localRepoRegex.MatchString(imageConfig)
+
+	return localRepoMatch, nil
 }

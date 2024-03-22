@@ -116,7 +116,15 @@ It can also be used for local development by updating its path and hash in the '
 						return err
 					}
 
-					// TODO: Add a check for - .*@local in the manifest and use legacy build if present
+					// WORKAROUND: rules_apko does not support package repos on the local filesystem, so fall back to legacy build
+					hasLocalPackage, err := bc.ContainsLocalPackages()
+					if err != nil {
+						return err
+					}
+					if hasLocalPackage {
+						std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "%s.yaml contains an `@local` package - falling back to legacy build method", baseImageName))
+						buildLegacy = true
+					}
 
 					if !buildLegacy {
 						isMatch, err := bc.CheckApkoLockHash()
@@ -124,7 +132,7 @@ It can also be used for local development by updating its path and hash in the '
 							return err
 						}
 						if !isMatch {
-							std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "%s.yaml does not match %s.lock.json - regenerating lockfile (run manually with `sg wolfi update-images %s`)", baseImageName, baseImageName, baseImageName))
+							std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "%s.yaml does not match %s.lock.json - regenerating lockfile (run manually with `sg wolfi lock %s`)", baseImageName, baseImageName, baseImageName))
 							if err = bc.UpdateImage(ctx); err != nil {
 								return err
 							}
