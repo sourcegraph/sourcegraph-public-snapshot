@@ -10,7 +10,7 @@ import (
 func removeWhitespaceOnlySequences(sequences []string) []string {
 	var result []string
 	for _, sequence := range sequences {
-		if strings.Trim(sequence, " \t\n\r") != "" {
+		if len(strings.TrimSpace(sequence)) > 0 {
 			result = append(result, sequence)
 		}
 	}
