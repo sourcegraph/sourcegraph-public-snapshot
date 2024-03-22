@@ -64,7 +64,7 @@ func TestValidAnthropicMessagesStream(t *testing.T) {
 	mockClient := getMockClient(linesToResponse(mockAnthropicMessagesResponseLines, "\n\n"))
 	events := []types.CompletionResponse{}
 	stream := true
-	err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{
+	err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{
 		Stream: &stream,
 	}, func(event types.CompletionResponse) error {
 		events = append(events, event)
@@ -80,7 +80,7 @@ func TestInvalidAnthropicMessagesStream(t *testing.T) {
 	var mockAnthropicInvalidResponseLines = []string{`data:{]`}
 
 	mockClient := getMockClient(linesToResponse(mockAnthropicInvalidResponseLines, "\r\n\r\n"))
-	err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil })
+	err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil })
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -98,7 +98,7 @@ func TestErrStatusNotOK(t *testing.T) {
 	}, "", "", false)
 
 	t.Run("Complete", func(t *testing.T) {
-		resp, err := mockClient.Complete(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{})
+		resp, err := mockClient.Complete(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{})
 		require.Error(t, err)
 		assert.Nil(t, resp)
 
@@ -108,7 +108,7 @@ func TestErrStatusNotOK(t *testing.T) {
 	})
 
 	t.Run("Stream", func(t *testing.T) {
-		err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil })
+		err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil })
 		require.Error(t, err)
 
 		autogold.Expect("Anthropic: unexpected status code 429: oh no, please slow down!").Equal(t, err.Error())
@@ -139,7 +139,7 @@ func TestCompleteApiToMessages(t *testing.T) {
 	}
 
 	t.Run("Complete", func(t *testing.T) {
-		resp, err := mockClient.Complete(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{Messages: messages})
+		resp, err := mockClient.Complete(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{Messages: messages})
 		require.Error(t, err)
 		assert.Nil(t, resp)
 
@@ -152,7 +152,7 @@ func TestCompleteApiToMessages(t *testing.T) {
 
 	t.Run("Stream", func(t *testing.T) {
 		stream := true
-		err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{Messages: messages, Stream: &stream}, func(event types.CompletionResponse) error { return nil })
+		err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{Messages: messages, Stream: &stream}, func(event types.CompletionResponse) error { return nil })
 		require.Error(t, err)
 
 		assert.NotNil(t, response)
