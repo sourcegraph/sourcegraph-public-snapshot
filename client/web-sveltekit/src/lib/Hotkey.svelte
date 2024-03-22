@@ -1,35 +1,51 @@
 <script lang="ts">
     import hotkeys from 'hotkeys-js';
+    import type {KeyHandler, HotkeysEvent} from 'hotkeys-js';
     import {onDestroy, onMount} from 'svelte';
+    import {isLinuxPlatform, isMacPlatform, isWindowsPlatform} from '$root/client/common';
 
     export let run: () => void;
-    export let key: string;
-    export let preventDefaultEffect: boolean = true;
+    export let key: string = '';
+    export let linux: string = '';
+    export let mac: string = '';
+    export let windows: string = '';
 
-    onMount(() => {
-        const conflictingKey = hotkeys.getAllKeyCodes().find(code => key.includes(code.shortcut))
+    export let unbindAfterInvoke: boolean = false;
 
-        if (conflictingKey) {
-            alert(`The key ${key} conflicts with another already registered hotkey.`);
-            return;
+    const evaluateKey: (keys: { mac: string, linux: string, windows: string, key: string }) => string = (keys) => {
+        if (isMacPlatform() && keys.mac) {
+            return keys.mac;
+        } else if (isLinuxPlatform() && keys.linux) {
+            return keys.linux;
+        } else if (isWindowsPlatform() && keys.windows) {
+            return keys.windows;
+        } else {
+            return keys.key;
+        }
+    }
+
+    let evaluatedKey: string = evaluateKey({mac, linux, windows, key});
+    $: evaluatedKey = evaluateKey({mac, linux, windows, key});
+    export let preventDefault: boolean = true;
+
+    const handler: KeyHandler = (event: KeyboardEvent, _handler: HotkeysEvent) => {
+        if (preventDefault) {
+            event.preventDefault();
         }
 
-        hotkeys(key, function(event, _handler){
-            if (preventDefaultEffect) {
-                event.preventDefault();
-            }
+        run();
 
-            // we can check for modifiers and ignore hotkeys to avoid duplicate bindings
-            if (hotkeys.command) {
-                console.log('command is pressed!');
-                return;
-            }
+        if (unbindAfterInvoke) {
+            hotkeys.unbind(evaluatedKey, handler)
+        }
+    }
 
-            run();
-        });
-    })
+    onMount(() => {
+        if (hotkeys.getAllKeyCodes().map(k => k.shortcut).includes(evaluatedKey)) {
+            console.error(`The hotkey "${evaluatedKey}" has already been registered by another Hotkey component.`);
+        }
 
-    onDestroy(() => {
-        hotkeys.unbind(key);
+        hotkeys(evaluatedKey, handler);
     });
+    onDestroy(() => hotkeys.unbind(evaluatedKey, handler));
 </script>

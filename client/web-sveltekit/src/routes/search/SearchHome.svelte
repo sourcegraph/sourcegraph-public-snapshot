@@ -8,8 +8,8 @@
     import { isLightTheme } from '$lib/stores'
 
     import SearchHomeNotifications from './SearchHomeNotifications.svelte'
-    import ReactiveHotkey from '$lib/ReactiveHotkey.svelte';
     import HotkeyList from '$lib/HotkeyList.svelte';
+    import Hotkey from '$lib/Hotkey.svelte';
 
     export let queryState: QueryStateStore
 
@@ -22,9 +22,8 @@
 
 <section>
     <div class="content">
-<!--        note: the override is not so reactive that it will auto-update this component when I only change the local storage value. i still need to refresh.-->
-        <ReactiveHotkey keyDefault="ctrl+u, command+u" run={() => alert('test1')} />
-        <ReactiveHotkey keyDefault="ctrl+u, command+u" run={() => alert('test2')} />
+        <Hotkey mac="command+u" linux="ctrl+u" run={() => alert('test1')} />
+        <Hotkey mac="command+u" linux="ctrl+u" run={() => alert('test2, unbinding now')} unbindAfterInvoke={true} />
         <HotkeyList />
         <img class="logo" src={$isLightTheme ? logoLight : logoDark} alt="Sourcegraph Logo" />
         <div class="search">
