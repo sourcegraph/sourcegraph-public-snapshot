@@ -26,7 +26,7 @@ func TestLegacyMessageConversion(t *testing.T) {
 		{Speaker: "assistant"},
 	}
 
-	convertedMessages := convertFromLegacyMessages(messages)
+	convertedMessages := types.ConvertFromLegacyMessages(messages)
 
 	autogold.Expect([]types.Message{
 		{
@@ -52,7 +52,7 @@ func TestLegacyMessageConversionWithTrailingAssistantResponse(t *testing.T) {
 		{Speaker: "assistant", Text: "Roses are red, "},
 	}
 
-	convertedMessages := convertFromLegacyMessages(messages)
+	convertedMessages := types.ConvertFromLegacyMessages(messages)
 
 	autogold.Expect([]types.Message{{
 		Speaker: "human",
