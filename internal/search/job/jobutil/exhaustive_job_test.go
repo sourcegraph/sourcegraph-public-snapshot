@@ -36,8 +36,8 @@ func TestNewExhaustive(t *testing.T) {
 		WantJob   autogold.Value
 	}{
 		{
-			Name:  "case insensitive lang match",
-			Query: `type:file index:no lang:cpp content`,
+			Name:  "case sensitive lang match",
+			Query: `type:file index:no lang:cpp content case:yes`,
 			WantPager: autogold.Expect(`
 (REPOPAGER
   (containsRefGlobs . false)
@@ -45,7 +45,7 @@ func TestNewExhaustive(t *testing.T) {
   (PARTIALREPOS
     (SEARCHERTEXTSEARCH
       (useFullDeadline . true)
-      (patternInfo . TextPatternInfo{"content",nopath,filematchlimit:1000000,lang:cpp,f:"(?i)(?:\\.cpp$)|(?:\\.c\\+\\+$)|(?:\\.cc$)|(?:\\.cp$)|(?:\\.cxx$)|(?:\\.h$)|(?:\\.h\\+\\+$)|(?:\\.hh$)|(?:\\.hpp$)|(?:\\.hxx$)|(?:\\.inc$)|(?:\\.inl$)|(?:\\.ino$)|(?:\\.ipp$)|(?:\\.ixx$)|(?:\\.re$)|(?:\\.tcc$)|(?:\\.tpp$)"})
+      (patternInfo . TextPatternInfo{"content",case,nopath,filematchlimit:1000000,lang:cpp,F:"(?i)(?:\\.cpp$)|(?:\\.c\\+\\+$)|(?:\\.cc$)|(?:\\.cp$)|(?:\\.cxx$)|(?:\\.h$)|(?:\\.h\\+\\+$)|(?:\\.hh$)|(?:\\.hpp$)|(?:\\.hxx$)|(?:\\.inc$)|(?:\\.inl$)|(?:\\.ino$)|(?:\\.ipp$)|(?:\\.ixx$)|(?:\\.re$)|(?:\\.tcc$)|(?:\\.tpp$)"})
       (numRepos . 0)
       (pathRegexps . [(?i)(?:\.cpp$)|(?:\.c\+\+$)|(?:\.cc$)|(?:\.cp$)|(?:\.cxx$)|(?:\.h$)|(?:\.h\+\+$)|(?:\.hh$)|(?:\.hpp$)|(?:\.hxx$)|(?:\.inc$)|(?:\.inl$)|(?:\.ino$)|(?:\.ipp$)|(?:\.ixx$)|(?:\.re$)|(?:\.tcc$)|(?:\.tpp$)])
       (indexed . false))))
@@ -53,7 +53,7 @@ func TestNewExhaustive(t *testing.T) {
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
   (useFullDeadline . true)
-  (patternInfo . TextPatternInfo{"content",nopath,filematchlimit:1000000,lang:cpp,f:"(?i)(?:\\.cpp$)|(?:\\.c\\+\\+$)|(?:\\.cc$)|(?:\\.cp$)|(?:\\.cxx$)|(?:\\.h$)|(?:\\.h\\+\\+$)|(?:\\.hh$)|(?:\\.hpp$)|(?:\\.hxx$)|(?:\\.inc$)|(?:\\.inl$)|(?:\\.ino$)|(?:\\.ipp$)|(?:\\.ixx$)|(?:\\.re$)|(?:\\.tcc$)|(?:\\.tpp$)"})
+  (patternInfo . TextPatternInfo{"content",case,nopath,filematchlimit:1000000,lang:cpp,F:"(?i)(?:\\.cpp$)|(?:\\.c\\+\\+$)|(?:\\.cc$)|(?:\\.cp$)|(?:\\.cxx$)|(?:\\.h$)|(?:\\.h\\+\\+$)|(?:\\.hh$)|(?:\\.hpp$)|(?:\\.hxx$)|(?:\\.inc$)|(?:\\.inl$)|(?:\\.ino$)|(?:\\.ipp$)|(?:\\.ixx$)|(?:\\.re$)|(?:\\.tcc$)|(?:\\.tpp$)"})
   (numRepos . 1)
   (pathRegexps . [(?i)(?:\.cpp$)|(?:\.c\+\+$)|(?:\.cc$)|(?:\.cp$)|(?:\.cxx$)|(?:\.h$)|(?:\.h\+\+$)|(?:\.hh$)|(?:\.hpp$)|(?:\.hxx$)|(?:\.inc$)|(?:\.inl$)|(?:\.ino$)|(?:\.ipp$)|(?:\.ixx$)|(?:\.re$)|(?:\.tcc$)|(?:\.tpp$)])
   (indexed . false))

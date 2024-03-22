@@ -1,18 +1,14 @@
 package zoekt
 
 import (
-	"cmp"
-	"slices"
 	"testing"
 
-	gpCmp "github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp"
 	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-
-	zoekt "github.com/sourcegraph/zoekt/query"
 )
 
 func TestQueryToZoektQuery(t *testing.T) {
@@ -145,7 +141,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 			}
 
 			queryStr := got.String()
-			if diff := gpCmp.Diff(tt.WantZoektOutput, queryStr); diff != "" {
+			if diff := cmp.Diff(tt.WantZoektOutput, queryStr); diff != "" {
 				t.Errorf("mismatched queries during [%s] (-want +got):\n%s", tt.Name, diff)
 			}
 		})
@@ -179,23 +175,6 @@ func Test_toZoektPattern(t *testing.T) {
 
 	autogold.Expect(`(and sym:substr:"foo" (not sym:substr:"bar"))`).
 		Equal(t, test(`type:symbol (foo and not bar)`, query.SearchTypeLiteral, search.SymbolRequest))
-}
-
-func queryEqual(a, b zoekt.Q) bool {
-	sortChildren := func(q zoekt.Q) zoekt.Q {
-		switch s := q.(type) {
-		case *zoekt.And:
-			slices.SortFunc(s.Children, zoektQStringCompare)
-		case *zoekt.Or:
-			slices.SortFunc(s.Children, zoektQStringCompare)
-		}
-		return q
-	}
-	return zoekt.Map(a, sortChildren).String() == zoekt.Map(b, sortChildren).String()
-}
-
-func zoektQStringCompare(a, b zoekt.Q) int {
-	return cmp.Compare(a.String(), b.String())
 }
 
 func computeResultTypes(types []string, b query.Basic, searchType query.SearchType) result.Types {
