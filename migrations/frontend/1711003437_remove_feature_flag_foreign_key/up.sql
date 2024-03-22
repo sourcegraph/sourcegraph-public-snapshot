@@ -11,4 +11,4 @@
 --    in the associated metadata.yaml file.
 
 ALTER TABLE feature_flag_overrides
-DROP CONSTRAINT feature_flag_overrides_flag_name_fkey;
+DROP CONSTRAINT IF EXISTS feature_flag_overrides_flag_name_fkey;
