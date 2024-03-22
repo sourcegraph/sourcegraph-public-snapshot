@@ -122,19 +122,21 @@ func (a *anthropicClient) Stream(
 
 func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, stream bool) (*http.Response, error) {
 	convertedMessages := requestParams.Messages
+	stopSequences := requestParams.StopSequences
 	if version == types.CompletionsVersionLegacy {
 		convertedMessages = convertFromLegacyMessages(convertedMessages)
+		stopSequences = removeWhitespaceOnlySequences(stopSequences)
 	}
 
 	var payload any
-	messages, err := ToAnthropicMessages(convertedMessages)
+	messages, err := toAnthropicMessages(convertedMessages)
 	if err != nil {
 		return nil, err
 	}
 	messagesPayload := anthropicRequestParameters{
 		Messages:      messages,
 		Stream:        stream,
-		StopSequences: requestParams.StopSequences,
+		StopSequences: stopSequences,
 		Model:         pinModel(requestParams.Model),
 		Temperature:   requestParams.Temperature,
 		MaxTokens:     requestParams.MaxTokensToSample,

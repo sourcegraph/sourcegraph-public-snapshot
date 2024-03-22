@@ -7,7 +7,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func ToAnthropicMessages(messages []types.Message) ([]anthropicMessage, error) {
+func removeWhitespaceOnlySequences(sequences []string) []string {
+	var result []string
+	for _, sequence := range sequences {
+		if strings.Trim(sequence, " \t\n\r") != "" {
+			result = append(result, sequence)
+		}
+	}
+	return result
+}
+
+func toAnthropicMessages(messages []types.Message) ([]anthropicMessage, error) {
 	anthropicMessages := make([]anthropicMessage, 0, len(messages))
 
 	for i, message := range messages {
