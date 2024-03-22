@@ -46,6 +46,7 @@ go_test(
         "anthropic_test.go",
         "anthropicmessages_test.go",
         "fireworks_test.go",
+        "flagging_test.go",
         "openai_test.go",
     ],
     embed = [":completions"],
