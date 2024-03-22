@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -29,6 +30,7 @@ func (l *loggingGRPCServer) DiskInfo(ctx context.Context, request *proto.DiskInf
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "DiskInfo"),
 			log.String("request", "<empty>"),
 			log.String("status", status.Code(err).String()),
@@ -47,6 +49,7 @@ func (l *loggingGRPCServer) Exec(request *proto.ExecRequest, server proto.Gitser
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(server.Context()).TraceID),
 			log.String("method", "Exec"),
 			log.String("repo", request.GetRepo()),
 			log.Strings("args", byteSlicesToStrings(request.GetArgs())),
@@ -67,6 +70,7 @@ func (l *loggingGRPCServer) GetObject(ctx context.Context, request *proto.GetObj
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "GetObject"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -85,6 +89,7 @@ func (l *loggingGRPCServer) IsRepoCloneable(ctx context.Context, request *proto.
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "IsRepoCloneable"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -103,6 +108,7 @@ func (l *loggingGRPCServer) ListGitolite(ctx context.Context, request *proto.Lis
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "ListGitolite"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -120,6 +126,7 @@ func (l *loggingGRPCServer) Search(request *proto.SearchRequest, server proto.Gi
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(server.Context()).TraceID),
 			log.String("method", "Search"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -138,6 +145,7 @@ func (l *loggingGRPCServer) Archive(request *proto.ArchiveRequest, server proto.
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(server.Context()).TraceID),
 			log.String("method", "Archive"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -156,6 +164,7 @@ func (l *loggingGRPCServer) RepoClone(ctx context.Context, request *proto.RepoCl
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "RepoClone"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -174,6 +183,7 @@ func (l *loggingGRPCServer) RepoCloneProgress(ctx context.Context, request *prot
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "RepoCloneProgress"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -192,6 +202,7 @@ func (l *loggingGRPCServer) RepoDelete(ctx context.Context, request *proto.RepoD
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "RepoDelete"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -210,6 +221,7 @@ func (l *loggingGRPCServer) RepoUpdate(ctx context.Context, request *proto.RepoU
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "RepoUpdate"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -228,6 +240,7 @@ func (l *loggingGRPCServer) IsPerforcePathCloneable(ctx context.Context, request
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "IsPerforcePathCloneable"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -246,6 +259,7 @@ func (l *loggingGRPCServer) CheckPerforceCredentials(ctx context.Context, reques
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "CheckPerforceCredentials"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -264,6 +278,7 @@ func (l *loggingGRPCServer) PerforceUsers(ctx context.Context, request *proto.Pe
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "PerforceUsers"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -282,6 +297,7 @@ func (l *loggingGRPCServer) PerforceProtectsForUser(ctx context.Context, request
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "PerforceProtectsForUser"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -300,6 +316,7 @@ func (l *loggingGRPCServer) PerforceProtectsForDepot(ctx context.Context, reques
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "PerforceProtectsForDepot"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -318,6 +335,7 @@ func (l *loggingGRPCServer) PerforceGroupMembers(ctx context.Context, request *p
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "PerforceGroupMembers"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -336,6 +354,7 @@ func (l *loggingGRPCServer) IsPerforceSuperUser(ctx context.Context, request *pr
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "IsPerforceSuperUser"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -354,6 +373,7 @@ func (l *loggingGRPCServer) PerforceGetChangelist(ctx context.Context, request *
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "PerforceGetChangelist"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -372,6 +392,7 @@ func (l *loggingGRPCServer) MergeBase(ctx context.Context, request *proto.MergeB
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "MergeBase"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -390,6 +411,7 @@ func (l *loggingGRPCServer) Blame(request *proto.BlameRequest, server proto.Gits
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(server.Context()).TraceID),
 			log.String("method", "Blame"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -408,6 +430,7 @@ func (l *loggingGRPCServer) DefaultBranch(ctx context.Context, request *proto.De
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "DefaultBranch"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -426,6 +449,7 @@ func (l *loggingGRPCServer) ReadFile(request *proto.ReadFileRequest, server prot
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(server.Context()).TraceID),
 			log.String("method", "ReadFile"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -444,6 +468,7 @@ func (l *loggingGRPCServer) GetCommit(ctx context.Context, request *proto.GetCom
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "GetCommit"),
 			log.String("status", status.Code(err).String()),
 			log.String("request", protojson.Format(request)),
@@ -462,6 +487,7 @@ func (l *loggingGRPCServer) ResolveRevision(ctx context.Context, request *proto.
 	defer func() {
 		elapsed := time.Since(start)
 		fields := []log.Field{
+			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "ResolveRevision"),
 			log.String("status", status.Code(err).String()),
 			log.String("repoName", request.GetRepoName()),
