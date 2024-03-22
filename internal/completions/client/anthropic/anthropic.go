@@ -122,12 +122,10 @@ func (a *anthropicClient) Stream(
 
 func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, stream bool) (*http.Response, error) {
 	convertedMessages := requestParams.Messages
-	stopSequences := requestParams.StopSequences
+	stopSequences := removeWhitespaceOnlySequences(requestParams.StopSequences)
 	if version == types.CompletionsVersionLegacy {
 		convertedMessages = convertFromLegacyMessages(convertedMessages)
-		stopSequences = removeWhitespaceOnlySequences(stopSequences)
 	}
-
 	var payload any
 	messages, err := toAnthropicMessages(convertedMessages)
 	if err != nil {
