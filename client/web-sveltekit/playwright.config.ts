@@ -7,11 +7,11 @@ const config: PlaywrightTestConfig = {
     testMatch: 'src/**/*.spec.ts',
     reporter: 'list',
     timeout: 5_000,
-    webServer: {
-        command: 'npm run preview',
-        port: PORT,
-        reuseExistingServer: !process.env.CI,
-    },
+    // webServer: {
+    //     command: 'npm run preview',
+    //     port: PORT,
+    //     reuseExistingServer: !process.env.CI,
+    // },
     use: {
         baseURL: `http://localhost:${PORT}`,
     },
