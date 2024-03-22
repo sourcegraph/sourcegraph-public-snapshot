@@ -139,11 +139,6 @@
     <Separator currentPosition={filtersSidebarPosition} />
     <div class="results">
         <aside class="actions">
-            {#if state === 'loading'}
-                <div>
-                    <LoadingSpinner inline />
-                </div>
-            {/if}
             <StreamingProgress {state} progress={$stream.progress} on:submit={onResubmitQuery} />
         </aside>
         <div class="result-list" bind:this={resultContainer}>

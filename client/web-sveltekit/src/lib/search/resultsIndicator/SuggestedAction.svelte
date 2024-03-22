@@ -67,7 +67,7 @@
         color: black;
     }
 
-    .info-badge.error {
+    .info-badge.error-text {
         background: var(--danger);
     }
 

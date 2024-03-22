@@ -15,19 +15,22 @@
     export let progress: Progress
     export let state: 'error' | 'complete' | 'loading'
 
-    const MAX_SEARCH_DURATION = 15000
+    const MAX_SEARCH_DURATION = 8000
     const icons: Record<string, string> = {
         info: mdiInformationOutline,
         warning: mdiAlert,
         error: mdiAlertCircle,
     }
 
-    // @TODO: fix this so that it restarts every time there's a new search.
     onMount(() => {
-        const startTime = Date.now()
+        let startTime = Date.now()
         setInterval(() => {
             const now = Date.now()
             elapsedDuration = now - startTime
+            // once search has completed, reset the startTime
+            if (done) {
+                startTime = Date.now()
+            }
         }, 1300)
     })
 
@@ -47,12 +50,13 @@
         {#if loading && !done}
             <LoadingSpinner inline />
         {:else}
-            <Icon svgPath={icons[severity]} size={18} />
+            <!-- TODO: Jason Harris: need to change the color of this but the --color tag isn't working -->
+            <Icon svgPath={icons[severity]} size={18} --color="red" />
         {/if}
     </div>
 
     <div class="messages">
-        <ProgressMessage {progress} {loading} {isError} {elapsedDuration} />
+        <ProgressMessage maxSearchDuration={MAX_SEARCH_DURATION} {progress} {loading} {isError} {elapsedDuration} />
         {#if !done && takingTooLong}
             <TimeoutMessage {isError} />
         {/if}

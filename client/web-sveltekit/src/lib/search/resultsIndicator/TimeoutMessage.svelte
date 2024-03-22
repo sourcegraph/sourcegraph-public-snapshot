@@ -20,7 +20,7 @@
     .duration-badge {
         display: flex;
         flex-flow: row-nowrap;
-        margin-top: 0.2rem;
+        // margin-top: 0.2rem;
     }
 
     .error-text {
