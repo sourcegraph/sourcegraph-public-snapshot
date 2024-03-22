@@ -1,4 +1,7 @@
 <script lang="ts">
+    // This is a forked ported to svelte version of react-resizable-panels package
+    // It's licenced under MIT license, original source - https://github.com/bvaughn/react-resizable-panels/tree/main
+
     import { onDestroy, setContext } from 'svelte'
     import { derived, type Readable, type Unsubscriber, writable, type Writable } from 'svelte/store'
 
