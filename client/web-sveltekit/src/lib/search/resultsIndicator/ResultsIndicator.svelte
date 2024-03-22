@@ -56,14 +56,19 @@
         {#if loading && !hasSkippedItems}
             <LoadingSpinner inline />
         {:else}
-            <!-- TODO: Jason Harris: need to change the color of this but the --color tag isn't working -->
-            <!-- currently, the --color style directive does nothing -->
-            <Icon svgPath={icons[severity]} size={18} --color="red" />
+            <Icon svgPath={icons[severity]} size={18} />
         {/if}
     </div>
 
     <div class="messages">
-        <ProgressMessage maxSearchDuration={MAX_SEARCH_DURATION} {progress} {loading} {isError} {elapsedDuration} />
+        <ProgressMessage
+            {state}
+            {progress}
+            {loading}
+            {isError}
+            {elapsedDuration}
+            maxSearchDuration={MAX_SEARCH_DURATION}
+        />
         {#if !done && takingTooLong}
             <TimeoutMessage {isError} />
         {/if}

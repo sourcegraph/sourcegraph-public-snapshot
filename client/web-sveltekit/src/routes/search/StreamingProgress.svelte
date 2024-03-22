@@ -33,10 +33,6 @@
     $: suggestedItems = sortedItems.filter((skipped): skipped is Required<Skipped> => !!skipped.suggested)
     $: hasSuggestedItems = suggestedItems.length > 0
     $: isError = state === 'error'
-
-    // Mock these?
-    // progress object
-    // stream object
 </script>
 
 <Popover let:registerTrigger let:toggle placement="bottom-start">

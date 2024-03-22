@@ -1,7 +1,8 @@
 <script lang="ts">
-    import { getProgressText } from '$lib/branded'
+    import InfoBadge from '$lib/search/resultsIndicator/InfoBadge.svelte'
     import type { Progress } from '$lib/shared'
 
+    export let state: 'error' | 'loading' | 'complete'
     export let progress: Progress
     export let loading: boolean
     export let isError: boolean
@@ -19,9 +20,7 @@
         </div>
     </div>
 {:else}
-    <div class={`progress-message ${isError && 'error-text'}`}>
-        {getProgressText(progress).visibleText}
-    </div>
+    <InfoBadge {state} searchProgress={progress} />
 {/if}
 
 <style lang="scss">
