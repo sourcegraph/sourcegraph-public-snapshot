@@ -32,7 +32,6 @@ func toAnthropicMessages(messages []types.Message) ([]anthropicMessage, error) {
 				return nil, errors.New("system role can only be used in the first message")
 			}
 		case types.ASSISTANT_MESSAGE_SPEAKER:
-			break
 		case types.HUMAN_MESSAGE_SPEAKER:
 			anthropicRole = "user"
 		default:
