@@ -170,6 +170,6 @@ func TestPinModel(t *testing.T) {
 	})
 
 	t.Run("Claude 2", func(t *testing.T) {
-		assert.Equal(t, pinModel("claude-2"), "claude-2.1")
+		assert.Equal(t, pinModel("claude-2"), "claude-2.0")
 	})
 }
