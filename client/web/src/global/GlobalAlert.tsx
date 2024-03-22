@@ -1,4 +1,4 @@
-import React from 'react'
+import { useEffect, type FunctionComponent, type PropsWithChildren } from 'react'
 
 import classNames from 'classnames'
 
@@ -25,12 +25,12 @@ interface Props extends TelemetryV2Props {
 /**
  * A global alert that is shown at the top of the viewport.
  */
-export const GlobalAlert: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+export const GlobalAlert: FunctionComponent<PropsWithChildren<Props>> = ({
     alert,
     className: commonClassName,
     telemetryRecorder,
 }) => {
-    React.useEffect(
+    useEffect(
         () =>
             telemetryRecorder.recordEvent('alert.global', 'view', {
                 metadata: { type: alert.type ? v2AlertTypes[alert.type] : 0 },

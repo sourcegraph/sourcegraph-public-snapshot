@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
 
@@ -101,8 +101,12 @@ export const VerifyEmailNotices: React.FunctionComponent<VerifyEmailNoticesProps
     authenticatedUser,
     telemetryRecorder,
 }) => {
+    useEffect(() => {
+        if (isEmailVerificationNeededForCody() && authenticatedUser) {
+            telemetryRecorder.recordEvent('alert.verifyEmail', 'view')
+        }
+    }, [telemetryRecorder, isEmailVerificationNeededForCody, authenticatedUser])
     if (isEmailVerificationNeededForCody() && authenticatedUser) {
-        telemetryRecorder.recordEvent('alert.verifyEmail', 'view')
         return (
             <div className={classNames(styles.notices, className)}>
                 <NoticeAlert

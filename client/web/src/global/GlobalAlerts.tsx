@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
 import { parseISO, differenceInDays } from 'date-fns'
@@ -53,6 +53,15 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
         fetchPolicy: 'cache-and-network',
     })
 
+    useEffect(() => {
+        if (settings?.motd && Array.isArray(settings.motd)) {
+            telemetryRecorder.recordEvent('alert.motd', 'view')
+        }
+        if (process.env.SOURCEGRAPH_API_URL) {
+            telemetryRecorder.recordEvent('alert.proxyAPI', 'view')
+        }
+    }, [settings?.motd, telemetryRecorder])
+
     const siteFlagsValue = data?.site
     let alerts = siteFlagsValue?.alerts ?? []
 
@@ -61,37 +70,6 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
             siteFlagsValue?.alerts.filter(
                 ({ message }) => !adminOnboardingRemovedAlerts.some(alt => message.includes(alt))
             ) ?? []
-    }
-
-    let motd: JSX.Element[] | undefined
-    if (settings?.motd && Array.isArray(settings.motd)) {
-        telemetryRecorder.recordEvent('alert.motd', 'view') // Just one event even if multiple motds
-        motd = settings.motd.map(motd => (
-            <DismissibleAlert key={motd} partialStorageKey={`motd.${motd}`} variant="info" className={styles.alert}>
-                <Markdown dangerousInnerHTML={renderMarkdown(motd)} />
-            </DismissibleAlert>
-        ))
-    }
-
-    let proxyAPINotice: JSX.Element | undefined
-    if (process.env.SOURCEGRAPH_API_URL) {
-        telemetryRecorder.recordEvent('alert.proxyAPI', 'view')
-        proxyAPINotice = (
-            <DismissibleAlert
-                key="dev-web-server-alert"
-                partialStorageKey="dev-web-server-alert"
-                variant="danger"
-                className={styles.alert}
-            >
-                <div>
-                    <strong>Warning!</strong> This build uses data from the proxied API:{' '}
-                    <Link className={styles.proxyLink} target="__blank" to={process.env.SOURCEGRAPH_API_URL}>
-                        {process.env.SOURCEGRAPH_API_URL}
-                    </Link>
-                </div>
-                .
-            </DismissibleAlert>
-        )
     }
 
     return (
@@ -135,11 +113,35 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                         })()}
                 </>
             )}
-            {motd}
-            {proxyAPINotice}
-
+            {settings?.motd &&
+                Array.isArray(settings.motd) &&
+                settings.motd.map(motd => (
+                    <DismissibleAlert
+                        key={motd}
+                        partialStorageKey={`motd.${motd}`}
+                        variant="info"
+                        className={styles.alert}
+                    >
+                        <Markdown dangerousInnerHTML={renderMarkdown(motd)} />
+                    </DismissibleAlert>
+                ))}
+            {process.env.SOURCEGRAPH_API_URL && (
+                <DismissibleAlert
+                    key="dev-web-server-alert"
+                    partialStorageKey="dev-web-server-alert"
+                    variant="danger"
+                    className={styles.alert}
+                >
+                    <div>
+                        <strong>Warning!</strong> This build uses data from the proxied API:{' '}
+                        <Link className={styles.proxyLink} target="__blank" to={process.env.SOURCEGRAPH_API_URL}>
+                            {process.env.SOURCEGRAPH_API_URL}
+                        </Link>
+                    </div>
+                    .
+                </DismissibleAlert>
+            )}
             <Notices alertClassName={styles.alert} location="top" telemetryRecorder={telemetryRecorder} />
-
             <VerifyEmailNotices
                 authenticatedUser={authenticatedUser}
                 alertClassName={styles.alert}
