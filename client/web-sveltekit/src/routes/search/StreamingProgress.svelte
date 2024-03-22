@@ -1,5 +1,12 @@
 <script lang="ts">
-    import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
+    import {
+        mdiAlertCircle,
+        mdiAlert,
+        mdiChevronDown,
+        mdiChevronLeft,
+        mdiInformationOutline,
+        mdiMagnify,
+    } from '@mdi/js'
 
     import { limitHit, sortBySeverity } from '$lib/branded'
     import { renderMarkdown, pluralize } from '$lib/common'
@@ -15,7 +22,7 @@
 
     const icons: Record<string, string> = {
         info: mdiInformationOutline,
-        warning: mdiAlertCircle,
+        warning: mdiAlert,
         error: mdiAlertCircle,
     }
     let searchAgainDisabled = true

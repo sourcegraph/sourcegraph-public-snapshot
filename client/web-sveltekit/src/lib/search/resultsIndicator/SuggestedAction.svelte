@@ -57,20 +57,21 @@
     }
 
     .info-badge {
-        background-color: var(--primary);
+        background-color: var(--primary-2);
         border-radius: 3px;
-        color: var(--white);
+        color: var(--text-body);
         padding-left: 0.4rem;
         padding-right: 0.2rem;
     }
 
     .info-badge.duration {
-        background: var(--warning);
-        color: black;
+        background: var(--warning-2);
+        color: var(--text-body);
     }
 
     .info-badge.error-text {
-        background: var(--danger);
+        background: var(--danger-2);
+        color: var(--text-body);
     }
 
     .more-details {

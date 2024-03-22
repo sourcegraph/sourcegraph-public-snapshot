@@ -29,14 +29,13 @@
 
     .info-badge {
         border-radius: 3px;
-        color: var(--gray-08);
+        color: var(--text-body);
         padding-left: 0.2rem;
         padding-right: 0.2rem;
     }
 
     .info-badge.duration {
-        background: var(--warning);
-        color: black;
+        background: var(--warning-2);
     }
 
     .loading-action-message {
