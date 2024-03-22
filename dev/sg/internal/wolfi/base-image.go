@@ -70,9 +70,18 @@ func SetupBaseImageBuild(name string, pc PackageRepoConfig, opts BaseImageOpts) 
 
 // resolveImagePath takes an image name and returns the build path where the image's Bazel config can be found
 func resolveImagePath(name string) (string, error) {
-	// Special cases which are embedded in wolfi-images/
-	if name == "sourcegraph" || name == "sourcegraph-dev" {
-		return "wolfi-images", nil
+	// Handle special case mappings
+	specialCase := map[string]string{
+		"sourcegraph":       "wolfi-images",
+		"sourcegraph-dev":   "wolfi-images",
+		"postgres-exporter": "docker-images/postgres_exporter",
+		"redis-exporter":    "docker-images/redis_exporter",
+		"redis":             "docker-images/redis-cache", // Or redis-store
+		"blobstore":         "docker-images/blobstore",   // cmd/blobstore is unused
+	}
+	if val, exists := specialCase[name]; exists {
+		fmt.Printf("Special case mapping for image '%s' to '%s'\n", name, val)
+		return val, nil
 	}
 
 	repoRoot, err := root.RepositoryRoot()
