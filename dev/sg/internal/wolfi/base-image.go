@@ -118,7 +118,7 @@ func (bc BaseImageConfig) DoBaseImageBuild() error {
 	}
 
 	if bc.BazelBuildPath == "" {
-		return errors.Newf("no Bazel build path found for image", bc.ImageName)
+		return errors.Newf("no Bazel build path found for image '%s'", bc.ImageName)
 	}
 
 	cmd := exec.Command(

@@ -115,6 +115,10 @@ It can also be used for local development by updating its path and hash in the '
 					if err != nil {
 						return err
 					}
+					if bc.BazelBuildPath == "" {
+						std.Out.WriteLine(output.Linef(output.EmojiWarning, output.StyleBold, "No Bazel build path found for %s - falling back to legacy build method", baseImageName))
+						buildLegacy = true
+					}
 
 					// WORKAROUND: rules_apko does not support package repos on the local filesystem, so fall back to legacy build
 					hasLocalPackage, err := bc.ContainsLocalPackages()
