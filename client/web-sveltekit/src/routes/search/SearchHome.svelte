@@ -22,8 +22,8 @@
 
 <section>
     <div class="content">
+        <Hotkey mac="command+x" linux="ctrl+x" run={() => alert('test-t')} ignoreInputFields={false} />
         <Hotkey mac="command+u" linux="ctrl+u" run={() => alert('test1')} />
-        <Hotkey mac="command+u" linux="ctrl+u" run={() => alert('test2, unbinding now')} unbindAfterInvoke={true} />
         <HotkeyList />
         <img class="logo" src={$isLightTheme ? logoLight : logoDark} alt="Sourcegraph Logo" />
         <div class="search">

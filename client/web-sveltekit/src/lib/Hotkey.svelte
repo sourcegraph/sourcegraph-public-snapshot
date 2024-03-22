@@ -10,7 +10,7 @@
     export let mac: string = '';
     export let windows: string = '';
 
-    export let unbindAfterInvoke: boolean = false;
+    export let ignoreInputFields: boolean = true;
 
     const evaluateKey: (keys: { mac: string, linux: string, windows: string, key: string }) => string = (keys) => {
         if (isMacPlatform() && keys.mac) {
@@ -33,11 +33,11 @@
             event.preventDefault();
         }
 
-        run();
-
-        if (unbindAfterInvoke) {
-            hotkeys.unbind(evaluatedKey, handler)
+        if (!ignoreInputFields) {
+            // todo: implement filtering with an early return
         }
+
+        run();
     }
 
     onMount(() => {
