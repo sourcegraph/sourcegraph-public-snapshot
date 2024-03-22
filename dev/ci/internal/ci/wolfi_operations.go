@@ -69,8 +69,6 @@ func WolfiBaseImagesOperations(changedFiles []string, tag string, packagesChange
 		}
 	}
 
-	ops.Append(allBaseImagesBuilt(buildStepKeys))
-
 	return ops, len(buildStepKeys)
 }
 
@@ -136,6 +134,7 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 }
 
 // No-op to ensure all base images are updated before building full images
+// DEPRECATED: Due to switch to Bazel, building base images is an optional convenience
 func allBaseImagesBuilt(baseImageKeys []string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":octopus: All base images built",
