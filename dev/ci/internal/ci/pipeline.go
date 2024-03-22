@@ -154,14 +154,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Wolfi package and base images
 		packageOps, baseImageOps, apkoOps := addWolfiOps(c)
+		if apkoOps != nil {
+			ops.Merge(apkoOps)
+		}
 		if packageOps != nil {
 			ops.Merge(packageOps)
 		}
 		if baseImageOps != nil {
 			ops.Merge(baseImageOps)
-		}
-		if apkoOps != nil {
-			ops.Merge(apkoOps)
 		}
 
 		if c.Diff.Has(changed.ClientBrowserExtensions) {
@@ -319,14 +319,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Wolfi package and base images
 		packageOps, baseImageOps, apkoOps := addWolfiOps(c)
+		if apkoOps != nil {
+			ops.Merge(apkoOps)
+		}
 		if packageOps != nil {
 			ops.Merge(packageOps)
 		}
 		if baseImageOps != nil {
 			ops.Merge(baseImageOps)
-		}
-		if apkoOps != nil {
-			ops.Merge(apkoOps)
 		}
 
 		// All operations before this point are required
