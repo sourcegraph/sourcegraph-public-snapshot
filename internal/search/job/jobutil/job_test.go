@@ -240,8 +240,8 @@ func TestNewPlanJob(t *testing.T) {
               (select . )
               (repoScope . [(and branch="HEAD" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)])
               (includePrivate . true)
-              (globalZoektQueryRegexps . [(?i)(?-s:ok.*?ok)])
-              (query . regex:"(?-s:ok.*?ok)")
+              (globalZoektQueryRegexps . [(?i)ok(?-s:.)*?ok])
+              (query . regex:"ok(?-s:.)*?ok")
               (type . text))
             (REPOSEARCH
               (repoOpts.repoFilters . [(?:ok).*?(?:ok)])
@@ -385,8 +385,8 @@ func TestNewPlanJob(t *testing.T) {
             (select . )
             (repoScope . [(and branch="HEAD" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)])
             (includePrivate . true)
-            (globalZoektQueryRegexps . [(?i)(?-s:foo.*?@bar)])
-            (query . regex:"(?-s:foo.*?@bar)")
+            (globalZoektQueryRegexps . [(?i)foo(?-s:.)*?@bar])
+            (query . regex:"foo(?-s:.)*?@bar")
             (type . text))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))
@@ -855,8 +855,8 @@ func TestNewPlanJob(t *testing.T) {
               (select . )
               (repoScope . [(and branch="HEAD" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)])
               (includePrivate . true)
-              (globalZoektQueryRegexps . [(?i)(?-s:a.*b)])
-              (query . regex:"(?-s:a.*b)")
+              (globalZoektQueryRegexps . [(?i)a(?-s:.)*b])
+              (query . regex:"a(?-s:.)*b")
               (type . text))
             REPOSCOMPUTEEXCLUDED
             NOOP))))))
@@ -890,8 +890,8 @@ func TestNewPlanJob(t *testing.T) {
                 (ZOEKTREPOSUBSETTEXTSEARCH
                   (fileMatchLimit . 10000)
                   (select . )
-                  (zoektQueryRegexps . [(?i)(?-s:a.*b)])
-                  (query . regex:"(?-s:a.*b)")
+                  (zoektQueryRegexps . [(?i)a(?-s:.)*b])
+                  (query . regex:"a(?-s:.)*b")
                   (type . text))))
             (REPOPAGER
               (containsRefGlobs . false)
