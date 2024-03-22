@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Search Jobs now supports diff, commit and path searches. Before, only file searches were supported. [#60883](https://github.com/sourcegraph/sourcegraph/pull/60883)
 - Auth providers now support a `noSignIn` option that, when set to true, will hide the auth provider from the sign in page, but still allow users to connect the external account from their Account Security page for permissions syncing. [#60722](https://github.com/sourcegraph/sourcegraph/pull/60722)
 - Added a "Commits" button to the folders in repos that shows commits for the items in that folder. [#60909](https://github.com/sourcegraph/sourcegraph/pull/60909)
+- The frontend Grafana dashboard has a new Prometheus metric that tracks the rate of requests that Sourcegraph issues to external services. [#61348](https://github.com/sourcegraph/sourcegraph/pull/61348)
 
 ### Changed
 
