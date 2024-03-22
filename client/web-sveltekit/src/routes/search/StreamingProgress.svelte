@@ -32,10 +32,15 @@
     $: openItems = sortedItems.map((_, index) => index === 0)
     $: suggestedItems = sortedItems.filter((skipped): skipped is Required<Skipped> => !!skipped.suggested)
     $: hasSuggestedItems = suggestedItems.length > 0
+    $: isError = state === 'error'
+
+    // Mock these?
+    // progress object
+    // stream object
 </script>
 
 <Popover let:registerTrigger let:toggle placement="bottom-start">
-    <Button variant="secondary" size="sm" outline>
+    <Button variant={`${isError ? 'danger' : 'secondary'}`} size="sm" outline>
         <svelte:fragment slot="custom" let:buttonClass>
             <button use:registerTrigger class="{buttonClass} progress-button" on:click={() => toggle()}>
                 <ResultsIndicator {state} {hasSkippedItems} {sortedItems} {hasSuggestedItems} {progress} />
@@ -128,7 +133,8 @@
 
     .progress-button {
         border: none;
-        padding: 0.5rem 0.5rem 0.5rem 0.25rem;
+        border-radius: 3px;
+        padding: 0.5rem 0.5rem 0.5rem 0.2rem;
     }
 
     .streaming-popover {

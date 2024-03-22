@@ -24,7 +24,6 @@
     import { beforeNavigate, goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
-    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import type { URLQueryFilter } from '$lib/search/dynamicFilters'
     import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
     import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
@@ -65,7 +64,7 @@
     const filtersSidebarPosition = getSeparatorPosition('search-results-sidebar', 0.2)
     const previewSidebarPosition = getSeparatorPosition('preview-sidebar', 0.2)
 
-    $: state = $stream.state
+    $: state = $stream.state // 'loading', 'error', 'complete'
     $: results = $stream.results
     $: if (state !== 'loading') {
         recentSearches.addRecentSearch({

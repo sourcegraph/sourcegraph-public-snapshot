@@ -45,11 +45,13 @@
     }
 
     .code-font {
-        background-color: var(--gray-06);
+        background-color: var(--secondary);
         border-radius: 3px;
-        color: white;
+        color: var(--text-body);
         font-family: var(--code-font-family);
-        font-size: 0.8rem;
+        font-size: 0.7rem;
+        padding-top: 0.2rem;
+        padding-bottom: 0.2rem;
         padding-left: 0.2rem;
         padding-right: 0.2rem;
     }
@@ -57,8 +59,8 @@
     .info-badge {
         background-color: var(--primary);
         border-radius: 3px;
-        color: white;
-        padding-left: 0.2rem;
+        color: var(--white);
+        padding-left: 0.4rem;
         padding-right: 0.2rem;
     }
 

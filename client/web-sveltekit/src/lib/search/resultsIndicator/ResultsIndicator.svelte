@@ -42,15 +42,22 @@
     $: severity = progress.skipped.some(skipped => skipped.severity === 'warn' || skipped.severity === 'error')
         ? 'error'
         : 'info'
-    $: done = progress.done
+    /*
+     * TODO: @jasonhawkharris Explore combining 'complete' and 'done' values.
+     * The values do refer to different objects. 'complete' is the state returned
+     * from the stream. 'done' is the state returned from the progress object (which)
+     * also exists as a smaller object inside of the search stream. Do they need to?
+     */
+    $: done = progress.done || state === 'complete'
 </script>
 
 <div class="indicator">
     <div class="icon">
-        {#if loading && !done}
+        {#if loading && !hasSkippedItems}
             <LoadingSpinner inline />
         {:else}
             <!-- TODO: Jason Harris: need to change the color of this but the --color tag isn't working -->
+            <!-- currently, the --color style directive does nothing -->
             <Icon svgPath={icons[severity]} size={18} --color="red" />
         {/if}
     </div>
