@@ -1,23 +1,20 @@
-import { type Writable, writable, type Updater, derived, type Readable } from 'svelte/store'
+import { type Writable, writable, type Updater, derived } from 'svelte/store'
 
 import { browser } from '$app/environment'
+import { ThemeSetting, Theme } from '$lib/shared'
 
 import { temporarySetting, type TemporarySettingStore } from './temporarySettings'
 
 const LOCAL_STORAGE_THEME_KEY = 'sourcegraph-theme'
 
-export enum Theme {
-    Light = 'Light',
-    Dark = 'Dark',
-    System = 'System',
-}
+export { ThemeSetting, Theme }
 
 /**
- * The currently selected theme. Writing to this store will persist the theme
- * to temporary settings.
+ * The user's theme preference.
  */
-export const theme: Writable<Theme> = (function () {
-    let theme: Theme = ((browser && localStorage.getItem(LOCAL_STORAGE_THEME_KEY)) || Theme.System) as Theme
+export const themeSetting: Writable<ThemeSetting> = (function () {
+    let theme: ThemeSetting = ((browser && localStorage.getItem(LOCAL_STORAGE_THEME_KEY)) ||
+        ThemeSetting.System) as ThemeSetting
     let themeSettingStore: TemporarySettingStore<'user.themePreference'> | undefined
 
     const { subscribe } = writable(theme, set => {
@@ -28,16 +25,19 @@ export const theme: Writable<Theme> = (function () {
         return themeSettingStore.subscribe($themeSetting => {
             if (!$themeSetting.loading && $themeSetting.data) {
                 switch ($themeSetting.data.toLowerCase()) {
+                    // Handle new and old theme settings
+                    case 'true':
                     case 'light': {
-                        theme = Theme.Light
+                        theme = ThemeSetting.Light
                         break
                     }
+                    case 'false':
                     case 'dark': {
-                        theme = Theme.Dark
+                        theme = ThemeSetting.Dark
                         break
                     }
-                    case 'system': {
-                        theme = Theme.System
+                    default: {
+                        theme = ThemeSetting.System
                         break
                     }
                 }
@@ -47,46 +47,38 @@ export const theme: Writable<Theme> = (function () {
         })
     })
 
-    function getThemeStringValue(theme: Theme): string {
-        switch (theme) {
-            case Theme.Light: {
-                return 'light'
-            }
-            case Theme.Dark: {
-                return 'dark'
-            }
-            case Theme.System: {
-                return 'system'
-            }
-        }
-    }
-
     return {
         subscribe,
-        set: (value: Theme) => {
-            themeSettingStore?.setValue(getThemeStringValue(value))
+        set: (value: ThemeSetting) => {
+            themeSettingStore?.setValue(value)
         },
-        update: (updater: Updater<Theme>) => {
+        update: (updater: Updater<ThemeSetting>) => {
             themeSettingStore?.setValue(updater(theme))
         },
     }
 })()
 
 /**
- * This store returns true if the theme is set to light or if the user's system
- * preference is 'light'. The store listens to match media changes and updates
- * accordingly.
+ * The current theme. If the theme is set to 'system', the theme will change
+ * based on the user's system preference.
  */
-export const isLightTheme = derived(theme, ($theme, set) => {
-    if ($theme === Theme.System) {
-        const matchMedia = window.matchMedia('(prefers-color-scheme: light)')
-        set(matchMedia.matches)
+export const theme = derived(themeSetting, ($themeSetting, set) => {
+    if ($themeSetting === ThemeSetting.System) {
+        const matchMedia = window.matchMedia('(prefers-color-scheme: dark)')
+        set(matchMedia.matches ? Theme.Dark : Theme.Light)
         const listener = (event: MediaQueryListEventMap['change']): void => {
-            set(event.matches)
+            set(event.matches ? Theme.Dark : Theme.Light)
         }
         matchMedia.addEventListener('change', listener)
         return () => matchMedia.removeEventListener('change', listener)
     }
-    set($theme === Theme.Light)
+    set($themeSetting === ThemeSetting.Dark ? Theme.Dark : Theme.Light)
     return
-}) satisfies Readable<boolean>
+})
+
+/**
+ * Helper store that returns true if the current theme is light. This is
+ * a common use case for components that need to know if they should render
+ * light or dark content based on the current theme.
+ */
+export const isLightTheme = derived(theme, $theme => $theme === Theme.Light)

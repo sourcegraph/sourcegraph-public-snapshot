@@ -5,7 +5,7 @@ import type { Settings, TemporarySettingsStorage } from '$lib/shared'
 
 import type { AuthenticatedUser, FeatureFlag } from '../routes/layout.gql'
 
-export { theme, isLightTheme } from './theme'
+export { themeSetting, theme, isLightTheme } from './theme'
 
 // Only exported to be used for mocking tests
 // TODO (fkling): Find a better way to initialize mocked contexts and stores
