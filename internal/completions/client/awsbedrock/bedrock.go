@@ -170,10 +170,6 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 		requestParams.TopP = 0
 	}
 
-	if len(requestParams.StopSequences) == 0 {
-		requestParams.StopSequences = []string{HUMAN_PROMPT}
-	}
-
 	if requestParams.MaxTokensToSample == 0 {
 		requestParams.MaxTokensToSample = 300
 	}
@@ -298,7 +294,7 @@ func awsConfigOptsForKeyConfig(endpoint string, accessToken string) []func(*conf
 	return configOpts
 }
 
-type bedrockNonStreamingResponse struct {
+type bedrockAnthropicNonStreamingResponse struct {
 	Content    []bedrockAnthropicMessageContent `json:"content"`
 	StopReason string                           `json:"stop_reason"`
 }
@@ -338,11 +334,6 @@ type bedrockAnthropicMessage struct {
 type bedrockAnthropicMessageContent struct {
 	Type string `json:"type"` // "text" or "image" (not yet supported)
 	Text string `json:"text"`
-}
-
-type bedrockAnthropicNonStreamingResponse struct {
-	Content    []bedrockAnthropicMessageContent `json:"content"`
-	StopReason string                           `json:"stop_reason"`
 }
 
 func removeWhitespaceOnlySequences(sequences []string) []string {
