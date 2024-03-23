@@ -7,14 +7,14 @@
     export let loading: boolean
     export let isError: boolean
     export let elapsedDuration: number
-    export let maxSearchDuration: number
+    export let searchJobThreshold: number
 </script>
 
 {#if loading}
     <div class="progress-message">Fetching results... {(elapsedDuration / 1000).toFixed(1)}s</div>
     <div class={`action-container ${isError && 'error-text'}`}>
         <div class="suggested-action">
-            {#if elapsedDuration <= maxSearchDuration}
+            {#if elapsedDuration <= searchJobThreshold}
                 <div class="running-search">Running Search</div>
             {/if}
         </div>
@@ -44,6 +44,6 @@
     }
 
     .running-search {
-        color: var(--gray-06);
+        color: var(--text-muted);
     }
 </style>

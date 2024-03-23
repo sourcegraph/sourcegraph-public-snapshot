@@ -15,7 +15,7 @@
     export let progress: Progress
     export let state: 'error' | 'complete' | 'loading'
 
-    const MAX_SEARCH_DURATION = 1000
+    const SEARCH_JOB_THRESHOLD = 8000
     const icons: Record<string, string> = {
         info: mdiInformationOutline,
         warning: mdiAlert,
@@ -35,7 +35,7 @@
     })
 
     $: elapsedDuration = 0
-    $: takingTooLong = elapsedDuration >= MAX_SEARCH_DURATION
+    $: takingTooLong = elapsedDuration >= SEARCH_JOB_THRESHOLD
     $: mostSevere = sortedItems[0]
     $: isError = state === 'error'
     $: loading = state === 'loading'
@@ -67,7 +67,7 @@
             {loading}
             {isError}
             {elapsedDuration}
-            maxSearchDuration={MAX_SEARCH_DURATION}
+            searchJobThreshold={SEARCH_JOB_THRESHOLD}
         />
         {#if !done && takingTooLong}
             <TimeoutMessage {isError} />

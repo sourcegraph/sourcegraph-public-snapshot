@@ -43,7 +43,7 @@
 </script>
 
 <Popover let:registerTrigger let:toggle placement="bottom-start">
-    <Button variant={`${isError ? 'danger' : 'secondary'}`} size="sm" outline>
+    <Button variant={isError ? 'danger' : 'secondary'} size="sm" outline>
         <svelte:fragment slot="custom" let:buttonClass>
             <button use:registerTrigger class="{buttonClass} progress-button" on:click={() => toggle()}>
                 <ResultsIndicator {state} {hasSkippedItems} {sortedItems} {hasSuggestedItems} {progress} />
