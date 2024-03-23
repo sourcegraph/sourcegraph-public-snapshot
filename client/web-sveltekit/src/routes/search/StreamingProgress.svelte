@@ -46,7 +46,7 @@
     <Button variant={isError ? 'danger' : 'secondary'} size="sm" outline>
         <svelte:fragment slot="custom" let:buttonClass>
             <button use:registerTrigger class="{buttonClass} progress-button" on:click={() => toggle()}>
-                <ResultsIndicator {state} {hasSkippedItems} {sortedItems} {hasSuggestedItems} {progress} />
+                <ResultsIndicator {state} {hasSuggestedItems} {progress} />
             </button>
         </svelte:fragment>
     </Button>
@@ -135,9 +135,9 @@
     }
 
     .progress-button {
-        border: none;
-        border-radius: 3px;
-        padding: 0.5rem 0.5rem 0.5rem 0.2rem;
+        border: 1px solid var(--border-color-2);
+        border-radius: 4px;
+        padding: 0.4rem 0.5rem;
     }
 
     .streaming-popover {

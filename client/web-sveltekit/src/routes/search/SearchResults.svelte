@@ -200,9 +200,6 @@
             padding-left: 0.25rem;
             display: flex;
             align-items: center;
-            // Explictly set height to avoid jumping when loading spinner is
-            // shown/hidden.
-            // height: 4rem;
             flex-shrink: 0;
         }
 

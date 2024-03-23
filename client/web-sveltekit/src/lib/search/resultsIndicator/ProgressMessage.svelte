@@ -4,23 +4,24 @@
 
     export let state: 'error' | 'loading' | 'complete'
     export let progress: Progress
-    export let loading: boolean
-    export let isError: boolean
     export let elapsedDuration: number
-    export let searchJobThreshold: number
+    export let threshold: number
+
+    $: isError = state === 'error'
+    $: loading = state === 'loading'
 </script>
 
 {#if loading}
     <div class="progress-message">Fetching results... {(elapsedDuration / 1000).toFixed(1)}s</div>
     <div class={`action-container ${isError && 'error-text'}`}>
         <div class="suggested-action">
-            {#if elapsedDuration <= searchJobThreshold}
+            {#if elapsedDuration <= threshold}
                 <div class="running-search">Running Search</div>
             {/if}
         </div>
     </div>
 {:else}
-    <InfoBadge {state} searchProgress={progress} />
+    <InfoBadge {state} {progress} />
 {/if}
 
 <style lang="scss">

@@ -7,10 +7,8 @@
     import ProgressMessage from '$lib/search/resultsIndicator/ProgressMessage.svelte'
     import SuggestedAction from '$lib/search/resultsIndicator/SuggestedAction.svelte'
     import TimeoutMessage from '$lib/search/resultsIndicator/TimeoutMessage.svelte'
-    import type { Progress, Skipped } from '$lib/shared'
+    import type { Progress } from '$lib/shared'
 
-    export let hasSkippedItems: boolean
-    export let sortedItems: Skipped[]
     export let hasSuggestedItems: boolean
     export let progress: Progress
     export let state: 'error' | 'complete' | 'loading'
@@ -36,24 +34,22 @@
 
     $: elapsedDuration = 0
     $: takingTooLong = elapsedDuration >= SEARCH_JOB_THRESHOLD
-    $: mostSevere = sortedItems[0]
     $: isError = state === 'error'
     $: loading = state === 'loading'
     $: severity = progress.skipped.some(skipped => skipped.severity === 'warn' || skipped.severity === 'error')
         ? 'error'
         : 'info'
     /*
-     * TODO: @jasonhawkharris Explore combining 'complete' and 'done' values.
-     * The values do refer to different objects. 'complete' is the state returned
-     * from the stream. 'done' is the state returned from the progress object (which)
-     * also exists as a smaller object inside of the search stream. Do they need to?
+     * NOTE: progress.done and state === 'complete' will sometimes be different values.
+     * Only one of them needs to evaluate to true in order for the ResultIndicator to
+     * evaluate a search as being finished. Hence, we check both here with an OR relationship
      */
     $: done = progress.done || state === 'complete'
 </script>
 
 <div class="indicator">
     <div class="icon">
-        {#if loading && !hasSkippedItems}
+        {#if loading}
             <LoadingSpinner inline />
         {:else}
             <Icon svgPath={icons[severity]} size={18} />
@@ -61,18 +57,11 @@
     </div>
 
     <div class="messages">
-        <ProgressMessage
-            {state}
-            {progress}
-            {loading}
-            {isError}
-            {elapsedDuration}
-            searchJobThreshold={SEARCH_JOB_THRESHOLD}
-        />
+        <ProgressMessage {state} {progress} {elapsedDuration} threshold={SEARCH_JOB_THRESHOLD} />
         {#if !done && takingTooLong}
             <TimeoutMessage {isError} />
         {/if}
-        <SuggestedAction {isError} {progress} {hasSkippedItems} {hasSuggestedItems} {mostSevere} />
+        <SuggestedAction {isError} {progress} {hasSuggestedItems} />
     </div>
 
     <div class="dropdown-icon">
@@ -81,6 +70,10 @@
 </div>
 
 <style lang="scss">
+    .icon {
+        margin-left: 0.4rem;
+    }
+
     .dropdown-icon {
         margin-left: 2rem;
     }

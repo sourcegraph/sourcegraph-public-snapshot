@@ -1,43 +1,45 @@
 <script lang="ts">
-    import { capitalizeFirstLetter } from '$lib/search/utils'
-    import type { Progress, Skipped } from '$lib/shared'
+    import { capitalize } from 'lodash'
+
+    import { sortBySeverity } from '$lib/branded'
+    import type { Progress } from '$lib/shared'
 
     export let isError: boolean
     export let progress: Progress
-    export let hasSkippedItems: boolean
     export let hasSuggestedItems: boolean
-    export let mostSevere: Skipped
 
-    const INTERPUNCT = '\u00B7'
+    const CENTER_DOT = '\u00B7' // AKA 'interpunct'
 
+    $: sortedItems = sortBySeverity(progress.skipped)
+    $: hasSkippedItems = progress.skipped.length > 0
+    $: mostSevere = sortedItems[0]
     $: done = progress.done
 </script>
 
-{#if progress}
-    <div class={`action-container ${isError && 'error-text'}`}>
-        <div class="suggested-action">
-            {#if done && !hasSkippedItems}
-                <div class="more-details">See more details</div>
-            {/if}
+<div class={`action-container ${isError && 'error-text'}`}>
+    <div class="suggested-action">
+        {#if done && !hasSkippedItems}
+            <div class="more-details">See more details</div>
+        {/if}
 
-            {#if done && hasSkippedItems}
-                <div class={`info-badge ${isError && 'error-text'}`}>
-                    {capitalizeFirstLetter(mostSevere?.title ? mostSevere.title : '')}&nbsp;
-                </div>
-            {/if}
+        {#if done && hasSkippedItems}
+            <!--snarf-->
+            <div class={`info-badge ${isError && 'error-text'}`}>
+                {capitalize(mostSevere?.title ? mostSevere.title : '')}&nbsp;
+            </div>
+        {/if}
 
-            {#if done && hasSuggestedItems}
-                <div class="separator">{INTERPUNCT}</div>
-                <div class="action-badge">
-                    {capitalizeFirstLetter(mostSevere?.suggested ? mostSevere.suggested.title : '')}&nbsp;
-                    <span class="code-font">
-                        {mostSevere.suggested?.queryExpression}
-                    </span>
-                </div>
-            {/if}
-        </div>
+        {#if done && hasSuggestedItems}
+            <div class="separator">{CENTER_DOT}</div>
+            <div class="action-badge">
+                {capitalize(mostSevere?.suggested ? mostSevere.suggested.title : '')}&nbsp;
+                <span class="code-font">
+                    {mostSevere.suggested?.queryExpression}
+                </span>
+            </div>
+        {/if}
     </div>
-{/if}
+</div>
 
 <style lang="scss">
     .action-container {
@@ -50,10 +52,7 @@
         color: var(--text-body);
         font-family: var(--code-font-family);
         font-size: 0.7rem;
-        padding-top: 0.2rem;
-        padding-bottom: 0.2rem;
-        padding-left: 0.2rem;
-        padding-right: 0.2rem;
+        padding: 0.2rem;
     }
 
     .info-badge {
@@ -62,16 +61,14 @@
         color: var(--text-body);
         padding-left: 0.4rem;
         padding-right: 0.2rem;
-    }
 
-    .info-badge.duration {
-        background: var(--warning-2);
-        color: var(--text-body);
-    }
+        &.duration {
+            background: var(--warning-2);
+        }
 
-    .info-badge.error-text {
-        background: var(--danger-2);
-        color: var(--text-body);
+        &.error-text {
+            background: var(--danger-2);
+        }
     }
 
     .more-details {
