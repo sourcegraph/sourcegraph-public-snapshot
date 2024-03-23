@@ -4,8 +4,7 @@
     const CENTER_DOT = '\u00B7' // interpunct
 </script>
 
-<!-- snarf -->
-<div class={`info-badge ${isError && 'error-text'}`}>
+<div class="info-badge" class:error-text={isError}>
     <div class="duration-badge">
         <div class="info-badge duration">Taking too long?</div>
         <div class="separator">{CENTER_DOT}</div>
@@ -35,19 +34,6 @@
         &.duration {
             background: var(--warning-2);
         }
-    }
-
-    .loading-action-message {
-        margin-left: 0.2rem;
-    }
-
-    .more-details {
-        color: var(--gray-06);
-        margin-left: 0.2rem;
-    }
-
-    .progress-message {
-        font-size: 0.9rem;
     }
 
     .separator {

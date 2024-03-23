@@ -14,7 +14,7 @@ describe('InfoBadge.svelte', () => {
     test('render as error if severity === error', async () => {
         renderInfoBadge({
             searchProgress: {
-                matchCount: 0,
+                // matchCount: ,
                 durationMs: 3800,
                 skipped: [
                     {

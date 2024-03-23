@@ -13,7 +13,7 @@
 
 {#if loading}
     <div class="progress-message">Fetching results... {(elapsedDuration / 1000).toFixed(1)}s</div>
-    <div class={`action-container ${isError && 'error-text'}`}>
+    <div class="action-container" class:error-text={isError}>
         <div class="suggested-action">
             {#if elapsedDuration <= threshold}
                 <div class="running-search">Running Search</div>

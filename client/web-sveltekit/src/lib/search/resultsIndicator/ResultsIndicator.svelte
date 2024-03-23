@@ -61,7 +61,7 @@
         {#if !done && takingTooLong}
             <TimeoutMessage {isError} />
         {/if}
-        <SuggestedAction {isError} {progress} {hasSuggestedItems} />
+        <SuggestedAction {state} {progress} {hasSuggestedItems} />
     </div>
 
     <div class="dropdown-icon">
