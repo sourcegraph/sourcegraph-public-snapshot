@@ -21,22 +21,28 @@
     <div class="action-container" class:error-text={isError}>
         <div class="suggested-action">
             {#if done && !hasSkippedItems}
-                <div class="more-details">See more details</div>
+                <small>
+                    <div class="more-details">See more details</div>
+                </small>
             {/if}
 
             {#if done && hasSkippedItems}
                 <div class="info-badge" class:error-text={isError}>
-                    {capitalize(mostSevere?.title ? mostSevere.title : '')}&nbsp;
+                    <small>
+                        {capitalize(mostSevere?.title ? mostSevere.title : '')}&nbsp;
+                    </small>
                 </div>
             {/if}
 
             {#if done && hasSuggestedItems}
                 <div class="separator">{CENTER_DOT}</div>
                 <div class="action-badge">
-                    {capitalize(mostSevere?.suggested ? mostSevere.suggested.title : '')}&nbsp;
-                    <span class="code-font">
-                        {mostSevere.suggested?.queryExpression}
-                    </span>
+                    <small>
+                        {capitalize(mostSevere?.suggested ? mostSevere.suggested.title : '')}&nbsp;
+                        <tt class="code-font">
+                            <small>{mostSevere.suggested?.queryExpression}</small>
+                        </tt>
+                    </small>
                 </div>
             {/if}
         </div>
@@ -53,16 +59,14 @@
         border-radius: 3px;
         color: var(--text-body);
         font-family: var(--code-font-family);
-        font-size: 0.7rem;
-        padding: 0.2rem;
+        padding: 0rem 0.2rem;
     }
 
     .info-badge {
         background-color: var(--primary-2);
         border-radius: 3px;
         color: var(--text-body);
-        padding-left: 0.4rem;
-        padding-right: 0.2rem;
+        padding: 0rem 0.1rem;
 
         &.error-text {
             background: var(--danger-2);

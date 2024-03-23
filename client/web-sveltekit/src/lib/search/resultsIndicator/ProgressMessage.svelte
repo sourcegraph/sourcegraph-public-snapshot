@@ -12,11 +12,15 @@
 </script>
 
 {#if loading}
-    <div class="progress-message">Fetching results... {(elapsedDuration / 1000).toFixed(1)}s</div>
+    <div class="progress-message">
+        Fetching results... {(elapsedDuration / 1000).toFixed(1)}s
+    </div>
     <div class="action-container" class:error-text={isError}>
         <div class="suggested-action">
             {#if elapsedDuration <= threshold}
-                <div class="running-search">Running Search</div>
+                <div class="running-search">
+                    <small> Running Search </small>
+                </div>
             {/if}
         </div>
     </div>
@@ -34,8 +38,8 @@
     }
 
     .progress-message {
-        font-size: 0.9rem;
         margin-left: 0.2rem;
+        font-size: var(--font-size-base);
     }
 
     .suggested-action {

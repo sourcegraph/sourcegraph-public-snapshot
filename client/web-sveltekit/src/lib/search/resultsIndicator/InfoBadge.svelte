@@ -18,7 +18,7 @@
     }
 
     .progress-message {
-        font-size: 0.9rem;
         margin-left: 0.2rem;
+        font-size: var(--font-size-base);
     }
 </style>

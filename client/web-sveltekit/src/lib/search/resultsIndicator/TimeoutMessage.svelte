@@ -4,9 +4,9 @@
     const CENTER_DOT = '\u00B7' // interpunct
 </script>
 
-<div class="info-badge" class:error-text={isError}>
-    <div class="duration-badge">
-        <div class="info-badge duration">Taking too long?</div>
+<div class="action-container" class:error-text={isError}>
+    <div class="suggested-action">
+        <div class="info-badge">Taking too long?</div>
         <div class="separator">{CENTER_DOT}</div>
         <div class="action-badge">
             Use
@@ -17,27 +17,26 @@
 </div>
 
 <style lang="scss">
-    .duration-badge {
-        display: flex;
-        flex-flow: row-nowrap;
-    }
-
-    .error-text {
-        color: var(--danger);
+    .action-container {
+        margin-top: 0.3rem;
     }
 
     .info-badge {
+        background-color: var(--warning-2);
         border-radius: 3px;
         color: var(--text-body);
-        padding: 0 0.2rem;
-
-        &.duration {
-            background: var(--warning-2);
-        }
+        padding-left: 0.4rem;
+        padding-right: 0.2rem;
     }
 
     .separator {
         margin-left: 0.4rem;
         margin-right: 0.4rem;
+    }
+
+    .suggested-action {
+        display: flex;
+        flex-flow: row nowrap;
+        margin-left: 0.2rem;
     }
 </style>
