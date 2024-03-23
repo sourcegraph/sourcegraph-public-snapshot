@@ -15,7 +15,7 @@
     export let progress: Progress
     export let state: 'error' | 'complete' | 'loading'
 
-    const MAX_SEARCH_DURATION = 8000
+    const MAX_SEARCH_DURATION = 1000
     const icons: Record<string, string> = {
         info: mdiInformationOutline,
         warning: mdiAlert,

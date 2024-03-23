@@ -8,7 +8,7 @@
     $: isError = state === 'error'
 </script>
 
-<div class={`progress-message ${isError && 'error-text'}`}>
+<div class="progress-message" class:error-text={isError}>
     {getProgressText(searchProgress).visibleText}
 </div>
 
