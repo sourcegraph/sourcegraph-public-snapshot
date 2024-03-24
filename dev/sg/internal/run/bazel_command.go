@@ -89,7 +89,7 @@ func (bc BazelCommand) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
 	return exec.CommandContext(ctx, "bash", "-c", fmt.Sprintf("%s\n%s", bc.Config.PreCmd, cmd)), nil
 }
 
-// Overrides the behavior of this command with other command.
+// Merge overrides the behavior of this command with other command.
 // This is used for the sg.config.overwrite.yaml functionality
 func (bc BazelCommand) Merge(other BazelCommand) BazelCommand {
 	merged := bc
