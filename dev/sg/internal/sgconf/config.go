@@ -151,7 +151,7 @@ type Config struct {
 	Tests             map[string]*run.Command       `yaml:"tests"`
 }
 
-// Merges merges the top-level entries of two Config objects, using the
+// Merge merges the top-level entries of two Config objects, using the
 // values from `other` if they are set as overrides and returns a new config
 func (c *Config) Merge(other *Config) *Config {
 	merged := *c
