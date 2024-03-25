@@ -46,7 +46,7 @@
     <Button variant={isError ? 'danger' : 'secondary'} size="sm" outline>
         <svelte:fragment slot="custom" let:buttonClass>
             <button use:registerTrigger class="{buttonClass} progress-button" on:click={() => toggle()}>
-                <ResultsIndicator {state} {hasSuggestedItems} {progress} />
+                <ResultsIndicator {state} {suggestedItems} {progress} />
             </button>
         </svelte:fragment>
     </Button>

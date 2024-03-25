@@ -2,15 +2,16 @@
     import { capitalize } from 'lodash'
 
     import { sortBySeverity } from '$lib/branded'
-    import type { Progress } from '$lib/shared'
+    import type { Progress, Skipped } from '$lib/shared'
 
     export let state: 'loading' | 'error' | 'complete'
     export let progress: Progress
-    export let hasSuggestedItems: boolean
+    export let suggestedItems: Required<Skipped>[]
 
     const CENTER_DOT = '\u00B7' // AKA 'interpunct'
 
     $: sortedItems = sortBySeverity(progress.skipped)
+    $: suggestedItems = sortedItems.filter((skipped): skipped is Required<Skipped> => !!skipped.suggested)
     $: isError = state === 'error'
     $: hasSkippedItems = progress.skipped.length > 0
     $: mostSevere = sortedItems[0]
@@ -34,7 +35,7 @@
                 </div>
             {/if}
 
-            {#if done && hasSuggestedItems}
+            {#if done && mostSevere.suggested}
                 <div class="separator">{CENTER_DOT}</div>
                 <div class="action-badge">
                     <small>

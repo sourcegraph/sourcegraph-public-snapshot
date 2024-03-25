@@ -7,9 +7,9 @@
     import ProgressMessage from '$lib/search/resultsIndicator/ProgressMessage.svelte'
     import SuggestedAction from '$lib/search/resultsIndicator/SuggestedAction.svelte'
     import TimeoutMessage from '$lib/search/resultsIndicator/TimeoutMessage.svelte'
-    import type { Progress } from '$lib/shared'
+    import type { Progress, Skipped } from '$lib/shared'
 
-    export let hasSuggestedItems: boolean
+    export let suggestedItems: Required<Skipped>[]
     export let progress: Progress
     export let state: 'error' | 'complete' | 'loading'
 
@@ -61,7 +61,7 @@
         {#if !done && takingTooLong}
             <TimeoutMessage {isError} />
         {/if}
-        <SuggestedAction {state} {progress} {hasSuggestedItems} />
+        <SuggestedAction {state} {progress} {suggestedItems} />
     </div>
 
     <div class="dropdown-icon">
