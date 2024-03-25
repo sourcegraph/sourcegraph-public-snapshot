@@ -23,7 +23,7 @@
 
     onMount(() => {
         let startTime = Date.now()
-        setInterval(() => {
+        const interval = setInterval(() => {
             const now = Date.now()
             elapsedDuration = now - startTime
             // once search has completed, reset the startTime
@@ -31,6 +31,7 @@
                 startTime = Date.now()
             }
         }, 1300)
+        return () => clearInterval(interval)
     })
 
     $: elapsedDuration = 0
