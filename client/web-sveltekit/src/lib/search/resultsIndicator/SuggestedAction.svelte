@@ -21,12 +21,14 @@
 
 <div class="action-container" class:error-text={isError}>
     <div class="suggested-action">
+        <!-- completed search -->
         {#if done && !hasSkippedItems}
-            <small>
-                <div class="more-details">See more details</div>
-            </small>
+            <div class="more-details">
+                <small> See more details </small>
+            </div>
         {/if}
 
+        <!-- completed with skpped items -->
         {#if done && hasSkippedItems}
             <div class="info-badge" class:error-text={isError}>
                 <small>
@@ -35,13 +37,14 @@
             </div>
         {/if}
 
+        <!-- completed with suggested items -->
         {#if done && mostSevere && Object.hasOwn(mostSevere, 'suggested')}
             <div class="separator">{CENTER_DOT}</div>
             <div class="action-badge">
                 <small>
                     {capitalize(mostSevere?.suggested ? mostSevere.suggested.title : '')}&nbsp;
                     <span class="code-font">
-                        <small>{mostSevere.suggested?.queryExpression}</small>
+                        {mostSevere.suggested?.queryExpression}
                     </span>
                 </small>
             </div>
@@ -50,10 +53,6 @@
 </div>
 
 <style lang="scss">
-    .action-container {
-        padding-top: 0.3rem;
-    }
-
     .code-font {
         background-color: var(--secondary);
         border-radius: 3px;

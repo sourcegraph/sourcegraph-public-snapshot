@@ -35,7 +35,6 @@
 
     $: elapsedDuration = 0
     $: takingTooLong = elapsedDuration >= SEARCH_JOB_THRESHOLD
-    $: isError = state === 'error'
     $: loading = state === 'loading'
     $: severity = progress.skipped.some(skipped => skipped.severity === 'warn' || skipped.severity === 'error')
         ? 'error'
@@ -59,24 +58,23 @@
 
     <div class="messages">
         <ProgressMessage {state} {progress} {elapsedDuration} {severity} />
-        {#if !done && takingTooLong}
-            <TimeoutMessage {isError} />
-        {/if}
 
-        {#if done}
-            <SuggestedAction {progress} {suggestedItems} {severity} {state} />
-        {:else}
-            <div class="action-container">
+        <div class="action-container">
+            {#if !done && takingTooLong}
+                <TimeoutMessage />
+            {:else if done}
+                <SuggestedAction {progress} {suggestedItems} {severity} {state} />
+            {:else}
                 <div class="suggested-action">
                     <!-- TODO add threshold to exported variables-->
                     {#if elapsedDuration <= SEARCH_JOB_THRESHOLD}
-                        <small>
-                            <div class="running-search">Running Search</div>
-                        </small>
+                        <div class="running-search">
+                            <small> Running Search </small>
+                        </div>
                     {/if}
                 </div>
-            </div>
-        {/if}
+            {/if}
+        </div>
     </div>
 
     <div class="dropdown-icon">
@@ -85,12 +83,16 @@
 </div>
 
 <style lang="scss">
+    .action-container {
+        margin-top: 0.3rem;
+    }
+
     .icon {
-        padding-right: 0.4rem;
+        margin-right: 0.5rem;
     }
 
     .dropdown-icon {
-        padding-left: 1.2rem;
+        margin-left: 1.2rem;
     }
 
     .indicator {
@@ -109,7 +111,6 @@
 
     .running-search {
         color: var(--text-muted);
-        padding-top: 0.3rem;
     }
 
     .suggested-action {
