@@ -1,5 +1,5 @@
 <script lang="ts">
-    import hotkeys from 'hotkeys-js';
+    import hotkeys from 'hotkeys-js'
 
-    console.log(hotkeys.getAllKeyCodes());
+    console.log(hotkeys.getAllKeyCodes())
 </script>

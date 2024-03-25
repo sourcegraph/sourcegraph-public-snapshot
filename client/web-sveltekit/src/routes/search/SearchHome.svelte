@@ -8,8 +8,8 @@
     import { isLightTheme } from '$lib/stores'
 
     import SearchHomeNotifications from './SearchHomeNotifications.svelte'
-    import HotkeyList from '$lib/HotkeyList.svelte';
-    import {registerHotkey} from '$lib/Hotkey';
+    import HotkeyList from '$lib/HotkeyList.svelte'
+    import { registerHotkey } from '$lib/Hotkey'
 
     export let queryState: QueryStateStore
 
@@ -26,21 +26,21 @@
             mac: 'command+o',
         },
         handler: () => alert('ctrl+o'),
-    });
+    })
     registerHotkey({
         keys: {
             key: 'ctrl+o',
             mac: 'command+o',
         },
         handler: () => alert('duplicate'),
-    });
+    })
 
     $: hk.bind({
         keys: {
             key: 'ctrl+o',
         },
         handler: () => alert('ctrl+o (rebind)'),
-    });
+    })
 </script>
 
 <section>
