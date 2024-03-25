@@ -369,14 +369,11 @@ func writeSCIPDocuments(
 
 		if upload.Indexer == shared.SyntacticIndexer {
 			scipWriter, err = tx.NewSyntacticSCIPWriter(ctx, upload.ID)
-			if err != nil {
-				return err
-			}
 		} else {
 			scipWriter, err = tx.NewPreciseSCIPWriter(ctx, upload.ID)
-			if err != nil {
-				return err
-			}
+		}
+		if err != nil {
+			return err
 		}
 
 		var numDocuments uint32
