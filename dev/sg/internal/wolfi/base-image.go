@@ -158,6 +158,7 @@ func (bc BaseImageConfig) DoBaseImageBuildLegacy() error {
 		"-v", fmt.Sprintf("%s:/images", bc.PackageRepoConfig.ImageDir),
 		"-e", fmt.Sprintf("SOURCE_DATE_EPOCH=%d", time.Now().Unix()),
 		"-w", "/work",
+		"cgr.dev/chainguard/apko",
 		"ls", "-al", "/work",
 		// "cgr.dev/chainguard/apko", "build",
 		// "--arch", "x86_64",
