@@ -8,7 +8,6 @@ import {
     stylePlugin,
     packageResolutionPlugin,
     monacoPlugin,
-    RXJS_RESOLUTIONS,
     buildTimerPlugin,
     workerPlugin,
 } from '@sourcegraph/build-config/src/esbuild/plugins'
@@ -51,7 +50,6 @@ export function esbuildBuildOptions(ENVIRONMENT_CONFIG: EnvironmentConfig): esbu
             workerPlugin,
             packageResolutionPlugin({
                 path: require.resolve('path-browserify'),
-                ...RXJS_RESOLUTIONS,
                 ...(ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_OMIT_SLOW_DEPS
                     ? {
                           // Monaco

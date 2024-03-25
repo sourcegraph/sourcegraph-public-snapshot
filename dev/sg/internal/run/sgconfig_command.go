@@ -13,6 +13,10 @@ type SGConfigCommand interface {
 	GetConfig() SGConfigCommandOptions
 	GetBinaryLocation() (string, error)
 	GetExecCmd(context.Context) (*exec.Cmd, error)
+	UpdateConfig(func(*SGConfigCommandOptions)) SGConfigCommand
+
+	// Optionally returns a bazel target associated with this command
+	GetBazelTarget() string
 
 	// Start a file watcher on the relevant filesystem sub-tree for this command
 	StartWatch(context.Context) (<-chan struct{}, error)

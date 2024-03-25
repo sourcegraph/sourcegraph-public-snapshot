@@ -44,7 +44,7 @@
     export let globalAlerts: GlobalNotifications
 
     $: settingsMotd = $settings?.motd
-    $: notices = $settings?.notices
+    $: notices = $settings?.notices?.filter(notice => notice.location === 'top')
 
     $: noLicenseWarningUserCount = globalAlerts.productSubscription.noLicenseWarningUserCount
     $: expiresAt = parseISO(globalAlerts.productSubscription.license.expiresAt)

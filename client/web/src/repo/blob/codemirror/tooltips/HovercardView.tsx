@@ -1,4 +1,4 @@
-import { ApolloClient } from '@apollo/client'
+import type { ApolloClient } from '@apollo/client'
 import { type EditorView, repositionTooltips, type TooltipView, type ViewUpdate } from '@codemirror/view'
 import classNames from 'classnames'
 import { createRoot, type Root } from 'react-dom/client'
@@ -19,7 +19,11 @@ type Unwrap<T> = T extends Observable<infer U> ? U : never
 
 // WebHoverOverlay expects to be passed the overlay position. Since CodeMirror
 // positions the element we always use the same value.
-const dummyOverlayPosition = { left: 0, bottom: 0 }
+const NOOP_OVERLAY_POSITION = { left: 0, bottom: 0 }
+
+// WebHoverOverlay is shared witht the browser extension and expects to be passed
+// an extension controller. This is a dummy value that is never used.
+const NOOP_EXTENSION_CONTROLLER = { executeCommand: () => Promise.resolve(undefined) }
 
 /**
  * This class is responsible for rendering a WebHoverOverlay component as a
@@ -123,17 +127,15 @@ export class HovercardView implements TooltipView {
                         // Blob props
                         location={props.location}
                         onHoverShown={props.onHoverShown}
-                        platformContext={props.platformContext}
-                        settingsCascade={props.settingsCascade}
                         telemetryService={props.telemetryService}
-                        extensionsController={props.extensionsController}
+                        extensionsController={NOOP_EXTENSION_CONTROLLER}
                         // Hover props
                         actionsOrError={actionsOrError}
                         hoverOrError={hoverOrError}
                         // CodeMirror handles the positioning but a
                         // non-nullable value must be passed for the
                         // hovercard to render
-                        overlayPosition={dummyOverlayPosition}
+                        overlayPosition={NOOP_OVERLAY_POSITION}
                         hoveredToken={hoveredToken}
                         pinOptions={{
                             showCloseButton: pinned,

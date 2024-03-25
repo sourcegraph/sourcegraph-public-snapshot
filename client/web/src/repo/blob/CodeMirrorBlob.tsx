@@ -20,15 +20,13 @@ import {
     formatSearchParameters,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
-import { getOrCreateCodeIntelAPI, type CodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
+import { createCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
-import type { PlatformContext, PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useSettings } from '@sourcegraph/shared/src/settings/settings'
 import type { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
-import { TelemetryV2Props, noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { type TelemetryV2Props, noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
@@ -46,7 +44,8 @@ import { isCodyEnabled } from '../../cody/isCodyEnabled'
 import { useCodySidebar } from '../../cody/sidebar/Provider'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type { ExternalLinkFields, Scalars } from '../../graphql-operations'
-import { type BlameHunkData } from '../blame/useBlameHunks'
+import { requestGraphQLAdapter } from '../../platform/context'
+import type { BlameHunkData } from '../blame/useBlameHunks'
 import type { HoverThresholdProps } from '../RepoContainer'
 
 import { BlameDecoration } from './BlameDecoration'
@@ -65,7 +64,6 @@ import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-
 import { CodeMirrorContainer } from './codemirror/react-interop'
 import { scipSnapshot } from './codemirror/scip-snapshot'
 import { search, type SearchPanelConfig } from './codemirror/search'
-import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { staticHighlights, type Range } from './codemirror/static-highlights'
 import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
 import { HovercardView } from './codemirror/tooltips/HovercardView'
@@ -92,14 +90,7 @@ interface CodeMirrorBlobProps {
     overrideBrowserSearchKeybinding?: boolean
 }
 
-export interface BlobProps
-    extends SettingsCascadeProps,
-        PlatformContextProps,
-        TelemetryProps,
-        TelemetryV2Props,
-        HoverThresholdProps,
-        ExtensionsControllerProps,
-        CodeMirrorBlobProps {
+export interface BlobProps extends TelemetryProps, TelemetryV2Props, HoverThresholdProps, CodeMirrorBlobProps {
     className: string
 
     wrapCode: boolean
@@ -217,7 +208,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         wrapCode,
         ariaLabel,
         role,
-        extensionsController,
         isBlameVisible,
         blameHunks,
         ocgVisibility,
@@ -339,7 +329,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
     )
     const codeIntelExtension = useCodeIntelExtension(
-        props.platformContext,
+        telemetryService,
         {
             repoName: blobInfo.repoName,
             filePath: blobInfo.filePath,
@@ -395,13 +385,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             pinnedTooltip,
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension(navigate) : codeIntelExtension,
             syntaxHighlight.of(blobInfo),
-            extensionsController !== null && !navigateToLineOnAnyClick
-                ? sourcegraphExtensions({
-                      blobInfo,
-                      initialSelection: position,
-                      extensionsController,
-                  })
-                : [],
             blobProps,
             blameDecorations,
             wrapCodeSettings,
@@ -426,7 +409,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             staticHighlightRanges,
             navigate,
             blobInfo,
-            extensionsController,
             isCodyEnabled,
             openCodeGraphExtension,
             codeIntelExtension,
@@ -569,7 +551,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 }
 
 function useCodeIntelExtension(
-    context: PlatformContext,
+    telemetryService: TelemetryProps['telemetryService'],
     {
         repoName,
         filePath,
@@ -583,31 +565,30 @@ function useCodeIntelExtension(
     const location = useLocation()
     const apolloClient = useApolloClient()
     const locationRef = useRef(location)
-    const [api, setApi] = useState<CodeIntelAPI | null>(null)
+    const settings = useSettings()
+    const codeIntelAPI = useMemo(
+        () =>
+            settings
+                ? createCodeIntelAPI({
+                      settings: name => settings[name],
+                      requestGraphQL: requestGraphQLAdapter(apolloClient),
+                      telemetryService,
+                  })
+                : null,
+        [settings, apolloClient, telemetryService]
+    )
 
     useEffect(() => {
         locationRef.current = location
     }, [location])
 
-    useEffect(() => {
-        let ignore = false
-        void getOrCreateCodeIntelAPI(context).then(api => {
-            if (!ignore) {
-                setApi(api)
-            }
-        })
-        return () => {
-            ignore = true
-        }
-    }, [context])
-
     return useMemo(
         () => [
             temporaryTooltip,
-            api
+            codeIntelAPI
                 ? createCodeIntelExtension({
                       api: {
-                          api,
+                          api: codeIntelAPI,
                           documentInfo: { repoName, filePath, commitID, revision, languages },
                           createTooltipView: ({ view, token, hovercardData }) =>
                               new HovercardView(view, token, hovercardData, apolloClient),
@@ -726,7 +707,7 @@ function useCodeIntelExtension(
                   })
                 : [],
         ],
-        [repoName, filePath, commitID, revision, mode, api, navigate, locationRef, languages, apolloClient]
+        [repoName, filePath, commitID, revision, mode, codeIntelAPI, navigate, locationRef, languages, apolloClient]
     )
 }
 

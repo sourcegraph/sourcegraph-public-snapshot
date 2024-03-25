@@ -12,6 +12,7 @@ import (
 // A BazelCommand is a command definition for sg run/start that uses
 // bazel under the hood. It will handle restarting itself autonomously,
 // as long as iBazel is running and watch that specific target.
+// Note: if you add a field here be sure to add it to the `Merge` method
 type BazelCommand struct {
 	Config SGConfigCommandOptions
 	Target string `yaml:"target"`
@@ -42,6 +43,14 @@ func (bc BazelCommand) GetConfig() SGConfigCommandOptions {
 	return bc.Config
 }
 
+func (bc BazelCommand) UpdateConfig(f func(*SGConfigCommandOptions)) SGConfigCommand {
+	f(&bc.Config)
+	return bc
+}
+
+func (bc BazelCommand) GetBazelTarget() string {
+	return bc.Target
+}
 func (bc BazelCommand) watchPaths() ([]string, error) {
 	// If no target is defined, there is nothing to be built and watched
 	if bc.Target == "" {
@@ -78,6 +87,18 @@ func (bc BazelCommand) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
 	}
 
 	return exec.CommandContext(ctx, "bash", "-c", fmt.Sprintf("%s\n%s", bc.Config.PreCmd, cmd)), nil
+}
+
+// Merge overrides the behavior of this command with other command.
+// This is used for the sg.config.overwrite.yaml functionality
+func (bc BazelCommand) Merge(other BazelCommand) BazelCommand {
+	merged := bc
+
+	merged.Config = bc.Config.Merge(other.Config)
+	merged.Target = mergeStrings(merged.Target, other.Target)
+	merged.RunTarget = mergeStrings(merged.RunTarget, other.RunTarget)
+
+	return merged
 }
 
 func binaryLocation(target string) (string, error) {

@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, Icon, Text, Link, Button, ErrorAlert, AnchorLink, Container } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -60,6 +60,10 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     )
 
     const shouldShowProvider = function (provider: AuthProvider): boolean {
+        if (provider.noSignIn) {
+            return false
+        }
+
         // Hide the Sourcegraph Operator authentication provider by default because it is
         // not useful to customer users and may even cause confusion.
         if (provider.serviceType === 'sourcegraph-operator') {

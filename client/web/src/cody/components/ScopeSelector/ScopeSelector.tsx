@@ -10,7 +10,7 @@ import { Text } from '@sourcegraph/wildcard'
 
 import type { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
 import { EventName } from '../../../util/constants'
-import { CodyTranscriptEventActions, CodyTranscriptEventFeatures } from '../../useCodyChat'
+import type { CodyTranscriptEventActions, CodyTranscriptEventFeatures } from '../../useCodyChat'
 
 import { ReposStatusQuery } from './backend'
 import { RepositoriesSelectorPopover, getFileName, type IRepo } from './RepositoriesSelectorPopover'

@@ -7,21 +7,46 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const HUMAN_PROMPT = "\n\nHuman:"
-const ASSISTANT_PROMPT = "\n\nAssistant:"
-
-func GetPrompt(messages []types.Message) (string, error) {
-	prompt := make([]string, 0, len(messages))
-	for idx, message := range messages {
-		if idx > 0 && messages[idx-1].Speaker == message.Speaker {
-			return "", errors.Newf("found consecutive messages with the same speaker '%s'", message.Speaker)
+func removeWhitespaceOnlySequences(sequences []string) []string {
+	var result []string
+	for _, sequence := range sequences {
+		if len(strings.TrimSpace(sequence)) > 0 {
+			result = append(result, sequence)
 		}
-
-		messagePrompt, err := message.GetPrompt(HUMAN_PROMPT, ASSISTANT_PROMPT)
-		if err != nil {
-			return "", err
-		}
-		prompt = append(prompt, messagePrompt)
 	}
-	return strings.Join(prompt, ""), nil
+	return result
+}
+
+func toAnthropicMessages(messages []types.Message) ([]anthropicMessage, error) {
+	anthropicMessages := make([]anthropicMessage, 0, len(messages))
+
+	for i, message := range messages {
+		speaker := message.Speaker
+		text := message.Text
+
+		anthropicRole := message.Speaker
+
+		switch speaker {
+		case types.SYSTEM_MESSAGE_SPEAKER:
+			if i != 0 {
+				return nil, errors.New("system role can only be used in the first message")
+			}
+		case types.ASSISTANT_MESSAGE_SPEAKER:
+		case types.HUMAN_MESSAGE_SPEAKER:
+			anthropicRole = "user"
+		default:
+			return nil, errors.Errorf("unexpected role: %s", text)
+		}
+
+		if text == "" {
+			return nil, errors.New("message content cannot be empty")
+		}
+
+		anthropicMessages = append(anthropicMessages, anthropicMessage{
+			Role:    anthropicRole,
+			Content: []anthropicMessageContent{{Text: text, Type: "text"}},
+		})
+	}
+
+	return anthropicMessages, nil
 }
