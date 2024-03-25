@@ -5202,15 +5202,15 @@ def go_dependencies():
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_google",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/google",
-        sum = "h1:5sY4zK5cz127gqcUQyLHQUc6oAijf9cWLNyBATntBSg=",
-        version = "v0.0.0-20231222002716-51aa712b9bcc",
+        sum = "h1:bv17EeWRJavA4xxnXT8iJjKZB9eF9bhV2jOnHl/xcJU=",
+        version = "v0.0.0-20240325114905-87053fe51a82",
     )
     go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_google_beta",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta",
-        sum = "h1:BMYXT/otUbE7daoJLSvTHo6/WwEclPzpoH8m/8+M0Ws=",
-        version = "v0.0.0-20231222002716-51aa712b9bcc",
+        sum = "h1:oIc1606BRD16jY6TcfQurYiew8PAH/tBjhaxXK89J4Y=",
+        version = "v0.0.0-20240325114905-87053fe51a82",
     )
     go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_nobl9",
