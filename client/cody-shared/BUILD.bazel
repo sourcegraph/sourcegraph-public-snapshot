@@ -15,6 +15,7 @@ ts_config(
 )
 
 ts_project(
+    tsconfig = ":tsconfig",
     name = "cody-shared_lib",
     srcs = [
         "src/chat/bot-response-multiplexer.ts",
@@ -124,6 +125,7 @@ ts_project(
 )
 
 ts_project(
+    tsconfig = ":tsconfig",
     name = "cody-shared_tests",
     testonly = True,
     srcs = ["src/test/mocks.ts"],
@@ -138,5 +140,12 @@ npm_package(
     srcs = [
         "package.json",
         ":cody-shared_lib",
+    ],
+)
+
+vitest_test(
+    name = "test",
+    data = [
+        ":cody-shared_tests",
     ],
 )

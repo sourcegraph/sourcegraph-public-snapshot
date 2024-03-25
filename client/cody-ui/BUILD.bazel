@@ -17,8 +17,6 @@ ts_config(
     visibility = ["//client:__subpackages__"],
     deps = [
         "//:tsconfig",
-        "//client/common:tsconfig",
-        "//client/testing:tsconfig",
     ],
 )
 
@@ -68,6 +66,7 @@ ts_project(
         "src/utils/Icon.tsx",
         "src/utils/icons.tsx",
     ],
+     tsconfig = ":tsconfig",
     deps = [
         ":module_style_typings",
         ":node_modules/@mdi/js",
