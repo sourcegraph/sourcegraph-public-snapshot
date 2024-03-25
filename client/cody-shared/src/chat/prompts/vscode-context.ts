@@ -39,8 +39,7 @@ export async function getFilePathContext(filePath: string): Promise<ContextMessa
         return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
             fileName,
         })
-    } catch (error) {
-        console.error(error)
+    } catch {
         return []
     }
 }
@@ -226,8 +225,8 @@ export async function getDirContextMessages(
                 { fileName }
             )
             contextMessages.push(...contextMessage)
-        } catch (error) {
-            console.error(error)
+        } catch {
+            // noop
         }
     }
 
@@ -317,8 +316,8 @@ export async function getCurrentDirFilteredContext(
                 { fileName }
             )
             contextMessages.push(...contextMessage)
-        } catch (error) {
-            console.error(error)
+        } catch {
+            // noop
         }
 
         // return context directly if the file name matches the current file name
@@ -475,8 +474,7 @@ export async function getDirectoryFileListContext(
                 text: answers.fileList.replace('{fileName}', fsPath),
             },
         ]
-    } catch (error) {
-        console.error(error)
+    } catch {
         return []
     }
 }
@@ -552,8 +550,7 @@ export const getFilesFromDir = async (
             const isFileNameIncludesTest = isValidTestFileName(fileName)
             return !isDirectory && !isHiddenFile && isFileNameIncludesTest
         })
-    } catch (error) {
-        console.error(error)
+    } catch {
         return []
     }
 }

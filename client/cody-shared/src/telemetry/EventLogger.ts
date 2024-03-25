@@ -23,6 +23,7 @@ export class EventLogger {
         private config: ConfigurationWithAccessToken
     ) {
         this.gqlAPIClient = new SourcegraphGraphQLAPIClient(this.config)
+        // eslint-disable-next-line no-console
         this.setSiteIdentification().catch(error => console.error(error))
         if (this.extensionDetails.ide === 'VSCode' && this.extensionDetails.ideExtensionType === 'Cody') {
             this.client = 'VSCODE_CODY_EXTENSION'
@@ -40,6 +41,7 @@ export class EventLogger {
         this.extensionDetails = newExtensionDetails
         this.config = newConfig
         this.gqlAPIClient.onConfigurationChange(newConfig)
+        // eslint-disable-next-line no-console
         this.setSiteIdentification().catch(error => console.error(error))
     }
 
@@ -94,9 +96,11 @@ export class EventLogger {
             })
             .then(response => {
                 if (isError(response)) {
+                    // eslint-disable-next-line no-console
                     console.error('Error logging event', response)
                 }
             })
+            // eslint-disable-next-line no-console
             .catch(error => console.error('Error logging event', error))
     }
 }

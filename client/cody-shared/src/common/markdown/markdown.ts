@@ -1,5 +1,6 @@
 import DOMPurify, { type Config as DOMPurifyConfig } from 'dompurify'
 import { highlight, highlightAuto } from 'highlight.js/lib/core'
+// eslint-disable-next-line no-restricted-imports
 import { marked } from 'marked'
 
 // TODO(sqs): copied from sourcegraph/sourcegraph. should dedupe.

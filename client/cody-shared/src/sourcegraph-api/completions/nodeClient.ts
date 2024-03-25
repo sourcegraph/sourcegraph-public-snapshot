@@ -81,6 +81,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
                     const parseResult = parseEvents(bufferText)
                     if (isError(parseResult)) {
+                        // eslint-disable-next-line no-console
                         console.error(parseResult)
                         return
                     }

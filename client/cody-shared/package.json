@@ -7,9 +7,8 @@
   "main": "src/index.ts",
   "sideEffects": false,
   "scripts": {
-    "build": "tsc --build",
-    "test": "vitest",
-    "prepublishOnly": "tsc --build --clean && pnpm run build"
+    "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'",
+    "test": "vitest"
   },
   "dependencies": {
     "@microsoft/fetch-event-source": "^2.0.1",

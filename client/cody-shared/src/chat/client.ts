@@ -169,7 +169,6 @@ export async function createClient({
                     transcript.addErrorAsAssistantResponse(error)
                     isMessageInProgress = false
                     sendTranscript(options?.data)
-                    console.error(`Completion request failed: ${error}`)
                 },
             })
         }

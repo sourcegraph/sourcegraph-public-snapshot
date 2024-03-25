@@ -78,7 +78,7 @@ export class ReleaseNotes implements Recipe {
         }
 
         const truncatedGitLogOutput = truncateText(gitLogOutput, MAX_RECIPE_INPUT_TOKENS)
-        console.log(truncatedGitLogOutput)
+
         let truncatedLogMessage = ''
         if (truncatedGitLogOutput.length < gitLogOutput.length) {
             truncatedLogMessage = 'Truncated extra long git log output, so release notes may miss some changes.'

@@ -114,6 +114,7 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
                         resolve(responseText)
                     },
                     onError: (message: string, statusCode?: number) => {
+                        // eslint-disable-next-line no-console
                         console.error(`Error detecting intent: Status code ${statusCode}: ${message}`)
                         resolve(fallback)
                     },
