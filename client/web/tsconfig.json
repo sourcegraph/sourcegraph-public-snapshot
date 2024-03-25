@@ -9,44 +9,50 @@
   },
   "references": [
     {
-      "path": "../../schema",
+      "path": "../../schema"
     },
     {
-      "path": "../branded",
+      "path": "../branded"
     },
     {
-      "path": "../build-config",
+      "path": "../build-config"
     },
     {
-      "path": "../client-api",
+      "path": "../client-api"
     },
     {
-      "path": "../codeintellify",
+      "path": "../codeintellify"
     },
     {
-      "path": "../common",
+      "path": "../cody-shared"
     },
     {
-      "path": "../extension-api-types",
+      "path": "../cody-ui"
     },
     {
-      "path": "../http-client",
+      "path": "../common"
     },
     {
-      "path": "../observability-client",
+      "path": "../extension-api-types"
     },
     {
-      "path": "../shared",
+      "path": "../http-client"
     },
     {
-      "path": "../storybook",
+      "path": "../observability-client"
     },
     {
-      "path": "../testing",
+      "path": "../shared"
     },
     {
-      "path": "../wildcard",
+      "path": "../storybook"
     },
+    {
+      "path": "../testing"
+    },
+    {
+      "path": "../wildcard"
+    }
   ],
   "include": ["src", "scripts", "__mocks__", "./src/**/*.json"],
   "exclude": [

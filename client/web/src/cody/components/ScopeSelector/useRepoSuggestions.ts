@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-import type { TranscriptJSON } from '@sourcegraph/cody-shared/dist/chat/transcript'
+import type {TranscriptJSON} from '@sourcegraph/cody-shared'
 import { useQuery } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 
