@@ -218,7 +218,7 @@ This service is operated on the %s.`,
 				)
 
 				md.Admonitionf(markdown.AdmonitionNote, "The %s is required for BOTH read-only and write access to the database.",
-					markdown.Link("'write access' Entitle permissions grant", entitleEditorLinksByCategory[env.Category]))
+					entitleEditorLinksByCategory[env.Category])
 
 				managedServicesRepoLink := markdown.Link(markdown.Code("sourcegraph/managed-services"),
 					"https://github.com/sourcegraph/managed-services")
