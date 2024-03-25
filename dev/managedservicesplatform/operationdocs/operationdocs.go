@@ -185,6 +185,7 @@ This service is operated on the %s.`,
 				{"Console", markdown.Linkf(
 					fmt.Sprintf("Cloud Run %s", string(serviceKind)), cloudRunURL)},
 				{"Service logs", markdown.Link("GCP logging", ServiceLogsURL(serviceKind, env.ProjectID))},
+				{"Service traces", markdown.Linkf("Cloud Trace", "https://console.cloud.google.com/traces/list?project=%s", env.ProjectID)},
 			},
 		)
 
