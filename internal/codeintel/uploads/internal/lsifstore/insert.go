@@ -428,23 +428,24 @@ func (s *scipWriter) Flush(ctx context.Context) (uint32, error) {
 	}
 
 	// We don't need to flush symbols for syntactic indexes, as we don't write any for them
-	if !s.isSyntactic {
-		// Flush all symbols data into temp tables
-		if err := s.symbolNameInserter.Flush(ctx); err != nil {
-			return 0, err
-		}
-		if err := s.symbolInserter.Flush(ctx); err != nil {
-			return 0, err
-		}
+	if s.isSyntactic {
+		return s.insertedSymbolsCount, nil
+	}
 
-		// Move all symbols data from temp tables into target tables
-		if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolNamesQuery, s.uploadID)); err != nil {
-			return 0, err
-		}
-		if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uploadID, 1)); err != nil {
-			return 0, err
-		}
+	// Flush all symbols data into temp tables
+	if err := s.symbolNameInserter.Flush(ctx); err != nil {
+		return 0, err
+	}
+	if err := s.symbolInserter.Flush(ctx); err != nil {
+		return 0, err
+	}
 
+	// Move all symbols data from temp tables into target tables
+	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolNamesQuery, s.uploadID)); err != nil {
+		return 0, err
+	}
+	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uploadID, 1)); err != nil {
+		return 0, err
 	}
 	return s.insertedSymbolsCount, nil
 }
