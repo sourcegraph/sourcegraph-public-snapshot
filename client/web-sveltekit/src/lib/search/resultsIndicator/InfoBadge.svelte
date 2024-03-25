@@ -3,9 +3,7 @@
     import type { Progress } from '$lib/shared'
 
     export let progress: Progress
-    export let state: 'error' | 'complete' | 'loading'
-
-    $: isError = state === 'error'
+    export let isError: boolean
 </script>
 
 <div class="progress-message" class:error-text={isError}>
@@ -13,12 +11,11 @@
 </div>
 
 <style lang="scss">
-    .error-text {
-        color: var(--danger);
-    }
-
     .progress-message {
         margin-left: 0.2rem;
         font-size: var(--font-size-base);
+        &.error-text {
+            color: var(--danger);
+        }
     }
 </style>

@@ -4,15 +4,16 @@
     import { sortBySeverity } from '$lib/branded'
     import type { Progress, Skipped } from '$lib/shared'
 
-    export let state: 'loading' | 'error' | 'complete'
     export let progress: Progress
     export let suggestedItems: Required<Skipped>[]
+    export let severity: string
+    export let state: 'error' | 'complete' | 'loading'
 
     const CENTER_DOT = '\u00B7' // AKA 'interpunct'
 
     $: sortedItems = sortBySeverity(progress.skipped)
     $: suggestedItems = sortedItems.filter((skipped): skipped is Required<Skipped> => !!skipped.suggested)
-    $: isError = state === 'error'
+    $: isError = severity === 'error' || state === 'error'
     $: hasSkippedItems = progress.skipped.length > 0
     $: mostSevere = sortedItems[0]
     $: done = progress.done
@@ -30,19 +31,20 @@
             {#if done && hasSkippedItems}
                 <div class="info-badge" class:error-text={isError}>
                     <small>
-                        {capitalize(mostSevere?.title ? mostSevere.title : '')}&nbsp;
+                        {capitalize(mostSevere?.title ?? mostSevere.title)}&nbsp;
                     </small>
                 </div>
             {/if}
 
-            {#if done && mostSevere.suggested}
+            <!-- check if suggested exists on most severe -->
+            {#if done && Object.hasOwn(mostSevere,'suggested')}
                 <div class="separator">{CENTER_DOT}</div>
                 <div class="action-badge">
                     <small>
                         {capitalize(mostSevere?.suggested ? mostSevere.suggested.title : '')}&nbsp;
-                        <tt class="code-font">
+                        <span class="code-font">
                             <small>{mostSevere.suggested?.queryExpression}</small>
-                        </tt>
+                        </span>
                     </small>
                 </div>
             {/if}

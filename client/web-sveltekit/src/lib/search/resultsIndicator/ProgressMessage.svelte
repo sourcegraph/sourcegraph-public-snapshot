@@ -6,8 +6,9 @@
     export let progress: Progress
     export let elapsedDuration: number
     export let threshold: number
+    export let severity: string
 
-    $: isError = state === 'error'
+    $: isError = state === 'error' || severity === 'error'
     $: loading = state === 'loading'
 </script>
 
@@ -15,7 +16,7 @@
     <div class="progress-message">
         Fetching results... {(elapsedDuration / 1000).toFixed(1)}s
     </div>
-    <div class="action-container" class:error-text={isError}>
+    <div class="action-container">
         <div class="suggested-action">
             {#if elapsedDuration <= threshold}
                 <div class="running-search">
@@ -25,21 +26,12 @@
         </div>
     </div>
 {:else}
-    <InfoBadge {state} {progress} />
+    <InfoBadge {progress} {isError} />
 {/if}
 
 <style lang="scss">
     .action-container {
         margin-top: 0.3rem;
-    }
-
-    .error-text {
-        color: var(--danger);
-    }
-
-    .progress-message {
-        margin-left: 0.2rem;
-        font-size: var(--font-size-base);
     }
 
     .suggested-action {

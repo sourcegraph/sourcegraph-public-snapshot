@@ -39,14 +39,17 @@
     $: openItems = sortedItems.map((_, index) => index === 0)
     $: suggestedItems = sortedItems.filter((skipped): skipped is Required<Skipped> => !!skipped.suggested)
     $: hasSuggestedItems = suggestedItems.length > 0
-    $: isError = state === 'error'
+    $: severity = progress.skipped.some(skipped => skipped.severity === 'warn' || skipped.severity === 'error')
+        ? 'error'
+        : 'info'
+    $: isError = severity === 'error' || state === 'error'
 </script>
 
 <Popover let:registerTrigger let:toggle placement="bottom-start">
     <Button variant={isError ? 'danger' : 'secondary'} size="sm" outline>
         <svelte:fragment slot="custom" let:buttonClass>
             <button use:registerTrigger class="{buttonClass} progress-button" on:click={() => toggle()}>
-                <ResultsIndicator {state} {suggestedItems} {progress} />
+                <ResultsIndicator {state} {suggestedItems} {progress} {severity} />
             </button>
         </svelte:fragment>
     </Button>

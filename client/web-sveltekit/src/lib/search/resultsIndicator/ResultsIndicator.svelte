@@ -9,9 +9,10 @@
     import TimeoutMessage from '$lib/search/resultsIndicator/TimeoutMessage.svelte'
     import type { Progress, Skipped } from '$lib/shared'
 
-    export let suggestedItems: Required<Skipped>[]
-    export let progress: Progress
     export let state: 'error' | 'complete' | 'loading'
+    export let progress: Progress
+    export let suggestedItems: Required<Skipped>[]
+    export let severity: string
 
     const SEARCH_JOB_THRESHOLD = 8000
     const icons: Record<string, string> = {
@@ -57,11 +58,11 @@
     </div>
 
     <div class="messages">
-        <ProgressMessage {state} {progress} {elapsedDuration} threshold={SEARCH_JOB_THRESHOLD} />
+        <ProgressMessage {state} {progress} {elapsedDuration} threshold={SEARCH_JOB_THRESHOLD} {severity} />
         {#if !done && takingTooLong}
             <TimeoutMessage {isError} />
         {/if}
-        <SuggestedAction {state} {progress} {suggestedItems} />
+        <SuggestedAction {progress} {suggestedItems} {severity} {state} />
     </div>
 
     <div class="dropdown-icon">
