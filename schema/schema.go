@@ -1638,18 +1638,15 @@ type NoOpEncryptionKey struct {
 	Type string `json:"type"`
 }
 type Notice struct {
-	// BackgroundColor description: The hex code of the background color for this notice. Defaults to the global notice background color if not specified.
-	BackgroundColor string `json:"backgroundColor,omitempty"`
 	// Dismissible description: Whether this notice can be dismissed (closed) by the user.
 	Dismissible bool `json:"dismissible,omitempty"`
 	// Location description: The location where this notice is shown: "top" for the top of every page, "home" for the homepage.
 	Location string `json:"location"`
 	// Message description: The message to display. Markdown formatting is supported.
 	Message string `json:"message"`
-	// TextCentered description: Whether the notice text should be centered. Defaults to false.
-	TextCentered bool `json:"textCentered,omitempty"`
-	// TextColor description: The hex code of the text color for this notice. Defaults to the global notice text color if not specified.
-	TextColor string `json:"textColor,omitempty"`
+	// StyleOverrides description: Overrides for the notice's default style. You probably want to use notice 'variant' setting instead.
+	StyleOverrides *StyleOverrides `json:"styleOverrides,omitempty"`
+	Variant        string          `json:"variant,omitempty"`
 }
 type Notifications struct {
 	// Key description: e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.
@@ -3174,6 +3171,16 @@ type Step struct {
 	Outputs map[string]OutputVariable `json:"outputs,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 	Run string `json:"run"`
+}
+
+// StyleOverrides description: Overrides for the notice's default style. You probably want to use notice 'variant' setting instead.
+type StyleOverrides struct {
+	// BackgroundColor description: The hex code of the background color for this notice.
+	BackgroundColor string `json:"backgroundColor,omitempty"`
+	// TextCentered description: Whether the notice text should be centered.
+	TextCentered bool `json:"textCentered,omitempty"`
+	// TextColor description: The hex code of the text color for this notice.
+	TextColor string `json:"textColor,omitempty"`
 }
 type SubRepoPermissions struct {
 	// Enabled description: Enables sub-repo permission checking
