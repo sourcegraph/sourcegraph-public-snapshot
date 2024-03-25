@@ -55,7 +55,8 @@ func NewGRPCServer(server *Server) proto.GitserverServiceServer {
 		svc:            server,
 	}
 
-	if conf.SiteConfig().ExperimentalFeatures.GitserverExhaustiveLogging {
+	exptFeatures := conf.SiteConfig().ExperimentalFeatures
+	if exptFeatures != nil && exptFeatures.GitserverExhaustiveLogging {
 		srv = &loggingGRPCServer{
 			GitserverServiceServer: srv,
 			logger:                 server.logger,
