@@ -17,6 +17,7 @@ ts_config(
     visibility = ["//client:__subpackages__"],
     deps = [
         "//:tsconfig",
+        "//client/cody-shared:tsconfig",
     ],
 )
 
