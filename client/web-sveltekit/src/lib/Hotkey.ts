@@ -105,6 +105,8 @@ export function registerHotkey({ keys, handler, allowDefault, ignoreInputFields 
             .map(k => k.shortcut)
             .includes(currentKey)
     ) {
+        // Instead of printing an error, we can also use hotkey's "single" option, which will automatically unregister any
+        // existing hotkey with the same key and scope.
         console.error(`The hotkey "${currentKey}" has already been registered by another Hotkey component.`)
     }
     let wrappedHandler = wrapHandler(handler, allowDefault, ignoreInputFields)
