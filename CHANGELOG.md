@@ -27,6 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - GitHub apps installation records will only be deleted from the database if the GitHub App has been uninstalled or if the GitHub app has been deleted. [#60460](https://github.com/sourcegraph/sourcegraph/pull/60460)
 - The Anthropic provider for Cody has been updated to use Anthropic's Messages API, bringing support for Claude 3 models if you use Cody Gateway or your own Anthropic license key. [#60953](https://github.com/sourcegraph/sourcegraph/pull/60953)
+- The AWS Bedrock provider for Cody has been updated to use Anthropic's Messages API, bringing support for Claude 3 models. [#61347](https://github.com/sourcegraph/sourcegraph/pull/61347)
 
 ### Fixed
 
