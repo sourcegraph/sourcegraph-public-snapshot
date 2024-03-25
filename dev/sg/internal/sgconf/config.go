@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func parseConfigFile(name string) (*Config, error) {
@@ -161,7 +162,7 @@ func (c *Config) Merge(other *Config) *Config {
 
 	for name, override := range other.Commands {
 		if original, ok := merged.Commands[name]; ok {
-			merged.Commands[name] = ptr(original.Merge(*override))
+			merged.Commands[name] = pointers.Ptr(original.Merge(*override))
 		} else {
 			merged.Commands[name] = override
 		}
@@ -169,7 +170,7 @@ func (c *Config) Merge(other *Config) *Config {
 
 	for name, override := range other.BazelCommands {
 		if original, ok := merged.BazelCommands[name]; ok {
-			merged.BazelCommands[name] = ptr(original.Merge(*override))
+			merged.BazelCommands[name] = pointers.Ptr(original.Merge(*override))
 		} else {
 			merged.BazelCommands[name] = override
 		}
@@ -177,7 +178,7 @@ func (c *Config) Merge(other *Config) *Config {
 
 	for name, override := range other.DockerCommands {
 		if original, ok := merged.DockerCommands[name]; ok {
-			merged.DockerCommands[name] = ptr(original.Merge(*override))
+			merged.DockerCommands[name] = pointers.Ptr(original.Merge(*override))
 		} else {
 			merged.DockerCommands[name] = override
 		}
@@ -197,7 +198,7 @@ func (c *Config) Merge(other *Config) *Config {
 
 	for name, override := range other.Tests {
 		if original, ok := merged.Tests[name]; ok {
-			merged.Tests[name] = ptr(original.Merge(*override))
+			merged.Tests[name] = pointers.Ptr(original.Merge(*override))
 		} else {
 			merged.Tests[name] = override
 		}
@@ -224,8 +225,4 @@ func (c *Config) GetEnv(key string) string {
 		}
 		return os.Getenv(lookup)
 	})
-}
-
-func ptr[T any](expr T) *T {
-	return &expr
 }
