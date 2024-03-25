@@ -66,8 +66,8 @@ This service is operated on the %s.`,
 		s.Service.GetName(),
 		markdown.Link("Managed Services Platform (MSP)", mspURL))
 
-	md.Admonitionf(markdown.AdmonitionImportant, "If this is your first time here, you should follow the %s as well to set up the prerequisite tooling.",
-		markdown.Link("sourcegraph/managed-services README", "https://github.com/sourcegraph/managed-services/blob/main/README.md"))
+	md.Admonitionf(markdown.AdmonitionImportant, "If this is your first time here, you must follow the %s as well to clone the service definitions repository and set up the prerequisite tooling.",
+		markdown.Link("sourcegraph/managed-services 'Tooling setup' guide", "https://github.com/sourcegraph/managed-services/blob/main/README.md"))
 
 	md.Paragraphf("If you need assistance with MSP infrastructure, reach out to the %s team in #discuss-core-services.",
 		markdown.Link("Core Services", coreServicesURL))
@@ -216,6 +216,9 @@ This service is operated on the %s.`,
 						{"Databases", strings.Join(mapTo(pg.Databases, markdown.Code), ", ")},
 					},
 				)
+
+				md.Admonitionf(markdown.AdmonitionNote, "The %s is required for BOTH read-only and write access to the database.",
+					entitleEditorLinksByCategory[env.Category])
 
 				managedServicesRepoLink := markdown.Link(markdown.Code("sourcegraph/managed-services"),
 					"https://github.com/sourcegraph/managed-services")
