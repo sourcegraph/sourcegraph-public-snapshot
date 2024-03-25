@@ -8879,9 +8879,9 @@ type MockLSIFStore struct {
 	// InsertMetadataFunc is an instance of a mock function object
 	// controlling the behavior of the method InsertMetadata.
 	InsertMetadataFunc *LSIFStoreInsertMetadataFunc
-	// NewSCIPWriterFunc is an instance of a mock function object
-	// controlling the behavior of the method NewSCIPWriter.
-	NewSCIPWriterFunc *LSIFStoreNewSCIPWriterFunc
+	// NewPreciseSCIPWriterFunc is an instance of a mock function object
+	// controlling the behavior of the method NewPreciseSCIPWriter.
+	NewPreciseSCIPWriterFunc *LSIFStoreNewPreciseSCIPWriterFunc
 	// NewSyntacticSCIPWriterFunc is an instance of a mock function object
 	// controlling the behavior of the method NewSyntacticSCIPWriter.
 	NewSyntacticSCIPWriterFunc *LSIFStoreNewSyntacticSCIPWriterFunc
@@ -8926,7 +8926,7 @@ func NewMockLSIFStore() *MockLSIFStore {
 				return
 			},
 		},
-		NewSCIPWriterFunc: &LSIFStoreNewSCIPWriterFunc{
+		NewPreciseSCIPWriterFunc: &LSIFStoreNewPreciseSCIPWriterFunc{
 			defaultHook: func(context.Context, int) (r0 lsifstore.SCIPWriter, r1 error) {
 				return
 			},
@@ -8983,7 +8983,7 @@ func NewStrictMockLSIFStore() *MockLSIFStore {
 				panic("unexpected invocation of MockLSIFStore.InsertMetadata")
 			},
 		},
-		NewSCIPWriterFunc: &LSIFStoreNewSCIPWriterFunc{
+		NewPreciseSCIPWriterFunc: &LSIFStoreNewPreciseSCIPWriterFunc{
 			defaultHook: func(context.Context, int) (lsifstore.SCIPWriter, error) {
 				panic("unexpected invocation of MockLSIFStore.NewPreciseSCIPWriter")
 			},
@@ -9030,7 +9030,7 @@ func NewMockLSIFStoreFrom(i lsifstore.Store) *MockLSIFStore {
 		InsertMetadataFunc: &LSIFStoreInsertMetadataFunc{
 			defaultHook: i.InsertMetadata,
 		},
-		NewSCIPWriterFunc: &LSIFStoreNewSCIPWriterFunc{
+		NewPreciseSCIPWriterFunc: &LSIFStoreNewPreciseSCIPWriterFunc{
 			defaultHook: i.NewPreciseSCIPWriter,
 		},
 		NewSyntacticSCIPWriterFunc: &LSIFStoreNewSyntacticSCIPWriterFunc{
@@ -9610,35 +9610,36 @@ func (c LSIFStoreInsertMetadataFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// LSIFStoreNewSCIPWriterFunc describes the behavior when the NewPreciseSCIPWriter
-// method of the parent MockLSIFStore instance is invoked.
-type LSIFStoreNewSCIPWriterFunc struct {
+// LSIFStoreNewPreciseSCIPWriterFunc describes the behavior when the
+// NewPreciseSCIPWriter method of the parent MockLSIFStore instance is
+// invoked.
+type LSIFStoreNewPreciseSCIPWriterFunc struct {
 	defaultHook func(context.Context, int) (lsifstore.SCIPWriter, error)
 	hooks       []func(context.Context, int) (lsifstore.SCIPWriter, error)
-	history     []LSIFStoreNewSCIPWriterFuncCall
+	history     []LSIFStoreNewPreciseSCIPWriterFuncCall
 	mutex       sync.Mutex
 }
 
-// NewSCIPWriter delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
+// NewPreciseSCIPWriter delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
 func (m *MockLSIFStore) NewPreciseSCIPWriter(v0 context.Context, v1 int) (lsifstore.SCIPWriter, error) {
-	r0, r1 := m.NewSCIPWriterFunc.nextHook()(v0, v1)
-	m.NewSCIPWriterFunc.appendCall(LSIFStoreNewSCIPWriterFuncCall{v0, v1, r0, r1})
+	r0, r1 := m.NewPreciseSCIPWriterFunc.nextHook()(v0, v1)
+	m.NewPreciseSCIPWriterFunc.appendCall(LSIFStoreNewPreciseSCIPWriterFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the NewPreciseSCIPWriter method
-// of the parent MockLSIFStore instance is invoked and the hook queue is
-// empty.
-func (f *LSIFStoreNewSCIPWriterFunc) SetDefaultHook(hook func(context.Context, int) (lsifstore.SCIPWriter, error)) {
+// SetDefaultHook sets function that is called when the NewPreciseSCIPWriter
+// method of the parent MockLSIFStore instance is invoked and the hook queue
+// is empty.
+func (f *LSIFStoreNewPreciseSCIPWriterFunc) SetDefaultHook(hook func(context.Context, int) (lsifstore.SCIPWriter, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// NewPreciseSCIPWriter method of the parent MockLSIFStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *LSIFStoreNewSCIPWriterFunc) PushHook(hook func(context.Context, int) (lsifstore.SCIPWriter, error)) {
+// NewPreciseSCIPWriter method of the parent MockLSIFStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *LSIFStoreNewPreciseSCIPWriterFunc) PushHook(hook func(context.Context, int) (lsifstore.SCIPWriter, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -9646,20 +9647,20 @@ func (f *LSIFStoreNewSCIPWriterFunc) PushHook(hook func(context.Context, int) (l
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LSIFStoreNewSCIPWriterFunc) SetDefaultReturn(r0 lsifstore.SCIPWriter, r1 error) {
+func (f *LSIFStoreNewPreciseSCIPWriterFunc) SetDefaultReturn(r0 lsifstore.SCIPWriter, r1 error) {
 	f.SetDefaultHook(func(context.Context, int) (lsifstore.SCIPWriter, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreNewSCIPWriterFunc) PushReturn(r0 lsifstore.SCIPWriter, r1 error) {
+func (f *LSIFStoreNewPreciseSCIPWriterFunc) PushReturn(r0 lsifstore.SCIPWriter, r1 error) {
 	f.PushHook(func(context.Context, int) (lsifstore.SCIPWriter, error) {
 		return r0, r1
 	})
 }
 
-func (f *LSIFStoreNewSCIPWriterFunc) nextHook() func(context.Context, int) (lsifstore.SCIPWriter, error) {
+func (f *LSIFStoreNewPreciseSCIPWriterFunc) nextHook() func(context.Context, int) (lsifstore.SCIPWriter, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -9672,26 +9673,27 @@ func (f *LSIFStoreNewSCIPWriterFunc) nextHook() func(context.Context, int) (lsif
 	return hook
 }
 
-func (f *LSIFStoreNewSCIPWriterFunc) appendCall(r0 LSIFStoreNewSCIPWriterFuncCall) {
+func (f *LSIFStoreNewPreciseSCIPWriterFunc) appendCall(r0 LSIFStoreNewPreciseSCIPWriterFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of LSIFStoreNewSCIPWriterFuncCall objects
-// describing the invocations of this function.
-func (f *LSIFStoreNewSCIPWriterFunc) History() []LSIFStoreNewSCIPWriterFuncCall {
+// History returns a sequence of LSIFStoreNewPreciseSCIPWriterFuncCall
+// objects describing the invocations of this function.
+func (f *LSIFStoreNewPreciseSCIPWriterFunc) History() []LSIFStoreNewPreciseSCIPWriterFuncCall {
 	f.mutex.Lock()
-	history := make([]LSIFStoreNewSCIPWriterFuncCall, len(f.history))
+	history := make([]LSIFStoreNewPreciseSCIPWriterFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// LSIFStoreNewSCIPWriterFuncCall is an object that describes an invocation
-// of method NewPreciseSCIPWriter on an instance of MockLSIFStore.
-type LSIFStoreNewSCIPWriterFuncCall struct {
+// LSIFStoreNewPreciseSCIPWriterFuncCall is an object that describes an
+// invocation of method NewPreciseSCIPWriter on an instance of
+// MockLSIFStore.
+type LSIFStoreNewPreciseSCIPWriterFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -9708,13 +9710,13 @@ type LSIFStoreNewSCIPWriterFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c LSIFStoreNewSCIPWriterFuncCall) Args() []interface{} {
+func (c LSIFStoreNewPreciseSCIPWriterFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c LSIFStoreNewSCIPWriterFuncCall) Results() []interface{} {
+func (c LSIFStoreNewPreciseSCIPWriterFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
