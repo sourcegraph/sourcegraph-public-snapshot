@@ -103,10 +103,10 @@ VALUES (%s, %s, %s, %s, %s, %s)
 func (s *store) NewSyntacticSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, error) {
 
 	scipWriter := &scipWriter{
-		uploadID:    uploadID,
-		db:          s.db,
-		count:       0,
-		isSyntactic: true,
+		uploadID:             uploadID,
+		db:                   s.db,
+		insertedSymbolsCount: 0,
+		isSyntactic:          true,
 	}
 
 	return scipWriter, nil
@@ -148,11 +148,11 @@ func (s *store) NewPreciseSCIPWriter(ctx context.Context, uploadID int) (SCIPWri
 	)
 
 	scipWriter := &scipWriter{
-		uploadID:           uploadID,
-		db:                 s.db,
-		symbolNameInserter: symbolNameInserter,
-		symbolInserter:     symbolInserter,
-		count:              0,
+		uploadID:             uploadID,
+		db:                   s.db,
+		symbolNameInserter:   symbolNameInserter,
+		symbolInserter:       symbolInserter,
+		insertedSymbolsCount: 0,
 	}
 
 	return scipWriter, nil
@@ -178,15 +178,15 @@ CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 `
 
 type scipWriter struct {
-	uploadID           int
-	nextID             int
-	isSyntactic        bool
-	db                 *basestore.Store
-	symbolNameInserter *batch.Inserter
-	symbolInserter     *batch.Inserter
-	count              uint32
-	batchPayloadSum    int
-	batch              []bufferedDocument
+	uploadID             int
+	nextID               int
+	isSyntactic          bool
+	db                   *basestore.Store
+	symbolNameInserter   *batch.Inserter
+	symbolInserter       *batch.Inserter
+	insertedSymbolsCount uint32
+	batchPayloadSum      int
+	batch                []bufferedDocument
 }
 
 type bufferedDocument struct {
@@ -404,7 +404,7 @@ func (s *scipWriter) writeSymbols(ctx context.Context, documents []bufferedDocum
 				return err
 			}
 
-			atomic.AddUint32(&s.count, 1)
+			atomic.AddUint32(&s.insertedSymbolsCount, 1)
 		}
 	}
 
@@ -443,7 +443,7 @@ func (s *scipWriter) Flush(ctx context.Context) (uint32, error) {
 		}
 
 	}
-	return s.count, nil
+	return s.insertedSymbolsCount, nil
 }
 
 const scipWriterFlushSymbolNamesQuery = `
