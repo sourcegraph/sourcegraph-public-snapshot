@@ -40,7 +40,7 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, query string
 		return nil, errcode.MakeNonRetryable(err)
 	}
 
-	// Inline job creation so we can mutate the commit job before running it
+	// Inline job creation, so we can mutate the commit job before running it
 	clients := searchClient.JobClients()
 	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
 	if err != nil {
@@ -192,7 +192,11 @@ func hookWithID(
 		if err != nil {
 			var revErr *gitdomain.RevisionNotFoundError
 			if errors.As(err, &revErr) {
-				if err := db.CodeMonitors().UpdateTriggerJobWithLogs(ctx, triggerID, err.Error()); err != nil {
+				if err := db.CodeMonitors().UpdateTriggerJobWithLogs(
+					ctx,
+					triggerID,
+					database.TriggerJobExecutionLogEntry{Message: err.Error()},
+				); err != nil {
 					return err
 				}
 			} else {

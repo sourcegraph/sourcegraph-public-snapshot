@@ -6768,7 +6768,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		UpdateTriggerJobWithLogsFunc: &CodeMonitorStoreUpdateTriggerJobWithLogsFunc{
-			defaultHook: func(context.Context, int32, string) (r0 error) {
+			defaultHook: func(context.Context, int32, database.TriggerJobExecutionLogEntry) (r0 error) {
 				return
 			},
 		},
@@ -7045,7 +7045,7 @@ func NewStrictMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		UpdateTriggerJobWithLogsFunc: &CodeMonitorStoreUpdateTriggerJobWithLogsFunc{
-			defaultHook: func(context.Context, int32, string) error {
+			defaultHook: func(context.Context, int32, database.TriggerJobExecutionLogEntry) error {
 				panic("unexpected invocation of MockCodeMonitorStore.UpdateTriggerJobWithLogs")
 			},
 		},
@@ -12794,15 +12794,15 @@ func (c CodeMonitorStoreUpdateSlackWebhookActionFuncCall) Results() []interface{
 // the UpdateTriggerJobWithLogs method of the parent MockCodeMonitorStore
 // instance is invoked.
 type CodeMonitorStoreUpdateTriggerJobWithLogsFunc struct {
-	defaultHook func(context.Context, int32, string) error
-	hooks       []func(context.Context, int32, string) error
+	defaultHook func(context.Context, int32, database.TriggerJobExecutionLogEntry) error
+	hooks       []func(context.Context, int32, database.TriggerJobExecutionLogEntry) error
 	history     []CodeMonitorStoreUpdateTriggerJobWithLogsFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateTriggerJobWithLogs delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) UpdateTriggerJobWithLogs(v0 context.Context, v1 int32, v2 string) error {
+func (m *MockCodeMonitorStore) UpdateTriggerJobWithLogs(v0 context.Context, v1 int32, v2 database.TriggerJobExecutionLogEntry) error {
 	r0 := m.UpdateTriggerJobWithLogsFunc.nextHook()(v0, v1, v2)
 	m.UpdateTriggerJobWithLogsFunc.appendCall(CodeMonitorStoreUpdateTriggerJobWithLogsFuncCall{v0, v1, v2, r0})
 	return r0
@@ -12811,7 +12811,7 @@ func (m *MockCodeMonitorStore) UpdateTriggerJobWithLogs(v0 context.Context, v1 i
 // SetDefaultHook sets function that is called when the
 // UpdateTriggerJobWithLogs method of the parent MockCodeMonitorStore
 // instance is invoked and the hook queue is empty.
-func (f *CodeMonitorStoreUpdateTriggerJobWithLogsFunc) SetDefaultHook(hook func(context.Context, int32, string) error) {
+func (f *CodeMonitorStoreUpdateTriggerJobWithLogsFunc) SetDefaultHook(hook func(context.Context, int32, database.TriggerJobExecutionLogEntry) error) {
 	f.defaultHook = hook
 }
 
@@ -12820,7 +12820,7 @@ func (f *CodeMonitorStoreUpdateTriggerJobWithLogsFunc) SetDefaultHook(hook func(
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *CodeMonitorStoreUpdateTriggerJobWithLogsFunc) PushHook(hook func(context.Context, int32, string) error) {
+func (f *CodeMonitorStoreUpdateTriggerJobWithLogsFunc) PushHook(hook func(context.Context, int32, database.TriggerJobExecutionLogEntry) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -12829,19 +12829,19 @@ func (f *CodeMonitorStoreUpdateTriggerJobWithLogsFunc) PushHook(hook func(contex
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *CodeMonitorStoreUpdateTriggerJobWithLogsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int32, string) error {
+	f.SetDefaultHook(func(context.Context, int32, database.TriggerJobExecutionLogEntry) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *CodeMonitorStoreUpdateTriggerJobWithLogsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int32, string) error {
+	f.PushHook(func(context.Context, int32, database.TriggerJobExecutionLogEntry) error {
 		return r0
 	})
 }
 
-func (f *CodeMonitorStoreUpdateTriggerJobWithLogsFunc) nextHook() func(context.Context, int32, string) error {
+func (f *CodeMonitorStoreUpdateTriggerJobWithLogsFunc) nextHook() func(context.Context, int32, database.TriggerJobExecutionLogEntry) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -12884,7 +12884,7 @@ type CodeMonitorStoreUpdateTriggerJobWithLogsFuncCall struct {
 	Arg1 int32
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 database.TriggerJobExecutionLogEntry
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
