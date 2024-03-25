@@ -321,6 +321,8 @@ func (s *scipWriter) flush(ctx context.Context) error {
 }
 
 func (s *scipWriter) writeSymbols(ctx context.Context, documents []bufferedDocument, documentLookupIDs []int) error {
+	// We don't write symbols for syntactic indexes, because we can't perform
+	// fuzzy matching against the trie datastructure we build for symbols in the database
 	if s.isSyntactic {
 		return nil
 	}
@@ -425,6 +427,7 @@ func (s *scipWriter) Flush(ctx context.Context) (uint32, error) {
 		return 0, err
 	}
 
+	// We don't need to flush symbols for syntactic indexes, as we don't write any for them
 	if !s.isSyntactic {
 		// Flush all symbols data into temp tables
 		if err := s.symbolNameInserter.Flush(ctx); err != nil {
