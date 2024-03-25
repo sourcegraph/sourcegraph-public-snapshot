@@ -13,16 +13,21 @@ All notable changes to Sourcegraph are documented in this file.
 
 <!-- START CHANGELOG -->
 
-## Unreleased (5.4.0 - Release Date TBD)
+## Unreleased (Monthly Release - April 5th, 2024)
 
 ### Added
 
 - GitHub app installations can now be refreshed from the Batch Changes Site Admin page. [#60125](https://github.com/sourcegraph/sourcegraph/pull/60125)
+- The SAML auth provider configuration now supports a `usernameAttributeNames` field that can be used to specify a list of SAML attribute that should be used as the username. [#60603](https://github.com/sourcegraph/sourcegraph/pull/60603)
 - Added the GraphQL query `User.evaluateFeatureFlag` to show if a feature flag is enabled or disabled for a user. [#60828](https://github.com/sourcegraph/sourcegraph/pull/60828)
+- Search Jobs now supports diff, commit and path searches. Before, only file searches were supported. [#60883](https://github.com/sourcegraph/sourcegraph/pull/60883)
+- Auth providers now support a `noSignIn` option that, when set to true, will hide the auth provider from the sign in page, but still allow users to connect the external account from their Account Security page for permissions syncing. [#60722](https://github.com/sourcegraph/sourcegraph/pull/60722)
 
 ### Changed
 
 - GitHub apps installation records will only be deleted from the database if the GitHub App has been uninstalled or if the GitHub app has been deleted. [#60460](https://github.com/sourcegraph/sourcegraph/pull/60460)
+- The Anthropic provider for Cody has been updated to use the messages API which includes support for Claude 3 models. This is applicable to both BYOK and Cody Gateway users. The messages API does not support model identifiers which only set a major model version such as: `claude-2`, `claude-instant-v1` and `claude-instant-1`. Default values have been updated to `claude-2.0` and `claude-instant-1.2`, any legacy models identifiers in the site config will be set to the corresponding default previously mentioned. [#60953](https://github.com/sourcegraph/sourcegraph/pull/60953) [#61324](https://github.com/sourcegraph/sourcegraph/pull/61324)
+- The AWS Bedrock provider for Cody has been updated to use Anthropic's Messages API, bringing support for Claude 3 models. [#61347](https://github.com/sourcegraph/sourcegraph/pull/61347)
 
 ### Fixed
 
@@ -30,43 +35,40 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed a bug where clicking "Exclude Repo" on Azure DevOps or Gerrit repositories would not work. [#60509](https://github.com/sourcegraph/sourcegraph/pull/60509)
 - Links in codeintel popovers respect the revision from the URL. [#60545](https://github.com/sourcegraph/sourcegraph/pull/60545)
 
-### Removed
-
--
-
-## Unreleased
+## 5.3.3
 
 ### Added
 
 ### Changed
 
+- Changed the Azure OpenAI Cody provider to use the stable 2023-05-15 api version, due to the retirement of previous preview api versions. [61005](https://github.com/sourcegraph/sourcegraph/pull/61005)
+
 ### Fixed
+
+- Fixed an issue in our build process that broke tooltips and validation in the settings editors. [#60808](https://github.com/sourcegraph/sourcegraph/pull/60808)
+
+- Fixes a bug where the reference panel would not show any definitions or references for Protocol Buffers (and other languages where the name contained a space). [#60987](https://github.com/sourcegraph/sourcegraph/pull/60987)
+
+- Fixed a bug where permission syncs could be scheduled for repositories or users even when a sync is already scheduled or in progress, leading to significant delays in the permissions sync system as a whole. [#61024](https://github.com/sourcegraph/sourcegraph/pull/61024)
+
+- Fixed a bug in gitserver where it was possible to use expired Github App authorization tokens when syncing a large repository. Now, gitserver will use the latest tokens for each step of the syncing process (and refresh them if necessary). [#61179](https://github.com/sourcegraph/sourcegraph/pull/61179/)
 
 ### Removed
 
 ## 5.3.2
-
-### Added
-
-### Changed
 
 ### Fixed
 
 - A bug in search that could trigger a panic
 - An unintentional change to the search results when using the LineMatch API which would include surrounding lines with no matches
 - Autoupgrade only looks for open db connections from the Sourcegraph application services, and disregards other applications connected to the postgres instance. [#60771](https://github.com/sourcegraph/sourcegraph/pull/60771)
+- Fixes a bug where hovers would not show up in C++ headers with the `.hxx` extension. [#60662](https://github.com/sourcegraph/sourcegraph/pull/60662)
 
 ## 5.3.1
-
-### Added
-
-### Changed
 
 ### Fixed
 
 - Updated container images to fix CVE-2023-4408, CVE-2023-50387, CVE-2023-50868, CVE-2023-5517, CVE-2023-5679, CVE-2023-6516
-
-### Removed
 
 ## 5.3.0
 
@@ -138,16 +140,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 5.2.7
 
-### Added
-
 ### Fixed
 
 - The reference panel correctly shows definition and reference information instead of a "Could not find token" error for MATLAB. [#59636](https://github.com/sourcegraph/sourcegraph/pull/59636)
 - The auto-index configuration page correctly shows any auto-inference errors instead of a nil pointer exception. [#59756](https://github.com/sourcegraph/sourcegraph/pull/59756)
-
-### Removed
-
-### Changed
 
 ## 5.2.6
 
@@ -175,8 +171,6 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Improved the admin page for search indexing. [#58866](https://github.com/sourcegraph/sourcegraph/pull/58866)
-
-### Removed
 
 ## 5.2.4
 

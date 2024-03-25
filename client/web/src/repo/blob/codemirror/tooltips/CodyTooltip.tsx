@@ -2,8 +2,8 @@ import { type EditorState, type Extension, StateField, type Transaction } from '
 import { type Tooltip, showTooltip } from '@codemirror/view'
 import ReactDOM from 'react-dom/client'
 
-import { BillingCategory, BillingProduct } from '@sourcegraph/shared/src/telemetry'
-import { TelemetryRecorder } from '@sourcegraph/telemetry'
+import type { BillingCategory, BillingProduct } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryRecorder } from '@sourcegraph/telemetry'
 
 import type { CodeMirrorEditor } from '../../../../cody/components/CodeMirrorEditor'
 import { CodyRecipesWidget } from '../../../../cody/widgets/CodyRecipesWidget'

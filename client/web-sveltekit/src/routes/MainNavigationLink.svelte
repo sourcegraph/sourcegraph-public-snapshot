@@ -6,7 +6,7 @@
     export let entry: NavigationEntry
 </script>
 
-<a href={entry.href} data-sveltekit-reload={entry.external}>
+<a href={entry.href}>
     {#if typeof entry.icon === 'string'}
         <Icon svgPath={entry.icon} aria-hidden="true" inline />&nbsp;
     {:else if entry.icon}

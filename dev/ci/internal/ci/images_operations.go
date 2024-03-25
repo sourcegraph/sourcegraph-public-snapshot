@@ -28,7 +28,7 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 
 		var imgs []string
 		for _, image := range []string{publishImage, devImage} {
-			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
+			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.InternalRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
 				imgs = append(imgs, fmt.Sprintf("%s:%s", image, c.Version))
 			}
 
@@ -68,21 +68,21 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 }
 
 // Used in default run type
-func bazelPushImagesCandidates(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, true)
+func bazelPushImagesCandidates(c Config) func(*bk.Pipeline) {
+	return bazelPushImagesCmd(c, true)
 }
 
 // Used in default run type
-func bazelPushImagesFinal(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, false, bk.DependsOn(AspectWorkflows.TestStepKey, AspectWorkflows.IntegrationTestStepKey))
+func bazelPushImagesFinal(c Config) func(*bk.Pipeline) {
+	return bazelPushImagesCmd(c, false, bk.DependsOn(AspectWorkflows.TestStepKey, AspectWorkflows.IntegrationTestStepKey))
 }
 
 // Used in CandidateNoTest run type
-func bazelPushImagesNoTest(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, false)
+func bazelPushImagesNoTest(c Config) func(*bk.Pipeline) {
+	return bazelPushImagesCmd(c, false)
 }
 
-func bazelPushImagesCmd(version string, isCandidate bool, opts ...bk.StepOpt) func(*bk.Pipeline) {
+func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk.Pipeline) {
 	stepName := ":bazel::docker: Push final images"
 	stepKey := "bazel-push-images"
 	candidate := ""
@@ -92,17 +92,40 @@ func bazelPushImagesCmd(version string, isCandidate bool, opts ...bk.StepOpt) fu
 		stepKey = stepKey + "-candidate"
 		candidate = "true"
 	}
+	// Default registries.
+	devRegistry := images.SourcegraphDockerDevRegistry
+	prodRegistry := images.SourcegraphDockerPublishRegistry
+
+	// If we're building an internal release, we push the final images to that specific registry instead.
+	// See also: release_operations.go
+	switch c.RunType {
+	case runtype.InternalRelease:
+		prodRegistry = images.SourcegraphInternalReleaseRegistry
+	case runtype.CloudEphemeral:
+		devRegistry = images.CloudEphemeralRegistry
+	}
+
+	_, bazelRC := aspectBazelRC()
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(stepName,
 			append(opts,
 				bk.Agent("queue", AspectWorkflows.QueueDefault),
 				bk.Key(stepKey),
-				bk.Env("PUSH_VERSION", version),
+				bk.Env("PUSH_VERSION", c.Version),
 				bk.Env("CANDIDATE_ONLY", candidate),
-				bk.Cmd(bazelStampedCmd(`build $$(bazel query 'kind("oci_push rule", //...)')`)),
-				bk.Cmd("./dev/ci/push_all.sh"),
-			)...,
+				bk.Env("DEV_REGISTRY", devRegistry),
+				bk.Env("PROD_REGISTRY", prodRegistry),
+				bk.Cmd(bazelStampedCmd(fmt.Sprintf(`build $$(bazel --bazelrc=%s --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc query 'kind("oci_push rule", //...)')`, bazelRC))),
+				bk.AnnotatedCmd(
+					"./dev/ci/push_all.sh",
+					bk.AnnotatedCmdOpts{
+						Annotations: &bk.AnnotationOpts{
+							Type:         bk.AnnotationTypeInfo,
+							IncludeNames: false,
+						},
+					},
+				))...,
 		)
 	}
 }

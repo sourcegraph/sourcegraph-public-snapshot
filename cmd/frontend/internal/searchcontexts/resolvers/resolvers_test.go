@@ -82,17 +82,14 @@ func TestSearchContexts(t *testing.T) {
 }
 
 func TestSearchContextsStarDefaultPermissions(t *testing.T) {
-	t.Parallel()
+	// Note: this test can't do t.Parallel since it mutates global state (MockSourcegraphDotComMode)
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	userID := int32(1)
 	graphqlUserID := graphqlbackend.MarshalUserID(userID)
 	username := "alice"
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: userID})
-
-	orig := dotcom.SourcegraphDotComMode()
-	dotcom.MockSourcegraphDotComMode(true)
-	defer dotcom.MockSourcegraphDotComMode(orig) // reset
 
 	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: username}, nil)

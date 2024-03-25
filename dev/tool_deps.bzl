@@ -7,6 +7,15 @@ SRC_CLI_VERSION = "5.3.0"
 CTAGS_VERSION = "6.0.0.2783f009"
 PACKER_VERSION = "1.8.3"
 P4_FUSION_VERSION = "v1.13.2-sg.04a293a"
+GH_VERSION = "2.45.0"
+
+GH_BUILDFILE = """
+filegroup(
+    name = "gh",
+    srcs = ["bin/gh"],
+    visibility = ["//visibility:public"],
+)
+"""
 
 SRC_CLI_BUILDFILE = """
 filegroup(
@@ -174,4 +183,28 @@ def tool_deps():
         sha256 = "f97942e145902e682a5c1bc2608071a24d17bf943f35faaf18f359cbbaacddcd",
         url = "https://storage.googleapis.com/p4-fusion/aarch64-darwin/dist/p4-fusion-{0}".format(P4_FUSION_VERSION),
         executable = True,
+    )
+
+    http_archive(
+        name = "gh_darwin-arm64",
+        build_file_content = GH_BUILDFILE,
+        sha256 = "a0423acd5954932a817d531a8160b67cf0456ea6c9e68c11c054c19ea7a6714b",
+        strip_prefix = "gh_{0}_macOS_arm64".format(GH_VERSION),
+        url = "https://github.com/cli/cli/releases/download/v{0}/gh_{0}_macOS_arm64.zip".format(GH_VERSION),
+    )
+
+    http_archive(
+        name = "gh_darwin-amd64",
+        build_file_content = GH_BUILDFILE,
+        sha256 = "82bea89eea5ddfcd5f88c53857fc2220ee361e0b65629f153d10695971a44195",
+        strip_prefix = "gh_{0}_macOS_amd64".format(GH_VERSION),
+        url = "https://github.com/cli/cli/releases/download/v{0}/gh_{0}_macOS_amd64.zip".format(GH_VERSION),
+    )
+
+    http_archive(
+        name = "gh_linux-amd64",
+        build_file_content = GH_BUILDFILE,
+        sha256 = "79e89a14af6fc69163aee00e764e86d5809d0c6c77e6f229aebe7a4ed115ee67",
+        strip_prefix = "gh_{0}_linux_amd64".format(GH_VERSION),
+        url = "https://github.com/cli/cli/releases/download/v{0}/gh_{0}_linux_amd64.tar.gz".format(GH_VERSION),
     )
