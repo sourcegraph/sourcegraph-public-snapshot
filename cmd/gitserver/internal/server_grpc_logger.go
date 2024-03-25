@@ -243,7 +243,7 @@ func (l *loggingGRPCServer) IsPerforcePathCloneable(ctx context.Context, request
 			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "IsPerforcePathCloneable"),
 			log.String("status", status.Code(err).String()),
-			log.String("request", protojson.Format(request)),
+			log.String("depotPath", request.GetDepotPath()),
 			log.Duration("duration", elapsed),
 		}
 
@@ -262,7 +262,7 @@ func (l *loggingGRPCServer) CheckPerforceCredentials(ctx context.Context, reques
 			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "CheckPerforceCredentials"),
 			log.String("status", status.Code(err).String()),
-			log.String("request", protojson.Format(request)),
+			log.String("request", "<empty"),
 			log.Duration("duration", elapsed),
 		}
 
@@ -281,7 +281,7 @@ func (l *loggingGRPCServer) PerforceUsers(ctx context.Context, request *proto.Pe
 			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "PerforceUsers"),
 			log.String("status", status.Code(err).String()),
-			log.String("request", protojson.Format(request)),
+			log.String("request", "<empty>"),
 			log.Duration("duration", elapsed),
 		}
 
@@ -300,7 +300,7 @@ func (l *loggingGRPCServer) PerforceProtectsForUser(ctx context.Context, request
 			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "PerforceProtectsForUser"),
 			log.String("status", status.Code(err).String()),
-			log.String("request", protojson.Format(request)),
+			log.String("username", request.GetUsername()),
 			log.Duration("duration", elapsed),
 		}
 
@@ -319,7 +319,7 @@ func (l *loggingGRPCServer) PerforceProtectsForDepot(ctx context.Context, reques
 			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "PerforceProtectsForDepot"),
 			log.String("status", status.Code(err).String()),
-			log.String("request", protojson.Format(request)),
+			log.String("depot", request.GetDepot()),
 			log.Duration("duration", elapsed),
 		}
 
@@ -338,7 +338,7 @@ func (l *loggingGRPCServer) PerforceGroupMembers(ctx context.Context, request *p
 			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "PerforceGroupMembers"),
 			log.String("status", status.Code(err).String()),
-			log.String("request", protojson.Format(request)),
+			log.String("group", request.GetGroup()),
 			log.Duration("duration", elapsed),
 		}
 
@@ -357,7 +357,7 @@ func (l *loggingGRPCServer) IsPerforceSuperUser(ctx context.Context, request *pr
 			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "IsPerforceSuperUser"),
 			log.String("status", status.Code(err).String()),
-			log.String("request", protojson.Format(request)),
+			log.String("request", "<empty>"),
 			log.Duration("duration", elapsed),
 		}
 
@@ -376,7 +376,7 @@ func (l *loggingGRPCServer) PerforceGetChangelist(ctx context.Context, request *
 			log.String("traceID", trace.Context(ctx).TraceID),
 			log.String("method", "PerforceGetChangelist"),
 			log.String("status", status.Code(err).String()),
-			log.String("request", protojson.Format(request)),
+			log.String("changelistId", request.GetChangelistId()),
 			log.Duration("duration", elapsed),
 		}
 
