@@ -23,12 +23,14 @@ function isContentField(event: KeyboardEvent): boolean {
     if (!target) {
         return false
     }
-    // todo: getAttribute doesn't seem to be supported by our typings, but works well in the browser. Figure out how to fix this.
-    return (
-        target.getAttribute('contenteditable') ||
-        // todo: figure out all roles that are editable (is this svelte specific?)
-        ['textarea', 'input', 'textbox'].includes(target.getAttribute('role'))
-    )
+    if (target instanceof Element) {
+        return (
+            target.getAttribute('contenteditable') === 'true' ||
+            // textarea and input are from the HTML standard, textbox is from svelte
+            ['textarea', 'input', 'textbox'].includes(target.getAttribute('role') ?? '')
+        )
+    }
+    return false
 }
 
 function wrapHandler(handler: KeyHandler, allowDefault: boolean = false, ignoreInputFields: boolean = true) {
