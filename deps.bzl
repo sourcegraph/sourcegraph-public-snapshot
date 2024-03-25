@@ -5139,8 +5139,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_go_ctags",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/go-ctags",
-        sum = "h1:7MrEECTEf+UmMdllIIbAHng17Uwqm8WbHEUAyv9LMBk=",
-        version = "v0.0.0-20231024141911-299d0263dc95",
+        sum = "h1:jppwnpC+DT9tIiRbw21lD0drA9Jqu4X47iA4gTk4w8M=",
+        version = "v0.0.0-20240325032535-71f1ec6e46e4",
     )
     go_repository(
         name = "com_github_sourcegraph_go_diff",
@@ -5294,8 +5294,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:aD4CM/TsPP91VTUL49ffUVLFmQu0AesOOrpWVebjwTY=",
-        version = "v0.0.0-20240313063445-cc5e093366ea",
+        sum = "h1:byvTmeoPS5n7R5Tj6vqj6P33L3dIsUIbnO2BKx7k3Dc=",
+        version = "v0.0.0-20240325122943-f2577c25dc61",
     )
     go_repository(
         name = "com_github_spaolacci_murmur3",
@@ -5537,13 +5537,6 @@ def go_dependencies():
         importpath = "github.com/tonistiigi/vt100",
         sum = "h1:Y/M5lygoNPKwVNLMPXgVfsRT40CSFKXCxuU8LoHySjs=",
         version = "v0.0.0-20230623042737-f9a4f7ef6531",
-    )
-    go_repository(
-        name = "com_github_twin_go_away",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/TwiN/go-away",
-        sum = "h1:aB6l/FPXmA5ds+V7I9zdhxzpsLLUvVtEuS++iU/ZmgE=",
-        version = "v1.6.13",
     )
     go_repository(
         name = "com_github_uber_gonduit",

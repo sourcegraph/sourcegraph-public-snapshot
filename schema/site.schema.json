@@ -2912,7 +2912,7 @@
         },
         "endpoint": {
           "type": "string",
-          "description": "The endpoint under which to reach the provider. Currently only used for provider types \"sourcegraph\", \"openai\" and \"anthropic\". The default values are \"https://cody-gateway.sourcegraph.com\", \"https://api.openai.com/v1/chat/completions\", and \"https://api.anthropic.com/v1/complete\" for Sourcegraph, OpenAI, and Anthropic, respectively."
+          "description": "The endpoint under which to reach the provider. Currently only used for provider types \"sourcegraph\", \"openai\" and \"anthropic\". The default values are \"https://cody-gateway.sourcegraph.com\", \"https://api.openai.com/v1/chat/completions\", and \"https://api.anthropic.com/v1/messages\" for Sourcegraph, OpenAI, and Anthropic, respectively."
         },
         "perUserDailyLimit": {
           "description": "If > 0, limits the number of completions requests allowed for a user in a day. On instances that allow anonymous requests, we enforce the rate limit by IP.",
@@ -3079,6 +3079,9 @@
         "hidden": {
           "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
         },
+        "noSignIn": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/noSignIn"
+        },
         "order": {
           "$ref": "#/definitions/AuthProviderCommon/properties/order"
         },
@@ -3151,6 +3154,9 @@
         },
         "hidden": {
           "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "noSignIn": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/noSignIn"
         },
         "order": {
           "$ref": "#/definitions/AuthProviderCommon/properties/order"
@@ -3306,6 +3312,9 @@
         "hidden": {
           "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
         },
+        "noSignIn": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/noSignIn"
+        },
         "order": {
           "$ref": "#/definitions/AuthProviderCommon/properties/order"
         },
@@ -3387,6 +3396,9 @@
         "hidden": {
           "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
         },
+        "noSignIn": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/noSignIn"
+        },
         "order": {
           "$ref": "#/definitions/AuthProviderCommon/properties/order"
         },
@@ -3463,6 +3475,9 @@
         },
         "hidden": {
           "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "noSignIn": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/noSignIn"
         },
         "order": {
           "$ref": "#/definitions/AuthProviderCommon/properties/order"
@@ -3542,6 +3557,9 @@
         "hidden": {
           "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
         },
+        "noSignIn": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/noSignIn"
+        },
         "order": {
           "$ref": "#/definitions/AuthProviderCommon/properties/order"
         },
@@ -3576,6 +3594,11 @@
       "properties": {
         "hidden": {
           "description": "Hides the configured auth provider from regular use through our web interface by omitting it from the JSContext, useful for experimental auth setups.",
+          "type": "boolean",
+          "default": false
+        },
+        "noSignIn": {
+          "description": "Hides the configured auth provider from the sign in page, but still allows users to connect an external account using their Account Security page to enable permissions syncing.",
           "type": "boolean",
           "default": false
         },
