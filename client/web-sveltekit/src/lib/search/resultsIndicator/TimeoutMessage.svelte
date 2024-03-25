@@ -6,12 +6,14 @@
 
 <div class="action-container" class:error-text={isError}>
     <div class="suggested-action">
-        <div class="info-badge">Taking too long?</div>
+        <div class="info-badge"><small>Taking too long?</small></div>
         <div class="separator">{CENTER_DOT}</div>
         <div class="action-badge">
-            Use
-            <a href="https://sourcegraph.com/docs/code-search/types/search-jobs" target="_blank"> Search Job </a>
-            for background search
+            <small>
+                Use
+                <a href="https://sourcegraph.com/docs/code-search/types/search-jobs" target="_blank"> Search Job </a>
+                for background search
+            </small>
         </div>
     </div>
 </div>
@@ -25,7 +27,7 @@
         background-color: var(--warning-2);
         border-radius: 3px;
         color: var(--text-body);
-        padding-left: 0.4rem;
+        padding-left: 0.2rem;
         padding-right: 0.2rem;
     }
 

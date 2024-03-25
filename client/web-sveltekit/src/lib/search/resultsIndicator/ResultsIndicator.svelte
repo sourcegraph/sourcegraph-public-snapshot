@@ -58,7 +58,7 @@
     </div>
 
     <div class="messages">
-        <ProgressMessage {state} {progress} {elapsedDuration} threshold={SEARCH_JOB_THRESHOLD} {severity} />
+        <ProgressMessage {state} {progress} {elapsedDuration} {severity} />
         {#if !done && takingTooLong}
             <TimeoutMessage {isError} />
         {/if}

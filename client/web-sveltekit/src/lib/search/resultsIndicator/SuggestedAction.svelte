@@ -35,7 +35,7 @@
             </div>
         {/if}
 
-        {#if done && Object.hasOwn(mostSevere, 'suggested')}
+        {#if done && mostSevere && Object.hasOwn(mostSevere, 'suggested')}
             <div class="separator">{CENTER_DOT}</div>
             <div class="action-badge">
                 <small>
