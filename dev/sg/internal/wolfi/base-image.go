@@ -147,26 +147,24 @@ func (bc BaseImageConfig) DoBaseImageBuildLegacy() error {
 	lscmd.Stderr = os.Stderr
 	lscmd.Run()
 
-	// imageName := legacyDockerImageName(bc.ImageName)
-	// imageFileName := imageFileName(bc.ImageName)
+	imageName := legacyDockerImageName(bc.ImageName)
+	imageFileName := imageFileName(bc.ImageName)
 
 	cmd := exec.Command(
 		"docker", "run", "--rm",
-		"-v", fmt.Sprintf("%s:/work", bc.ImageConfigDir),
+		"-v", fmt.Sprintf("%s:/work", bc.ImageConfigDir+"/"),
 		"-v", fmt.Sprintf("%s:/packages", bc.PackageRepoConfig.PackageDir),
 		"-v", fmt.Sprintf("%s:/keys", bc.PackageRepoConfig.KeyDir),
 		"-v", fmt.Sprintf("%s:/images", bc.PackageRepoConfig.ImageDir),
 		"-e", fmt.Sprintf("SOURCE_DATE_EPOCH=%d", time.Now().Unix()),
 		"-w", "/work",
-		"cgr.dev/chainguard/apko",
-		"ls", "-al", "/work",
-		// "cgr.dev/chainguard/apko", "build",
-		// "--arch", "x86_64",
-		// "--repository-append", "@local /packages",
-		// "--keyring-append", fmt.Sprintf("/keys/%s.pub", bc.PackageRepoConfig.KeyFilename),
-		// fmt.Sprintf("/work/%s.yaml", bc.ImageName),
-		// imageName,
-		// filepath.Join("/images", imageFileName),
+		"cgr.dev/chainguard/apko", "build",
+		"--arch", "x86_64",
+		"--repository-append", "@local /packages",
+		"--keyring-append", fmt.Sprintf("/keys/%s.pub", bc.PackageRepoConfig.KeyFilename),
+		fmt.Sprintf("/work/%s.yaml", bc.ImageName),
+		imageName,
+		filepath.Join("/images", imageFileName),
 	)
 
 	cmd.Stdout = os.Stdout
