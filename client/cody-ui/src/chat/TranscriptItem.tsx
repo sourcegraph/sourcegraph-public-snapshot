@@ -16,6 +16,7 @@ import type {
 import {BlinkingCursor} from './BlinkingCursor'
 import {CodeBlocks} from './CodeBlocks'
 import {ContextFiles, type FileLinkProps} from './ContextFiles'
+
 // import { PluginExecutionInfos } from './PluginExecutionInfos'
 
 import styles from './TranscriptItem.module.scss'
@@ -58,30 +59,30 @@ export const TranscriptItem: React.FunctionComponent<
         pluginsDevMode?: boolean
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
-                                                  message,
-                                                  inProgress,
-                                                  beingEdited,
-                                                  setBeingEdited,
-                                                  fileLinkComponent,
-                                                  transcriptItemClassName,
-                                                  humanTranscriptItemClassName,
-                                                  transcriptItemParticipantClassName,
-                                                  codeBlocksCopyButtonClassName,
-                                                  codeBlocksInsertButtonClassName,
-                                                  transcriptActionClassName,
-                                                  textAreaComponent: TextArea,
-                                                  EditButtonContainer,
-                                                  editButtonOnSubmit,
-                                                  showEditButton,
-                                                  FeedbackButtonsContainer,
-                                                  feedbackButtonsOnSubmit,
-                                                  showFeedbackButtons,
-                                                  copyButtonOnSubmit,
-                                                  submitButtonComponent: SubmitButton,
-                                                  chatInputClassName,
-                                                  ChatButtonComponent,
-                                                  pluginsDevMode,
-                                              }) {
+                                                                               message,
+                                                                               inProgress,
+                                                                               beingEdited,
+                                                                               setBeingEdited,
+                                                                               fileLinkComponent,
+                                                                               transcriptItemClassName,
+                                                                               humanTranscriptItemClassName,
+                                                                               transcriptItemParticipantClassName,
+                                                                               codeBlocksCopyButtonClassName,
+                                                                               codeBlocksInsertButtonClassName,
+                                                                               transcriptActionClassName,
+                                                                               textAreaComponent: TextArea,
+                                                                               EditButtonContainer,
+                                                                               editButtonOnSubmit,
+                                                                               showEditButton,
+                                                                               FeedbackButtonsContainer,
+                                                                               feedbackButtonsOnSubmit,
+                                                                               showFeedbackButtons,
+                                                                               copyButtonOnSubmit,
+                                                                               submitButtonComponent: SubmitButton,
+                                                                               chatInputClassName,
+                                                                               ChatButtonComponent,
+                                                                               pluginsDevMode,
+                                                                           }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const textarea =
         TextArea && beingEdited && editButtonOnSubmit && SubmitButton ? (
@@ -164,12 +165,7 @@ export const TranscriptItem: React.FunctionComponent<
             {/*         /> */}
             {/*     </div> */}
             {/* )} */}
-            <div
-                className={classNames(
-                    textarea ? undefined : styles.content,
-                    inProgress && styles.rowInProgress
-                )}
-            >
+            <div className={classNames(textarea ? undefined : styles.content, inProgress && styles.rowInProgress)}>
                 {message.displayText ? (
                     textarea ?? (
                         <CodeBlocks

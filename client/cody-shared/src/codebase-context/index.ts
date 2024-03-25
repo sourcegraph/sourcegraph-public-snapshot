@@ -18,7 +18,12 @@ import type {EmbeddingsSearchResult} from '../sourcegraph-api/graphql/client'
 import type {UnifiedContextFetcher} from '../unified-context'
 import {isError} from '../utils'
 
-import {type ContextFile, type ContextFileSource, type ContextMessage, getContextMessageWithResponse} from './messages'
+import {
+    type ContextFile,
+    type ContextFileSource,
+    type ContextMessage,
+    getContextMessageWithResponse,
+} from './messages'
 
 export interface ContextSearchOptions {
     numCodeResults: number

@@ -78,7 +78,7 @@ export interface VsCodeCommandsController {
 export interface ActiveTextEditorViewControllers<
     I extends VsCodeInlineController = VsCodeInlineController,
     F extends VsCodeFixupController = VsCodeFixupController,
-    C extends VsCodeCommandsController = VsCodeCommandsController,
+    C extends VsCodeCommandsController = VsCodeCommandsController
 > {
     readonly inline?: I
     readonly fixups?: F
@@ -88,7 +88,7 @@ export interface ActiveTextEditorViewControllers<
 export interface Editor<
     I extends VsCodeInlineController = VsCodeInlineController,
     F extends VsCodeFixupController = VsCodeFixupController,
-    P extends VsCodeCommandsController = VsCodeCommandsController,
+    P extends VsCodeCommandsController = VsCodeCommandsController
 > {
     controllers?: ActiveTextEditorViewControllers<I, F, P>
 

@@ -9,4 +9,3 @@ export interface ChatContextStatus {
     selectionRange?: ActiveTextEditorSelectionRange
     supportsKeyword?: boolean
 }
-

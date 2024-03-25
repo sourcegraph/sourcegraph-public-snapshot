@@ -15,7 +15,6 @@ import {getPreamble} from './preamble'
 import {getRecipe} from './recipes/browser-recipes'
 import type {RecipeID} from './recipes/recipe'
 import {Transcript, type TranscriptJSON} from './transcript'
-
 import type {ChatMessage} from './transcript/messages'
 import {reformatBotMessage} from './viewHelpers'
 

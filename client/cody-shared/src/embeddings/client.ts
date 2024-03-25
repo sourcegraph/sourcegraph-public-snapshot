@@ -3,11 +3,7 @@ import type {EmbeddingsSearchResults, SourcegraphGraphQLAPIClient} from '../sour
 import type {EmbeddingsSearch} from '.'
 
 export class SourcegraphEmbeddingsSearchClient implements EmbeddingsSearch {
-    constructor(
-        private client: SourcegraphGraphQLAPIClient,
-        private repoId: string,
-        private web: boolean = false
-    ) {}
+    constructor(private client: SourcegraphGraphQLAPIClient, private repoId: string, private web: boolean = false) {}
 
     public async search(
         query: string,

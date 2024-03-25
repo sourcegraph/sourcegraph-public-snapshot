@@ -7,7 +7,7 @@ import {
     type ChatContextStatus,
     type ChatMessage,
     type CodyPrompt,
-    isDefined
+    isDefined,
 } from '@sourcegraph/cody-shared'
 
 import type {FileLinkProps} from './chat/ContextFiles'
@@ -166,7 +166,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                                                              gettingStartedComponent: GettingStartedComponent,
                                                              gettingStartedComponentProps = {},
                                                              abortMessageInProgressComponent: AbortMessageInProgressButton,
-                                                             onAbortMessageInProgress = () => {},
+                                                             onAbortMessageInProgress = () => {
+                                                             },
                                                              isCodyEnabled,
                                                              ChatButtonComponent,
                                                              pluginsDevMode,
@@ -191,8 +192,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 return
             }
             if (inputValue.startsWith('/')) {
-                const filteredCommands = chatCommands.filter(
-                    ([_, prompt]) => prompt.slashCommand?.startsWith(inputValue)
+                const filteredCommands = chatCommands.filter(([_, prompt]) =>
+                    prompt.slashCommand?.startsWith(inputValue)
                 )
                 setDisplayCommands(filteredCommands)
                 setSelectedChatCommand(0)

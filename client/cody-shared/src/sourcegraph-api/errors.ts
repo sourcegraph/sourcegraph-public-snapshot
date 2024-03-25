@@ -1,11 +1,7 @@
 import {isError} from '../utils'
 
 export class RateLimitError extends Error {
-    constructor(
-        message: string,
-        public limit?: number,
-        public retryAfter?: Date
-    ) {
+    constructor(message: string, public limit?: number, public retryAfter?: Date) {
         super(message)
     }
 }
@@ -15,10 +11,7 @@ export function isRateLimitError(error: unknown): error is RateLimitError {
 }
 
 export class TracedError extends Error {
-    constructor(
-        message: string,
-        public traceId: string | undefined
-    ) {
+    constructor(message: string, public traceId: string | undefined) {
         super(message)
     }
 }
@@ -30,10 +23,7 @@ export function isTracedError(error: Error): error is TracedError {
 export class NetworkError extends Error {
     public readonly status: number
 
-    constructor(
-        response: Response,
-        public traceId: string | undefined
-    ) {
+    constructor(response: Response, public traceId: string | undefined) {
         super(`Request to ${response.url} failed with ${response.status}: ${response.statusText}`)
         this.status = response.status
     }

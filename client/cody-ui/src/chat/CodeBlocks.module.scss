@@ -13,13 +13,14 @@
     right: 0;
     visibility: hidden;
     display: flex;
-    gap: .25rem;
+    gap: 0.25rem;
 }
 
 .container:hover .buttons {
     visibility: visible;
 }
 
-.copy-button, .insert-button {
+.copy-button,
+.insert-button {
     cursor: pointer;
 }

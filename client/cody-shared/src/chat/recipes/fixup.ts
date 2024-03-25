@@ -194,7 +194,6 @@ export class Fixup implements Recipe {
                 )
             }
         }
-
     }
 
     // Prompt Templates

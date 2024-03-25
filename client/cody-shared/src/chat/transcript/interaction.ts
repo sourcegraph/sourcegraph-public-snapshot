@@ -1,4 +1,5 @@
 import type {ContextFile, ContextMessage, PreciseContext} from '../../codebase-context/messages'
+
 import type {ChatMessage, InteractionMessage} from './messages'
 
 export interface InteractionJSON {

@@ -86,6 +86,7 @@ if (isRunningInWebWorker) {
     // HACK: @microsoft/fetch-event-source tries to call document.removeEventListener, which is not
     // available in a worker.
     ;(self as any).document = {
-        removeEventListener: () => {}
+        removeEventListener: () => {
+        },
     }
 }

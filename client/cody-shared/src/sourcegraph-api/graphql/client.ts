@@ -505,13 +505,10 @@ export class SourcegraphGraphQLAPIClient {
         return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(GET_FEATURE_FLAGS_QUERY, {}).then(
             response =>
                 extractDataOrError(response, data =>
-                    data.evaluatedFeatureFlags.reduce(
-                        (acc, {name, value}) => {
-                            acc[name] = value
-                            return acc
-                        },
-                        {} as Record<string, boolean>
-                    )
+                    data.evaluatedFeatureFlags.reduce((acc, {name, value}) => {
+                        acc[name] = value
+                        return acc
+                    }, {} as Record<string, boolean>)
                 )
         )
     }
