@@ -135,6 +135,7 @@ This service is operated on the %s.`,
 				resourceHeadings[k] = h
 				return l
 			}), ", ")},
+			{"Slack notifications", fmt.Sprintf("#alerts-%s-%s", s.Service.ID, env.ID)},
 			{"Alerts", markdown.Linkf("GCP monitoring", "https://console.cloud.google.com/monitoring/alerting?project=%s", env.ProjectID)},
 			{"Errors", sentryLink},
 		}
