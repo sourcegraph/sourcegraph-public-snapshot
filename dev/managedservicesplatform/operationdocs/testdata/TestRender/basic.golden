@@ -67,7 +67,7 @@ You may want to check your service environment's TFC workspaces if a Terraform a
 
 > [!NOTE]
 > If you are looking for service logs, see the [dev Cloud Run](#dev-cloud-run) section instead. In general:
-> 
+>
 > - check service logs ([dev Cloud Run](#dev-cloud-run)) if your service has gone down or is misbehaving
 > - check TFC workspaces for infrastructure provisioning or configuration issues
 
