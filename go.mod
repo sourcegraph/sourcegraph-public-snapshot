@@ -275,8 +275,8 @@ require (
 	github.com/prometheus/statsd_exporter v0.22.7
 	github.com/qdrant/go-client v1.4.1
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare v0.0.0-20230822024612-edb48c530722
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20231222002716-51aa712b9bcc
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20231222002716-51aa712b9bcc
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20240325114905-87053fe51a82
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20240325114905-87053fe51a82
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/nobl9 v0.0.0-20240131130226-cb88836e6df8
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie v0.0.0-20231230001101-a13188f9c749
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql v0.0.0-20231220215815-b87ebb3e8c47
