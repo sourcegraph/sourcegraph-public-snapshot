@@ -22,7 +22,7 @@ ts_config(
 )
 
 module_style_typings(
-    name = "module_style_typings"
+    name = "module_style_typings",
 )
 
 sass(
