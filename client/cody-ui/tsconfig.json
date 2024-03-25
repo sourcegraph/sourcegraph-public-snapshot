@@ -5,18 +5,15 @@
     "sourceRoot": "src",
     "rootDir": ".",
     "outDir": "./out",
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
   },
-  "include": [
-    "src",
-    "./src/**/*.json"
-  ],
+  "include": ["src", "./src/**/*.json"],
   "references": [
     {
-      "path": "../cody-shared"
+      "path": "../cody-shared",
     },
     {
-      "path": "../wildcard"
-    }
-  ]
+      "path": "../wildcard",
+    },
+  ],
 }

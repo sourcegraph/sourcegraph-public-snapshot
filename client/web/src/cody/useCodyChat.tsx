@@ -10,7 +10,7 @@ import type {
     CodyClientConfig,
     CodyClientEvent,
 } from '@sourcegraph/cody-shared'
-import {Transcript, useClient, NoopEditor} from '@sourcegraph/cody-shared'
+import { Transcript, useClient, NoopEditor } from '@sourcegraph/cody-shared'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { useLocalStorage } from '@sourcegraph/wildcard'

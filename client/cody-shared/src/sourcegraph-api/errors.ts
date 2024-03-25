@@ -1,4 +1,4 @@
-import {isError} from '../utils'
+import { isError } from '../utils'
 
 export class RateLimitError extends Error {
     constructor(message: string, public limit?: number, public retryAfter?: Date) {

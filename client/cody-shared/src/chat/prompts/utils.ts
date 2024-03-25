@@ -1,14 +1,14 @@
-import {basename, extname} from 'path'
+import { basename, extname } from 'path'
 
-import type {ContextMessage} from '../../codebase-context/messages'
-import type {ActiveTextEditorSelection} from '../../editor'
-import {CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_RECIPE_INPUT_TOKENS} from '../../prompt/constants'
-import {truncateText} from '../../prompt/truncation'
-import {getFileExtension, getNormalizedLanguageName} from '../recipes/helpers'
-import {Interaction} from '../transcript/interaction'
+import type { ContextMessage } from '../../codebase-context/messages'
+import type { ActiveTextEditorSelection } from '../../editor'
+import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
+import { truncateText } from '../../prompt/truncation'
+import { getFileExtension, getNormalizedLanguageName } from '../recipes/helpers'
+import { Interaction } from '../transcript/interaction'
 
-import type {CodyPromptContext} from '.'
-import {prompts} from './templates'
+import type { CodyPromptContext } from '.'
+import { prompts } from './templates'
 
 /**
  * Creates a new Interaction object with the given parameters.
@@ -20,11 +20,11 @@ export async function newInteraction(args: {
     assistantText?: string
     assistantDisplayText?: string
 }): Promise<Interaction> {
-    const {text, displayText, contextMessages, assistantText, assistantDisplayText} = args
+    const { text, displayText, contextMessages, assistantText, assistantDisplayText } = args
     return Promise.resolve(
         new Interaction(
-            {speaker: 'human', text, displayText},
-            {speaker: 'assistant', text: assistantText, displayText: assistantDisplayText},
+            { speaker: 'human', text, displayText },
+            { speaker: 'assistant', text: assistantText, displayText: assistantDisplayText },
             Promise.resolve(contextMessages || []),
             []
         )
@@ -40,8 +40,8 @@ export async function newInteraction(args: {
 export async function newInteractionWithError(errorMsg: string, displayText = ''): Promise<Interaction> {
     return Promise.resolve(
         new Interaction(
-            {speaker: 'human', displayText},
-            {speaker: 'assistant', displayText: errorMsg, error: errorMsg},
+            { speaker: 'human', displayText },
+            { speaker: 'assistant', displayText: errorMsg, error: errorMsg },
             Promise.resolve([]),
             []
         )
@@ -187,7 +187,7 @@ export function createSelectionDisplayText(selection: ActiveTextEditorSelection)
     const range = selection.selectionRange
         ? `${selection.selectionRange.start.line + 1}-${selection.selectionRange.end.line + 1}`
         : start
-    return {range, start}
+    return { range, start }
 }
 
 /**

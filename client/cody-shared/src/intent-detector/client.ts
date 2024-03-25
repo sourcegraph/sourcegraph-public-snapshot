@@ -1,9 +1,9 @@
-import {ANSWER_TOKENS} from '../prompt/constants'
-import type {Message} from '../sourcegraph-api'
-import type {SourcegraphCompletionsClient} from '../sourcegraph-api/completions/client'
-import type {SourcegraphGraphQLAPIClient} from '../sourcegraph-api/graphql'
+import { ANSWER_TOKENS } from '../prompt/constants'
+import type { Message } from '../sourcegraph-api'
+import type { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
+import type { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
-import type {IntentClassificationOption, IntentDetector} from '.'
+import type { IntentClassificationOption, IntentDetector } from '.'
 
 const editorRegexps = [/editor/, /(open|current|this)\s+file/, /current(ly)?\s+open/, /have\s+open/]
 
@@ -31,7 +31,7 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
 
     private buildInitialTranscript(options: IntentClassificationOption[]): Message[] {
         const functions = options
-            .map(({id, description}) => `Function ID: ${id}\nFunction Description: ${description}`)
+            .map(({ id, description }) => `Function ID: ${id}\nFunction Description: ${description}`)
             .join('\n')
 
         return [
@@ -47,7 +47,7 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
     }
 
     private buildExampleTranscript(options: IntentClassificationOption[]): Message[] {
-        const messages = options.flatMap(({id, examplePrompts}) =>
+        const messages = options.flatMap(({ id, examplePrompts }) =>
             examplePrompts.flatMap(
                 example =>
                     [

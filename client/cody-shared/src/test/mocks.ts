@@ -1,8 +1,8 @@
-import type {URI} from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
-import {BotResponseMultiplexer} from '../chat/bot-response-multiplexer'
-import type {RecipeContext} from '../chat/recipes/recipe'
-import {CodebaseContext} from '../codebase-context'
+import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
+import type { RecipeContext } from '../chat/recipes/recipe'
+import { CodebaseContext } from '../codebase-context'
 import type {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
@@ -11,14 +11,13 @@ import type {
     ActiveTextEditorVisibleContent,
     Editor,
 } from '../editor'
-import type {EmbeddingsSearch} from '../embeddings'
-import type {IntentClassificationOption, IntentDetector} from '../intent-detector'
-import type {ContextResult, KeywordContextFetcher} from '../local-context'
-import type {EmbeddingsSearchResults} from '../sourcegraph-api/graphql'
+import type { EmbeddingsSearch } from '../embeddings'
+import type { IntentClassificationOption, IntentDetector } from '../intent-detector'
+import type { ContextResult, KeywordContextFetcher } from '../local-context'
+import type { EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
 
 export class MockEmbeddingsClient implements EmbeddingsSearch {
-    constructor(private mocks: Partial<EmbeddingsSearch> = {}) {
-    }
+    constructor(private mocks: Partial<EmbeddingsSearch> = {}) {}
 
     public search(
         query: string,
@@ -27,14 +26,13 @@ export class MockEmbeddingsClient implements EmbeddingsSearch {
     ): Promise<EmbeddingsSearchResults | Error> {
         return (
             this.mocks.search?.(query, codeResultsCount, textResultsCount) ??
-            Promise.resolve({codeResults: [], textResults: []})
+            Promise.resolve({ codeResults: [], textResults: [] })
         )
     }
 }
 
 export class MockIntentDetector implements IntentDetector {
-    constructor(private mocks: Partial<IntentDetector> = {}) {
-    }
+    constructor(private mocks: Partial<IntentDetector> = {}) {}
 
     public isCodebaseContextRequired(input: string): Promise<boolean | Error> {
         return this.mocks.isCodebaseContextRequired?.(input) ?? Promise.resolve(false)
@@ -54,8 +52,7 @@ export class MockIntentDetector implements IntentDetector {
 }
 
 export class MockKeywordContextFetcher implements KeywordContextFetcher {
-    constructor(private mocks: Partial<KeywordContextFetcher> = {}) {
-    }
+    constructor(private mocks: Partial<KeywordContextFetcher> = {}) {}
 
     public getContext(query: string, numResults: number): Promise<ContextResult[]> {
         return this.mocks.getContext?.(query, numResults) ?? Promise.resolve([])
@@ -67,8 +64,7 @@ export class MockKeywordContextFetcher implements KeywordContextFetcher {
 }
 
 export class MockEditor implements Editor {
-    constructor(private mocks: Partial<Editor> = {}) {
-    }
+    constructor(private mocks: Partial<Editor> = {}) {}
 
     public fileName = ''
 
@@ -151,7 +147,7 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
         codebaseContext:
             args.codebaseContext ||
             new CodebaseContext(
-                {useContext: 'none', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false},
+                { useContext: 'none', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
                 'dummy-codebase',
                 defaultEmbeddingsClient,
                 defaultKeywordContextFetcher,

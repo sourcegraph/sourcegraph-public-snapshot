@@ -1,11 +1,10 @@
-import {isErrorLike} from '../common'
-import type {SourcegraphGraphQLAPIClient} from '../sourcegraph-api/graphql'
+import { isErrorLike } from '../common'
+import type { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
-import type {UnifiedContextFetcher, UnifiedContextFetcherResult} from '.'
+import type { UnifiedContextFetcher, UnifiedContextFetcherResult } from '.'
 
 export class UnifiedContextFetcherClient implements UnifiedContextFetcher {
-    constructor(private client: SourcegraphGraphQLAPIClient, private repoIds: string[]) {
-    }
+    constructor(private client: SourcegraphGraphQLAPIClient, private repoIds: string[]) {}
 
     public async getContext(
         query: string,
@@ -30,7 +29,7 @@ export class UnifiedContextFetcherClient implements UnifiedContextFetcher {
                     revision: result.blob.commit.oid,
                 })
             } else {
-                results.push({type: 'UnknownContext'})
+                results.push({ type: 'UnknownContext' })
             }
 
             return results

@@ -1,8 +1,8 @@
-import type {CodebaseContext} from '../../codebase-context'
-import type {Editor} from '../../editor'
-import type {IntentDetector} from '../../intent-detector'
-import type {BotResponseMultiplexer} from '../bot-response-multiplexer'
-import type {Interaction} from '../transcript/interaction'
+import type { CodebaseContext } from '../../codebase-context'
+import type { Editor } from '../../editor'
+import type { IntentDetector } from '../../intent-detector'
+import type { BotResponseMultiplexer } from '../bot-response-multiplexer'
+import type { Interaction } from '../transcript/interaction'
 
 /** Tools and context recipes can use at the point they are invoked. */
 export interface RecipeContext {

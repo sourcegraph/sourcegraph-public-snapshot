@@ -1,9 +1,9 @@
-import {CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_RECIPE_INPUT_TOKENS} from '../../prompt/constants'
-import {truncateText} from '../../prompt/truncation'
-import {Interaction} from '../transcript/interaction'
+import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
+import { truncateText } from '../../prompt/truncation'
+import { Interaction } from '../transcript/interaction'
 
-import {getNormalizedLanguageName} from './helpers'
-import type {Recipe, RecipeContext, RecipeID} from './recipe'
+import { getNormalizedLanguageName } from './helpers'
+import type { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class FindCodeSmells implements Recipe {
     public id: RecipeID = 'find-code-smells'
@@ -34,7 +34,7 @@ If you have no ideas because the code looks fine, feel free to say that it alrea
 
         const assistantResponsePrefix = ''
         return new Interaction(
-            {speaker: 'human', text: promptMessage, displayText},
+            { speaker: 'human', text: promptMessage, displayText },
             {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,

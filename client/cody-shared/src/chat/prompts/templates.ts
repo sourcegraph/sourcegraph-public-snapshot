@@ -7,7 +7,7 @@ const instruction_prompt = `Please follow these rules when answering my question
 <questions>{humanInput}</questions>
 `
 const prevent_hallucinations =
-    'Answer the questions only if you know the answer or can make a well-informed guess, else tell me you don\'t know it.'
+    "Answer the questions only if you know the answer or can make a well-informed guess, else tell me you don't know it."
 
 export const answers = {
     terminal: 'Noted. I will answer your next question based on this terminal output with other code you shared.',

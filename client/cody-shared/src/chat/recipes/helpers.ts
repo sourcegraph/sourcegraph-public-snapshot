@@ -1,9 +1,9 @@
 import path from 'path'
 
-import type {CodebaseContext} from '../../codebase-context'
-import {type ContextMessage, getContextMessageWithResponse} from '../../codebase-context/messages'
-import {NUM_CODE_RESULTS, NUM_TEXT_RESULTS} from '../../prompt/constants'
-import {populateCodeContextTemplate} from '../../prompt/templates'
+import type { CodebaseContext } from '../../codebase-context'
+import { type ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
+import { NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
+import { populateCodeContextTemplate } from '../../prompt/templates'
 
 export const MARKDOWN_FORMAT_PROMPT = 'Enclose code snippets with three backticks like so: ```.'
 
@@ -45,7 +45,7 @@ export async function getContextMessagesFromSelection(
     selectedText: string,
     precedingText: string,
     followingText: string,
-    {fileName, repoName, revision}: { fileName: string; repoName?: string; revision?: string },
+    { fileName, repoName, revision }: { fileName: string; repoName?: string; revision?: string },
     codebaseContext: CodebaseContext
 ): Promise<ContextMessage[]> {
     const selectedTextContext = await codebaseContext.getContextMessages(selectedText, {

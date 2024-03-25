@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo, useState} from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -10,10 +10,10 @@ import {
     isDefined,
 } from '@sourcegraph/cody-shared'
 
-import type {FileLinkProps} from './chat/ContextFiles'
-import {ChatInputContext} from './chat/inputContext/ChatInputContext'
-import {Transcript} from './chat/Transcript'
-import type {TranscriptItemClassNames} from './chat/TranscriptItem'
+import type { FileLinkProps } from './chat/ContextFiles'
+import { ChatInputContext } from './chat/inputContext/ChatInputContext'
+import { Transcript } from './chat/Transcript'
+import type { TranscriptItemClassNames } from './chat/TranscriptItem'
 
 import styles from './Chat.module.scss'
 
@@ -124,57 +124,56 @@ export interface ChatCommandsProps {
  * The Cody chat interface, with a transcript of all messages and a message form.
  */
 export const Chat: React.FunctionComponent<ChatProps> = ({
-                                                             messageInProgress,
-                                                             messageBeingEdited,
-                                                             setMessageBeingEdited,
-                                                             transcript,
-                                                             contextStatus,
-                                                             formInput,
-                                                             setFormInput,
-                                                             inputHistory,
-                                                             setInputHistory,
-                                                             onSubmit,
-                                                             textAreaComponent: TextArea,
-                                                             submitButtonComponent: SubmitButton,
-                                                             suggestionButtonComponent: SuggestionButton,
-                                                             fileLinkComponent,
-                                                             helpMarkdown,
-                                                             afterMarkdown,
-                                                             gettingStartedButtons,
-                                                             className,
-                                                             codeBlocksCopyButtonClassName,
-                                                             codeBlocksInsertButtonClassName,
-                                                             transcriptItemClassName,
-                                                             humanTranscriptItemClassName,
-                                                             transcriptItemParticipantClassName,
-                                                             transcriptActionClassName,
-                                                             inputRowClassName,
-                                                             chatInputContextClassName,
-                                                             chatInputClassName,
-                                                             EditButtonContainer,
-                                                             editButtonOnSubmit,
-                                                             FeedbackButtonsContainer,
-                                                             feedbackButtonsOnSubmit,
-                                                             copyButtonOnSubmit,
-                                                             suggestions,
-                                                             setSuggestions,
-                                                             needsEmailVerification = false,
-                                                             codyNotEnabledNotice: CodyNotEnabledNotice,
-                                                             needsEmailVerificationNotice: NeedsEmailVerificationNotice,
-                                                             contextStatusComponent: ContextStatusComponent,
-                                                             contextStatusComponentProps = {},
-                                                             gettingStartedComponent: GettingStartedComponent,
-                                                             gettingStartedComponentProps = {},
-                                                             abortMessageInProgressComponent: AbortMessageInProgressButton,
-                                                             onAbortMessageInProgress = () => {
-                                                             },
-                                                             isCodyEnabled,
-                                                             ChatButtonComponent,
-                                                             pluginsDevMode,
-                                                             chatCommands,
-                                                             ChatCommandsComponent,
-                                                             isTranscriptError,
-                                                         }) => {
+    messageInProgress,
+    messageBeingEdited,
+    setMessageBeingEdited,
+    transcript,
+    contextStatus,
+    formInput,
+    setFormInput,
+    inputHistory,
+    setInputHistory,
+    onSubmit,
+    textAreaComponent: TextArea,
+    submitButtonComponent: SubmitButton,
+    suggestionButtonComponent: SuggestionButton,
+    fileLinkComponent,
+    helpMarkdown,
+    afterMarkdown,
+    gettingStartedButtons,
+    className,
+    codeBlocksCopyButtonClassName,
+    codeBlocksInsertButtonClassName,
+    transcriptItemClassName,
+    humanTranscriptItemClassName,
+    transcriptItemParticipantClassName,
+    transcriptActionClassName,
+    inputRowClassName,
+    chatInputContextClassName,
+    chatInputClassName,
+    EditButtonContainer,
+    editButtonOnSubmit,
+    FeedbackButtonsContainer,
+    feedbackButtonsOnSubmit,
+    copyButtonOnSubmit,
+    suggestions,
+    setSuggestions,
+    needsEmailVerification = false,
+    codyNotEnabledNotice: CodyNotEnabledNotice,
+    needsEmailVerificationNotice: NeedsEmailVerificationNotice,
+    contextStatusComponent: ContextStatusComponent,
+    contextStatusComponentProps = {},
+    gettingStartedComponent: GettingStartedComponent,
+    gettingStartedComponentProps = {},
+    abortMessageInProgressComponent: AbortMessageInProgressButton,
+    onAbortMessageInProgress = () => {},
+    isCodyEnabled,
+    ChatButtonComponent,
+    pluginsDevMode,
+    chatCommands,
+    ChatCommandsComponent,
+    isTranscriptError,
+}) => {
     const [inputRows, setInputRows] = useState(1)
     const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt][] | null>(chatCommands || null)
     const [selectedChatCommand, setSelectedChatCommand] = useState(-1)
@@ -233,8 +232,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions]
     )
     const onChatInput = useCallback(
-        ({target}: React.SyntheticEvent) => {
-            const {value} = target as HTMLInputElement
+        ({ target }: React.SyntheticEvent) => {
+            const { value } = target as HTMLInputElement
             inputHandler(value)
         },
         [inputHandler]
@@ -346,7 +345,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         () => [
             {
                 speaker: 'assistant',
-                displayText: welcomeText({helpMarkdown, afterMarkdown}),
+                displayText: welcomeText({ helpMarkdown, afterMarkdown }),
                 buttons: gettingStartedButtons,
             },
             ...transcript,
@@ -360,11 +359,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         <div className={classNames(className, styles.innerContainer)}>
             {!isCodyEnabled && CodyNotEnabledNotice ? (
                 <div className="flex-1">
-                    <CodyNotEnabledNotice/>
+                    <CodyNotEnabledNotice />
                 </div>
             ) : needsEmailVerification && NeedsEmailVerificationNotice ? (
                 <div className="flex-1">
-                    <NeedsEmailVerificationNotice/>
+                    <NeedsEmailVerificationNotice />
                 </div>
             ) : (
                 <Transcript
@@ -395,7 +394,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             )}
 
             {isGettingStartedComponentVisible && (
-                <GettingStartedComponent {...gettingStartedComponentProps} submitInput={submitInput}/>
+                <GettingStartedComponent {...gettingStartedComponentProps} submitInput={submitInput} />
             )}
 
             {/* eslint-disable-next-line react/forbid-elements */}
@@ -424,7 +423,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 )}
                 {messageInProgress && AbortMessageInProgressButton && (
                     <div className={classNames(styles.abortButtonContainer)}>
-                        <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress}/>
+                        <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
                     </div>
                 )}
                 <div className={styles.textAreaContainer}>
@@ -450,7 +449,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     <ContextStatusComponent {...contextStatusComponentProps} />
                 ) : (
                     contextStatus && (
-                        <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName}/>
+                        <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
                     )
                 )}
             </form>
@@ -466,10 +465,10 @@ interface WelcomeTextOptions {
 }
 
 function welcomeText({
-                         helpMarkdown = 'See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.',
-                         afterMarkdown,
-                     }: WelcomeTextOptions): string {
-    return ['Hello! I\'m Cody. I can write code and answer questions for you. ' + helpMarkdown, afterMarkdown]
+    helpMarkdown = 'See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.',
+    afterMarkdown,
+}: WelcomeTextOptions): string {
+    return ["Hello! I'm Cody. I can write code and answer questions for you. " + helpMarkdown, afterMarkdown]
         .filter(isDefined)
         .join('\n\n')
 }

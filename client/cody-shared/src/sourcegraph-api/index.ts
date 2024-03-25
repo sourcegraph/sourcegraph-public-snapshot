@@ -1,1 +1,1 @@
-export type {Message} from './completions/types'
+export type { Message } from './completions/types'

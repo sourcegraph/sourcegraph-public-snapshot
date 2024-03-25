@@ -1,6 +1,6 @@
-import type {URI} from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
-import type {CodyPrompt} from '../chat/prompts'
+import type { CodyPrompt } from '../chat/prompts'
 
 export interface ActiveTextEditor {
     content: string

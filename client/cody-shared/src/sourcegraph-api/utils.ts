@@ -5,7 +5,7 @@
 // will find an initial byte before the start of the buffer.
 export function toPartialUtf8String(buf: Buffer): { str: string; buf: Buffer } {
     if (buf.length === 0) {
-        return {str: '', buf: Buffer.of()}
+        return { str: '', buf: Buffer.of() }
     }
     let lastValidByteOffsetExclusive = buf.length
     if ((buf[lastValidByteOffsetExclusive - 1] & 0x80) !== 0) {

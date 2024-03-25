@@ -1,4 +1,4 @@
-import {CHARS_PER_TOKEN} from './constants'
+import { CHARS_PER_TOKEN } from './constants'
 
 /**
  * Truncates text to the given number of tokens, keeping the start of the text.

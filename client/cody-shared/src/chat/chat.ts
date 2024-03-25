@@ -1,7 +1,7 @@
-import {ANSWER_TOKENS} from '../prompt/constants'
-import type {Message} from '../sourcegraph-api'
-import type {SourcegraphCompletionsClient} from '../sourcegraph-api/completions/client'
-import type {CompletionCallbacks, CompletionParameters} from '../sourcegraph-api/completions/types'
+import { ANSWER_TOKENS } from '../prompt/constants'
+import type { Message } from '../sourcegraph-api'
+import type { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
+import type { CompletionCallbacks, CompletionParameters } from '../sourcegraph-api/completions/types'
 
 type ChatParameters = Omit<CompletionParameters, 'messages'>
 
@@ -17,7 +17,7 @@ export class ChatClient {
 
     public chat(messages: Message[], cb: CompletionCallbacks, params?: Partial<ChatParameters>): () => void {
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
-        const augmentedMessages = isLastMessageFromHuman ? messages.concat([{speaker: 'assistant'}]) : messages
+        const augmentedMessages = isLastMessageFromHuman ? messages.concat([{ speaker: 'assistant' }]) : messages
 
         return this.completions.stream(
             {

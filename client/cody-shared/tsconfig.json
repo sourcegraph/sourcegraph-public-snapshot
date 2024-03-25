@@ -4,10 +4,7 @@
     "module": "commonjs",
     "sourceRoot": "src",
     "rootDir": ".",
-    "outDir": "./out"
+    "outDir": "./out",
   },
-  "include": [
-    "src",
-    "./src/**/*.json"
-  ]
+  "include": ["src", "./src/**/*.json"],
 }

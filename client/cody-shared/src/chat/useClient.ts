@@ -1,25 +1,25 @@
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import {CodebaseContext} from '../codebase-context'
-import {isErrorLike} from '../common'
-import type {ConfigurationWithAccessToken} from '../configuration'
-import {type Editor, NoopEditor} from '../editor'
-import {type PrefilledOptions, withPreselectedOptions} from '../editor/withPreselectedOptions'
-import {SourcegraphIntentDetectorClient} from '../intent-detector/client'
-import {SourcegraphBrowserCompletionsClient} from '../sourcegraph-api/completions/browserClient'
-import {SourcegraphGraphQLAPIClient} from '../sourcegraph-api/graphql'
-import {UnifiedContextFetcherClient} from '../unified-context/client'
-import {isError} from '../utils'
+import { CodebaseContext } from '../codebase-context'
+import { isErrorLike } from '../common'
+import type { ConfigurationWithAccessToken } from '../configuration'
+import { type Editor, NoopEditor } from '../editor'
+import { type PrefilledOptions, withPreselectedOptions } from '../editor/withPreselectedOptions'
+import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
+import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
+import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { UnifiedContextFetcherClient } from '../unified-context/client'
+import { isError } from '../utils'
 
-import {BotResponseMultiplexer} from './bot-response-multiplexer'
-import {ChatClient} from './chat'
-import {getMultiRepoPreamble} from './preamble'
-import {getRecipe} from './recipes/browser-recipes'
-import type {RecipeID} from './recipes/recipe'
-import {Transcript} from './transcript'
-import type {ChatMessage} from './transcript/messages'
-import {Typewriter} from './typewriter'
-import {reformatBotMessage} from './viewHelpers'
+import { BotResponseMultiplexer } from './bot-response-multiplexer'
+import { ChatClient } from './chat'
+import { getMultiRepoPreamble } from './preamble'
+import { getRecipe } from './recipes/browser-recipes'
+import type { RecipeID } from './recipes/recipe'
+import { Transcript } from './transcript'
+import type { ChatMessage } from './transcript/messages'
+import { Typewriter } from './typewriter'
+import { reformatBotMessage } from './viewHelpers'
 
 export type CodyClientConfig = Pick<
     ConfigurationWithAccessToken,
@@ -82,16 +82,16 @@ interface CodyClientProps {
 }
 
 export const useClient = ({
-                              config: initialConfig,
-                              initialTranscript = null,
-                              scope: initialScope = {
-                                  includeInferredRepository: true,
-                                  includeInferredFile: true,
-                                  repositories: [],
-                                  editor: new NoopEditor(),
-                              },
-                              onEvent,
-                          }: CodyClientProps): CodyClient => {
+    config: initialConfig,
+    initialTranscript = null,
+    scope: initialScope = {
+        includeInferredRepository: true,
+        includeInferredFile: true,
+        repositories: [],
+        editor: new NoopEditor(),
+    },
+    onEvent,
+}: CodyClientProps): CodyClient => {
     const [transcript, setTranscriptState] = useState<Transcript | null>(initialTranscript)
     const [chatMessages, setChatMessagesState] = useState<ChatMessage[]>([])
     const [isMessageInProgress, setIsMessageInProgressState] = useState<boolean>(false)
@@ -137,13 +137,13 @@ export const useClient = ({
 
     const [config, setConfig] = useState<CodyClientConfig>(initialConfig)
 
-    const {graphqlClient, chatClient, intentDetector} = useMemo(() => {
+    const { graphqlClient, chatClient, intentDetector } = useMemo(() => {
         const completionsClient = new SourcegraphBrowserCompletionsClient(config)
         const chatClient = new ChatClient(completionsClient)
         const graphqlClient = new SourcegraphGraphQLAPIClient(config)
         const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient, completionsClient)
 
-        return {graphqlClient, chatClient, intentDetector}
+        return { graphqlClient, chatClient, intentDetector }
     }, [config])
 
     const [scope, setScopeState] = useState<CodyClientScope>(initialScope)
@@ -180,7 +180,7 @@ export const useClient = ({
     )
 
     const toggleIncludeInferredFile = useCallback(
-        () => setScopeState(scope => ({...scope, includeInferredFile: !scope.includeInferredFile})),
+        () => setScopeState(scope => ({ ...scope, includeInferredFile: !scope.includeInferredFile })),
         [setScopeState]
     )
 
@@ -209,7 +209,7 @@ export const useClient = ({
             return []
         }
 
-        return results.map(({id}) => id)
+        return results.map(({ id }) => id)
     }, [codebases, graphqlClient])
 
     const fetchRepositoryNames = useCallback(
@@ -299,7 +299,7 @@ export const useClient = ({
                 unifiedContextFetcherClient
             )
 
-            const {humanChatInput = '', prefilledOptions} = options ?? {}
+            const { humanChatInput = '', prefilledOptions } = options ?? {}
             // TODO(naman): save scope with each interaction
             const interaction = await recipe.getInteraction(humanChatInput, {
                 editor: prefilledOptions ? withPreselectedOptions(editor, prefilledOptions) : editor,
@@ -317,7 +317,7 @@ export const useClient = ({
             setIsMessageInProgressState(true)
             onEvent?.('submit')
 
-            const {prompt, contextFiles, preciseContexts} = await transcript.getPromptForLastInteraction(
+            const { prompt, contextFiles, preciseContexts } = await transcript.getPromptForLastInteraction(
                 getMultiRepoPreamble(repoNames)
             )
             transcript.setUsedContextFilesForLastInteraction(contextFiles, preciseContexts)
@@ -428,7 +428,7 @@ export const useClient = ({
 
     const submitMessage = useCallback(
         async (humanChatInput: string, scope?: CodyClientScope): Promise<Transcript | null> =>
-            executeRecipe('chat-question', {humanChatInput, scope}),
+            executeRecipe('chat-question', { humanChatInput, scope }),
         [executeRecipe]
     )
 

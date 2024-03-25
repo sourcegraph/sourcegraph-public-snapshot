@@ -9,50 +9,50 @@
   },
   "references": [
     {
-      "path": "../../schema"
+      "path": "../../schema",
     },
     {
-      "path": "../branded"
+      "path": "../branded",
     },
     {
-      "path": "../build-config"
+      "path": "../build-config",
     },
     {
-      "path": "../client-api"
+      "path": "../client-api",
     },
     {
-      "path": "../codeintellify"
+      "path": "../codeintellify",
     },
     {
-      "path": "../cody-shared"
+      "path": "../cody-shared",
     },
     {
-      "path": "../cody-ui"
+      "path": "../cody-ui",
     },
     {
-      "path": "../common"
+      "path": "../common",
     },
     {
-      "path": "../extension-api-types"
+      "path": "../extension-api-types",
     },
     {
-      "path": "../http-client"
+      "path": "../http-client",
     },
     {
-      "path": "../observability-client"
+      "path": "../observability-client",
     },
     {
-      "path": "../shared"
+      "path": "../shared",
     },
     {
-      "path": "../storybook"
+      "path": "../storybook",
     },
     {
-      "path": "../testing"
+      "path": "../testing",
     },
     {
-      "path": "../wildcard"
-    }
+      "path": "../wildcard",
+    },
   ],
   "include": ["src", "scripts", "__mocks__", "./src/**/*.json"],
   "exclude": [

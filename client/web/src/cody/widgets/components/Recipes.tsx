@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import {AskCodyIcon} from '@sourcegraph/cody-ui'
+import { AskCodyIcon } from '@sourcegraph/cody-ui'
 
 import styles from './Recipes.module.scss'
 

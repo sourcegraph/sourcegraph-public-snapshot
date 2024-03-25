@@ -1,6 +1,6 @@
-import type {ContextFile, ContextMessage, PreciseContext} from '../../codebase-context/messages'
+import type { ContextFile, ContextMessage, PreciseContext } from '../../codebase-context/messages'
 
-import type {ChatMessage, InteractionMessage} from './messages'
+import type { ChatMessage, InteractionMessage } from './messages'
 
 export interface InteractionJSON {
     humanMessage: InteractionMessage
@@ -25,7 +25,7 @@ export class Interaction {
     ) {}
 
     public getAssistantMessage(): InteractionMessage {
-        return {...this.assistantMessage}
+        return { ...this.assistantMessage }
     }
 
     public setAssistantMessage(assistantMessage: InteractionMessage): void {
@@ -33,12 +33,12 @@ export class Interaction {
     }
 
     public getHumanMessage(): InteractionMessage {
-        return {...this.humanMessage}
+        return { ...this.humanMessage }
     }
 
     public async getFullContext(): Promise<ContextMessage[]> {
         const msgs = await this.fullContext
-        return msgs.map(msg => ({...msg}))
+        return msgs.map(msg => ({ ...msg }))
     }
 
     public async hasContext(): Promise<boolean> {

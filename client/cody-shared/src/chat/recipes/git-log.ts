@@ -1,11 +1,11 @@
-import {spawnSync} from 'child_process'
+import { spawnSync } from 'child_process'
 import path from 'path'
 
-import {MAX_RECIPE_INPUT_TOKENS} from '../../prompt/constants'
-import {truncateText} from '../../prompt/truncation'
-import {Interaction} from '../transcript/interaction'
+import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
+import { truncateText } from '../../prompt/truncation'
+import { Interaction } from '../transcript/interaction'
 
-import type {Recipe, RecipeContext, RecipeID} from './recipe'
+import type { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class GitHistory implements Recipe {
     public id: RecipeID = 'git-history'
@@ -31,7 +31,7 @@ export class GitHistory implements Recipe {
             },
             {
                 label: 'Last week',
-                args: ['log', '--since=\'1 week\'', logFormat],
+                args: ['log', "--since='1 week'", logFormat],
                 rawDisplayText: 'What changed in my codebase in the last week?',
             },
         ]
@@ -49,18 +49,18 @@ export class GitHistory implements Recipe {
             return null
         }
         const selected = Object.fromEntries(
-            items.map(({label, args, rawDisplayText}) => [label, {args, rawDisplayText}])
+            items.map(({ label, args, rawDisplayText }) => [label, { args, rawDisplayText }])
         )[selectedLabel]
 
-        const {args: gitArgs, rawDisplayText} = selected
+        const { args: gitArgs, rawDisplayText } = selected
 
-        const gitLogCommand = spawnSync('git', ['--no-pager', ...gitArgs], {cwd: dirPath})
+        const gitLogCommand = spawnSync('git', ['--no-pager', ...gitArgs], { cwd: dirPath })
         const gitLogOutput = gitLogCommand.stdout.toString().trim()
 
         if (!gitLogOutput) {
             const emptyGitLogMessage = 'No recent changes found'
             return new Interaction(
-                {speaker: 'human', displayText: rawDisplayText},
+                { speaker: 'human', displayText: rawDisplayText },
                 {
                     speaker: 'assistant',
                     prefix: emptyGitLogMessage,
@@ -80,7 +80,7 @@ export class GitHistory implements Recipe {
         const promptMessage = `Summarize these commits:\n${truncatedGitLogOutput}\n\nProvide your response in the form of a bulleted list. Do not mention the commit hashes.`
         const assistantResponsePrefix = `Here is a summary of recent changes:\n${truncatedLogMessage}`
         return new Interaction(
-            {speaker: 'human', text: promptMessage, displayText: rawDisplayText},
+            { speaker: 'human', text: promptMessage, displayText: rawDisplayText },
             {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,

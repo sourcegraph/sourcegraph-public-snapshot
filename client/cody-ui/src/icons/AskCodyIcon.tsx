@@ -1,8 +1,8 @@
 import React from 'react'
 
-export const AskCodyIcon: React.FC<{ iconColor?: string }> = ({iconColor = '#A112FF'}) => (
+export const AskCodyIcon: React.FC<{ iconColor?: string }> = ({ iconColor = '#A112FF' }) => (
     // eslint-disable-next-line react/forbid-dom-props
-    <div style={{padding: '0 3px'}}>
+    <div style={{ padding: '0 3px' }}>
         <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
                 d="M13.9088 4C14.756 4 15.4429 4.69836 15.4429 5.55983V8.33286C15.4429 9.19433 14.756 9.89269 13.9088 9.89269C13.0615 9.89269 12.3747 9.19433 12.3747 8.33286V5.55983C12.3747 4.69836 13.0615 4 13.9088 4Z"

@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-restricted-imports
-import {marked} from 'marked'
+import { marked } from 'marked'
 
-import {registerHighlightContributions, renderMarkdown as renderMarkdownCommon} from '../common/markdown'
+import { registerHighlightContributions, renderMarkdown as renderMarkdownCommon } from '../common/markdown'
 
 /**
  * Supported URIs to render as links in outputted markdown.
@@ -66,5 +66,5 @@ export function renderCodyMarkdown(markdown: string): string {
  * Returns the parsed markdown at block level.
  */
 export function parseMarkdown(text: string): marked.Token[] {
-    return marked.Lexer.lex(text, {gfm: true})
+    return marked.Lexer.lex(text, { gfm: true })
 }

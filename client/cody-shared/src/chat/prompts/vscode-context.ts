@@ -1,11 +1,11 @@
-import {dirname} from 'path'
+import { dirname } from 'path'
 
 import * as vscode from 'vscode'
-import {URI} from 'vscode-uri'
+import { URI } from 'vscode-uri'
 
-import {type ContextMessage, getContextMessageWithResponse} from '../../codebase-context/messages'
-import type {ActiveTextEditorSelection} from '../../editor'
-import {MAX_CURRENT_FILE_TOKENS} from '../../prompt/constants'
+import { type ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
+import type { ActiveTextEditorSelection } from '../../editor'
+import { MAX_CURRENT_FILE_TOKENS } from '../../prompt/constants'
 import {
     populateCodeContextTemplate,
     populateContextTemplateFromText,
@@ -16,10 +16,10 @@ import {
     populateListOfFilesContextTemplate,
     populateTerminalOutputContextTemplate,
 } from '../../prompt/templates'
-import {truncateText} from '../../prompt/truncation'
+import { truncateText } from '../../prompt/truncation'
 
-import {answers, displayFileName} from './templates'
-import {createSelectionDisplayText, createVSCodeTestSearchPattern, isValidTestFileName} from './utils'
+import { answers, displayFileName } from './templates'
+import { createSelectionDisplayText, createVSCodeTestSearchPattern, isValidTestFileName } from './utils'
 
 // TODO bea move out of shared
 
@@ -55,7 +55,7 @@ export function getTerminalOutputContext(terminalOutput: string): ContextMessage
     const truncatedTerminalOutput = truncateText(terminalOutput, MAX_CURRENT_FILE_TOKENS)
 
     return [
-        {speaker: 'human', text: populateTerminalOutputContextTemplate(truncatedTerminalOutput)},
+        { speaker: 'human', text: populateTerminalOutputContextTemplate(truncatedTerminalOutput) },
         {
             speaker: 'assistant',
             text: answers.terminal,
@@ -223,7 +223,7 @@ export async function getDirContextMessages(
             const templateText = 'Codebase context from file path {fileName}: '
             const contextMessage = getContextMessageWithResponse(
                 populateContextTemplateFromText(templateText, truncatedContent, fileName),
-                {fileName}
+                { fileName }
             )
             contextMessages.push(...contextMessage)
         } catch (error) {
@@ -258,14 +258,14 @@ export async function getPackageJsonContext(filePath?: string): Promise<ContextM
         const scripts = packageJson.scripts
         const devDependencies = packageJson.devDependencies
         // stringify the scripts object with devDependencies
-        const context = JSON.stringify({scripts, devDependencies})
+        const context = JSON.stringify({ scripts, devDependencies })
         const truncatedContent = truncateText(context.toString() || decoded.toString(), MAX_CURRENT_FILE_TOKENS)
         const fileName = createVSCodeRelativePath(packageJsonUri.fsPath)
         const templateText = 'Here are the scripts and devDependencies from the package.json file for the codebase: '
 
         return getContextMessageWithResponse(
             populateContextTemplateFromText(templateText, truncatedContent, fileName),
-            {fileName},
+            { fileName },
             answers.packageJson
         )
     } catch {
@@ -314,7 +314,7 @@ export async function getCurrentDirFilteredContext(
             const templateText = 'Codebase context from file path {fileName}: '
             const contextMessage = getContextMessageWithResponse(
                 populateContextTemplateFromText(templateText, truncatedContent, fileName),
-                {fileName}
+                { fileName }
             )
             contextMessages.push(...contextMessage)
         } catch (error) {
@@ -731,7 +731,7 @@ export function createHumanDisplayTextWithDocLink(
     docUri: URI,
     selection: ActiveTextEditorSelection
 ): string {
-    const {range, start} = createSelectionDisplayText(selection)
+    const { range, start } = createSelectionDisplayText(selection)
     const fsPath = docUri.fsPath
     const fileName = createVSCodeRelativePath(fsPath)
     const fileLink = `vscode://file${fsPath}:${start}`

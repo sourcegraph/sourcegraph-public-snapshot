@@ -1,5 +1,5 @@
 import * as defaultPrompts from './default-prompts.json'
-import {toSlashCommand} from './utils'
+import { toSlashCommand } from './utils'
 
 export function getDefaultCommandsMap(editorCommands: CodyPrompt[] = []): Map<string, CodyPrompt> {
     const map = new Map<string, CodyPrompt>()

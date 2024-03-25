@@ -1,4 +1,4 @@
-import {registerLanguage} from 'highlight.js/lib/core'
+import { registerLanguage } from 'highlight.js/lib/core'
 import bash from 'highlight.js/lib/languages/bash'
 import cLike from 'highlight.js/lib/languages/c-like'
 import clojure from 'highlight.js/lib/languages/clojure'

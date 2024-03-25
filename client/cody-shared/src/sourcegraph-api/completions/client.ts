@@ -1,16 +1,16 @@
-import type {ConfigurationWithAccessToken} from '../../configuration'
-import type {FeatureFlagProvider} from '../../experimentation/FeatureFlagProvider'
+import type { ConfigurationWithAccessToken } from '../../configuration'
+import type { FeatureFlagProvider } from '../../experimentation/FeatureFlagProvider'
 
-import type {CompletionCallbacks, CompletionParameters, CompletionResponse, Event} from './types'
+import type { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
 
 export interface CompletionLogger {
     startCompletion(params: CompletionParameters | {}):
         | undefined
         | {
-        onError: (error: string) => void
-        onComplete: (response: string | CompletionResponse | string[] | CompletionResponse[]) => void
-        onEvents: (events: Event[]) => void
-    }
+              onError: (error: string) => void
+              onComplete: (response: string | CompletionResponse | string[] | CompletionResponse[]) => void
+              onEvents: (events: Event[]) => void
+          }
 }
 
 export type CompletionsClientConfig = Pick<

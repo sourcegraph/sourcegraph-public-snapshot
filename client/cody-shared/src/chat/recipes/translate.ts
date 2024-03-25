@@ -1,9 +1,9 @@
-import {MAX_RECIPE_INPUT_TOKENS} from '../../prompt/constants'
-import {truncateText} from '../../prompt/truncation'
-import {Interaction} from '../transcript/interaction'
+import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
+import { truncateText } from '../../prompt/truncation'
+import { Interaction } from '../transcript/interaction'
 
-import {languageMarkdownID, languageNames} from './langs'
-import type {Recipe, RecipeContext, RecipeID} from './recipe'
+import { languageMarkdownID, languageNames } from './langs'
+import type { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class TranslateToLanguage implements Recipe {
     public id: RecipeID = 'translate-to-language'
@@ -34,7 +34,7 @@ export class TranslateToLanguage implements Recipe {
         const assistantResponsePrefix = `Here is the code translated to ${toLanguage}:\n\`\`\`${markdownID}\n`
 
         return new Interaction(
-            {speaker: 'human', text: promptMessage, displayText},
+            { speaker: 'human', text: promptMessage, displayText },
             {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,

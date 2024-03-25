@@ -1,9 +1,9 @@
-import {fetchEventSource} from '@microsoft/fetch-event-source'
+import { fetchEventSource } from '@microsoft/fetch-event-source'
 
-import {addCustomUserAgent} from '../graphql/client'
+import { addCustomUserAgent } from '../graphql/client'
 
-import {SourcegraphCompletionsClient} from './client'
-import type {CompletionCallbacks, CompletionParameters, Event} from './types'
+import { SourcegraphCompletionsClient } from './client'
+import type { CompletionCallbacks, CompletionParameters, Event } from './types'
 
 export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsClient {
     public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
@@ -47,7 +47,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             },
             onmessage: message => {
                 try {
-                    const data: Event = {...JSON.parse(message.data), type: message.event}
+                    const data: Event = { ...JSON.parse(message.data), type: message.event }
                     this.sendEvents([data], cb)
                 } catch (error: any) {
                     cb.onError(error.message)
@@ -86,7 +86,6 @@ if (isRunningInWebWorker) {
     // HACK: @microsoft/fetch-event-source tries to call document.removeEventListener, which is not
     // available in a worker.
     ;(self as any).document = {
-        removeEventListener: () => {
-        },
+        removeEventListener: () => {},
     }
 }

@@ -1,13 +1,13 @@
-import {type ContextMessage, getContextMessageWithResponse} from '../../codebase-context/messages'
-import type {VsCodeFixupTaskRecipeData} from '../../editor'
-import type {IntentClassificationOption} from '../../intent-detector'
-import {MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS} from '../../prompt/constants'
-import {populateCodeContextTemplate, populateCurrentEditorDiagnosticsTemplate} from '../../prompt/templates'
-import {truncateText, truncateTextStart} from '../../prompt/truncation'
-import {Interaction} from '../transcript/interaction'
+import { type ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
+import type { VsCodeFixupTaskRecipeData } from '../../editor'
+import type { IntentClassificationOption } from '../../intent-detector'
+import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
+import { populateCodeContextTemplate, populateCurrentEditorDiagnosticsTemplate } from '../../prompt/templates'
+import { truncateText, truncateTextStart } from '../../prompt/truncation'
+import { Interaction } from '../transcript/interaction'
 
-import {getContextMessagesFromSelection} from './helpers'
-import type {Recipe, RecipeContext, RecipeID} from './recipe'
+import { getContextMessagesFromSelection } from './helpers'
+import type { Recipe, RecipeContext, RecipeID } from './recipe'
 
 /**
  * The intent classification.
@@ -60,7 +60,7 @@ export class Fixup implements Recipe {
 
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
         if (truncateText(fixupTask.selectedText, quarterFileContext * 2) !== fixupTask.selectedText) {
-            const msg = 'The amount of text selected exceeds Cody\'s current capacity.'
+            const msg = "The amount of text selected exceeds Cody's current capacity."
             await context.editor.showWarningMessage(msg)
             return null
         }
@@ -163,7 +163,7 @@ export class Fixup implements Recipe {
             case 'edit': {
                 const range = task.selectionRange
                 const diagnostics = range ? context.editor.getActiveTextEditorDiagnosticsForRange(range) || [] : []
-                const errorsAndWarnings = diagnostics.filter(({type}) => type === 'error' || type === 'warning')
+                const errorsAndWarnings = diagnostics.filter(({ type }) => type === 'error' || type === 'warning')
 
                 return getContextMessagesFromSelection(
                     task.selectedText,

@@ -1,4 +1,4 @@
-import {defineProjectWithDefaults} from '../../vitest.shared'
+import { defineProjectWithDefaults } from '../../vitest.shared'
 
 export default defineProjectWithDefaults(__dirname, {
     test: {

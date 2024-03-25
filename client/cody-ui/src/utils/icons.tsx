@@ -1,6 +1,6 @@
 import React from 'react'
 
-export const CodyColoredSvg = React.memo<{ className?: string }>(function CodySvg({className}) {
+export const CodyColoredSvg = React.memo<{ className?: string }>(function CodySvg({ className }) {
     return (
         <svg
             width="81"
@@ -48,7 +48,7 @@ export const CodyColoredSvg = React.memo<{ className?: string }>(function CodySv
     )
 })
 
-export const CodySvg = React.memo<{ className?: string }>(function CodySvg({className}) {
+export const CodySvg = React.memo<{ className?: string }>(function CodySvg({ className }) {
     return (
         <svg
             version="1.0"
@@ -79,7 +79,7 @@ export const CodySvg = React.memo<{ className?: string }>(function CodySvg({clas
     )
 })
 
-export const SubmitSvg = React.memo<{ className?: string }>(function CodySvg({className}) {
+export const SubmitSvg = React.memo<{ className?: string }>(function CodySvg({ className }) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -89,13 +89,12 @@ export const SubmitSvg = React.memo<{ className?: string }>(function CodySvg({cl
             fill="currentColor"
             className={className}
         >
-            <path
-                d="m21.426 11.095-17-8A1 1 0 0 0 3.03 4.242l1.212 4.849L12 12l-7.758 2.909-1.212 4.849a.998.998 0 0 0 1.396 1.147l17-8a1 1 0 0 0 0-1.81z"/>
+            <path d="m21.426 11.095-17-8A1 1 0 0 0 3.03 4.242l1.212 4.849L12 12l-7.758 2.909-1.212 4.849a.998.998 0 0 0 1.396 1.147l17-8a1 1 0 0 0 0-1.81z" />
         </svg>
     )
 })
 
-export const SourcegraphLogoMuted = React.memo<{ className?: string }>(function CodySvg({className}) {
+export const SourcegraphLogoMuted = React.memo<{ className?: string }>(function CodySvg({ className }) {
     return (
         <svg
             width="102"

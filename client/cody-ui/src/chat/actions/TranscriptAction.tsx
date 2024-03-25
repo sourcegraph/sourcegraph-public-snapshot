@@ -1,9 +1,9 @@
-import React, {useState} from 'react'
+import React, { useState } from 'react'
 
-import {mdiChevronDown, mdiChevronUp} from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 
-import {Icon} from '../../utils/Icon'
+import { Icon } from '../../utils/Icon'
 
 import styles from './TranscriptAction.module.scss'
 
@@ -22,7 +22,7 @@ export const TranscriptAction: React.FunctionComponent<{
     title: string | { verb: string; object: string }
     steps: TranscriptActionStep[]
     className?: string
-}> = ({title, steps, className}) => {
+}> = ({ title, steps, className }) => {
     const [open, setOpen] = useState(false)
 
     return (
@@ -46,7 +46,7 @@ export const TranscriptAction: React.FunctionComponent<{
                     {steps.map((step, index) => (
                         // eslint-disable-next-line react/no-array-index-key
                         <li key={index} className={styles.step}>
-                            {step.icon && <Icon svgPath={step.icon} className={styles.stepIcon}/>}{' '}
+                            {step.icon && <Icon svgPath={step.icon} className={styles.stepIcon} />}{' '}
                             <span className={styles.stepObject}>
                                 {step.verb} {step.object}
                             </span>

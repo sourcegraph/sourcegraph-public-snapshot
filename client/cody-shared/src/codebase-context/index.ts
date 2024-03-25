@@ -1,6 +1,6 @@
-import type {Configuration} from '../configuration'
-import type {EmbeddingsSearch} from '../embeddings'
-import type {GraphContextFetcher} from '../graph-context'
+import type { Configuration } from '../configuration'
+import type { EmbeddingsSearch } from '../embeddings'
+import type { GraphContextFetcher } from '../graph-context'
 import type {
     ContextResult,
     FilenameContextFetcher,
@@ -13,10 +13,10 @@ import {
     populateMarkdownContextTemplate,
     populatePreciseCodeContextTemplate,
 } from '../prompt/templates'
-import type {Message} from '../sourcegraph-api'
-import type {EmbeddingsSearchResult} from '../sourcegraph-api/graphql/client'
-import type {UnifiedContextFetcher} from '../unified-context'
-import {isError} from '../utils'
+import type { Message } from '../sourcegraph-api'
+import type { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
+import type { UnifiedContextFetcher } from '../unified-context'
+import { isError } from '../utils'
 
 import {
     type ContextFile,
@@ -197,12 +197,12 @@ export class CodebaseContext {
 
         return results.flatMap(result => {
             if (result?.type === 'FileChunkContext') {
-                const {content, filePath, repoName, revision} = result
+                const { content, filePath, repoName, revision } = result
                 const messageText = isMarkdownFile(filePath)
                     ? populateMarkdownContextTemplate(content, filePath, repoName)
                     : populateCodeContextTemplate(content, filePath, repoName)
 
-                return getContextMessageWithResponse(messageText, {fileName: filePath, repoName, revision})
+                return getContextMessageWithResponse(messageText, { fileName: filePath, repoName, revision })
             }
 
             return []
@@ -262,7 +262,7 @@ export class CodebaseContext {
                 preciseContext.definitionSnippet
             )
 
-            contextMessages.push({speaker: 'human', preciseContext, text}, {speaker: 'assistant', text: 'okay'})
+            contextMessages.push({ speaker: 'human', preciseContext, text }, { speaker: 'assistant', text: 'okay' })
         }
 
         return contextMessages
@@ -273,7 +273,7 @@ function groupResultsByFile(results: EmbeddingsSearchResult[]): { file: ContextF
     const originalFileOrder: ContextFile[] = []
     for (const result of results) {
         if (!originalFileOrder.find((ogFile: ContextFile) => ogFile.fileName === result.fileName)) {
-            originalFileOrder.push({fileName: result.fileName, repoName: result.repoName, revision: result.revision})
+            originalFileOrder.push({ fileName: result.fileName, repoName: result.repoName, revision: result.revision })
         }
     }
 
@@ -312,9 +312,9 @@ function mergeConsecutiveResults(results: EmbeddingsSearchResult[]): string[] {
 }
 
 function resultsToMessages(results: ContextResult[]): ContextMessage[] {
-    return results.flatMap(({content, fileName, repoName, revision}) => {
+    return results.flatMap(({ content, fileName, repoName, revision }) => {
         const messageText = populateCodeContextTemplate(content, fileName, repoName)
-        return getContextMessageWithResponse(messageText, {fileName, repoName, revision})
+        return getContextMessageWithResponse(messageText, { fileName, repoName, revision })
     })
 }
 

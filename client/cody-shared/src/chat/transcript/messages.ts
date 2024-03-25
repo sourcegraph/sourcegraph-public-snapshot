@@ -1,7 +1,7 @@
-import type {ContextFile, PreciseContext} from '../../codebase-context/messages'
-import type {Message} from '../../sourcegraph-api'
+import type { ContextFile, PreciseContext } from '../../codebase-context/messages'
+import type { Message } from '../../sourcegraph-api'
 
-import type {TranscriptJSON} from '.'
+import type { TranscriptJSON } from '.'
 
 export interface ChatButton {
     label: string

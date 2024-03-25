@@ -1,10 +1,10 @@
-import React, {useEffect, useMemo, useRef} from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import {renderCodyMarkdown} from '@sourcegraph/cody-shared'
+import { renderCodyMarkdown } from '@sourcegraph/cody-shared'
 
-import type {CopyButtonProps} from '../Chat'
+import type { CopyButtonProps } from '../Chat'
 
 import styles from './CodeBlocks.module.scss'
 
@@ -94,11 +94,11 @@ function createInsertButton(
 }
 
 export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(function CodeBlocksContent({
-                                                                                                              displayText,
-                                                                                                              copyButtonClassName,
-                                                                                                              insertButtonClassName,
-                                                                                                              CopyButtonProps,
-                                                                                                          }) {
+    displayText,
+    copyButtonClassName,
+    insertButtonClassName,
+    CopyButtonProps,
+}) {
     const rootRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -121,7 +121,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
     }, [displayText, CopyButtonProps, copyButtonClassName, insertButtonClassName, rootRef])
 
     return useMemo(
-        () => <div ref={rootRef} dangerouslySetInnerHTML={{__html: renderCodyMarkdown(displayText)}}/>,
+        () => <div ref={rootRef} dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />,
         [displayText]
     )
 })

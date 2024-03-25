@@ -1,11 +1,11 @@
 import React from 'react'
 
-import {mdiDatabaseCheckOutline, mdiDatabaseOffOutline, mdiDatabaseRemoveOutline} from '@mdi/js'
+import { mdiDatabaseCheckOutline, mdiDatabaseOffOutline, mdiDatabaseRemoveOutline } from '@mdi/js'
 import classNames from 'classnames'
 
-import {basename, type ChatContextStatus} from '@sourcegraph/cody-shared'
+import { basename, type ChatContextStatus } from '@sourcegraph/cody-shared'
 
-import {Icon} from '../../utils/Icon'
+import { Icon } from '../../utils/Icon'
 
 import styles from './ChatInputContext.module.scss'
 
@@ -32,7 +32,7 @@ const formatFilePath = (filePath: string, selection: ChatContextStatus['selectio
 export const ChatInputContext: React.FunctionComponent<{
     contextStatus: ChatContextStatus
     className?: string
-}> = React.memo(function ChatInputContextContent({contextStatus, className}) {
+}> = React.memo(function ChatInputContextContent({ contextStatus, className }) {
     return (
         <div className={classNames(styles.container, className)}>
             {!contextStatus.codebase ? (
@@ -75,9 +75,9 @@ const CodebaseState: React.FunctionComponent<{
     iconClassName?: string
     icon: string
     codebase?: string
-}> = ({tooltip, iconClassName, icon, codebase}) => (
+}> = ({ tooltip, iconClassName, icon, codebase }) => (
     // eslint-disable-next-line react/forbid-elements
     <h3 title={tooltip} className={styles.codebase}>
-        <Icon svgPath={icon} className={classNames(styles.codebaseIcon, iconClassName)}/>
+        <Icon svgPath={icon} className={classNames(styles.codebaseIcon, iconClassName)} />
     </h3>
 )

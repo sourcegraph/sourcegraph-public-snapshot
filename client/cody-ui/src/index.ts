@@ -1,5 +1,5 @@
-export {AskCodyIcon} from './icons/AskCodyIcon'
-export {CodyLogo} from './icons/CodyLogo'
+export { AskCodyIcon } from './icons/AskCodyIcon'
+export { CodyLogo } from './icons/CodyLogo'
 
 export {
     Chat,
@@ -9,4 +9,4 @@ export {
     type FeedbackButtonsProps,
 } from './Chat'
 
-export type {FileLinkProps} from './chat/ContextFiles'
+export type { FileLinkProps } from './chat/ContextFiles'

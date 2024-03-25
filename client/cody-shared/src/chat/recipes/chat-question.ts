@@ -1,17 +1,17 @@
-import type {CodebaseContext} from '../../codebase-context'
-import {type ContextMessage, getContextMessageWithResponse} from '../../codebase-context/messages'
-import type {ActiveTextEditorSelection, Editor} from '../../editor'
-import type {IntentDetector} from '../../intent-detector'
-import {MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS} from '../../prompt/constants'
+import type { CodebaseContext } from '../../codebase-context'
+import { type ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
+import type { ActiveTextEditorSelection, Editor } from '../../editor'
+import type { IntentDetector } from '../../intent-detector'
+import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import {
     populateCurrentEditorContextTemplate,
     populateCurrentEditorSelectedContextTemplate,
 } from '../../prompt/templates'
-import {truncateText} from '../../prompt/truncation'
-import {Interaction} from '../transcript/interaction'
+import { truncateText } from '../../prompt/truncation'
+import { Interaction } from '../transcript/interaction'
 
-import {isSingleWord, numResults} from './helpers'
-import type {Recipe, RecipeContext, RecipeID} from './recipe'
+import { isSingleWord, numResults } from './helpers'
+import type { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class ChatQuestion implements Recipe {
     public id: RecipeID = 'chat-question'
@@ -24,8 +24,8 @@ export class ChatQuestion implements Recipe {
 
         return Promise.resolve(
             new Interaction(
-                {speaker: 'human', text: truncatedText, displayText: humanChatInput},
-                {speaker: 'assistant'},
+                { speaker: 'human', text: truncatedText, displayText: humanChatInput },
+                { speaker: 'assistant' },
                 this.getContextMessages(
                     truncatedText,
                     context.editor,

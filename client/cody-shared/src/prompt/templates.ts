@@ -1,10 +1,10 @@
 import path from 'path'
 
-import {getFileExtension, getNormalizedLanguageName} from '../chat/recipes/helpers'
-import type {ActiveTextEditorDiagnostic, ActiveTextEditorSelection} from '../editor'
+import { getFileExtension, getNormalizedLanguageName } from '../chat/recipes/helpers'
+import type { ActiveTextEditorDiagnostic, ActiveTextEditorSelection } from '../editor'
 
-import {MAX_RECIPE_INPUT_TOKENS} from './constants'
-import {truncateText, truncateTextStart} from './truncation'
+import { MAX_RECIPE_INPUT_TOKENS } from './constants'
+import { truncateText, truncateTextStart } from './truncation'
 
 const CODE_CONTEXT_TEMPLATE = `Use following code snippet from file \`{filePath}\`:
 \`\`\`{language}
@@ -57,8 +57,8 @@ export function populateCurrentEditorContextTemplate(code: string, filePath: str
         : populateCodeContextTemplate(code, filePath, repoName)
     return (
         (repoName
-                ? CURRENT_EDITOR_CODE_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
-                : CURRENT_EDITOR_CODE_TEMPLATE
+            ? CURRENT_EDITOR_CODE_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
+            : CURRENT_EDITOR_CODE_TEMPLATE
         ).replaceAll('{filePath}', filePath) + context
     )
 }
@@ -80,8 +80,8 @@ export function populateCurrentEditorSelectedContextTemplate(
         : populateCodeContextTemplate(code, filePath, repoName)
     return (
         (repoName
-                ? CURRENT_EDITOR_SELECTED_CODE_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
-                : CURRENT_EDITOR_SELECTED_CODE_TEMPLATE
+            ? CURRENT_EDITOR_SELECTED_CODE_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
+            : CURRENT_EDITOR_SELECTED_CODE_TEMPLATE
         )
             .replace('{language}', languageName)
             .replaceAll('{filePath}', filePath) + context
@@ -96,7 +96,7 @@ Code snippet:
 \`\`\``
 
 export function populateCurrentEditorDiagnosticsTemplate(
-    {message, type, text}: ActiveTextEditorDiagnostic,
+    { message, type, text }: ActiveTextEditorDiagnostic,
     filePath: string
 ): string {
     const language = getExtension(filePath)

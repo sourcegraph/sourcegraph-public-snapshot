@@ -1,6 +1,6 @@
-import {MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS} from '../../prompt/constants'
-import {truncateText, truncateTextStart} from '../../prompt/truncation'
-import {Interaction} from '../transcript/interaction'
+import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
+import { truncateText, truncateTextStart } from '../../prompt/truncation'
+import { Interaction } from '../transcript/interaction'
 
 import {
     getContextMessagesFromSelection,
@@ -8,7 +8,7 @@ import {
     getNormalizedLanguageName,
     MARKDOWN_FORMAT_PROMPT,
 } from './helpers'
-import type {Recipe, RecipeContext, RecipeID} from './recipe'
+import type { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class ImproveVariableNames implements Recipe {
     public id: RecipeID = 'improve-variable-names'
@@ -33,7 +33,7 @@ export class ImproveVariableNames implements Recipe {
         const assistantResponsePrefix = `Here is the improved code:\n\`\`\`${extension}\n`
 
         return new Interaction(
-            {speaker: 'human', text: promptMessage, displayText},
+            { speaker: 'human', text: promptMessage, displayText },
             {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,

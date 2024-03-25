@@ -1,13 +1,13 @@
-import {ChatQuestion} from './chat-question'
-import {CodeQuestion} from './code-question'
-import {ExplainCodeDetailed} from './explain-code-detailed'
-import {ExplainCodeHighLevel} from './explain-code-high-level'
-import {FindCodeSmells} from './find-code-smells'
-import {GenerateDocstring} from './generate-docstring'
-import {GenerateTest} from './generate-test'
-import {ImproveVariableNames} from './improve-variable-names'
-import type {Recipe, RecipeID} from './recipe'
-import {TranslateToLanguage} from './translate'
+import { ChatQuestion } from './chat-question'
+import { CodeQuestion } from './code-question'
+import { ExplainCodeDetailed } from './explain-code-detailed'
+import { ExplainCodeHighLevel } from './explain-code-high-level'
+import { FindCodeSmells } from './find-code-smells'
+import { GenerateDocstring } from './generate-docstring'
+import { GenerateTest } from './generate-test'
+import { ImproveVariableNames } from './improve-variable-names'
+import type { Recipe, RecipeID } from './recipe'
+import { TranslateToLanguage } from './translate'
 
 const registeredRecipes: { [id in RecipeID]?: Recipe } = {}
 

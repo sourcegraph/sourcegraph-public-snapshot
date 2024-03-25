@@ -1,25 +1,25 @@
-import {CodebaseContext} from '../codebase-context'
-import type {ConfigurationWithAccessToken} from '../configuration'
-import type {Editor} from '../editor'
-import {type PrefilledOptions, withPreselectedOptions} from '../editor/withPreselectedOptions'
-import {SourcegraphEmbeddingsSearchClient} from '../embeddings/client'
-import {SourcegraphIntentDetectorClient} from '../intent-detector/client'
-import {SourcegraphBrowserCompletionsClient} from '../sourcegraph-api/completions/browserClient'
-import type {CompletionsClientConfig, SourcegraphCompletionsClient} from '../sourcegraph-api/completions/client'
-import {SourcegraphGraphQLAPIClient} from '../sourcegraph-api/graphql'
-import {isError} from '../utils'
+import { CodebaseContext } from '../codebase-context'
+import type { ConfigurationWithAccessToken } from '../configuration'
+import type { Editor } from '../editor'
+import { type PrefilledOptions, withPreselectedOptions } from '../editor/withPreselectedOptions'
+import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
+import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
+import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
+import type { CompletionsClientConfig, SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
+import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { isError } from '../utils'
 
-import {BotResponseMultiplexer} from './bot-response-multiplexer'
-import {ChatClient} from './chat'
-import {getPreamble} from './preamble'
-import {getRecipe} from './recipes/browser-recipes'
-import type {RecipeID} from './recipes/recipe'
-import {Transcript, type TranscriptJSON} from './transcript'
-import type {ChatMessage} from './transcript/messages'
-import {reformatBotMessage} from './viewHelpers'
+import { BotResponseMultiplexer } from './bot-response-multiplexer'
+import { ChatClient } from './chat'
+import { getPreamble } from './preamble'
+import { getRecipe } from './recipes/browser-recipes'
+import type { RecipeID } from './recipes/recipe'
+import { Transcript, type TranscriptJSON } from './transcript'
+import type { ChatMessage } from './transcript/messages'
+import { reformatBotMessage } from './viewHelpers'
 
-export type {TranscriptJSON}
-export {Transcript}
+export type { TranscriptJSON }
+export { Transcript }
 
 export type ClientInitConfig = Pick<
     ConfigurationWithAccessToken,
@@ -55,19 +55,19 @@ export interface Client {
 }
 
 export async function createClient({
-                                       config,
-                                       setMessageInProgress,
-                                       setTranscript,
-                                       editor,
-                                       initialTranscript,
-                                       createCompletionsClient = config => new SourcegraphBrowserCompletionsClient(config),
-                                   }: ClientInit): Promise<Client | null> {
-    const fullConfig = {debugEnable: false, ...config}
+    config,
+    setMessageInProgress,
+    setTranscript,
+    editor,
+    initialTranscript,
+    createCompletionsClient = config => new SourcegraphBrowserCompletionsClient(config),
+}: ClientInit): Promise<Client | null> {
+    const fullConfig = { debugEnable: false, ...config }
 
     const graphqlClient = new SourcegraphGraphQLAPIClient(fullConfig)
     const sourcegraphVersion = await graphqlClient.getSiteVersion()
 
-    const sourcegraphStatus = {authenticated: false, version: ''}
+    const sourcegraphStatus = { authenticated: false, version: '' }
     if (!isError(sourcegraphVersion)) {
         sourcegraphStatus.authenticated = true
         sourcegraphStatus.version = sourcegraphVersion
@@ -107,7 +107,7 @@ export async function createClient({
             } else {
                 setTranscript(transcript)
                 if (data) {
-                    setMessageInProgress({data, speaker: 'assistant'})
+                    setMessageInProgress({ data, speaker: 'assistant' })
                 } else {
                     setMessageInProgress(null)
                 }
@@ -141,7 +141,7 @@ export async function createClient({
             isMessageInProgress = true
             transcript.addInteraction(interaction)
 
-            const {prompt, contextFiles, preciseContexts} = await transcript.getPromptForLastInteraction(
+            const { prompt, contextFiles, preciseContexts } = await transcript.getPromptForLastInteraction(
                 getPreamble(config.codebase)
             )
             transcript.setUsedContextFilesForLastInteraction(contextFiles, preciseContexts)
@@ -182,7 +182,7 @@ export async function createClient({
                 return isMessageInProgress
             },
             submitMessage(text: string) {
-                return executeRecipe('chat-question', {humanChatInput: text})
+                return executeRecipe('chat-question', { humanChatInput: text })
             },
             executeRecipe,
             reset() {

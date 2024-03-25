@@ -1,13 +1,13 @@
 import http from 'http'
 import https from 'https'
 
-import {isError} from '../../utils'
-import {customUserAgent} from '../graphql/client'
-import {toPartialUtf8String} from '../utils'
+import { isError } from '../../utils'
+import { customUserAgent } from '../graphql/client'
+import { toPartialUtf8String } from '../utils'
 
-import {SourcegraphCompletionsClient} from './client'
-import {parseEvents} from './parse'
-import type {CompletionCallbacks, CompletionParameters} from './types'
+import { SourcegraphCompletionsClient } from './client'
+import { parseEvents } from './parse'
+import type { CompletionCallbacks, CompletionParameters } from './types'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
     public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
@@ -24,8 +24,8 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...(this.config.accessToken ? {Authorization: `token ${this.config.accessToken}`} : null),
-                    ...(customUserAgent ? {'User-Agent': customUserAgent} : null),
+                    ...(this.config.accessToken ? { Authorization: `token ${this.config.accessToken}` } : null),
+                    ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
                     ...this.config.customHeaders,
                 },
                 // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
@@ -48,7 +48,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         }
                         // Messages are expected to be UTF-8, but a chunk can terminate
                         // in the middle of a character
-                        const {str, buf} = toPartialUtf8String(Buffer.concat([bufferBin, chunk]))
+                        const { str, buf } = toPartialUtf8String(Buffer.concat([bufferBin, chunk]))
                         errorMessage += str
                         bufferBin = buf
                     })
@@ -75,7 +75,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     }
                     // text/event-stream messages are always UTF-8, but a chunk
                     // may terminate in the middle of a character
-                    const {str, buf} = toPartialUtf8String(Buffer.concat([bufferBin, chunk]))
+                    const { str, buf } = toPartialUtf8String(Buffer.concat([bufferBin, chunk]))
                     bufferText += str
                     bufferBin = buf
 

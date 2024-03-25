@@ -1,16 +1,16 @@
 import * as vscode from 'vscode'
 
-import type {ContextMessage} from '../../codebase-context/messages'
-import type {ActiveTextEditorSelection} from '../../editor'
-import {MAX_HUMAN_INPUT_TOKENS, MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS} from '../../prompt/constants'
-import {truncateText} from '../../prompt/truncation'
-import {BufferedBotResponseSubscriber} from '../bot-response-multiplexer'
-import {getEditorDirContext, getEditorOpenTabsContext} from '../prompts/vscode-context'
-import {Interaction} from '../transcript/interaction'
+import type { ContextMessage } from '../../codebase-context/messages'
+import type { ActiveTextEditorSelection } from '../../editor'
+import { MAX_HUMAN_INPUT_TOKENS, MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
+import { truncateText } from '../../prompt/truncation'
+import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
+import { getEditorDirContext, getEditorOpenTabsContext } from '../prompts/vscode-context'
+import { Interaction } from '../transcript/interaction'
 
-import {ChatQuestion} from './chat-question'
-import {commandRegex, contentSanitizer} from './helpers'
-import type {Recipe, RecipeContext, RecipeID} from './recipe'
+import { ChatQuestion } from './chat-question'
+import { commandRegex, contentSanitizer } from './helpers'
+import type { Recipe, RecipeContext, RecipeID } from './recipe'
 
 /**
  * ======================================================
@@ -82,7 +82,7 @@ export class InlineTouch implements Recipe {
                 }
                 // Create a new file if it doesn't exist
                 const workspaceEditor = new vscode.WorkspaceEdit()
-                workspaceEditor.createFile(fileUri, {ignoreIfExists: true})
+                workspaceEditor.createFile(fileUri, { ignoreIfExists: true })
                 await vscode.workspace.applyEdit(workspaceEditor)
                 this.debug('InlineTouch:workspaceEditor', 'createFile', fileUri)
                 await this.addContentToNewFile(workspaceEditor, fileUri, content)

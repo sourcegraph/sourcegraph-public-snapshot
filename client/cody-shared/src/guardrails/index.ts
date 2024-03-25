@@ -1,6 +1,6 @@
-import {parseMarkdown} from '../chat/markdown'
-import {escapeMarkdown, pluralize} from '../common'
-import {isError} from '../utils'
+import { parseMarkdown } from '../chat/markdown'
+import { escapeMarkdown, pluralize } from '../common'
+import { isError } from '../utils'
 
 export interface Attribution {
     limitHit: boolean

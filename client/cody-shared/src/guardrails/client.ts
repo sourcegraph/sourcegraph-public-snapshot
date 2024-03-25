@@ -1,7 +1,7 @@
-import type {SourcegraphGraphQLAPIClient} from '../sourcegraph-api/graphql'
-import {isError} from '../utils'
+import type { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { isError } from '../utils'
 
-import type {Attribution, Guardrails} from '.'
+import type { Attribution, Guardrails } from '.'
 
 export class SourcegraphGuardrailsClient implements Guardrails {
     constructor(private client: SourcegraphGraphQLAPIClient) {}
@@ -15,7 +15,7 @@ export class SourcegraphGuardrailsClient implements Guardrails {
 
         return {
             limitHit: result.limitHit,
-            repositories: result.nodes.map(repo => ({name: repo.repositoryName})),
+            repositories: result.nodes.map(repo => ({ name: repo.repositoryName })),
         }
     }
 }

@@ -1,4 +1,4 @@
-import type {Message} from '../sourcegraph-api'
+import type { Message } from '../sourcegraph-api'
 
 // tracked for telemetry purposes. Which context source provided this context
 // file.
@@ -60,7 +60,7 @@ export function getContextMessageWithResponse(
     response: string = 'Ok.'
 ): ContextMessage[] {
     return [
-        {speaker: 'human', text, file},
-        {speaker: 'assistant', text: response},
+        { speaker: 'human', text, file },
+        { speaker: 'assistant', text: response },
     ]
 }

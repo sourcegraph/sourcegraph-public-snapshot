@@ -1,7 +1,7 @@
 import x2js from 'x2js'
 
-import type {ChatClient} from '../chat/chat'
-import type {ContextResult} from '../local-context'
+import type { ChatClient } from '../chat/chat'
+import type { ContextResult } from '../local-context'
 
 export interface Reranker {
     rerank(userQuery: string, results: ContextResult[]): Promise<ContextResult[]>

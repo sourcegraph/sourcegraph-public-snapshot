@@ -1,4 +1,4 @@
-import type {Message} from '../sourcegraph-api'
+import type { Message } from '../sourcegraph-api'
 
 export interface Preamble {
     actions: string
@@ -82,19 +82,19 @@ export function getMultiRepoPreamble(codebases: string[], customPreamble?: Pream
     if (codebases.length) {
         preamble.push(
             `You have access to ${codebases.length} repositories:\n` +
-            codebases.map((name, index) => `${index + 1}. ${name}`).join('\n') +
-            '\n You are able to answer questions about all the above repositories. ' +
-            'I will provide the relevant code snippets from the files present in the above repositories when necessary to answer my questions. ' +
-            'If I ask you a question about a repository which is not listed above, please tell me to add additional repositories to the chat context using the repositories selector below the input box to help you answer the question.' +
-            '\n If the repository is listed above but you do not know the answer to the quesstion, tell me you do not know and what context I need to provide you for you to answer the question.'
+                codebases.map((name, index) => `${index + 1}. ${name}`).join('\n') +
+                '\n You are able to answer questions about all the above repositories. ' +
+                'I will provide the relevant code snippets from the files present in the above repositories when necessary to answer my questions. ' +
+                'If I ask you a question about a repository which is not listed above, please tell me to add additional repositories to the chat context using the repositories selector below the input box to help you answer the question.' +
+                '\n If the repository is listed above but you do not know the answer to the quesstion, tell me you do not know and what context I need to provide you for you to answer the question.'
         )
 
         preambleResponse.push(
             'I have access to files present in the following repositories:\n' +
-            codebases.map((name, index) => `${index + 1}. ${name}`).join('\n') +
-            '\\n I can answer questions about code and files present in all the above repositories. ' +
-            'If you ask a question about a repository which I do not have access to, I will ask you to add additional repositories to the chat context using the repositories selector below the input box to help me answer the question. ' +
-            'If I have access to the repository but do not know the answer to the question, I will tell you I do not know and what context you need to provide me for me to answer the question.'
+                codebases.map((name, index) => `${index + 1}. ${name}`).join('\n') +
+                '\\n I can answer questions about code and files present in all the above repositories. ' +
+                'If you ask a question about a repository which I do not have access to, I will ask you to add additional repositories to the chat context using the repositories selector below the input box to help me answer the question. ' +
+                'If I have access to the repository but do not know the answer to the question, I will tell you I do not know and what context you need to provide me for me to answer the question.'
         )
     }
 

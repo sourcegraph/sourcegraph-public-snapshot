@@ -1,6 +1,6 @@
-import {MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS} from '../../prompt/constants'
-import {truncateText, truncateTextStart} from '../../prompt/truncation'
-import {Interaction} from '../transcript/interaction'
+import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
+import { truncateText, truncateTextStart } from '../../prompt/truncation'
+import { Interaction } from '../transcript/interaction'
 
 import {
     getContextMessagesFromSelection,
@@ -8,7 +8,7 @@ import {
     getNormalizedLanguageName,
     MARKDOWN_FORMAT_PROMPT,
 } from './helpers'
-import type {Recipe, RecipeContext, RecipeID} from './recipe'
+import type { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class GenerateTest implements Recipe {
     public id: RecipeID = 'generate-unit-test'
@@ -33,7 +33,7 @@ export class GenerateTest implements Recipe {
         const displayText = `Generate a unit test for the following code:\n\`\`\`${extension}\n${selection.selectedText}\n\`\`\``
 
         return new Interaction(
-            {speaker: 'human', text: promptMessage, displayText},
+            { speaker: 'human', text: promptMessage, displayText },
             {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,

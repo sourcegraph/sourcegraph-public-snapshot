@@ -1,8 +1,8 @@
-import React, {useEffect, useRef} from 'react'
+import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import type {ChatMessage} from '@sourcegraph/cody-shared'
+import type { ChatMessage } from '@sourcegraph/cody-shared'
 
 import type {
     ChatButtonProps,
@@ -13,8 +13,8 @@ import type {
     FeedbackButtonsProps,
 } from '../Chat'
 
-import type {FileLinkProps} from './ContextFiles'
-import {TranscriptItem, type TranscriptItemClassNames} from './TranscriptItem'
+import type { FileLinkProps } from './ContextFiles'
+import { TranscriptItem, type TranscriptItemClassNames } from './TranscriptItem'
 
 import styles from './Transcript.module.scss'
 
@@ -38,30 +38,30 @@ export const Transcript: React.FunctionComponent<
         isTranscriptError?: boolean
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
-                                                                       transcript,
-                                                                       messageInProgress,
-                                                                       messageBeingEdited,
-                                                                       setMessageBeingEdited,
-                                                                       fileLinkComponent,
-                                                                       className,
-                                                                       codeBlocksCopyButtonClassName,
-                                                                       codeBlocksInsertButtonClassName,
-                                                                       transcriptItemClassName,
-                                                                       humanTranscriptItemClassName,
-                                                                       transcriptItemParticipantClassName,
-                                                                       transcriptActionClassName,
-                                                                       textAreaComponent,
-                                                                       EditButtonContainer,
-                                                                       editButtonOnSubmit,
-                                                                       FeedbackButtonsContainer,
-                                                                       feedbackButtonsOnSubmit,
-                                                                       copyButtonOnSubmit,
-                                                                       submitButtonComponent,
-                                                                       chatInputClassName,
-                                                                       ChatButtonComponent,
-                                                                       pluginsDevMode,
-                                                                       isTranscriptError,
-                                                                   }) {
+    transcript,
+    messageInProgress,
+    messageBeingEdited,
+    setMessageBeingEdited,
+    fileLinkComponent,
+    className,
+    codeBlocksCopyButtonClassName,
+    codeBlocksInsertButtonClassName,
+    transcriptItemClassName,
+    humanTranscriptItemClassName,
+    transcriptItemParticipantClassName,
+    transcriptActionClassName,
+    textAreaComponent,
+    EditButtonContainer,
+    editButtonOnSubmit,
+    FeedbackButtonsContainer,
+    feedbackButtonsOnSubmit,
+    copyButtonOnSubmit,
+    submitButtonComponent,
+    chatInputClassName,
+    ChatButtonComponent,
+    pluginsDevMode,
+    isTranscriptError,
+}) {
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     useEffect(() => {
         if (transcriptContainerRef.current) {
@@ -75,8 +75,8 @@ export const Transcript: React.FunctionComponent<
             const SCROLL_THRESHOLD = 50
             const delta = Math.abs(
                 transcriptContainerRef.current.scrollHeight -
-                transcriptContainerRef.current.offsetHeight -
-                transcriptContainerRef.current.scrollTop
+                    transcriptContainerRef.current.offsetHeight -
+                    transcriptContainerRef.current.scrollTop
             )
             if (delta < SCROLL_THRESHOLD) {
                 transcriptContainerRef.current.scrollTo({

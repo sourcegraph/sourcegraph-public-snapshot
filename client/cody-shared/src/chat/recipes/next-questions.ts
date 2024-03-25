@@ -1,14 +1,14 @@
-import type {CodebaseContext} from '../../codebase-context'
-import {type ContextMessage, getContextMessageWithResponse} from '../../codebase-context/messages'
-import type {Editor} from '../../editor'
-import type {IntentDetector} from '../../intent-detector'
-import {CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_CURRENT_FILE_TOKENS} from '../../prompt/constants'
-import {populateCurrentEditorContextTemplate} from '../../prompt/templates'
-import {truncateText} from '../../prompt/truncation'
-import {Interaction} from '../transcript/interaction'
+import type { CodebaseContext } from '../../codebase-context'
+import { type ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
+import type { Editor } from '../../editor'
+import type { IntentDetector } from '../../intent-detector'
+import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_CURRENT_FILE_TOKENS } from '../../prompt/constants'
+import { populateCurrentEditorContextTemplate } from '../../prompt/templates'
+import { truncateText } from '../../prompt/truncation'
+import { Interaction } from '../transcript/interaction'
 
-import {numResults} from './helpers'
-import type {Recipe, RecipeContext, RecipeID} from './recipe'
+import { numResults } from './helpers'
+import type { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class NextQuestions implements Recipe {
     public id: RecipeID = 'next-questions'
@@ -27,7 +27,7 @@ export class NextQuestions implements Recipe {
         const assistantResponsePrefix = 'Sure, here are great follow-up discussion topics and learning ideas:\n\n - '
         return Promise.resolve(
             new Interaction(
-                {speaker: 'human', text: promptMessage},
+                { speaker: 'human', text: promptMessage },
                 {
                     speaker: 'assistant',
                     prefix: assistantResponsePrefix,

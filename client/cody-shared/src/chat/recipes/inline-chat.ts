@@ -1,15 +1,15 @@
-import type {CodebaseContext} from '../../codebase-context'
-import type {ContextMessage} from '../../codebase-context/messages'
-import type {ActiveTextEditorSelection, Editor} from '../../editor'
-import {MAX_HUMAN_INPUT_TOKENS, MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS} from '../../prompt/constants'
-import {truncateText} from '../../prompt/truncation'
-import {Interaction} from '../transcript/interaction'
+import type { CodebaseContext } from '../../codebase-context'
+import type { ContextMessage } from '../../codebase-context/messages'
+import type { ActiveTextEditorSelection, Editor } from '../../editor'
+import { MAX_HUMAN_INPUT_TOKENS, MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
+import { truncateText } from '../../prompt/truncation'
+import { Interaction } from '../transcript/interaction'
 
-import {ChatQuestion} from './chat-question'
-import {Fixup} from './fixup'
-import {commandRegex} from './helpers'
-import {InlineTouch} from './inline-touch'
-import type {Recipe, RecipeContext, RecipeID} from './recipe'
+import { ChatQuestion } from './chat-question'
+import { Fixup } from './fixup'
+import { commandRegex } from './helpers'
+import { InlineTouch } from './inline-touch'
+import type { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class InlineChat implements Recipe {
     public id: RecipeID = 'inline-chat'
@@ -55,7 +55,7 @@ export class InlineChat implements Recipe {
                     text: promptText,
                     displayText,
                 },
-                {speaker: 'assistant'},
+                { speaker: 'assistant' },
                 this.getContextMessages(truncatedText, context.codebaseContext, selection, context.editor),
                 []
             )

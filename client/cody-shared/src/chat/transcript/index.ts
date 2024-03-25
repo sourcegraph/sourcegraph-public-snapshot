@@ -1,10 +1,10 @@
-import type {ContextFile, ContextMessage, OldContextMessage, PreciseContext} from '../../codebase-context/messages'
-import {CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH} from '../../prompt/constants'
-import {PromptMixin} from '../../prompt/prompt-mixin'
-import type {Message} from '../../sourcegraph-api'
+import type { ContextFile, ContextMessage, OldContextMessage, PreciseContext } from '../../codebase-context/messages'
+import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
+import { PromptMixin } from '../../prompt/prompt-mixin'
+import type { Message } from '../../sourcegraph-api'
 
-import {Interaction, type InteractionJSON} from './interaction'
-import type {ChatMessage} from './messages'
+import { Interaction, type InteractionJSON } from './interaction'
+import type { ChatMessage } from './messages'
 
 export interface TranscriptJSONScope {
     includeInferredRepository: boolean
@@ -29,14 +29,14 @@ export class Transcript {
         return new Transcript(
             json.interactions.map(
                 ({
-                     humanMessage,
-                     assistantMessage,
-                     context,
-                     fullContext,
-                     usedContextFiles,
-                     usedPreciseContext,
-                     timestamp,
-                 }) => {
+                    humanMessage,
+                    assistantMessage,
+                    context,
+                    fullContext,
+                    usedContextFiles,
+                    usedPreciseContext,
+                    timestamp,
+                }) => {
                     if (!fullContext) {
                         fullContext = context || []
                     }
@@ -49,9 +49,9 @@ export class Transcript {
                                     return message
                                 }
 
-                                const {fileName} = message as any as OldContextMessage
+                                const { fileName } = message as any as OldContextMessage
                                 if (fileName) {
-                                    return {...message, file: {fileName}}
+                                    return { ...message, file: { fileName } }
                                 }
 
                                 return message
@@ -75,7 +75,7 @@ export class Transcript {
         this.interactions = interactions
         this.internalID =
             id ||
-            this.interactions.find(({timestamp}) => !isNaN(new Date(timestamp) as any))?.timestamp ||
+            this.interactions.find(({ timestamp }) => !isNaN(new Date(timestamp) as any))?.timestamp ||
             new Date().toISOString()
     }
 
@@ -89,7 +89,7 @@ export class Transcript {
 
     public get lastInteractionTimestamp(): string {
         for (let index = this.interactions.length - 1; index >= 0; index--) {
-            const {timestamp} = this.interactions[index]
+            const { timestamp } = this.interactions[index]
 
             if (!isNaN(new Date(timestamp) as any)) {
                 return timestamp
@@ -115,7 +115,7 @@ export class Transcript {
     }
 
     public removeInteractionsSince(id: string): void {
-        const index = this.interactions.findIndex(({timestamp}) => timestamp === id)
+        const index = this.interactions.findIndex(({ timestamp }) => timestamp === id)
         if (index >= 0) {
             this.interactions = this.interactions.slice(0, index)
         }
@@ -165,7 +165,7 @@ export class Transcript {
         onlyHumanMessages: boolean = false
     ): Promise<{ prompt: Message[]; contextFiles: ContextFile[]; preciseContexts: PreciseContext[] }> {
         if (this.interactions.length === 0) {
-            return {prompt: [], contextFiles: [], preciseContexts: []}
+            return { prompt: [], contextFiles: [], preciseContexts: [] }
         }
 
         const lastInteractionWithContextIndex = await this.getLastInteractionWithContextIndex()
@@ -200,7 +200,7 @@ export class Transcript {
         }
 
         // Filter out extraneous fields from ContextMessage instances
-        truncatedMessages = truncatedMessages.map(({speaker, text}) => ({speaker, text}))
+        truncatedMessages = truncatedMessages.map(({ speaker, text }) => ({ speaker, text }))
 
         return {
             prompt: [...preamble, ...truncatedMessages],
@@ -236,10 +236,10 @@ export class Transcript {
             lastInteractionTimestamp: this.lastInteractionTimestamp,
             scope: scope
                 ? {
-                    repositories: scope.repositories,
-                    includeInferredRepository: scope.includeInferredRepository,
-                    includeInferredFile: scope.includeInferredFile,
-                }
+                      repositories: scope.repositories,
+                      includeInferredRepository: scope.includeInferredRepository,
+                      includeInferredFile: scope.includeInferredFile,
+                  }
                 : undefined,
         }
     }
@@ -251,10 +251,10 @@ export class Transcript {
             lastInteractionTimestamp: this.lastInteractionTimestamp,
             scope: scope
                 ? {
-                    repositories: scope.repositories,
-                    includeInferredRepository: scope.includeInferredRepository,
-                    includeInferredFile: scope.includeInferredFile,
-                }
+                      repositories: scope.repositories,
+                      includeInferredRepository: scope.includeInferredRepository,
+                      includeInferredFile: scope.includeInferredFile,
+                  }
                 : undefined,
         }
     }

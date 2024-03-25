@@ -1,10 +1,10 @@
-import {spawnSync} from 'child_process'
+import { spawnSync } from 'child_process'
 
-import {MAX_RECIPE_INPUT_TOKENS} from '../../prompt/constants'
-import {truncateText} from '../../prompt/truncation'
-import {Interaction} from '../transcript/interaction'
+import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
+import { truncateText } from '../../prompt/truncation'
+import { Interaction } from '../transcript/interaction'
 
-import type {Recipe, RecipeContext, RecipeID} from './recipe'
+import type { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class ReleaseNotes implements Recipe {
     public id: RecipeID = 'release-notes'
@@ -20,7 +20,7 @@ export class ReleaseNotes implements Recipe {
         const logFormat = '--pretty="Commit author: %an%nCommit message: %s%nChange description:%b%n"'
 
         // check for tags first
-        const gitTagCommand = spawnSync('git', ['tag', '--sort=-creatordate'], {cwd: dirPath})
+        const gitTagCommand = spawnSync('git', ['tag', '--sort=-creatordate'], { cwd: dirPath })
         const gitTagOutput = gitTagCommand.stdout.toString().trim()
         let tagsPromptText = ''
 
@@ -38,15 +38,15 @@ export class ReleaseNotes implements Recipe {
             quickPickItems = [
                 {
                     label: 'Last week',
-                    args: ['log', '--since=\'1 week\'', logFormat],
+                    args: ['log', "--since='1 week'", logFormat],
                 },
                 {
                     label: 'Last 2 weeks',
-                    args: ['log', '--since=\'2 week\'', logFormat],
+                    args: ['log', "--since='2 week'", logFormat],
                 },
                 {
                     label: 'Last 4 weeks',
-                    args: ['log', '--since=\'4 week\'', logFormat],
+                    args: ['log', "--since='4 week'", logFormat],
                 },
             ]
         }
@@ -55,18 +55,18 @@ export class ReleaseNotes implements Recipe {
         if (!selectedLabel) {
             return null
         }
-        const selected = Object.fromEntries(quickPickItems.map(({label, args}) => [label, {args}]))[selectedLabel]
+        const selected = Object.fromEntries(quickPickItems.map(({ label, args }) => [label, { args }]))[selectedLabel]
 
-        const {args: gitArgs} = selected
+        const { args: gitArgs } = selected
 
-        const gitLogCommand = spawnSync('git', ['--no-pager', ...gitArgs], {cwd: dirPath})
+        const gitLogCommand = spawnSync('git', ['--no-pager', ...gitArgs], { cwd: dirPath })
         const gitLogOutput = gitLogCommand.stdout.toString().trim()
         const rawDisplayText = `Generate release notes for the changes made since ${selectedLabel}`
 
         if (!gitLogOutput) {
             const emptyGitLogMessage = 'No recent changes found to generate release notes.'
             return new Interaction(
-                {speaker: 'human', displayText: rawDisplayText},
+                { speaker: 'human', displayText: rawDisplayText },
                 {
                     speaker: 'assistant',
                     prefix: emptyGitLogMessage,
@@ -87,7 +87,7 @@ export class ReleaseNotes implements Recipe {
         const promptMessage = `Generate release notes by summarising these commits:\n${truncatedGitLogOutput}\n\nUse proper heading format for the release notes.\n\n${tagsPromptText}.Do not include other changes and dependency updates.`
         const assistantResponsePrefix = `Here is the generated release notes for ${selectedLabel}\n${truncatedLogMessage}`
         return new Interaction(
-            {speaker: 'human', text: promptMessage, displayText: rawDisplayText},
+            { speaker: 'human', text: promptMessage, displayText: rawDisplayText },
             {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,

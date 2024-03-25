@@ -1,11 +1,11 @@
-import type {URI} from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
-import type {CodebaseContext} from '../../codebase-context'
-import type {ContextMessage} from '../../codebase-context/messages'
-import type {ActiveTextEditorSelection, Editor} from '../../editor'
-import {MAX_HUMAN_INPUT_TOKENS, NUM_CODE_RESULTS, NUM_TEXT_RESULTS} from '../../prompt/constants'
-import {truncateText} from '../../prompt/truncation'
-import type {CodyPromptContext} from '../prompts'
+import type { CodebaseContext } from '../../codebase-context'
+import type { ContextMessage } from '../../codebase-context/messages'
+import type { ActiveTextEditorSelection, Editor } from '../../editor'
+import { MAX_HUMAN_INPUT_TOKENS, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
+import { truncateText } from '../../prompt/truncation'
+import type { CodyPromptContext } from '../prompts'
 import {
     extractTestType,
     getHumanLLMText,
@@ -25,10 +25,10 @@ import {
     getPackageJsonContext,
     getTerminalOutputContext,
 } from '../prompts/vscode-context'
-import type {Interaction} from '../transcript/interaction'
+import type { Interaction } from '../transcript/interaction'
 
-import {getFileExtension, numResults} from './helpers'
-import type {Recipe, RecipeContext, RecipeID} from './recipe'
+import { getFileExtension, numResults } from './helpers'
+import type { Recipe, RecipeContext, RecipeID } from './recipe'
 
 /**
  * ======================================================
@@ -77,7 +77,7 @@ export class CustomPrompt implements Recipe {
         // Attach code selection to prompt text if only selection is needed as context
         if (selection && isOnlySelectionRequired(contextConfig)) {
             const contextMessages = Promise.resolve(getCurrentFileContextFromEditorSelection(selection))
-            return newInteraction({text, displayText, contextMessages})
+            return newInteraction({ text, displayText, contextMessages })
         }
 
         // Get output from the command if any
@@ -93,7 +93,7 @@ export class CustomPrompt implements Recipe {
             commandOutput
         )
 
-        return newInteraction({text: truncatedText, displayText, contextMessages})
+        return newInteraction({ text: truncatedText, displayText, contextMessages })
     }
 
     private async getContextMessages(

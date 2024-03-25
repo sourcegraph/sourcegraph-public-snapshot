@@ -1,6 +1,6 @@
-import {isError} from '../../utils'
+import { isError } from '../../utils'
 
-import type {Event} from './types'
+import type { Event } from './types'
 
 const EVENT_LINE_PREFIX = 'event: '
 const DATA_LINE_PREFIX = 'data: '
@@ -46,7 +46,7 @@ function parseEventData(eventType: Event['type'], dataLine: string): Event | Err
             if (typeof data.completion === undefined) {
                 return new Error('invalid completion event')
             }
-            return {type: eventType, completion: data.completion, stopReason: data.stopReason}
+            return { type: eventType, completion: data.completion, stopReason: data.stopReason }
         }
         case 'error': {
             const data = parseJSON<{ error: string }>(jsonData)
@@ -56,10 +56,10 @@ function parseEventData(eventType: Event['type'], dataLine: string): Event | Err
             if (typeof data.error === undefined) {
                 return new Error('invalid error event')
             }
-            return {type: eventType, error: data.error}
+            return { type: eventType, error: data.error }
         }
         case 'done': {
-            return {type: eventType}
+            return { type: eventType }
         }
     }
 }
@@ -94,5 +94,5 @@ export function parseEvents(eventsBuffer: string): EventsParseResult | Error {
         eventEndIndex = eventsBuffer.indexOf(EVENTS_SEPARATOR, eventStartIndex)
     }
 
-    return {events, remainingBuffer: eventsBuffer.slice(eventStartIndex)}
+    return { events, remainingBuffer: eventsBuffer.slice(eventStartIndex) }
 }

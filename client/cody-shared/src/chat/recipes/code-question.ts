@@ -1,17 +1,17 @@
-import type {CodebaseContext} from '../../codebase-context'
-import {type ContextMessage, getContextMessageWithResponse} from '../../codebase-context/messages'
-import type {ActiveTextEditorSelection, Editor} from '../../editor'
-import type {IntentDetector} from '../../intent-detector'
-import {MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS} from '../../prompt/constants'
+import type { CodebaseContext } from '../../codebase-context'
+import { type ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
+import type { ActiveTextEditorSelection, Editor } from '../../editor'
+import type { IntentDetector } from '../../intent-detector'
+import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import {
     populateCurrentEditorContextTemplate,
     populateCurrentEditorSelectedContextTemplate,
 } from '../../prompt/templates'
-import {truncateText} from '../../prompt/truncation'
-import {Interaction} from '../transcript/interaction'
+import { truncateText } from '../../prompt/truncation'
+import { Interaction } from '../transcript/interaction'
 
-import {getFileExtension, isSingleWord, numResults} from './helpers'
-import type {Recipe, RecipeContext, RecipeID} from './recipe'
+import { getFileExtension, isSingleWord, numResults } from './helpers'
+import type { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class CodeQuestion implements Recipe {
     public id: RecipeID = 'code-question'
@@ -24,7 +24,7 @@ export class CodeQuestion implements Recipe {
 
         return Promise.resolve(
             new Interaction(
-                {speaker: 'human', text: truncatedText, displayText: humanChatInput},
+                { speaker: 'human', text: truncatedText, displayText: humanChatInput },
                 {
                     speaker: 'assistant',
                     text: `\`\`\`${getFileExtension(context.editor.getActiveTextEditorSelection()?.fileName ?? '')}\n`,
