@@ -31,11 +31,11 @@
     overflow: hidden;
 }
 
-.errorColor {
+.error-color {
     color: var(--vscode-errorForeground, inherit);
 }
 
-.warningColor {
+.warning-color {
     display: inline;
     color: var(--vscode-list-warningForeground, inherit);
 }

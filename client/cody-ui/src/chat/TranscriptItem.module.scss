@@ -14,7 +14,7 @@
     padding-bottom: calc(var(--spacing) * 2);
 }
 
-.row:before {
+.row::before {
     position: absolute;
     top: 0;
     left: 0;
@@ -25,7 +25,7 @@
     content: '';
 }
 
-.assistant-row:before {
+.assistant-row::before {
     background-image: linear-gradient(to bottom, #b200f8, #ff5543, #00cbec);
 }
 

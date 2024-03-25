@@ -46,12 +46,14 @@
     flex-direction: row;
     gap: 0.1rem;
     margin-bottom: 0.25rem;
+
     /* This matches the button paddings, so the button text lines up with the input */
-    margin-left: -6px;
+    margin-left: -0.375rem;
 }
 
 .abort-button-container {
     display: flex;
+
     /* Remove the padding of the form container from the width */
     width: calc(100% - 2rem);
     justify-content: center;
