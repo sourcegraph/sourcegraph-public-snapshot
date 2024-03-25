@@ -18,7 +18,7 @@
 
 <style lang="scss">
     .action-container {
-        margin-top: 0.3rem;
+        padding-top: 0.3rem;
     }
 
     .info-badge {
@@ -30,13 +30,12 @@
     }
 
     .separator {
-        margin-left: 0.4rem;
-        margin-right: 0.4rem;
+        padding-left: 0.4rem;
+        padding-right: 0.4rem;
     }
 
     .suggested-action {
         display: flex;
         flex-flow: row nowrap;
-        margin-left: 0.2rem;
     }
 </style>

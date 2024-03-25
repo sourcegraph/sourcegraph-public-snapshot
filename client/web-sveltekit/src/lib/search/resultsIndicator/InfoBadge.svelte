@@ -12,7 +12,6 @@
 
 <style lang="scss">
     .progress-message {
-        margin-left: 0.2rem;
         font-size: var(--font-size-base);
         &.error-text {
             color: var(--danger);

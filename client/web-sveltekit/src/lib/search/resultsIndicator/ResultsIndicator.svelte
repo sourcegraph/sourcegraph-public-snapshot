@@ -62,7 +62,21 @@
         {#if !done && takingTooLong}
             <TimeoutMessage {isError} />
         {/if}
-        <SuggestedAction {progress} {suggestedItems} {severity} {state} />
+
+        {#if done}
+            <SuggestedAction {progress} {suggestedItems} {severity} {state} />
+        {:else}
+            <div class="action-container">
+                <div class="suggested-action">
+                    <!-- TODO add threshold to exported variables-->
+                    {#if elapsedDuration <= SEARCH_JOB_THRESHOLD}
+                        <small>
+                            <div class="running-search">Running Search</div>
+                        </small>
+                    {/if}
+                </div>
+            </div>
+        {/if}
     </div>
 
     <div class="dropdown-icon">
@@ -72,17 +86,18 @@
 
 <style lang="scss">
     .icon {
-        margin-left: 0.4rem;
+        padding-right: 0.4rem;
     }
 
     .dropdown-icon {
-        margin-left: 2rem;
+        padding-left: 1.2rem;
     }
 
     .indicator {
         align-items: center;
         display: flex;
         flex-flow: row nowrap;
+        justify-content: space-between;
     }
 
     .messages {
@@ -90,6 +105,15 @@
         align-items: flex-start;
         display: flex;
         flex-flow: column nowrap;
-        margin-left: 0.5rem;
+    }
+
+    .running-search {
+        color: var(--text-muted);
+        padding-top: 0.3rem;
+    }
+
+    .suggested-action {
+        display: flex;
+        flex-flow: row nowrap;
     }
 </style>

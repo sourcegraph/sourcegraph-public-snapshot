@@ -19,42 +19,39 @@
     $: done = progress.done
 </script>
 
-{#if progress}
-    <div class="action-container" class:error-text={isError}>
-        <div class="suggested-action">
-            {#if done && !hasSkippedItems}
+<div class="action-container" class:error-text={isError}>
+    <div class="suggested-action">
+        {#if done && !hasSkippedItems}
+            <small>
+                <div class="more-details">See more details</div>
+            </small>
+        {/if}
+
+        {#if done && hasSkippedItems}
+            <div class="info-badge" class:error-text={isError}>
                 <small>
-                    <div class="more-details">See more details</div>
+                    {capitalize(mostSevere?.title ?? mostSevere.title)}
                 </small>
-            {/if}
+            </div>
+        {/if}
 
-            {#if done && hasSkippedItems}
-                <div class="info-badge" class:error-text={isError}>
-                    <small>
-                        {capitalize(mostSevere?.title ?? mostSevere.title)}&nbsp;
-                    </small>
-                </div>
-            {/if}
-
-            <!-- check if suggested exists on most severe -->
-            {#if done && Object.hasOwn(mostSevere,'suggested')}
-                <div class="separator">{CENTER_DOT}</div>
-                <div class="action-badge">
-                    <small>
-                        {capitalize(mostSevere?.suggested ? mostSevere.suggested.title : '')}&nbsp;
-                        <span class="code-font">
-                            <small>{mostSevere.suggested?.queryExpression}</small>
-                        </span>
-                    </small>
-                </div>
-            {/if}
-        </div>
+        {#if done && Object.hasOwn(mostSevere, 'suggested')}
+            <div class="separator">{CENTER_DOT}</div>
+            <div class="action-badge">
+                <small>
+                    {capitalize(mostSevere?.suggested ? mostSevere.suggested.title : '')}&nbsp;
+                    <span class="code-font">
+                        <small>{mostSevere.suggested?.queryExpression}</small>
+                    </span>
+                </small>
+            </div>
+        {/if}
     </div>
-{/if}
+</div>
 
 <style lang="scss">
     .action-container {
-        margin-top: 0.3rem;
+        padding-top: 0.3rem;
     }
 
     .code-font {
@@ -69,7 +66,7 @@
         background-color: var(--primary-2);
         border-radius: 3px;
         color: var(--text-body);
-        padding: 0rem 0.1rem;
+        padding: 0rem 0.2rem 0rem 0.2rem;
 
         &.error-text {
             background: var(--danger-2);
@@ -81,13 +78,12 @@
     }
 
     .separator {
-        margin-left: 0.4rem;
-        margin-right: 0.4rem;
+        padding-left: 0.4rem;
+        padding-right: 0.4rem;
     }
 
     .suggested-action {
         display: flex;
         flex-flow: row nowrap;
-        margin-left: 0.2rem;
     }
 </style>
