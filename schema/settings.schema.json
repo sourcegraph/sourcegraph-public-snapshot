@@ -481,15 +481,7 @@
           },
           "variant": {
             "type": "string",
-            "enum": [
-              "primary",
-              "secondary",
-              "success",
-              "danger",
-              "warning",
-              "info",
-              "note"
-            ]
+            "enum": ["primary", "secondary", "success", "danger", "warning", "info", "note"]
           },
           "dismissible": {
             "description": "Whether this notice can be dismissed (closed) by the user.",

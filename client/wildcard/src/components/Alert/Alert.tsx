@@ -55,7 +55,6 @@ export const Alert = React.forwardRef(function Alert(
     const { isBranded } = useWildcardTheme()
     const brandedClassName = isBranded && classNames(styles.alert, variant && getAlertStyle({ variant }))
 
-
     /**
      * Set the assertiveness setting on the alert.
      * Assertive: The alert will interrupt any current screen reader announcements.
@@ -66,10 +65,10 @@ export const Alert = React.forwardRef(function Alert(
     // Merge styles with overrides
     const { backgroundColor, textColor, textCentered } = styleOverrides || {}
     const mergedStyles: React.CSSProperties = {
-            ...style,
-            ...(!!backgroundColor && { backgroundColor }),
-            ...(!!textColor && { color: textColor }),
-            ...(!!textCentered && { textAlign: 'center' }),
+        ...style,
+        ...(!!backgroundColor && { backgroundColor }),
+        ...(!!textColor && { color: textColor }),
+        ...(!!textCentered && { textAlign: 'center' }),
     }
 
     return (
