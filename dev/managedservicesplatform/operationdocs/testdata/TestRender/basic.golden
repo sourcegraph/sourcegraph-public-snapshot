@@ -33,7 +33,7 @@ If you need assistance with MSP infrastructure, reach out to the [Core Services]
 | Category   | **test**                                                                                            |
 | Resources  |                                                                                                     |
 | Alerts     | [GCP monitoring](https://console.cloud.google.com/monitoring/alerting?project=msp-testbed-dev-xxxx) |
-| Sentry     | [`msp-testbed-dev`](https://sourcegraph.sentry.io/projects/msp-testbed-dev/)                        |
+| Errors     | [Sentry `msp-testbed-dev`](https://sourcegraph.sentry.io/projects/msp-testbed-dev/)                 |
 
 MSP infrastructure access needs to be requested using Entitle for time-bound privileges. Test environments may have less stringent requirements.
 
@@ -53,6 +53,7 @@ The msp-testbed dev service implementation is deployed on [Google Cloud Run](htt
 | Console        | [Cloud Run service](https://console.cloud.google.com/run?project=msp-testbed-dev-xxxx)                                                                                                                                                                                                                                            |
 | Service logs   | [GCP logging](https://console.cloud.google.com/logs/query;query=resource.type%20%3D%20%22cloud_run_revision%22%20-logName%3D~%22logs%2Frun.googleapis.com%252Frequests%22;summaryFields=jsonPayload%252FInstrumentationScope,jsonPayload%252FBody,jsonPayload%252FAttributes%252Ferror:false:32:end?project=msp-testbed-dev-xxxx) |
 | Service traces | [Cloud Trace](https://console.cloud.google.com/traces/list?project=msp-testbed-dev-xxxx)                                                                                                                                                                                                                                          |
+| Service errors | [Sentry `msp-testbed-dev`](https://sourcegraph.sentry.io/projects/msp-testbed-dev/)                                                                                                                                                                                                                                               |
 
 You can also use `sg msp` to quickly open a link to your service logs:
 

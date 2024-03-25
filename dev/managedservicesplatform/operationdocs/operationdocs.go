@@ -126,6 +126,7 @@ This service is operated on the %s.`,
 		// ResourceKind:env-specific header
 		resourceHeadings := map[string]string{}
 
+		sentryLink := markdown.Linkf("Sentry "+markdown.Codef("%s-%s", s.Service.ID, env.ID), "https://sourcegraph.sentry.io/projects/%s-%s/", s.Service.ID, env.ID)
 		overview := [][]string{
 			{"Project ID", markdown.Linkf(markdown.Code(env.ProjectID), cloudRunURL)},
 			{"Category", markdown.Bold(string(env.Category))},
@@ -135,7 +136,7 @@ This service is operated on the %s.`,
 				return l
 			}), ", ")},
 			{"Alerts", markdown.Linkf("GCP monitoring", "https://console.cloud.google.com/monitoring/alerting?project=%s", env.ProjectID)},
-			{"Sentry", markdown.Linkf(markdown.Codef("%s-%s", s.Service.ID, env.ID), "https://sourcegraph.sentry.io/projects/%s-%s/", s.Service.ID, env.ID)},
+			{"Errors", sentryLink},
 		}
 		if env.EnvironmentServiceSpec != nil {
 			if domain := env.Domain.GetDNSName(); domain != "" {
@@ -186,6 +187,7 @@ This service is operated on the %s.`,
 					fmt.Sprintf("Cloud Run %s", string(serviceKind)), cloudRunURL)},
 				{"Service logs", markdown.Link("GCP logging", ServiceLogsURL(serviceKind, env.ProjectID))},
 				{"Service traces", markdown.Linkf("Cloud Trace", "https://console.cloud.google.com/traces/list?project=%s", env.ProjectID)},
+				{"Service errors", sentryLink},
 			},
 		)
 
