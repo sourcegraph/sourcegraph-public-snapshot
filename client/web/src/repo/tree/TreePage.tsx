@@ -422,6 +422,9 @@ export const TreePage: FC<Props> = ({
                             isPackage={isPackage}
                             authenticatedUser={authenticatedUser}
                             showOwnership={showOwnership}
+                            tooltip={tooltip}
+                            title={title}
+                            revisionPath={revisionPath}
                             {...props}
                         />
                     )}

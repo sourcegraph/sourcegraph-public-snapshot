@@ -155,10 +155,13 @@ interface TreePageContentProps extends TelemetryProps, PlatformContextProps {
     isPackage: boolean
     authenticatedUser: AuthenticatedUser | null
     showOwnership: boolean
+    tooltip: string
+    title: string
+    revisionPath: string
 }
 
 export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = props => {
-    const { filePath, tree, treeWithHistory, repo, revision, isPackage, showOwnership } = props
+    const { filePath, tree, treeWithHistory, repo, revision, isPackage, showOwnership, tooltip, title, revisionPath } = props
 
     const isRoot = filePath === ''
 
@@ -179,18 +182,18 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         <>
             {!isRoot && (
                 <div className={menuStyles.menu}>
-                    <Tooltip content="Git commits">
+                    <Tooltip content={tooltip}>
                         <Button
                             className="flex-shrink-0"
                             to={`/${encodeURIPathComponent(repo.name)}${
                                 revision && `@${encodeURIPathComponent(revision)}`
-                            }/-/commits/${encodeURIPathComponent(filePath)}`}
+                            }/-/${revisionPath}/${encodeURIPathComponent(filePath)}`}
                             variant="secondary"
                             outline={true}
                             as={Link}
                         >
                             <Icon aria-hidden={true} svgPath={mdiSourceCommit} />{' '}
-                            <span className={menuStyles.text}>Commits</span>
+                            <span className={menuStyles.text}>{title}</span>
                         </Button>
                     </Tooltip>
                 </div>
