@@ -33,11 +33,6 @@ sass(
     deps = ["//client/wildcard:sass-breakpoints"],
 )
 
-filegroup(
-    name = "snapshots",
-    srcs = glob(["src/**/__snapshots__/*"]),
-)
-
 npm_package(
     name = "cody-ui_pkg",
     srcs = [

@@ -27,13 +27,11 @@ ts_project(
         "src/chat/prompts/index.ts",
         "src/chat/prompts/templates.ts",
         "src/chat/prompts/utils.ts",
-        "src/chat/prompts/vscode-context.ts",
         "src/chat/recipes/agent-recipes.ts",
         "src/chat/recipes/browser-recipes.ts",
         "src/chat/recipes/chat-question.ts",
         "src/chat/recipes/code-question.ts",
         "src/chat/recipes/context-search.ts",
-        "src/chat/recipes/custom-prompt.ts",
         "src/chat/recipes/explain-code-detailed.ts",
         "src/chat/recipes/explain-code-high-level.ts",
         "src/chat/recipes/find-code-smells.ts",
@@ -45,8 +43,6 @@ ts_project(
         "src/chat/recipes/git-log.ts",
         "src/chat/recipes/helpers.ts",
         "src/chat/recipes/improve-variable-names.ts",
-        "src/chat/recipes/inline-chat.ts",
-        "src/chat/recipes/inline-touch.ts",
         "src/chat/recipes/langs.ts",
         "src/chat/recipes/next-questions.ts",
         "src/chat/recipes/recipe.ts",
@@ -110,7 +106,6 @@ ts_project(
         ":node_modules/@types/isomorphic-fetch",
         ":node_modules/@types/lodash",
         ":node_modules/@types/marked",
-        ":node_modules/@types/vscode",
         ":node_modules/dompurify",
         ":node_modules/highlight.js",
         ":node_modules/isomorphic-fetch",
@@ -124,17 +119,6 @@ ts_project(
     ],
 )
 
-ts_project(
-    name = "cody-shared_tests",
-    testonly = True,
-    srcs = ["src/test/mocks.ts"],
-    tsconfig = ":tsconfig",
-    deps = [
-        ":cody-shared_lib",
-        ":node_modules/vscode-uri",
-    ],
-)
-
 npm_package(
     name = "cody-shared_pkg",
     srcs = [
@@ -143,9 +127,12 @@ npm_package(
     ],
 )
 
-vitest_test(
-    name = "test",
-    data = [
-        ":cody-shared_tests",
+ts_project(
+    name = "cody-shared_tests",
+    testonly = True,
+    srcs = ["src/test/mocks.ts"],
+    deps = [
+        ":cody-shared_lib",
+        ":node_modules/vscode-uri",
     ],
 )
