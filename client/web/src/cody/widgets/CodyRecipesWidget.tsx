@@ -1,4 +1,3 @@
-/* eslint-disable no-void */
 
 import React, { useEffect } from 'react'
 
