@@ -15,7 +15,6 @@ ts_config(
 )
 
 ts_project(
-    tsconfig = ":tsconfig",
     name = "cody-shared_lib",
     srcs = [
         "src/chat/bot-response-multiplexer.ts",
@@ -103,6 +102,7 @@ ts_project(
         "src/unified-context/index.ts",
         "src/utils.ts",
     ],
+    tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@microsoft/fetch-event-source",
         ":node_modules/@types/dompurify",
@@ -125,10 +125,10 @@ ts_project(
 )
 
 ts_project(
-    tsconfig = ":tsconfig",
     name = "cody-shared_tests",
     testonly = True,
     srcs = ["src/test/mocks.ts"],
+    tsconfig = ":tsconfig",
     deps = [
         ":cody-shared_lib",
         ":node_modules/vscode-uri",
