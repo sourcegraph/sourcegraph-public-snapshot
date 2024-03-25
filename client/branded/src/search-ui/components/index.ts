@@ -17,6 +17,6 @@ export * from './SearchResultStar'
 export * from './SyntaxHighlightedSearchQuery'
 export * from './codeLinkNavigation'
 export * from './LegacyResultContainer'
-export * from './legacy-result-container/ResultContainer'
+export * from './old-result-container/OldResultContainer'
 
 export { FileMatchChildrenStyles, SymbolSearchResultStyles }

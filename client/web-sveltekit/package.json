@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "vite dev",
     "dev:dotcom": "vite dev --mode=dotcom",
+    "dev:enterprise": "DEPLOY_TYPE=dev vite build --watch",
     "build": "vite build",
     "build:watch": "vite build --watch",
     "preview": "vite preview",

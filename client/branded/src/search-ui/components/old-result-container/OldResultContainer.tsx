@@ -10,7 +10,7 @@ import { CodeHostIcon } from '../CodeHostIcon'
 import { LastSyncedIcon } from '../LastSyncedIcon'
 import { SearchResultStar } from '../SearchResultStar'
 
-import styles from './ResultContainer.module.scss'
+import styles from './OldResultContainer.module.scss'
 
 export interface ResultContainerProps {
     index: number
