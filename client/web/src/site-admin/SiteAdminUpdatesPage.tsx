@@ -3,14 +3,6 @@ import React, { type FunctionComponent, useCallback, useEffect, useMemo, useStat
 import { mdiOpenInNew, mdiCheckCircle, mdiChevronUp, mdiChevronDown, mdiAlertOctagram, mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
 import { parseISO, formatDistance } from 'date-fns'
-import type {
-    SetAutoUpgradeResult,
-    SetAutoUpgradeVariables,
-    SiteUpdateCheckResult,
-    SiteUpdateCheckVariables,
-    SiteUpgradeReadinessResult,
-    SiteUpgradeReadinessVariables,
-} from 'src/graphql-operations'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useQuery, useMutation } from '@sourcegraph/http-client'
@@ -37,6 +29,14 @@ import {
 
 import { LogOutput } from '../components/LogOutput'
 import { PageTitle } from '../components/PageTitle'
+import type {
+    SetAutoUpgradeResult,
+    SetAutoUpgradeVariables,
+    SiteUpdateCheckResult,
+    SiteUpdateCheckVariables,
+    SiteUpgradeReadinessResult,
+    SiteUpgradeReadinessVariables,
+} from '../graphql-operations'
 
 import { SITE_UPDATE_CHECK, SITE_UPGRADE_READINESS, SET_AUTO_UPGRADE } from './backend'
 

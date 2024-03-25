@@ -55,10 +55,12 @@ func (u Upload) SizeStats() UploadSizeStats {
 	return UploadSizeStats{u.ID, u.UploadSize, u.UncompressedSize}
 }
 
-// TODO - unify with Upload
-// Dump is a subset of the lsif_uploads table (queried via the lsif_dumps_with_repository_name view)
+// CompletedUpload is a subset of the lsif_uploads table
+// (queried via the lsif_dumps_with_repository_name view)
 // and stores only processed records.
-type Dump struct {
+//
+// The State must be 'completed', see TODO(id: completed-state-check).
+type CompletedUpload struct {
 	ID                int        `json:"id"`
 	Commit            string     `json:"commit"`
 	Root              string     `json:"root"`
@@ -76,6 +78,27 @@ type Dump struct {
 	Indexer           string     `json:"indexer"`
 	IndexerVersion    string     `json:"indexerVersion"`
 	AssociatedIndexID *int       `json:"associatedIndex"`
+}
+
+func (u *CompletedUpload) ConvertToUpload() Upload {
+	return Upload{
+		ID:                u.ID,
+		Commit:            u.Commit,
+		Root:              u.Root,
+		UploadedAt:        u.UploadedAt,
+		State:             u.State,
+		FailureMessage:    u.FailureMessage,
+		StartedAt:         u.StartedAt,
+		FinishedAt:        u.FinishedAt,
+		ProcessAfter:      u.ProcessAfter,
+		NumResets:         u.NumResets,
+		NumFailures:       u.NumFailures,
+		RepositoryID:      u.RepositoryID,
+		RepositoryName:    u.RepositoryName,
+		Indexer:           u.Indexer,
+		IndexerVersion:    u.IndexerVersion,
+		AssociatedIndexID: u.AssociatedIndexID,
+	}
 }
 
 type UploadLog struct {
@@ -202,11 +225,11 @@ type DeleteUploadsOptions struct {
 
 // Package pairs a package scheme+manager+name+version with the dump that provides it.
 type Package struct {
-	DumpID  int
-	Scheme  string
-	Manager string
-	Name    string
-	Version string
+	UploadID int
+	Scheme   string
+	Manager  string
+	Name     string
+	Version  string
 }
 
 // PackageReference is a package scheme+name+version

@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { mdiChevronRight, mdiCodeBracesBox, mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
 import { Badge, H1, H2, H3, H4, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 

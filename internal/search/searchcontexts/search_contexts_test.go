@@ -108,9 +108,7 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 }
 
 func TestResolvingInvalidSearchContextSpecs_Cloud(t *testing.T) {
-	orig := dotcom.SourcegraphDotComMode()
-	dotcom.MockSourcegraphDotComMode(true)
-	defer dotcom.MockSourcegraphDotComMode(orig)
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	tests := []struct {
 		name              string

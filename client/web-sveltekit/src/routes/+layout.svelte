@@ -16,7 +16,6 @@
 
     import type { LayoutData } from './$types'
     import { createFeatureFlagStore, featureFlag } from '$lib/featureflags'
-    import InfoBanner from './InfoBanner.svelte'
     import GlobalNotification from '$lib/global-notifications/GlobalNotifications.svelte'
     import { getGraphQLClient } from '$lib/graphql/apollo'
     import { isRouteRolledOut } from '$lib/navigation'
@@ -86,8 +85,6 @@
 </svelte:head>
 
 <svelte:body use:classNames={$scrollAll ? '' : 'overflowHidden'} />
-
-<InfoBanner />
 
 {#await data.globalSiteAlerts then globalSiteAlerts}
     {#if globalSiteAlerts}

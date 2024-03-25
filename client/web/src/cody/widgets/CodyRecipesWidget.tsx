@@ -5,7 +5,7 @@ import React, { useEffect } from 'react'
 import { mdiCardBulletedOutline, mdiDotsVertical, mdiProgressPencil, mdiShuffleVariant } from '@mdi/js'
 
 import { TranslateToLanguage } from '@sourcegraph/cody-shared/dist/chat/recipes/translate'
-import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'

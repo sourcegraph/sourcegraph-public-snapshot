@@ -2,7 +2,7 @@ import { type FC, useState, useEffect } from 'react'
 
 import { mdiChevronDown } from '@mdi/js'
 
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Text,

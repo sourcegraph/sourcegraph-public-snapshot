@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-import { ApolloClient, ApolloProvider } from '@apollo/client'
+import { type ApolloClient, ApolloProvider } from '@apollo/client'
 import { BrowserRouter, type NavigateFunction, useLocation } from 'react-router-dom'
 
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
