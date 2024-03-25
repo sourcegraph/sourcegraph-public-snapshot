@@ -994,7 +994,15 @@ func (m *monitorTriggerEvent) ResultCount() int32 {
 }
 
 func (m *monitorTriggerEvent) Message() *string {
-	return m.FailureMessage
+	if m.LogContents == nil {
+		return m.FailureMessage
+	}
+	var msg string
+	if m.FailureMessage != nil {
+		msg = *m.FailureMessage + "\n\n"
+	}
+	msg += "Log:\n" + *m.LogContents
+	return &msg
 }
 
 func (m *monitorTriggerEvent) Timestamp() (gqlutil.DateTime, error) {

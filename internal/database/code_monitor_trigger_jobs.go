@@ -90,6 +90,16 @@ func (s *codeMonitorStore) UpdateTriggerJobWithResults(ctx context.Context, trig
 	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, resultsJSON, triggerJobID))
 }
 
+const updateTriggerJobLogsFmtStr = `
+UPDATE cm_trigger_jobs
+SET log_contents =COALESCE(NULLIF(log_contents, '') || '\n', '') || %s
+WHERE id = %s
+`
+
+func (s *codeMonitorStore) UpdateTriggerJobWithLogs(ctx context.Context, triggerJobID int32, logContents string) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(updateTriggerJobLogsFmtStr, logContents, triggerJobID))
+}
+
 const deleteOldJobLogsFmtStr = `
 DELETE FROM cm_trigger_jobs
 WHERE finished_at < (NOW() - (%s * '1 day'::interval));

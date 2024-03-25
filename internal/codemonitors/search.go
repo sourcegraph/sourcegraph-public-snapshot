@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -24,7 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-func Search(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64) (_ []*result.CommitMatch, err error) {
+func Search(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64, triggerID int32) (_ []*result.CommitMatch, err error) {
 	searchClient := client.New(logger, db, gitserver.NewClient("monitors.search"))
 	inputs, err := searchClient.Plan(
 		ctx,
@@ -47,7 +48,7 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, query string
 	}
 
 	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, doSearch commit.DoSearchFunc) error {
-		return hookWithID(ctx, db, gs, monitorID, repoID, args, doSearch)
+		return hookWithID(ctx, db, gs, monitorID, triggerID, repoID, args, doSearch)
 	}
 	planJob, err = addCodeMonitorHook(planJob, hook)
 	if err != nil {
@@ -172,6 +173,7 @@ func hookWithID(
 	db database.DB,
 	gs commit.GitserverClient,
 	monitorID int64,
+	triggerID int32,
 	repoID api.RepoID,
 	args *gitprotocol.SearchRequest,
 	doSearch commit.DoSearchFunc,
@@ -181,14 +183,21 @@ func hookWithID(
 	// Resolve the requested revisions into a static set of commit hashes
 	commitHashes := make([]string, 0, len(args.Revisions))
 	for _, rev := range args.Revisions {
-		// Fail early for context cancelation.
+		// Fail early for context cancellation.
 		if err := ctx.Err(); err != nil {
 			return ctx.Err()
 		}
 
 		res, err := gs.ResolveRevision(ctx, args.Repo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 		if err != nil {
-			return err
+			var revErr *gitdomain.RevisionNotFoundError
+			if errors.As(err, &revErr) {
+				if err := db.CodeMonitors().UpdateTriggerJobWithLogs(ctx, triggerID, err.Error()); err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
 		}
 		commitHashes = append(commitHashes, string(res))
 	}
