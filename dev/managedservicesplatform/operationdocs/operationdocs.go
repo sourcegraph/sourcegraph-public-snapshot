@@ -127,6 +127,7 @@ This service is operated on the %s.`,
 		resourceHeadings := map[string]string{}
 
 		sentryLink := markdown.Linkf("Sentry "+markdown.Codef("%s-%s", s.Service.ID, env.ID), "https://sourcegraph.sentry.io/projects/%s-%s/", s.Service.ID, env.ID)
+		slackChannelName := fmt.Sprintf("alerts-%s-%s", s.Service.ID, env.ID)
 		overview := [][]string{
 			{"Project ID", markdown.Linkf(markdown.Code(env.ProjectID), cloudRunURL)},
 			{"Category", markdown.Bold(string(env.Category))},
@@ -135,8 +136,7 @@ This service is operated on the %s.`,
 				resourceHeadings[k] = h
 				return l
 			}), ", ")},
-			// When rendered by sourcegraph/handbook, Slack channels are automatically linked
-			{"Slack notifications", fmt.Sprintf("#alerts-%s-%s", s.Service.ID, env.ID)},
+			{"Slack notifications", markdown.Linkf("#"+slackChannelName, "https://sourcegraph.slack.com/archives/"+slackChannelName)},
 			{"Alerts", markdown.Linkf("GCP monitoring", "https://console.cloud.google.com/monitoring/alerting?project=%s", env.ProjectID)},
 			{"Errors", sentryLink},
 		}
