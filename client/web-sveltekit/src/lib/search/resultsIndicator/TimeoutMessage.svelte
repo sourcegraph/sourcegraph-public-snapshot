@@ -8,7 +8,7 @@
     <div class="action-badge">
         <small>
             Use
-            <a href="https://sourcegraph.com/docs/code-search/types/search-jobs" target="_blank"> Search Job </a>
+            <a href="/help/code-search/types/search-jobs"> Search Job </a>
             for background search
         </small>
     </div>
