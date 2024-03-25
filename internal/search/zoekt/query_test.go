@@ -92,40 +92,10 @@ func TestQueryToZoektQuery(t *testing.T) {
 			WantZoektOutput: `(and case_file_regex:"(?m:\\.go$)" case_file_regex:"(?im:\\.GO$)")`,
 		},
 		{
-			Name:  "Language get passed as lang: query",
-			Type:  search.TextRequest,
-			Query: `lang:go`,
-			Features: search.Features{
-				ContentBasedLangFilters: true,
-			},
-			WantZoektOutput: `lang:Go`,
-		},
-		{
-			Name:  "Multiple languages get passed as lang queries",
-			Type:  search.TextRequest,
-			Query: `lang:go lang:typescript`,
-			Features: search.Features{
-				ContentBasedLangFilters: true,
-			},
-			WantZoektOutput: `(and lang:Go lang:TypeScript)`,
-		},
-		{
-			Name:  "Excluded languages get passed as lang: query",
-			Type:  search.TextRequest,
-			Query: `lang:go -lang:typescript -lang:markdown`,
-			Features: search.Features{
-				ContentBasedLangFilters: true,
-			},
-			WantZoektOutput: `(and lang:Go (not lang:TypeScript) (not lang:Markdown))`,
-		},
-		{
-			Name:  "Mixed file and lang filters",
-			Type:  search.TextRequest,
-			Query: `file:\.go$ lang:go lang:typescript`,
-			Features: search.Features{
-				ContentBasedLangFilters: true,
-			},
-			WantZoektOutput: `(and lang:Go lang:TypeScript file_regex:"(?m:\\.go$)")`,
+			Name:            "Languages is ignored",
+			Type:            search.TextRequest,
+			Query:           `file:\.go$ lang:go`,
+			WantZoektOutput: `(and file_regex:"(?m:\\.go$)" file_regex:"(?im:\\.GO$)")`,
 		},
 	}
 	for _, tt := range cases {
