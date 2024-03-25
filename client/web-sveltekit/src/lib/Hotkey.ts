@@ -29,13 +29,6 @@ function isContentField(event: KeyboardEvent): boolean {
         || ['textarea', 'input', 'textbox'].includes(target.getAttribute('role'));
 }
 
-interface Keys {
-    key: string,
-    mac?: string,
-    linux?: string,
-    windows?: string,
-}
-
 function wrapHandler(handler: KeyHandler, allowDefault: boolean = false, ignoreInputFields: boolean = true) {
     return (keyboardEvent: KeyboardEvent, hotkeysEvent: HotkeysEvent) => {
         if (!allowDefault) {
@@ -53,24 +46,53 @@ function wrapHandler(handler: KeyHandler, allowDefault: boolean = false, ignoreI
     }
 }
 
-interface HotkeyOptions {
-    keys: Keys,
-    handler: KeyHandler,
-    allowDefault?: boolean,
-    ignoreInputFields?: boolean
+interface Keys {
+    /**
+     * The default key which should trigger the action.
+     */
+    key: string,
+    /**
+     * An override for Mac users. The OS is resolved via https://developer.mozilla.org/en-US/docs/web/api/navigator/platform.
+     */
+    mac?: string,
+    /**
+     * An override for Linux users. The OS is resolved via https://developer.mozilla.org/en-US/docs/web/api/navigator/platform.
+     */
+    linux?: string,
+    /**
+     * An override for Windows users. The OS is resolved via https://developer.mozilla.org/en-US/docs/web/api/navigator/platform.
+     */
+    windows?: string,
 }
 
-interface HotkeyBindOptions {
+interface HotkeyOptions {
+    /**
+     * The keys that should trigger the handler.
+     */
     keys: Keys,
+    /**
+     * The action that should be triggered when the keys are pressed.
+     */
     handler: KeyHandler,
+}
+
+interface HotkeySetupOptions extends HotkeyOptions {
+    /**
+     * Whether the default browser behavior should execute.
+     */
+    allowDefault?: boolean,
+    /**
+     * Whether the handler should be executed when the user focuses an input field.
+     */
+    ignoreInputFields?: boolean
 }
 
 /**
  * Creates a global keyboard shortcut. Needs to be called during
  * component initialization.
  */
-export function registerHotkey({keys, handler, allowDefault, ignoreInputFields}: HotkeyOptions): {
-    bind: (options: HotkeyBindOptions) => void
+export function registerHotkey({keys, handler, allowDefault, ignoreInputFields}: HotkeySetupOptions): {
+    bind: (options: HotkeyOptions) => void
 } {
     let currentKey = evaluateKey(keys);
     let wrappedHandler = wrapHandler(handler, allowDefault, ignoreInputFields);
@@ -92,7 +114,7 @@ export function registerHotkey({keys, handler, allowDefault, ignoreInputFields}:
     }
 
     return {
-        bind({keys: bindKeys, handler: bindHandler}: HotkeyBindOptions) {
+        bind({keys: bindKeys, handler: bindHandler}: HotkeyOptions) {
             if (currentKey) {
                 hotkeys.unbind(currentKey, wrappedHandler);
             }

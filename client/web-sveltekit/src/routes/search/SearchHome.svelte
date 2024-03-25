@@ -9,7 +9,7 @@
 
     import SearchHomeNotifications from './SearchHomeNotifications.svelte'
     import HotkeyList from '$lib/HotkeyList.svelte';
-    import {registerHotkey} from '$lib/HotkeyFn';
+    import {registerHotkey} from '$lib/Hotkey';
 
     export let queryState: QueryStateStore
 
@@ -19,6 +19,7 @@
         },
     })
 
+    // Info for reviewer: Changes to this file will be reverted before merge.
     const hk = registerHotkey({
         keys: {
             key: 'ctrl+o',
