@@ -10,7 +10,7 @@
   "include": ["src", "./src/**/*.json"],
   "references": [
     {
-      "path": "../cody-shared"
-    }
+      "path": "../cody-shared",
+    },
   ],
 }
