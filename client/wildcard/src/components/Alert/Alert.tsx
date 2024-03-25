@@ -20,9 +20,12 @@ export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
      * be default.
      */
     withIcon?: boolean
-    //Custom background color if set
-    backgroundColor?: string
-    textColor?: string
+
+    styleOverrides?: {
+        backgroundColor?: string
+        textColor?: string
+        textCentered?: boolean
+    }
 }
 
 const userShouldBeImmediatelyNotified = (variant?: AlertVariant): boolean =>
@@ -43,9 +46,8 @@ export const Alert = React.forwardRef(function Alert(
         variant,
         className,
         role = 'alert',
-        backgroundColor,
-        textColor,
-        textCentered,
+        styleOverrides,
+        style,
         ...attributes
     },
     reference
@@ -53,13 +55,22 @@ export const Alert = React.forwardRef(function Alert(
     const { isBranded } = useWildcardTheme()
     const brandedClassName = isBranded && classNames(styles.alert, variant && getAlertStyle({ variant }))
 
+
     /**
      * Set the assertiveness setting on the alert.
      * Assertive: The alert will interrupt any current screen reader announcements.
      * Polite: The alert will be read out by the screen reader when the user is idle.
      */
     const alertAssertiveness = userShouldBeImmediatelyNotified(variant) ? 'assertive' : 'polite'
-    const color = textColor
+
+    // Merge styles with overrides
+    const { backgroundColor, textColor, textCentered } = styleOverrides || {}
+    const mergedStyles: React.CSSProperties = {
+            ...style,
+            ...(!!backgroundColor && { backgroundColor }),
+            ...(!!textColor && { color: textColor }),
+            ...(!!textCentered && { textAlign: 'center' }),
+    }
 
     return (
         <Component
@@ -67,11 +78,7 @@ export const Alert = React.forwardRef(function Alert(
             className={classNames(brandedClassName, className, { [styles.alertWithNoIcon]: !withIcon })}
             role={role}
             aria-live={alertAssertiveness}
-            style={{
-                ...(backgroundColor !== '' && { backgroundColor }),
-                ...(textColor !== '' && { color }),
-                ...(textCentered && { textAlign: 'center' }),
-            }}
+            style={mergedStyles}
             {...attributes}
         >
             {children}
