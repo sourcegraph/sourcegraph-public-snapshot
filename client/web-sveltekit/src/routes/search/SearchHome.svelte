@@ -9,8 +9,7 @@
 
     import SearchHomeNotifications from './SearchHomeNotifications.svelte'
     import HotkeyList from '$lib/HotkeyList.svelte';
-    import Hotkey from '$lib/Hotkey.svelte';
-    import {createHotkey, evaluateKey} from '$lib/HotkeyFn';
+    import {registerHotkey} from '$lib/HotkeyFn';
 
     export let queryState: QueryStateStore
 
@@ -20,14 +19,24 @@
         },
     })
 
-    createHotkey('ctrl+i', () => alert('test-fn'));
-    createHotkey(evaluateKey({mac: 'command+o'}), () => alert('test-fn-mac'));
+    const hk = registerHotkey({
+        keys: {
+            key: 'ctrl+o',
+            mac: 'command+o',
+        },
+        handler: () => alert('ctrl+o'),
+    });
+
+    $: hk.bind({
+        keys: {
+            key: 'ctrl+o',
+        },
+        handler: () => alert('ctrl+o (rebind)'),
+    });
 </script>
 
 <section>
     <div class="content">
-        <Hotkey mac="command+x" linux="ctrl+x" run={() => alert('test-t')} ignoreInputFields={false} />
-        <Hotkey mac="command+u" linux="ctrl+u" run={() => alert('test1')} />
         <HotkeyList />
         <img class="logo" src={$isLightTheme ? logoLight : logoDark} alt="Sourcegraph Logo" />
         <div class="search">

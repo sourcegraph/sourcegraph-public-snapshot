@@ -2,7 +2,7 @@
     import hotkeys from 'hotkeys-js';
     import type {KeyHandler, HotkeysEvent} from 'hotkeys-js';
     import {onDestroy, onMount} from 'svelte';
-    import {isLinuxPlatform, isMacPlatform, isWindowsPlatform} from '$root/client/common';
+    import {isLinuxPlatform, isMacPlatform, isWindowsPlatform} from '$lib/common';
 
     export let run: () => void;
     export let key: string = '';
