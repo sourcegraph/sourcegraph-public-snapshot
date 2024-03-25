@@ -27,6 +27,13 @@
         },
         handler: () => alert('ctrl+o'),
     });
+    registerHotkey({
+        keys: {
+            key: 'ctrl+o',
+            mac: 'command+o',
+        },
+        handler: () => alert('duplicate'),
+    });
 
     $: hk.bind({
         keys: {

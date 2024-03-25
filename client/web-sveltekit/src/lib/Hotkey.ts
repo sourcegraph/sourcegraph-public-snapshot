@@ -95,6 +95,9 @@ export function registerHotkey({keys, handler, allowDefault, ignoreInputFields}:
     bind: (options: HotkeyOptions) => void
 } {
     let currentKey = evaluateKey(keys);
+    if (hotkeys.getAllKeyCodes().map(k => k.shortcut).includes(currentKey)) {
+        console.error(`The hotkey "${currentKey}" has already been registered by another Hotkey component.`);
+    }
     let wrappedHandler = wrapHandler(handler, allowDefault, ignoreInputFields);
 
     // By default, hotkeys-js ignores input fields. Unfortunately this filter can only be set globally, and will apply to all hotkeys.
