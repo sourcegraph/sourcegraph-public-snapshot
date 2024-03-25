@@ -8,7 +8,7 @@ This document describes operational guidance for msp-testbed infrastructure.
 This service is operated on the [Managed Services Platform (MSP)](https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/).
 
 > [!IMPORTANT]
-> If this is your first time here, you should follow the [sourcegraph/managed-services README](https://github.com/sourcegraph/managed-services/blob/main/README.md) as well to set up the prerequisite tooling.
+> If this is your first time here, you must follow the [sourcegraph/managed-services 'Tooling setup' guide](https://github.com/sourcegraph/managed-services/blob/main/README.md) as well to clone the service definitions repository and set up the prerequisite tooling.
 
 If you need assistance with MSP infrastructure, reach out to the [Core Services](https://handbook.sourcegraph.com/departments/engineering/teams/core-services/) team in #discuss-core-services.
 
@@ -71,6 +71,9 @@ sg msp logs msp-testbed dev
 |-----------|----------------------------------------------------------------------------------------------------|
 | Console   | [Cloud SQL instances](https://console.cloud.google.com/sql/instances?project=msp-testbed-dev-xxxx) |
 | Databases | `foo`, `bar`                                                                                       |
+
+> [!NOTE]
+> The ['write access' Entitle permissions grant]([Entitle request for the 'Engineering Projects' folder](https://app.entitle.io/request?data=eyJkdXJhdGlvbiI6IjIxNjAwIiwianVzdGlmaWNhdGlvbiI6IkVOVEVSIEpVU1RJRklDQVRJT04gSEVSRSIsInJvbGVJZHMiOlt7ImlkIjoiYzJkMTUwOGEtMGQ0ZS00MjA1LWFiZWUtOGY1ODg1ZGY3ZDE4IiwidGhyb3VnaCI6ImMyZDE1MDhhLTBkNGUtNDIwNS1hYmVlLThmNTg4NWRmN2QxOCIsInR5cGUiOiJyb2xlIn1dfQ%3D%3D)) is required for BOTH read-only and write access to the database.
 
 To connect to the PostgreSQL instance in this environment, use `sg msp` in the [`sourcegraph/managed-services`](https://github.com/sourcegraph/managed-services) repository:
 
