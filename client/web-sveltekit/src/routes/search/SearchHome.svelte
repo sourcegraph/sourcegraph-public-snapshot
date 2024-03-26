@@ -8,8 +8,6 @@
     import { isLightTheme } from '$lib/stores'
 
     import SearchHomeNotifications from './SearchHomeNotifications.svelte'
-    import HotkeyList from '$lib/HotkeyList.svelte'
-    import { registerHotkey } from '$lib/Hotkey'
 
     export let queryState: QueryStateStore
 
@@ -18,34 +16,10 @@
             queryState.setQuery(newQuery)
         },
     })
-
-    // Info for reviewer: Changes to this file will be reverted before merge.
-    const hk = registerHotkey({
-        keys: {
-            key: 'ctrl+o',
-            mac: 'command+o',
-        },
-        handler: () => alert('ctrl+o'),
-    })
-    registerHotkey({
-        keys: {
-            key: 'ctrl+o',
-            mac: 'command+o',
-        },
-        handler: () => alert('duplicate'),
-    })
-
-    $: hk.bind({
-        keys: {
-            key: 'ctrl+o',
-        },
-        handler: () => alert('ctrl+o (rebind)'),
-    })
 </script>
 
 <section>
     <div class="content">
-        <HotkeyList />
         <img class="logo" src={$isLightTheme ? logoLight : logoDark} alt="Sourcegraph Logo" />
         <div class="search">
             <SearchInput {queryState} autoFocus />
