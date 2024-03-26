@@ -116,6 +116,10 @@ It can also be used for local development by updating its path and hash in the '
 						return err
 					}
 					if bc.BazelBuildPath == "" {
+						if os.Getenv("BUILDKITE") == "true" {
+							std.Out.WriteLine(output.Linef(output.EmojiWarning, output.StyleBold, "No Bazel build path found for %s - no fallback avilable in Buildkite, so soft-failing", baseImageName))
+							return cli.Exit("Cannot build base image without Bazel build path on Buildkite (soft-fail)", 222)
+						}
 						std.Out.WriteLine(output.Linef(output.EmojiWarning, output.StyleBold, "No Bazel build path found for %s - falling back to legacy build method", baseImageName))
 						buildLegacy = true
 					}
