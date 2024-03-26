@@ -1,9 +1,9 @@
 import hotkeys, { type HotkeysEvent, type KeyHandler } from 'hotkeys-js'
 import { onDestroy } from 'svelte'
 
-import { isLinuxPlatform, isMacPlatform, isWindowsPlatform } from '$lib/common'
+import { isLinuxPlatform, isMacPlatform, isWindowsPlatform } from './common'
 
-export function evaluateKey(keys: { mac?: string; linux?: string; windows?: string; key?: string }): string {
+export function evaluateKey(keys: { mac?: string; linux?: string; windows?: string; key: string }): string {
     if (keys.mac && isMacPlatform()) {
         return keys.mac
     }
@@ -16,15 +16,25 @@ export function evaluateKey(keys: { mac?: string; linux?: string; windows?: stri
         return keys.windows
     }
 
-    return keys.key ?? ''
+    return keys.key
 }
 
-function isContentField(event: KeyboardEvent): boolean {
+export function isElement(t: any): t is Element {
+    return t instanceof Element
+}
+
+/**
+ * This function determines if the field that's focussed by the KeyboardEvent is some kind of input.
+ * The implementation makes some assumptions about how the UI sets up content fields, which are also
+ * specific to Svelte. It may need adjustment in the future.
+ * @param event KeyboardEvent
+ */
+export function isContentField(event: KeyboardEvent): boolean {
     const target = event.target
     if (!target) {
         return false
     }
-    if (target instanceof Element) {
+    if (isElement(target)) {
         return (
             target.getAttribute('contenteditable') === 'true' ||
             // textarea and input are from the HTML standard, textbox is from svelte
