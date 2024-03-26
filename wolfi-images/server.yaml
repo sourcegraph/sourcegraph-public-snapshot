@@ -46,8 +46,6 @@ contents:
     - s3proxy@sourcegraph
     - grafana-7@chainguard
 
-    - apk-tools
-
 accounts:
   groups:
     - groupname: sourcegraph
