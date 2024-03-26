@@ -65,6 +65,7 @@ BUILD_DEPS = [
     "//:node_modules/rxjs",
     "//:node_modules/uuid",
     "//cmd/frontend/graphqlbackend:graphql_schema",
+    ":node_modules/hotkeys-js",
     ":node_modules/@faker-js/faker",
     ":node_modules/@floating-ui/dom",
     ":node_modules/@graphql-codegen/cli",
