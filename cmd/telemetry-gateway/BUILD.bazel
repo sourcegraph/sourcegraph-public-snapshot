@@ -68,7 +68,7 @@ go_library(
 
 msp_delivery(
     name = "msp_deploy",
-    gcp_delivery_pipeline = "telemetry-gateway-us-central1-rollout",
     gcp_project = "telemetry-gateway-prod-acae",
+    msp_service_id = "telemetry-gateway",
     repository = "index.docker.io/sourcegraph/telemetry-gateway",
 )
