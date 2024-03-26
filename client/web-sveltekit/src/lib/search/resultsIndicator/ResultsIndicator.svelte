@@ -67,7 +67,6 @@
                 <SuggestedAction {progress} {suggestedItems} {severity} {state} />
             {:else}
                 <div class="suggested-action">
-                    <!-- TODO add threshold to exported variables-->
                     {#if elapsedDuration <= SEARCH_JOB_THRESHOLD}
                         <div class="running-search">
                             <small> Running Search </small>

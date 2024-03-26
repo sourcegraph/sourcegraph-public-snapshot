@@ -18,19 +18,13 @@ describe('ProgressMessage.svelte', () => {
                 durationMs: 0,
                 skipped: [],
             },
-            loading: true,
-            isError: false,
             elapsedDuration: 5000,
-            maxSearchDuration: 10000,
+            state: 'loading',
+            severity: 'info'
         })
 
         const progressMessage = document.getElementsByClassName('progress-message')
         expect(progressMessage[0].textContent).toBe(`Fetching results... ${(5000 / 1000).toFixed(1)}s`)
-
-        const runningSearch = document.getElementsByClassName('running-search')
-        expect(runningSearch).toHaveLength(1)
-
-        const runningSearchText = runningSearch[0].textContent
-        expect(runningSearchText).toBe('Running Search')
+        expect(progressMessage).toHaveLength(1)
     })
 })

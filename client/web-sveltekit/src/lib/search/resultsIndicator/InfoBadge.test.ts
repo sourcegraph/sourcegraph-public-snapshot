@@ -13,8 +13,8 @@ describe('InfoBadge.svelte', () => {
 
     test('render as error if severity === error', async () => {
         renderInfoBadge({
-            searchProgress: {
-                // matchCount: ,
+            progress: {
+                matchCount: 0,
                 durationMs: 3800,
                 skipped: [
                     {
@@ -25,7 +25,7 @@ describe('InfoBadge.svelte', () => {
                     },
                 ],
             },
-            state: 'error',
+            isError: true,
         })
 
         const errorClass = document.getElementsByClassName('error-text')
@@ -37,7 +37,7 @@ describe('InfoBadge.svelte', () => {
 
     test('render as info if severity === info', () => {
         renderInfoBadge({
-            searchProgress: {
+            progress: {
                 matchCount: 433,
                 durationMs: 5600,
                 skipped: [
@@ -49,7 +49,7 @@ describe('InfoBadge.svelte', () => {
                     },
                 ],
             },
-            state: 'info',
+            isError: false,
         })
 
         const infoClass = document.getElementsByClassName('error-text')

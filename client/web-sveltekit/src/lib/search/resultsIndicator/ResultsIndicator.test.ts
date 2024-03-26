@@ -13,22 +13,28 @@ describe('ResultsIndicator.svelte', () => {
 
     test('renders correct format for indicator', async () => {
         renderResultsIndicator({
-            hasSkippedItems: true,
-            sortedItems: [
-                {
-                    reason: 'display',
-                    title: 'Display limit hit',
-                    message: 'you hit the display limit',
-                    severity: 'info',
-                },
-            ],
-            hasSuggestedItems: true,
             progress: {
                 matchCount: 600,
                 durationMs: 5260,
-                skipped: [],
+                skipped: [
+                    {
+                        reason: 'display',
+                        title: 'Display limit hit',
+                        message: 'you hit the display limit',
+                        severity: 'info',
+                        suggested: {
+                            title: "use higher limit",
+                            queryExpression: "limit:11000"
+                        }
+                    },
+                ],
             },
+            severity: 'info',
             state: 'complete',
+            suggestedItems: {
+                title: "use higher limit",
+                queryExpression: "limit:11000"
+            }
         })
 
         const indicator = document.getElementsByClassName('indicator')

@@ -13,8 +13,6 @@ describe('SuggestedAction.svelte', () => {
 
     test('renders action with title and suggestion', async () => {
         renderSuggestedAction({
-            hasSkippedItems: true,
-            hasSuggestedItems: true,
             progress: {
                 done: true,
                 matchCount: 600,
@@ -32,17 +30,8 @@ describe('SuggestedAction.svelte', () => {
                     },
                 ],
             },
-            isError: false,
-            mostSevere: {
-                reason: 'info',
-                title: 'info here',
-                message: 'vv much an info',
-                severity: 'info',
-                suggested: {
-                    title: "here's a title",
-                    message: "here's a message",
-                },
-            },
+            severity: 'error',
+            state: 'complete',
         })
 
         const title = document.getElementsByClassName('info-badge')
@@ -57,8 +46,6 @@ describe('SuggestedAction.svelte', () => {
 
     test('renders title only when there is no suggested items', async () => {
         renderSuggestedAction({
-            hasSkippedItems: true,
-            hasSuggestedItems: false,
             progress: {
                 done: true,
                 matchCount: 600,
@@ -72,22 +59,47 @@ describe('SuggestedAction.svelte', () => {
                     },
                 ],
             },
-            isError: false,
-            mostSevere: {
-                reason: 'info',
-                title: 'info here',
-                message: 'vv much an info',
-                severity: 'info',
-            },
+            severity: 'error',
+            state: 'error',
         })
 
-        const title = document.getElementsByClassName('info-badge')
-        expect(title).toHaveLength(1)
+        const infoBadge = document.getElementsByClassName('info-badge error-text')
+        expect(infoBadge).toHaveLength(1)
 
         const interpunct = document.getElementsByClassName('separator')
         expect(interpunct).toHaveLength(0)
 
         const action = document.getElementsByClassName('action-badge')
         expect(action).toHaveLength(0)
+    })
+
+    test('shows most severe skipped item in action container', async () => {
+        renderSuggestedAction({
+            progress: {
+                matchCount: 600,
+                durationMs: 5260,
+                skipped: [
+                    {
+                        reason: 'display',
+                        title: 'Display limit hit',
+                        message: 'you hit the display limit',
+                        severity: 'info',
+                    },
+                    {
+                        reason: "error is the reason",
+                        title: "Error badge",
+                        message: 'error is the message',
+                        severity: "error",
+                    },
+                ],
+                done: true,
+            },
+            severity: 'error',
+            state: 'error',
+        })
+
+        const infoBadge = document.getElementsByClassName('info-badge error-text')
+        expect(infoBadge).toHaveLength(1)
+        expect(infoBadge[0].textContent).toBe("Error badge")
     })
 })

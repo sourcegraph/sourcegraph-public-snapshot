@@ -5,7 +5,7 @@
     import type { Progress, Skipped } from '$lib/shared'
 
     export let progress: Progress
-    export let suggestedItems: Required<Skipped>[]
+    export let suggestedItems: Required<Skipped>[] = []
     export let severity: string
     export let state: 'error' | 'complete' | 'loading'
 
@@ -28,7 +28,7 @@
             </div>
         {/if}
 
-        <!-- completed with skpped items -->
+        <!-- completed with skipped items -->
         {#if done && hasSkippedItems}
             <div class="info-badge" class:error-text={isError}>
                 <small>
