@@ -44,7 +44,7 @@ var (
 
 	maxTotalPathsLengthRaw = env.Get("MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive")
 
-	disableHybridSearch = env.MustGetBool("DISABLE_HYBRID_SEARCH", false, "set to true to disable hybrid search")
+	disableHybridSearch = env.MustGetBool("DISABLE_HYBRID_SEARCH", false, "if true, unindexed search will not consult indexed search to speed up searches")
 )
 
 const port = "3181"

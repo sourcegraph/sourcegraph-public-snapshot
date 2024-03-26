@@ -54,6 +54,9 @@ type Service struct {
 	// for the exec.Command on gitserver.
 	MaxTotalPathsLength int
 
+	// DisableHybridSearch disables hybrid search, which means searcher will not
+	// call out to Zoekt to offload part of the search workload. This is useful for
+	// troubleshooting, for example if searcher causes a high load on Zoekt.
 	DisableHybridSearch bool
 }
 
