@@ -169,20 +169,18 @@ Cody automatically understands your codebase context based on the project opened
 
 To connect the extension with your Enterprise instance,
 
-- Log in to your Sourcegraph instance
-- Go to **Settings > Access tokens** (`https://<your-instance>.sourcegraph.com/users/<your-username>/settings/tokens`)
-- From here, click **Generate new token**
-- Next, go back to **Cody Settings...** in the IntelliJ editor
-- Click the plus icon (+) under **Authentication** and then select **Log In with Token to Sourcegraph Enterprise**
-- Finally, paste your newly created access token and instance URL in the respective fields and click **Add Account** to complete the process
+- Click **Sign in with an Enterprise Instance**
+- Enter the server for your enterprise instance (e.g. `https://mycompany.sourcegraph.com`)
+- Select "Generate new token." You'll be redirected to the `Access tokens` page on your instance in the browser. Generate a new token, copy it, and paste it into the `Token` field in your editor.
+- Click `Sign in`
 
 ### For Sourcegraph.com users
 
-Alternatively, you can click `Log In to Sourcegraph` to authenticate the IntelliJ extension with your Sourcegraph.com account.
+For Cody Free and Cody Pro users, you can click `Log In to Sourcegraph` to authenticate the IntelliJ extension with your Sourcegraph.com account. 
 
 ## Verifying the installation
 
-Once Cody is connected successfully to your Sourcegraph instance, click the Cody icon from the sidebar again, and a panel will open. To verify that the Cody extension has been successfully installed and is working as expected, let's create an autocomplete suggestion.
+Once Cody is successfully connected, you'll see that the sign-in panel has been replaced by a welcome message from Cody. To verify that the Cody extension has been successfully installed and is working as expected, let's create an autocomplete suggestion.
 
 Cody provides intelligent code suggestions and context-aware autocompletions for numerous programming languages like JavaScript, Python, TypeScript, Go, etc.
 
