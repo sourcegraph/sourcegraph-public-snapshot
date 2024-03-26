@@ -44,7 +44,7 @@ func CoreTestOperations(buildOpts bk.BuildOptions, diff changed.Diff, opts CoreT
 	}
 	ops.Merge(linterOps)
 
-	if diff.Has(changed.Client | changed.GraphQL) {
+	if true { //diff.Has(changed.Client | changed.GraphQL) {
 		// If there are any Graphql changes, they are impacting the client as well.
 		clientChecks := operations.NewNamedSet("Client checks",
 			clientChromaticTests(opts),
