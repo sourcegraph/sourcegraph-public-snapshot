@@ -126,9 +126,10 @@ Hello world example in go`, typeFile},
 		},
 		MaxTotalPathsLength: 100_000,
 
-		Store:   s,
-		Indexed: backend.ZoektDial(zoektURL),
-		Log:     logtest.Scoped(t),
+		Store:           s,
+		Indexed:         backend.ZoektDial(zoektURL),
+		Log:             logtest.Scoped(t),
+		UseHybridSearch: true,
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
