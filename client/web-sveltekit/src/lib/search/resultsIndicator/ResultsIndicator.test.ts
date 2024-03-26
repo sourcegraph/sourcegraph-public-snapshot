@@ -23,18 +23,18 @@ describe('ResultsIndicator.svelte', () => {
                         message: 'you hit the display limit',
                         severity: 'info',
                         suggested: {
-                            title: "use higher limit",
-                            queryExpression: "limit:11000"
-                        }
+                            title: 'use higher limit',
+                            queryExpression: 'limit:11000',
+                        },
                     },
                 ],
             },
             severity: 'info',
             state: 'complete',
             suggestedItems: {
-                title: "use higher limit",
-                queryExpression: "limit:11000"
-            }
+                title: 'use higher limit',
+                queryExpression: 'limit:11000',
+            },
         })
 
         const indicator = document.getElementsByClassName('indicator')

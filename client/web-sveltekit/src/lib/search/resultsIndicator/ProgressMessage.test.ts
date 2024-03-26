@@ -20,7 +20,7 @@ describe('ProgressMessage.svelte', () => {
             },
             elapsedDuration: 5000,
             state: 'loading',
-            severity: 'info'
+            severity: 'info',
         })
 
         const progressMessage = document.getElementsByClassName('progress-message')

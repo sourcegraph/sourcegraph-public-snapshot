@@ -86,10 +86,10 @@ describe('SuggestedAction.svelte', () => {
                         severity: 'info',
                     },
                     {
-                        reason: "error is the reason",
-                        title: "Error badge",
+                        reason: 'error is the reason',
+                        title: 'Error badge',
                         message: 'error is the message',
-                        severity: "error",
+                        severity: 'error',
                     },
                 ],
                 done: true,
@@ -100,6 +100,6 @@ describe('SuggestedAction.svelte', () => {
 
         const infoBadge = document.getElementsByClassName('info-badge error-text')
         expect(infoBadge).toHaveLength(1)
-        expect(infoBadge[0].textContent).toBe("Error badge")
+        expect(infoBadge[0].textContent).toBe('Error badge')
     })
 })
