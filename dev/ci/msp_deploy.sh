@@ -20,13 +20,13 @@ set -eux -o pipefail
 
 # Computed Variables
 GCP_CLOUDRUN_SKAFFOLD_SOURCE="gs://${GCP_PROJECT}-cloudrun-skaffold/source.tar.gz"
+GCP_DELIVERY_PIPELINE="${MSP_SERVICE_ID}-${GCP_REGION}-rollout"
 SHORT_SHA="${BUILDKITE_COMMIT:0:12}"
 TAG="${SHORT_SHA}_${BUILDKITE_BUILD_NUMBER}"
 # resource ids must be lower-case letters, numbers, and hyphens,
 # with the first character a letter, the last a letter or a number,
 # and a 63 character maximum
 RELEASE_NAME="deploy-${SHORT_SHA}-${BUILDKITE_BUILD_NUMBER}"
-GCP_DELIVERY_PIPELINE="${MSP_SERVICE_ID}-${GCP_REGION}-rollout"
 
 # Commands are passed as args to the script
 push=$1
