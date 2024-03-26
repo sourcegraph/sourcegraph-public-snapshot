@@ -54,3 +54,7 @@ common --action_env=PGUSER=postgres
 # This overrides the same flag set in ci.bazelrc. Note that if for some reason this bazelrc is loaded before ci.bazelrc,
 # then the ci.bazelrc will override this one.
 test --flaky_test_attempts=2
+
+# See https://github.com/aspect-build/rules_js/issues/1412
+# Sometimes the build fails due to some flakiness where a npm package fails to be copied
+common --noexperimental_merged_skyframe_analysis_execution
