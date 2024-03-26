@@ -1,8 +1,9 @@
-import { onDestroy } from 'svelte'
 import hotkeys, { type HotkeysEvent, type KeyHandler } from 'hotkeys-js'
+import { onDestroy } from 'svelte'
+
 import { isLinuxPlatform, isMacPlatform, isWindowsPlatform } from '$lib/common'
 
-function evaluateKey(keys: { mac?: string; linux?: string; windows?: string; key?: string }): string {
+export function evaluateKey(keys: { mac?: string; linux?: string; windows?: string; key?: string }): string {
     if (keys.mac && isMacPlatform()) {
         return keys.mac
     }
