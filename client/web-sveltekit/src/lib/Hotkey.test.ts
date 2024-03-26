@@ -1,4 +1,5 @@
 import { expect, describe, it, vi } from 'vitest'
+
 import { evaluateKey } from './Hotkey'
 
 const mocks = vi.hoisted(() => ({
@@ -13,7 +14,6 @@ vi.mock('$lib/common', () => ({
 }))
 
 describe('Hotkey', () => {
-
     describe('evaluateKey', () => {
         it('should return default key', () => {
             const actual = evaluateKey({
