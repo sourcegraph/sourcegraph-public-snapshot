@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
@@ -138,17 +137,13 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 				})
 			},
 			FetchTarPaths: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
-				pathspecs := make([]gitdomain.Pathspec, len(paths))
-				for i, p := range paths {
-					pathspecs[i] = gitdomain.PathspecLiteral(p)
-				}
 				// We pass in a nil sub-repo permissions checker and an internal actor here since
 				// searcher needs access to all data in the archive.
 				ctx = actor.WithInternalActor(ctx)
 				return git.ArchiveReader(ctx, repo, gitserver.ArchiveOptions{
-					Treeish:   string(commit),
-					Format:    gitserver.ArchiveFormatTar,
-					Pathspecs: pathspecs,
+					Treeish: string(commit),
+					Format:  gitserver.ArchiveFormatTar,
+					Paths:   paths,
 				})
 			},
 			FilterTar:         search.NewFilter,

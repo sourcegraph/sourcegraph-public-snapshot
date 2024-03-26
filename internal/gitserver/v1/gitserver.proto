@@ -25,11 +25,21 @@ service GitserverService {
   rpc Search(SearchRequest) returns (stream SearchResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // Archive creates an archive for the given treeish in the given format.
+  // If paths are specified, only those paths are included in the archive.
+  //
+  // If subrepo permissions are enabled for the repo, no archive will be created
+  // for non-internal actors and an unimplemented error will be returned. We can
+  // currently not filter parts of the archive, so this would be considered leaking
+  // information.
+  //
+  // If the given treeish does not exist, an error with a RevisionNotFoundPayload
+  // is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a RepoNotFoundPayload in the details.
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  rpc P4Exec(P4ExecRequest) returns (stream P4ExecResponse) {
-    option deprecated = true;
   }
   rpc RepoClone(RepoCloneRequest) returns (RepoCloneResponse) {
     option idempotency_level = IDEMPOTENT;
@@ -118,6 +128,45 @@ service GitserverService {
   rpc GetCommit(GetCommitRequest) returns (GetCommitResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // ResolveRevision resolves a given revspec-ish to a commit SHA.
+  // If passed a commit sha, the endpoint will also verify that the commit exists.
+  //
+  // If the revision cannot be resolved an error with RevisionNotFoundPayload is
+  // returned.
+  //
+  // Under the hood, this endpoint currently uses git rev-parse to resolve the revspec,
+  // but we forbid certain revspecs (like HEAD) to avoid leaking existence files,
+  // and to avoid running very expensive rev-parse operations.
+  // Assume only the following are supported:
+  // - Symbolic refs
+  // - All refs under refs/, including tags
+  // - Commit hashes
+  // - Abbreviated commit hashes
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a RepoNotFoundPayload in the details.
+  rpc ResolveRevision(ResolveRevisionRequest) returns (ResolveRevisionResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+}
+
+message ResolveRevisionRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // The rev spec to resolve. I.e., HEAD, deadbeefdeadbeefdeadbeefdeadbeef, or refs/heads/main.
+  bytes rev_spec = 3;
+  // ensure_revision tries to ensure that the revision is present in the repo by
+  // triggering a git fetch if it is not present. It's not guaranteed that
+  // a revision exists in the repo after this call, if it really doesn't exist.
+  // This can slow down the response time significantly, only use it if you have
+  // good reason to do so.
+  optional bool ensure_revision = 4;
+}
+
+message ResolveRevisionResponse {
+  // commit is the commit SHA of the resolved revision.
+  string commit_sha = 1;
 }
 
 message GetCommitRequest {
@@ -312,7 +361,7 @@ message CreateCommitFromPatchBinaryResponse {
 
 message ExecRequest {
   string repo = 1;
-  bytes ensure_revision = 2;
+  bytes ensure_revision = 2 [deprecated = true];
   repeated bytes args = 3;
   bytes stdin = 4 [deprecated = true];
   bool no_timeout = 5;
@@ -510,17 +559,23 @@ message CommitMatch {
   repeated string modified_files = 9;
 }
 
+enum ArchiveFormat {
+  ARCHIVE_FORMAT_UNSPECIFIED = 0;
+  ARCHIVE_FORMAT_ZIP = 1;
+  ARCHIVE_FORMAT_TAR = 2;
+}
+
 // ArchiveRequest is set of parameters for the Archive RPC.
 message ArchiveRequest {
-  // repo is the name of the repo to be archived
+  // repo is the name of the repo to be archived.
   string repo = 1;
-  // treeish is the tree or commit to produce an archive for
+  // treeish is the tree or commit to produce an archive for.
   string treeish = 2;
-  // format is the format of the resulting archive (usually "tar" or "zip")
-  string format = 3;
-  // pathspecs is the list of pathspecs to include in the archive. If empty, all
-  // pathspecs are included.
-  repeated string pathspecs = 4;
+  // format is the format of the resulting archive (either ZIP or TAR).
+  ArchiveFormat format = 3;
+  // paths is the list of paths to include in the archive. If empty, all
+  // paths are included.
+  repeated string paths = 4;
 }
 
 // ArchiveResponse is the response from the Archive RPC that returns a chunk of
@@ -559,24 +614,22 @@ message RepoCloneResponse {
 // RepoCloneProgressRequest is a request for information about the clone
 // progress of multiple repositories on gitserver.
 message RepoCloneProgressRequest {
-  repeated string repos = 1;
+  reserved 1;
+  reserved "repos";
+
+  // repo_name is the name of the repo to get the progress for.
+  string repo_name = 2;
 }
 
-// RepoCloneProgress is information about the clone progress of a repo
-message RepoCloneProgress {
+// RepoCloneProgressResponse is the response to a repository clone progress
+// request.
+message RepoCloneProgressResponse {
   // clone_in_progress is whether the repository is currently being cloned
   bool clone_in_progress = 1;
   // clone_progress is a progress message from the running clone command.
   string clone_progress = 2;
   // cloned is whether the repository has been cloned successfully
   bool cloned = 3;
-}
-
-// RepoCloneProgressResponse is the response to a repository clone progress
-// request for multiple repositories at the same time.
-message RepoCloneProgressResponse {
-  // results is a map from repository name to clone progress information
-  map<string, RepoCloneProgress> results = 1;
 }
 
 // RepoDeleteRequest is a request to delete a repository.
@@ -595,8 +648,12 @@ message RepoUpdateRequest {
   // repo is the name of the repo to update.
   string repo = 1;
   // since is the debounce interval for queries, used only with
-  // request-repo-update
-  google.protobuf.Duration since = 2;
+  // request-repo-update.
+  // This field has now been deprecated and is no longer respected.
+  // The caller should make sure to not call this endpoint more often
+  // than needed, and gitserver may make it's own internal decisions
+  // on when to fast-pass a request.
+  google.protobuf.Duration since = 2 [deprecated = true];
 }
 
 // RepoUpdateResponse is the response from the RepoUpdate RPC.
@@ -607,19 +664,6 @@ message RepoUpdateResponse {
   google.protobuf.Timestamp last_changed = 2;
   // error is the error that occurred during the update.
   string error = 3;
-}
-
-// Do not use: The P4Exec method has been deprecated and will disappear soon!
-message P4ExecRequest {
-  string p4port = 1 [deprecated = true];
-  string p4user = 2 [deprecated = true];
-  string p4passwd = 3 [deprecated = true];
-  repeated bytes args = 4 [deprecated = true];
-}
-
-// Do not use: The P4Exec method has been deprecated and will disappear soon!
-message P4ExecResponse {
-  bytes data = 1 [deprecated = true];
 }
 
 // ListGitoliteRequest is a request to list all repositories in gitolite.

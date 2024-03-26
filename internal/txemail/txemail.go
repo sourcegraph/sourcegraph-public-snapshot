@@ -72,9 +72,6 @@ func render(fromAddress, fromName string, message Message) (*email.Email, error)
 // should use this directly to send emails.  Source is used to categorize metrics, and
 // should indicate the product feature that is sending this email.
 //
-// Callers that do not live in the frontend should call internalapi.Client.SendEmail
-// instead.
-//
 // 🚨 SECURITY: If the email address is associated with a user, make sure to assess whether
 // the email should be verified or not, and conduct the appropriate checks before sending.
 // This helps reduce the chance that we damage email sender reputations when attempting to

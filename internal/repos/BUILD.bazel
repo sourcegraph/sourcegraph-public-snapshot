@@ -1,3 +1,4 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
@@ -41,7 +42,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/repos",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/actor",
         "//internal/api",
         "//internal/bytesize",
@@ -51,6 +51,7 @@ go_library(
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbutil",
+        "//internal/dotcom",
         "//internal/encryption/keyring",
         "//internal/errcode",
         "//internal/extsvc",
@@ -149,7 +150,6 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/api",
         "//internal/codeintel/dependencies",
         "//internal/conf",
@@ -158,6 +158,7 @@ go_test(
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/database/dbtest",
+        "//internal/dotcom",
         "//internal/encryption/keyring",
         "//internal/extsvc",
         "//internal/extsvc/auth",
@@ -186,7 +187,7 @@ go_test(
         "//lib/errors",
         "//lib/pointers",
         "//schema",
-        "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_derision_test_go_mockgen_v2//testutil/require",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_google_uuid//:uuid",
@@ -198,4 +199,15 @@ go_test(
         "@com_github_stretchr_testify//require",
         "@org_golang_x_time//rate",
     ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_temp.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [":repos"],
 )

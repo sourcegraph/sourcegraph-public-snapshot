@@ -9,7 +9,9 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
+	"google.golang.org/grpc"
 
+	"github.com/sourcegraph/sourcegraph/internal/grpc/internalerrs"
 	"github.com/sourcegraph/sourcegraph/internal/otlpenv"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -39,8 +41,13 @@ func NewOTLPTraceExporter(ctx context.Context, logger log.Logger) (oteltracesdk.
 	// Work with different protocols
 	switch protocol {
 	case otlpenv.ProtocolGRPC:
+		otlpLogger := logger.Scoped("otlp")
 		opts := []otlptracegrpc.Option{
 			otlptracegrpc.WithEndpoint(trimmedEndpoint),
+			otlptracegrpc.WithDialOption(
+				grpc.WithStreamInterceptor(internalerrs.LoggingStreamClientInterceptor(otlpLogger)),
+				grpc.WithUnaryInterceptor(internalerrs.LoggingUnaryClientInterceptor(otlpLogger)),
+			),
 		}
 		if insecure {
 			opts = append(opts, otlptracegrpc.WithInsecure())
@@ -55,6 +62,8 @@ func NewOTLPTraceExporter(ctx context.Context, logger log.Logger) (oteltracesdk.
 			opts = append(opts, otlptracehttp.WithInsecure())
 		}
 		client = otlptracehttp.NewClient(opts...)
+	default:
+		return nil, errors.Newf("unexpected protocol %q", protocol)
 	}
 
 	// Initialize the exporter

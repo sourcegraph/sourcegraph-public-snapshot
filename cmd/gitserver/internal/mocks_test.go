@@ -26,9 +26,9 @@ type MockService struct {
 	// CreateCommitFromPatchFunc is an instance of a mock function object
 	// controlling the behavior of the method CreateCommitFromPatch.
 	CreateCommitFromPatchFunc *ServiceCreateCommitFromPatchFunc
-	// ExecFunc is an instance of a mock function object controlling the
-	// behavior of the method Exec.
-	ExecFunc *ServiceExecFunc
+	// EnsureRevisionFunc is an instance of a mock function object
+	// controlling the behavior of the method EnsureRevision.
+	EnsureRevisionFunc *ServiceEnsureRevisionFunc
 	// IsRepoCloneableFunc is an instance of a mock function object
 	// controlling the behavior of the method IsRepoCloneable.
 	IsRepoCloneableFunc *ServiceIsRepoCloneableFunc
@@ -60,8 +60,8 @@ func NewMockService() *MockService {
 				return
 			},
 		},
-		ExecFunc: &ServiceExecFunc{
-			defaultHook: func(context.Context, *protocol.ExecRequest, io.Writer) (r0 execStatus, r1 error) {
+		EnsureRevisionFunc: &ServiceEnsureRevisionFunc{
+			defaultHook: func(context.Context, api.RepoName, string) (r0 bool) {
 				return
 			},
 		},
@@ -81,7 +81,7 @@ func NewMockService() *MockService {
 			},
 		},
 		RepoUpdateFunc: &ServiceRepoUpdateFunc{
-			defaultHook: func(*protocol.RepoUpdateRequest) (r0 protocol.RepoUpdateResponse) {
+			defaultHook: func(context.Context, *protocol.RepoUpdateRequest) (r0 protocol.RepoUpdateResponse) {
 				return
 			},
 		},
@@ -107,9 +107,9 @@ func NewStrictMockService() *MockService {
 				panic("unexpected invocation of MockService.CreateCommitFromPatch")
 			},
 		},
-		ExecFunc: &ServiceExecFunc{
-			defaultHook: func(context.Context, *protocol.ExecRequest, io.Writer) (execStatus, error) {
-				panic("unexpected invocation of MockService.Exec")
+		EnsureRevisionFunc: &ServiceEnsureRevisionFunc{
+			defaultHook: func(context.Context, api.RepoName, string) bool {
+				panic("unexpected invocation of MockService.EnsureRevision")
 			},
 		},
 		IsRepoCloneableFunc: &ServiceIsRepoCloneableFunc{
@@ -128,7 +128,7 @@ func NewStrictMockService() *MockService {
 			},
 		},
 		RepoUpdateFunc: &ServiceRepoUpdateFunc{
-			defaultHook: func(*protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
+			defaultHook: func(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
 				panic("unexpected invocation of MockService.RepoUpdate")
 			},
 		},
@@ -146,11 +146,11 @@ func NewStrictMockService() *MockService {
 type surrogateMockService interface {
 	CloneRepo(context.Context, api.RepoName, CloneOptions) (string, error)
 	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse
-	Exec(context.Context, *protocol.ExecRequest, io.Writer) (execStatus, error)
+	EnsureRevision(context.Context, api.RepoName, string) bool
 	IsRepoCloneable(context.Context, api.RepoName) (protocol.IsRepoCloneableResponse, error)
 	LogIfCorrupt(context.Context, api.RepoName, error)
 	MaybeStartClone(context.Context, api.RepoName) (*protocol.NotFoundPayload, bool)
-	RepoUpdate(*protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
+	RepoUpdate(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
 	SearchWithObservability(context.Context, trace.Trace, *protocol.SearchRequest, func(*protocol.CommitMatch) error) (bool, error)
 }
 
@@ -164,8 +164,8 @@ func NewMockServiceFrom(i surrogateMockService) *MockService {
 		CreateCommitFromPatchFunc: &ServiceCreateCommitFromPatchFunc{
 			defaultHook: i.CreateCommitFromPatch,
 		},
-		ExecFunc: &ServiceExecFunc{
-			defaultHook: i.Exec,
+		EnsureRevisionFunc: &ServiceEnsureRevisionFunc{
+			defaultHook: i.EnsureRevision,
 		},
 		IsRepoCloneableFunc: &ServiceIsRepoCloneableFunc{
 			defaultHook: i.IsRepoCloneable,
@@ -404,34 +404,35 @@ func (c ServiceCreateCommitFromPatchFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// ServiceExecFunc describes the behavior when the Exec method of the parent
-// MockService instance is invoked.
-type ServiceExecFunc struct {
-	defaultHook func(context.Context, *protocol.ExecRequest, io.Writer) (execStatus, error)
-	hooks       []func(context.Context, *protocol.ExecRequest, io.Writer) (execStatus, error)
-	history     []ServiceExecFuncCall
+// ServiceEnsureRevisionFunc describes the behavior when the EnsureRevision
+// method of the parent MockService instance is invoked.
+type ServiceEnsureRevisionFunc struct {
+	defaultHook func(context.Context, api.RepoName, string) bool
+	hooks       []func(context.Context, api.RepoName, string) bool
+	history     []ServiceEnsureRevisionFuncCall
 	mutex       sync.Mutex
 }
 
-// Exec delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockService) Exec(v0 context.Context, v1 *protocol.ExecRequest, v2 io.Writer) (execStatus, error) {
-	r0, r1 := m.ExecFunc.nextHook()(v0, v1, v2)
-	m.ExecFunc.appendCall(ServiceExecFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
+// EnsureRevision delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockService) EnsureRevision(v0 context.Context, v1 api.RepoName, v2 string) bool {
+	r0 := m.EnsureRevisionFunc.nextHook()(v0, v1, v2)
+	m.EnsureRevisionFunc.appendCall(ServiceEnsureRevisionFuncCall{v0, v1, v2, r0})
+	return r0
 }
 
-// SetDefaultHook sets function that is called when the Exec method of the
-// parent MockService instance is invoked and the hook queue is empty.
-func (f *ServiceExecFunc) SetDefaultHook(hook func(context.Context, *protocol.ExecRequest, io.Writer) (execStatus, error)) {
+// SetDefaultHook sets function that is called when the EnsureRevision
+// method of the parent MockService instance is invoked and the hook queue
+// is empty.
+func (f *ServiceEnsureRevisionFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string) bool) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Exec method of the parent MockService instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *ServiceExecFunc) PushHook(hook func(context.Context, *protocol.ExecRequest, io.Writer) (execStatus, error)) {
+// EnsureRevision method of the parent MockService instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ServiceEnsureRevisionFunc) PushHook(hook func(context.Context, api.RepoName, string) bool) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -439,20 +440,20 @@ func (f *ServiceExecFunc) PushHook(hook func(context.Context, *protocol.ExecRequ
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ServiceExecFunc) SetDefaultReturn(r0 execStatus, r1 error) {
-	f.SetDefaultHook(func(context.Context, *protocol.ExecRequest, io.Writer) (execStatus, error) {
-		return r0, r1
+func (f *ServiceEnsureRevisionFunc) SetDefaultReturn(r0 bool) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string) bool {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ServiceExecFunc) PushReturn(r0 execStatus, r1 error) {
-	f.PushHook(func(context.Context, *protocol.ExecRequest, io.Writer) (execStatus, error) {
-		return r0, r1
+func (f *ServiceEnsureRevisionFunc) PushReturn(r0 bool) {
+	f.PushHook(func(context.Context, api.RepoName, string) bool {
+		return r0
 	})
 }
 
-func (f *ServiceExecFunc) nextHook() func(context.Context, *protocol.ExecRequest, io.Writer) (execStatus, error) {
+func (f *ServiceEnsureRevisionFunc) nextHook() func(context.Context, api.RepoName, string) bool {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -465,53 +466,50 @@ func (f *ServiceExecFunc) nextHook() func(context.Context, *protocol.ExecRequest
 	return hook
 }
 
-func (f *ServiceExecFunc) appendCall(r0 ServiceExecFuncCall) {
+func (f *ServiceEnsureRevisionFunc) appendCall(r0 ServiceEnsureRevisionFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of ServiceExecFuncCall objects describing the
-// invocations of this function.
-func (f *ServiceExecFunc) History() []ServiceExecFuncCall {
+// History returns a sequence of ServiceEnsureRevisionFuncCall objects
+// describing the invocations of this function.
+func (f *ServiceEnsureRevisionFunc) History() []ServiceEnsureRevisionFuncCall {
 	f.mutex.Lock()
-	history := make([]ServiceExecFuncCall, len(f.history))
+	history := make([]ServiceEnsureRevisionFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// ServiceExecFuncCall is an object that describes an invocation of method
-// Exec on an instance of MockService.
-type ServiceExecFuncCall struct {
+// ServiceEnsureRevisionFuncCall is an object that describes an invocation
+// of method EnsureRevision on an instance of MockService.
+type ServiceEnsureRevisionFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *protocol.ExecRequest
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 io.Writer
+	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 execStatus
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
+	Result0 bool
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c ServiceExecFuncCall) Args() []interface{} {
+func (c ServiceEnsureRevisionFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c ServiceExecFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+func (c ServiceEnsureRevisionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ServiceIsRepoCloneableFunc describes the behavior when the
@@ -838,23 +836,23 @@ func (c ServiceMaybeStartCloneFuncCall) Results() []interface{} {
 // ServiceRepoUpdateFunc describes the behavior when the RepoUpdate method
 // of the parent MockService instance is invoked.
 type ServiceRepoUpdateFunc struct {
-	defaultHook func(*protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
-	hooks       []func(*protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
+	defaultHook func(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
+	hooks       []func(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
 	history     []ServiceRepoUpdateFuncCall
 	mutex       sync.Mutex
 }
 
 // RepoUpdate delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockService) RepoUpdate(v0 *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
-	r0 := m.RepoUpdateFunc.nextHook()(v0)
-	m.RepoUpdateFunc.appendCall(ServiceRepoUpdateFuncCall{v0, r0})
+func (m *MockService) RepoUpdate(v0 context.Context, v1 *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
+	r0 := m.RepoUpdateFunc.nextHook()(v0, v1)
+	m.RepoUpdateFunc.appendCall(ServiceRepoUpdateFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the RepoUpdate method of
 // the parent MockService instance is invoked and the hook queue is empty.
-func (f *ServiceRepoUpdateFunc) SetDefaultHook(hook func(*protocol.RepoUpdateRequest) protocol.RepoUpdateResponse) {
+func (f *ServiceRepoUpdateFunc) SetDefaultHook(hook func(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse) {
 	f.defaultHook = hook
 }
 
@@ -862,7 +860,7 @@ func (f *ServiceRepoUpdateFunc) SetDefaultHook(hook func(*protocol.RepoUpdateReq
 // RepoUpdate method of the parent MockService instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ServiceRepoUpdateFunc) PushHook(hook func(*protocol.RepoUpdateRequest) protocol.RepoUpdateResponse) {
+func (f *ServiceRepoUpdateFunc) PushHook(hook func(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -871,19 +869,19 @@ func (f *ServiceRepoUpdateFunc) PushHook(hook func(*protocol.RepoUpdateRequest) 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ServiceRepoUpdateFunc) SetDefaultReturn(r0 protocol.RepoUpdateResponse) {
-	f.SetDefaultHook(func(*protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
+	f.SetDefaultHook(func(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ServiceRepoUpdateFunc) PushReturn(r0 protocol.RepoUpdateResponse) {
-	f.PushHook(func(*protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
+	f.PushHook(func(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
 		return r0
 	})
 }
 
-func (f *ServiceRepoUpdateFunc) nextHook() func(*protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
+func (f *ServiceRepoUpdateFunc) nextHook() func(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -918,7 +916,10 @@ func (f *ServiceRepoUpdateFunc) History() []ServiceRepoUpdateFuncCall {
 type ServiceRepoUpdateFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 *protocol.RepoUpdateRequest
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *protocol.RepoUpdateRequest
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 protocol.RepoUpdateResponse
@@ -927,7 +928,7 @@ type ServiceRepoUpdateFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ServiceRepoUpdateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

@@ -17,6 +17,8 @@ import type {
     Scalars,
     UserBatchChangesCodeHostsResult,
     UserBatchChangesCodeHostsVariables,
+    RefreshGitHubAppResult,
+    RefreshGitHubAppVariables,
 } from '../../../graphql-operations'
 
 export const CREDENTIAL_FIELDS_FRAGMENT = gql`
@@ -191,3 +193,14 @@ export const CHECK_BATCH_CHANGES_CREDENTIAL = gql`
         }
     }
 `
+
+export const REFRESH_GITHUB_APP = gql`
+    mutation RefreshGitHubApp($gitHubApp: ID!) {
+        refreshGitHubApp(gitHubApp: $gitHubApp) {
+            alwaysNil
+        }
+    }
+`
+
+export const useRefreshGitHubApp = (): MutationTuple<RefreshGitHubAppResult, RefreshGitHubAppVariables> =>
+    useMutation(REFRESH_GITHUB_APP)

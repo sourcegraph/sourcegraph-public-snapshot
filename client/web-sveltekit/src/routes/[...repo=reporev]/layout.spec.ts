@@ -18,7 +18,7 @@ test.beforeEach(({ sg }) => {
 test.describe('cloned repository', () => {
     test.beforeEach(async ({ sg, page }) => {
         sg.mockOperations({
-            ResolveRepoRevison: ({ repoName }) => ({
+            ResolveRepoRevision: ({ repoName }) => ({
                 repositoryRedirect: {
                     id: '1',
                     name: repoName,
@@ -33,14 +33,14 @@ test.describe('cloned repository', () => {
     })
 
     test('has search button', async ({ page }) => {
-        await page.getByRole('button', { name: 'Search' }).click()
+        await page.getByRole('button', { name: 'Search', exact: true }).click()
         await expect(page.getByRole('textbox')).toHaveText(String.raw`repo:^github\.com/sourcegraph/sourcegraph$ `)
     })
 })
 
 test('clone in progress', async ({ sg, page }) => {
     sg.mockOperations({
-        ResolveRepoRevison: ({ repoName }) => ({
+        ResolveRepoRevision: ({ repoName }) => ({
             repositoryRedirect: {
                 id: '1',
                 name: repoName,
@@ -62,7 +62,7 @@ test('clone in progress', async ({ sg, page }) => {
 
 test('not cloned', async ({ sg, page }) => {
     sg.mockOperations({
-        ResolveRepoRevison: ({ repoName }) => ({
+        ResolveRepoRevision: ({ repoName }) => ({
             repositoryRedirect: {
                 id: '1',
                 name: repoName,

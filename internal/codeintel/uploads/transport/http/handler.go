@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -69,11 +68,6 @@ func newHandler(
 }
 
 func ensureRepoAndCommitExist(ctx context.Context, repoStore RepoStore, repoName, commit string, logger log.Logger) (int, int, error) {
-	// 🚨 SECURITY: Bypass authz here; we've already determined that the current request is
-	// authorized to view the target repository; they are either a site admin or the code
-	// host has explicit listed them with some level of access (depending on the code host).
-	ctx = actor.WithInternalActor(ctx)
-
 	//
 	// 1. Resolve repository
 

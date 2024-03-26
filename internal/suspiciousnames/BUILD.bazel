@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/suspiciousnames",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
+        "//internal/dotcom",
         "//lib/errors",
     ],
 )

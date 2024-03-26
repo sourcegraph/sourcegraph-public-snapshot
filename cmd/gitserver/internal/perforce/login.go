@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -98,7 +97,7 @@ func P4UserIsSuperUser(ctx context.Context, args P4UserIsSuperUserArguments) err
 	defer os.Remove(scratchDir)
 
 	cmd := NewBaseCommand(ctx, args.P4Home, scratchDir, options...)
-	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -152,7 +151,7 @@ func P4Trust(ctx context.Context, args P4TrustArguments) error {
 
 	cmd := NewBaseCommand(ctx, args.P4Home, scratchDir, options...)
 
-	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -207,7 +206,7 @@ func P4Test(ctx context.Context, args P4TestArguments) error {
 
 		cmd := NewBaseCommand(ctx, args.P4Home, scratchDir, options...)
 
-		out, err := executil.RunCommandCombinedOutput(ctx, cmd)
+		out, err := cmd.CombinedOutput()
 		if err != nil {
 			if ctxerr := ctx.Err(); ctxerr != nil {
 				err = errors.Wrap(ctxerr, "p4 login context error")

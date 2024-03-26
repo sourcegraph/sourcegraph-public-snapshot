@@ -1,6 +1,8 @@
 module github.com/sourcegraph/sourcegraph/lib/managedservicesplatform
 
-go 1.19
+go 1.22
+
+toolchain go1.22.0
 
 replace github.com/sourcegraph/sourcegraph/lib => ../
 
@@ -16,7 +18,6 @@ require (
 	github.com/sourcegraph/conc v0.3.1-0.20240108182409-4afefce20f9b
 	github.com/sourcegraph/log v0.0.0-20231018134238-fbadff7458bb
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20231122233253-1f857814717c
-	go.opentelemetry.io/contrib/detectors/gcp v1.22.0
 	go.opentelemetry.io/contrib/propagators/jaeger v1.22.0
 	go.opentelemetry.io/contrib/propagators/ot v1.22.0
 	go.opentelemetry.io/otel v1.22.0
@@ -35,7 +36,6 @@ require (
 	cloud.google.com/go/iam v1.1.5 // indirect
 	cloud.google.com/go/monitoring v1.17.0 // indirect
 	cloud.google.com/go/trace v1.10.4 // indirect
-	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.21.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.45.0 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/apache/arrow/go/v12 v12.0.0 // indirect
@@ -95,15 +95,15 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
-	golang.org/x/crypto v0.18.0 // indirect
-	golang.org/x/mod v0.11.0 // indirect
-	golang.org/x/net v0.20.0 // indirect
+	golang.org/x/crypto v0.19.0 // indirect
+	golang.org/x/mod v0.15.0 // indirect
+	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/oauth2 v0.16.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/sys v0.17.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/tools v0.10.0 // indirect
+	golang.org/x/tools v0.18.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/api v0.156.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect

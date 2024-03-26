@@ -2,6 +2,9 @@ package runtime
 
 import (
 	"context"
+	"flag"
+	"fmt"
+	"os"
 
 	"cloud.google.com/go/profiler"
 	"github.com/getsentry/sentry-go"
@@ -19,14 +22,17 @@ type ServiceMetadata interface {
 type Service[ConfigT any] interface {
 	ServiceMetadata
 	// Initialize should use given configuration to build a combined background
-	// routine that implements starting and stopping the service.
+	// routine (such as background.CombinedRoutine or background.LIFOStopRoutine)
+	// that implements starting and stopping the service.
 	Initialize(
 		ctx context.Context,
 		logger log.Logger,
 		contract Contract,
 		config ConfigT,
-	) (background.CombinedRoutine, error)
+	) (background.Routine, error)
 }
+
+var showHelp = flag.Bool("help", false, "Show service help text")
 
 // Start handles the entire lifecycle of the program running Service, and should
 // be the only thing called in a MSP program's main package, for example:
@@ -39,6 +45,7 @@ func Start[
 	ConfigT any,
 	LoaderT ConfigLoader[ConfigT],
 ](service Service[ConfigT]) {
+	flag.Parse()
 	passSanityCheck(service)
 
 	// Resource representing the service
@@ -68,6 +75,23 @@ func Start[
 	// Load configuration variables from environment
 	config.Load(env)
 	contract := newContract(log.Scoped("msp.contract"), env, service)
+
+	// Fast-exit with configuration facts if requested
+	if *showHelp {
+		fmt.Printf("SERVICE: %s\nVERSION: %s\n",
+			service.Name(), service.Version())
+		fmt.Printf("CONFIGURATION OPTIONS:\n")
+		for _, v := range env.requestedEnvVars {
+			fmt.Printf("- '%s': %s", v.name, v.description)
+			if v.defaultValue != "" {
+				fmt.Printf(" (default: %q)", v.defaultValue)
+			} else {
+				fmt.Printf(" (required)")
+			}
+			fmt.Println()
+		}
+		os.Exit(0)
+	}
 
 	// Enable Sentry error log reporting
 	var sentryEnabled bool

@@ -8,6 +8,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/grafana/regexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -73,6 +74,29 @@ func (node Pattern) String() string {
 	return strconv.Quote(node.Value)
 }
 
+// IsRegExp returns true if the Pattern.Value should be interpreted as a Regex
+// otherwise returns false for a Literal.
+//
+// Note: This checks that the relevant annotation is set, which occasionally
+// we regress on setting. In such situations it will return that the Pattern
+// is Regex. Use this method so we have consistent behaviour across our
+// backends rather than directly checking annotations when building queries
+// for your backend.
+func (node Pattern) IsRegExp() bool {
+	// NOTE: Structural tech debt. We want the patterns to be treated like
+	// literals and not passed down as regex to searcher.
+	return !node.Annotation.Labels.IsSet(Literal | Structural)
+}
+
+// RegExpPattern returns the pattern value as a regex string. If node.IsRegExp
+// this is just node.Value, otherwise we escape the literal.
+func (node Pattern) RegExpPattern() string {
+	if node.IsRegExp() {
+		return node.Value
+	}
+	return regexp.QuoteMeta(node.Value)
+}
+
 func (node Parameter) String() string {
 	var v string
 	switch {
@@ -118,9 +142,20 @@ const (
 	NOT    keyword = "not"
 )
 
+// isSpace returns true if the buffer only contains UTF-8 encoded whitespace as
+// defined by unicode.IsSpace.
 func isSpace(buf []byte) bool {
-	r, _ := utf8.DecodeRune(buf)
-	return unicode.IsSpace(r)
+	if len(buf) == 0 {
+		return false
+	}
+	for len(buf) > 0 {
+		r, n := utf8.DecodeRune(buf)
+		if !unicode.IsSpace(r) {
+			return false
+		}
+		buf = buf[n:]
+	}
+	return true
 }
 
 // skipSpace returns the number of whitespace bytes skipped from the beginning of a buffer buf.
@@ -194,7 +229,7 @@ func (p *parser) peek(n int) (string, error) {
 	}()
 
 	var result []rune
-	for i := 0; i < n; i++ {
+	for range n {
 		if p.done() {
 			return "", io.ErrShortBuffer
 		}
@@ -223,12 +258,16 @@ func (p *parser) expect(keyword keyword) bool {
 	return true
 }
 
-// matchKeyword is like match but expects the keyword to be preceded and followed by whitespace.
+// matchKeyword is like match but checks whether the keyword has a valid prefix
+// and suffix.
 func (p *parser) matchKeyword(keyword keyword) bool {
 	if p.pos == 0 {
 		return false
 	}
-	if !isSpace(p.buf[p.pos-1 : p.pos]) {
+	if isSpace(p.buf[:p.pos]) {
+		return false
+	}
+	if !(isSpace(p.buf[p.pos-1:p.pos]) || p.buf[p.pos-1] == ')') {
 		return false
 	}
 	v, err := p.peek(len(string(keyword)))
@@ -236,7 +275,7 @@ func (p *parser) matchKeyword(keyword keyword) bool {
 		return false
 	}
 	after := p.pos + len(string(keyword))
-	if after >= len(p.buf) || !isSpace(p.buf[after:after+1]) {
+	if after >= len(p.buf) || !(isSpace(p.buf[after:after+1]) || p.buf[after] == '(') {
 		return false
 	}
 	return strings.EqualFold(v, string(keyword))
@@ -244,8 +283,7 @@ func (p *parser) matchKeyword(keyword keyword) bool {
 
 // matchUnaryKeyword is like match but expects the keyword to be followed by whitespace.
 func (p *parser) matchUnaryKeyword(keyword keyword) bool {
-	if p.pos != 0 && !(isSpace(p.buf[p.pos-1:p.pos]) || p.buf[p.pos-1] == '(') {
-		// "not" must be preceded by a space or ( anywhere except the beginning of the string
+	if p.pos != 0 && !(isSpace(p.buf[p.pos-1:p.pos]) || p.buf[p.pos-1] == ')' || p.buf[p.pos-1] == '(') {
 		return false
 	}
 	v, err := p.peek(len(string(keyword)))
@@ -868,7 +906,6 @@ func (p *parser) ParsePattern(label labels) Pattern {
 	}
 	p.pos += advance
 	return newPattern(value, label, newRange(start, p.pos))
-
 }
 
 // ParseParameter returns a leaf node corresponding to the syntax
@@ -965,7 +1002,8 @@ loop:
 				return nil, err
 			}
 			nodes = append(nodes, result...)
-		case p.expect(RPAREN) && !isSet(p.heuristics, allowDanglingParens):
+		case p.match(RPAREN) && !isSet(p.heuristics, allowDanglingParens):
+			// Caller advances.
 			if p.balanced <= 0 {
 				if label.IsSet(QuotesAsLiterals) {
 					return nil, errors.New("unsupported expression. The combination of parentheses in the query has an unclear meaning. Use \"...\" to quote patterns that contain parentheses")
@@ -1148,6 +1186,11 @@ func (p *parser) parseOr() ([]Node, error) {
 	if left == nil {
 		return nil, &ExpectedOperand{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
 	}
+
+	// parseAnd might have parsed an expression, in which case parser.pos is
+	// currently pointing to a RPAREN.
+	_ = p.expect(RPAREN)
+
 	if !p.expect(OR) {
 		return left, nil
 	}

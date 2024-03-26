@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"net/url"
 	"path"
@@ -12,18 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	proto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// TODO: Can be removed after 5.3 is cut.
-func serveConfiguration(w http.ResponseWriter, _ *http.Request) error {
-	raw := conf.Raw()
-	err := json.NewEncoder(w).Encode(raw)
-	if err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
-}
 
 // configServer implements proto.ConfigServiceServer to serve config to other clients in the cluster.
 type configServer struct {

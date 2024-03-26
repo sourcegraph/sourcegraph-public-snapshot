@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -100,7 +99,7 @@ func P4Depots(ctx context.Context, args P4DepotsArguments) ([]perforceDepot, err
 
 	cmd := NewBaseCommand(ctx, args.P4Home, scratchDir, options...)
 
-	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = errors.Wrap(ctxerr, "p4 depots context error")

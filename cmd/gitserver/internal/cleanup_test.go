@@ -60,10 +60,6 @@ func TestCleanup_computeStats(t *testing.T) {
 		}
 	}
 
-	// This may be different in practice, but the way we setup the tests
-	// we only have .git dirs to measure so this is correct.
-	wantGitDirBytes := gitserverfs.DirSize(root)
-
 	logger, capturedLogs := logtest.Captured(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
@@ -89,6 +85,10 @@ UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 		false,
 	)
+
+	// This may be different in practice, but the way we setup the tests
+	// we only have .git dirs to measure so this is correct.
+	wantGitDirBytes := gitserverfs.DirSize(root)
 
 	for i := 1; i <= 3; i++ {
 		repo, err := db.GitserverRepos().GetByID(context.Background(), api.RepoID(i))
@@ -281,7 +281,7 @@ func TestGitGCAuto(t *testing.T) {
 	runCmd(t, wd, "git", "init", "--initial-branch", "main", repo)
 
 	// First we need to generate a moderate number of commits.
-	for i := 0; i < 50; i++ {
+	for range 50 {
 		runCmd(t, repo, "sh", "-c", "echo 1 >> file1")
 		runCmd(t, repo, "git", "add", "file1")
 		runCmd(t, repo, "git", "commit", "-m", "file1")
@@ -289,7 +289,7 @@ func TestGitGCAuto(t *testing.T) {
 
 	// Now on a second branch, we do the same thing.
 	runCmd(t, repo, "git", "checkout", "-b", "secondary")
-	for i := 0; i < 50; i++ {
+	for range 50 {
 		runCmd(t, repo, "sh", "-c", "echo 2 >> file2")
 		runCmd(t, repo, "git", "add", "file2")
 		runCmd(t, repo, "git", "commit", "-m", "file2")

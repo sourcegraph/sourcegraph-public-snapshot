@@ -42,6 +42,8 @@ type Config struct {
 	CloudflareProxied bool
 	// Production is true if environments[].category is `internal` or `external` but not `test`
 	Production bool
+	// EnableLogging enables always-on logging for the backend.
+	EnableLogging bool
 }
 
 type SSLCertificate interface {
@@ -100,6 +102,11 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 				}
 				return nil
 			}(),
+			LogConfig: &computebackendservice.ComputeBackendServiceLogConfig{
+				// https://cloud.google.com/load-balancing/docs/https/https-logging-monitoring#viewing_logs
+				Enable:     config.EnableLogging,
+				SampleRate: pointers.Float64(1), // always-sample when logging is enabled
+			},
 
 			Backend: []*computebackendservice.ComputeBackendServiceBackend{{
 				Group: endpointGroup.Id(),

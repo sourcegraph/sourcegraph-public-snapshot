@@ -17,13 +17,13 @@ import type { LayoutLoad } from './$types'
 import { ResolveRepoRevision, ResolvedRepository, type ResolveRepoRevisionResult } from './layout.gql'
 
 export interface ResolvedRevision {
-    repo: ResolvedRepository
+    repo: ResolvedRepository & NonNullable<{ commit: ResolvedRepository['commit'] }>
     commitID: string
     defaultBranch: string
 }
 
 export const load: LayoutLoad = async ({ params, url, depends }) => {
-    const client = await getGraphQLClient()
+    const client = getGraphQLClient()
 
     // This allows other places to reload all repo related data by calling
     // invalidate('repo:root')
@@ -84,24 +84,10 @@ async function resolveRepoRevision({
     revision?: string
 }): Promise<ResolvedRevision> {
     // See if we have a cached response
-    let data = client.readQuery({
-        query: ResolveRepoRevision,
-        variables: {
-            repoName,
-            revision,
-        },
-    })
+    let data = client.readQuery(ResolveRepoRevision, { repoName, revision })?.data
+
     if (shouldResolveRepositoryInformation(data)) {
-        data = await client
-            .query({
-                query: ResolveRepoRevision,
-                variables: {
-                    repoName,
-                    revision,
-                },
-                fetchPolicy: 'network-only',
-            })
-            .then(result => result.data)
+        data = (await client.query(ResolveRepoRevision, { repoName, revision }, { requestPolicy: 'network-only' })).data
     }
 
     if (!data?.repositoryRedirect) {
@@ -150,7 +136,7 @@ async function resolveRepoRevision({
  * corresponding commit ID only once.
  * This ensures consistentcy as the user navigates to and away from the repository page.
  */
-function shouldResolveRepositoryInformation(data: ResolveRepoRevisionResult | null): boolean {
+function shouldResolveRepositoryInformation(data: ResolveRepoRevisionResult | undefined): boolean {
     if (!data) {
         return true
     }

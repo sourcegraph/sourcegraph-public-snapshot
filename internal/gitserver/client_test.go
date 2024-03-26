@@ -24,7 +24,7 @@ import (
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 )
 
-func TestClient_Archive_ProtoRoundTrip(t *testing.T) {
+func TestClientArchiveOptions_ProtoRoundTrip(t *testing.T) {
 	var diff string
 
 	fn := func(original gitserver.ArchiveOptions) bool {
@@ -66,10 +66,9 @@ func TestClient_IsRepoCloneale_ProtoRoundTrip(t *testing.T) {
 func TestClient_RepoUpdateRequest_ProtoRoundTrip(t *testing.T) {
 	var diff string
 	t.Run("request", func(t *testing.T) {
-		fn := func(repo api.RepoName, since int64) bool {
+		fn := func(repo api.RepoName) bool {
 			original := protocol.RepoUpdateRequest{
-				Repo:  repo,
-				Since: time.Duration(since),
+				Repo: repo,
 			}
 
 			var converted protocol.RepoUpdateRequest
@@ -180,25 +179,6 @@ func TestClient_CreateCommitFromPatchRequest_ProtoRoundTrip(t *testing.T) {
 			t.Errorf("CreateCommitFromPatchResponse proto roundtrip failed (-want +got):\n%s", diff)
 		}
 	})
-}
-
-func TestClient_RepoCloneProgress_ProtoRoundTrip(t *testing.T) {
-	var diff string
-
-	fn := func(original protocol.RepoCloneProgress) bool {
-		var converted protocol.RepoCloneProgress
-		converted.FromProto(original.ToProto())
-
-		if diff = cmp.Diff(original, converted); diff != "" {
-			return false
-		}
-
-		return true
-	}
-
-	if err := quick.Check(fn, nil); err != nil {
-		t.Errorf("RepoCloneProgress proto roundtrip failed (-want +got):\n%s", diff)
-	}
 }
 
 func TestClient_RepoClone_ProtoRoundTrip(t *testing.T) {

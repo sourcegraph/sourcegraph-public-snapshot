@@ -38,6 +38,32 @@ type userClaims struct {
 	EmailVerified     *bool  `json:"email_verified"`
 }
 
+// getLogin returns the preferred username or email address from the user claims,
+// or the email address if the preferred username is not set.
+func getLogin(c *userClaims, i *oidc.UserInfo) string {
+	if c.PreferredUsername != "" {
+		return c.PreferredUsername
+	}
+
+	return i.Email
+}
+
+// getDisplayName returns a display name from the user claims in this order:
+// 1. GivenName
+// 2. Name
+// 3. provided defaultName
+func getDisplayName(c *userClaims, defaultName string) string {
+	if c.GivenName != "" {
+		return c.GivenName
+	}
+
+	if c.Name != "" {
+		return c.Name
+	}
+
+	return defaultName
+}
+
 // Middleware is middleware for OpenID Connect (OIDC) authentication, adding endpoints under the
 // auth path prefix ("/.auth") to enable the login flow and requiring login for all other endpoints.
 //
@@ -95,7 +121,7 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 	// it's an app request, and the sign-out cookie is not present, redirect to sign-in immediately.
 	//
 	// For sign-out requests (sign-out cookie is  present), the user is redirected to the Sourcegraph login page.
-	ps := providers.Providers()
+	ps := providers.SignInProviders()
 	openIDConnectEnabled := len(ps) == 1 && ps[0].Config().Openidconnect != nil
 	if openIDConnectEnabled && !auth.HasSignOutCookie(r) && !isAPIRequest {
 		p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), ps[0].ConfigID().ID, GetProvider)
@@ -165,7 +191,6 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			}
 			if err := db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventOIDCLoginSucceeded, r.URL.Path, uint32(result.User.ID), "", "BACKEND", nil); err != nil {
 				log15.Warn("Error logging security event.", "error", err)
-
 			}
 
 			var exp time.Duration
@@ -439,11 +464,9 @@ func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, 
 	// validating the response to the ID Token request. We re-use the Authn request
 	// state as the nonce.
 	//
-	// The "prompt=login" asks the OP to prompt the user for re-authentication.
-	//
 	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
 	// OIDC spec.
-	authURL := p.oauth2Config().AuthCodeURL(oidcState, oidc.Nonce(oidcState)) + "&prompt=login"
+	authURL := p.oauth2Config().AuthCodeURL(oidcState, oidc.Nonce(oidcState))
 	// Pass along the prompt_auth to OP for the specific type of authentication to
 	// use, e.g. "github", "gitlab", "google".
 	promptAuth := r.URL.Query().Get("prompt_auth")

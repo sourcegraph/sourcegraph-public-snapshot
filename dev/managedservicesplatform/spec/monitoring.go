@@ -15,7 +15,7 @@ type MonitoringSpec struct {
 	Alerts MonitoringAlertsSpec `yaml:"alerts"`
 	// Nobl9 determines whether to provision a Nobl9 project.
 	// Currently for trial purposes only
-	Nobl9 bool `yaml:"nobl9"`
+	Nobl9 *bool `yaml:"nobl9,omitempty"`
 }
 
 func (s *MonitoringSpec) Validate() []error {

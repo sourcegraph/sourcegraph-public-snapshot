@@ -82,7 +82,7 @@ var exiter = func() { os.Exit(0) }
 // exitAfterSignals waits for a number of signals on the given channel, then
 // calls os.Exit(0) to exit the program.
 func exitAfterSignals(signals <-chan os.Signal, numSignals int) {
-	for i := 0; i < numSignals; i++ {
+	for range numSignals {
 		<-signals
 	}
 
@@ -104,6 +104,22 @@ func (r CombinedRoutine) Stop() {
 	wg.Wait()
 }
 
+// LIFOStopRoutine is a list of routines which are started in unison, but stopped
+// sequentially last-in-first-out (the last Routine is stopped, and once it
+// successfully stops, the next routine is stopped).
+//
+// This is useful for services where subprocessors should be stopped before the
+// primary service stops for a graceful shutdown.
+type LIFOStopRoutine []Routine
+
+func (r LIFOStopRoutine) Start() { CombinedRoutine(r).Start() }
+
+func (r LIFOStopRoutine) Stop() {
+	for i := len(r) - 1; i >= 0; i -= 1 {
+		r[i].Stop()
+	}
+}
+
 // NoopRoutine does nothing for start or stop.
 func NoopRoutine() Routine {
 	return CallbackRoutine{}
@@ -121,6 +137,7 @@ func (r CallbackRoutine) Start() {
 		r.StartFunc()
 	}
 }
+
 func (r CallbackRoutine) Stop() {
 	if r.StopFunc != nil {
 		r.StopFunc()

@@ -39,7 +39,7 @@ var Targets = []Target{
 		Name:        "go",
 		Description: "Check go code for linting errors, forbidden imports, generated files, etc",
 		Checks: []*linter{
-			timeCheck(goGenerateLinter),
+			onlyLocal(goGenerateLinter),
 			onlyLocal(goDBConnImport),
 			onlyLocal(noLocalHost),
 			timeCheck(lintGoDirectives()),

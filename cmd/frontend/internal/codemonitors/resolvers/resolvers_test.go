@@ -126,7 +126,7 @@ func TestListCodeMonitors(t *testing.T) {
 	require.False(t, r1.PageInfo().HasNextPage())
 
 	// Create enough monitors to necessitate paging
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		_, err := r.insertTestMonitorWithOpts(ctx, t)
 		require.NoError(t, err)
 	}
@@ -148,6 +148,40 @@ func TestListCodeMonitors(t *testing.T) {
 
 	require.Len(t, r3.Nodes(), 6, "unexpected node count")
 	require.False(t, r3.PageInfo().HasNextPage())
+}
+
+func TestListCodeMonitors_MissingUsers(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := actor.WithInternalActor(context.Background())
+	db := database.NewDB(logger, dbtest.NewDB(t))
+	r := newTestResolver(t, db)
+
+	user := insertTestUser(t, db, "cm-user1", true)
+	ctx = actor.WithActor(ctx, actor.FromUser(user.ID))
+
+	// Create a monitor.
+	_, err := r.insertTestMonitorWithOpts(ctx, t)
+	require.NoError(t, err)
+
+	args := &graphqlbackend.ListMonitorsArgs{
+		First: 5,
+	}
+
+	r1, err := r.Monitors(ctx, &user.ID, args)
+	require.NoError(t, err)
+
+	require.Len(t, r1.Nodes(), 1, "unexpected node count")
+	require.False(t, r1.PageInfo().HasNextPage())
+
+	// Soft-delete user
+	err = db.Users().Delete(ctx, user.ID)
+	require.NoError(t, err)
+
+	r2, err := r.Monitors(ctx, &user.ID, args)
+	require.NoError(t, err)
+
+	require.Len(t, r2.Nodes(), 0, "unexpected node count")
+	require.False(t, r2.PageInfo().HasNextPage())
 }
 
 func TestIsAllowedToEdit(t *testing.T) {

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
@@ -43,7 +42,7 @@ func P4Users(ctx context.Context, args P4UsersArguments) ([]perforce.User, error
 	defer os.Remove(scratchDir)
 
 	cmd := NewBaseCommand(ctx, args.P4Home, scratchDir, options...)
-	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = errors.Wrap(ctxerr, "p4 users context error")

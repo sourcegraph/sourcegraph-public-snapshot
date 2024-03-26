@@ -2,6 +2,8 @@ package inttests
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"net"
 	"net/http"
 	"os"
@@ -74,17 +76,35 @@ func InitGitserver() {
 	})
 	db.ReposFunc.SetDefaultReturn(r)
 
+	getRemoteURLFunc := func(_ context.Context, name api.RepoName) (string, error) { //nolint:unparam // context is unused but required by the interface, error is not used in this test
+		return filepath.Join(root, "remotes", string(name)), nil
+	}
+
 	s := server.NewServer(&server.ServerOpts{
 		Logger:   sglog.Scoped("server"),
 		ReposDir: filepath.Join(root, "repos"),
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			return gitcli.NewBackend(logtest.Scoped(&t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 		},
-		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
-			return filepath.Join(root, "remotes", string(name)), nil
-		},
+		GetRemoteURLFunc: getRemoteURLFunc,
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-			return vcssyncer.NewGitRepoSyncer(logger, wrexec.NewNoOpRecordingCommandFactory()), nil
+			getRemoteURLSource := func(ctx context.Context, name api.RepoName) (vcssyncer.RemoteURLSource, error) {
+				return vcssyncer.RemoteURLSourceFunc(func(ctx context.Context) (*vcs.URL, error) {
+					raw, err := getRemoteURLFunc(ctx, name)
+					if err != nil {
+						return nil, errors.Wrapf(err, "failed to get remote URL for %s", name)
+					}
+
+					u, err := vcs.ParseURL(raw)
+					if err != nil {
+						return nil, errors.Wrapf(err, "failed to parse remote URL %q", raw)
+					}
+
+					return u, nil
+				}), nil
+			}
+
+			return vcssyncer.NewGitRepoSyncer(logger, wrexec.NewNoOpRecordingCommandFactory(), getRemoteURLSource), nil
 		},
 		DB:                      db,
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
@@ -117,7 +137,7 @@ func MakeGitRepository(t testing.TB, cmds ...string) api.RepoName {
 	t.Helper()
 	dir := InitGitRepository(t, cmds...)
 	repo := api.RepoName(filepath.Base(dir))
-	if resp, err := testGitserverClient.RequestRepoUpdate(context.Background(), repo, 0); err != nil {
+	if resp, err := testGitserverClient.RequestRepoUpdate(context.Background(), repo); err != nil {
 		t.Fatal(err)
 	} else if resp.Error != "" {
 		t.Fatal(resp.Error)
@@ -160,4 +180,37 @@ func GitCommand(dir, name string, args ...string) *exec.Cmd {
 		"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z",
 	)
 	return c
+}
+
+func createSimpleGitRepo(t *testing.T, root string) string {
+	t.Helper()
+	dir := filepath.Join(root, "remotes", "simple")
+
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, cmd := range []string{
+		"git init",
+		"mkdir dir1",
+		"echo -n infile1 > dir1/file1",
+		"touch --date=2006-01-02T15:04:05Z dir1 dir1/file1 || touch -t 200601021704.05 dir1 dir1/file1",
+		"git add dir1/file1",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_AUTHOR_DATE=2006-01-02T15:04:05Z GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"echo -n infile2 > 'file 2'",
+		"touch --date=2014-05-06T19:20:21Z 'file 2' || touch -t 201405062120.21 'file 2'",
+		"git add 'file 2'",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_AUTHOR_DATE=2006-01-02T15:04:05Z GIT_COMMITTER_DATE=2014-05-06T19:20:21Z git commit -m commit2 --author='a <a@a.com>' --date 2014-05-06T19:20:21Z",
+		"git branch test-ref HEAD~1",
+		"git branch test-nested-ref test-ref",
+	} {
+		c := exec.Command("bash", "-c", `GIT_CONFIG_GLOBAL="" GIT_CONFIG_SYSTEM="" `+cmd)
+		c.Dir = dir
+		out, err := c.CombinedOutput()
+		if err != nil {
+			t.Fatalf("Command %q failed. Output was:\n\n%s", cmd, out)
+		}
+	}
+
+	return dir
 }

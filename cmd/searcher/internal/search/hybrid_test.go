@@ -165,8 +165,8 @@ Hello world example in go
 	}, {
 		Name: "added",
 		Pattern: protocol.PatternInfo{
-			Query:           &protocol.PatternNode{Value: "world"},
-			IncludePatterns: []string{"added"},
+			Query:        &protocol.PatternNode{Value: "world"},
+			IncludePaths: []string{"added"},
 		},
 		Want: `
 added.md:1:1:
@@ -220,8 +220,8 @@ changed.go
 	}, {
 		Name: "path-include",
 		Pattern: protocol.PatternInfo{
-			Query:           &protocol.PatternNode{Value: ""},
-			IncludePatterns: []string{"^added"},
+			Query:        &protocol.PatternNode{Value: ""},
+			IncludePaths: []string{"^added"},
 		},
 		Want: `
 added.md
@@ -229,8 +229,8 @@ added.md
 	}, {
 		Name: "path-exclude-added",
 		Pattern: protocol.PatternInfo{
-			Query:          &protocol.PatternNode{Value: ""},
-			ExcludePattern: "added",
+			Query:        &protocol.PatternNode{Value: ""},
+			ExcludePaths: "added",
 		},
 		Want: `
 changed.go
@@ -239,8 +239,8 @@ unchanged.md
 	}, {
 		Name: "path-exclude-unchanged",
 		Pattern: protocol.PatternInfo{
-			Query:          &protocol.PatternNode{Value: ""},
-			ExcludePattern: "unchanged",
+			Query:        &protocol.PatternNode{Value: ""},
+			ExcludePaths: "unchanged",
 		},
 		Want: `
 added.md
@@ -249,8 +249,8 @@ changed.go
 	}, {
 		Name: "path-all",
 		Pattern: protocol.PatternInfo{
-			Query:           &protocol.PatternNode{Value: ""},
-			IncludePatterns: []string{"."},
+			Query:        &protocol.PatternNode{Value: ""},
+			IncludePaths: []string{"."},
 		},
 		Want: `
 added.md
@@ -279,7 +279,37 @@ Hello world example in go
 added.md
 unchanged.md
 `,
-	}}
+	}, {
+		Name: "lang-filters-include",
+		Pattern: protocol.PatternInfo{
+			Query:        &protocol.PatternNode{Value: ""},
+			IncludeLangs: []string{"Markdown"},
+		},
+		Want: `
+added.md
+unchanged.md
+`,
+	}, {
+		Name: "lang-filters-exclude",
+		Pattern: protocol.PatternInfo{
+			Query:        &protocol.PatternNode{Value: ""},
+			ExcludeLangs: []string{"Markdown"},
+		},
+		Want: `
+changed.go
+`,
+	}, {
+		Name: "lang-filters-with-paths",
+		Pattern: protocol.PatternInfo{
+			Query:        &protocol.PatternNode{Value: ""},
+			IncludePaths: []string{"change"},
+			ExcludeLangs: []string{"Markdown"},
+		},
+		Want: `
+changed.go
+`,
+	},
+	}
 
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {

@@ -8,7 +8,6 @@
 
 <script lang="ts">
     import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
-    import { observeIntersection } from '$lib/intersection-observer'
 
     import {
         addLineRangeQueryParameter,
@@ -17,17 +16,19 @@
         toPositionOrRangeQueryParameter,
     } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
-    import { getFileMatchUrl, type ContentMatch, rankByLine, rankPassthrough } from '$lib/shared'
-
-    import SearchResult from './SearchResult.svelte'
-    import { getSearchResultsContext } from './searchResultsContext'
-    import CodeHostIcon from './CodeHostIcon.svelte'
-    import RepoStars from './RepoStars.svelte'
-    import { settings } from '$lib/stores'
-    import { rankContentMatch } from '$lib/search/results'
-    import FileSearchResultHeader from './FileSearchResultHeader.svelte'
+    import { observeIntersection } from '$lib/intersection-observer'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
     import CodeExcerpt from '$lib/search/CodeExcerpt.svelte'
+    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import { rankContentMatch } from '$lib/search/results'
+    import { getFileMatchUrl, type ContentMatch, rankByLine, rankPassthrough } from '$lib/shared'
+    import { settings } from '$lib/stores'
+
+    import FileSearchResultHeader from './FileSearchResultHeader.svelte'
+    import PreviewButton from './PreviewButton.svelte'
+    import RepoStars from './RepoStars.svelte'
+    import SearchResult from './SearchResult.svelte'
+    import { getSearchResultsContext } from './searchResultsContext'
 
     export let result: ContentMatch
 
@@ -75,15 +76,18 @@
     let visible = false
     let highlightedHTMLRows: Promise<string[][]> | undefined
     $: if (visible) {
-        // We rely on fetchFileRangeMatches to cache the result for us so that repeated
-        // calls will not result in repeated network requests.
-        highlightedHTMLRows = fetchFileRangeMatches({
-            result,
-            ranges: expandedMatchGroups.map(group => ({
-                startLine: group.startLine,
-                endLine: group.endLine,
-            })),
-        })
+        // If the file contains some large lines, avoid stressing syntax-highlighter and the browser.
+        if (!result.chunkMatches?.some(chunk => chunk.contentTruncated)) {
+            // We rely on fetchFileRangeMatches to cache the result for us so that repeated
+            // calls will not result in repeated network requests.
+            highlightedHTMLRows = fetchFileRangeMatches({
+                result,
+                ranges: expandedMatchGroups.map(group => ({
+                    startLine: group.startLine,
+                    endLine: group.endLine,
+                })),
+            })
+        }
     }
 </script>
 
@@ -94,6 +98,7 @@
         {#if result.repoStars}
             <RepoStars repoStars={result.repoStars} />
         {/if}
+        <PreviewButton {result} />
     </svelte:fragment>
 
     <div bind:this={root} use:observeIntersection on:intersecting={event => (visible = event.detail)} class="matches">
@@ -109,6 +114,7 @@
                             startLine={group.startLine}
                             matches={group.matches}
                             plaintextLines={group.plaintextLines}
+                            --background-color="transparent"
                         />
                     {:then result}
                         <CodeExcerpt
@@ -116,6 +122,7 @@
                             matches={group.matches}
                             plaintextLines={group.plaintextLines}
                             highlightedHTMLRows={result?.[index]?.slice(0, group.plaintextLines.length)}
+                            --background-color="transparent"
                         />
                     {/await}
                 </a>
@@ -151,6 +158,10 @@
             position: sticky;
             bottom: 0;
         }
+
+        &:hover {
+            background-color: var(--subtle-bg-2);
+        }
     }
 
     .code {
@@ -158,6 +169,10 @@
 
         &:last-child {
             border-bottom: none;
+        }
+
+        &:hover {
+            background-color: var(--subtle-bg-2);
         }
 
         a {

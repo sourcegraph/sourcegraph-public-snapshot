@@ -187,7 +187,7 @@ func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherU
 			IsCaseSensitive:       j.caseSensitive,
 			FileMatchLimit:        99999999,
 			Index:                 query.No,
-			IncludePatterns:       []string{query.UnionRegExps(fileNames)},
+			IncludePaths:          []string{query.UnionRegExps(fileNames)},
 			PatternMatchesContent: true,
 		}
 

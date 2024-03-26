@@ -20,7 +20,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
@@ -31,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	du "github.com/sourcegraph/sourcegraph/internal/diskusage"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -64,7 +64,7 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wre
 			// On customer instances, this worker is useless, because repos are always
 			// managed by an external service connection and they will be recloned
 			// ASAP.
-			if envvar.SourcegraphDotComMode() {
+			if dotcom.SourcegraphDotComMode() {
 				diskSizer := &StatDiskSizer{}
 				logger := logger.Scoped("dotcom-repo-cleaner")
 				start := time.Now()
@@ -326,11 +326,22 @@ func cleanupRepos(
 	}
 
 	collectSize := func(dir common.GitDir) (done bool, err error) {
-		size := gitserverfs.DirSize(dir.Path("."))
-		name := gitserverfs.RepoNameFromDir(reposDir, dir)
-		repoToSize[name] = size
+		repoName := gitserverfs.RepoNameFromDir(reposDir, dir)
+		backend := gitcli.NewBackend(logger, rcf, dir, repoName)
+		last, err := getLastSizeCalculation(ctx, backend.Config())
+		if err != nil {
+			return false, err
+		}
 
-		return false, nil
+		if time.Since(last) < repoSizeRecalcInterval {
+			// Don't recalculate.
+			return false, nil
+		}
+
+		size := gitserverfs.DirSize(dir.Path("."))
+		repoToSize[repoName] = size
+
+		return false, setLastSizeCalculation(ctx, backend.Config())
 	}
 
 	maybeRemoveCorrupt := func(dir common.GitDir) (done bool, _ error) {
@@ -339,6 +350,7 @@ func cleanupRepos(
 			return false, err
 		}
 
+		repoCorruptedCounter.Inc()
 		repoName := gitserverfs.RepoNameFromDir(reposDir, dir)
 		err = db.GitserverRepos().LogCorruption(ctx, repoName, fmt.Sprintf("sourcegraph detected corrupt repo: %s", reason), shardID)
 		if err != nil {
@@ -358,7 +370,8 @@ func cleanupRepos(
 			return false, nil
 		}
 
-		_, err := db.GitserverRepos().GetByName(ctx, gitserverfs.RepoNameFromDir(reposDir, dir))
+		repoName := gitserverfs.RepoNameFromDir(reposDir, dir)
+		_, err := db.GitserverRepos().GetByName(ctx, repoName)
 		// Repo still exists, nothing to do.
 		if err == nil {
 			return false, nil
@@ -366,7 +379,7 @@ func cleanupRepos(
 
 		// Failed to talk to DB, skip this repo.
 		if !errcode.IsNotFound(err) {
-			logger.Warn("failed to look up repo", log.Error(err), log.String("repo", string(dir)))
+			logger.Warn("failed to look up repo", log.Error(err), log.String("repo", string(repoName)))
 			return false, nil
 		}
 
@@ -444,10 +457,8 @@ func cleanupRepos(
 			return false, nil
 		}
 
-		// name is the relative path to ReposDir, but without the .git suffix.
-		repo := gitserverfs.RepoNameFromDir(reposDir, dir)
 		recloneLogger := logger.With(
-			log.String("repo", string(repo)),
+			log.String("repo", string(repoName)),
 			log.Time("cloned", recloneTime),
 			log.String("reason", reason),
 		)
@@ -463,7 +474,7 @@ func cleanupRepos(
 
 		cmdCtx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 		defer cancel()
-		if _, err := cloneRepo(cmdCtx, repo, CloneOptions{Block: true, Overwrite: true}); err != nil {
+		if _, err := cloneRepo(cmdCtx, repoName, CloneOptions{Block: true, Overwrite: true}); err != nil {
 			return true, err
 		}
 		reposRecloned.Inc()
@@ -543,8 +554,6 @@ func cleanupRepos(
 		// maybe there's been a resharding event and we can actually remove it
 		// and not spend further CPU cycles fixing it.
 		{"delete wrong shard repos", maybeDeleteWrongShardRepos},
-		// Compute the amount of space used by the repo
-		{"compute stats", collectSize},
 		// Do some sanity checks on the repository.
 		{"maybe remove corrupt", maybeRemoveCorrupt},
 		// Remove repo if DB does not contain it anymore
@@ -591,6 +600,10 @@ func cleanupRepos(
 			Do:   maybeReclone,
 		})
 	}
+
+	// Compute the amount of space used by the repo. We do this last, because
+	// we want it to reflect the improvements that previous GC methods had.
+	cleanups = append(cleanups, cleanupFn{"compute stats", collectSize})
 
 	reposCleaned := 0
 
@@ -1005,7 +1018,7 @@ func sgMaintenance(logger log.Logger, dir common.GitDir) (err error) {
 		)
 		return nil
 	}
-	defer unlock()
+	defer func() { _ = unlock() }()
 
 	b, err := cmd.CombinedOutput()
 	if err != nil {
@@ -1259,4 +1272,45 @@ func removeFileOlderThan(logger log.Logger, path string, maxAge time.Duration) (
 
 func mockRemoveNonExistingReposConfig(value bool) {
 	removeNonExistingRepos = value
+}
+
+const (
+	sizeCalculationConfigKey = "sourcegraph.sizeCalculationTime"
+	// We recalculate the repository size every day at most in the janitor.
+	// There's no need to recalculate it more often than that, since fetches
+	// update it anyways. So this will only be useful for "housekeeping" purposes
+	// in case we don't fetch for a while and the size on disk changes.
+	repoSizeRecalcInterval = 24 * time.Hour
+)
+
+// getLastSizeCalculation returns the time the repository size was last calculated
+// by the janitor. We don't set this timestamp in fetches, so janitor still runs
+// this task every now and then.
+func getLastSizeCalculation(ctx context.Context, c git.GitConfigBackend) (time.Time, error) {
+	value, err := c.Get(ctx, sizeCalculationConfigKey)
+	if err != nil {
+		return time.Unix(0, 0), errors.Wrap(err, "failed to determine last size calculation timestamp")
+	}
+	if value == "" {
+		// Return a time long in the past, to force an initial run.
+		return time.Time{}, setLastSizeCalculation(ctx, c)
+	}
+
+	sec, err := strconv.ParseInt(value, 10, 0)
+	if err != nil {
+		// If the value is bad update it to the current time
+		err2 := setLastSizeCalculation(ctx, c)
+		if err2 != nil {
+			err = err2
+		}
+		// And return a time long in the past, to force an update.
+		return time.Time{}, err
+	}
+
+	return time.Unix(sec, 0), nil
+}
+
+func setLastSizeCalculation(ctx context.Context, c git.GitConfigBackend) error {
+	now := time.Now()
+	return c.Set(ctx, sizeCalculationConfigKey, strconv.FormatInt(now.Unix(), 10))
 }

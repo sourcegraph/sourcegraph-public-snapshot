@@ -8,9 +8,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -321,9 +321,9 @@ func TestGetCompletionsConfig(t *testing.T) {
 	zeroConfigDefaultWithLicense := &conftypes.CompletionsConfig{
 		ChatModel:                "anthropic/claude-2.0",
 		ChatModelMaxTokens:       12000,
-		FastChatModel:            "anthropic/claude-instant-1",
+		FastChatModel:            "anthropic/claude-instant-1.2",
 		FastChatModelMaxTokens:   9000,
-		CompletionModel:          "anthropic/claude-instant-1",
+		CompletionModel:          "anthropic/claude-instant-1.2",
 		CompletionModelMaxTokens: 9000,
 		AccessToken:              licenseAccessToken,
 		Provider:                 "sourcegraph",
@@ -410,13 +410,13 @@ func TestGetCompletionsConfig(t *testing.T) {
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "claude-2.0",
 				ChatModelMaxTokens:       12000,
-				FastChatModel:            "claude-instant-1",
+				FastChatModel:            "claude-instant-1.2",
 				FastChatModelMaxTokens:   9000,
-				CompletionModel:          "claude-instant-1",
+				CompletionModel:          "claude-instant-1.2",
 				CompletionModelMaxTokens: 9000,
 				AccessToken:              "asdf",
 				Provider:                 "anthropic",
-				Endpoint:                 "https://api.anthropic.com/v1/complete",
+				Endpoint:                 "https://api.anthropic.com/v1/messages",
 			},
 		},
 		{
@@ -429,19 +429,19 @@ func TestGetCompletionsConfig(t *testing.T) {
 					Provider:        "anthropic",
 					AccessToken:     "asdf",
 					ChatModel:       "claude-v1",
-					CompletionModel: "claude-instant-1",
+					CompletionModel: "claude-instant-1.2",
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "claude-v1",
 				ChatModelMaxTokens:       9000,
-				FastChatModel:            "claude-instant-1",
+				FastChatModel:            "claude-instant-1.2",
 				FastChatModelMaxTokens:   9000,
-				CompletionModel:          "claude-instant-1",
+				CompletionModel:          "claude-instant-1.2",
 				CompletionModelMaxTokens: 9000,
 				AccessToken:              "asdf",
 				Provider:                 "anthropic",
-				Endpoint:                 "https://api.anthropic.com/v1/complete",
+				Endpoint:                 "https://api.anthropic.com/v1/messages",
 			},
 		},
 		{
@@ -469,7 +469,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 				ChatModel:                "gpt-4",
 				ChatModelMaxTokens:       7000,
 				FastChatModel:            "gpt-3.5-turbo",
-				FastChatModelMaxTokens:   4000,
+				FastChatModelMaxTokens:   16000,
 				CompletionModel:          "gpt-3.5-turbo-instruct",
 				CompletionModelMaxTokens: 4000,
 				AccessToken:              "asdf",
@@ -1135,12 +1135,11 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			defaultDeploy := deploy.Type()
-			envvar.MockSourcegraphDotComMode(tc.dotcom)
+			dotcom.MockSourcegraphDotComMode(t, tc.dotcom)
 			if tc.deployType != "" {
 				deploy.Mock(tc.deployType)
 			}
 			t.Cleanup(func() {
-				envvar.MockSourcegraphDotComMode(false)
 				deploy.Mock(defaultDeploy)
 			})
 			conf := GetEmbeddingsConfig(tc.siteConfig)

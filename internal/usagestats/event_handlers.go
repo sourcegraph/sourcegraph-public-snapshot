@@ -12,9 +12,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -75,7 +75,7 @@ func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, a
 	eventID := int32(rand.Int())
 
 	client := "SERVER_BACKEND"
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		client = "DOTCOM_BACKEND"
 	}
 
@@ -121,7 +121,7 @@ func LogEvents(ctx context.Context, db database.DB, events []Event) error {
 		return nil
 	}
 
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		go func() {
 			if err := publishSourcegraphDotComEvents(events); err != nil {
 				log15.Error("publishSourcegraphDotComEvents failed", "err", err)
@@ -171,7 +171,7 @@ var (
 
 // publishSourcegraphDotComEvents publishes Sourcegraph.com events to BigQuery.
 func publishSourcegraphDotComEvents(events []Event) error {
-	if !envvar.SourcegraphDotComMode() || pubSubDotComEventsTopicID == "" {
+	if !dotcom.SourcegraphDotComMode() || pubSubDotComEventsTopicID == "" {
 		return nil
 	}
 	pubsubClientOnce.Do(func() {
@@ -334,7 +334,7 @@ func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 	// Because Sourcegraph.com only contains public code, URLs do not contain sensitive information.
 	// Redaction is only used for URLs from cloud and self-hosted instance telemetry.
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		return rawURL, nil
 	}
 

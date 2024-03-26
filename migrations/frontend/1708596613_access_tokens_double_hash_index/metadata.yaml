@@ -1,0 +1,3 @@
+name: access_tokens_double_hash_index
+parents: [1695911128, 1707759188]
+createIndexConcurrently: true

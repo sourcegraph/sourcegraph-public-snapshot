@@ -12,22 +12,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type SearchJob struct {
 	Query                gitprotocol.Node
-	RepoOpts             search.RepoOptions
+	Repos                []*search.RepositoryRevisions
 	Diff                 bool
 	Limit                int
 	IncludeModifiedFiles bool
@@ -42,7 +41,7 @@ type CodeMonitorHook func(context.Context, database.DB, GitserverClient, *gitpro
 
 type GitserverClient interface {
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
-	ResolveRevisions(context.Context, api.RepoName, []gitprotocol.RevisionSpecifier) ([]string, error)
+	ResolveRevision(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error)
 }
 
 func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -61,7 +60,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 
 		args := &protocol.SearchRequest{
 			Repo:                 repoRev.Repo.Name,
-			Revisions:            searchRevsToGitserverRevs(repoRev.Revs),
+			Revisions:            repoRev.Revs,
 			Query:                j.Query,
 			IncludeDiff:          j.Diff,
 			Limit:                j.Limit,
@@ -80,7 +79,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 
 		doSearch := func(args *gitprotocol.SearchRequest) error {
 			limitHit, err := clients.Gitserver.Search(ctx, args, onMatches)
-			statusMap, limitHit, err := search.HandleRepoSearchResult(repoRev.Repo.ID, repoRev.Revs, limitHit, false, err)
+			statusMap, err := search.HandleRepoSearchResult(repoRev.Repo.ID, repoRev.Revs, limitHit, false, err)
 			stream.Send(streaming.SearchEvent{
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
@@ -96,30 +95,19 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return doSearch(args)
 	}
 
-	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.SearcherGRPCConnectionCache, clients.Zoekt)
-	it := repos.Iterator(ctx, j.RepoOpts)
-
 	p := pool.New().WithContext(ctx).WithMaxGoroutines(4).WithFirstError()
 
-	for it.Next() {
-		page := it.Current()
-		page.MaybeSendStats(stream)
-
-		for _, repoRev := range page.RepoRevs {
-			repoRev := repoRev
-			p.Go(func(ctx context.Context) error {
-				return searchRepoRev(ctx, repoRev)
-			})
-		}
+	for _, repoRev := range j.Repos {
+		repoRev := repoRev
+		p.Go(func(ctx context.Context) error {
+			return searchRepoRev(ctx, repoRev)
+		})
 	}
 
-	if err := p.Wait(); err != nil {
-		return nil, err
-	}
-	return nil, it.Err()
+	return nil, p.Wait()
 }
 
-func (j SearchJob) Name() string {
+func (j *SearchJob) Name() string {
 	if j.Diff {
 		return "DiffSearchJob"
 	}
@@ -139,7 +127,6 @@ func (j *SearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 			attribute.Bool("diff", j.Diff),
 			attribute.Int("limit", j.Limit),
 		)
-		res = append(res, trace.Scoped("repoOpts", j.RepoOpts.Attributes()...)...)
 	}
 	return res
 }
@@ -248,16 +235,6 @@ func QueryToGitQuery(b query.Basic, diff bool) gitprotocol.Node {
 	return gitprotocol.Reduce(gitprotocol.NewAnd(res...))
 }
 
-func searchRevsToGitserverRevs(in []string) []gitprotocol.RevisionSpecifier {
-	out := make([]gitprotocol.RevisionSpecifier, 0, len(in))
-	for _, rev := range in {
-		out = append(out, gitprotocol.RevisionSpecifier{
-			RevSpec: rev,
-		})
-	}
-	return out
-}
-
 func queryPatternToPredicate(node query.Node, caseSensitive, diff bool) gitprotocol.Node {
 	switch v := node.(type) {
 	case query.Operator:
@@ -293,10 +270,7 @@ func patternNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gi
 }
 
 func patternAtomToPredicate(pattern query.Pattern, caseSensitive, diff bool) gitprotocol.Node {
-	patString := pattern.Value
-	if pattern.Annotation.Labels.IsSet(query.Literal) {
-		patString = regexp.QuoteMeta(pattern.Value)
-	}
+	patString := pattern.RegExpPattern()
 
 	var newPred gitprotocol.Node
 	if diff {

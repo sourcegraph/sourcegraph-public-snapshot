@@ -7,6 +7,7 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"strings"
 
 	"github.com/sourcegraph/log"
 
@@ -21,9 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
-
-const fireworksAPIURL = "https://api.fireworks.ai/inference/v1/completions"
-const fireworksChatAPIURL = "https://api.fireworks.ai/inference/v1/chat/completions"
 
 func NewFireworksHandler(
 	baseLogger log.Logger,
@@ -41,13 +39,6 @@ func NewFireworksHandler(
 		rateLimitNotifier,
 		httpClient,
 		string(conftypes.CompletionsProviderNameFireworks),
-		func(feature codygateway.Feature) string {
-			if feature == codygateway.FeatureChatCompletions {
-				return fireworksChatAPIURL
-			} else {
-				return fireworksAPIURL
-			}
-		},
 		config.AllowedModels,
 		&FireworksHandlerMethods{
 			baseLogger:  baseLogger,
@@ -84,6 +75,17 @@ func (fr fireworksRequest) GetModel() string {
 	return fr.Model
 }
 
+func (fr fireworksRequest) BuildPrompt() string {
+	if fr.Prompt != "" {
+		return fr.Prompt
+	}
+	var sb strings.Builder
+	for _, m := range fr.Messages {
+		sb.WriteString(m.Content + "\n")
+	}
+	return sb.String()
+}
+
 type message struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
@@ -108,9 +110,24 @@ type FireworksHandlerMethods struct {
 	config      config.FireworksConfig
 }
 
-func (f *FireworksHandlerMethods) validateRequest(_ context.Context, _ log.Logger, _ codygateway.Feature, _ fireworksRequest) (int, *flaggingResult, error) {
-	return 0, nil, nil
+func (f *FireworksHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) string {
+	if feature == codygateway.FeatureChatCompletions {
+		return "https://api.fireworks.ai/inference/v1/chat/completions"
+	} else {
+		return "https://api.fireworks.ai/inference/v1/completions"
+	}
 }
+
+func (f *FireworksHandlerMethods) validateRequest(_ context.Context, _ log.Logger, _ codygateway.Feature, _ fireworksRequest) error {
+	// TODO[#61278]: Add missing request validation for all LLM providers in Cody Gateway.
+	return nil
+}
+
+func (f *FireworksHandlerMethods) shouldFlagRequest(_ context.Context, _ log.Logger, _ fireworksRequest) (*flaggingResult, error) {
+	// TODO[#61278]: Add missing request validation for all LLM providers in Cody Gateway.
+	return nil, nil
+}
+
 func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string) {
 	// We don't want to let users generate multiple responses, as this would
 	// mess with rate limit counting.
@@ -118,30 +135,18 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 		body.N = 1
 	}
 
-	// Enterprise virtual model string
-	if body.Model == "starcoder" {
-		body.Model = pickModelBasedOnTrafficSplit(f.config.StarcoderEnterpriseSingleTenantPercent, fireworks.Starcoder16bSingleTenant, fireworks.Starcoder16b)
-	}
-
-	// PLG virtual model strings
-	//
-	// TODO: Remove the support for the full 7b MT model names here as soon as we can remove the
-	//       virtual model resolution on the SG instance in codecompletion.go
-	if body.Model == "starcoder-16b" || body.Model == "starcoder-7b" || body.Model == fireworks.Starcoder7b || body.Model == fireworks.Starcoder16b {
-		multiTenantModel := fireworks.Starcoder16b
-		if body.Model == "starcoder-7b" || body.Model == fireworks.Starcoder7b {
-			multiTenantModel = fireworks.Starcoder7b
-		}
-		body.Model = pickModelBasedOnTrafficSplit(f.config.StarcoderCommunitySingleTenantPercent, fireworks.Starcoder16bSingleTenant, multiTenantModel)
-	}
+	body.Model = pickStarCoderModel(body.Model, f.config)
 }
+
 func (f *FireworksHandlerMethods) getRequestMetadata(body fireworksRequest) (model string, additionalMetadata map[string]any) {
 	return body.Model, map[string]any{"stream": body.Stream}
 }
+
 func (f *FireworksHandlerMethods) transformRequest(r *http.Request) {
 	r.Header.Set("Content-Type", "application/json")
 	r.Header.Set("Authorization", "Bearer "+f.config.AccessToken)
 }
+
 func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody fireworksRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	promptUsage.characters = len(reqBody.Prompt)
@@ -208,6 +213,30 @@ func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 	}
 
 	return promptUsage, completionUsage
+}
+
+func pickStarCoderModel(model string, config config.FireworksConfig) string {
+	if model == "starcoder" {
+		// Enterprise virtual model string
+		model = pickModelBasedOnTrafficSplit(config.StarcoderEnterpriseSingleTenantPercent, fireworks.Starcoder16bSingleTenant, fireworks.Starcoder16b)
+	} else if model == "starcoder-16b" || model == "starcoder-7b" {
+		// PLG virtual model strings
+		multiTenantModel := fireworks.Starcoder16b
+		if model == "starcoder-7b" {
+			multiTenantModel = fireworks.Starcoder7b
+		}
+		model = pickModelBasedOnTrafficSplit(config.StarcoderCommunitySingleTenantPercent, fireworks.Starcoder16bSingleTenant, multiTenantModel)
+	}
+
+	// PLG virtual model strings
+	if model == "starcoder2-15b" {
+		model = fireworks.StarcoderTwo15b
+	}
+	if model == "starcoder2-7b" {
+		model = fireworks.StarcoderTwo7b
+	}
+
+	return model
 }
 
 // Picks a model based on a specific percentage split. If the percent value is 0, the

@@ -3,7 +3,7 @@
 package:
   name: http-server-stabilizer
   version: 1.1.0
-  epoch: 1
+  epoch: 2
   description: "HTTP server stabilizer for unruly servers"
   target-architecture:
     - x86_64

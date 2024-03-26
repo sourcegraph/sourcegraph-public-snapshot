@@ -24,22 +24,15 @@ genrule(
     srcs = [],
     outs = ["stitched-migration-graph.json"],
     cmd = """\
-        mkdir -p _migration_archives
-        # "-m" flag enables concurrent mode, it's significantly faster even if files are small.
-        CLOUDSDK_CORE_PROJECT="sourcegraph-ci"
-        $(location //dev/tools:gsutil) -m cp "gs://schemas-migrations/migrations/*" _migration_archives/
         $(location //internal/database/migration/shared/data/cmd/generator) \
             -output=$@ \
             -frozen-output=. \
-            -archive=_migration_archives
+            -archive=$(location @schemas_migrations//:archives)
     """,
-    tags = [
-        "no-sandbox",  # gsutil doesn't work sandboxed.
-        "requires-network",  # we're fetching files from a GCP bucket.
-    ],
     tools = [
         "//dev/tools:gsutil",
         "//internal/database/migration/shared/data/cmd/generator",
+        "@schemas_migrations//:archives",
     ],
     visibility = ["//visibility:public"],
 )

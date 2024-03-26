@@ -264,12 +264,12 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 	if len(paths) == 0 {
 		r, err = s.FetchTar(ctx, repo, commit)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "fetching tar")
 		}
 	} else {
 		r, err = s.FetchTarPaths(ctx, repo, commit, paths)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "fetching tar paths: %v", paths)
 		}
 	}
 

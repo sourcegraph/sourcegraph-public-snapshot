@@ -3,6 +3,8 @@ package inttests
 import (
 	"container/list"
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
@@ -23,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
@@ -33,7 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 )
 
-func TestClient_ResolveRevisions(t *testing.T) {
+func TestClient_ResolveRevision(t *testing.T) {
 	root := t.TempDir()
 	remote := createSimpleGitRepo(t, root)
 	// These hashes should be stable since we set the timestamps
@@ -42,32 +43,36 @@ func TestClient_ResolveRevisions(t *testing.T) {
 	hash2 := "c5151eceb40d5e625716589b745248e1a6c6228d"
 
 	tests := []struct {
-		input []protocol.RevisionSpecifier
-		want  []string
+		input string
+		want  api.CommitID
 		err   error
 	}{{
-		input: []protocol.RevisionSpecifier{{}},
-		want:  []string{hash2},
+		input: "",
+		want:  api.CommitID(hash2),
 	}, {
-		input: []protocol.RevisionSpecifier{{RevSpec: "HEAD"}},
-		want:  []string{hash2},
+		input: "HEAD",
+		want:  api.CommitID(hash2),
 	}, {
-		input: []protocol.RevisionSpecifier{{RevSpec: "HEAD~1"}},
-		want:  []string{hash1},
+		input: "HEAD~1",
+		want:  api.CommitID(hash1),
 	}, {
-		input: []protocol.RevisionSpecifier{{RevSpec: "test-ref"}},
-		want:  []string{hash1},
+		input: "test-ref",
+		want:  api.CommitID(hash1),
 	}, {
-		input: []protocol.RevisionSpecifier{{RevSpec: "test-nested-ref"}},
-		want:  []string{hash1},
+		input: "test-nested-ref",
+		want:  api.CommitID(hash1),
 	}, {
-		input: []protocol.RevisionSpecifier{{RevSpec: "test-fake-ref"}},
-		err:   &gitdomain.RevisionNotFoundError{Repo: api.RepoName(remote), Spec: "test-fake-ref"},
+		input: "test-fake-ref",
+		err:   &gitdomain.RevisionNotFoundError{Repo: api.RepoName(remote), Spec: "test-fake-ref^0"},
 	}}
 
 	logger := logtest.Scoped(t)
 	db := newMockDB()
 	ctx := context.Background()
+
+	getRemoteURLFunc := func(_ context.Context, name api.RepoName) (string, error) { //nolint:unparam
+		return remote, nil
+	}
 
 	s := server.NewServer(&server.ServerOpts{
 		Logger:   logger,
@@ -75,11 +80,23 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 		},
-		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
-			return remote, nil
-		},
+		GetRemoteURLFunc: getRemoteURLFunc,
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory()), nil
+			getRemoteURLSource := func(ctx context.Context, name api.RepoName) (vcssyncer.RemoteURLSource, error) {
+				return vcssyncer.RemoteURLSourceFunc(func(ctx context.Context) (*vcs.URL, error) {
+					raw, err := getRemoteURLFunc(ctx, name)
+					if err != nil {
+						return nil, errors.Wrapf(err, "failed to get remote URL for %s", name)
+					}
+
+					u, err := vcs.ParseURL(raw)
+					if err != nil {
+						return nil, errors.Wrapf(err, "failed to parse remote URL %q", raw)
+					}
+					return u, nil
+				}), nil
+			}
+			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), getRemoteURLSource), nil
 		},
 		DB:                      db,
 		Perforce:                perforce.NewService(ctx, observation.TestContextTB(t), logger, db, list.New()),
@@ -104,10 +121,10 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
-			_, err := cli.RequestRepoUpdate(ctx, api.RepoName(remote), 0)
+			_, err := cli.RequestRepoUpdate(ctx, api.RepoName(remote))
 			require.NoError(t, err)
 
-			got, err := cli.ResolveRevisions(ctx, api.RepoName(remote), test.input)
+			got, err := cli.ResolveRevision(ctx, api.RepoName(remote), test.input, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 			if test.err != nil {
 				require.Equal(t, test.err, err)
 				return

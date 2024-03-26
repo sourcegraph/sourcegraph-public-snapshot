@@ -59,7 +59,8 @@ export interface FuzzyModalProps extends FuzzyState {
     initialMaxResults: number
     initialQuery: string
     onClose: () => void
-    onClickItem: (eventName: 'FuzzyFinderResultClicked' | 'FuzzyFinderGoToResultsPageClicked') => void
+    onClickResult: () => void
+    onClickGoToResultsPage: () => void
     tabs: FuzzyTabs
     location: H.Location
 }
@@ -237,7 +238,8 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
     const {
         initialMaxResults,
         onClose,
-        onClickItem,
+        onClickResult,
+        onClickGoToResultsPage,
         fsmGeneration,
         rankingCache,
         query,
@@ -275,7 +277,6 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
     )
 
     // Stage 2: render results from the fuzzy matcher.
-    const handleResultClick = useCallback(() => onClickItem('FuzzyFinderResultClicked'), [onClickItem])
     const queryResult = useMemo<QueryResult>(() => {
         const fsmErrors = fuzzyErrors(tabs, activeTab, scope)
         if (fsmErrors.length > 0) {
@@ -287,7 +288,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
             maxResults,
             initialMaxResults,
             setMaxResults,
-            handleResultClick
+            onClickResult
         )
     }, [
         activeTab,
@@ -297,7 +298,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
         maxResults,
         initialMaxResults,
         setMaxResults,
-        handleResultClick,
+        onClickResult,
         tabs,
     ])
 
@@ -387,11 +388,6 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
               onChange: (index: number) => setActiveTab(tabs.focusTab(index)),
           }
         : {}
-
-    const handleGoToResultsPageClick = useCallback(
-        () => onClickItem('FuzzyFinderGoToResultsPageClicked'),
-        [onClickItem]
-    )
 
     return (
         <Modal
@@ -484,7 +480,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                 )}
                 <hr className="my-0 w-100" />
                 <div className="d-flex align-items-center w-100 p-3">
-                    <SearchQueryLink {...props} onClickItem={handleGoToResultsPageClick} />
+                    <SearchQueryLink {...props} onClickItem={onClickGoToResultsPage} />
                     <span className="ml-auto mr-2">
                         <ArrowKeyExplanation />
                     </span>

@@ -18,6 +18,7 @@ import {
     concat,
     BehaviorSubject,
     fromEvent,
+    lastValueFrom,
 } from 'rxjs'
 import {
     catchError,
@@ -472,7 +473,6 @@ function initCodeIntelligence({
                         telemetryService={telemetryService}
                         hoverRef={this.nextOverlayElement}
                         extensionsController={extensionsController}
-                        platformContext={platformContext}
                         location={H.createLocation(window.location)}
                         useBrandedLogo={true}
                     />
@@ -643,10 +643,12 @@ const isSafeToContinueCodeIntel = async ({
 
         rawRepoName = context.rawRepoName
 
-        const isRepoCloned = await resolvePrivateRepo({
-            rawRepoName,
-            requestGraphQL,
-        }).toPromise()
+        const isRepoCloned = await lastValueFrom(
+            resolvePrivateRepo({
+                rawRepoName,
+                requestGraphQL,
+            })
+        )
 
         return isRepoCloned
     } catch (error) {
