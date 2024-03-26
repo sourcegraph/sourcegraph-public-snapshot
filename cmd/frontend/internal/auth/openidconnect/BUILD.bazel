@@ -24,6 +24,7 @@ go_library(
         "//internal/conf/conftypes",
         "//internal/cookie",
         "//internal/database",
+        "//internal/dotcom",
         "//internal/encryption",
         "//internal/extsvc",
         "//internal/httpcli",

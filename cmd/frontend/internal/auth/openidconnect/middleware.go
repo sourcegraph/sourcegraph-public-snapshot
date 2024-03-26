@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -22,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -359,7 +361,20 @@ func AuthCallback(db database.DB, r *http.Request, usernamePrefix string, getPro
 		return c.Value
 	}
 	anonymousId, _ := cookie.AnonymousUID(r)
-	newUserCreated, actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, p, oauth2Token, idToken, userInfo, &claims, usernamePrefix, &hubspot.ContactProperties{
+
+	// PLG: If the user has been created just now, we want to log an additional event
+	// that indicates that the user has initiated the signup from the IDE extension.
+	userCreateEventProperties := map[string]any{}
+	if dotcom.SourcegraphDotComMode() {
+		u, err := url.Parse(state.Redirect)
+		if err == nil {
+			if strings.EqualFold(u.Query().Get("requestFrom"), "CODY") {
+				userCreateEventProperties["signup_source"] = "IDE"
+			}
+		}
+	}
+
+	newUserCreated, actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, p, oauth2Token, idToken, userInfo, &claims, usernamePrefix, userCreateEventProperties, &hubspot.ContactProperties{
 		AnonymousUserID:        anonymousId,
 		FirstSourceURL:         getCookie("sourcegraphSourceUrl"),
 		LastSourceURL:          getCookie("sourcegraphRecentSourceUrl"),

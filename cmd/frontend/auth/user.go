@@ -36,6 +36,10 @@ type GetAndSaveUserOp struct {
 	// SingleIdentityPerUser indicates that the provider should only allow to
 	// connect a single external identity per user.
 	SingleIdentityPerUser bool
+	// UserCreateEventProperties is a map of key-value pairs to be added to the
+	// `ExternalAuthSignupSucceeded` event that is logged when a new user is created.
+	// Security: Do NOT include any sensitive data here.
+	UserCreateEventProperties map[string]any
 }
 
 // GetAndSaveUser accepts authentication information associated with a given user, validates and applies
@@ -185,13 +189,18 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		// more scenarios. We retain the legacy event because it is still
 		// exported by the legacy Cloud exporter, remove in future release.
 		const legacyEventName = "ExternalAuthSignupSucceeded"
+
 		// SECURITY: This args map is treated as a public argument in the LogEvent call below, so it must not contain
 		// any sensitive data.
-		args, err := json.Marshal(map[string]any{
-			// NOTE: The conventional name should be "service_type", but keeping as-is for
-			// backwards capability.
-			"serviceType": acct.AccountSpec.ServiceType,
-		})
+		argMap := map[string]any{}
+		for k, v := range op.UserCreateEventProperties {
+			argMap[k] = v
+		}
+		// NOTE: The conventional name should be "service_type", but keeping as-is for
+		// backwards capability.
+		argMap["serviceType"] = acct.AccountSpec.ServiceType
+
+		args, err := json.Marshal(argMap)
 		if err != nil {
 			logger.Error(
 				"failed to marshal JSON for event log argument",
