@@ -6,6 +6,7 @@ import { faker } from '@faker-js/faker'
 import { test as base, type Page, type Locator } from '@playwright/test'
 import glob from 'glob'
 import { buildSchema } from 'graphql'
+import * as mime from 'mime-types'
 
 import { GraphQLMockServer } from './graphql-mocking'
 import type { TypeMocks, ObjectMock, UserMock, OperationMocks } from './graphql-type-mocks'
@@ -71,6 +72,36 @@ class Sourcegraph {
     constructor(private readonly page: Page, private readonly graphqlMock: GraphQLMockServer) {}
 
     async setup(): Promise<void> {
+        // All assets are mocked and served from the filesystem. If you do want to use
+        // a local preview server or even backend, you can set this env var
+        if (!parseBool(process.env.DISABLE_APP_ASSETS_MOCKING)) {
+            // routes in playwright are tested in reverse registration order
+            // so in order to make this the fallback we register it first
+            // all unmatched routes are treated as routes within the application
+            // and so only route to the manifest
+            await this.page.route('/**/*', route => {
+                route.fulfill({
+                    status: 200,
+                    contentType: 'text/html',
+                    body: readFileSync('./build/index.html'),
+                })
+            })
+
+            // Intercept any asset calls and replace them with static files
+            await this.page.route('_app/**/*', route => {
+                const asset = new URL(route.request().url()).pathname
+                const contentType = mime.contentType(path.basename(asset)) || undefined
+                route.fulfill({
+                    status: 200,
+                    contentType,
+                    body: readFileSync(path.join('./build/', new URL(route.request().url()).pathname)),
+                    headers: {
+                        'cache-control': 'public, max-age=31536000, immutable',
+                    },
+                })
+            })
+        }
+        // mock graphql calls
         await this.page.route(/\.api\/graphql/, route => {
             const { query, variables, operationName } = JSON.parse(route.request().postData() ?? '')
             const result = this.graphqlMock.query(
@@ -174,3 +205,10 @@ export const test = base.extend<{ sg: Sourcegraph; utils: Utils }, { graphqlMock
         { scope: 'worker' },
     ],
 })
+
+function parseBool(s: string | undefined): boolean {
+    if (s === undefined) {
+        return false
+    }
+    return s.toLowerCase() === 'true'
+}
