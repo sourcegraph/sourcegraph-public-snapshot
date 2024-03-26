@@ -161,17 +161,17 @@ Ensure you have the following tools installed:
 
 #### Deployment via Kustomize
 
-Please refer to the [Sourcegraph Kustomize docs](https://docs.sourcegraph.com/admin/deploy/kubernetes/kustomize) for the latest instructions.
+Please refer to the [Sourcegraph Kustomize docs](../deploy/kubernetes/kustomize) for the latest instructions.
 
-To include Native Kubernetes Executors, see [configure Sourcegraph with Kustomize](https://docs.sourcegraph.com/admin/deploy/kubernetes/configure) on how to specify the component (`components/executors/k8s`).
+To include Native Kubernetes Executors, see [configure Sourcegraph with Kustomize](../deploy/kubernetes/configure) on how to specify the component (`components/executors/k8s`).
 
 #### Deployment via Helm
 
-Please refer to the [Sourcegraph Helm docs](https://docs.sourcegraph.com/admin/deploy/kubernetes/helm#quickstart) for the latest instructions.
+Please refer to the [Sourcegraph Helm docs](../deploy/kubernetes/helm#quickstart) for the latest instructions.
 
 To specifically deploy Executors,
 1. Create an overrides file, `override.yaml`, with any other customizations you may require.
-    1. See [details on configurations](https://docs.sourcegraph.com/admin/deploy/kubernetes/helm#configuration).
+    1. See [details on configurations](../deploy/kubernetes/helm#configuration).
 2. Run the following command:
     ```bash
     helm upgrade --install --values ./override.yaml --version <your Sourcegraph Version> sg-executor sourcegraph/sourcegraph-executor-k8s
