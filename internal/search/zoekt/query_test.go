@@ -35,25 +35,25 @@ func TestQueryToZoektQuery(t *testing.T) {
 			Name:            "regex",
 			Type:            search.TextRequest,
 			Query:           `(foo).*?(bar) patterntype:regexp`,
-			WantZoektOutput: `regex:"(?-s:foo.*?bar)"`,
+			WantZoektOutput: `regex:"foo(?-s:.)*?bar"`,
 		},
 		{
 			Name:            "path",
 			Type:            search.TextRequest,
 			Query:           `foo file:\.go$ file:\.yaml$ -file:\bvendor\b patterntype:regexp`,
-			WantZoektOutput: `(and substr:"foo" file_regex:"(?m:\\.go$)" file_regex:"(?m:\\.yaml$)" (not file_regex:"\\bvendor\\b"))`,
+			WantZoektOutput: `(and substr:"foo" file_regex:"\\.go(?m:$)" file_regex:"\\.yaml(?m:$)" (not file_regex:"\\bvendor\\b"))`,
 		},
 		{
 			Name:            "case",
 			Type:            search.TextRequest,
 			Query:           `foo case:yes patterntype:regexp file:\.go$ file:yaml`,
-			WantZoektOutput: `(and case_substr:"foo" case_file_regex:"(?m:\\.go$)" case_file_substr:"yaml")`,
+			WantZoektOutput: `(and case_substr:"foo" case_file_regex:"\\.go(?m:$)" case_file_substr:"yaml")`,
 		},
 		{
 			Name:            "casepath",
 			Type:            search.TextRequest,
 			Query:           `foo case:yes file:\.go$ file:\.yaml$ -file:\bvendor\b patterntype:regexp`,
-			WantZoektOutput: `(and case_substr:"foo" case_file_regex:"(?m:\\.go$)" case_file_regex:"(?m:\\.yaml$)" (not case_file_regex:"\\bvendor\\b"))`,
+			WantZoektOutput: `(and case_substr:"foo" case_file_regex:"\\.go(?m:$)" case_file_regex:"\\.yaml(?m:$)" (not case_file_regex:"\\bvendor\\b"))`,
 		},
 		{
 			Name:            "path matches only",
@@ -77,25 +77,25 @@ func TestQueryToZoektQuery(t *testing.T) {
 			Name:            "Just file",
 			Type:            search.TextRequest,
 			Query:           `file:\.go$`,
-			WantZoektOutput: `file_regex:"(?m:\\.go$)"`,
+			WantZoektOutput: `file_regex:"\\.go(?m:$)"`,
 		},
 		{
 			Name:            "Languages get passed as file filter",
 			Type:            search.TextRequest,
 			Query:           `file:\.go$ lang:go`,
-			WantZoektOutput: `(and file_regex:"(?m:\\.go$)" file_regex:"(?im:\\.GO$)")`,
+			WantZoektOutput: `(and file_regex:"\\.go(?m:$)" file_regex:"(?i:\\.GO)(?m:$)")`,
 		},
 		{
 			Name:            "Languages still use case_insensitive in case sensitivity mode",
 			Type:            search.TextRequest,
 			Query:           `file:\.go$ lang:go case:true`,
-			WantZoektOutput: `(and case_file_regex:"(?m:\\.go$)" case_file_regex:"(?im:\\.GO$)")`,
+			WantZoektOutput: `(and case_file_regex:"\\.go(?m:$)" case_file_regex:"(?i:\\.GO)(?m:$)")`,
 		},
 		{
 			Name:            "Languages is ignored",
 			Type:            search.TextRequest,
 			Query:           `file:\.go$ lang:go`,
-			WantZoektOutput: `(and file_regex:"(?m:\\.go$)" file_regex:"(?im:\\.GO$)")`,
+			WantZoektOutput: `(and file_regex:"\\.go(?m:$)" file_regex:"(?i:\\.GO)(?m:$)")`,
 		},
 	}
 	for _, tt := range cases {
@@ -112,7 +112,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 
 			queryStr := got.String()
 			if diff := cmp.Diff(tt.WantZoektOutput, queryStr); diff != "" {
-				t.Errorf("mismatched queries during [%s] (-want +got):\n%s", tt.Name, diff)
+				t.Errorf("mismatched queries during [%s] (-want +got):\n%s", tt.Name, queryStr)
 			}
 		})
 	}
