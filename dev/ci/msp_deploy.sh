@@ -3,9 +3,9 @@
 set -eux -o pipefail
 
 # Service Specific Parameters
+: "${MSP_SERVICE_ID:?"MSP_SERVICE_ID is required"}"
 : "${GCP_PROJECT:?"GCP_PROJECT is required"}"
 : "${GCP_REGION:?"GCP_REGION is required"}"
-: "${GCP_DELIVERY_PIPELINE:?"GCP_DELIVERY_PIPELINE is required"}"
 : "${REPOSITORY:?"REPOSITORY is required"}"
 
 # CI Variables
@@ -26,6 +26,7 @@ TAG="${SHORT_SHA}_${BUILDKITE_BUILD_NUMBER}"
 # with the first character a letter, the last a letter or a number,
 # and a 63 character maximum
 RELEASE_NAME="deploy-${SHORT_SHA}-${BUILDKITE_BUILD_NUMBER}"
+GCP_DELIVERY_PIPELINE="${MSP_SERVICE_ID}-${GCP_REGION}-rollout"
 
 # Commands are passed as args to the script
 push=$1
