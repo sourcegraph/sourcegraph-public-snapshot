@@ -72,8 +72,8 @@ func SetupBaseImageBuild(name string, pc PackageRepoConfig, opts BaseImageOpts) 
 func resolveImagePath(name string) (string, error) {
 	// Handle special case mappings
 	specialCase := map[string]string{
-		"sourcegraph":       "wolfi-images",
-		"sourcegraph-dev":   "wolfi-images",
+		"sourcegraph":       "wolfi-images/sourcegraph",
+		"sourcegraph-dev":   "wolfi-images/sourcegraph-dev",
 		"postgres-exporter": "docker-images/postgres_exporter",
 		"redis-exporter":    "docker-images/redis_exporter",
 		"redis":             "docker-images/redis-cache", // Or redis-store
@@ -103,10 +103,7 @@ func resolveImagePath(name string) (string, error) {
 }
 
 func (bc BaseImageConfig) DoBaseImageBuild() error {
-	std.Out.WriteLine(output.Linef("📦", output.StylePending, "Building base image %s using Bazel...", bc.ImageName))
-	std.Out.WriteLine(output.Linef("🤖", output.StylePending, "rules_apko build output:\n"))
-
-	// If we're already running in Bazel, we can't run Bazel again inside its own builddir,
+	// If we're already running in Bazel we can't run Bazel again inside its own builddir,
 	// so ensure we're running in the base repo
 	buildDir, err := os.Getwd()
 	if err != nil {
@@ -120,6 +117,9 @@ func (bc BaseImageConfig) DoBaseImageBuild() error {
 	if bc.BazelBuildPath == "" {
 		return errors.Newf("no Bazel build path found for image '%s'", bc.ImageName)
 	}
+
+	std.Out.WriteLine(output.Linef("📦", output.StylePending, "Building base image %s using `bazel run %s`", bc.ImageName, bc.BazelBuildPath))
+	std.Out.WriteLine(output.Linef("🤖", output.StylePending, "rules_apko build output:\n"))
 
 	cmd := exec.Command(
 		"bazel", "run", bc.BazelBuildPath,
