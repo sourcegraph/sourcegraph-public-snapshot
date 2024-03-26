@@ -53,6 +53,8 @@ type Service struct {
 	// single call to git archive. This mainly needs to be less than ARG_MAX
 	// for the exec.Command on gitserver.
 	MaxTotalPathsLength int
+
+	UseHybridSearch bool
 }
 
 func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
@@ -142,27 +144,29 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		return badRequestError{err.Error()}
 	}
 
-	logger := logWithTrace(ctx, s.Log).Scoped("hybrid").With(
-		log.String("repo", string(p.Repo)),
-		log.String("commit", string(p.Commit)),
-	)
-
 	var paths []string
-	unsearched, ok, err := s.hybrid(ctx, logger, p, sender)
-	if err != nil {
-		// error logging is done inside of s.hybrid so we just return
-		// error here.
-		return errors.Wrap(err, "hybrid search failed")
-	}
-	if !ok {
-		logger.Debug("hybrid search is falling back to normal unindexed search")
-	} else {
-		// now we only need to search unsearched
-		if len(unsearched) == 0 {
-			// indexed search did it all
-			return nil
+	if s.UseHybridSearch {
+		logger := logWithTrace(ctx, s.Log).Scoped("hybrid").With(
+			log.String("repo", string(p.Repo)),
+			log.String("commit", string(p.Commit)),
+		)
+
+		unsearched, ok, err := s.hybrid(ctx, logger, p, sender)
+		if err != nil {
+			// error logging is done inside of s.hybrid so we just return
+			// error here.
+			return errors.Wrap(err, "hybrid search failed")
 		}
-		paths = unsearched
+		if !ok {
+			logger.Debug("hybrid search is falling back to normal unindexed search")
+		} else {
+			// now we only need to search unsearched
+			if len(unsearched) == 0 {
+				// indexed search did it all
+				return nil
+			}
+			paths = unsearched
+		}
 	}
 
 	_, zf, err := s.getZipFile(ctx, tr, p, paths)
