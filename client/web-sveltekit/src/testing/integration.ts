@@ -10,7 +10,7 @@ import { buildSchema } from 'graphql'
 import { GraphQLMockServer } from './graphql-mocking'
 import type { TypeMocks, ObjectMock, UserMock, OperationMocks } from './graphql-type-mocks'
 
-export { expect, defineConfig, type Locator, type Page } from '@playwright/test'
+export { expect, defineConfig, type Locator, type Page, type Browser } from '@playwright/test'
 
 const defaultMocks: TypeMocks = {
     Query: () => ({

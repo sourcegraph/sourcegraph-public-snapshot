@@ -6,6 +6,7 @@ const PORT = process.env.PORT ? Number(process.env.PORT) : 4173
 const config: PlaywrightTestConfig = {
     testMatch: 'src/**/*.spec.ts',
     reporter: 'list',
+    // note: if you proxy into a locally running vite preview, you may have to raise this to 60 seconds
     timeout: 5_000,
     // webServer: {
     //     command: 'npm run preview',
