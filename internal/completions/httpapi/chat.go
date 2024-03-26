@@ -74,7 +74,9 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 	// When updating these two lists, make sure you also update `allowedModels` in codygateway_dotcom_user.go.
 	if isProUser {
 		switch model {
-		case "anthropic/claude-3-sonnet-20240229",
+		case
+			"anthropic/claude-3-haiku-20240307",
+			"anthropic/claude-3-sonnet-20240229",
 			"anthropic/claude-3-opus-20240229",
 			"fireworks/" + fireworks.Mixtral8x7bInstruct,
 			"openai/gpt-3.5-turbo",
@@ -93,7 +95,10 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 		}
 	} else {
 		switch model {
-		case // Remove after the Claude 3 rollout is complete
+		case
+			"anthropic/claude-3-sonnet-20240229",
+			"anthropic/claude-3-haiku-20240307",
+			// Remove after the Claude 3 rollout is complete
 			"anthropic/claude-2",
 			"anthropic/claude-2.0",
 			"anthropic/claude-instant-v1",

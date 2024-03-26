@@ -349,6 +349,7 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 		if !isProUser {
 			return []string{
 				"anthropic/claude-3-haiku-20240307",
+				"anthropic/claude-3-sonnet-20240229",
 				// Remove after the Claude 3 rollout is complete
 				"anthropic/claude-2.0",
 				"anthropic/claude-instant-v1",
