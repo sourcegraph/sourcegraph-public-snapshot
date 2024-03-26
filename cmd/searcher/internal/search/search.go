@@ -54,7 +54,7 @@ type Service struct {
 	// for the exec.Command on gitserver.
 	MaxTotalPathsLength int
 
-	UseHybridSearch bool
+	DisableHybridSearch bool
 }
 
 func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
@@ -145,7 +145,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	}
 
 	var paths []string
-	if s.UseHybridSearch {
+	if !s.DisableHybridSearch {
 		logger := logWithTrace(ctx, s.Log).Scoped("hybrid").With(
 			log.String("repo", string(p.Repo)),
 			log.String("commit", string(p.Commit)),

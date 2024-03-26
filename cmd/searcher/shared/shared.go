@@ -44,7 +44,7 @@ var (
 
 	maxTotalPathsLengthRaw = env.Get("MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive")
 
-	useHybridSearch = env.MustGetBool("USE_HYBRID_SEARCH", true, "set to false to disable hybrid search")
+	disableHybridSearch = env.MustGetBool("DISABLE_HYBRID_SEARCH", false, "set to true to disable hybrid search")
 )
 
 const port = "3181"
@@ -167,7 +167,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 		Log: logger,
 
-		UseHybridSearch: useHybridSearch,
+		DisableHybridSearch: disableHybridSearch,
 	}
 	sService.Store.Start()
 
