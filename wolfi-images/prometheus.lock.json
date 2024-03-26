@@ -1,5 +1,5 @@
 {
-  "configHash": "7e9aa8a4eea648621125ed2c953379043862a09c19a80b9d436b2d9d18a94fc1",
+  "configHash": "f037cdc3460fef2debe4deb304207ff9a6943ffd14b70bb3f26f77cc037b7f8f",
   "contents": {
     "keyring": [
       {
@@ -736,22 +736,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q18/twmIqLbVz0Kdo78PMgXSbFgww=",
+        "checksum": "Q14UQ3vJmCRJDnx3rjsoVdbHogXBU=",
         "control": {
-          "checksum": "sha1-8/twmIqLbVz0Kdo78PMgXSbFgww=",
-          "range": "bytes=699-1121"
+          "checksum": "sha1-4UQ3vJmCRJDnx3rjsoVdbHogXBU=",
+          "range": "bytes=698-1128"
         },
         "data": {
-          "checksum": "sha256-FSmctvsuR8q6ApCgATqtseyrrHJ9BdQBqqdT1QZh3y8=",
-          "range": "bytes=1122-186198043"
+          "checksum": "sha256-ApbK0d5OQuX+SFGzxi7y3mYklmCDrbtTw3L5qD5X/k4=",
+          "range": "bytes=1129-186198054"
         },
         "name": "prometheus",
         "signature": {
-          "checksum": "sha1-aE/hT+C3YyW6duxYWatWW6Qu9r0=",
-          "range": "bytes=0-698"
+          "checksum": "sha1-IwLnXEX0jcJ8gmYe6yICIxw8r3U=",
+          "range": "bytes=0-697"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/prometheus-2.51.0-r0.apk",
-        "version": "2.51.0-r0"
+        "url": "https://packages.wolfi.dev/os/x86_64/prometheus-2.51.0-r1.apk",
+        "version": "2.51.0-r1"
       },
       {
         "architecture": "x86_64",

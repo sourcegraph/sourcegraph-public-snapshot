@@ -1,15 +1,7 @@
 {
-  "configHash": "89bfb0e4ccbd8bc594e6cf5136106a311487280ce55a52571391b9c3920b1e0f",
+  "configHash": "e977d6af43aa424c674ffd1170333941e195fb575c4e1284800849816fad40df",
   "contents": {
     "keyring": [
-      {
-        "name": "packages.wolfi.dev/os/wolfi-signing.rsa.pub",
-        "url": "https://packages.wolfi.dev/os/wolfi-signing.rsa.pub"
-      },
-      {
-        "name": "packages.sgdev.org/sourcegraph-melange-prod.rsa.pub",
-        "url": "https://packages.sgdev.org/sourcegraph-melange-prod.rsa.pub"
-      },
       {
         "name": "packages.wolfi.dev/os/wolfi-signing.rsa.pub",
         "url": "https://packages.wolfi.dev/os/wolfi-signing.rsa.pub"
@@ -991,16 +983,6 @@
       }
     ],
     "repositories": [
-      {
-        "architecture": "x86_64",
-        "name": "packages.wolfi.dev/os/x86_64",
-        "url": "https://packages.wolfi.dev/os/x86_64/APKINDEX.tar.gz"
-      },
-      {
-        "architecture": "x86_64",
-        "name": "@sourcegraph https://packages.sgdev.org/main/x86_64",
-        "url": "@sourcegraph https://packages.sgdev.org/main/x86_64/APKINDEX.tar.gz"
-      },
       {
         "architecture": "x86_64",
         "name": "packages.wolfi.dev/os/x86_64",

@@ -1,5 +1,5 @@
 {
-  "configHash": "425f89a8791d92cf8854b4af018e426202b95a7fab4facc14a1d7b3390e5ee33",
+  "configHash": "88f4725fd01769c5dcc33941e7c3c5b9329102a50b153faa4d49ae61f083946f",
   "contents": {
     "keyring": [
       {
@@ -1439,22 +1439,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q19xHfmw7G1cRITt7WBI88yOm4Rfg=",
+        "checksum": "Q11JQrLMLaYaYIAi9BRQb3djaH8nU=",
         "control": {
-          "checksum": "sha1-9xHfmw7G1cRITt7WBI88yOm4Rfg=",
-          "range": "bytes=700-1086"
+          "checksum": "sha1-1JQrLMLaYaYIAi9BRQb3djaH8nU=",
+          "range": "bytes=703-1097"
         },
         "data": {
-          "checksum": "sha256-h5yDQYMpVFoDicU+Lykq5cp91D3rChb/hhmId4oSv8U=",
-          "range": "bytes=1087-10687346"
+          "checksum": "sha256-0JMV0qVMjwgwWd1LzYJiFSqJpjADOOs3NA5ix1CIsJU=",
+          "range": "bytes=1098-10709726"
         },
         "name": "yq",
         "signature": {
-          "checksum": "sha1-MvoU4xoN4ZFkxJtdN4vxn3bDuzE=",
-          "range": "bytes=0-699"
+          "checksum": "sha1-YWZXdEJ1OQKsq3g/M2x2XnckmeM=",
+          "range": "bytes=0-702"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/yq-4.42.1-r2.apk",
-        "version": "4.42.1-r2"
+        "url": "https://packages.wolfi.dev/os/x86_64/yq-4.43.1-r0.apk",
+        "version": "4.43.1-r0"
       }
     ],
     "repositories": [
