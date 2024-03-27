@@ -1,6 +1,7 @@
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@npm//:vite/package_json.bzl", vite_bin = "bin")
 load("@npm//client/web-sveltekit:@playwright/test/package_json.bzl", playwright_test_bin = "bin")
+load("@npm//client/web-sveltekit:playwright-core/package_json.bzl", playwright_bin = "bin")
 
 # gazelle:ignore
 
@@ -122,6 +123,18 @@ vite_bin.vite(
     # silent_on_success = False,
 )
 
+playwright_bin.playwright_core_test(
+    name = "playwright_install",
+    args = [
+        "install",
+    ],
+    local = True,
+    tags = [
+        "no-sandbox",
+        "requires-network",
+    ],
+)
+
 playwright_test_bin.playwright_test(
     name = "e2e_test",
     args = [
@@ -130,11 +143,11 @@ playwright_test_bin.playwright_test(
     ],
     chdir = package_name(),
     data = glob(["src/**/*.spec.ts"]) + [
-        # ":playwright_install",  # removed this to speed up the feedback loop, will be brought back later
         "playwright.config.ts",
-        ":node_modules/@playwright/test",
-        ":node_modules/playwright-core",
+        ":playwright_install",
         ":web-sveltekit",
+        "//client/web-sveltekit:node_modules/@playwright/test",
+        "//client/web-sveltekit:node_modules/playwright-core",
     ],
     env = {
         "BAZEL": "1",
