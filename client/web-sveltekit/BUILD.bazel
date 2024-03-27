@@ -1,7 +1,7 @@
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@npm//:vite/package_json.bzl", vite_bin = "bin")
 load("@npm//client/web-sveltekit:@playwright/test/package_json.bzl", playwright_test_bin = "bin")
-load("@npm//client/web-sveltekit:playwright-core/package_json.bzl", playwright_bin = "bin")
+load("@npm//client/web-sveltekit:playwright/package_json.bzl", playwright_bin = "bin")
 
 # gazelle:ignore
 
@@ -30,6 +30,7 @@ SRCS = [
     ]],
     [
         "src/**/*.spec.ts",
+        "src/testing/*.ts",
         "src/lib/graphql-operations.ts",
         "src/lib/graphql-types.ts",
         "src/lib/graphql-type-mocks.ts",
@@ -123,7 +124,7 @@ vite_bin.vite(
     # silent_on_success = False,
 )
 
-playwright_bin.playwright_core_test(
+playwright_bin.playwright_test(
     name = "playwright_install",
     args = [
         "install",
@@ -135,6 +136,14 @@ playwright_bin.playwright_core_test(
     ],
 )
 
+filegroup(
+    name = "test_files",
+    srcs = glob([
+        "src/playwright/*.spec.ts",
+        "src/testing/*.ts",
+    ]) + ["playwright.config.ts"],
+)
+
 playwright_test_bin.playwright_test(
     name = "e2e_test",
     args = [
@@ -143,11 +152,10 @@ playwright_test_bin.playwright_test(
     ],
     chdir = package_name(),
     data = glob(["src/**/*.spec.ts"]) + [
-        "playwright.config.ts",
         ":playwright_install",
+        ":test_files",
         ":web-sveltekit",
         "//client/web-sveltekit:node_modules/@playwright/test",
-        "//client/web-sveltekit:node_modules/playwright-core",
     ],
     env = {
         "BAZEL": "1",

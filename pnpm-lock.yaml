@@ -1470,7 +1470,7 @@ importers:
         specifier: ^3.2.0
         version: 3.2.0(graphql@15.4.0)
       '@playwright/test':
-        specifier: 1.42.1
+        specifier: ^1.42.1
         version: 1.42.1
       '@storybook/addon-essentials':
         specifier: ^7.2.0
@@ -1538,8 +1538,11 @@ importers:
       msw-storybook-addon:
         specifier: ^1.8.0
         version: 1.8.0(msw@1.2.3)
+      playwright:
+        specifier: ^1.42.1
+        version: 1.42.1
       playwright-core:
-        specifier: 1.42.1
+        specifier: ^1.42.1
         version: 1.42.1
       prettier:
         specifier: 2.8.1
