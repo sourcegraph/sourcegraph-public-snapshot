@@ -127,19 +127,19 @@ func TestUpdateTriggerJobWithLogs(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, jobs, 1)
 
-		entry0 := TriggerJobExecutionLogEntry{Message: "foo"}
+		entry0 := TriggerJobLogs{Message: "foo"}
 		err = db.CodeMonitors().UpdateTriggerJobWithLogs(ctx, jobs[0].ID, entry0)
 		require.NoError(t, err)
 
-		entry1 := TriggerJobExecutionLogEntry{Message: "bar"}
+		entry1 := TriggerJobLogs{Message: "bar"}
 		err = db.CodeMonitors().UpdateTriggerJobWithLogs(ctx, jobs[0].ID, entry1)
 		require.NoError(t, err)
 
 		js, err := db.CodeMonitors().ListQueryTriggerJobs(ctx, ListTriggerJobsOpts{QueryID: &jobs[0].Query})
 		require.NoError(t, err)
 		require.Len(t, js, 1)
-		require.Len(t, js[0].ExecutionLogs, 2)
-		require.Equal(t, entry0, js[0].ExecutionLogs[0])
-		require.Equal(t, entry1, js[0].ExecutionLogs[1])
+		require.Len(t, js[0].Logs, 2)
+		require.Equal(t, entry0, js[0].Logs[0])
+		require.Equal(t, entry1, js[0].Logs[1])
 	})
 }

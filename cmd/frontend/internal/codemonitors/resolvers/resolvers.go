@@ -1000,7 +1000,7 @@ func (m *monitorTriggerEvent) Message() *string {
 	if m.FailureMessage != nil {
 		msg = *m.FailureMessage + "\n"
 	}
-	for _, log := range m.ExecutionLogs {
+	for _, log := range m.Logs {
 		msg += log.Message + "\n"
 	}
 	msg = strings.TrimSpace(msg)
