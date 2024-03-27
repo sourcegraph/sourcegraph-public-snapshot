@@ -72,6 +72,31 @@ func TestRender(t *testing.T) {
 				},
 			}},
 		},
+	}, {
+		name: "with README",
+		spec: spec.Spec{
+			Service: spec.ServiceSpec{
+				ID:          testServiceID,
+				Description: "Test service for MSP",
+			},
+			Build: spec.BuildSpec{
+				Image: "us.gcr.io/sourcegraph-dev/msp-example",
+				Source: spec.BuildSourceSpec{
+					Repo: "github.com/sourcegraph/sourcegraph",
+					Dir:  "cmd/msp-example",
+				},
+			},
+			Environments: []spec.EnvironmentSpec{{
+				ID:        testServiceEnvironment,
+				ProjectID: testProjectID,
+				Category:  spec.EnvironmentCategoryTest,
+			}},
+			README: []byte(`This service does X, Y, Z. Refer to [here](sourcegraph.com) for more information.
+
+## Additional operations
+
+Some additional operations!`),
+		},
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
 			doc, err := Render(tc.spec, tc.opts)
