@@ -70,7 +70,7 @@ export function isRolledOutRoute(pathname: string): boolean {
     return false
 }
 
-export async function enableSvelteAndReload(client: ApolloClient<{}>, userID: string) {
+export async function enableSvelteAndReload(client: ApolloClient<{}>, userID: string): Promise<void> {
     await client.mutate({
         mutation: gql`
             mutation EnableSveltePrototype($userID: ID!) {
