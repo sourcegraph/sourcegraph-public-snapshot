@@ -235,7 +235,9 @@ export const TreePage: FC<Props> = ({
                     <Tooltip content="Git commits">
                         <Button
                             className="flex-shrink-0"
-                            to={`/${encodeURIPathComponent(repoName)}/-/commits`}
+                            to={`/${encodeURIPathComponent(repoName)}${
+                                revision && `@${encodeURIPathComponent(revision)}`
+                            }/-/commits`}
                             variant="secondary"
                             outline={true}
                             as={Link}
