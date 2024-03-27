@@ -23,18 +23,28 @@ If you need assistance with MSP infrastructure, reach out to the [Core Services]
 | Docker image | `us.gcr.io/sourcegraph-dev/msp-example`                                                                                          |
 | Source code  | [`github.com/sourcegraph/sourcegraph` - `cmd/msp-example`](https://github.com/sourcegraph/sourcegraph/tree/HEAD/cmd/msp-example) |
 
+<!--
+Automatically generated from the service README: https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/README.md
+-->
+
+This service does X, Y, Z. Refer to [here](sourcegraph.com) for more information.
+
+### Additional operations
+
+Some additional operations!
+
 ## Environments
 
 ### test
 
-|      PROPERTY       |                                                              DETAILS                                                              |
-|---------------------|-----------------------------------------------------------------------------------------------------------------------------------|
-| Project ID          | [`msp-testbed-test-77589aae45d0`](https://console.cloud.google.com/run?project=msp-testbed-test-77589aae45d0)                     |
-| Category            | **test**                                                                                                                          |
-| Resources           | [test Redis](#test-redis), [test PostgreSQL instance](#test-postgresql-instance), [test BigQuery dataset](#test-bigquery-dataset) |
-| Slack notifications | [#alerts-msp-testbed-test](https://sourcegraph.slack.com/archives/alerts-msp-testbed-test)                                        |
-| Alerts              | [GCP monitoring](https://console.cloud.google.com/monitoring/alerting?project=msp-testbed-test-77589aae45d0)                      |
-| Errors              | [Sentry `msp-testbed-test`](https://sourcegraph.sentry.io/projects/msp-testbed-test/)                                             |
+|      PROPERTY       |                                                    DETAILS                                                    |
+|---------------------|---------------------------------------------------------------------------------------------------------------|
+| Project ID          | [`msp-testbed-test-77589aae45d0`](https://console.cloud.google.com/run?project=msp-testbed-test-77589aae45d0) |
+| Category            | **test**                                                                                                      |
+| Resources           |                                                                                                               |
+| Slack notifications | [#alerts-msp-testbed-test](https://sourcegraph.slack.com/archives/alerts-msp-testbed-test)                    |
+| Alerts              | [GCP monitoring](https://console.cloud.google.com/monitoring/alerting?project=msp-testbed-test-77589aae45d0)  |
+| Errors              | [Sentry `msp-testbed-test`](https://sourcegraph.sentry.io/projects/msp-testbed-test/)                         |
 
 MSP infrastructure access needs to be requested using Entitle for time-bound privileges. Test environments may have less stringent requirements.
 
@@ -61,40 +71,6 @@ You can also use `sg msp` to quickly open a link to your service logs:
 ```bash
 sg msp logs msp-testbed test
 ```
-
-#### test Redis
-
-| PROPERTY |                                                              DETAILS                                                              |
-|----------|-----------------------------------------------------------------------------------------------------------------------------------|
-| Console  | [Memorystore Redis instances](https://console.cloud.google.com/memorystore/redis/instances?project=msp-testbed-test-77589aae45d0) |
-
-#### test PostgreSQL instance
-
-| PROPERTY  |                                                   DETAILS                                                   |
-|-----------|-------------------------------------------------------------------------------------------------------------|
-| Console   | [Cloud SQL instances](https://console.cloud.google.com/sql/instances?project=msp-testbed-test-77589aae45d0) |
-| Databases | `foo`, `bar`                                                                                                |
-
-> [!NOTE]
-> The [Write access Entitle request for the 'Engineering Projects' folder](https://app.entitle.io/request?data=eyJkdXJhdGlvbiI6IjIxNjAwIiwianVzdGlmaWNhdGlvbiI6IkVOVEVSIEpVU1RJRklDQVRJT04gSEVSRSIsInJvbGVJZHMiOlt7ImlkIjoiYzJkMTUwOGEtMGQ0ZS00MjA1LWFiZWUtOGY1ODg1ZGY3ZDE4IiwidGhyb3VnaCI6ImMyZDE1MDhhLTBkNGUtNDIwNS1hYmVlLThmNTg4NWRmN2QxOCIsInR5cGUiOiJyb2xlIn1dfQ%3D%3D) is required for BOTH read-only and write access to the database.
-
-To connect to the PostgreSQL instance in this environment, use `sg msp` in the [`sourcegraph/managed-services`](https://github.com/sourcegraph/managed-services) repository:
-
-```bash
-# For read-only access
-sg msp pg connect msp-testbed test
-
-# For write access - use with caution!
-sg msp pg connect -write-access msp-testbed test
-```
-
-#### test BigQuery dataset
-
-|    PROPERTY     |                                                                                                            DETAILS                                                                                                             |
-|-----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Dataset Project | `msp-testbed-test-77589aae45d0`                                                                                                                                                                                                |
-| Dataset ID      | `msp_testbed`                                                                                                                                                                                                                  |
-| Tables          | [`bar`](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/bar.bigquerytable.json), [`baz`](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/baz.bigquerytable.json) |
 
 #### test Terraform Cloud
 
