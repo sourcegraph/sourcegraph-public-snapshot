@@ -11,13 +11,14 @@ func ExampleRoleBinding() {
 	rb, _ := NewRoleBinding("test", "sourcegraph")
 
 	jrb, _ := json.Marshal(rb)
-	fmt.Print(string(jrb))
+	fmt.Println(string(jrb))
 
 	yrb, _ := yaml.Marshal(rb)
-	fmt.Print(string(yrb))
+	fmt.Println(string(yrb))
 
 	// Output:
-	// {"metadata":{"name":"test","namespace":"sourcegraph","creationTimestamp":null,"labels":{"deploy":"sourcegraph"}},"roleRef":{"apiGroup":"","kind":"","name":""}}metadata:
+	// {"metadata":{"name":"test","namespace":"sourcegraph","creationTimestamp":null,"labels":{"deploy":"sourcegraph"}},"roleRef":{"apiGroup":"","kind":"","name":""}}
+	// metadata:
 	//   creationTimestamp: null
 	//   labels:
 	//     deploy: sourcegraph
