@@ -29,7 +29,7 @@ function isElement(t: any): t is Element {
  * specific to Svelte. It may need adjustment in the future.
  * @param event KeyboardEvent
  */
-export function isContentField(event: KeyboardEvent): boolean {
+function isContentField(event: KeyboardEvent): boolean {
     if (!event?.target) {
         return false
     }
