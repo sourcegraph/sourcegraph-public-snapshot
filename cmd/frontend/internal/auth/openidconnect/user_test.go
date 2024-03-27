@@ -77,7 +77,8 @@ func TestAllowSignup(t *testing.T) {
 				},
 				&userClaims{},
 				test.usernamePrefix,
-				nil,
+				nil, // UserCreateEventProperties
+
 				&hubspot.ContactProperties{
 					AnonymousUserID: "anonymous-user-id-123",
 					FirstSourceURL:  "https://example.com/",
