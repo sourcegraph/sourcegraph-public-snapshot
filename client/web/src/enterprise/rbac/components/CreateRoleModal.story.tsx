@@ -3,6 +3,7 @@ import { noop } from 'lodash'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
@@ -37,7 +38,12 @@ export const CreateRoleModalStory: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={mocks}>
-                <CreateRoleModal onCancel={noop} afterCreate={noop} allPermissions={mockPermissionsMap} />
+                <CreateRoleModal
+                    onCancel={noop}
+                    afterCreate={noop}
+                    allPermissions={mockPermissionsMap}
+                    telemetryRecorder={noOpTelemetryRecorder}
+                />
             </MockedTestProvider>
         )}
     </WebStory>
