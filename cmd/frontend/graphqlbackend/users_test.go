@@ -26,7 +26,7 @@ func TestUsers(t *testing.T) {
 	users.CountFunc.SetDefaultReturn(2, nil)
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		if id == 1 {
-			return &types.User{ID: 1, SiteAdmin: true}, nil
+			return &types.User{ID: 1, SiteAdmin: true, Username: "user1"}, nil
 		}
 		return nil, database.NewUserNotFoundError(id)
 	})
@@ -63,6 +63,26 @@ func TestUsers(t *testing.T) {
 							}
 						],
 						"totalCount": 2
+					}
+				}
+			`,
+		},
+		{
+			Context: actor.WithActor(context.Background(), actor.FromMockUser(1)),
+			Schema:  mustParseGraphQLSchema(t, db),
+			Query: `
+				{
+					user(intID:1) {
+						username
+						siteAdmin
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"user": {
+						"username": "user1",
+						"siteAdmin": true
 					}
 				}
 			`,

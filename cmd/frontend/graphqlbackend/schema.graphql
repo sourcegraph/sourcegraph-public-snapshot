@@ -1717,6 +1717,10 @@ type Query {
         Query the user by verified email address.
         """
         email: String
+        """
+        Query the user by ID. Clients should prefer using GraphQL IDs. This is primarily intended for debugging.
+        """
+        intID: Int
     ): User
     """
     List all users.
