@@ -26,9 +26,7 @@
     "lint": "pnpm lint:js && pnpm:lint:css",
     "lint:js": "NODE_OPTIONS=\"--max_old_space_size=16192\" eslint --cache '**/*.[tj]s?(x)'",
     "lint:css": "stylelint 'src/**/*.scss' --quiet",
-    "bundlesize": "pnpm exec bundlesize --config=./bundlesize.config.js",
-    "playwright:install": "pnpm exec playwright install",
-    "playwright:test": "pnpm exec playwright test"
+    "bundlesize": "pnpm exec bundlesize --config=./bundlesize.config.js"
   },
   "devDependencies": {
     "@bazel/concatjs": "^5.8.1",

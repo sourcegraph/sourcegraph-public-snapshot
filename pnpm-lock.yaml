@@ -1270,22 +1270,6 @@ importers:
         specifier: workspace:*
         version: link:../build-config
 
-  client/playwright:
-    dependencies:
-      '@sourcegraph/web':
-        specifier: workspace:*
-        version: link:../web
-    devDependencies:
-      '@playwright/test':
-        specifier: 1.42.0
-        version: 1.42.0
-      '@types/node':
-        specifier: ^20.11.19
-        version: 20.11.19
-      playwright-core:
-        specifier: ^1.42.1
-        version: 1.42.1
-
   client/shared:
     dependencies:
       '@sourcegraph/client-api':
@@ -1486,17 +1470,8 @@ importers:
         specifier: ^3.2.0
         version: 3.2.0(graphql@15.4.0)
       '@playwright/test':
-        specifier: 1.42.0
-        version: 1.42.0
-      '@pollyjs/adapter-xhr':
-        specifier: ^6.0.6
-        version: 6.0.6
-      '@pollyjs/core':
-        specifier: ^6.0.6
-        version: 6.0.6
-      '@pollyjs/persister-rest':
-        specifier: ^6.0.6
-        version: 6.0.6
+        specifier: 1.42.1
+        version: 1.42.1
       '@storybook/addon-essentials':
         specifier: ^7.2.0
         version: 7.2.0(@types/react-dom@18.0.2)(@types/react@18.0.8)(react-dom@18.1.0)(react@18.1.0)
@@ -1563,12 +1538,9 @@ importers:
       msw-storybook-addon:
         specifier: ^1.8.0
         version: 1.8.0(msw@1.2.3)
-      playwright-core:
-        specifier: ^1.42.1
+      playwright:
+        specifier: 1.42.1
         version: 1.42.1
-      polly-adapter-playwright:
-        specifier: ^2.3.0
-        version: 2.3.0(@pollyjs/adapter@6.0.6)
       prettier:
         specifier: 2.8.1
         version: 2.8.1
@@ -6080,16 +6052,6 @@ packages:
       aggregate-error: 3.1.0
     dev: true
 
-  /@offirgolan/nise@4.1.0:
-    resolution: {integrity: sha512-7GEUt4YBlYdQM3D5cyQTUiupvBtSNapNiplkz1AI9hJETjFOemUPUHJq0+NmlaBt3WjdHGq8zg+FfKwjYTSQcw==}
-    dependencies:
-      '@sinonjs/commons': 1.8.3
-      '@sinonjs/fake-timers': 6.0.1
-      '@sinonjs/text-encoding': 0.7.1
-      just-extend: 4.0.2
-      path-to-regexp: 1.7.0
-    dev: true
-
   /@open-draft/until@1.0.3:
     resolution: {integrity: sha512-Aq58f5HiWdyDlFffbbSjAlv596h/cOnt2DO1w3DOC7OJ5EHs0hd/nycJfiu9RJbT6Yk6F1knnRRXNSpxoIVZ9Q==}
     dev: true
@@ -6533,37 +6495,22 @@ packages:
     dev: true
     optional: true
 
-  /@playwright/test@1.42.0:
-    resolution: {integrity: sha512-2k1HzC28Fs+HiwbJOQDUwrWMttqSLUVdjCqitBOjdCD0svWOMQUVqrXX6iFD7POps6xXAojsX/dGBpKnjZctLA==}
+  /@playwright/test@1.42.1:
+    resolution: {integrity: sha512-Gq9rmS54mjBL/7/MvBaNOBwbfnh7beHvS6oS4srqXFcQHpQCV1+c8JXWE8VLPyRDhgS3H8x8A7hztqI9VnwrAQ==}
     engines: {node: '>=16'}
     hasBin: true
     dependencies:
-      playwright: 1.42.0
+      playwright: 1.42.1
     dev: true
 
   /@polka/url@1.0.0-next.24:
     resolution: {integrity: sha512-2LuNTFBIO0m7kKIQvvPHN6UE63VjpmL9rnEEaOOaiSPbZK+zUOYIzBAWcED+3XYzhYsd/0mD57VdxAEqqV52CQ==}
     dev: true
 
-  /@pollyjs/adapter-xhr@6.0.6:
-    resolution: {integrity: sha512-S/2RVZvCe460BWz5fYVg9dfVZ0yZobA54vqReF17A2fkvAjrPXT3jk2tRLhULccrsbEAnBdxE0/w+aKOBUjXbw==}
-    dependencies:
-      '@offirgolan/nise': 4.1.0
-      '@pollyjs/adapter': 6.0.6
-      '@pollyjs/utils': 6.0.6
-      to-arraybuffer: 1.0.1
-    dev: true
-
   /@pollyjs/adapter@5.0.0:
     resolution: {integrity: sha512-GaJUp9hKKKbRbh1FDbjVfxNGIYs8/1QQI5SR+zjz+OjpjV2btRPFCq1cqO4ORrHA2pTIC8IvEL3lgPSG4v/cPg==}
     dependencies:
       '@pollyjs/utils': 5.0.0
-    dev: true
-
-  /@pollyjs/adapter@6.0.6:
-    resolution: {integrity: sha512-szhys0NiFQqCJDMC0kpDyjhLqSI7aWc6m6iATCRKgcMcN/7QN85pb3GmRzvnNV8+/Bi2AUSCwxZljcsKhbYVWQ==}
-    dependencies:
-      '@pollyjs/utils': 6.0.6
     dev: true
 
   /@pollyjs/core@5.1.0:
@@ -6577,20 +6524,6 @@ packages:
       lodash-es: 4.17.21
       route-recognizer: 0.3.4
       slugify: 1.4.5
-    dev: true
-
-  /@pollyjs/core@6.0.6:
-    resolution: {integrity: sha512-1ZZcmojW8iSFmvHGeLlvuudM3WiDV842FsVvtPAo3HoAYE6jCNveLHJ+X4qvonL4enj1SyTF3hXA107UkQFQrA==}
-    dependencies:
-      '@pollyjs/utils': 6.0.6
-      '@sindresorhus/fnv1a': 2.0.1
-      blueimp-md5: 2.19.0
-      fast-json-stable-stringify: 2.1.0
-      is-absolute-url: 3.0.3
-      lodash-es: 4.17.21
-      loglevel: 1.9.1
-      route-recognizer: 0.3.4
-      slugify: 1.6.6
     dev: true
 
   /@pollyjs/node-server@5.0.0:
@@ -6617,13 +6550,6 @@ packages:
       - supports-color
     dev: true
 
-  /@pollyjs/persister-rest@6.0.6:
-    resolution: {integrity: sha512-xgnIV3dMzPVQSuJVFeF3fjwpTo4nG6seJlUdFV0axg5OyilxLcuz4aMf1sXYfAcSeqEV82rXx6+VceA0UXvE4g==}
-    dependencies:
-      '@pollyjs/persister': 6.0.6
-      '@pollyjs/utils': 6.0.6
-    dev: true
-
   /@pollyjs/persister@5.0.0:
     resolution: {integrity: sha512-bTJes0c2/y4xrXi1vPypJhup/N/VPC1jY7maOuSv4pOFo6VAvoVJGT2sgMMnPU7qHSRn9Y6v+S7QqGtLOZCyAA==}
     dependencies:
@@ -6635,27 +6561,8 @@ packages:
       utf8-byte-length: 1.0.4
     dev: true
 
-  /@pollyjs/persister@6.0.6:
-    resolution: {integrity: sha512-9KB1p+frvYvFGur4ifzLnFKFLXAMXrhAhCnVhTnkG2WIqqQPT7y+mKBV/DKCmYFx8GPA9FiNGqt2pB53uJpIdw==}
-    dependencies:
-      '@pollyjs/utils': 6.0.6
-      '@types/set-cookie-parser': 2.4.3
-      bowser: 2.9.0
-      fast-json-stable-stringify: 2.1.0
-      lodash-es: 4.17.21
-      set-cookie-parser: 2.6.0
-      utf8-byte-length: 1.0.4
-    dev: true
-
   /@pollyjs/utils@5.0.0:
     resolution: {integrity: sha512-zXoR13NGR1fVoUAcKR9/8AYCXZsMkG5EdvTZbR1nk5hCYJN1AR73HAKXMPsk/2vkLnBr6LWoAr3f9LjwqJOehQ==}
-    dependencies:
-      qs: 6.11.2
-      url-parse: 1.5.10
-    dev: true
-
-  /@pollyjs/utils@6.0.6:
-    resolution: {integrity: sha512-nhVJoI3nRgRimE0V2DVSvsXXNROUH6iyJbroDu4IdsOIOFC1Ds0w+ANMB4NMwFaqE+AisWOmXFzwAGdAfyiQVg==}
     dependencies:
       qs: 6.11.2
       url-parse: 1.5.10
@@ -8226,11 +8133,6 @@ packages:
   /@sindresorhus/fnv1a@1.2.0:
     resolution: {integrity: sha512-5ezb/dBSTWtKQ4sLQwMgOJyREXJcZZkTMbendMwKrXTghUhWjZhstzkkmt4/WkFy/GSTSGzfJOKU7dEXv3C/XQ==}
     engines: {node: '>=6'}
-    dev: true
-
-  /@sindresorhus/fnv1a@2.0.1:
-    resolution: {integrity: sha512-suq9tRQ6bkpMukTG5K5z0sPWB7t0zExMzZCdmYm6xTSSIm/yCKNm7VCL36wVeyTsFr597/UhU1OAYdHGMDiHrw==}
-    engines: {node: '>=10'}
     dev: true
 
   /@sindresorhus/is@0.14.0:
@@ -12952,10 +12854,6 @@ packages:
 
   /blueimp-md5@2.16.0:
     resolution: {integrity: sha512-j4nzWIqEFpLSbdhUApHRGDwfXbV8ALhqOn+FY5L6XBdKPAXU9BpGgFSbDsgqogfqPPR9R2WooseWCsfhfEC6uQ==}
-    dev: true
-
-  /blueimp-md5@2.19.0:
-    resolution: {integrity: sha512-DRQrD6gJyy8FbiE4s+bDoXS9hiW3Vbx5uCdwvcCf3zLHL+Iv7LtGHLpr+GZV8rHG8tK766FGYBwRbu8pELTt+w==}
     dev: true
 
   /body-parser@1.20.1:
@@ -19224,11 +19122,6 @@ packages:
       yargs: 15.4.1
     dev: false
 
-  /loglevel@1.9.1:
-    resolution: {integrity: sha512-hP3I3kCrDIMuRwAwHltphhDM1r8i55H33GgqjXbrisuJhF4kRhW1dNuxsRklp4bXl8DSdLaNLuiL4A/LWRfxvg==}
-    engines: {node: '>= 0.6.0'}
-    dev: true
-
   /long@4.0.0:
     resolution: {integrity: sha512-XsP+KhQif4bjX1kbuSiySJFNAehNxgLb6hPRGJ9QsUr8ajHkuXGdrHmFUTUUXhDwVX2R5bY4JNZEwbUiMhV+MA==}
     dev: true
@@ -21223,24 +21116,18 @@ packages:
       pathe: 1.1.2
     dev: true
 
-  /playwright-core@1.42.0:
-    resolution: {integrity: sha512-0HD9y8qEVlcbsAjdpBaFjmaTHf+1FeIddy8VJLeiqwhcNqGCBe4Wp2e8knpqiYbzxtxarxiXyNDw2cG8sCaNMQ==}
-    engines: {node: '>=16'}
-    hasBin: true
-    dev: true
-
   /playwright-core@1.42.1:
     resolution: {integrity: sha512-mxz6zclokgrke9p1vtdy/COWBH+eOZgYUVVU34C73M+4j4HLlQJHtfcqiqqxpP0o8HhMkflvfbquLX5dg6wlfA==}
     engines: {node: '>=16'}
     hasBin: true
     dev: true
 
-  /playwright@1.42.0:
-    resolution: {integrity: sha512-Ko7YRUgj5xBHbntrgt4EIw/nE//XBHOKVKnBjO1KuZkmkhlbgyggTe5s9hjqQ1LpN+Xg+kHsQyt5Pa0Bw5XpvQ==}
+  /playwright@1.42.1:
+    resolution: {integrity: sha512-PgwB03s2DZBcNRoW+1w9E+VkLBxweib6KTXM0M3tkiT4jVxKSi6PmVJ591J+0u10LUrgxB7dLRbiJqO5s2QPMg==}
     engines: {node: '>=16'}
     hasBin: true
     dependencies:
-      playwright-core: 1.42.0
+      playwright-core: 1.42.1
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
@@ -21262,14 +21149,6 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       '@babel/runtime': 7.23.1
-    dev: true
-
-  /polly-adapter-playwright@2.3.0(@pollyjs/adapter@6.0.6):
-    resolution: {integrity: sha512-89Ds9OQOE5BOZ9yjekcr8BY9979Gg9VCi7672tYdOXaM3pzVjuL2H+GR3M48BgfQVT1JXfSZwFcWIlSkrQ9oVw==}
-    peerDependencies:
-      '@pollyjs/adapter': ^6.0.0
-    dependencies:
-      '@pollyjs/adapter': 6.0.6
     dev: true
 
   /postcss-cli@10.1.0(postcss@8.4.33)(ts-node@10.9.1):
@@ -23455,11 +23334,6 @@ packages:
     engines: {node: '>=8.0.0'}
     dev: true
 
-  /slugify@1.6.6:
-    resolution: {integrity: sha512-h+z7HKHYXj6wJU+AnS/+IH8Uh9fdcX1Lrhg1/VMdf9PwoBQXFcXiAdsy2tSK0P6gKwJLXp02r90ahUCqHk9rrw==}
-    engines: {node: '>=8.0.0'}
-    dev: true
-
   /smart-buffer@4.2.0:
     resolution: {integrity: sha512-94hK0Hh8rPqQl2xXc3HsaBoOXKV20MToPkcXvwbISWLEs+64sBq5kFgn2kJDHb1Pry9yrP0dxrCI9RRci7RXKg==}
     engines: {node: '>= 6.0.0', npm: '>= 3.0.0'}
@@ -24583,10 +24457,6 @@ packages:
 
   /tmpl@1.0.5:
     resolution: {integrity: sha512-3f0uOEAQwIqGuWW2MVzYg8fV/QNnc/IpuJNG837rLuczAaLVHslWHZQj4IGiEl5Hs3kkbhwL9Ab7Hrsmuj+Smw==}
-
-  /to-arraybuffer@1.0.1:
-    resolution: {integrity: sha512-okFlQcoGTi4LQBG/PgSYblw9VOyptsz2KJZqc6qtgGdes8VktzUQkj4BI2blit072iS8VODNcMA+tvnS9dnuMA==}
-    dev: true
 
   /to-fast-properties@2.0.0:
     resolution: {integrity: sha512-/OaKK0xYrs3DmxRYqL/yDc+FxFUVYhDlXMhRmv3z915w2HF1tnN1omB354j8VUGO/hbRzyD6Y3sA7v7GS/ceog==}
