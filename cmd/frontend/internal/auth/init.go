@@ -45,7 +45,7 @@ func Init(logger log.Logger, db database.DB) {
 	// Register enterprise auth middleware
 	auth.RegisterMiddlewares(
 		authutil.ConnectOrSignOutMiddleware(db),
-		openidconnect.Middleware(db),
+		openidconnect.Middleware(logger, db),
 		sourcegraphoperator.Middleware(db),
 		saml.Middleware(db),
 		httpheader.Middleware(db),
