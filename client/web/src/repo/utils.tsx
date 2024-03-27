@@ -65,20 +65,18 @@ export const RepoCommitsButton: React.FunctionComponent<React.PropsWithChildren<
     const title = isRepoPerforce ? 'Changelists' : 'Commits'
     const revisionPath = isRepoPerforce ? 'changelists' : 'commits'
     return (
-        <>
-            <Tooltip content={tooltip}>
-                <Button
-                    className="flex-shrink-0"
-                    to={`/${encodeURIPathComponent(repoName)}${
-                        revision && `@${encodeURIPathComponent(revision)}`
-                    }/-/${revisionPath}${filePath && `/${encodeURIPathComponent(filePath)}`}`}
-                    variant="secondary"
-                    outline={true}
-                    as={Link}
-                >
-                    <Icon aria-hidden={true} svgPath={svgPath} /> <span className={className}>{title}</span>
-                </Button>
-            </Tooltip>
-        </>
+        <Tooltip content={tooltip}>
+            <Button
+                className="flex-shrink-0"
+                to={`/${encodeURIPathComponent(repoName)}${
+                    revision && `@${encodeURIPathComponent(revision)}`
+                }/-/${revisionPath}${filePath && `/${encodeURIPathComponent(filePath)}`}`}
+                variant="secondary"
+                outline={true}
+                as={Link}
+            >
+                <Icon aria-hidden={true} svgPath={svgPath} /> <span className={className}>{title}</span>
+            </Button>
+        </Tooltip>
     )
 }
