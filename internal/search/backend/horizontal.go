@@ -63,28 +63,26 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 
 	pl := pool.New().WithErrors()
 	for endpoint, client := range clients {
-		e := endpoint
-		c := client
 		pl.Go(func() error {
-			err := c.StreamSearch(ctx, q, opts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
+			err := client.StreamSearch(ctx, q, opts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
 				// This shouldn't happen, but skip event if sr is nil.
 				if sr == nil {
 					return
 				}
 
 				mu.Lock()
-				sr.Files = dedupper.Dedup(e, sr.Files)
+				sr.Files = dedupper.Dedup(endpoint, sr.Files)
 				mu.Unlock()
 
-				flushSender.Send(e, sr)
+				flushSender.Send(endpoint, sr)
 			}))
 
 			if isZoektRolloutError(ctx, err) {
-				flushSender.Send(e, crashEvent())
+				flushSender.Send(endpoint, crashEvent())
 				return nil
 			}
 
-			flushSender.SendDone(e)
+			flushSender.SendDone(endpoint)
 			return err
 		})
 	}
@@ -148,10 +146,10 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 	}
 	results := make(chan result, len(clients))
 	for _, c := range clients {
-		go func(c zoekt.Streamer) {
+		go func() {
 			rl, err := c.List(ctx, q, opts)
 			results <- result{rl: rl, err: err}
-		}(c)
+		}()
 	}
 
 	// PERF: We don't deduplicate Repos since the only user of List already

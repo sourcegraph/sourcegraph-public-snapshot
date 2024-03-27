@@ -708,10 +708,6 @@ func TestParseTags_WithoutCreatorDate(t *testing.T) {
 	}
 }
 
-var (
-	nonExistentCommitID = api.CommitID(strings.Repeat("a", 40))
-)
-
 func TestLogPartsPerCommitInSync(t *testing.T) {
 	require.Equal(t, partsPerCommit-1, strings.Count(logFormatWithoutRefs, "%x00"))
 }

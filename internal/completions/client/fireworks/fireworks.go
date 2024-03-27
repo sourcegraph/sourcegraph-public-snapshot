@@ -20,6 +20,8 @@ const Starcoder16b8bit = "accounts/fireworks/models/starcoder-16b-w8a16"
 const Starcoder7b8bit = "accounts/fireworks/models/starcoder-7b-w8a16"
 const Starcoder16b = "accounts/fireworks/models/starcoder-16b"
 const Starcoder7b = "accounts/fireworks/models/starcoder-7b"
+const StarcoderTwo15b = "accounts/sourcegraph/models/starcoder2-15b"
+const StarcoderTwo7b = "accounts/sourcegraph/models/starcoder2-7b"
 const Llama27bCode = "accounts/fireworks/models/llama-v2-7b-code"
 const Llama213bCode = "accounts/fireworks/models/llama-v2-13b-code"
 const Llama213bCodeInstruct = "accounts/fireworks/models/llama-v2-13b-code-instruct"
@@ -44,6 +46,7 @@ type fireworksClient struct {
 func (c *fireworksClient) Complete(
 	ctx context.Context,
 	feature types.CompletionsFeature,
+	_ types.CompletionsVersion,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
 	resp, err := c.makeRequest(ctx, feature, requestParams, false)
@@ -81,6 +84,7 @@ func (c *fireworksClient) Complete(
 func (c *fireworksClient) Stream(
 	ctx context.Context,
 	feature types.CompletionsFeature,
+	_ types.CompletionsVersion,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
@@ -188,7 +192,7 @@ func (c *fireworksClient) makeRequest(ctx context.Context, feature types.Complet
 			switch m.Speaker {
 			case types.HUMAN_MESSAGE_SPEAKER:
 				role = "user"
-			case types.ASISSTANT_MESSAGE_SPEAKER:
+			case types.ASSISTANT_MESSAGE_SPEAKER:
 				role = "assistant"
 			default:
 				role = strings.ToLower(role)

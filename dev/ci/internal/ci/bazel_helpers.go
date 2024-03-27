@@ -46,6 +46,7 @@ func bazelStampedCmd(args ...string) string {
 		genBazelRC,
 		"bazel",
 		fmt.Sprintf("--bazelrc=%s", bazelrc),
+		fmt.Sprintf("--bazelrc=%s", ".aspect/bazelrc/ci.sourcegraph.bazelrc"),
 	}
 	post := []string{
 		"--stamp",
@@ -55,13 +56,6 @@ func bazelStampedCmd(args ...string) string {
 	cmd := append(pre, args...)
 	cmd = append(cmd, post...)
 	return strings.Join(cmd, " ")
-}
-
-func aspectBazelRC() (string, string) {
-	path := "/tmp/aspect-generated.bazelrc"
-	cmd := fmt.Sprintf("rosetta bazelrc > %s;", path)
-
-	return cmd, path
 }
 
 // TODO(burmudar): do we remove this?

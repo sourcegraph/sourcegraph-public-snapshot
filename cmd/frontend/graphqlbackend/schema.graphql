@@ -1717,6 +1717,10 @@ type Query {
         Query the user by verified email address.
         """
         email: String
+        """
+        Query the user by ID. Clients should prefer using GraphQL IDs. This is primarily intended for debugging.
+        """
+        databaseID: Int
     ): User
     """
     List all users.
@@ -6380,7 +6384,6 @@ enum CodySubscriptionStatus {
     UNPAID
     CANCELED
     TRIALING
-    PENDING
     OTHER
 }
 
@@ -6639,6 +6642,11 @@ type User implements Node & SettingsSubject & Namespace {
     """
     codySubscription: CodySubscription
     """
+    The rate limit status for the user stored in Cody Gateway.
+    On dotcom only the user and site admins can access this field.
+    """
+    codyGatewayRateLimitStatus: [CodyGatewayRateLimitStatus!]
+    """
     DEPRECATED
     Whether the user has enrolled for Cody Pro.
     """
@@ -6844,6 +6852,11 @@ type ExternalAccount implements Node {
     may query this field.
     """
     publicAccountData: PublicExternalAccountData
+    """
+    TEMPORARY: to debug #inc-284-plg-users-paying-for-and-being-billed-for-pro-without-being-upgrade.
+    Cody Subscription associated with the external account.
+    """
+    codySubscription: CodySubscription
 }
 
 """
@@ -10474,6 +10487,11 @@ enum PermissionNamespace {
     This represents the Cody namespace.
     """
     CODY
+
+    """
+    ❗ Product subscriptions are only available in Sourcegraph.com
+    """
+    PRODUCT_SUBSCRIPTIONS
 }
 
 """
