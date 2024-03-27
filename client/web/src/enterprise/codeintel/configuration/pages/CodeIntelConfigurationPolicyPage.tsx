@@ -85,17 +85,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeIntelConfigurationPolicy')
-        if (domain === 'scip') {
-            if (repo) {
-                telemetryRecorder.recordEvent('repo.codeIntel.configurationPolicy', 'view')
-            } else {
-                telemetryRecorder.recordEvent('admin.codeIntel.configurationPolicy', 'view')
-            }
-        } else if (repo) {
-            telemetryRecorder.recordEvent('repo.cody.configurationPolicy', 'view')
-        } else {
-            telemetryRecorder.recordEvent('admin.cody.configurationPolicy', 'view')
-        }
+        telemetryRecorder.recordEvent(getViewEventFeatureName(domain, !!repo), 'view')
     }, [telemetryService, telemetryRecorder, domain, repo])
 
     // Handle local policy state
@@ -994,4 +984,12 @@ function comparePatterns(a: string[] | null, b: string[] | null): boolean {
 
     // Both supplied and their contents match
     return a.length === b.length && a.every((pattern, index) => b[index] === pattern)
+}
+
+function getViewEventFeatureName(domain: string, hasRepo: boolean) {
+    if (domain === 'scip') {
+        return hasRepo ? 'repo.codeIntel.configurationPolicy' : 'admin.codeIntel.configurationPolicy'
+    }
+
+    return hasRepo ? 'repo.cody.configurationPolicy' : 'admin.cody.configurationPolicy'
 }
