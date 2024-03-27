@@ -36,6 +36,7 @@ func (r *schemaResolver) User(
 	args struct {
 		Username *string
 		Email    *string
+		IntID    *int32
 	},
 ) (*UserResolver, error) {
 	var err error
@@ -43,6 +44,9 @@ func (r *schemaResolver) User(
 	switch {
 	case args.Username != nil:
 		user, err = r.db.Users().GetByUsername(ctx, *args.Username)
+
+	case args.IntID != nil:
+		user, err = r.db.Users().GetByID(ctx, *args.IntID)
 
 	case args.Email != nil:
 		// 🚨 SECURITY: Only site admins are allowed to look up by email address on
@@ -53,7 +57,6 @@ func (r *schemaResolver) User(
 			}
 		}
 		user, err = r.db.Users().GetByVerifiedEmail(ctx, *args.Email)
-
 	default:
 		return nil, errors.New("must specify either username or email to look up a user")
 	}
