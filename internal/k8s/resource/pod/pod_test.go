@@ -473,13 +473,13 @@ func TestNewPodTemplate(t *testing.T) {
 			t.Parallel()
 			got, err := NewPodTemplate(tt.args.name, tt.args.namespace, tt.args.options...)
 			if err != nil && tt.wantErr == false {
-				t.Errorf("NewContainer() error: %v", err)
+				t.Errorf("NewPodTemplate() error: %v", err)
 			}
 			if err != nil && tt.wantErr == true {
 				return
 			}
 			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Errorf("NewContainer() mismatch (-want +got):\n%s", diff)
+				t.Errorf("NewPodTemplate() mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
