@@ -175,18 +175,20 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
     const [enableOwnershipPanels] = useFeatureFlag('enable-ownership-panels', true)
     const hasRepoMetaWritePermissions = canWriteRepoMetadata(props.authenticatedUser)
 
-    const commitsButton = RepoCommitsButton({
-        repoName: repo?.name,
-        repoType: repo?.sourceType,
-        revision: revision,
-        filePath: filePath,
-        svgPath: mdiSourceCommit,
-        className: menuStyles.text,
-    })
-
     return (
         <>
-            {!isRoot && <div className={menuStyles.menu}>{commitsButton}</div>}
+            {!isRoot && (
+                <div className={menuStyles.menu}>
+                    <RepoCommitsButton
+                        repoName={repo.name}
+                        repoType={repo.sourceType}
+                        revision={revision}
+                        filePath={filePath}
+                        svgPath={mdiSourceCommit}
+                        className={menuStyles.text}
+                    />
+                </div>
+            )}
 
             {(readmeEntry || isRoot) && (
                 <section className={classNames('container mb-3 px-0', styles.section)}>

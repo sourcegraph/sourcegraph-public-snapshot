@@ -216,15 +216,6 @@ export const TreePage: FC<Props> = ({
         return mdiSourceRepository
     }
 
-    const commitsButton = RepoCommitsButton({
-        repoName: repo?.name || '',
-        repoType: repo?.sourceType || '',
-        revision: revision,
-        filePath: filePath,
-        svgPath: mdiSourceCommit,
-        className: styles.text,
-    })
-
     const RootHeaderSection = (): React.ReactElement => (
         <div className="d-flex flex-wrap justify-content-between px-0">
             <div className={styles.header}>
@@ -242,7 +233,14 @@ export const TreePage: FC<Props> = ({
             </div>
             <div className={styles.menu}>
                 <ButtonGroup>
-                    {commitsButton}
+                    <RepoCommitsButton
+                        repoName={repo?.name || ''}
+                        repoType={repo?.sourceType || ''}
+                        revision={revision}
+                        filePath={filePath}
+                        svgPath={mdiSourceCommit}
+                        className={styles.text}
+                    />
                     {!isPackage && (
                         <Tooltip content="Git branches">
                             <Button
