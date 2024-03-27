@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 
-import {expect, describe, it, vi, beforeEach} from 'vitest'
+import hotkeys from 'hotkeys-js'
+import { expect, describe, it, vi, beforeEach } from 'vitest'
 
-import {evaluateKey, registerHotkey} from './Hotkey'
-import hotkeys from 'hotkeys-js';
+import { evaluateKey, registerHotkey } from './Hotkey'
 
 const mocks = vi.hoisted(() => ({
     isLinuxPlatform: vi.fn(),
@@ -71,9 +71,8 @@ describe('Hotkey', () => {
     })
 
     describe('registerHotkey', () => {
-
         beforeEach(() => {
-            hotkeys.getAllKeyCodes().map(hotkey => hotkeys.unbind(hotkey.shortcut));
+            hotkeys.getAllKeyCodes().map(hotkey => hotkeys.unbind(hotkey.shortcut))
         })
 
         it('should register hotkey', () => {
@@ -84,34 +83,34 @@ describe('Hotkey', () => {
                 handler: () => {},
             })
 
-            const allKeyCodes = hotkeys.getAllKeyCodes();
-            expect(allKeyCodes.length).toBe(1);
-            expect(allKeyCodes[0].shortcut).toBe('hello');
-        });
+            const allKeyCodes = hotkeys.getAllKeyCodes()
+            expect(allKeyCodes.length).toBe(1)
+            expect(allKeyCodes[0].shortcut).toBe('hello')
+        })
 
         it('should be able to re-bind a hotkey', () => {
-            const {bind} = registerHotkey({
+            const { bind } = registerHotkey({
                 keys: {
                     key: 'hello',
                 },
                 handler: () => {},
             })
 
-            const allKeyCodesBefore = hotkeys.getAllKeyCodes();
-            expect(allKeyCodesBefore.length).toBe(1);
-            expect(allKeyCodesBefore[0].shortcut).toBe('hello');
+            const allKeyCodesBefore = hotkeys.getAllKeyCodes()
+            expect(allKeyCodesBefore.length).toBe(1)
+            expect(allKeyCodesBefore[0].shortcut).toBe('hello')
 
             bind({
                 keys: {
-                    key: 'updated'
+                    key: 'updated',
                 },
                 handler: () => {},
-            });
+            })
 
-            const allKeyCodesAfter = hotkeys.getAllKeyCodes();
-            expect(allKeyCodesAfter.length).toBe(1);
-            expect(allKeyCodesAfter[0].shortcut).toBe('updated');
-        });
+            const allKeyCodesAfter = hotkeys.getAllKeyCodes()
+            expect(allKeyCodesAfter.length).toBe(1)
+            expect(allKeyCodesAfter[0].shortcut).toBe('updated')
+        })
 
         it('should be able to un-register a hotkey', () => {
             const hotkey = registerHotkey({
@@ -121,58 +120,58 @@ describe('Hotkey', () => {
                 handler: () => {},
             })
 
-            const allKeyCodesBefore = hotkeys.getAllKeyCodes();
-            expect(allKeyCodesBefore.length).toBe(1);
-            expect(allKeyCodesBefore[0].shortcut).toBe('hello');
+            const allKeyCodesBefore = hotkeys.getAllKeyCodes()
+            expect(allKeyCodesBefore.length).toBe(1)
+            expect(allKeyCodesBefore[0].shortcut).toBe('hello')
 
-            hotkey.unregister();
+            hotkey.unregister()
 
-            const allKeyCodesAfter = hotkeys.getAllKeyCodes();
-            expect(allKeyCodesAfter.length).toBe(0);
-        });
+            const allKeyCodesAfter = hotkeys.getAllKeyCodes()
+            expect(allKeyCodesAfter.length).toBe(0)
+        })
 
         it('should invoke the handler when hotkey is used', () => {
-            let counter = 0;
+            let counter = 0
             registerHotkey({
                 keys: {
                     key: 'hello',
                 },
                 handler: () => {
-                    counter++;
+                    counter++
                 },
             })
 
-            expect(counter).toBe(0);
-            hotkeys.trigger('hello');
-            expect(counter).toBe(1);
+            expect(counter).toBe(0)
+            hotkeys.trigger('hello')
+            expect(counter).toBe(1)
         })
 
         it('should invoke the re-bound handler when hotkey is used', () => {
-            let counter_1 = 0;
-            let counter_2 = 0;
-            const {bind} = registerHotkey({
+            let counter_1 = 0
+            let counter_2 = 0
+            const { bind } = registerHotkey({
                 keys: {
                     key: 'hello',
                 },
                 handler: () => {
-                    counter_1++;
+                    counter_1++
                 },
             })
 
             bind({
                 keys: {
-                    key: 'hello'
+                    key: 'hello',
                 },
                 handler: () => {
-                    counter_2++;
+                    counter_2++
                 },
             })
 
-            expect(counter_1).toBe(0);
-            expect(counter_2).toBe(0);
-            hotkeys.trigger('hello');
-            expect(counter_1).toBe(0);
-            expect(counter_2).toBe(1);
+            expect(counter_1).toBe(0)
+            expect(counter_2).toBe(0)
+            hotkeys.trigger('hello')
+            expect(counter_1).toBe(0)
+            expect(counter_2).toBe(1)
         })
-    });
+    })
 })

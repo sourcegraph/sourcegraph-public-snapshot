@@ -33,7 +33,7 @@ function isContentField(event: KeyboardEvent): boolean {
     if (!event?.target) {
         return false
     }
-    const target = event.target;
+    const target = event.target
     if (isElement(target)) {
         return (
             target.getAttribute('contenteditable') === 'true' ||
@@ -108,7 +108,8 @@ interface HotkeySetupOptions extends HotkeyOptions {
  * component initialization.
  */
 export function registerHotkey({ keys, handler, allowDefault, ignoreInputFields }: HotkeySetupOptions): {
-    bind: (options: HotkeyOptions) => void, unregister: () => void,
+    bind: (options: HotkeyOptions) => void
+    unregister: () => void
 } {
     let currentKey = evaluateKey(keys)
     if (
@@ -140,6 +141,10 @@ export function registerHotkey({ keys, handler, allowDefault, ignoreInputFields 
     }
 
     return {
+        /**
+         * Use this function to change the shortcut and handler of a function. A use case for this may be when
+         * a user changes their hotkey maps.
+         */
         bind({ keys: bindKeys, handler: bindHandler }: HotkeyOptions) {
             if (currentKey) {
                 hotkeys.unbind(currentKey, wrappedHandler)
@@ -148,10 +153,14 @@ export function registerHotkey({ keys, handler, allowDefault, ignoreInputFields 
             wrappedHandler = wrapHandler(bindHandler, allowDefault, ignoreInputFields)
             hotkeys(currentKey, wrappedHandler)
         },
+        /**
+         * Use this function if you want to dynamically unregister a hotkey. You don't have to clean up after yourself:
+         * The hotkey will be automatically removed when the lifecycle of a component ends (`onDestroy` hook).
+         */
         unregister() {
             if (currentKey) {
                 hotkeys.unbind(currentKey, wrappedHandler)
             }
-        }
+        },
     }
 }
