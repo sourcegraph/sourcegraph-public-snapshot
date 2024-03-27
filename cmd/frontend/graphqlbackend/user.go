@@ -34,9 +34,9 @@ import (
 func (r *schemaResolver) User(
 	ctx context.Context,
 	args struct {
-		Username *string
-		Email    *string
-		IntID    *int32
+		Username   *string
+		Email      *string
+		DatabaseID *int32
 	},
 ) (*UserResolver, error) {
 	var err error
@@ -45,8 +45,8 @@ func (r *schemaResolver) User(
 	case args.Username != nil:
 		user, err = r.db.Users().GetByUsername(ctx, *args.Username)
 
-	case args.IntID != nil:
-		user, err = r.db.Users().GetByID(ctx, *args.IntID)
+	case args.DatabaseID != nil:
+		user, err = r.db.Users().GetByID(ctx, *args.DatabaseID)
 
 	case args.Email != nil:
 		// 🚨 SECURITY: Only site admins are allowed to look up by email address on
