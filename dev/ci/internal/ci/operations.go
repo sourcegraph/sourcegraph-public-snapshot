@@ -1,11 +1,6 @@
 package ci
 
 import (
-	"fmt"
-	"time"
-
-	"github.com/Masterminds/semver"
-
 	bk "github.com/sourcegraph/sourcegraph/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/operations"
@@ -23,9 +18,6 @@ type CoreTestOperationsOptions struct {
 	CreateBundleSizeDiff bool // for addWebAppEnterpriseBuild
 
 	IsMainBranch bool
-
-	// AspectWorkflows is set to true when we generate steps as part of the Aspect Workflows pipeline
-	AspectWorkflows bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -41,9 +33,11 @@ type CoreTestOperationsOptions struct {
 func CoreTestOperations(buildOpts bk.BuildOptions, diff changed.Diff, opts CoreTestOperationsOptions) *operations.Set {
 	// Base set
 	ops := operations.NewSet()
-
-	// Simple, fast-ish linter checks
-	ops.Append(BazelOperations(buildOpts, opts)...)
+	ops.Append(
+		bazelPrechecks(),
+		triggerBackCompatTest(buildOpts),
+		bazelGoModTidy(),
+	)
 	linterOps := operations.NewNamedSet("Linters and static analysis")
 	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
 		linterOps.Append(addSgLints(targets))
@@ -55,12 +49,27 @@ func CoreTestOperations(buildOpts bk.BuildOptions, diff changed.Diff, opts CoreT
 		clientChecks := operations.NewNamedSet("Client checks",
 			clientChromaticTests(opts),
 			addJetBrainsUnitTests, // ~2.5m
+			addVsceTests,          // ~3.0m
 			addStylelint,
 		)
 		ops.Merge(clientChecks)
 	}
 
 	return ops
+}
+
+// Builds and tests the VS Code extensions.
+func addVsceTests(pipeline *bk.Pipeline) {
+	pipeline.AddStep(
+		":vscode: Tests for VS Code extension",
+		withPnpmCache(),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+		bk.Cmd("pnpm generate"),
+		bk.Cmd("pnpm --filter @sourcegraph/vscode run build:test"),
+		// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
+		// bk.Cmd("pnpm --filter @sourcegraph/vscode run test-integration --verbose"),
+		// bk.AutomaticRetry(1),
+	)
 }
 
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
@@ -72,61 +81,17 @@ func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 	)
 }
 
+// Release the VS Code extension.
+func addVsceReleaseSteps(pipeline *bk.Pipeline) {
+	// Publish extension to the VS Code Marketplace
+	pipeline.AddStep(":vscode: Extension release",
+		withPnpmCache(),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+		bk.Cmd("pnpm generate"),
+		bk.Cmd("pnpm --filter @sourcegraph/vscode run release"))
+}
+
 // Adds a Buildkite pipeline "Wait".
 func wait(pipeline *bk.Pipeline) {
 	pipeline.AddWait()
-}
-
-func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		version := semver.MustParse(minimumUpgradeableVersion)
-
-		// HACK: we can't just subtract a single minor version once we roll over to 4.0,
-		// so hard-code the previous minor version.
-		previousMinorVersion := fmt.Sprintf("%d.%d", version.Major(), version.Minor()-1)
-		if version.Major() == 4 && version.Minor() == 0 {
-			previousMinorVersion = "3.43"
-		} else if version.Major() == 5 && version.Minor() == 0 {
-			previousMinorVersion = "4.5"
-		}
-
-		for _, branch := range []string{
-			// Most recent major.minor
-			fmt.Sprintf("%d.%d", version.Major(), version.Minor()),
-			previousMinorVersion,
-		} {
-			name := fmt.Sprintf(":stethoscope: Trigger %s release branch healthcheck build", branch)
-			pipeline.AddTrigger(name, "sourcegraph",
-				bk.Async(false),
-				bk.Build(bk.BuildOptions{
-					Branch:  branch,
-					Message: time.Now().Format(time.RFC1123) + " healthcheck build",
-				}),
-			)
-		}
-	}
-}
-
-func codeIntelQA(candidateTag string) operations.Operation {
-	return func(p *bk.Pipeline) {
-		p.AddStep(":bazel::docker::brain: Code Intel QA",
-			bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
-				Message:     ":alert: :noemi-handwriting: Code Intel QA Flake detected <@Noah S-C>",
-				ChannelName: "code-intel-buildkite",
-				Conditions: bk.SlackStepNotifyPayloadConditions{
-					Failed: true,
-				},
-			}),
-			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
-			bk.Agent("queue", "bazel"),
-			bk.Env("CANDIDATE_VERSION", candidateTag),
-			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
-			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
-			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
-			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-			bk.Cmd("dev/ci/integration/code-intel/run.sh"),
-			bk.ArtifactPaths("./*.log"),
-			bk.SoftFail(1))
-	}
 }

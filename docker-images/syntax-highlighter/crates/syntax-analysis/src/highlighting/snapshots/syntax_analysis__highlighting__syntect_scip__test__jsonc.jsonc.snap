@@ -1,0 +1,10 @@
+---
+source: crates/syntax-analysis/src/highlighting/syntect_scip.rs
+expression: "snapshot_sciptect_documents(&document, &contents)"
+---
+  {
+      // Comment
+      "hello": "world",
+      "list": [null, 1, 2.0, true, false]
+  }
+

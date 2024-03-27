@@ -69,10 +69,7 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 }
 
 func (r *Resolver) fileChunkToResolver(ctx context.Context, chunk *codycontext.FileChunkContext) (graphqlbackend.ContextResultResolver, error) {
-	repoResolver := graphqlbackend.NewRepositoryResolver(r.db, r.gitserverClient, &types.Repo{
-		ID:   chunk.RepoID,
-		Name: chunk.RepoName,
-	})
+	repoResolver := graphqlbackend.NewMinimalRepositoryResolver(r.db, r.gitserverClient, chunk.RepoID, chunk.RepoName)
 
 	commitResolver := graphqlbackend.NewGitCommitResolver(r.db, r.gitserverClient, repoResolver, chunk.CommitID, nil)
 	stat, err := r.gitserverClient.Stat(ctx, chunk.RepoName, chunk.CommitID, chunk.Path)

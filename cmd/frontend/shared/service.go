@@ -17,22 +17,36 @@ import (
 	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 )
 
-type svc struct{}
+type svc struct {
+	ready                chan struct{}
+	debugserverEndpoints cli.LazyDebugserverEndpoint
+}
 
 func (svc) Name() string { return "frontend" }
 
-func (svc) Configure() (env.Config, []debugserver.Endpoint) {
+func (s *svc) Configure() (env.Config, []debugserver.Endpoint) {
 	CLILoadConfig()
 	codeintel.LoadConfig()
 	search.LoadConfig()
-	return nil, CreateDebugServerEndpoints()
+	// Signals health of startup.
+	s.ready = make(chan struct{})
+
+	return nil, createDebugServerEndpoints(s.ready, &s.debugserverEndpoints)
 }
 
-func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {
-	return CLIMain(ctx, observationCtx, ready, EnterpriseSetupHook, register.RegisterEnterpriseMigratorsUsingConfAndStoreFactory)
+func (s *svc) Start(ctx context.Context, observationCtx *observation.Context, signalReadyToParent service.ReadyFunc, config env.Config) error {
+	// This service's debugserver endpoints should start responding when this service is ready (and
+	// not ewait for *all* services to be ready). Therefore, we need to track whether we are ready
+	// separately.
+	ready := service.ReadyFunc(func() {
+		close(s.ready)
+		signalReadyToParent()
+	})
+
+	return CLIMain(ctx, observationCtx, ready, &s.debugserverEndpoints, EnterpriseSetupHook, register.RegisterEnterpriseMigratorsUsingConfAndStoreFactory)
 }
 
-var Service service.Service = svc{}
+var Service service.Service = &svc{}
 
 // Reexported to get around `internal` package.
 var (

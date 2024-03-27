@@ -3,18 +3,18 @@ package conf
 import (
 	"context"
 	"math/rand"
-	"net"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/sourcegraph/log"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type client struct {
@@ -119,6 +119,12 @@ func (c *client) ServiceConnections() conftypes.ServiceConnections {
 // Mock is a wrapper around client.Mock.
 func Mock(mockery *Unified) {
 	DefaultClient().Mock(mockery)
+}
+
+// MockAndNotifyWatchers sets up mock data and notifies all the watcher of the change.
+func MockAndNotifyWatchers(mockery *Unified) {
+	DefaultClient().Mock(mockery)
+	DefaultClient().notifyWatchers()
 }
 
 // Mock sets up mock data for the site configuration.
@@ -250,20 +256,10 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 	}
 
 	isFrontendUnreachableError := func(err error) bool {
-		var e *net.OpError
-		if errors.As(err, &e) && e.Op == "dial" {
-			return true
-		}
-
-		// If we're using gRPC to fetch configuration, gRPC clients will return
-		// a status code of "Unavailable" if the server is unreachable. See
-		// https://grpc.github.io/grpc/core/md_doc_statuscodes.html for more
-		// information.
-		if status.Code(err) == codes.Unavailable {
-			return true
-		}
-
-		return false
+		// gRPC clients will return a status code of "Unavailable" if the server
+		// is unreachable. See https://grpc.github.io/grpc/core/md_doc_statuscodes.html
+		// for more information.
+		return status.Code(err) == codes.Unavailable
 	}
 
 	waitForSleep := func() <-chan struct{} {

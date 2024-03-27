@@ -1,3 +1,4 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("//dev:go_defs.bzl", "go_test")
 
@@ -12,6 +13,8 @@ go_library(
     deps = [
         "//cmd/gitserver/internal",
         "//cmd/gitserver/internal/common",
+        "//cmd/gitserver/internal/git",
+        "//cmd/gitserver/internal/git/gitcli",
         "//cmd/gitserver/internal/vcssyncer",
         "//internal/api",
         "//internal/database/dbmocks",
@@ -20,13 +23,13 @@ go_library(
         "//internal/gitserver/v1:gitserver",
         "//internal/grpc",
         "//internal/grpc/defaults",
-        "//internal/httpcli",
-        "//internal/observation",
         "//internal/ratelimit",
         "//internal/types",
+        "//internal/vcs",
         "//internal/wrexec",
+        "//lib/errors",
         "@com_github_sourcegraph_log//:log",
-        "@org_golang_x_sync//semaphore",
+        "@com_github_sourcegraph_log//logtest",
         "@org_golang_x_time//rate",
     ],
 )
@@ -35,9 +38,7 @@ go_test(
     name = "integration_tests_test",
     timeout = "short",
     srcs = [
-        "archivereader_test.go",
         "clone_test.go",
-        "commits_test.go",
         "main_test.go",
         "object_test.go",
         "resolverevisions_test.go",
@@ -49,6 +50,9 @@ go_test(
     env = {"COURSIER_CACHE_DIR": "/tmp"},
     deps = [
         "//cmd/gitserver/internal",
+        "//cmd/gitserver/internal/common",
+        "//cmd/gitserver/internal/git",
+        "//cmd/gitserver/internal/git/gitcli",
         "//cmd/gitserver/internal/gitserverfs",
         "//cmd/gitserver/internal/perforce",
         "//cmd/gitserver/internal/vcssyncer",
@@ -61,7 +65,6 @@ go_test(
         "//internal/extsvc",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
-        "//internal/gitserver/protocol",
         "//internal/gitserver/v1:gitserver",
         "//internal/grpc",
         "//internal/grpc/defaults",
@@ -72,14 +75,23 @@ go_test(
         "//internal/wrexec",
         "//lib/errors",
         "//schema",
-        "@com_github_derision_test_go_mockgen//testutil/assert",
-        "@com_github_derision_test_go_mockgen//testutil/require",
-        "@com_github_google_go_cmp//cmp",
+        "@com_github_derision_test_go_mockgen_v2//testutil/assert",
+        "@com_github_derision_test_go_mockgen_v2//testutil/require",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
-        "@org_golang_google_grpc//:go_default_library",
         "@org_golang_x_time//rate",
     ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = ["//cmd/gitserver/internal"],
 )

@@ -70,6 +70,5 @@ go_test(
         "@com_github_sourcegraph_zoekt//:zoekt",
         "@com_github_sourcegraph_zoekt//query",
         "@com_github_stretchr_testify//require",
-        "@org_golang_x_exp//slices",
     ],
 )

@@ -16,6 +16,7 @@ go_library(
         "//lib/managedservicesplatform/example:__subpackages__",
     ],
     deps = [
+        "//internal/version",
         "//lib/background",
         "//lib/errors",
         "//lib/managedservicesplatform/runtime",

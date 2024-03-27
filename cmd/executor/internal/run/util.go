@@ -83,6 +83,7 @@ func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOpt
 
 		NodeExporterEndpoint:               c.NodeExporterURL,
 		DockerRegistryNodeExporterEndpoint: c.DockerRegistryNodeExporterURL,
+		EnableJobAuditLogging:              c.EnableJobAuditLogging,
 	}
 }
 

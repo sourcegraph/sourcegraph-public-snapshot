@@ -132,7 +132,6 @@ export const useRepoSuggestions = (
         variables: {
             names: suggestedRepoNames,
             numResults: numSuggestions,
-            includeJobs: !!authenticatedUser?.siteAdmin,
         },
         fetchPolicy: 'cache-first',
     })

@@ -13,11 +13,11 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/multiversion"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -300,10 +301,30 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	}
 
 	prev := conf.Raw()
+
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so take the redacted version for logging purposes.
+	prevSCredacted, _ := conf.RedactSecrets(prev)
+	arg := struct {
+		PrevConfig string `json:"prev_config"`
+		NewConfig  string `json:"new_config"`
+	}{
+		PrevConfig: prevSCredacted.Site,
+		NewConfig:  args.Input,
+	}
+
 	unredacted, err := conf.UnredactSecrets(args.Input, prev)
 	if err != nil {
 		return false, errors.Errorf("error unredacting secrets: %s", err)
 	}
+
+	cloudSiteConfig := cloud.SiteConfig()
+	if cloudSiteConfig.SiteConfigAllowlistEnabled() && !actor.FromContext(ctx).SourcegraphOperator {
+		if p, ok := allowEdit(prev.Site, unredacted, cloudSiteConfig.SiteConfigAllowlist.Paths); !ok {
+			return false, cloudSiteConfig.SiteConfigAllowlistOnError(p)
+		}
+	}
+
 	prev.Site = unredacted
 
 	server := globals.ConfigurationServerFrontendOnly
@@ -314,7 +335,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log an event when site config is updated
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
@@ -567,7 +588,7 @@ func (r *siteResolver) PerUserCodeCompletionsQuota() *int32 {
 
 func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
 	// We only require this on dotcom
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		return false
 	}
 
@@ -575,7 +596,10 @@ func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
 	return !isAdmin
 }
 
-func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool { return cody.IsCodyEnabled(ctx) }
+func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool {
+	enabled, _ := cody.IsCodyEnabled(ctx, r.db)
+	return enabled
+}
 
 func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) *codyLLMConfigurationResolver {
 	c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
@@ -585,6 +609,23 @@ func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) *codyLLMConfigu
 
 	return &codyLLMConfigurationResolver{config: c}
 }
+
+func (r *siteResolver) CodyConfigFeatures(ctx context.Context) *codyConfigFeaturesResolver {
+	c := conf.GetConfigFeatures(conf.Get().SiteConfig())
+	if c == nil {
+		return nil
+	}
+	return &codyConfigFeaturesResolver{config: c}
+}
+
+type codyConfigFeaturesResolver struct {
+	config *conftypes.ConfigFeatures
+}
+
+func (c *codyConfigFeaturesResolver) Chat() bool         { return c.config.Chat }
+func (c *codyConfigFeaturesResolver) AutoComplete() bool { return c.config.AutoComplete }
+func (c *codyConfigFeaturesResolver) Commands() bool     { return c.config.Commands }
+func (c *codyConfigFeaturesResolver) Attribution() bool  { return c.config.Attribution }
 
 type codyLLMConfigurationResolver struct {
 	config *conftypes.CompletionsConfig
@@ -609,11 +650,24 @@ func (c *codyLLMConfigurationResolver) FastChatModelMaxTokens() *int32 {
 }
 
 func (c *codyLLMConfigurationResolver) Provider() string        { return string(c.config.Provider) }
-func (c *codyLLMConfigurationResolver) CompletionModel() string { return c.config.FastChatModel }
+func (c *codyLLMConfigurationResolver) CompletionModel() string { return c.config.CompletionModel }
 func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 	if c.config.CompletionModelMaxTokens != 0 {
 		max := int32(c.config.CompletionModelMaxTokens)
 		return &max
 	}
 	return nil
+}
+
+func allowEdit(before, after string, allowlist []string) ([]string, bool) {
+	var notAllowed []string
+	changes := conf.Diff(before, after)
+	for key := range changes {
+		for _, p := range allowlist {
+			if key != p {
+				notAllowed = append(notAllowed, key)
+			}
+		}
+	}
+	return notAllowed, len(notAllowed) == 0
 }

@@ -1,11 +1,11 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import { mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
+    import { mdiFileCodeOutline, mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
     import { onMount } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
-    import { getFileIconInfo, DEFAULT_FILE_ICON } from '$lib/fileIcons'
+    import { getFileIconInfo, Alert } from '$lib/wildcard'
     import Icon from '$lib/Icon.svelte'
     import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue, type TreeEntryFields } from '$lib/repo/api/tree'
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
@@ -13,6 +13,7 @@
     import { createForwardStore } from '$lib/utils'
     import { replaceRevisionInURL } from '$lib/web'
 
+    export let repoName: string
     export let treeProvider: FileTreeProvider
     export let selectedPath: string
     export let revision: string
@@ -81,18 +82,16 @@
     }
 
     let treeView: TreeView<FileTreeNodeValue>
-    let repoID = treeProvider.getRepoID()
     // Since context is only set once when the component is created
     // we need to dynamically sync any changes to the corresponding
     // file tree state store
-    const treeState = createForwardStore(getSidebarFileTreeStateForRepo(treeProvider.getRepoID()))
+    const treeState = createForwardStore(getSidebarFileTreeStateForRepo(repoName))
     // Propagating the tree state via context yielded better performance than passing
     // it via props.
     setTreeContext(treeState)
 
     $: treeRoot = treeProvider.getRoot()
-    $: repoID = treeProvider.getRepoID()
-    $: treeState.updateStore(getSidebarFileTreeStateForRepo(repoID))
+    $: treeState.updateStore(getSidebarFileTreeStateForRepo(repoName))
     // Update open and selected nodes when the path changes.
     $: markSelected(selectedPath)
 
@@ -126,21 +125,26 @@
                     {#if entry.isDirectory}
                         <Icon svgPath={getDirectoryIconPath(entry, expanded)} inline />
                     {:else}
-                        {@const icon =
-                            (entry.__typename === 'GitBlob' && getFileIconInfo(entry.name, entry.languages)?.svg) ||
-                            DEFAULT_FILE_ICON}
+                        {@const icon = (entry.__typename === 'GitBlob' &&
+                            getFileIconInfo(entry.name, entry.languages.at(0) ?? '')?.svg) || {
+                            path: mdiFileCodeOutline,
+                            color: 'var(--gray-05)',
+                        }}
                         <Icon svgPath={icon.path} inline --color={icon.color} />
                     {/if}
                     {isRoot ? '..' : entry.name}
                 </a>
             {/if}
         </svelte:fragment>
+        <Alert slot="error" let:error variant="danger">
+            Unable to fetch file tree data: {error.message}
+        </Alert>
     </TreeView>
 </div>
 
 <style lang="scss">
     div {
-        overflow: scroll;
+        overflow: auto;
 
         :global(.treeitem.selectable) > :global(.label) {
             cursor: pointer;

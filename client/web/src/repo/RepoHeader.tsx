@@ -236,9 +236,11 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                                 {a.element}
                             </li>
                         ))}
-                        <li className={classNames('nav-item', styles.actionListItem)}>
-                            <RepoHeaderContextMenu actions={rightActionsInContextMenu} />
-                        </li>
+                        {rightActionsInContextMenu.length > 0 && (
+                            <li className={classNames('nav-item', styles.actionListItem)}>
+                                <RepoHeaderContextMenu actions={rightActionsInContextMenu} />
+                            </li>
+                        )}
                     </ul>
                 ) : (
                     <ul className="navbar-nav">

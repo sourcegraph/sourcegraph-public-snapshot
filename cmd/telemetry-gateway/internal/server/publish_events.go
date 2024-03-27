@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
@@ -37,13 +36,14 @@ func handlePublishEvents(
 
 	// Record the result on the trace and metrics
 	resultAttribute := attribute.String("result", summary.result)
-	tr.SetAttributes(resultAttribute)
+	sourceAttribute := attribute.String("source", publisher.GetSourceName())
+	tr.SetAttributes(resultAttribute, sourceAttribute)
 	payloadMetrics.length.Record(ctx, int64(len(events)),
-		metric.WithAttributes(resultAttribute))
+		metric.WithAttributes(resultAttribute, sourceAttribute))
 	payloadMetrics.processedEvents.Add(ctx, int64(len(summary.succeededEvents)),
-		metric.WithAttributes(attribute.Bool("succeeded", true), resultAttribute))
+		metric.WithAttributes(attribute.Bool("succeeded", true), resultAttribute, sourceAttribute))
 	payloadMetrics.processedEvents.Add(ctx, int64(len(summary.failedEvents)),
-		metric.WithAttributes(attribute.Bool("succeeded", false), resultAttribute))
+		metric.WithAttributes(attribute.Bool("succeeded", false), resultAttribute, sourceAttribute))
 
 	// Generate a log message for convenience
 	summaryFields := []log.Field{
@@ -53,8 +53,8 @@ func handlePublishEvents(
 		log.Int("failed", len(summary.failedEvents)),
 	}
 	if len(summary.failedEvents) > 0 {
-		tr.RecordError(errors.New(summary.message),
-			trace.WithAttributes(attribute.Int("failed", len(summary.failedEvents))))
+		tr.SetError(errors.New(summary.message)) // mark span as failed
+		tr.SetAttributes(attribute.Int("failed", len(summary.failedEvents)))
 		logger.Error(summary.message, append(summaryFields, summary.errorFields...)...)
 	} else {
 		logger.Info(summary.message, summaryFields...)

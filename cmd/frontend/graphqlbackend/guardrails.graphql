@@ -27,6 +27,13 @@ type SnippetAttributionConnection {
     limitHit: Boolean!
 
     """
+    snippetThreshold presents to the client whether or not search was run
+    because of the snippet size, as attribution is only considered for snippets
+    of sizes above a certain threshold.
+    """
+    snippetThreshold: AttributionSnippetThreshold!
+
+    """
     The pagination info for the connection.
     """
     pageInfo: PageInfo!
@@ -49,4 +56,20 @@ type SnippetAttribution {
     sourcegraph.com open source corpus.
     """
     repositoryName: String!
+}
+
+"""
+AttributionSnippetThreshold describes whether search snippet was considered
+large enough to run the search, and what are the thresholds.
+"""
+type AttributionSnippetThreshold {
+    """
+    Whether or not search for the snippet parameter was run.
+    """
+    searchPerformed: Boolean!
+
+    """
+    Lower bound of lines that Cody considers for attribution search (if any).
+    """
+    linesLowerBound: Int!
 }

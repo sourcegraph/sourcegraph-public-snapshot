@@ -19,11 +19,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 // Examples:
@@ -195,7 +195,7 @@ func serveRaw(logger log.Logger, db database.DB, gitserverClient gitserver.Clien
 			// internet, so we use default compression levels on zips (instead of no
 			// compression).
 			f, err := gitserverClient.ArchiveReader(r.Context(), common.Repo.Name,
-				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Pathspecs: []gitdomain.Pathspec{gitdomain.PathspecLiteral(relativePath)}})
+				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Paths: []string{relativePath}})
 			if err != nil {
 				return err
 			}

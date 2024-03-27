@@ -1,0 +1,42 @@
+[
+  {
+    "concat": [
+      {
+        "value": "anjou",
+        "negated": false,
+        "labels": [
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 0
+          },
+          "end": {
+            "line": 0,
+            "column": 5
+          }
+        }
+      },
+      {
+        "value": "saumur",
+        "negated": false,
+        "labels": [
+          "Regexp"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 6
+          },
+          "end": {
+            "line": 0,
+            "column": 14
+          }
+        }
+      }
+    ]
+  }
+]

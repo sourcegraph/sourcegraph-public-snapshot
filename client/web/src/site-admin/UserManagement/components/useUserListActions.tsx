@@ -1,5 +1,7 @@
 import React, { useState, useCallback } from 'react'
 
+import { lastValueFrom } from 'rxjs'
+
 import { logger } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
 import { Text } from '@sourcegraph/wildcard'
@@ -202,25 +204,24 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
     const handleResetUserPassword = useCallback(
         ([user]: SiteUser[]) => {
             if (confirm('Are you sure you want to reset the selected user password?')) {
-                randomizeUserPassword(user.id)
-                    .toPromise()
+                lastValueFrom(randomizeUserPassword(user.id))
                     .then(({ resetPasswordURL, emailSent }) => {
                         if (resetPasswordURL === null || emailSent) {
                             createOnSuccess(
-                                <Text as="span">
+                                <Text className="mb-0">
                                     Password was reset. The reset link was sent to the primary email of the user:{' '}
                                     <strong>{user.username}</strong>
                                 </Text>
                             )()
                         } else {
                             createOnSuccess(
-                                <>
-                                    <Text>
+                                <div>
+                                    <Text className="mb-2">
                                         Password was reset. You must manually send <strong>{user.username}</strong> this
                                         reset link:
                                     </Text>
                                     <CopyableText text={resetPasswordURL} size={40} />
-                                </>
+                                </div>
                             )()
                         }
                     })

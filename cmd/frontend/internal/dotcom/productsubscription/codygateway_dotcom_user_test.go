@@ -2,9 +2,12 @@ package productsubscription_test
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"testing"
+	"time"
 
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,12 +17,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/audit/audittest"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/rbac"
+	"github.com/sourcegraph/sourcegraph/internal/ssc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -113,7 +119,7 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 			adminContext := actor.WithActor(context.Background(), actor.FromActualUser(adminUser))
 
 			// Generate a dotcom api Token for the test user
-			_, dotcomToken, err := db.AccessTokens().Create(context.Background(), test.user.ID, []string{authz.ScopeUserAll}, test.name, test.user.ID)
+			_, dotcomToken, err := db.AccessTokens().Create(context.Background(), test.user.ID, []string{authz.ScopeUserAll}, test.name, test.user.ID, time.Time{})
 			require.NoError(t, err)
 			// convert token into a gateway token
 			gatewayToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(dotcomToken)
@@ -182,11 +188,30 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	adminUser, err := db.Users().Create(ctx, database.NewUser{Username: "admin", EmailIsVerified: true, Email: "admin@test.com"})
 	require.NoError(t, err)
 
-	// Not Admin with feature flag
+	// Not Admin with RBAC
 	notAdminUser, err := db.Users().Create(ctx, database.NewUser{Username: "verified", EmailIsVerified: true, Email: "verified@test.com"})
 	require.NoError(t, err)
+	ns, action, err := rbac.ParsePermissionDisplayName(rbac.ProductSubscriptionsReadPermission)
+	require.NoError(t, err)
+	perm, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
+		Namespace: ns,
+		Action:    action,
+	})
+	require.NoError(t, err)
+	role, err := db.Roles().Create(ctx, "SUBSCRIPTIONS_READER", false)
+	require.NoError(t, err)
+	err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
+		PermissionID: perm.ID,
+		RoleID:       role.ID,
+	})
+	require.NoError(t, err)
+	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
+		UserID: notAdminUser.ID,
+		RoleID: role.ID,
+	})
+	require.NoError(t, err)
 
-	// No admin, no feature flag
+	// No admin, no RBAC
 	noAccessUser, err := db.Users().Create(ctx, database.NewUser{Username: "nottheone", EmailIsVerified: true, Email: "nottheone@test.com"})
 	require.NoError(t, err)
 
@@ -194,21 +219,15 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	codyUser, err := db.Users().Create(ctx, database.NewUser{Username: "cody", EmailIsVerified: true, Email: "cody@test.com"})
 	require.NoError(t, err)
 	// Generate a token for the cody user
-	_, codyUserApiToken, err := db.AccessTokens().Create(context.Background(), codyUser.ID, []string{authz.ScopeUserAll}, "cody", codyUser.ID)
+	_, codyUserApiToken, err := db.AccessTokens().Create(context.Background(), codyUser.ID, []string{authz.ScopeUserAll}, "cody", codyUser.ID, time.Time{})
 	require.NoError(t, err)
 	codyUserGatewayToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(codyUserApiToken)
-	require.NoError(t, err)
-
-	// Create a feature flag override entry for the notAdminUser.
-	_, err = db.FeatureFlags().CreateBool(context.Background(), "product-subscriptions-reader-service-account", false)
-	require.NoError(t, err)
-	_, err = db.FeatureFlags().CreateOverride(context.Background(), &featureflag.Override{FlagName: "product-subscriptions-reader-service-account", Value: true, UserID: &notAdminUser.ID})
 	require.NoError(t, err)
 
 	tests := []struct {
 		name    string
 		user    *types.User
-		wantErr error
+		wantErr autogold.Value
 	}{
 		{
 			name:    "admin user",
@@ -216,14 +235,14 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name:    "service account",
+			name:    "RBAC reader role",
 			user:    notAdminUser,
 			wantErr: nil,
 		},
 		{
-			name:    "not admin or service account user",
+			name:    "not admin or RBAC reader role user",
 			user:    noAccessUser,
-			wantErr: auth.ErrMustBeSiteAdmin,
+			wantErr: autogold.Expect("unauthorized"),
 		},
 	}
 
@@ -237,7 +256,12 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 			r := productsubscription.CodyGatewayDotcomUserResolver{Logger: logtest.Scoped(t), DB: db}
 			_, err := r.CodyGatewayDotcomUserByToken(userContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: codyUserGatewayToken})
 
-			require.ErrorIs(t, err, test.wantErr)
+			if test.wantErr != nil {
+				require.Error(t, err)
+				test.wantErr.Equal(t, err.Error())
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }
@@ -253,11 +277,8 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 	oneDayInSeconds := int32(60 * 60 * 24)
 
 	// Create feature flags
-	codyPro := "cody-pro"
 	limitsExceeded := "rate-limits-exceeded-for-testing"
-	_, err := db.FeatureFlags().CreateBool(ctx, codyPro, false)
-	require.NoError(t, err)
-	_, err = db.FeatureFlags().CreateBool(ctx, limitsExceeded, false)
+	_, err := db.FeatureFlags().CreateBool(ctx, limitsExceeded, false)
 	require.NoError(t, err)
 
 	tru := true
@@ -278,11 +299,7 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 		conf.Mock(nil)
 	}()
 
-	// Non-SSC user
-	nonSscUser, err := db.Users().Create(ctx, database.NewUser{Username: "non-ssc", EmailIsVerified: true, Email: "non-ssc@test.com"})
-	require.NoError(t, err)
-
-	// Non-SSC user with an override
+	// User with an override
 	userWithOverrides, err := db.Users().Create(ctx, database.NewUser{Username: "override", EmailIsVerified: true, Email: "override@test.com"})
 	require.NoError(t, err)
 	err = db.Users().SetChatCompletionsQuota(context.Background(), userWithOverrides.ID, pointers.Ptr(override))
@@ -291,49 +308,71 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 	// Cody SSC - Free user
 	sscFreeUser, err := db.Users().Create(ctx, database.NewUser{Username: "ssc-free", EmailIsVerified: true, Email: "ssc-free@test.com"})
 	require.NoError(t, err)
-	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: codyPro, Value: true, UserID: &sscFreeUser.ID})
+	sscFreeUserExternalAccount, err := db.UserExternalAccounts().Insert(ctx, &extsvc.Account{
+		UserID: sscFreeUser.ID,
+		AccountSpec: extsvc.AccountSpec{
+			AccountID:   "123",
+			ServiceType: "openidconnect",
+			ServiceID:   fmt.Sprintf("https://%s", ssc.GetSAMSHostName()),
+		},
+	})
 	require.NoError(t, err)
 
 	// Cody SSC - Pro user
 	sscProUser, err := db.Users().Create(ctx, database.NewUser{Username: "ssc-pro", EmailIsVerified: true, Email: "ssc-pro@test.com"})
 	require.NoError(t, err)
-	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: codyPro, Value: true, UserID: &sscProUser.ID})
-	require.NoError(t, err)
 	err = db.Users().ChangeCodyPlan(ctx, sscProUser.ID, true)
+	require.NoError(t, err)
+	sscProUserExternalAccount, err := db.UserExternalAccounts().Insert(ctx, &extsvc.Account{
+		UserID: sscProUser.ID,
+		AccountSpec: extsvc.AccountSpec{
+			AccountID:   "456",
+			ServiceType: "openidconnect",
+			ServiceID:   fmt.Sprintf("https://%s", ssc.GetSAMSHostName()),
+		},
+	})
 	require.NoError(t, err)
 
 	// Rate limited Cody SSC - Free user
 	rateLimitsExceededFreeUser, err := db.Users().Create(ctx, database.NewUser{Username: "free-limited", EmailIsVerified: true, Email: "free-limited@test.com"})
 	require.NoError(t, err)
-	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: codyPro, Value: true, UserID: &rateLimitsExceededFreeUser.ID})
-	require.NoError(t, err)
 	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: limitsExceeded, Value: true, UserID: &rateLimitsExceededFreeUser.ID})
+	require.NoError(t, err)
+	rateLimitsExceededFreeUserExternalAccount, err := db.UserExternalAccounts().Insert(ctx, &extsvc.Account{
+		UserID: rateLimitsExceededFreeUser.ID,
+		AccountSpec: extsvc.AccountSpec{
+			AccountID:   "789",
+			ServiceType: "openidconnect",
+			ServiceID:   fmt.Sprintf("https://%s", ssc.GetSAMSHostName()),
+		},
+	})
 	require.NoError(t, err)
 
 	// Rate limited Cody SSC - Pro user
 	rateLimitsExceededProUser, err := db.Users().Create(ctx, database.NewUser{Username: "pro-limited", EmailIsVerified: true, Email: "pro-limited@test.com"})
 	require.NoError(t, err)
-	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: codyPro, Value: true, UserID: &rateLimitsExceededProUser.ID})
-	require.NoError(t, err)
 	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: limitsExceeded, Value: true, UserID: &rateLimitsExceededProUser.ID})
+	require.NoError(t, err)
+	rateLimitsExceededProUserExternalAccount, err := db.UserExternalAccounts().Insert(ctx, &extsvc.Account{
+		UserID: rateLimitsExceededProUser.ID,
+		AccountSpec: extsvc.AccountSpec{
+			AccountID:   "abc",
+			ServiceType: "openidconnect",
+			ServiceID:   fmt.Sprintf("https://%s", ssc.GetSAMSHostName()),
+		},
+	})
 	require.NoError(t, err)
 
 	tests := []struct {
 		name                            string
+		pro                             bool
 		user                            *types.User
+		externalAccount                 *extsvc.Account
 		wantChatLimit                   graphqlbackend.BigInt
 		wantChatLimitInterval           int32
 		wantCodeCompletionLimit         graphqlbackend.BigInt
 		wantCodeCompletionLimitInterval int32
 	}{
-		{
-			name:                            "non-ssc",
-			user:                            nonSscUser,
-			wantChatLimit:                   graphqlbackend.BigInt(perUserDailyLimit),
-			wantChatLimitInterval:           oneDayInSeconds,
-			wantCodeCompletionLimit:         graphqlbackend.BigInt(0),
-			wantCodeCompletionLimitInterval: oneDayInSeconds,
-		},
 		{
 			name:                            "override",
 			user:                            userWithOverrides,
@@ -345,6 +384,7 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 		{
 			name:                            "ssc-free",
 			user:                            sscFreeUser,
+			externalAccount:                 sscFreeUserExternalAccount,
 			wantChatLimit:                   graphqlbackend.BigInt(perCommunityUserChatMonthlyLLMRequestLimit),
 			wantChatLimitInterval:           oneDayInSeconds * 30,
 			wantCodeCompletionLimit:         graphqlbackend.BigInt(0),
@@ -353,14 +393,17 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 		{
 			name:                            "ssc-pro",
 			user:                            sscProUser,
+			externalAccount:                 sscProUserExternalAccount,
 			wantChatLimit:                   graphqlbackend.BigInt(perProUserChatDailyLLMRequestLimit),
 			wantChatLimitInterval:           oneDayInSeconds,
 			wantCodeCompletionLimit:         graphqlbackend.BigInt(0),
 			wantCodeCompletionLimitInterval: oneDayInSeconds,
+			pro:                             true,
 		},
 		{
 			name:                            "free-limited",
 			user:                            rateLimitsExceededFreeUser,
+			externalAccount:                 rateLimitsExceededFreeUserExternalAccount,
 			wantChatLimit:                   graphqlbackend.BigInt(1),
 			wantChatLimitInterval:           math.MaxInt32,
 			wantCodeCompletionLimit:         graphqlbackend.BigInt(1),
@@ -369,10 +412,12 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 		{
 			name:                            "pro-limited",
 			user:                            rateLimitsExceededProUser,
+			externalAccount:                 rateLimitsExceededProUserExternalAccount,
 			wantChatLimit:                   graphqlbackend.BigInt(1),
 			wantChatLimitInterval:           math.MaxInt32,
 			wantCodeCompletionLimit:         graphqlbackend.BigInt(1),
 			wantCodeCompletionLimitInterval: math.MaxInt32,
+			pro:                             true,
 		},
 	}
 
@@ -384,13 +429,41 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 			require.NoError(t, err)
 
 			// Create resolver and get user
-			_, apiToken, err := db.AccessTokens().Create(ctx, user.ID, []string{authz.ScopeUserAll}, "test", user.ID)
+			_, apiToken, err := db.AccessTokens().Create(ctx, user.ID, []string{authz.ScopeUserAll}, "test", user.ID, time.Time{})
 			require.NoError(t, err)
 			gatewayToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(apiToken)
 			require.NoError(t, err)
 
 			// Create a request context from the user
 			userContext := featureflag.WithFlags(actor.WithActor(ctx, actor.FromActualUser(user)), db.FeatureFlags())
+			if test.pro {
+				userContext = cody.WithMockSSCClient(userContext, cody.MockSSCClient{
+					MockSSCValue: []cody.MockSSCValue{{
+						Subscription: &ssc.Subscription{
+							Status:             ssc.SubscriptionStatusActive,
+							BillingInterval:    ssc.BillingIntervalMonthly,
+							CancelAtPeriodEnd:  false,
+							CurrentPeriodStart: time.Now().Format(time.RFC3339Nano),
+							CurrentPeriodEnd:   time.Now().Format(time.RFC3339Nano),
+						},
+						SAMSAccountID: test.externalAccount.AccountID,
+					}},
+					ShouldBeCalled: test.externalAccount != nil,
+				})
+			} else if test.externalAccount != nil {
+				userContext = cody.WithMockSSCClient(userContext, cody.MockSSCClient{
+					MockSSCValue: []cody.MockSSCValue{{
+						SAMSAccountID: test.externalAccount.AccountID,
+					}},
+					ShouldBeCalled: true,
+				})
+			} else {
+				userContext = cody.WithMockSSCClient(userContext, cody.MockSSCClient{
+					MockSSCValue:   []cody.MockSSCValue{},
+					ShouldBeCalled: false,
+				})
+			}
+
 			r := productsubscription.CodyGatewayDotcomUserResolver{Logger: logtest.Scoped(t), DB: db}
 			gatewayUser, err := r.CodyGatewayDotcomUserByToken(userContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: gatewayToken})
 			require.NoError(t, err)

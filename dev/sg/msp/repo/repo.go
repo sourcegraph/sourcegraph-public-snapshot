@@ -1,11 +1,14 @@
 package repo
 
 import (
+	"context"
 	"io/fs"
 	"os"
 	"path/filepath"
 
 	"github.com/urfave/cli/v2"
+
+	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -64,7 +67,7 @@ func ListServices() ([]string, error) {
 
 // ServicesAndEnvironmentsCompletion provides completions capabilities for
 // commands that accept '<service ID> <environment ID>' positional arguments.
-func ServicesAndEnvironmentsCompletion() cli.BashCompleteFunc {
+func ServicesAndEnvironmentsCompletion(additionalArgs ...func(args cli.Args) (options []string)) cli.BashCompleteFunc {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return nil
@@ -73,8 +76,8 @@ func ServicesAndEnvironmentsCompletion() cli.BashCompleteFunc {
 	if err != nil {
 		return nil
 	}
-	return completions.CompletePositionalArgs(
-		func(args cli.Args) (options []string) {
+	args := []func(cli.Args) []string{
+		func(cli.Args) (options []string) {
 			services, _ := listServicesFromRoot(repoRoot)
 			return services
 		},
@@ -87,9 +90,28 @@ func ServicesAndEnvironmentsCompletion() cli.BashCompleteFunc {
 			}
 			return svc.ListEnvironmentIDs()
 		},
-	)
+	}
+	return completions.CompletePositionalArgs(append(args, additionalArgs...)...)
 }
 
 func ServiceYAMLPath(serviceID string) string {
 	return filepath.Join("services", serviceID, "service.yaml")
+}
+
+func ServiceStackPath(serviceID, envID, stackID string) string {
+	return filepath.Join("services", serviceID, "terraform", envID, "stacks", stackID)
+}
+
+// GitRevision gets the revision of the managed-services repository.
+// Requires UseManagedServicesRepo.
+func GitRevision(ctx context.Context) (string, error) {
+	return run.Cmd(ctx, "git rev-parse HEAD").
+		Environ(append(os.Environ(),
+			// Options copy-pasta from dev/sg/internal/run
+			// Don't use the system wide git config.
+			"GIT_CONFIG_NOSYSTEM=1",
+			// And also not any other, because they can mess up output, change defaults, .. which can do unexpected things.
+			"GIT_CONFIG=/dev/null")).
+		Run().
+		String()
 }

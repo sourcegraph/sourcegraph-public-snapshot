@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest'
 
-import { languageCompletion, POPULAR_LANGUAGES, ALL_LANGUAGES } from './languageFilter'
+import { POPULAR_LANGUAGES, ALL_LANGUAGES } from '@sourcegraph/common'
+
+import { languageCompletion } from './languageFilter'
 import { type Literal, createLiteral } from './token'
 
 const create = (value: string): Literal => createLiteral(value, { start: 0, end: 0 })

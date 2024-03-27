@@ -1,3 +1,4 @@
+import { FILTERS_URL_KEY } from '@sourcegraph/branded/src/search-ui/results/filters/hooks'
 import { compatNavigate } from '@sourcegraph/common'
 import type { SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -12,7 +13,13 @@ import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './results
  * This breaks all functionality that is built on top of URL query params and history
  * state. This list of query keys will be preserved between searches.
  */
-const PRESERVED_QUERY_PARAMETERS = ['feat', 'trace', AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY]
+const PRESERVED_QUERY_PARAMETERS = [
+    'feat',
+    'trace',
+    AGGREGATION_MODE_URL_KEY,
+    AGGREGATION_UI_MODE_URL_KEY,
+    FILTERS_URL_KEY,
+]
 
 /**
  * Returns a URL query string with only the parameters in PRESERVED_QUERY_PARAMETERS.

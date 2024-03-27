@@ -8,6 +8,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 import {
@@ -30,7 +31,7 @@ import type { RepoHeaderContext } from '../RepoHeader'
 
 import styles from './actions.module.scss'
 
-interface CopyPermalinkActionProps extends RepoHeaderContext, TelemetryProps {
+interface CopyPermalinkActionProps extends RepoHeaderContext, TelemetryProps, TelemetryV2Props {
     /**
      * The current (possibly undefined or non-full-SHA) Git revision.
      */
@@ -47,8 +48,9 @@ interface CopyPermalinkActionProps extends RepoHeaderContext, TelemetryProps {
  * Git commit SHA.
  */
 export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionProps> = props => {
-    const { revision, commitID, actionType, repoName, telemetryService } = props
+    const { revision, commitID, actionType, repoName, telemetryService, telemetryRecorder } = props
 
+    const rootUrl = window.context.externalURL
     const navigate = useNavigate()
     const location = useLocation()
     const fullURL = location.pathname + location.search + location.hash
@@ -79,6 +81,7 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
 
     const onClick = (): void => {
         telemetryService.log('PermalinkClicked', { repoName, commitID })
+        telemetryRecorder.recordEvent('search.header.permalink', 'click')
     }
 
     if (actionType === 'dropdown') {
@@ -92,7 +95,8 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
 
     const copyPermalink = (): void => {
         telemetryService.log('CopyPermalink')
-        copy(permalinkURL)
+        telemetryRecorder.recordEvent('search.header.permalink', 'copy')
+        copy(createUrl(rootUrl, permalinkURL))
         setCopiedPermalink(true)
         screenReaderAnnounce('Permalink copied to clipboard')
 
@@ -101,7 +105,8 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
 
     const copyLink = (): void => {
         telemetryService.log('CopyLink')
-        copy(linkURL)
+        telemetryRecorder.recordEvent('search.header.link', 'click')
+        copy(createUrl(rootUrl, linkURL))
         setCopiedLink(true)
         screenReaderAnnounce('Link copied to clipboard')
 
@@ -168,3 +173,5 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
         </Menu>
     )
 }
+
+export const createUrl = (rooturl: string, path: string): string => `${rooturl}${path}`

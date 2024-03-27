@@ -846,7 +846,7 @@ func Zoekt() *monitoring.Dashboard {
 
 								    - Enabling shard merging for Zoekt: Set SRC_ENABLE_SHARD_MERGING="1" for zoekt-indexserver. Use this option
 								if your corpus of repositories has a high percentage of small, rarely updated repositories. See
-								[documentation](https://docs.sourcegraph.com/code_search/explanations/search_details#shard-merging).
+								[documentation](https://sourcegraph.com/docs/code-search/features#shard-merging).
 								    - Creating additional Zoekt replicas: This spreads all the shards out amongst more replicas, which
 								means that each _individual_ replica will have fewer shards. This, in turn, decreases the
 								amount of memory map areas that a _single_ replica can create (in order to load the shards into memory).
@@ -1082,6 +1082,15 @@ func Zoekt() *monitoring.Dashboard {
 
 			shared.NewGRPCInternalErrorMetricsGroup(
 				shared.GRPCInternalErrorMetricsOptions{
+					HumanServiceName:   "zoekt-webserver",
+					RawGRPCServiceName: grpcServiceName,
+					Namespace:          "src",
+
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+				}, monitoring.ObservableOwnerSearchCore),
+
+			shared.NewGRPCRetryMetricsGroup(
+				shared.GRPCRetryMetricsOptions{
 					HumanServiceName:   "zoekt-webserver",
 					RawGRPCServiceName: grpcServiceName,
 					Namespace:          "src",

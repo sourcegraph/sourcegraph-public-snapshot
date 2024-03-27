@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -319,9 +321,9 @@ func TestGetCompletionsConfig(t *testing.T) {
 	zeroConfigDefaultWithLicense := &conftypes.CompletionsConfig{
 		ChatModel:                "anthropic/claude-2.0",
 		ChatModelMaxTokens:       12000,
-		FastChatModel:            "anthropic/claude-instant-1",
+		FastChatModel:            "anthropic/claude-instant-1.2",
 		FastChatModelMaxTokens:   9000,
-		CompletionModel:          "anthropic/claude-instant-1",
+		CompletionModel:          "anthropic/claude-instant-1.2",
 		CompletionModelMaxTokens: 9000,
 		AccessToken:              licenseAccessToken,
 		Provider:                 "sourcegraph",
@@ -408,13 +410,13 @@ func TestGetCompletionsConfig(t *testing.T) {
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "claude-2.0",
 				ChatModelMaxTokens:       12000,
-				FastChatModel:            "claude-instant-1",
+				FastChatModel:            "claude-instant-1.2",
 				FastChatModelMaxTokens:   9000,
-				CompletionModel:          "claude-instant-1",
+				CompletionModel:          "claude-instant-1.2",
 				CompletionModelMaxTokens: 9000,
 				AccessToken:              "asdf",
 				Provider:                 "anthropic",
-				Endpoint:                 "https://api.anthropic.com/v1/complete",
+				Endpoint:                 "https://api.anthropic.com/v1/messages",
 			},
 		},
 		{
@@ -427,19 +429,19 @@ func TestGetCompletionsConfig(t *testing.T) {
 					Provider:        "anthropic",
 					AccessToken:     "asdf",
 					ChatModel:       "claude-v1",
-					CompletionModel: "claude-instant-1",
+					CompletionModel: "claude-instant-1.2",
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "claude-v1",
 				ChatModelMaxTokens:       9000,
-				FastChatModel:            "claude-instant-1",
+				FastChatModel:            "claude-instant-1.2",
 				FastChatModelMaxTokens:   9000,
-				CompletionModel:          "claude-instant-1",
+				CompletionModel:          "claude-instant-1.2",
 				CompletionModelMaxTokens: 9000,
 				AccessToken:              "asdf",
 				Provider:                 "anthropic",
-				Endpoint:                 "https://api.anthropic.com/v1/complete",
+				Endpoint:                 "https://api.anthropic.com/v1/messages",
 			},
 		},
 		{
@@ -465,9 +467,9 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "gpt-4",
-				ChatModelMaxTokens:       7500,
+				ChatModelMaxTokens:       7000,
 				FastChatModel:            "gpt-3.5-turbo",
-				FastChatModelMaxTokens:   4000,
+				FastChatModelMaxTokens:   16000,
 				CompletionModel:          "gpt-3.5-turbo-instruct",
 				CompletionModelMaxTokens: 4000,
 				AccessToken:              "asdf",
@@ -491,11 +493,11 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "gpt4-deployment",
-				ChatModelMaxTokens:       7500,
+				ChatModelMaxTokens:       7000,
 				FastChatModel:            "gpt35-turbo-deployment",
-				FastChatModelMaxTokens:   7500,
+				FastChatModelMaxTokens:   7000,
 				CompletionModel:          "gpt35-turbo-deployment",
-				CompletionModelMaxTokens: 7500,
+				CompletionModelMaxTokens: 7000,
 				AccessToken:              "asdf",
 				Provider:                 "azure-openai",
 				Endpoint:                 "https://acmecorp.openai.azure.com",
@@ -516,7 +518,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 				ChatModelMaxTokens:       3000,
 				FastChatModel:            "accounts/fireworks/models/llama-v2-7b",
 				FastChatModelMaxTokens:   3000,
-				CompletionModel:          "accounts/fireworks/models/starcoder-7b-w8a16",
+				CompletionModel:          "starcoder",
 				CompletionModelMaxTokens: 6000,
 				AccessToken:              "asdf",
 				Provider:                 "fireworks",
@@ -633,6 +635,135 @@ func TestGetCompletionsConfig(t *testing.T) {
 	}
 }
 
+func TestGetFeaturesConfig(t *testing.T) {
+	zeroConfigDefaultWithLicense := &conftypes.ConfigFeatures{
+		Chat:         true,
+		AutoComplete: true,
+		Commands:     true,
+	}
+
+	testCases := []struct {
+		name         string
+		siteConfig   schema.SiteConfiguration
+		deployType   string
+		wantConfig   *conftypes.ConfigFeatures
+		wantDisabled bool
+	}{
+		{
+			name: "Only Chat enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				ConfigFeatures: &schema.ConfigFeatures{
+					Chat: true,
+				},
+			},
+			wantConfig: &conftypes.ConfigFeatures{
+				Chat:         true,
+				AutoComplete: false,
+				Commands:     false,
+			},
+		},
+		{
+			name: "Only AutoComplete enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				ConfigFeatures: &schema.ConfigFeatures{
+					AutoComplete: true,
+				},
+			},
+			wantConfig: &conftypes.ConfigFeatures{
+				Chat:         false,
+				AutoComplete: true,
+				Commands:     false,
+			},
+		},
+		{
+			name: "Only Commands enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				ConfigFeatures: &schema.ConfigFeatures{
+					Commands: true,
+				},
+			},
+			wantConfig: &conftypes.ConfigFeatures{
+				Chat:         false,
+				AutoComplete: false,
+				Commands:     true,
+			},
+		},
+		{
+			name: "No config given",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled:    pointers.Ptr(true),
+				ConfigFeatures: nil,
+			},
+			wantConfig: &conftypes.ConfigFeatures{
+				Chat:         true,
+				AutoComplete: true,
+				Commands:     true,
+			},
+		},
+		{
+			name: "All Config Enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				ConfigFeatures: &schema.ConfigFeatures{
+					Commands:     true,
+					Chat:         true,
+					AutoComplete: true,
+				},
+			},
+			wantConfig: &conftypes.ConfigFeatures{
+				Chat:         true,
+				AutoComplete: true,
+				Commands:     true,
+			},
+		},
+		{
+			name: "Commands and Autocomplete Enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				ConfigFeatures: &schema.ConfigFeatures{
+					Commands:     true,
+					Chat:         false,
+					AutoComplete: true,
+				},
+			},
+			wantConfig: &conftypes.ConfigFeatures{
+				Chat:         false,
+				AutoComplete: true,
+				Commands:     true,
+			},
+		},
+	}
+	fmt.Println(testCases, zeroConfigDefaultWithLicense, "what is love")
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			defaultDeploy := deploy.Type()
+			if tc.deployType != "" {
+				deploy.Mock(tc.deployType)
+			}
+			t.Cleanup(func() {
+				deploy.Mock(defaultDeploy)
+			})
+			conf := GetConfigFeatures(tc.siteConfig)
+			if tc.wantDisabled {
+				if conf != nil {
+					t.Fatalf("expected nil config but got non-nil: %+v", conf)
+				}
+			} else {
+				if conf == nil {
+					t.Fatal("unexpected nil config returned")
+				}
+				if diff := cmp.Diff(tc.wantConfig, conf); diff != "" {
+					t.Fatalf("unexpected config computed: %s", diff)
+				}
+			}
+		})
+	}
+}
+
 func TestGetEmbeddingsConfig(t *testing.T) {
 	licenseKey := "theasdfkey"
 	licenseAccessToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
@@ -672,10 +803,11 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 		siteConfig   schema.SiteConfiguration
 		deployType   string
 		wantConfig   *conftypes.EmbeddingsConfig
+		dotcom       bool
 		wantDisabled bool
 	}{
 		{
-			name: "Embeddings disabled",
+			name: "dotcom Embeddings disabled",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -683,35 +815,39 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					Enabled: pointers.Ptr(false),
 				},
 			},
+			dotcom:       true,
 			wantDisabled: true,
 		},
 		{
-			name: "cody.enabled and empty embeddings object",
+			name: "dotcom cody.enabled and empty embeddings object",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Embeddings:  &schema.Embeddings{},
 			},
+			dotcom:     true,
 			wantConfig: zeroConfigDefaultWithLicense,
 		},
 		{
-			name: "cody.enabled set false",
+			name: "dotcom cody.enabled set false",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(false),
 				Embeddings:  &schema.Embeddings{},
 			},
+			dotcom:       true,
 			wantDisabled: true,
 		},
 		{
-			name: "no cody config",
+			name: "dotcom no cody config",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: nil,
 				Embeddings:  nil,
 			},
+			dotcom:       true,
 			wantDisabled: true,
 		},
 		{
-			name: "Invalid provider",
+			name: "dotcom Invalid provider",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -719,18 +855,20 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					Provider: "invalid",
 				},
 			},
+			dotcom:       true,
 			wantDisabled: true,
 		},
 		{
-			name: "Implicit config with cody.enabled",
+			name: "dotcom Implicit config with cody.enabled",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 			},
+			dotcom:     true,
 			wantConfig: zeroConfigDefaultWithLicense,
 		},
 		{
-			name: "Sourcegraph provider",
+			name: "dotcom Sourcegraph provider",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -738,10 +876,11 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					Provider: "sourcegraph",
 				},
 			},
+			dotcom:     true,
 			wantConfig: zeroConfigDefaultWithLicense,
 		},
 		{
-			name: "File filters",
+			name: "dotcom File filters",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -754,6 +893,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					},
 				},
 			},
+			dotcom: true,
 			wantConfig: &conftypes.EmbeddingsConfig{
 				Provider:                   "sourcegraph",
 				AccessToken:                licenseAccessToken,
@@ -775,7 +915,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "File filters w/o MaxFileSizeBytes",
+			name: "dotcom File filters w/o MaxFileSizeBytes",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -787,6 +927,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					},
 				},
 			},
+			dotcom: true,
 			wantConfig: &conftypes.EmbeddingsConfig{
 				Provider:                   "sourcegraph",
 				AccessToken:                licenseAccessToken,
@@ -808,7 +949,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "Disable exclude failed chunk during indexing",
+			name: "dotcom Disable exclude failed chunk during indexing",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -822,6 +963,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					ExcludeChunkOnError: pointers.Ptr(false),
 				},
 			},
+			dotcom: true,
 			wantConfig: &conftypes.EmbeddingsConfig{
 				Provider:                   "sourcegraph",
 				AccessToken:                licenseAccessToken,
@@ -843,7 +985,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "No provider and no token, assume Sourcegraph",
+			name: "dotcom No provider and no token, assume Sourcegraph",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -851,6 +993,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					Model: "openai/text-embedding-bobert-9000",
 				},
 			},
+			dotcom: true,
 			wantConfig: &conftypes.EmbeddingsConfig{
 				Provider:                   "sourcegraph",
 				AccessToken:                licenseAccessToken,
@@ -870,7 +1013,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "Sourcegraph provider without license",
+			name: "dotcom Sourcegraph provider without license",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  "",
@@ -878,10 +1021,11 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					Provider: "sourcegraph",
 				},
 			},
+			dotcom:       true,
 			wantDisabled: true,
 		},
 		{
-			name: "OpenAI provider",
+			name: "dotcom OpenAI provider",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -890,6 +1034,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					AccessToken: "asdf",
 				},
 			},
+			dotcom: true,
 			wantConfig: &conftypes.EmbeddingsConfig{
 				Provider:                   "openai",
 				AccessToken:                "asdf",
@@ -909,7 +1054,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "OpenAI provider without access token",
+			name: "dotcom OpenAI provider without access token",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -917,10 +1062,11 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					Provider: "openai",
 				},
 			},
+			dotcom:       true,
 			wantDisabled: true,
 		},
 		{
-			name: "Azure OpenAI provider",
+			name: "dotcom Azure OpenAI provider",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -932,6 +1078,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					Model:       "the-model",
 				},
 			},
+			dotcom: true,
 			wantConfig: &conftypes.EmbeddingsConfig{
 				Provider:                   "azure-openai",
 				AccessToken:                "asdf",
@@ -950,11 +1097,45 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				Qdrant:              defaultQdrantConfig,
 			},
 		},
+		{
+			name: "Enterprise Implicit config with cody.enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+			},
+			dotcom:       false,
+			wantDisabled: true,
+		},
+		{
+			name: "Enterprise Sourcegraph provider",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+				},
+			},
+			dotcom:       false,
+			wantDisabled: true,
+		},
+		{
+			name: "Enterprise explict enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+				},
+			},
+			dotcom:       false,
+			wantDisabled: true,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			defaultDeploy := deploy.Type()
+			dotcom.MockSourcegraphDotComMode(t, tc.dotcom)
 			if tc.deployType != "" {
 				deploy.Mock(tc.deployType)
 			}
@@ -1006,6 +1187,130 @@ func TestEmailSenderName(t *testing.T) {
 			if got, want := EmailSenderName(), tc.want; got != want {
 				t.Fatalf("EmailSenderName() = %v, want %v", got, want)
 			}
+		})
+	}
+}
+
+func TestAccessTokenAllowNoExpiration(t *testing.T) {
+	testCases := []struct {
+		name       string
+		siteConfig schema.SiteConfiguration
+		want       bool
+	}{
+		{
+			name:       "no accesstoken config set",
+			siteConfig: schema.SiteConfiguration{},
+			want:       true,
+		},
+		{
+			name: "default value",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					Allow: string(AccessTokensAll),
+				},
+			},
+			want: true,
+		},
+		{
+			name: "allow no expiration",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					Allow:             string(AccessTokensAll),
+					AllowNoExpiration: pointers.Ptr(true),
+				},
+			},
+			want: true,
+		},
+		{
+			name: "do not allow no expiration",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					Allow:             string(AccessTokensAll),
+					AllowNoExpiration: pointers.Ptr(false),
+				},
+			},
+			want: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			Mock(&Unified{SiteConfiguration: tc.siteConfig})
+			t.Cleanup(func() { Mock(nil) })
+
+			if got, want := AccessTokensAllowNoExpiration(), tc.want; got != want {
+				t.Fatalf("AccessTokensAllowNoExpiration() = %v, want %v", got, want)
+			}
+		})
+	}
+}
+
+func TestAccessTokensExpirationOptions(t *testing.T) {
+	testCases := []struct {
+		name        string
+		siteConfig  schema.SiteConfiguration
+		wantDefault int
+		wantOptions []int
+	}{
+		{
+			name:        "nil config",
+			siteConfig:  schema.SiteConfiguration{},
+			wantDefault: 90,
+			wantOptions: []int{7, 14, 30, 60, 90},
+		},
+		{
+			name: "empty config",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{},
+			},
+			wantDefault: 90,
+			wantOptions: []int{7, 14, 30, 60, 90},
+		},
+		{
+			name: "custom options no default",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					ExpirationOptionDays: []int{10, 20},
+				},
+			},
+			wantDefault: 90,
+			wantOptions: []int{10, 20, 90},
+		},
+		{
+			name: "custom options including default",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					ExpirationOptionDays:  []int{10, 20},
+					DefaultExpirationDays: pointers.Ptr(20),
+				},
+			},
+			wantDefault: 20,
+			wantOptions: []int{10, 20},
+		},
+		{
+			name: "ensure options are properly sorted",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					ExpirationOptionDays:  []int{30, 20, 10},
+					DefaultExpirationDays: pointers.Ptr(15),
+				},
+			},
+			wantDefault: 15,
+			wantOptions: []int{10, 15, 20, 30},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			Mock(&Unified{
+				SiteConfiguration: tc.siteConfig,
+			})
+			defer Mock(nil)
+
+			defaultDays, options := AccessTokensExpirationOptions()
+
+			assert.Equal(t, tc.wantDefault, defaultDays)
+			assert.Equal(t, tc.wantOptions, options)
 		})
 	}
 }

@@ -11,9 +11,9 @@ import (
 	"github.com/sourcegraph/zoekt/query"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -32,7 +32,7 @@ func Test_zoektSearch(t *testing.T) {
 	// Create a mock client that will send a few files worth of matches
 	client := &mockClient{
 		mockStreamSearch: func(ctx context.Context, q query.Q, so *zoekt.SearchOptions, s zoekt.Sender) error {
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				s.Send(&zoekt.SearchResult{
 					Files: []zoekt.FileMatch{{}, {}},
 				})
@@ -53,7 +53,7 @@ func Test_zoektSearch(t *testing.T) {
 		ctx,
 		logtest.Scoped(t),
 		client,
-		&search.TextPatternInfo{},
+		&protocol.PatternInfo{},
 		[]query.BranchRepos{{Branch: "test", Repos: roaring.BitmapOf(1, 2, 3)}},
 		0,
 		time.Since,

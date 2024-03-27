@@ -24,16 +24,26 @@ import styles from './RepositoryFileTreePage.module.scss'
 
 export interface RepositoryFileTreePageProps extends RepoRevisionContainerContext, NotebookProps, OwnConfigProps {
     objectType: 'blob' | 'tree' | undefined
-    globalContext: Pick<SourcegraphContext, 'authProviders'>
+    globalContext: Pick<SourcegraphContext, 'externalURL'>
 }
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 
-/** A page that shows a file or a directory (tree view) in a repository at the
- * current revision. */
+/**
+ * A page that shows a file or a directory (tree view) in a repository at the
+ * current revision.
+ */
 export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => {
-    const { repo, resolvedRevision, repoName, objectType: maybeObjectType, globalContext, ...context } = props
+    const {
+        repo,
+        resolvedRevision,
+        repoName,
+        objectType: maybeObjectType,
+        globalContext,
+        platformContext,
+        ...context
+    } = props
 
     const location = useLocation()
     const { filePath = '' } = parseBrowserRepoURL(location.pathname) // empty string is root
@@ -78,6 +88,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                 revision={context.revision}
                 settingsCascade={context.settingsCascade}
                 telemetryService={context.telemetryService}
+                telemetryRecorder={platformContext.telemetryRecorder}
                 authenticatedUser={context.authenticatedUser}
                 isSourcegraphDotCom={context.isSourcegraphDotCom}
                 commitID={resolvedRevision?.commitID}
@@ -108,6 +119,8 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                                     fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                                     className={styles.pageContent}
                                     context={globalContext}
+                                    platformContext={platformContext}
+                                    telemetryRecorder={platformContext.telemetryRecorder}
                                 />
                             </TraceSpanProvider>
                         ) : resolvedRevision ? (

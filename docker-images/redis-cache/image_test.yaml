@@ -6,6 +6,11 @@ commandTests:
     args:
       - --version
 
+  - name: "readiness script available"
+    command: "/usr/local/bin/readiness.sh"
+    expectedError: ["Could not connect to Redis"]
+    exitCode: 1
+
   - name: "not running as root"
     command: "/usr/bin/id"
     args:

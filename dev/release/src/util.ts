@@ -290,6 +290,58 @@ export const updateUpgradeGuides = (previous: string, next: string): EditFunc =>
     }
 }
 
+// This is a copy of updateUpgradeGuides designed to target mdx files instead of md files and also search files in the docs/ rather than doc/ directory
+export const updateDocsUpgradeGuides = (previous: string, next: string): EditFunc => {
+    let updateDirectory = '/docs/admin/updates'
+    const notPatchRelease = next.endsWith('.0')
+
+    return (directory: string): void => {
+        updateDirectory = directory + updateDirectory
+        for (const file of readdirSync(updateDirectory)) {
+            if (file === 'index.mdx') {
+                continue
+            }
+            const mode = file.replace('.mdx', '')
+            const updateFunc = getUpgradeGuide(mode)
+            if (updateFunc === undefined) {
+                console.log(`Skipping upgrade file: ${file} due to missing content generator`)
+                continue
+            }
+            const guide = getUpgradeGuide(mode)(previous, next)
+
+            const fullPath = path.join(updateDirectory, file)
+            console.log(`Updating upgrade guide: ${fullPath}`)
+            let updateContents = readFileSync(fullPath).toString()
+            const releaseHeader = `## v${previous} ➔ v${next}`
+            const notesHeader = '\n\n#### Notes:'
+
+            if (notPatchRelease) {
+                let content = `${update.releaseTemplate}\n\n${releaseHeader}`
+                if (guide) {
+                    content = `${content}\n\n${guide}`
+                }
+                content = content + notesHeader
+                updateContents = updateContents.replace(update.releaseTemplate, content)
+            } else {
+                const prevReleaseHeaderPattern = `##\\s+v\\d\\.\\d(?:\\.\\d)? ➔ v${previous}\\s*`
+                const matches = updateContents.match(new RegExp(prevReleaseHeaderPattern))
+                if (!matches || matches.length === 0) {
+                    console.log(`Unable to find header using pattern: ${prevReleaseHeaderPattern}. Skipping.`)
+                    continue
+                }
+                const prevReleaseHeader = matches[0]
+                let content = `${releaseHeader}`
+                if (guide) {
+                    content = `${content}\n\n${guide}`
+                }
+                content = content + notesHeader + `\n\n${prevReleaseHeader}`
+                updateContents = updateContents.replace(prevReleaseHeader, content)
+            }
+            writeFileSync(fullPath, updateContents)
+        }
+    }
+}
+
 export async function retryInput(
     prompt: string,
     delegate: (val: string) => boolean,

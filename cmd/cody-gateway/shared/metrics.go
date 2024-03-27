@@ -6,6 +6,7 @@ import (
 
 	gcpmetricexporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 	"go.opentelemetry.io/otel"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -14,12 +15,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func maybeEnableMetrics(_ context.Context, logger log.Logger, config OpenTelemetryConfig, otelResource *resource.Resource) (func(), error) {
+func maybeEnableMetrics(_ context.Context, logger log.Logger, cfg config.OpenTelemetryConfig, otelResource *resource.Resource) (func(), error) {
 	var reader sdkmetric.Reader
-	if config.GCPProjectID != "" {
-		logger.Info("initializing GCP trace exporter", log.String("projectID", config.GCPProjectID))
+	if cfg.GCPProjectID != "" {
+		logger.Info("initializing GCP trace exporter", log.String("projectID", cfg.GCPProjectID))
 		exporter, err := gcpmetricexporter.New(
-			gcpmetricexporter.WithProjectID(config.GCPProjectID))
+			gcpmetricexporter.WithProjectID(cfg.GCPProjectID))
 		if err != nil {
 			return nil, errors.Wrap(err, "gcpmetricexporter.New")
 		}

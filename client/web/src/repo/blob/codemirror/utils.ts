@@ -229,7 +229,7 @@ export function isValidLineRange(
 }
 
 export function locationToURL(
-    documentInfo: { repoName: string; filePath: string; commitID: string; revision?: string },
+    documentInfo: { repoName: string; filePath: string; commitID: string; revision: string },
     location: Location,
     viewState?: BlobViewState
 ): string {

@@ -6,12 +6,11 @@ import (
 	"net/url"
 	"strings"
 
-	"code.gitea.io/gitea/modules/hostmatcher"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/hostmatcher"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 

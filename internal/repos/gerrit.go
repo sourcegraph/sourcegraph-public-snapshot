@@ -28,6 +28,9 @@ type GerritSource struct {
 	perPage         int
 	private         bool
 	allowedProjects map[string]struct{}
+	// disallowedProjects is a set of project names that will never be added
+	// by this source. This takes precedence over allowedProjects.
+	disallowedProjects map[string]struct{}
 }
 
 // NewGerritSource returns a new GerritSource from the given external service.
@@ -68,13 +71,19 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 		allowedProjects[project] = struct{}{}
 	}
 
+	disallowedProjects := make(map[string]struct{})
+	for _, project := range c.Exclude {
+		disallowedProjects[project.Name] = struct{}{}
+	}
+
 	return &GerritSource{
-		svc:             svc,
-		cli:             cli,
-		allowedProjects: allowedProjects,
-		serviceID:       extsvc.NormalizeBaseURL(cli.GetURL()).String(),
-		perPage:         100,
-		private:         c.Authorization != nil,
+		svc:                svc,
+		cli:                cli,
+		allowedProjects:    allowedProjects,
+		disallowedProjects: disallowedProjects,
+		serviceID:          extsvc.NormalizeBaseURL(cli.GetURL()).String(),
+		perPage:            100,
+		private:            c.Authorization != nil,
 	}, nil
 }
 
@@ -109,6 +118,10 @@ func (s *GerritSource) ListRepos(ctx context.Context, results chan SourceResult)
 		sort.Strings(pageKeySlice)
 
 		for _, p := range pageKeySlice {
+			if _, ok := s.disallowedProjects[p]; ok {
+				continue
+			}
+
 			// Only check if the project is allowed if we have a list of allowed projects
 			if len(s.allowedProjects) != 0 {
 				if _, ok := s.allowedProjects[p]; !ok {

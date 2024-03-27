@@ -179,18 +179,9 @@ func createLogFields(upload uploadsshared.Upload) []attribute.KeyValue {
 // defaultBranchContains tells if the default branch contains the given commit ID.
 func (c *handler) defaultBranchContains(ctx context.Context, repo api.RepoName, commit string) (bool, error) {
 	// Determine default branch name.
-	descriptions, err := c.gitserverClient.RefDescriptions(ctx, repo)
+	defaultBranchName, _, err := c.gitserverClient.GetDefaultBranch(ctx, repo, true)
 	if err != nil {
 		return false, err
-	}
-	var defaultBranchName string
-	for _, descriptions := range descriptions {
-		for _, ref := range descriptions {
-			if ref.IsDefaultBranch {
-				defaultBranchName = ref.Name
-				break
-			}
-		}
 	}
 
 	// Determine if branch contains commit.
@@ -249,13 +240,16 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		// database (if not already present). We need to have the commit data of every processed upload
 		// for a repository when calculating the commit graph (triggered at the end of this handler).
 
-		_, commitDate, revisionExists, err := h.gitserverClient.CommitDate(ctx, repo.Name, api.CommitID(upload.Commit))
+		commit, err := h.gitserverClient.GetCommit(ctx, repo.Name, api.CommitID(upload.Commit))
 		if err != nil {
-			return errors.Wrap(err, "gitserverClient.CommitDate")
+			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				return errCommitDoesNotExist
+			}
+			return errors.Wrap(err, "failed to determine commit date")
 		}
-		if !revisionExists {
-			return errCommitDoesNotExist
-		}
+
+		commitDate := commit.Committer.Date
+
 		trace.AddEvent("TODO Domain Owner", attribute.String("commitDate", commitDate.String()))
 
 		// We do the update here outside of the transaction started below to reduce the long blocking
@@ -296,8 +290,8 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 			// Before we mark the upload as complete, we need to delete any existing completed uploads
 			// that have the same repository_id, commit, root, and indexer values. Otherwise, the transaction
 			// will fail as these values form a unique constraint.
-			if err := tx.DeleteOverlappingDumps(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
-				return errors.Wrap(err, "store.DeleteOverlappingDumps")
+			if err := tx.DeleteOverlappingCompletedUploads(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
+				return errors.Wrap(err, "store.DeleteOverlappingCompletedUploads")
 			}
 
 			trace.AddEvent("TODO Domain Owner", attribute.Int("packages", len(pkgData.Packages)))

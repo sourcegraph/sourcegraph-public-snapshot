@@ -87,7 +87,7 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 	// actually searching since the index may update. If the index changes,
 	// which files we search need to change. As such we keep retrying until we
 	// know we have had a consistent list and search on zoekt.
-	for try := 0; try < 5; try++ {
+	for try := range 5 {
 		logger := rootLogger.With(log.Int("try", try))
 
 		indexed, ok, err := zoektIndexedCommit(ctx, client, p.Repo)
@@ -212,6 +212,7 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 
 			sender.Send(protocol.FileMatch{
 				Path:         fm.FileName,
+				Language:     fm.Language,
 				ChunkMatches: zoektChunkMatches(fm.ChunkMatches),
 			})
 		}
@@ -255,17 +256,15 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 // zoektCompile builds a text search zoekt query for p.
 //
 // This function should support the same features as the "compile" function,
-// but return a zoektquery instead of a regexMatcher.
+// but return a zoektquery instead of a regexMatchTree.
 //
 // Note: This is used by hybrid search and not structural search.
 func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 	var parts []zoektquery.Q
 	// we are redoing work here, but ensures we generate the same regex and it
-	// feels nicer than passing in a regexMatcher since handle path directly.
-	if m, err := compilePattern(p); err != nil {
+	// feels nicer than passing in a regexMatchTree since handle path directly.
+	if m, err := toMatchTree(p.Query, p.IsCaseSensitive); err != nil {
 		return nil, err
-	} else if m.MatchesAllContent() { // we are just matching paths
-		parts = append(parts, &zoektquery.Const{Value: true})
 	} else {
 		q, err := m.ToZoektQuery(p.PatternMatchesContent, p.PatternMatchesPath)
 		if err != nil {
@@ -274,7 +273,7 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 		parts = append(parts, q)
 	}
 
-	for _, pat := range p.IncludePatterns {
+	for _, pat := range p.IncludePaths {
 		re, err := syntax.Parse(pat, syntax.Perl)
 		if err != nil {
 			return nil, err
@@ -286,8 +285,8 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 		})
 	}
 
-	if p.ExcludePattern != "" {
-		re, err := syntax.Parse(p.ExcludePattern, syntax.Perl)
+	if p.ExcludePaths != "" {
+		re, err := syntax.Parse(p.ExcludePaths, syntax.Perl)
 		if err != nil {
 			return nil, err
 		}
@@ -295,6 +294,18 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 			Regexp:        re,
 			FileName:      true,
 			CaseSensitive: p.PathPatternsAreCaseSensitive,
+		}})
+	}
+
+	for _, lang := range p.IncludeLangs {
+		parts = append(parts, &zoektquery.Language{
+			Language: lang,
+		})
+	}
+
+	for _, lang := range p.ExcludeLangs {
+		parts = append(parts, &zoektquery.Not{Child: &zoektquery.Language{
+			Language: lang,
 		}})
 	}
 

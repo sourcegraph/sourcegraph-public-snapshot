@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"io/fs"
 	"net/url"
 	"os"
@@ -15,7 +16,6 @@ import (
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -24,6 +24,7 @@ import (
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
@@ -110,12 +111,19 @@ func (r *GitTreeEntryResolver) ByteSize(ctx context.Context) (int32, error) {
 
 func (r *GitTreeEntryResolver) Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
 	r.contentOnce.Do(func() {
-		r.fullContentBytes, r.contentErr = r.gitserverClient.ReadFile(
+		fr, err := r.gitserverClient.NewFileReader(
 			ctx,
 			r.commit.repoResolver.RepoName(),
 			api.CommitID(r.commit.OID()),
 			r.Path(),
 		)
+		if err != nil {
+			r.contentErr = err
+			return
+		}
+		defer fr.Close()
+
+		r.fullContentBytes, r.contentErr = io.ReadAll(fr)
 	})
 
 	return string(pageContent(r.fullContentBytes, int32ToIntPtr(args.StartLine), int32ToIntPtr(args.EndLine))), r.contentErr
@@ -200,7 +208,7 @@ func nthIndex(in []byte, sep byte, n int) (idx int) {
 	}
 
 	start := 0
-	for i := 0; i < n; i++ {
+	for range n {
 		idx := bytes.IndexByte(in[start:], sep)
 		if idx == -1 {
 			return idx
@@ -229,14 +237,11 @@ func (r *GitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
 	return binary.IsBinary(r.fullContentBytes), nil
 }
 
-var (
-	syntaxHighlightFileBlocklist = []string{
-		"package.json",
-		"yarn.lock",
-		"pnpm-lock.yaml",
-		"package-lock.json",
-	}
-)
+var syntaxHighlightFileBlocklist = []string{
+	"yarn.lock",
+	"pnpm-lock.yaml",
+	"package-lock.json",
+}
 
 func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
 	// Currently, pagination + highlighting is not supported, throw out an error if it is attempted.
@@ -250,8 +255,8 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 		return nil, err
 	}
 
-	// special handling in dotcom to prevent syntax highlighting large files
-	if envvar.SourcegraphDotComMode() {
+	// special handling in dotcom to prevent syntax highlighting large lock files
+	if dotcom.SourcegraphDotComMode() {
 		for _, f := range syntaxHighlightFileBlocklist {
 			if strings.HasSuffix(r.Path(), f) {
 				// this will force the content to be returned as plaintext
@@ -382,11 +387,11 @@ func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
 func (r *GitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
 
 func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	repo, err := r.commit.repoResolver.repo(ctx)
+	linker, err := r.commit.repoResolver.getLinker(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return externallink.FileOrDir(ctx, r.db, r.gitserverClient, repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
+	return linker.FileOrDir(r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir()), nil
 }
 
 func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
@@ -440,7 +445,7 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 		toolName = *args.ToolName
 	}
 
-	repo, err := r.commit.repoResolver.repo(ctx)
+	repo, err := r.commit.repoResolver.getRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -455,7 +460,7 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 }
 
 func (r *GitTreeEntryResolver) LocalCodeIntel(ctx context.Context) (*JSONValue, error) {
-	repo, err := r.commit.repoResolver.repo(ctx)
+	repo, err := r.commit.repoResolver.getRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -482,7 +487,7 @@ func (r *GitTreeEntryResolver) SymbolInfo(ctx context.Context, args *symbolInfoA
 		return nil, errors.New("expected arguments to symbolInfo")
 	}
 
-	repo, err := r.commit.repoResolver.repo(ctx)
+	repo, err := r.commit.repoResolver.getRepo(ctx)
 	if err != nil {
 		return nil, err
 	}

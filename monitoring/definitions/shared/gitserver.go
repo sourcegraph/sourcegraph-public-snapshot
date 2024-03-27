@@ -10,20 +10,19 @@ var GitServer gitServer
 // gitServer provides `GitServer` implementations.
 type gitServer struct{}
 
-// src_gitserver_api_total
-// src_gitserver_api_duration_seconds_bucket
-// src_gitserver_api_errors_total
-func (gitServer) NewAPIGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerSource, ObservationGroupOptions{
+// src_gitserver_backend_total
+// src_gitserver_backend_duration_seconds_bucket
+// src_gitserver_backend_errors_total
+func (gitServer) NewBackendGroup(containerName string, hidden bool) monitoring.Group {
+	g := Observation.NewGroup(containerName, monitoring.ObservableOwnerSource, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
+			Hidden:          hidden,
 			Namespace:       "gitserver",
-			DescriptionRoot: "Gitserver API (powered by internal/observation)",
-			Hidden:          true,
+			DescriptionRoot: "Gitserver Backend",
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "gitserver_api",
-				MetricDescriptionRoot: "graphql",
-				By:                    []string{"op"},
+				MetricNameRoot: "gitserver_backend",
+				By:             []string{"op"},
 			},
 		},
 
@@ -40,6 +39,22 @@ func (gitServer) NewAPIGroup(containerName string) monitoring.Group {
 			ErrorRate: NoAlertsOption("none"),
 		},
 	})
+
+	g.Rows = append([]monitoring.Row{
+		{
+			{
+				Name:           "concurrent_backend_operations",
+				Description:    "number of concurrently running backend operations",
+				Query:          "src_gitserver_backend_concurrent_operations",
+				NoAlert:        true,
+				Panel:          monitoring.Panel().LegendFormat("{{op}}").Min(0),
+				Owner:          monitoring.ObservableOwnerSource,
+				Interpretation: "The number of requests that are currently being handled by gitserver backend layer, at the point in time of scraping.",
+			},
+		},
+	}, g.Rows...)
+
+	return g
 }
 
 // src_gitserver_client_total
@@ -72,20 +87,4 @@ func (gitServer) NewClientGroup(containerName string) monitoring.Group {
 			ErrorRate: NoAlertsOption("none"),
 		},
 	})
-}
-
-// src_batch_log_semaphore_wait_duration_seconds_bucket
-func (gitServer) NewBatchLogSemaphoreWait(containerName string) monitoring.Group {
-	return monitoring.Group{
-		Title:  "Global operation semaphores",
-		Hidden: true,
-		Rows: []monitoring.Row{
-			{
-				NoAlertsOption("none")(Observation.Duration(ObservableConstructorOptions{
-					MetricNameRoot:        "batch_log_semaphore_wait",
-					MetricDescriptionRoot: "batch log semaphore",
-				})(containerName, monitoring.ObservableOwnerSource)).Observable(),
-			},
-		},
-	}
 }

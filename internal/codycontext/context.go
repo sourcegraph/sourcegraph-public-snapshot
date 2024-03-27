@@ -1,4 +1,4 @@
-package context
+package codycontext
 
 import (
 	"context"
@@ -13,12 +13,12 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	vdb "github.com/sourcegraph/sourcegraph/internal/embeddings/db"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -40,7 +40,7 @@ type FileChunkContext struct {
 	EndLine   int
 }
 
-func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embeddingsClient embeddings.Client, searchClient client.SearchClient, getQdrantSearcher func() (vdb.VectorSearcher, error)) *CodyContextClient {
+func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embeddingsClient embeddings.Client, searchClient client.SearchClient, getQdrantSearcher func() (vdb.VectorSearcher, error), contentFilter RepoContentFilter) *CodyContextClient {
 	redMetrics := metrics.NewREDMetrics(
 		obsCtx.Registerer,
 		"codycontext_client",
@@ -63,6 +63,7 @@ func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embedding
 		embeddingsClient:  embeddingsClient,
 		searchClient:      searchClient,
 		getQdrantSearcher: getQdrantSearcher,
+		contentFilter:     contentFilter,
 
 		obsCtx:                 obsCtx,
 		getCodyContextOp:       op("getCodyContext"),
@@ -75,6 +76,7 @@ type CodyContextClient struct {
 	db                database.DB
 	embeddingsClient  embeddings.Client
 	searchClient      client.SearchClient
+	contentFilter     RepoContentFilter
 	getQdrantSearcher func() (vdb.VectorSearcher, error)
 
 	obsCtx                 *observation.Context
@@ -111,6 +113,19 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 	ctx, _, endObservation := c.getCodyContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
+	if isEnabled, reason := cody.IsCodyEnabled(ctx, c.db); !isEnabled {
+		return nil, errors.Newf("cody is not enabled: %s", reason)
+	}
+
+	if err := cody.CheckVerifiedEmailRequirement(ctx, c.db, c.obsCtx.Logger); err != nil {
+		return nil, err
+	}
+
+	// Generating the content filter removes any repos where the filter can not
+	// be determined
+	filterableRepos, contextFilter := c.contentFilter.GetFilter(args.Repos, c.obsCtx.Logger)
+	args.Repos = filterableRepos
+
 	embeddingRepos, keywordRepos, err := c.partitionRepos(ctx, args.Repos)
 	if err != nil {
 		return nil, err
@@ -121,7 +136,7 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 	// to decide how many results out of our limit should be reserved for
 	// embeddings results. We can't easily compare the scores between embeddings
 	// and keyword search.
-	embeddingsResultRatio := float32(len(embeddingRepos)) / float32(len(args.Repos))
+	embeddingsResultRatio := float32(len(embeddingRepos)) / float32(len(filterableRepos))
 
 	embeddingsArgs := GetContextArgs{
 		Repos:            embeddingRepos,
@@ -142,11 +157,11 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 	// Fetch keyword results and embeddings results concurrently
 	p := pool.New().WithErrors()
 	p.Go(func() (err error) {
-		embeddingsResults, err = c.getEmbeddingsContext(ctx, embeddingsArgs)
+		embeddingsResults, err = c.getEmbeddingsContext(ctx, embeddingsArgs, contextFilter)
 		return err
 	})
 	p.Go(func() (err error) {
-		keywordResults, err = c.getKeywordContext(ctx, keywordArgs)
+		keywordResults, err = c.getKeywordContext(ctx, keywordArgs, contextFilter)
 		return err
 	})
 
@@ -160,6 +175,10 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 
 // partitionRepos splits a set of repos into repos with embeddings and repos without embeddings
 func (c *CodyContextClient) partitionRepos(ctx context.Context, input []types.RepoIDName) (embedded, notEmbedded []types.RepoIDName, err error) {
+	// if embeddings are disabled , return all repos in the notEmbedded slice
+	if !conf.EmbeddingsEnabled() {
+		return nil, input, nil
+	}
 	for _, repo := range input {
 		exists, err := c.db.Repos().RepoEmbeddingExists(ctx, repo.ID)
 		if err != nil {
@@ -175,17 +194,13 @@ func (c *CodyContextClient) partitionRepos(ctx context.Context, input []types.Re
 	return embedded, notEmbedded, nil
 }
 
-func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
+func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs, filter FileChunkFilterFunc) (_ []FileChunkContext, err error) {
 	ctx, _, endObservation := c.getEmbeddingsContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
 	if len(args.Repos) == 0 || (args.CodeResultsCount == 0 && args.TextResultsCount == 0) {
 		// Don't bother doing an API request if we can't actually have any results.
 		return nil, nil
-	}
-
-	if featureflag.FromContext(ctx).GetBoolOr("qdrant", false) {
-		return c.getEmbeddingsContextFromQdrant(ctx, args)
 	}
 
 	repoNames := make([]api.RepoName, len(args.Repos))
@@ -222,7 +237,7 @@ func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetCo
 			EndLine:   result.EndLine,
 		})
 	}
-	return res, nil
+	return filter(res), nil
 }
 
 var textFileFilter = func() string {
@@ -234,7 +249,7 @@ var textFileFilter = func() string {
 }()
 
 // getKeywordContext uses keyword search to find relevant bits of context for Cody
-func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
+func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs, filter FileChunkFilterFunc) (_ []FileChunkContext, err error) {
 	ctx, _, endObservation := c.getKeywordContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
@@ -265,11 +280,11 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		patternTypeKeyword := "keyword"
+		patternType := "codycontext"
 		plan, err := c.searchClient.Plan(
 			ctx,
 			"V3",
-			&patternTypeKeyword,
+			&patternType,
 			query,
 			search.Precise,
 			search.Streaming,
@@ -289,7 +304,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 
 			for _, res := range e.Results {
 				if fm, ok := res.(*result.FileMatch); ok {
-					collected = append(collected, fileMatchToContextMatches(fm)...)
+					collected = append(collected, filter(fileMatchToContextMatches(fm))...)
 					if len(collected) >= limit {
 						cancel()
 						return
@@ -325,52 +340,6 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	}
 
 	return append(results[0], results[1]...), nil
-}
-
-func (c *CodyContextClient) getEmbeddingsContextFromQdrant(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
-	embeddingsConf := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
-	if c == nil {
-		return nil, errors.New("embeddings not configured or disabled")
-	}
-	client, err := embed.NewEmbeddingsClient(embeddingsConf)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting embeddings client")
-	}
-	qdrantSearcher, err := c.getQdrantSearcher()
-	if err != nil {
-		return nil, errors.Wrap(err, "getting qdrant searcher")
-	}
-
-	resp, err := client.GetQueryEmbedding(ctx, args.Query)
-	if err != nil || len(resp.Failed) > 0 {
-		return nil, errors.Wrap(err, "getting query embedding")
-	}
-	query := resp.Embeddings
-
-	params := vdb.SearchParams{
-		ModelID:   client.GetModelIdentifier(),
-		RepoIDs:   args.RepoIDs(),
-		Query:     query,
-		CodeLimit: int(args.CodeResultsCount),
-		TextLimit: int(args.TextResultsCount),
-	}
-	chunks, err := qdrantSearcher.Search(ctx, params)
-	if err != nil {
-		return nil, errors.Wrap(err, "searching vector DB")
-	}
-
-	res := make([]FileChunkContext, 0, len(chunks))
-	for _, chunk := range chunks {
-		res = append(res, FileChunkContext{
-			RepoName:  chunk.Point.Payload.RepoName,
-			RepoID:    chunk.Point.Payload.RepoID,
-			CommitID:  chunk.Point.Payload.Revision,
-			Path:      chunk.Point.Payload.FilePath,
-			StartLine: int(chunk.Point.Payload.StartLine),
-			EndLine:   int(chunk.Point.Payload.EndLine),
-		})
-	}
-	return res, nil
 }
 
 func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {

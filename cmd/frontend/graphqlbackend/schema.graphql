@@ -301,12 +301,14 @@ type Mutation {
     - "site-admin:sudo": Ability to perform any action as any other user. (Only site admins may create tokens
       with this scope.)
 
+    DurationSeconds: If provided, the number of seconds until the token expires automatically.
+
     Only the user or site admins may perform this mutation.
     """
     # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
     # introduce any breaking changes, and let new parameters be optional with
     # reasonable defaults instead.
-    createAccessToken(user: ID!, scopes: [String!]!, note: String!): CreateAccessTokenResult!
+    createAccessToken(user: ID!, durationSeconds: Int, scopes: [String!]!, note: String!): CreateAccessTokenResult!
     """
     Deletes and immediately revokes the specified access token, specified by either its ID or by the token
     itself.
@@ -2677,7 +2679,7 @@ enum SearchPatternType {
     structural
     lucky
     keyword
-    newStandardRC1
+    codycontext
 }
 
 """
@@ -3331,11 +3333,21 @@ type ExternalService implements Node {
     nextSyncAt: DateTime
 
     """
+    The creator of this external service. Null if the user was deleted or created by a background routine.
+    """
+    creator: User
+
+    """
+    The last updater of this external service. Null if the user was deleted or created by a background routine.
+    """
+    lastUpdater: User
+
+    """
     Returns recently received webhooks on this external service.
 
     Only site admins may access this field.
 
-    DEPRECATED: Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice
+    DEPRECATED: Webhook logs linked directly to an external service will be removed. See https://sourcegraph.com/docs/admin/config/webhooks/incoming#deprecation-notice
     """
     webhookLogs(
         """
@@ -3364,7 +3376,7 @@ type ExternalService implements Node {
         until: DateTime
     ): WebhookLogConnection!
         @deprecated(
-            reason: "Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice"
+            reason: "Webhook logs linked directly to an external service will be removed. See https://sourcegraph.com/docs/admin/config/webhooks/incoming#deprecation-notice"
         )
 
     """
@@ -6051,7 +6063,7 @@ type GitBlob implements TreeEntry & File2 {
     """
     Blame the blob.
     """
-    blame(startLine: Int!, endLine: Int!, ignoreWhitespace: Boolean = false): [Hunk!]!
+    blame(startLine: Int, endLine: Int, ignoreWhitespace: Boolean = false): [Hunk!]!
     """
     Highlight the blob contents.
     """
@@ -6207,6 +6219,10 @@ type FileMatch {
     Whether or not the limit was hit.
     """
     limitHit: Boolean!
+    """
+    The detected languages for the file, empty if the language cannot be determined.
+    """
+    languages: [String!]!
 }
 
 """
@@ -6353,6 +6369,57 @@ type NewUsersConnection implements Connection {
     Pagination information.
     """
     pageInfo: ConnectionPageInfo!
+}
+
+"""
+A status for cody subscription.
+"""
+enum CodySubscriptionStatus {
+    ACTIVE
+    PAST_DUE
+    UNPAID
+    CANCELED
+    TRIALING
+    OTHER
+}
+
+"""
+A plan for cody subscription.
+"""
+enum CodySubscriptionPlan {
+    FREE
+    PRO
+}
+
+"""
+A subscription for cody.
+"""
+type CodySubscription {
+    """
+    The status for cody subscription.
+    """
+    status: CodySubscriptionStatus!
+    """
+    The plan for cody subscription.
+    """
+    plan: CodySubscriptionPlan!
+    """
+    Whether pro rate limits are applied for the user.
+    """
+    applyProRateLimits: Boolean!
+    """
+    The current billing period start time.
+    """
+    currentPeriodStartAt: DateTime!
+    """
+    The current billing period end time. This may be in the past if the
+    subscription is in a canceled state.
+    """
+    currentPeriodEndAt: DateTime!
+    """
+    Whether the subscription will be canceled at the end of the current billing period. (Or automatically renew, if true.)
+    """
+    cancelAtPeriodEnd: Boolean!
 }
 
 """
@@ -6567,21 +6634,19 @@ type User implements Node & SettingsSubject & Namespace {
     """
     codeCompletionsQuotaOverride: Int
     """
+    The Cody subscription details for the user.
+    """
+    codySubscription: CodySubscription
+    """
+    The rate limit status for the user stored in Cody Gateway.
+    On dotcom only the user and site admins can access this field.
+    """
+    codyGatewayRateLimitStatus: [CodyGatewayRateLimitStatus!]
+    """
+    DEPRECATED
     Whether the user has enrolled for Cody Pro.
     """
     codyProEnabled: Boolean!
-    """
-    The date when the user enrolled for Cody Pro.
-    """
-    codyProEnabledAt: DateTime
-    """
-    The start date of current billing period of Cody.
-    """
-    codyCurrentPeriodStartDate: DateTime
-    """
-    The end date of current billing period of Cody.
-    """
-    codyCurrentPeriodEndDate: DateTime
     """
     The count of Cody chats in the current billing period.
     """
@@ -6598,6 +6663,10 @@ type User implements Node & SettingsSubject & Namespace {
     The limit of Cody code completions for the current billing period.
     """
     codyCurrentPeriodCodeLimit: Int!
+    """
+    Evaluates a feature flag for the user. Returns null if the feature flag does not exist.
+    """
+    evaluateFeatureFlag(flagName: String!): Boolean
 }
 
 """
@@ -6633,6 +6702,10 @@ type AccessToken implements Node {
     The date when the access token was last used to authenticate a request.
     """
     lastUsedAt: DateTime
+    """
+    If non-null, the token may no longer be used after this date.
+    """
+    expiresAt: DateTime
 }
 
 """
@@ -6775,6 +6848,11 @@ type ExternalAccount implements Node {
     may query this field.
     """
     publicAccountData: PublicExternalAccountData
+    """
+    TEMPORARY: to debug #inc-284-plg-users-paying-for-and-being-billed-for-pro-without-being-upgrade.
+    Cody Subscription associated with the external account.
+    """
+    codySubscription: CodySubscription
 }
 
 """
@@ -7372,8 +7450,8 @@ type Site implements SettingsSubject {
     Note: This is primarily used for displaying recently-fired alerts in the web app. If your intent
     is to monitor Sourcegraph, it is better to configure alerting or query Prometheus directly in
     order to ensure that if the frontend goes down you still receive alerts:
-    Configure alerting: https://docs.sourcegraph.com/admin/observability/alerting
-    Query Prometheus directly: https://docs.sourcegraph.com/admin/observability/alerting_custom_consumption
+    Configure alerting: https://sourcegraph.com/docs/admin/observability/alerting
+    Query Prometheus directly: https://sourcegraph.com/docs/admin/observability/alerting_custom_consumption
     """
     monitoringStatistics(
         """
@@ -7422,6 +7500,13 @@ type Site implements SettingsSubject {
     codyLLMConfiguration: CodyLLMConfiguration
 
     """
+    Decides which features to enable for the users of this SG instance
+
+    Site-admin only.
+    """
+    codyConfigFeatures: CodyConfigFeatures
+
+    """
     Returns the status of the Cody Rate limits when using the `sourcegraph` provider.
     If the instance is not using the Cody Gateway there will be no rate limits.
 
@@ -7463,6 +7548,32 @@ type CodyLLMConfiguration {
     Name of the provider being used for LLM interactions.
     """
     provider: String!
+}
+
+"""
+Cody Config features contains information about which LLM features are enabled
+for this SG instance
+"""
+type CodyConfigFeatures {
+    """
+    Enable Cody chat feature.
+    """
+    chat: Boolean!
+
+    """
+    Enable Cody autocomplete feature.
+    """
+    autoComplete: Boolean!
+
+    """
+    Enable Cody special commands feature.
+    """
+    commands: Boolean!
+
+    """
+    Enable attribution search for Cody-generated snippets.
+    """
+    attribution: Boolean!
 }
 
 """
@@ -8498,7 +8609,7 @@ type MonitoringStatistics {
 }
 
 """
-A high-level monitoring alert, for details see https://docs.sourcegraph.com/admin/observability/metrics#high-level-alerting-metrics
+A high-level monitoring alert, for details see https://sourcegraph.com/docs/admin/observability/metrics#high-level-alerting-metrics
 """
 type MonitoringAlert {
     """
@@ -8621,9 +8732,10 @@ type ProductSubscriptionStatus {
     """
     noLicenseWarningUserCount: Int
     """
-    The product license associated with this subscription, if any.
+    The product license associated with this subscription.
+    If no license key is applied, a free plan is assumed.
     """
-    license: ProductLicenseInfo
+    license: ProductLicenseInfo!
 }
 
 """
@@ -8636,6 +8748,10 @@ type ProductLicenseInfo {
     no license).
     """
     productNameWithBrand: String!
+    """
+    True if the license is for a free plan.
+    """
+    isFreePlan: Boolean!
     """
     Tags indicating the product plan and features activated by this license.
     """
@@ -10130,6 +10246,10 @@ enum AccessRequestStatus {
     Access request was rejected
     """
     REJECTED
+    """
+    Access request was canceled
+    """
+    CANCELED
 }
 
 """
@@ -10358,6 +10478,16 @@ enum PermissionNamespace {
     key-value pair metadata.
     """
     REPO_METADATA
+
+    """
+    This represents the Cody namespace.
+    """
+    CODY
+
+    """
+    ❗ Product subscriptions are only available in Sourcegraph.com
+    """
+    PRODUCT_SUBSCRIPTIONS
 }
 
 """

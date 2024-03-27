@@ -161,6 +161,19 @@ func (r *Runner[Args]) Interactive(
 	results := &runAllCategoryChecksResult{
 		failed: []int{1}, // initialize, this gets reset immediately
 	}
+
+	buildChoices := func(failed []int) map[int]string {
+		var choices = make(map[int]string)
+		for _, idx := range failed {
+			category := r.categories[idx]
+			// categories are zero based indexes internally, but are displayed with 1-based indexes
+			choices[idx+1] = fmt.Sprintf("Fix %q", category.Name)
+		}
+
+		choices[FixAll] = "Fix everything"
+		choices[FixQuit] = "Quit"
+		return choices
+	}
 	for len(results.failed) != 0 {
 		// Update results
 		results = r.runAllCategoryChecks(ctx, args)
@@ -168,27 +181,44 @@ func (r *Runner[Args]) Interactive(
 			break
 		}
 
-		r.Output.WriteWarningf("Some checks failed. Which one do you want to fix?")
-
-		idx, err := getNumberOutOf(r.Input, r.Output, results.failed)
+		choice, err := getChoice(r.Input, r.Output, buildChoices(results.failed))
 		if err != nil {
 			if err == io.EOF {
 				return nil
 			}
 			return err
 		}
-		selectedCategory := r.categories[idx]
 
-		r.Output.ClearScreen()
-
-		err = r.presentFailedCategoryWithOptions(ctx, idx, &selectedCategory, args, results)
-		if err != nil {
-			if err == io.EOF {
-				return nil // we are done
+		switch choice {
+		case FixAll:
+			{
+				if everythingFixed := r.fixAllCategories(ctx, args, results); everythingFixed {
+					// evertyhing got fixed \o/
+					return nil
+				}
 			}
+		case FixQuit:
+			{
+				return nil
+			}
+		default:
+			{
+				// choice is 1 index based, so we subtract 1 to make it zero index based so that we can use it with r.categories
+				idx := choice - 1
+				selectedCategory := r.categories[idx]
 
-			r.Output.WriteWarningf("Encountered error while fixing: %s", err.Error())
-			// continue, do not exit
+				r.Output.ClearScreen()
+
+				err = r.presentFailedCategoryWithOptions(ctx, idx, &selectedCategory, args, results)
+				if err != nil {
+					if err == io.EOF {
+						return nil // we are done
+					}
+
+					r.Output.WriteWarningf("Encountered error while fixing: %s", err.Error())
+					// continue, do not exit
+				}
+			}
 		}
 	}
 
@@ -582,7 +612,7 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 		} else {
 			r.Output.WriteNoticef("Which one do you want to fix?")
 			var err error
-			idx, err = getNumberOutOf(r.Input, r.Output, toFix)
+			idx, err = askWhatToFix(r.Input, r.Output, toFix)
 			if err != nil {
 				if err == io.EOF {
 					return nil
@@ -624,6 +654,20 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 	}
 
 	return nil
+}
+
+func (r *Runner[Args]) fixAllCategories(ctx context.Context, args Args, results *runAllCategoryChecksResult) (ok bool) {
+	r.Output.WriteLine(output.Styledf(output.StyleBold, "Right time for the BIG FIX. Let's try to fix everything!"))
+	fixedCount := 0
+	for _, idx := range results.failed {
+		category := r.categories[idx]
+		fixed := r.fixCategoryAutomatically(ctx, idx, &category, args, results)
+		if fixed {
+			fixedCount++
+		}
+	}
+
+	return fixedCount == len(results.failed)
 }
 
 func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx int, category *Category[Args], args Args, results *runAllCategoryChecksResult) (ok bool) {

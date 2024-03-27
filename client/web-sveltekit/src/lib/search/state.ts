@@ -1,9 +1,10 @@
 import { writable, type Readable } from 'svelte/store'
 
-import { goto } from '$app/navigation'
 import { SearchPatternType } from '$lib/graphql-operations'
-import { buildSearchURLQuery, type SettingsCascade } from '$lib/shared'
-import { defaultSearchModeFromSettings } from '$lib/web'
+import { buildSearchURLQuery, type Settings } from '$lib/shared'
+import { defaultSearchModeFromSettings, defaultPatternTypeFromSettings } from '$lib/web'
+
+import { USE_CLIENT_CACHE_QUERY_PARAMETER } from './constants'
 
 // Defined in @sourcegraph/shared/src/search/searchQueryState.tsx
 export enum SearchMode {
@@ -23,14 +24,14 @@ interface Options {
 }
 
 type QuerySettings = Pick<
-    SettingsCascade['final'],
+    Settings,
     'search.defaultCaseSensitive' | 'search.defaultPatternType' | 'search.defaultMode'
 > | null
 export type QueryOptions = Pick<Options, 'patternType' | 'caseSensitive' | 'searchMode' | 'searchContext'>
 
 export class QueryState {
     private defaultCaseSensitive = false
-    private defaultPatternType = SearchPatternType.standard
+    private defaultPatternType = SearchPatternType.keyword
     private defaultSearchMode = SearchMode.Precise
     private defaultQuery = ''
     private defaultSearchContext = 'global'
@@ -48,7 +49,7 @@ export class QueryState {
     public get patternType(): SearchPatternType {
         return (
             this.options.patternType ??
-            (this.settings?.['search.defaultPatternType'] as SearchPatternType) ??
+            (this.settings ? defaultPatternTypeFromSettings({ final: this.settings, subjects: [] }) : null) ??
             this.defaultPatternType
         )
     }
@@ -139,22 +140,27 @@ export function queryStateStore(initial: Partial<Options> = {}, settings: QueryS
     }
 }
 
+/**
+ * getQueryURL builds a /search URL from the given query state.
+ * If enforceCache is true the in-memory query cache will be used when available.
+ *
+ * @param queryState The query state to build the URL from.
+ * @param enforceCache Whether to enforce the use of the in-memory query cache.
+ */
 export function getQueryURL(
-    queryState: Pick<QueryState, 'searchMode' | 'query' | 'caseSensitive' | 'patternType' | 'searchContext'>
-): string {
-    const searchQueryParameter = buildSearchURLQuery(
+    queryState: Pick<QueryState, 'searchMode' | 'query' | 'caseSensitive' | 'patternType' | 'searchContext'>,
+    enforceCache = false
+): URL {
+    let url = new URL('/search', location.href)
+    url.search = buildSearchURLQuery(
         queryState.query,
         queryState.patternType,
         queryState.caseSensitive,
         queryState.searchContext,
         queryState.searchMode
     )
-
-    return '/search?' + searchQueryParameter
-}
-
-export function submitSearch(
-    queryState: Pick<QueryState, 'searchMode' | 'query' | 'caseSensitive' | 'patternType' | 'searchContext'>
-): void {
-    void goto(getQueryURL(queryState))
+    if (enforceCache) {
+        url.searchParams.append(USE_CLIENT_CACHE_QUERY_PARAMETER, '')
+    }
+    return url
 }

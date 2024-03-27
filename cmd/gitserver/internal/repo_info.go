@@ -2,8 +2,6 @@ package internal
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
 
 	"github.com/sourcegraph/log"
 
@@ -26,42 +24,6 @@ func repoCloneProgress(reposDir string, locker RepositoryLocker, repo api.RepoNa
 		resp.CloneProgress = "This will never finish cloning"
 	}
 	return &resp
-}
-
-func (s *Server) handleRepoCloneProgress(w http.ResponseWriter, r *http.Request) {
-	var req protocol.RepoCloneProgressRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	resp := protocol.RepoCloneProgressResponse{
-		Results: make(map[api.RepoName]*protocol.RepoCloneProgress, len(req.Repos)),
-	}
-	for _, repoName := range req.Repos {
-		result := repoCloneProgress(s.ReposDir, s.Locker, repoName)
-		resp.Results[repoName] = result
-	}
-
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {
-	var req protocol.RepoDeleteRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if err := deleteRepo(r.Context(), s.Logger, s.DB, s.Hostname, s.ReposDir, req.Repo); err != nil {
-		s.Logger.Error("failed to delete repository", log.String("repo", string(req.Repo)), log.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	s.Logger.Info("deleted repository", log.String("repo", string(req.Repo)))
 }
 
 func deleteRepo(

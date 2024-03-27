@@ -35,6 +35,7 @@ func Init(
 		embeddingsClient,
 		searchClient,
 		getQdrantSearcher,
+		codycontext.NewCodyIgnoreFilter(services.GitserverClient.Scoped("codycontext.ignore")),
 	)
 	enterpriseServices.CodyContextResolver = resolvers.NewResolver(
 		db,

@@ -350,7 +350,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pa
 	}
 
 	if !foundResults.Load() && since(t0) >= searchOpts.MaxWallTime {
-		c.Send(streaming.SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
+		c.Send(streaming.SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedOut)}})
 	}
 	return nil
 }
@@ -415,10 +415,11 @@ func sendMatches(event *zoekt.SearchResult, pathRegexps []*regexp.Regexp, getRep
 				Symbols:      symbols,
 				PathMatches:  pathMatches,
 				File: result.File{
-					InputRev: &inputRev,
-					CommitID: api.CommitID(file.Version),
-					Repo:     repo,
-					Path:     file.FileName,
+					InputRev:        &inputRev,
+					CommitID:        api.CommitID(file.Version),
+					Repo:            repo,
+					Path:            file.FileName,
+					PreciseLanguage: file.Language,
 				},
 			}
 			if debug := file.Debug; debug != "" {
@@ -436,42 +437,6 @@ func sendMatches(event *zoekt.SearchResult, pathRegexps []*regexp.Regexp, getRep
 
 func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.ChunkMatches {
 	cms := make(result.ChunkMatches, 0, len(file.ChunkMatches))
-	for _, l := range file.LineMatches {
-		if l.FileName {
-			continue
-		}
-
-		ranges := make(result.Ranges, 0, len(l.LineFragments))
-		for _, m := range l.LineFragments {
-			offset := utf8.RuneCount(l.Line[:m.LineOffset])
-			length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
-
-			ranges = append(ranges, result.Range{
-				Start: result.Location{
-					Offset: int(m.Offset),
-					Line:   l.LineNumber - 1,
-					Column: offset,
-				},
-				End: result.Location{
-					Offset: int(m.Offset) + m.MatchLength,
-					Line:   l.LineNumber - 1,
-					Column: offset + length,
-				},
-			})
-		}
-
-		cms = append(cms, result.ChunkMatch{
-			Content: string(l.Line),
-			// zoekt line numbers are 1-based rather than 0-based so subtract 1
-			ContentStart: result.Location{
-				Offset: l.LineStart,
-				Line:   l.LineNumber - 1,
-				Column: 0,
-			},
-			Ranges: ranges,
-		})
-	}
-
 	for _, cm := range file.ChunkMatches {
 		if cm.FileName {
 			continue
@@ -531,38 +496,14 @@ func zoektFileMatchToPathMatchRanges(file *zoekt.FileMatch, pathRegexps []*regex
 
 func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, file *zoekt.FileMatch) []*result.SymbolMatch {
 	newFile := &result.File{
-		Path:     file.FileName,
-		Repo:     repoName,
-		CommitID: api.CommitID(file.Version),
-		InputRev: &inputRev,
+		Path:            file.FileName,
+		Repo:            repoName,
+		CommitID:        api.CommitID(file.Version),
+		InputRev:        &inputRev,
+		PreciseLanguage: file.Language,
 	}
 
 	symbols := make([]*result.SymbolMatch, 0, len(file.ChunkMatches))
-	for _, l := range file.LineMatches {
-		if l.FileName {
-			continue
-		}
-
-		for _, m := range l.LineFragments {
-			if m.SymbolInfo == nil {
-				continue
-			}
-
-			symbols = append(symbols, result.NewSymbolMatch(
-				newFile,
-				l.LineNumber,
-				-1, // -1 means infer the column
-				m.SymbolInfo.Sym,
-				m.SymbolInfo.Kind,
-				m.SymbolInfo.Parent,
-				m.SymbolInfo.ParentKind,
-				file.Language,
-				string(l.Line),
-				false,
-			))
-		}
-	}
-
 	for _, cm := range file.ChunkMatches {
 		if cm.FileName || len(cm.SymbolInfo) == 0 {
 			continue
@@ -589,7 +530,10 @@ func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, 
 		}
 	}
 
-	return symbols
+	// We deduplicate symbol matches. For example searching for "foo AND bar"
+	// will return the symbol "foobar" twice. However, sourcegraph's result
+	// type for symbol is modeled as a result per symbol.
+	return result.DedupSymbols(symbols)
 }
 
 // contextWithoutDeadline returns a context which will cancel if the cOld is

@@ -15,10 +15,6 @@ export const productSubscriptionFragment = gql`
             id
             username
             displayName
-            emails {
-                email
-                verified
-            }
         }
         activeLicense {
             licenseKey

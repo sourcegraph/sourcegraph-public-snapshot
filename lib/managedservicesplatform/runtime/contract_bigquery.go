@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"cloud.google.com/go/bigquery"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/bigquerywriter"
 )
@@ -40,7 +41,5 @@ func (c bigQueryContract) GetTableWriter(ctx context.Context, table string) (*bi
 		return nil, errors.Wrap(err, "creating BigQuery client")
 	}
 
-	return &bigquerywriter.Writer{
-		Inserter: client.Dataset(*c.datasetID).Table(table).Inserter(),
-	}, nil
+	return bigquerywriter.New(client, *c.datasetID, table), nil
 }

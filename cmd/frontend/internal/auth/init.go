@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/bitbucketcloudoauth"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/gerrit"
-	githubapp "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/githubappauth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/githuboauth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/gitlaboauth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/httpheader"
@@ -54,7 +53,6 @@ func Init(logger log.Logger, db database.DB) {
 		gitlaboauth.Middleware(db),
 		bitbucketcloudoauth.Middleware(db),
 		azureoauth.Middleware(db),
-		githubapp.Middleware(db),
 	)
 	// Register app-level sign-out handler
 	app.RegisterSSOSignOutHandler(ssoSignOutHandler)

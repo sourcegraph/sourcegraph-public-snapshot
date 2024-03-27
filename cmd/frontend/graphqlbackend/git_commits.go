@@ -76,6 +76,18 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 			return []*gitdomain.Commit{}, errors.Wrap(err, "failed to parse afterCursor")
 		}
 
+		// Make sure the range revisions exist, in case the browser extension makes
+		// a request for a diff of a newly pushed PR.
+		_, err = r.gitserverClient.ResolveRevision(
+			ctx,
+			r.repo.RepoName(),
+			r.revisionRange,
+			gitserver.ResolveRevisionOptions{NoEnsureRevision: false},
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to resolve revision range")
+		}
+
 		return r.gitserverClient.Commits(ctx, r.repo.RepoName(), gitserver.CommitsOptions{
 			Range:        r.revisionRange,
 			N:            uint(n),

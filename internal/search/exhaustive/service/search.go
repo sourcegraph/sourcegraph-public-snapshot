@@ -1,16 +1,17 @@
 package service
 
 import (
-	"bytes"
 	"context"
-	"encoding/csv"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	types2 "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
@@ -72,15 +73,15 @@ type SearchQuery interface {
 
 	ResolveRepositoryRevSpec(context.Context, types.RepositoryRevSpecs) ([]types.RepositoryRevision, error)
 
-	Search(context.Context, types.RepositoryRevision, CSVWriter) error
+	Search(context.Context, types.RepositoryRevision, MatchWriter) error
 }
 
-// CSVWriter makes it so we can avoid caring about search types and leave it
+type MatchWriter interface {
+	Write(match result.Match) error
+}
+
+// CSVWriter makes it, so we can avoid caring about search types and leave it
 // up to the search job to decide the shape of data.
-//
-// Note: I expect the implementation of this to handle things like chunking up
-// the CSV/etc. EG once we hit 100MB of data it can write the data out then
-// start a new file. It takes care of remembering the header for the new file.
 type CSVWriter interface {
 	// WriteHeader should be called first and only once.
 	WriteHeader(...string) error
@@ -88,145 +89,8 @@ type CSVWriter interface {
 	// WriteRow should have the same number of values as WriteHeader and can be
 	// called zero or more times.
 	WriteRow(...string) error
-}
 
-// NewBlobstoreCSVWriter creates a new BlobstoreCSVWriter which writes a CSV to
-// the store. BlobstoreCSVWriter takes care of chunking the CSV into blobs of
-// 100MiB, each with the same header row. Blobs are named {prefix}-{shard}
-// except for the first blob, which is named {prefix}.
-//
-// Data is buffered in memory until the blob reaches the maximum allowed size,
-// at which point the blob is uploaded to the store.
-//
-// The caller is expected to call Close() once and only once after the last call
-// to WriteRow.
-func NewBlobstoreCSVWriter(ctx context.Context, store uploadstore.Store, prefix string) *BlobstoreCSVWriter {
-
-	c := &BlobstoreCSVWriter{
-		maxBlobSizeBytes: 100 * 1024 * 1024,
-		ctx:              ctx,
-		prefix:           prefix,
-		store:            store,
-		// Start with "1" because we increment it before creating a new file. The second
-		// shard will be called {prefix}-2.
-		shard: 1,
-	}
-
-	c.startNewFile(ctx, prefix)
-
-	return c
-}
-
-type BlobstoreCSVWriter struct {
-	// ctx is the context we use for uploading blobs.
-	ctx context.Context
-
-	maxBlobSizeBytes int64
-
-	prefix string
-
-	w *csv.Writer
-
-	// local buffer for the current blob.
-	buf bytes.Buffer
-
-	store uploadstore.Store
-
-	// header keeps track of the header we write as the first row of a new file.
-	header []string
-
-	// close takes care of flushing w and closing the upload.
-	close func() error
-
-	// n is the total number of bytes we have buffered so far.
-	n int64
-
-	// shard is incremented before we create a new shard.
-	shard int
-}
-
-func (c *BlobstoreCSVWriter) WriteHeader(s ...string) error {
-	if c.header == nil {
-		c.header = s
-	}
-
-	// Check that c.header matches s.
-	if len(c.header) != len(s) {
-		return errors.Errorf("header mismatch: %v != %v", c.header, s)
-	}
-	for i := range c.header {
-		if c.header[i] != s[i] {
-			return errors.Errorf("header mismatch: %v != %v", c.header, s)
-		}
-	}
-
-	return c.write(s)
-}
-
-func (c *BlobstoreCSVWriter) WriteRow(s ...string) error {
-	// Create new file if we've exceeded the max blob size.
-	if c.n >= c.maxBlobSizeBytes {
-		// Close the current upload.
-		err := c.Close()
-		if err != nil {
-			return errors.Wrapf(err, "error closing upload")
-		}
-
-		c.shard++
-		c.startNewFile(c.ctx, fmt.Sprintf("%s-%d", c.prefix, c.shard))
-		err = c.WriteHeader(c.header...)
-		if err != nil {
-			return errors.Wrapf(err, "error writing header for new file")
-		}
-	}
-
-	return c.write(s)
-}
-
-// startNewFile creates a new blob and sets up the CSV writer to write to it.
-//
-// The caller is expected to call c.Close() before calling startNewFile if a
-// previous file was open.
-func (c *BlobstoreCSVWriter) startNewFile(ctx context.Context, key string) {
-	c.buf = bytes.Buffer{}
-	csvWriter := csv.NewWriter(&c.buf)
-
-	closeFn := func() error {
-		csvWriter.Flush()
-		// Don't upload empty files.
-		if c.buf.Len() == 0 {
-			return nil
-		}
-		_, err := c.store.Upload(ctx, key, &c.buf)
-		return err
-	}
-
-	c.w = csvWriter
-	c.close = closeFn
-	c.n = 0
-}
-
-// write wraps Write to keep track of the number of bytes written. This is
-// mainly for test purposes: The CSV writer is buffered (default 4096 bytes),
-// and we don't have access to the number of bytes in the buffer. In production,
-// we could just wrap the io.Pipe writer with a counter, ignore the buffer, and
-// accept that size of the blobs is off by a few kilobytes.
-func (c *BlobstoreCSVWriter) write(s []string) error {
-	err := c.w.Write(s)
-	if err != nil {
-		return err
-	}
-
-	for _, field := range s {
-		c.n += int64(len(field))
-	}
-	c.n += int64(len(s)) // len(s)-1 for the commas, +1 for the newline
-
-	return nil
-}
-
-func (c *BlobstoreCSVWriter) Close() error {
-	return c.close()
+	io.Closer
 }
 
 // NewSearcherFake is a convenient working implementation of SearchQuery which
@@ -312,15 +176,18 @@ func (s searcherFake) ResolveRepositoryRevSpec(ctx context.Context, repoRevSpec 
 	return repoRevs, nil
 }
 
-func (s searcherFake) Search(ctx context.Context, r types.RepositoryRevision, w CSVWriter) error {
+func (s searcherFake) Search(ctx context.Context, r types.RepositoryRevision, w MatchWriter) error {
 	if err := isSameUser(ctx, s.userID); err != nil {
 		return err
 	}
 
-	if err := w.WriteHeader("repo", "revspec", "revision"); err != nil {
-		return err
-	}
-	return w.WriteRow(strconv.Itoa(int(r.Repository)), string(r.RevisionSpecifiers), string(r.Revision))
+	return w.Write(&result.FileMatch{
+		File: result.File{
+			Repo:     types2.MinimalRepo{ID: r.Repository, Name: "repo" + api.RepoName(strconv.Itoa(int(r.Repository)))},
+			CommitID: api.CommitID(r.Revision),
+			Path:     "path/to/file.go",
+		},
+	})
 }
 
 func isSameUser(ctx context.Context, userID int32) error {

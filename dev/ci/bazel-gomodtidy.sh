@@ -3,12 +3,22 @@
 set -eu
 EXIT_CODE=0
 
+cd "$(dirname "${BASH_SOURCE[0]}")/../.."
+
+echo "~~~ :aspect: :stethoscope: Agent Health check"
+/etc/aspect/workflows/bin/agent_health_check
+
+aspectRC="/tmp/aspect-generated.bazelrc"
+rosetta bazelrc > "$aspectRC"
+
 runGoModTidy() {
   local dir
   dir=$1
   cd "$dir"
+
+
   echo "--- :bazel: Running go mod tidy in $dir"
-  bazel run @go_sdk//:bin/go -- mod tidy
+  bazel --bazelrc="$aspectRC" run @go_sdk//:bin/go -- mod tidy
   cd -
 }
 

@@ -22,7 +22,7 @@ import (
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Handler) http.Handler {
+func NewHandler(db database.DB, logger log.Logger) http.Handler {
 	session.SetSessionStore(session.NewRedisStore(func() bool {
 		return globals.ExternalURL().Scheme == "https"
 	}))
@@ -77,10 +77,6 @@ func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Ha
 
 	// Ping retrieval
 	r.Get(router.LatestPing).Handler(trace.Route(latestPingHandler(db)))
-
-	// Sourcegraph GitHub App setup (Cloud and on-prem)
-	r.Get(router.SetupGitHubAppCloud).Handler(trace.Route(githubAppSetupHandler))
-	r.Get(router.SetupGitHubApp).Handler(trace.Route(githubAppSetupHandler))
 
 	r.Get(router.Editor).Handler(trace.Route(errorutil.Handler(serveEditor(db))))
 

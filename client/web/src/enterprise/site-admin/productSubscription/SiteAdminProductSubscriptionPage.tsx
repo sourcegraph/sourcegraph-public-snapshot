@@ -14,7 +14,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent = () => {
     return (
         <div className="site-admin-product-subscription-page">
             <PageTitle title="Sourcegraph product subscription" />
-            <ProductSubscriptionStatus showTrueUpStatus={true} />
+            <ProductSubscriptionStatus />
         </div>
     )
 }

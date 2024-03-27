@@ -38,6 +38,32 @@ type userClaims struct {
 	EmailVerified     *bool  `json:"email_verified"`
 }
 
+// getLogin returns the preferred username or email address from the user claims,
+// or the email address if the preferred username is not set.
+func getLogin(c *userClaims, i *oidc.UserInfo) string {
+	if c.PreferredUsername != "" {
+		return c.PreferredUsername
+	}
+
+	return i.Email
+}
+
+// getDisplayName returns a display name from the user claims in this order:
+// 1. GivenName
+// 2. Name
+// 3. provided defaultName
+func getDisplayName(c *userClaims, defaultName string) string {
+	if c.GivenName != "" {
+		return c.GivenName
+	}
+
+	if c.Name != "" {
+		return c.Name
+	}
+
+	return defaultName
+}
+
 // Middleware is middleware for OpenID Connect (OIDC) authentication, adding endpoints under the
 // auth path prefix ("/.auth") to enable the login flow and requiring login for all other endpoints.
 //
@@ -95,7 +121,7 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 	// it's an app request, and the sign-out cookie is not present, redirect to sign-in immediately.
 	//
 	// For sign-out requests (sign-out cookie is  present), the user is redirected to the Sourcegraph login page.
-	ps := providers.Providers()
+	ps := providers.SignInProviders()
 	openIDConnectEnabled := len(ps) == 1 && ps[0].Config().Openidconnect != nil
 	if openIDConnectEnabled && !auth.HasSignOutCookie(r) && !isAPIRequest {
 		p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), ps[0].ConfigID().ID, GetProvider)
@@ -123,15 +149,26 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 		case "/login": // Endpoint that starts the Authentication Request Code Flow.
-			p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), r.URL.Query().Get("pc"), GetProvider)
-			if err != nil {
-				log15.Error("Failed to get provider.", "error", err)
-				http.Error(w, safeErrMsg, http.StatusInternalServerError)
-				return
-			}
+			// NOTE: Within the Sourcegraph application, we have been using both the
+			// "redirect" and "returnTo" query parameters inconsistently, and some of the
+			// usages are also on the client side (Cody clients). If we ever settle on one
+			// and updated all usages on both server and client side, we need to make sure
+			// to have a grace period (e.g. 3 months) for the client side because we have no
+			// control over when users will actually upgrade their clients.
 			redirect := r.URL.Query().Get("redirect")
 			if redirect == "" {
 				redirect = r.URL.Query().Get("returnTo")
+			}
+
+			p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), r.URL.Query().Get("pc"), GetProvider)
+			if errors.Is(err, errNoSuchProvider) {
+				log15.Warn("Failed to get provider.", "error", err)
+				http.Redirect(w, r, "/sign-in?returnTo="+redirect, http.StatusFound)
+				return
+			} else if err != nil {
+				log15.Error("Failed to get provider.", "error", err)
+				http.Error(w, safeErrMsg, http.StatusInternalServerError)
+				return
 			}
 			RedirectToAuthRequest(w, r, p, redirect)
 			return
@@ -141,28 +178,20 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log15.Error("Failed to authenticate with OpenID connect.", "error", err)
 				http.Error(w, safeErrMsg, errStatus)
-				arg, _ := json.Marshal(struct {
+				arg := struct {
 					SafeErrorMsg string `json:"safe_error_msg"`
 				}{
 					SafeErrorMsg: safeErrMsg,
-				})
-				db.SecurityEventLogs().LogEvent(r.Context(), &database.SecurityEvent{
-					Name:            database.SecurityEventOIDCLoginFailed,
-					URL:             r.URL.Path,                                   // Don't log OIDC query params
-					AnonymousUserID: fmt.Sprintf("unknown OIDC @ %s", time.Now()), // we don't have a reliable user identifier at the time of the failure
-					Source:          "BACKEND",
-					Timestamp:       time.Now(),
-					Argument:        arg,
-				})
+				}
+
+				if err := db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventOIDCLoginFailed, r.URL.Path, uint32(0), fmt.Sprintf("unknown OIDC @ %s", time.Now()), "BACKEND", arg); err != nil {
+					log15.Warn("Error logging security event.", "error", err)
+				}
 				return
 			}
-			db.SecurityEventLogs().LogEvent(r.Context(), &database.SecurityEvent{
-				Name:      database.SecurityEventOIDCLoginSucceeded,
-				URL:       r.URL.Path, // Don't log OIDC query params
-				UserID:    uint32(result.User.ID),
-				Source:    "BACKEND",
-				Timestamp: time.Now(),
-			})
+			if err := db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventOIDCLoginSucceeded, r.URL.Path, uint32(result.User.ID), "", "BACKEND", nil); err != nil {
+				log15.Warn("Error logging security event.", "error", err)
+			}
 
 			var exp time.Duration
 			// 🚨 SECURITY: TODO(sqs): We *should* uncomment the lines below to make our own sessions
@@ -437,5 +466,12 @@ func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, 
 	//
 	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
 	// OIDC spec.
-	http.Redirect(w, r, p.oauth2Config().AuthCodeURL(oidcState, oidc.Nonce(oidcState)), http.StatusFound)
+	authURL := p.oauth2Config().AuthCodeURL(oidcState, oidc.Nonce(oidcState))
+	// Pass along the prompt_auth to OP for the specific type of authentication to
+	// use, e.g. "github", "gitlab", "google".
+	promptAuth := r.URL.Query().Get("prompt_auth")
+	if promptAuth != "" {
+		authURL += "&prompt_auth=" + promptAuth
+	}
+	http.Redirect(w, r, authURL, http.StatusFound)
 }

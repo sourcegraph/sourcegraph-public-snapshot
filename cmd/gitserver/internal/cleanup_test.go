@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"io/fs"
-	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"os"
 	"os/exec"
 	"path"
@@ -21,6 +20,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -60,10 +60,6 @@ func TestCleanup_computeStats(t *testing.T) {
 		}
 	}
 
-	// This may be different in practice, but the way we setup the tests
-	// we only have .git dirs to measure so this is correct.
-	wantGitDirBytes := gitserverfs.DirSize(root)
-
 	logger, capturedLogs := logtest.Captured(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
@@ -89,6 +85,10 @@ UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 		false,
 	)
+
+	// This may be different in practice, but the way we setup the tests
+	// we only have .git dirs to measure so this is correct.
+	wantGitDirBytes := gitserverfs.DirSize(root)
 
 	for i := 1; i <= 3; i++ {
 		repo, err := db.GitserverRepos().GetByID(context.Background(), api.RepoID(i))
@@ -281,7 +281,7 @@ func TestGitGCAuto(t *testing.T) {
 	runCmd(t, wd, "git", "init", "--initial-branch", "main", repo)
 
 	// First we need to generate a moderate number of commits.
-	for i := 0; i < 50; i++ {
+	for range 50 {
 		runCmd(t, repo, "sh", "-c", "echo 1 >> file1")
 		runCmd(t, repo, "git", "add", "file1")
 		runCmd(t, repo, "git", "commit", "-m", "file1")
@@ -289,7 +289,7 @@ func TestGitGCAuto(t *testing.T) {
 
 	// Now on a second branch, we do the same thing.
 	runCmd(t, repo, "git", "checkout", "-b", "secondary")
-	for i := 0; i < 50; i++ {
+	for range 50 {
 		runCmd(t, repo, "sh", "-c", "echo 2 >> file2")
 		runCmd(t, repo, "git", "add", "file2")
 		runCmd(t, repo, "git", "commit", "-m", "file2")
@@ -339,6 +339,7 @@ func TestGitGCAuto(t *testing.T) {
 }
 
 func TestCleanupExpired(t *testing.T) {
+	ctx := context.Background()
 	root := t.TempDir()
 
 	repoNew := path.Join(root, "repo-new", ".git")
@@ -378,7 +379,10 @@ func TestCleanupExpired(t *testing.T) {
 	}
 	recloneTime := func(path string) time.Time {
 		t.Helper()
-		ts, err := getRecloneTime(wrexec.NewNoOpRecordingCommandFactory(), root, common.GitDir(path))
+
+		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(path), "git")
+
+		ts, err := getRecloneTime(ctx, cli.Config(), common.GitDir(path))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -397,21 +401,31 @@ func TestCleanupExpired(t *testing.T) {
 		repoPerforceGCOld: 2 * repoTTLGC,
 	} {
 		ts := time.Now().Add(-delta)
-		if err := setRecloneTime(wrexec.NewNoOpRecordingCommandFactory(), root, common.GitDir(gitDirPath), ts); err != nil {
+		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(gitDirPath), "git")
+		if err := setRecloneTime(ctx, cli.Config(), common.GitDir(gitDirPath), ts); err != nil {
 			t.Fatal(err)
 		}
 		if err := os.Chtimes(filepath.Join(gitDirPath, "HEAD"), ts, ts); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err := git.ConfigSet(wrexec.NewNoOpRecordingCommandFactory(), root, common.GitDir(repoCorrupt), gitConfigMaybeCorrupt, "1"); err != nil {
-		t.Fatal(err)
+	{
+		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(repoCorrupt), "perforce")
+		if err := cli.Config().Set(ctx, gitConfigMaybeCorrupt, "1"); err != nil {
+			t.Fatal(err)
+		}
 	}
-	if err := git.SetRepositoryType(wrexec.NewNoOpRecordingCommandFactory(), root, common.GitDir(repoPerforce), "perforce"); err != nil {
-		t.Fatal(err)
+	{
+		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(repoPerforce), "perforce")
+		if err := git.SetRepositoryType(ctx, cli.Config(), "perforce"); err != nil {
+			t.Fatal(err)
+		}
 	}
-	if err := git.SetRepositoryType(wrexec.NewNoOpRecordingCommandFactory(), root, common.GitDir(repoPerforceGCOld), "perforce"); err != nil {
-		t.Fatal(err)
+	{
+		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(repoPerforceGCOld), "perforce")
+		if err := git.SetRepositoryType(ctx, cli.Config(), "perforce"); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	now := time.Now()
@@ -802,7 +816,7 @@ func assertPaths(t *testing.T, root string, want ...string) {
 		return nil
 	})
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	if len(notfound) > 0 {

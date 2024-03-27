@@ -72,7 +72,7 @@
             {#each suggestions as group, groupIndex (group.title)}
                 {#if group.options.length > 0}
                     <ul role="rowgroup" aria-labelledby="{groupIndex}-label">
-                        <li id="{groupIndex}-lable" role="presentation">{group.title}</li>
+                        <li id="{groupIndex}-label" role="presentation">{group.title}</li>
                         {#each group.options as option, rowIndex (option)}
                             <SuggestionOption {groupIndex} {rowIndex} {option} selected={option === selectedOption} />
                         {/each}

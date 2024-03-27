@@ -130,7 +130,7 @@ func displayLimitHandler(resultsResolver ProgressStats) (Skipped, bool) {
 	return Skipped{
 		Reason:   DisplayLimit,
 		Title:    "display limit hit",
-		Message:  fmt.Sprintf("We only display %d %s even if your search returned more results. To see all results and configure the display limit, use our CLI.", resultsResolver.DisplayLimit, result),
+		Message:  fmt.Sprintf("We only display %d %s even if your search returned more results. To see all results, use our CLI.", resultsResolver.DisplayLimit, result),
 		Severity: SeverityInfo,
 	}, true
 }

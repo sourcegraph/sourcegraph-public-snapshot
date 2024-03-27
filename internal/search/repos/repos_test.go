@@ -1,20 +1,21 @@
 package repos
 
 import (
+	stdcmp "cmp"
 	"context"
 	"flag"
 	"fmt"
 	"os"
 	"reflect"
+	"slices"
 	"testing"
 	"time"
 
-	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/zoekt"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -26,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -147,7 +149,7 @@ func TestRevisionValidation(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			op := search.RepoOptions{RepoFilters: toParsedRepoFilters(tt.repoFilters...)}
-			repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil, nil)
+			repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil, defaults.NewConnectionCache(logtest.Scoped(t)), nil)
 			repositoryResolver.gitserver = mockGitserver
 			resolved, _, err := repositoryResolver.resolve(context.Background(), op)
 			if !errors.Is(err, tt.wantErr) {
@@ -256,7 +258,7 @@ func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 	b.Run("2 conflicting", func(b *testing.B) {
 		repoRevs := toParsedRepoFilters(".*o@123456", "foo@234567")
 		_, pats := findPatternRevs(repoRevs)
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_, _ = getRevsForMatchedRepo("foo", pats)
 		}
 	})
@@ -264,7 +266,7 @@ func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 	b.Run("multiple overlapping", func(b *testing.B) {
 		repoRevs := toParsedRepoFilters(".*o@a:b:c:d", "foo@b:c:d:e", "foo@c:d:e:f")
 		_, pats := findPatternRevs(repoRevs)
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_, _ = getRevsForMatchedRepo("foo", pats)
 		}
 	})
@@ -276,12 +278,12 @@ func TestResolverIterator(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	for i := 1; i <= 5; i++ {
-		r := types.MinimalRepo{
+		r := &types.Repo{
 			Name:  api.RepoName(fmt.Sprintf("github.com/foo/bar%d", i)),
 			Stars: i * 100,
 		}
 
-		if err := db.Repos().Create(ctx, r.ToRepo()); err != nil {
+		if err := db.Repos().Create(ctx, r); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -298,7 +300,7 @@ func TestResolverIterator(t *testing.T) {
 		return "", nil
 	})
 
-	resolver := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil)
+	resolver := NewResolver(logtest.Scoped(t), db, gsClient, nil, defaults.NewConnectionCache(logtest.Scoped(t)), nil)
 	all, _, err := resolver.resolve(ctx, search.RepoOptions{})
 	if err != nil {
 		t.Fatal(err)
@@ -402,7 +404,7 @@ func TestResolverIterator(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil)
+			r := NewResolver(logtest.Scoped(t), db, gsClient, nil, defaults.NewConnectionCache(logtest.Scoped(t)), nil)
 			it := r.Iterator(ctx, tc.opts)
 
 			var pages []Resolved
@@ -435,18 +437,20 @@ func TestResolverIterateRepoRevs(t *testing.T) {
 
 	var all []RepoRevSpecs
 	for i := 1; i <= 5; i++ {
-		r := types.MinimalRepo{
+		r := &types.Repo{
 			Name:  api.RepoName(fmt.Sprintf("github.com/foo/bar%d", i)),
 			Stars: i * 100,
 		}
 
-		repo := r.ToRepo()
-		if err := db.Repos().Create(ctx, repo); err != nil {
+		if err := db.Repos().Create(ctx, r); err != nil {
 			t.Fatal(err)
 		}
-		r.ID = repo.ID
 
-		all = append(all, RepoRevSpecs{Repo: r})
+		all = append(all, RepoRevSpecs{Repo: types.MinimalRepo{
+			ID:    r.ID,
+			Name:  r.Name,
+			Stars: r.Stars,
+		}})
 	}
 
 	withRevSpecs := func(rrs []RepoRevSpecs, revs ...query.RevisionSpecifier) []RepoRevSpecs {
@@ -519,7 +523,7 @@ func TestResolverIterateRepoRevs(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := NewResolver(logger, db, gsClient, nil, nil)
+			r := NewResolver(logger, db, gsClient, nil, defaults.NewConnectionCache(logtest.Scoped(t)), nil)
 			got, err := iterator.Collect(r.IterateRepoRevs(ctx, tc.opts))
 
 			var gotErr string
@@ -534,11 +538,11 @@ func TestResolverIterateRepoRevs(t *testing.T) {
 			var want []RepoRevSpecs
 			want = append(want, tc.want...)
 
-			less := func(a, b RepoRevSpecs) bool {
-				return a.Repo.ID < b.Repo.ID
+			compare := func(a, b RepoRevSpecs) int {
+				return stdcmp.Compare(a.Repo.ID, b.Repo.ID)
 			}
-			slices.SortFunc(got, less)
-			slices.SortFunc(want, less)
+			slices.SortFunc(got, compare)
+			slices.SortFunc(want, compare)
 
 			if diff := cmp.Diff(got, want); diff != "" {
 				t.Errorf("unexpected (-have, +want):\n%s", diff)
@@ -590,7 +594,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	op := search.RepoOptions{
 		SearchContextSpec: "searchcontext",
 	}
-	repositoryResolver := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil)
+	repositoryResolver := NewResolver(logtest.Scoped(t), db, gsClient, nil, defaults.NewConnectionCache(logtest.Scoped(t)), nil)
 	resolved, _, err := repositoryResolver.resolve(context.Background(), op)
 	if err != nil {
 		t.Fatal(err)
@@ -650,13 +654,20 @@ func TestRepoHasFileContent(t *testing.T) {
 			},
 		},
 	}
-	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error) {
+	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatch func(*protocol.FileMatch)) (limitHit bool, err error) {
+		var pattern string
+		if pt, ok := p.Query.(*protocol.PatternNode); ok {
+			pattern = pt.Value
+		} else {
+			return false, errors.New("expected a simple regex pattern")
+		}
+
 		if r, ok := unindexedCorpus[string(repo)]; ok {
 			for path, lines := range r {
-				if len(p.IncludePatterns) == 0 || p.IncludePatterns[0] == path {
+				if len(p.IncludePaths) == 0 || p.IncludePaths[0] == path {
 					for line := range lines {
-						if p.Pattern == line || p.Pattern == "" {
-							onMatches([]*protocol.FileMatch{{}})
+						if pattern == line || pattern == "" {
+							onMatch(&protocol.FileMatch{})
 						}
 					}
 				}
@@ -762,7 +773,7 @@ func TestRepoHasFileContent(t *testing.T) {
 				ReposMap: tc.matchingRepos,
 			}, nil)
 
-			res := NewResolver(logtest.Scoped(t), db, mockGitserver, endpoint.Static("test"), mockZoekt)
+			res := NewResolver(logtest.Scoped(t), db, mockGitserver, endpoint.Static("test"), defaults.NewConnectionCache(logtest.Scoped(t)), mockZoekt)
 			resolved, _, err := res.resolve(context.Background(), search.RepoOptions{
 				RepoFilters:    toParsedRepoFilters(".*"),
 				HasFileContent: tc.filters,
@@ -865,7 +876,7 @@ func TestRepoHasCommitAfter(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			res := NewResolver(logtest.Scoped(t), db, nil, endpoint.Static("test"), nil)
+			res := NewResolver(logtest.Scoped(t), db, nil, endpoint.Static("test"), defaults.NewConnectionCache(logtest.Scoped(t)), nil)
 			res.gitserver = mockGitserver
 			resolved, _, err := res.resolve(context.Background(), search.RepoOptions{
 				RepoFilters: toParsedRepoFilters(tc.nameFilter),

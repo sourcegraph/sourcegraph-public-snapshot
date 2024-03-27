@@ -12,12 +12,12 @@ import (
 	"golang.org/x/sync/singleflight"
 	"golang.org/x/time/rate"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/bytesize"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -90,7 +91,7 @@ func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []g
 			minSyncInterval: opts.MinSyncInterval,
 		}, SyncWorkerOptions{
 			WorkerInterval: opts.DequeueInterval,
-			NumHandlers:    ConfRepoConcurrentExternalServiceSyncers(),
+			NumHandlers:    conf.RepoConcurrentExternalServiceSyncers(),
 			CleanupOldJobs: true,
 		},
 	)
@@ -113,7 +114,14 @@ func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []g
 		goroutine.WithIntervalFunc(opts.EnqueueInterval),
 	)
 
-	return []goroutine.BackgroundRoutine{worker, resetter, syncerJanitor, scheduler}
+	routines := []goroutine.BackgroundRoutine{worker, resetter, syncerJanitor, scheduler}
+
+	if opts.IsDotCom {
+		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(1, 1))
+		routines = append(routines, s.newSyncReposWithLastErrorsWorker(ctx, rateLimiter))
+	}
+
+	return routines
 }
 
 type syncHandler struct {
@@ -557,7 +565,7 @@ func (s *Syncer) SyncExternalService(
 
 		sourced := res.Repo
 
-		if envvar.SourcegraphDotComMode() && sourced.Private {
+		if dotcom.SourcegraphDotComMode() && sourced.Private {
 			err := errors.Newf("%s is private, but dotcom does not support private repositories.", sourced.Name)
 			syncProgress.Errors++
 			logger.Error("failed to sync private repo", log.String("repo", string(sourced.Name)), log.Error(err))

@@ -12,123 +12,20 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/cacert"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/trace" //nolint:staticcheck // OT is deprecated
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/process"
 )
 
-// ShortGitCommandTimeout returns the timeout for git commands that should not
-// take a long time. Some commands such as "git archive" are allowed more time
-// than "git rev-parse", so this will return an appropriate timeout given the
-// command.
-func ShortGitCommandTimeout(args []string) time.Duration {
-	if len(args) < 1 {
-		return time.Minute
-	}
-	switch args[0] {
-	case "archive":
-		// This is a long time, but this never blocks a user request for this
-		// long. Even repos that are not that large can take a long time, for
-		// example a search over all repos in an organization may have several
-		// large repos. All of those repos will be competing for IO => we need
-		// a larger timeout.
-		return conf.GitLongCommandTimeout()
-
-	case "ls-remote":
-		return 30 * time.Second
-
-	default:
-		return time.Minute
-	}
-}
-
 // UnsetExitStatus is a sentinel value for an unknown/unset exit status.
 const UnsetExitStatus = -10810
-
-// UpdateRunCommandMock sets the runCommand mock function for use in tests
-func UpdateRunCommandMock(mock func(context.Context, *exec.Cmd) (int, error)) {
-	runCommandMockMu.Lock()
-	defer runCommandMockMu.Unlock()
-
-	RunCommandMock = mock
-}
-
-// runCommmandMockMu protects runCommandMock against simultaneous access across
-// multiple goroutines
-var runCommandMockMu sync.RWMutex
-
-// RunCommandMock is set by tests. When non-nil it is run instead of
-// runCommand
-var RunCommandMock func(context.Context, *exec.Cmd) (int, error)
-
-// RunCommand runs the command and returns the exit status. All clients of this function should set the context
-// in cmd themselves, but we have to pass the context separately here for the sake of tracing.
-func RunCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error) {
-	runCommandMockMu.RLock()
-
-	if RunCommandMock != nil {
-		code, err := RunCommandMock(ctx, cmd.Unwrap())
-		runCommandMockMu.RUnlock()
-		return code, err
-	}
-	runCommandMockMu.RUnlock()
-
-	tr, _ := trace.New(ctx, "runCommand",
-		attribute.String("path", cmd.Unwrap().Path),
-		attribute.StringSlice("args", cmd.Unwrap().Args),
-		attribute.String("dir", cmd.Unwrap().Dir))
-	defer func() {
-		tr.SetAttributes(attribute.Int("exitCode", exitCode))
-		tr.EndWithErr(&err)
-	}()
-
-	err = cmd.Run()
-	exitStatus := UnsetExitStatus
-	if cmd.Unwrap().ProcessState != nil { // is nil if process failed to start
-		exitStatus = cmd.Unwrap().ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
-	}
-	return exitStatus, err
-}
-
-// RunCommandCombinedOutput runs the command with runCommand and returns its
-// combined standard output and standard error.
-func RunCommandCombinedOutput(ctx context.Context, cmd wrexec.Cmder) ([]byte, error) {
-	var buf bytes.Buffer
-	cmd.Unwrap().Stdout = &buf
-	cmd.Unwrap().Stderr = &buf
-	_, err := RunCommand(ctx, cmd)
-	return buf.Bytes(), err
-}
-
-// RunRemoteGitCommand runs the command after applying the remote options.
-func RunRemoteGitCommand(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool) ([]byte, error) {
-	if configRemoteOpts {
-		// Inherit process environment. This allows admins to configure
-		// variables like http_proxy/etc.
-		if cmd.Unwrap().Env == nil {
-			cmd.Unwrap().Env = os.Environ()
-		}
-		configureRemoteGitCommand(cmd.Unwrap(), tlsExternal())
-	}
-
-	var buf bytes.Buffer
-	cmd.Unwrap().Stdout = &buf
-	cmd.Unwrap().Stderr = &buf
-
-	// We don't care about exitStatus, we just rely on error.
-	_, err := RunCommand(ctx, cmd)
-
-	return buf.Bytes(), err
-}
 
 // tlsExternal will create a new cache for this gitserer process and store the certificates set in
 // the site config.
@@ -225,11 +122,16 @@ func getTlsExternalDoNotInvoke() *tlsConfig {
 	}
 }
 
-func ConfigureRemoteGitCommand(cmd *exec.Cmd) {
-	configureRemoteGitCommand(cmd, tlsExternal())
+func ConfigureRemoteGitCommand(cmd *exec.Cmd, remoteURL *vcs.URL) {
+	// Inherit process environment. This allows admins to configure
+	// variables like http_proxy/etc.
+	if cmd.Env == nil {
+		cmd.Env = os.Environ()
+	}
+	configureRemoteGitCommand(cmd, remoteURL, tlsExternal())
 }
 
-func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
+func configureRemoteGitCommand(cmd *exec.Cmd, remoteURL *vcs.URL, tlsConf *tlsConfig) {
 	// We split here in case the first command is an absolute path to the executable
 	// which allows us to safely match lower down
 	_, executable := path.Split(cmd.Args[0])
@@ -258,9 +160,34 @@ func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
 		cmd.Env = append(cmd.Env, "GIT_SSL_CAINFO="+tlsConf.SSLCAInfo)
 	}
 
+	// Unset credential helper because the command is non-interactive.
+	// Even when we pass a second credential helper for HTTP credentials below,
+	// we will need this. Otherwise, the original credential helper will be used
+	// as well.
 	extraArgs := []string{
-		// Unset credential helper because the command is non-interactive.
 		"-c", "credential.helper=",
+	}
+
+	// If we have creds in the URL, pass it in via the credHelper.
+	password, ok := remoteURL.User.Password()
+	if ok && executable == "git" && !remoteURL.IsSSH() {
+		// If the remote URL is one of the args, remove the user section from it.
+		hasCreds := false
+		for i, arg := range cmd.Args {
+			if arg == remoteURL.String() {
+				ru := *remoteURL
+				ru.User = nil
+				cmd.Args[i] = ru.String()
+				hasCreds = true
+			}
+		}
+		if hasCreds {
+			// Next up, add out credential helper.
+			// Note: We add an ADDITIONAL credential helper here, the previous
+			// one is just unsetting any existing ones.
+			extraArgs = append(extraArgs, "-c", "credential.helper=!f() { echo \"username=$GIT_SG_USERNAME\npassword=$GIT_SG_PASSWORD\"; }; f")
+			cmd.Env = append(cmd.Env, "GIT_SG_USERNAME="+remoteURL.User.Username(), "GIT_SG_PASSWORD="+password)
+		}
 	}
 
 	if len(cmd.Args) > 1 && cmd.Args[1] != "ls-remote" {
@@ -373,6 +300,11 @@ func RunCommandWriteOutput(ctx context.Context, cmd wrexec.Cmder, writer io.Writ
 	}
 
 	err = cmd.Wait()
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		// Redact the stderr output if we have it.
+		exitErr.Stderr = []byte(redactor(string(exitErr.Stderr)))
+	}
 
 	if ps := cmd.Unwrap().ProcessState; ps != nil && ps.Sys() != nil {
 		if ws, ok := ps.Sys().(syscall.WaitStatus); ok {

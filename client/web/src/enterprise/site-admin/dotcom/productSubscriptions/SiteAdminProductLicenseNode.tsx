@@ -14,7 +14,7 @@ import {
     H3,
     Icon,
     Label,
-    LinkOrSpan,
+    Link,
     Text,
 } from '@sourcegraph/wildcard'
 
@@ -87,9 +87,9 @@ export const SiteAdminProductLicenseNode: React.FunctionComponent<
                                 <div className="text-truncate d-flex">
                                     <H3>
                                         License in{' '}
-                                        <LinkOrSpan to={node.subscription.urlForSiteAdmin} className="mr-3">
+                                        <Link to={node.subscription.urlForSiteAdmin!} className="mr-3">
                                             {node.subscription.name}
-                                        </LinkOrSpan>
+                                        </Link>
                                     </H3>
                                     <span className="mr-3">
                                         <AccountName account={node.subscription.account} />
@@ -99,19 +99,16 @@ export const SiteAdminProductLicenseNode: React.FunctionComponent<
                             {!loading && error && (
                                 <Alert variant="danger">Error revoking license: {error.message}</Alert>
                             )}
-                            <div className="d-flex align-items-baseline mb-2">
+                            <div className="mb-1">
                                 {node.info && (
                                     <ProductLicenseInfoDescription licenseInfo={node.info} className="mb-0" />
                                 )}
-                                <Text className="ml-3 mb-0">
-                                    <small className="text-muted">
-                                        Created <Timestamp date={node.createdAt} />
-                                    </small>
-                                </Text>
-                                <Text className="ml-3 mb-0 text-muted">
-                                    <small>v{node.version}</small>
-                                </Text>
                             </div>
+                            <Text className="mb-2">
+                                <small className="text-muted">
+                                    Created <Timestamp date={node.createdAt} />
+                                </small>
+                            </Text>
                             <ProductLicenseValidity license={node} />
                         </div>
                         {!node?.revokedAt && !isProductLicenseExpired(node?.info?.expiresAt ?? 0) && (
@@ -129,6 +126,10 @@ export const SiteAdminProductLicenseNode: React.FunctionComponent<
                         <div className="d-flex">
                             <Label>License Key ID</Label>
                             <Text className="ml-3">{uuid}</Text>
+                        </div>
+                        <div className="d-flex">
+                            <Label>Key Version</Label>
+                            <Text className="ml-3">{node.version}</Text>
                         </div>
                         {node.version > 1 && (
                             <>

@@ -20,8 +20,6 @@ import type { BlockProps, QueryBlock } from '../..'
 import type { AuthenticatedUser } from '../../../auth'
 import { SearchPatternType } from '../../../graphql-operations'
 import type { OwnConfigProps } from '../../../own/OwnConfigProps'
-import { submitSearch } from '../../../search/helpers'
-import { setSearchMode, useNavbarQueryState } from '../../../stores'
 import { blockKeymap, focusEditor as focusCodeMirrorInput } from '../../codemirror-utils'
 import type { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
@@ -72,10 +70,6 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         const [editor, setEditor] = useState<EditorView | null>(null)
         const searchResults = useObservable(output ?? of(undefined))
         const [executedQuery, setExecutedQuery] = useState<string>(input.query)
-
-        const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
-        const searchMode = useNavbarQueryState(state => state.searchMode)
-        const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
 
         const onInputChange = useCallback(
             (query: string) => onBlockInputChange(id, { type: 'query', input: { query } }),
@@ -198,11 +192,6 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                                 platformContext={props.platformContext}
                                 openMatchesInNewTab={true}
                                 executedQuery={executedQuery}
-                                searchMode={searchMode}
-                                setSearchMode={setSearchMode}
-                                submitSearch={submitSearch}
-                                caseSensitive={caseSensitive}
-                                searchQueryFromURL={submittedURLQuery}
                                 showQueryExamplesOnNoResultsPage={false}
                             />
                         </div>

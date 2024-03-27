@@ -10,14 +10,6 @@ go_test(
         "repository_test.go",
         "site_admin_test.go",
     ],
-    goarch = select({
-        "//:darwin_docker_e2e_go": "arm64",
-        "//conditions:default": None,
-    }),  # Force targeting darwin/arm64 if we're building for locally running e2e tests.
-    goos = select({
-        "//:darwin_docker_e2e_go": "darwin",
-        "//conditions:default": None,
-    }),  # Force targeting darwin/arm64 if we're building for locally running e2e tests.
     visibility = ["//testing:__subpackages__"],
     deps = [
         "//internal/auth",

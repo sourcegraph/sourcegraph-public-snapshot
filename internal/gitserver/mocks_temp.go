@@ -15,6 +15,7 @@ import (
 
 	diff "github.com/sourcegraph/go-diff/diff"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
+	gitolite "github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	perforce "github.com/sourcegraph/sourcegraph/internal/perforce"
@@ -27,30 +28,15 @@ type MockClient struct {
 	// AddrForRepoFunc is an instance of a mock function object controlling
 	// the behavior of the method AddrForRepo.
 	AddrForRepoFunc *ClientAddrForRepoFunc
-	// AddrsFunc is an instance of a mock function object controlling the
-	// behavior of the method Addrs.
-	AddrsFunc *ClientAddrsFunc
 	// ArchiveReaderFunc is an instance of a mock function object
 	// controlling the behavior of the method ArchiveReader.
 	ArchiveReaderFunc *ClientArchiveReaderFunc
-	// BatchLogFunc is an instance of a mock function object controlling the
-	// behavior of the method BatchLog.
-	BatchLogFunc *ClientBatchLogFunc
-	// BlameFileFunc is an instance of a mock function object controlling
-	// the behavior of the method BlameFile.
-	BlameFileFunc *ClientBlameFileFunc
 	// BranchesContainingFunc is an instance of a mock function object
 	// controlling the behavior of the method BranchesContaining.
 	BranchesContainingFunc *ClientBranchesContainingFunc
 	// CheckPerforceCredentialsFunc is an instance of a mock function object
 	// controlling the behavior of the method CheckPerforceCredentials.
 	CheckPerforceCredentialsFunc *ClientCheckPerforceCredentialsFunc
-	// CommitDateFunc is an instance of a mock function object controlling
-	// the behavior of the method CommitDate.
-	CommitDateFunc *ClientCommitDateFunc
-	// CommitExistsFunc is an instance of a mock function object controlling
-	// the behavior of the method CommitExists.
-	CommitExistsFunc *ClientCommitExistsFunc
 	// CommitGraphFunc is an instance of a mock function object controlling
 	// the behavior of the method CommitGraph.
 	CommitGraphFunc *ClientCommitGraphFunc
@@ -60,9 +46,6 @@ type MockClient struct {
 	// CommitsFunc is an instance of a mock function object controlling the
 	// behavior of the method Commits.
 	CommitsFunc *ClientCommitsFunc
-	// CommitsExistFunc is an instance of a mock function object controlling
-	// the behavior of the method CommitsExist.
-	CommitsExistFunc *ClientCommitsExistFunc
 	// CommitsUniqueToBranchFunc is an instance of a mock function object
 	// controlling the behavior of the method CommitsUniqueToBranch.
 	CommitsUniqueToBranchFunc *ClientCommitsUniqueToBranchFunc
@@ -90,9 +73,6 @@ type MockClient struct {
 	// GetCommitFunc is an instance of a mock function object controlling
 	// the behavior of the method GetCommit.
 	GetCommitFunc *ClientGetCommitFunc
-	// GetCommitsFunc is an instance of a mock function object controlling
-	// the behavior of the method GetCommits.
-	GetCommitsFunc *ClientGetCommitsFunc
 	// GetDefaultBranchFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDefaultBranch.
 	GetDefaultBranchFunc *ClientGetDefaultBranchFunc
@@ -102,9 +82,6 @@ type MockClient struct {
 	// HasCommitAfterFunc is an instance of a mock function object
 	// controlling the behavior of the method HasCommitAfter.
 	HasCommitAfterFunc *ClientHasCommitAfterFunc
-	// HeadFunc is an instance of a mock function object controlling the
-	// behavior of the method Head.
-	HeadFunc *ClientHeadFunc
 	// IsPerforcePathCloneableFunc is an instance of a mock function object
 	// controlling the behavior of the method IsPerforcePathCloneable.
 	IsPerforcePathCloneableFunc *ClientIsPerforcePathCloneableFunc
@@ -120,6 +97,9 @@ type MockClient struct {
 	// ListDirectoryChildrenFunc is an instance of a mock function object
 	// controlling the behavior of the method ListDirectoryChildren.
 	ListDirectoryChildrenFunc *ClientListDirectoryChildrenFunc
+	// ListGitoliteReposFunc is an instance of a mock function object
+	// controlling the behavior of the method ListGitoliteRepos.
+	ListGitoliteReposFunc *ClientListGitoliteReposFunc
 	// ListRefsFunc is an instance of a mock function object controlling the
 	// behavior of the method ListRefs.
 	ListRefsFunc *ClientListRefsFunc
@@ -156,9 +136,6 @@ type MockClient struct {
 	// ReadDirFunc is an instance of a mock function object controlling the
 	// behavior of the method ReadDir.
 	ReadDirFunc *ClientReadDirFunc
-	// ReadFileFunc is an instance of a mock function object controlling the
-	// behavior of the method ReadFile.
-	ReadFileFunc *ClientReadFileFunc
 	// RefDescriptionsFunc is an instance of a mock function object
 	// controlling the behavior of the method RefDescriptions.
 	RefDescriptionsFunc *ClientRefDescriptionsFunc
@@ -177,9 +154,6 @@ type MockClient struct {
 	// ResolveRevisionFunc is an instance of a mock function object
 	// controlling the behavior of the method ResolveRevision.
 	ResolveRevisionFunc *ClientResolveRevisionFunc
-	// ResolveRevisionsFunc is an instance of a mock function object
-	// controlling the behavior of the method ResolveRevisions.
-	ResolveRevisionsFunc *ClientResolveRevisionsFunc
 	// RevListFunc is an instance of a mock function object controlling the
 	// behavior of the method RevList.
 	RevListFunc *ClientRevListFunc
@@ -212,23 +186,8 @@ func NewMockClient() *MockClient {
 				return
 			},
 		},
-		AddrsFunc: &ClientAddrsFunc{
-			defaultHook: func() (r0 []string) {
-				return
-			},
-		},
 		ArchiveReaderFunc: &ClientArchiveReaderFunc{
 			defaultHook: func(context.Context, api.RepoName, ArchiveOptions) (r0 io.ReadCloser, r1 error) {
-				return
-			},
-		},
-		BatchLogFunc: &ClientBatchLogFunc{
-			defaultHook: func(context.Context, BatchLogOptions, BatchLogCallback) (r0 error) {
-				return
-			},
-		},
-		BlameFileFunc: &ClientBlameFileFunc{
-			defaultHook: func(context.Context, api.RepoName, string, *BlameOptions) (r0 []*Hunk, r1 error) {
 				return
 			},
 		},
@@ -239,16 +198,6 @@ func NewMockClient() *MockClient {
 		},
 		CheckPerforceCredentialsFunc: &ClientCheckPerforceCredentialsFunc{
 			defaultHook: func(context.Context, protocol.PerforceConnectionDetails) (r0 error) {
-				return
-			},
-		},
-		CommitDateFunc: &ClientCommitDateFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID) (r0 string, r1 time.Time, r2 bool, r3 error) {
-				return
-			},
-		},
-		CommitExistsFunc: &ClientCommitExistsFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -264,11 +213,6 @@ func NewMockClient() *MockClient {
 		},
 		CommitsFunc: &ClientCommitsFunc{
 			defaultHook: func(context.Context, api.RepoName, CommitsOptions) (r0 []*gitdomain.Commit, r1 error) {
-				return
-			},
-		},
-		CommitsExistFunc: &ClientCommitsExistFunc{
-			defaultHook: func(context.Context, []api.RepoCommit) (r0 []bool, r1 error) {
 				return
 			},
 		},
@@ -313,12 +257,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		GetCommitFunc: &ClientGetCommitFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, ResolveRevisionOptions) (r0 *gitdomain.Commit, r1 error) {
-				return
-			},
-		},
-		GetCommitsFunc: &ClientGetCommitsFunc{
-			defaultHook: func(context.Context, []api.RepoCommit, bool) (r0 []*gitdomain.Commit, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, api.CommitID) (r0 *gitdomain.Commit, r1 error) {
 				return
 			},
 		},
@@ -334,11 +273,6 @@ func NewMockClient() *MockClient {
 		},
 		HasCommitAfterFunc: &ClientHasCommitAfterFunc{
 			defaultHook: func(context.Context, api.RepoName, string, string) (r0 bool, r1 error) {
-				return
-			},
-		},
-		HeadFunc: &ClientHeadFunc{
-			defaultHook: func(context.Context, api.RepoName) (r0 string, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -358,12 +292,17 @@ func NewMockClient() *MockClient {
 			},
 		},
 		ListBranchesFunc: &ClientListBranchesFunc{
-			defaultHook: func(context.Context, api.RepoName, BranchesOptions) (r0 []*gitdomain.Branch, r1 error) {
+			defaultHook: func(context.Context, api.RepoName) (r0 []*gitdomain.Branch, r1 error) {
 				return
 			},
 		},
 		ListDirectoryChildrenFunc: &ClientListDirectoryChildrenFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID, []string) (r0 map[string][]string, r1 error) {
+				return
+			},
+		},
+		ListGitoliteReposFunc: &ClientListGitoliteReposFunc{
+			defaultHook: func(context.Context, string) (r0 []*gitolite.Repo, r1 error) {
 				return
 			},
 		},
@@ -388,7 +327,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		MergeBaseFunc: &ClientMergeBaseFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (r0 api.CommitID, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, string, string) (r0 api.CommitID, r1 error) {
 				return
 			},
 		},
@@ -427,11 +366,6 @@ func NewMockClient() *MockClient {
 				return
 			},
 		},
-		ReadFileFunc: &ClientReadFileFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, string) (r0 []byte, r1 error) {
-				return
-			},
-		},
 		RefDescriptionsFunc: &ClientRefDescriptionsFunc{
 			defaultHook: func(context.Context, api.RepoName, ...string) (r0 map[string][]gitdomain.RefDescription, r1 error) {
 				return
@@ -443,7 +377,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		RepoCloneProgressFunc: &ClientRepoCloneProgressFunc{
-			defaultHook: func(context.Context, ...api.RepoName) (r0 *protocol.RepoCloneProgressResponse, r1 error) {
+			defaultHook: func(context.Context, api.RepoName) (r0 *protocol.RepoCloneProgress, r1 error) {
 				return
 			},
 		},
@@ -453,17 +387,12 @@ func NewMockClient() *MockClient {
 			},
 		},
 		RequestRepoUpdateFunc: &ClientRequestRepoUpdateFunc{
-			defaultHook: func(context.Context, api.RepoName, time.Duration) (r0 *protocol.RepoUpdateResponse, r1 error) {
+			defaultHook: func(context.Context, api.RepoName) (r0 *protocol.RepoUpdateResponse, r1 error) {
 				return
 			},
 		},
 		ResolveRevisionFunc: &ClientResolveRevisionFunc{
 			defaultHook: func(context.Context, api.RepoName, string, ResolveRevisionOptions) (r0 api.CommitID, r1 error) {
-				return
-			},
-		},
-		ResolveRevisionsFunc: &ClientResolveRevisionsFunc{
-			defaultHook: func(context.Context, api.RepoName, []protocol.RevisionSpecifier) (r0 []string, r1 error) {
 				return
 			},
 		},
@@ -514,24 +443,9 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.AddrForRepo")
 			},
 		},
-		AddrsFunc: &ClientAddrsFunc{
-			defaultHook: func() []string {
-				panic("unexpected invocation of MockClient.Addrs")
-			},
-		},
 		ArchiveReaderFunc: &ClientArchiveReaderFunc{
 			defaultHook: func(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error) {
 				panic("unexpected invocation of MockClient.ArchiveReader")
-			},
-		},
-		BatchLogFunc: &ClientBatchLogFunc{
-			defaultHook: func(context.Context, BatchLogOptions, BatchLogCallback) error {
-				panic("unexpected invocation of MockClient.BatchLog")
-			},
-		},
-		BlameFileFunc: &ClientBlameFileFunc{
-			defaultHook: func(context.Context, api.RepoName, string, *BlameOptions) ([]*Hunk, error) {
-				panic("unexpected invocation of MockClient.BlameFile")
 			},
 		},
 		BranchesContainingFunc: &ClientBranchesContainingFunc{
@@ -542,16 +456,6 @@ func NewStrictMockClient() *MockClient {
 		CheckPerforceCredentialsFunc: &ClientCheckPerforceCredentialsFunc{
 			defaultHook: func(context.Context, protocol.PerforceConnectionDetails) error {
 				panic("unexpected invocation of MockClient.CheckPerforceCredentials")
-			},
-		},
-		CommitDateFunc: &ClientCommitDateFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID) (string, time.Time, bool, error) {
-				panic("unexpected invocation of MockClient.CommitDate")
-			},
-		},
-		CommitExistsFunc: &ClientCommitExistsFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID) (bool, error) {
-				panic("unexpected invocation of MockClient.CommitExists")
 			},
 		},
 		CommitGraphFunc: &ClientCommitGraphFunc{
@@ -567,11 +471,6 @@ func NewStrictMockClient() *MockClient {
 		CommitsFunc: &ClientCommitsFunc{
 			defaultHook: func(context.Context, api.RepoName, CommitsOptions) ([]*gitdomain.Commit, error) {
 				panic("unexpected invocation of MockClient.Commits")
-			},
-		},
-		CommitsExistFunc: &ClientCommitsExistFunc{
-			defaultHook: func(context.Context, []api.RepoCommit) ([]bool, error) {
-				panic("unexpected invocation of MockClient.CommitsExist")
 			},
 		},
 		CommitsUniqueToBranchFunc: &ClientCommitsUniqueToBranchFunc{
@@ -615,13 +514,8 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		GetCommitFunc: &ClientGetCommitFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, ResolveRevisionOptions) (*gitdomain.Commit, error) {
+			defaultHook: func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error) {
 				panic("unexpected invocation of MockClient.GetCommit")
-			},
-		},
-		GetCommitsFunc: &ClientGetCommitsFunc{
-			defaultHook: func(context.Context, []api.RepoCommit, bool) ([]*gitdomain.Commit, error) {
-				panic("unexpected invocation of MockClient.GetCommits")
 			},
 		},
 		GetDefaultBranchFunc: &ClientGetDefaultBranchFunc{
@@ -637,11 +531,6 @@ func NewStrictMockClient() *MockClient {
 		HasCommitAfterFunc: &ClientHasCommitAfterFunc{
 			defaultHook: func(context.Context, api.RepoName, string, string) (bool, error) {
 				panic("unexpected invocation of MockClient.HasCommitAfter")
-			},
-		},
-		HeadFunc: &ClientHeadFunc{
-			defaultHook: func(context.Context, api.RepoName) (string, bool, error) {
-				panic("unexpected invocation of MockClient.Head")
 			},
 		},
 		IsPerforcePathCloneableFunc: &ClientIsPerforcePathCloneableFunc{
@@ -660,13 +549,18 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		ListBranchesFunc: &ClientListBranchesFunc{
-			defaultHook: func(context.Context, api.RepoName, BranchesOptions) ([]*gitdomain.Branch, error) {
+			defaultHook: func(context.Context, api.RepoName) ([]*gitdomain.Branch, error) {
 				panic("unexpected invocation of MockClient.ListBranches")
 			},
 		},
 		ListDirectoryChildrenFunc: &ClientListDirectoryChildrenFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID, []string) (map[string][]string, error) {
 				panic("unexpected invocation of MockClient.ListDirectoryChildren")
+			},
+		},
+		ListGitoliteReposFunc: &ClientListGitoliteReposFunc{
+			defaultHook: func(context.Context, string) ([]*gitolite.Repo, error) {
+				panic("unexpected invocation of MockClient.ListGitoliteRepos")
 			},
 		},
 		ListRefsFunc: &ClientListRefsFunc{
@@ -690,7 +584,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		MergeBaseFunc: &ClientMergeBaseFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error) {
+			defaultHook: func(context.Context, api.RepoName, string, string) (api.CommitID, error) {
 				panic("unexpected invocation of MockClient.MergeBase")
 			},
 		},
@@ -729,11 +623,6 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.ReadDir")
 			},
 		},
-		ReadFileFunc: &ClientReadFileFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error) {
-				panic("unexpected invocation of MockClient.ReadFile")
-			},
-		},
 		RefDescriptionsFunc: &ClientRefDescriptionsFunc{
 			defaultHook: func(context.Context, api.RepoName, ...string) (map[string][]gitdomain.RefDescription, error) {
 				panic("unexpected invocation of MockClient.RefDescriptions")
@@ -745,7 +634,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		RepoCloneProgressFunc: &ClientRepoCloneProgressFunc{
-			defaultHook: func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
+			defaultHook: func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error) {
 				panic("unexpected invocation of MockClient.RepoCloneProgress")
 			},
 		},
@@ -755,18 +644,13 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		RequestRepoUpdateFunc: &ClientRequestRepoUpdateFunc{
-			defaultHook: func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error) {
+			defaultHook: func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
 				panic("unexpected invocation of MockClient.RequestRepoUpdate")
 			},
 		},
 		ResolveRevisionFunc: &ClientResolveRevisionFunc{
 			defaultHook: func(context.Context, api.RepoName, string, ResolveRevisionOptions) (api.CommitID, error) {
 				panic("unexpected invocation of MockClient.ResolveRevision")
-			},
-		},
-		ResolveRevisionsFunc: &ClientResolveRevisionsFunc{
-			defaultHook: func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error) {
-				panic("unexpected invocation of MockClient.ResolveRevisions")
 			},
 		},
 		RevListFunc: &ClientRevListFunc{
@@ -814,29 +698,14 @@ func NewMockClientFrom(i Client) *MockClient {
 		AddrForRepoFunc: &ClientAddrForRepoFunc{
 			defaultHook: i.AddrForRepo,
 		},
-		AddrsFunc: &ClientAddrsFunc{
-			defaultHook: i.Addrs,
-		},
 		ArchiveReaderFunc: &ClientArchiveReaderFunc{
 			defaultHook: i.ArchiveReader,
-		},
-		BatchLogFunc: &ClientBatchLogFunc{
-			defaultHook: i.BatchLog,
-		},
-		BlameFileFunc: &ClientBlameFileFunc{
-			defaultHook: i.BlameFile,
 		},
 		BranchesContainingFunc: &ClientBranchesContainingFunc{
 			defaultHook: i.BranchesContaining,
 		},
 		CheckPerforceCredentialsFunc: &ClientCheckPerforceCredentialsFunc{
 			defaultHook: i.CheckPerforceCredentials,
-		},
-		CommitDateFunc: &ClientCommitDateFunc{
-			defaultHook: i.CommitDate,
-		},
-		CommitExistsFunc: &ClientCommitExistsFunc{
-			defaultHook: i.CommitExists,
 		},
 		CommitGraphFunc: &ClientCommitGraphFunc{
 			defaultHook: i.CommitGraph,
@@ -846,9 +715,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		CommitsFunc: &ClientCommitsFunc{
 			defaultHook: i.Commits,
-		},
-		CommitsExistFunc: &ClientCommitsExistFunc{
-			defaultHook: i.CommitsExist,
 		},
 		CommitsUniqueToBranchFunc: &ClientCommitsUniqueToBranchFunc{
 			defaultHook: i.CommitsUniqueToBranch,
@@ -877,9 +743,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		GetCommitFunc: &ClientGetCommitFunc{
 			defaultHook: i.GetCommit,
 		},
-		GetCommitsFunc: &ClientGetCommitsFunc{
-			defaultHook: i.GetCommits,
-		},
 		GetDefaultBranchFunc: &ClientGetDefaultBranchFunc{
 			defaultHook: i.GetDefaultBranch,
 		},
@@ -888,9 +751,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		HasCommitAfterFunc: &ClientHasCommitAfterFunc{
 			defaultHook: i.HasCommitAfter,
-		},
-		HeadFunc: &ClientHeadFunc{
-			defaultHook: i.Head,
 		},
 		IsPerforcePathCloneableFunc: &ClientIsPerforcePathCloneableFunc{
 			defaultHook: i.IsPerforcePathCloneable,
@@ -906,6 +766,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		ListDirectoryChildrenFunc: &ClientListDirectoryChildrenFunc{
 			defaultHook: i.ListDirectoryChildren,
+		},
+		ListGitoliteReposFunc: &ClientListGitoliteReposFunc{
+			defaultHook: i.ListGitoliteRepos,
 		},
 		ListRefsFunc: &ClientListRefsFunc{
 			defaultHook: i.ListRefs,
@@ -943,9 +806,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		ReadDirFunc: &ClientReadDirFunc{
 			defaultHook: i.ReadDir,
 		},
-		ReadFileFunc: &ClientReadFileFunc{
-			defaultHook: i.ReadFile,
-		},
 		RefDescriptionsFunc: &ClientRefDescriptionsFunc{
 			defaultHook: i.RefDescriptions,
 		},
@@ -963,9 +823,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		ResolveRevisionFunc: &ClientResolveRevisionFunc{
 			defaultHook: i.ResolveRevision,
-		},
-		ResolveRevisionsFunc: &ClientResolveRevisionsFunc{
-			defaultHook: i.ResolveRevisions,
 		},
 		RevListFunc: &ClientRevListFunc{
 			defaultHook: i.RevList,
@@ -1095,104 +952,6 @@ func (c ClientAddrForRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// ClientAddrsFunc describes the behavior when the Addrs method of the
-// parent MockClient instance is invoked.
-type ClientAddrsFunc struct {
-	defaultHook func() []string
-	hooks       []func() []string
-	history     []ClientAddrsFuncCall
-	mutex       sync.Mutex
-}
-
-// Addrs delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockClient) Addrs() []string {
-	r0 := m.AddrsFunc.nextHook()()
-	m.AddrsFunc.appendCall(ClientAddrsFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Addrs method of the
-// parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientAddrsFunc) SetDefaultHook(hook func() []string) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Addrs method of the parent MockClient instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *ClientAddrsFunc) PushHook(hook func() []string) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientAddrsFunc) SetDefaultReturn(r0 []string) {
-	f.SetDefaultHook(func() []string {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientAddrsFunc) PushReturn(r0 []string) {
-	f.PushHook(func() []string {
-		return r0
-	})
-}
-
-func (f *ClientAddrsFunc) nextHook() func() []string {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientAddrsFunc) appendCall(r0 ClientAddrsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientAddrsFuncCall objects describing the
-// invocations of this function.
-func (f *ClientAddrsFunc) History() []ClientAddrsFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientAddrsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientAddrsFuncCall is an object that describes an invocation of method
-// Addrs on an instance of MockClient.
-type ClientAddrsFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []string
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientAddrsFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientAddrsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // ClientArchiveReaderFunc describes the behavior when the ArchiveReader
 // method of the parent MockClient instance is invoked.
 type ClientArchiveReaderFunc struct {
@@ -1300,226 +1059,6 @@ func (c ClientArchiveReaderFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientArchiveReaderFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ClientBatchLogFunc describes the behavior when the BatchLog method of the
-// parent MockClient instance is invoked.
-type ClientBatchLogFunc struct {
-	defaultHook func(context.Context, BatchLogOptions, BatchLogCallback) error
-	hooks       []func(context.Context, BatchLogOptions, BatchLogCallback) error
-	history     []ClientBatchLogFuncCall
-	mutex       sync.Mutex
-}
-
-// BatchLog delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockClient) BatchLog(v0 context.Context, v1 BatchLogOptions, v2 BatchLogCallback) error {
-	r0 := m.BatchLogFunc.nextHook()(v0, v1, v2)
-	m.BatchLogFunc.appendCall(ClientBatchLogFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the BatchLog method of
-// the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientBatchLogFunc) SetDefaultHook(hook func(context.Context, BatchLogOptions, BatchLogCallback) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// BatchLog method of the parent MockClient instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *ClientBatchLogFunc) PushHook(hook func(context.Context, BatchLogOptions, BatchLogCallback) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientBatchLogFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, BatchLogOptions, BatchLogCallback) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientBatchLogFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, BatchLogOptions, BatchLogCallback) error {
-		return r0
-	})
-}
-
-func (f *ClientBatchLogFunc) nextHook() func(context.Context, BatchLogOptions, BatchLogCallback) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientBatchLogFunc) appendCall(r0 ClientBatchLogFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientBatchLogFuncCall objects describing
-// the invocations of this function.
-func (f *ClientBatchLogFunc) History() []ClientBatchLogFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientBatchLogFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientBatchLogFuncCall is an object that describes an invocation of
-// method BatchLog on an instance of MockClient.
-type ClientBatchLogFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 BatchLogOptions
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 BatchLogCallback
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientBatchLogFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientBatchLogFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// ClientBlameFileFunc describes the behavior when the BlameFile method of
-// the parent MockClient instance is invoked.
-type ClientBlameFileFunc struct {
-	defaultHook func(context.Context, api.RepoName, string, *BlameOptions) ([]*Hunk, error)
-	hooks       []func(context.Context, api.RepoName, string, *BlameOptions) ([]*Hunk, error)
-	history     []ClientBlameFileFuncCall
-	mutex       sync.Mutex
-}
-
-// BlameFile delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockClient) BlameFile(v0 context.Context, v1 api.RepoName, v2 string, v3 *BlameOptions) ([]*Hunk, error) {
-	r0, r1 := m.BlameFileFunc.nextHook()(v0, v1, v2, v3)
-	m.BlameFileFunc.appendCall(ClientBlameFileFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the BlameFile method of
-// the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientBlameFileFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, *BlameOptions) ([]*Hunk, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// BlameFile method of the parent MockClient instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientBlameFileFunc) PushHook(hook func(context.Context, api.RepoName, string, *BlameOptions) ([]*Hunk, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientBlameFileFunc) SetDefaultReturn(r0 []*Hunk, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string, *BlameOptions) ([]*Hunk, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientBlameFileFunc) PushReturn(r0 []*Hunk, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, string, *BlameOptions) ([]*Hunk, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientBlameFileFunc) nextHook() func(context.Context, api.RepoName, string, *BlameOptions) ([]*Hunk, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientBlameFileFunc) appendCall(r0 ClientBlameFileFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientBlameFileFuncCall objects describing
-// the invocations of this function.
-func (f *ClientBlameFileFunc) History() []ClientBlameFileFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientBlameFileFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientBlameFileFuncCall is an object that describes an invocation of
-// method BlameFile on an instance of MockClient.
-type ClientBlameFileFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 *BlameOptions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*Hunk
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientBlameFileFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientBlameFileFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -1739,232 +1278,6 @@ func (c ClientCheckPerforceCredentialsFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientCheckPerforceCredentialsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// ClientCommitDateFunc describes the behavior when the CommitDate method of
-// the parent MockClient instance is invoked.
-type ClientCommitDateFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID) (string, time.Time, bool, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID) (string, time.Time, bool, error)
-	history     []ClientCommitDateFuncCall
-	mutex       sync.Mutex
-}
-
-// CommitDate delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockClient) CommitDate(v0 context.Context, v1 api.RepoName, v2 api.CommitID) (string, time.Time, bool, error) {
-	r0, r1, r2, r3 := m.CommitDateFunc.nextHook()(v0, v1, v2)
-	m.CommitDateFunc.appendCall(ClientCommitDateFuncCall{v0, v1, v2, r0, r1, r2, r3})
-	return r0, r1, r2, r3
-}
-
-// SetDefaultHook sets function that is called when the CommitDate method of
-// the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientCommitDateFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID) (string, time.Time, bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// CommitDate method of the parent MockClient instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientCommitDateFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID) (string, time.Time, bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientCommitDateFunc) SetDefaultReturn(r0 string, r1 time.Time, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID) (string, time.Time, bool, error) {
-		return r0, r1, r2, r3
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientCommitDateFunc) PushReturn(r0 string, r1 time.Time, r2 bool, r3 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID) (string, time.Time, bool, error) {
-		return r0, r1, r2, r3
-	})
-}
-
-func (f *ClientCommitDateFunc) nextHook() func(context.Context, api.RepoName, api.CommitID) (string, time.Time, bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientCommitDateFunc) appendCall(r0 ClientCommitDateFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientCommitDateFuncCall objects describing
-// the invocations of this function.
-func (f *ClientCommitDateFunc) History() []ClientCommitDateFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientCommitDateFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientCommitDateFuncCall is an object that describes an invocation of
-// method CommitDate on an instance of MockClient.
-type ClientCommitDateFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.CommitID
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 time.Time
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 bool
-	// Result3 is the value of the 4th result returned from this method
-	// invocation.
-	Result3 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientCommitDateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientCommitDateFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
-}
-
-// ClientCommitExistsFunc describes the behavior when the CommitExists
-// method of the parent MockClient instance is invoked.
-type ClientCommitExistsFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID) (bool, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID) (bool, error)
-	history     []ClientCommitExistsFuncCall
-	mutex       sync.Mutex
-}
-
-// CommitExists delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockClient) CommitExists(v0 context.Context, v1 api.RepoName, v2 api.CommitID) (bool, error) {
-	r0, r1 := m.CommitExistsFunc.nextHook()(v0, v1, v2)
-	m.CommitExistsFunc.appendCall(ClientCommitExistsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the CommitExists method
-// of the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientCommitExistsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID) (bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// CommitExists method of the parent MockClient instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientCommitExistsFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID) (bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientCommitExistsFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID) (bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientCommitExistsFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID) (bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientCommitExistsFunc) nextHook() func(context.Context, api.RepoName, api.CommitID) (bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientCommitExistsFunc) appendCall(r0 ClientCommitExistsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientCommitExistsFuncCall objects
-// describing the invocations of this function.
-func (f *ClientCommitExistsFunc) History() []ClientCommitExistsFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientCommitExistsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientCommitExistsFuncCall is an object that describes an invocation of
-// method CommitExists on an instance of MockClient.
-type ClientCommitExistsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.CommitID
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientCommitExistsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientCommitExistsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // ClientCommitGraphFunc describes the behavior when the CommitGraph method
@@ -2294,113 +1607,6 @@ func (c ClientCommitsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientCommitsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ClientCommitsExistFunc describes the behavior when the CommitsExist
-// method of the parent MockClient instance is invoked.
-type ClientCommitsExistFunc struct {
-	defaultHook func(context.Context, []api.RepoCommit) ([]bool, error)
-	hooks       []func(context.Context, []api.RepoCommit) ([]bool, error)
-	history     []ClientCommitsExistFuncCall
-	mutex       sync.Mutex
-}
-
-// CommitsExist delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockClient) CommitsExist(v0 context.Context, v1 []api.RepoCommit) ([]bool, error) {
-	r0, r1 := m.CommitsExistFunc.nextHook()(v0, v1)
-	m.CommitsExistFunc.appendCall(ClientCommitsExistFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the CommitsExist method
-// of the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientCommitsExistFunc) SetDefaultHook(hook func(context.Context, []api.RepoCommit) ([]bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// CommitsExist method of the parent MockClient instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientCommitsExistFunc) PushHook(hook func(context.Context, []api.RepoCommit) ([]bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientCommitsExistFunc) SetDefaultReturn(r0 []bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, []api.RepoCommit) ([]bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientCommitsExistFunc) PushReturn(r0 []bool, r1 error) {
-	f.PushHook(func(context.Context, []api.RepoCommit) ([]bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientCommitsExistFunc) nextHook() func(context.Context, []api.RepoCommit) ([]bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientCommitsExistFunc) appendCall(r0 ClientCommitsExistFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientCommitsExistFuncCall objects
-// describing the invocations of this function.
-func (f *ClientCommitsExistFunc) History() []ClientCommitsExistFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientCommitsExistFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientCommitsExistFuncCall is an object that describes an invocation of
-// method CommitsExist on an instance of MockClient.
-type ClientCommitsExistFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []api.RepoCommit
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientCommitsExistFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientCommitsExistFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -3303,23 +2509,23 @@ func (c ClientGetBehindAheadFuncCall) Results() []interface{} {
 // ClientGetCommitFunc describes the behavior when the GetCommit method of
 // the parent MockClient instance is invoked.
 type ClientGetCommitFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID, ResolveRevisionOptions) (*gitdomain.Commit, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID, ResolveRevisionOptions) (*gitdomain.Commit, error)
+	defaultHook func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error)
+	hooks       []func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error)
 	history     []ClientGetCommitFuncCall
 	mutex       sync.Mutex
 }
 
 // GetCommit delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockClient) GetCommit(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 ResolveRevisionOptions) (*gitdomain.Commit, error) {
-	r0, r1 := m.GetCommitFunc.nextHook()(v0, v1, v2, v3)
-	m.GetCommitFunc.appendCall(ClientGetCommitFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockClient) GetCommit(v0 context.Context, v1 api.RepoName, v2 api.CommitID) (*gitdomain.Commit, error) {
+	r0, r1 := m.GetCommitFunc.nextHook()(v0, v1, v2)
+	m.GetCommitFunc.appendCall(ClientGetCommitFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the GetCommit method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientGetCommitFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, ResolveRevisionOptions) (*gitdomain.Commit, error)) {
+func (f *ClientGetCommitFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error)) {
 	f.defaultHook = hook
 }
 
@@ -3327,7 +2533,7 @@ func (f *ClientGetCommitFunc) SetDefaultHook(hook func(context.Context, api.Repo
 // GetCommit method of the parent MockClient instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientGetCommitFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, ResolveRevisionOptions) (*gitdomain.Commit, error)) {
+func (f *ClientGetCommitFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3336,19 +2542,19 @@ func (f *ClientGetCommitFunc) PushHook(hook func(context.Context, api.RepoName, 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientGetCommitFunc) SetDefaultReturn(r0 *gitdomain.Commit, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, ResolveRevisionOptions) (*gitdomain.Commit, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientGetCommitFunc) PushReturn(r0 *gitdomain.Commit, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID, ResolveRevisionOptions) (*gitdomain.Commit, error) {
+	f.PushHook(func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientGetCommitFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, ResolveRevisionOptions) (*gitdomain.Commit, error) {
+func (f *ClientGetCommitFunc) nextHook() func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3390,9 +2596,6 @@ type ClientGetCommitFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 api.CommitID
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 ResolveRevisionOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *gitdomain.Commit
@@ -3404,122 +2607,12 @@ type ClientGetCommitFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientGetCommitFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientGetCommitFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ClientGetCommitsFunc describes the behavior when the GetCommits method of
-// the parent MockClient instance is invoked.
-type ClientGetCommitsFunc struct {
-	defaultHook func(context.Context, []api.RepoCommit, bool) ([]*gitdomain.Commit, error)
-	hooks       []func(context.Context, []api.RepoCommit, bool) ([]*gitdomain.Commit, error)
-	history     []ClientGetCommitsFuncCall
-	mutex       sync.Mutex
-}
-
-// GetCommits delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockClient) GetCommits(v0 context.Context, v1 []api.RepoCommit, v2 bool) ([]*gitdomain.Commit, error) {
-	r0, r1 := m.GetCommitsFunc.nextHook()(v0, v1, v2)
-	m.GetCommitsFunc.appendCall(ClientGetCommitsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetCommits method of
-// the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientGetCommitsFunc) SetDefaultHook(hook func(context.Context, []api.RepoCommit, bool) ([]*gitdomain.Commit, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetCommits method of the parent MockClient instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientGetCommitsFunc) PushHook(hook func(context.Context, []api.RepoCommit, bool) ([]*gitdomain.Commit, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientGetCommitsFunc) SetDefaultReturn(r0 []*gitdomain.Commit, r1 error) {
-	f.SetDefaultHook(func(context.Context, []api.RepoCommit, bool) ([]*gitdomain.Commit, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientGetCommitsFunc) PushReturn(r0 []*gitdomain.Commit, r1 error) {
-	f.PushHook(func(context.Context, []api.RepoCommit, bool) ([]*gitdomain.Commit, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientGetCommitsFunc) nextHook() func(context.Context, []api.RepoCommit, bool) ([]*gitdomain.Commit, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientGetCommitsFunc) appendCall(r0 ClientGetCommitsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientGetCommitsFuncCall objects describing
-// the invocations of this function.
-func (f *ClientGetCommitsFunc) History() []ClientGetCommitsFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientGetCommitsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientGetCommitsFuncCall is an object that describes an invocation of
-// method GetCommits on an instance of MockClient.
-type ClientGetCommitsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []api.RepoCommit
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 bool
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*gitdomain.Commit
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientGetCommitsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c ClientGetCommitsFuncCall) Results() []interface{} {
+func (c ClientGetCommitFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -3861,116 +2954,6 @@ func (c ClientHasCommitAfterFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// ClientHeadFunc describes the behavior when the Head method of the parent
-// MockClient instance is invoked.
-type ClientHeadFunc struct {
-	defaultHook func(context.Context, api.RepoName) (string, bool, error)
-	hooks       []func(context.Context, api.RepoName) (string, bool, error)
-	history     []ClientHeadFuncCall
-	mutex       sync.Mutex
-}
-
-// Head delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockClient) Head(v0 context.Context, v1 api.RepoName) (string, bool, error) {
-	r0, r1, r2 := m.HeadFunc.nextHook()(v0, v1)
-	m.HeadFunc.appendCall(ClientHeadFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the Head method of the
-// parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientHeadFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (string, bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Head method of the parent MockClient instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *ClientHeadFunc) PushHook(hook func(context.Context, api.RepoName) (string, bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientHeadFunc) SetDefaultReturn(r0 string, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) (string, bool, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientHeadFunc) PushReturn(r0 string, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, api.RepoName) (string, bool, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *ClientHeadFunc) nextHook() func(context.Context, api.RepoName) (string, bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientHeadFunc) appendCall(r0 ClientHeadFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientHeadFuncCall objects describing the
-// invocations of this function.
-func (f *ClientHeadFunc) History() []ClientHeadFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientHeadFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientHeadFuncCall is an object that describes an invocation of method
-// Head on an instance of MockClient.
-type ClientHeadFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 bool
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientHeadFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientHeadFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
 // ClientIsPerforcePathCloneableFunc describes the behavior when the
 // IsPerforcePathCloneable method of the parent MockClient instance is
 // invoked.
@@ -4294,23 +3277,23 @@ func (c ClientIsRepoCloneableFuncCall) Results() []interface{} {
 // ClientListBranchesFunc describes the behavior when the ListBranches
 // method of the parent MockClient instance is invoked.
 type ClientListBranchesFunc struct {
-	defaultHook func(context.Context, api.RepoName, BranchesOptions) ([]*gitdomain.Branch, error)
-	hooks       []func(context.Context, api.RepoName, BranchesOptions) ([]*gitdomain.Branch, error)
+	defaultHook func(context.Context, api.RepoName) ([]*gitdomain.Branch, error)
+	hooks       []func(context.Context, api.RepoName) ([]*gitdomain.Branch, error)
 	history     []ClientListBranchesFuncCall
 	mutex       sync.Mutex
 }
 
 // ListBranches delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockClient) ListBranches(v0 context.Context, v1 api.RepoName, v2 BranchesOptions) ([]*gitdomain.Branch, error) {
-	r0, r1 := m.ListBranchesFunc.nextHook()(v0, v1, v2)
-	m.ListBranchesFunc.appendCall(ClientListBranchesFuncCall{v0, v1, v2, r0, r1})
+func (m *MockClient) ListBranches(v0 context.Context, v1 api.RepoName) ([]*gitdomain.Branch, error) {
+	r0, r1 := m.ListBranchesFunc.nextHook()(v0, v1)
+	m.ListBranchesFunc.appendCall(ClientListBranchesFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the ListBranches method
 // of the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientListBranchesFunc) SetDefaultHook(hook func(context.Context, api.RepoName, BranchesOptions) ([]*gitdomain.Branch, error)) {
+func (f *ClientListBranchesFunc) SetDefaultHook(hook func(context.Context, api.RepoName) ([]*gitdomain.Branch, error)) {
 	f.defaultHook = hook
 }
 
@@ -4318,7 +3301,7 @@ func (f *ClientListBranchesFunc) SetDefaultHook(hook func(context.Context, api.R
 // ListBranches method of the parent MockClient instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientListBranchesFunc) PushHook(hook func(context.Context, api.RepoName, BranchesOptions) ([]*gitdomain.Branch, error)) {
+func (f *ClientListBranchesFunc) PushHook(hook func(context.Context, api.RepoName) ([]*gitdomain.Branch, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4327,19 +3310,19 @@ func (f *ClientListBranchesFunc) PushHook(hook func(context.Context, api.RepoNam
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientListBranchesFunc) SetDefaultReturn(r0 []*gitdomain.Branch, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, BranchesOptions) ([]*gitdomain.Branch, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) ([]*gitdomain.Branch, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientListBranchesFunc) PushReturn(r0 []*gitdomain.Branch, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, BranchesOptions) ([]*gitdomain.Branch, error) {
+	f.PushHook(func(context.Context, api.RepoName) ([]*gitdomain.Branch, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientListBranchesFunc) nextHook() func(context.Context, api.RepoName, BranchesOptions) ([]*gitdomain.Branch, error) {
+func (f *ClientListBranchesFunc) nextHook() func(context.Context, api.RepoName) ([]*gitdomain.Branch, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4378,9 +3361,6 @@ type ClientListBranchesFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 BranchesOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []*gitdomain.Branch
@@ -4392,7 +3372,7 @@ type ClientListBranchesFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientListBranchesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -4513,6 +3493,114 @@ func (c ClientListDirectoryChildrenFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientListDirectoryChildrenFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientListGitoliteReposFunc describes the behavior when the
+// ListGitoliteRepos method of the parent MockClient instance is invoked.
+type ClientListGitoliteReposFunc struct {
+	defaultHook func(context.Context, string) ([]*gitolite.Repo, error)
+	hooks       []func(context.Context, string) ([]*gitolite.Repo, error)
+	history     []ClientListGitoliteReposFuncCall
+	mutex       sync.Mutex
+}
+
+// ListGitoliteRepos delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockClient) ListGitoliteRepos(v0 context.Context, v1 string) ([]*gitolite.Repo, error) {
+	r0, r1 := m.ListGitoliteReposFunc.nextHook()(v0, v1)
+	m.ListGitoliteReposFunc.appendCall(ClientListGitoliteReposFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListGitoliteRepos
+// method of the parent MockClient instance is invoked and the hook queue is
+// empty.
+func (f *ClientListGitoliteReposFunc) SetDefaultHook(hook func(context.Context, string) ([]*gitolite.Repo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListGitoliteRepos method of the parent MockClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ClientListGitoliteReposFunc) PushHook(hook func(context.Context, string) ([]*gitolite.Repo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientListGitoliteReposFunc) SetDefaultReturn(r0 []*gitolite.Repo, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) ([]*gitolite.Repo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientListGitoliteReposFunc) PushReturn(r0 []*gitolite.Repo, r1 error) {
+	f.PushHook(func(context.Context, string) ([]*gitolite.Repo, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientListGitoliteReposFunc) nextHook() func(context.Context, string) ([]*gitolite.Repo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientListGitoliteReposFunc) appendCall(r0 ClientListGitoliteReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientListGitoliteReposFuncCall objects
+// describing the invocations of this function.
+func (f *ClientListGitoliteReposFunc) History() []ClientListGitoliteReposFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientListGitoliteReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientListGitoliteReposFuncCall is an object that describes an invocation
+// of method ListGitoliteRepos on an instance of MockClient.
+type ClientListGitoliteReposFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*gitolite.Repo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientListGitoliteReposFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientListGitoliteReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -4977,15 +4065,15 @@ func (c ClientLsFilesFuncCall) Results() []interface{} {
 // ClientMergeBaseFunc describes the behavior when the MergeBase method of
 // the parent MockClient instance is invoked.
 type ClientMergeBaseFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error)
+	defaultHook func(context.Context, api.RepoName, string, string) (api.CommitID, error)
+	hooks       []func(context.Context, api.RepoName, string, string) (api.CommitID, error)
 	history     []ClientMergeBaseFuncCall
 	mutex       sync.Mutex
 }
 
 // MergeBase delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockClient) MergeBase(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 api.CommitID) (api.CommitID, error) {
+func (m *MockClient) MergeBase(v0 context.Context, v1 api.RepoName, v2 string, v3 string) (api.CommitID, error) {
 	r0, r1 := m.MergeBaseFunc.nextHook()(v0, v1, v2, v3)
 	m.MergeBaseFunc.appendCall(ClientMergeBaseFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -4993,7 +4081,7 @@ func (m *MockClient) MergeBase(v0 context.Context, v1 api.RepoName, v2 api.Commi
 
 // SetDefaultHook sets function that is called when the MergeBase method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientMergeBaseFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error)) {
+func (f *ClientMergeBaseFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, string) (api.CommitID, error)) {
 	f.defaultHook = hook
 }
 
@@ -5001,7 +4089,7 @@ func (f *ClientMergeBaseFunc) SetDefaultHook(hook func(context.Context, api.Repo
 // MergeBase method of the parent MockClient instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientMergeBaseFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error)) {
+func (f *ClientMergeBaseFunc) PushHook(hook func(context.Context, api.RepoName, string, string) (api.CommitID, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5010,19 +4098,19 @@ func (f *ClientMergeBaseFunc) PushHook(hook func(context.Context, api.RepoName, 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientMergeBaseFunc) SetDefaultReturn(r0 api.CommitID, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, string) (api.CommitID, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientMergeBaseFunc) PushReturn(r0 api.CommitID, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error) {
+	f.PushHook(func(context.Context, api.RepoName, string, string) (api.CommitID, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientMergeBaseFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error) {
+func (f *ClientMergeBaseFunc) nextHook() func(context.Context, api.RepoName, string, string) (api.CommitID, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5063,10 +4151,10 @@ type ClientMergeBaseFuncCall struct {
 	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.CommitID
+	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 api.CommitID
+	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 api.CommitID
@@ -5872,119 +4960,6 @@ func (c ClientReadDirFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// ClientReadFileFunc describes the behavior when the ReadFile method of the
-// parent MockClient instance is invoked.
-type ClientReadFileFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error)
-	history     []ClientReadFileFuncCall
-	mutex       sync.Mutex
-}
-
-// ReadFile delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockClient) ReadFile(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 string) ([]byte, error) {
-	r0, r1 := m.ReadFileFunc.nextHook()(v0, v1, v2, v3)
-	m.ReadFileFunc.appendCall(ClientReadFileFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ReadFile method of
-// the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientReadFileFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ReadFile method of the parent MockClient instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *ClientReadFileFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientReadFileFunc) SetDefaultReturn(r0 []byte, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientReadFileFunc) PushReturn(r0 []byte, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientReadFileFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientReadFileFunc) appendCall(r0 ClientReadFileFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientReadFileFuncCall objects describing
-// the invocations of this function.
-func (f *ClientReadFileFunc) History() []ClientReadFileFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientReadFileFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientReadFileFuncCall is an object that describes an invocation of
-// method ReadFile on an instance of MockClient.
-type ClientReadFileFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.CommitID
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []byte
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientReadFileFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientReadFileFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // ClientRefDescriptionsFunc describes the behavior when the RefDescriptions
 // method of the parent MockClient instance is invoked.
 type ClientRefDescriptionsFunc struct {
@@ -6210,16 +5185,16 @@ func (c ClientRemoveFuncCall) Results() []interface{} {
 // ClientRepoCloneProgressFunc describes the behavior when the
 // RepoCloneProgress method of the parent MockClient instance is invoked.
 type ClientRepoCloneProgressFunc struct {
-	defaultHook func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
-	hooks       []func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
+	defaultHook func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error)
+	hooks       []func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error)
 	history     []ClientRepoCloneProgressFuncCall
 	mutex       sync.Mutex
 }
 
 // RepoCloneProgress delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockClient) RepoCloneProgress(v0 context.Context, v1 ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
-	r0, r1 := m.RepoCloneProgressFunc.nextHook()(v0, v1...)
+func (m *MockClient) RepoCloneProgress(v0 context.Context, v1 api.RepoName) (*protocol.RepoCloneProgress, error) {
+	r0, r1 := m.RepoCloneProgressFunc.nextHook()(v0, v1)
 	m.RepoCloneProgressFunc.appendCall(ClientRepoCloneProgressFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
@@ -6227,7 +5202,7 @@ func (m *MockClient) RepoCloneProgress(v0 context.Context, v1 ...api.RepoName) (
 // SetDefaultHook sets function that is called when the RepoCloneProgress
 // method of the parent MockClient instance is invoked and the hook queue is
 // empty.
-func (f *ClientRepoCloneProgressFunc) SetDefaultHook(hook func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)) {
+func (f *ClientRepoCloneProgressFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error)) {
 	f.defaultHook = hook
 }
 
@@ -6235,7 +5210,7 @@ func (f *ClientRepoCloneProgressFunc) SetDefaultHook(hook func(context.Context, 
 // RepoCloneProgress method of the parent MockClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ClientRepoCloneProgressFunc) PushHook(hook func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)) {
+func (f *ClientRepoCloneProgressFunc) PushHook(hook func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -6243,20 +5218,20 @@ func (f *ClientRepoCloneProgressFunc) PushHook(hook func(context.Context, ...api
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientRepoCloneProgressFunc) SetDefaultReturn(r0 *protocol.RepoCloneProgressResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
+func (f *ClientRepoCloneProgressFunc) SetDefaultReturn(r0 *protocol.RepoCloneProgress, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientRepoCloneProgressFunc) PushReturn(r0 *protocol.RepoCloneProgressResponse, r1 error) {
-	f.PushHook(func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
+func (f *ClientRepoCloneProgressFunc) PushReturn(r0 *protocol.RepoCloneProgress, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientRepoCloneProgressFunc) nextHook() func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
+func (f *ClientRepoCloneProgressFunc) nextHook() func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -6292,28 +5267,21 @@ type ClientRepoCloneProgressFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 []api.RepoName
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *protocol.RepoCloneProgressResponse
+	Result0 *protocol.RepoCloneProgress
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
+// invocation.
 func (c ClientRepoCloneProgressFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -6433,24 +5401,24 @@ func (c ClientRequestRepoCloneFuncCall) Results() []interface{} {
 // ClientRequestRepoUpdateFunc describes the behavior when the
 // RequestRepoUpdate method of the parent MockClient instance is invoked.
 type ClientRequestRepoUpdateFunc struct {
-	defaultHook func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
-	hooks       []func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
+	defaultHook func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
+	hooks       []func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
 	history     []ClientRequestRepoUpdateFuncCall
 	mutex       sync.Mutex
 }
 
 // RequestRepoUpdate delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockClient) RequestRepoUpdate(v0 context.Context, v1 api.RepoName, v2 time.Duration) (*protocol.RepoUpdateResponse, error) {
-	r0, r1 := m.RequestRepoUpdateFunc.nextHook()(v0, v1, v2)
-	m.RequestRepoUpdateFunc.appendCall(ClientRequestRepoUpdateFuncCall{v0, v1, v2, r0, r1})
+func (m *MockClient) RequestRepoUpdate(v0 context.Context, v1 api.RepoName) (*protocol.RepoUpdateResponse, error) {
+	r0, r1 := m.RequestRepoUpdateFunc.nextHook()(v0, v1)
+	m.RequestRepoUpdateFunc.appendCall(ClientRequestRepoUpdateFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the RequestRepoUpdate
 // method of the parent MockClient instance is invoked and the hook queue is
 // empty.
-func (f *ClientRequestRepoUpdateFunc) SetDefaultHook(hook func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)) {
+func (f *ClientRequestRepoUpdateFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)) {
 	f.defaultHook = hook
 }
 
@@ -6458,7 +5426,7 @@ func (f *ClientRequestRepoUpdateFunc) SetDefaultHook(hook func(context.Context, 
 // RequestRepoUpdate method of the parent MockClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ClientRequestRepoUpdateFunc) PushHook(hook func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)) {
+func (f *ClientRequestRepoUpdateFunc) PushHook(hook func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -6467,19 +5435,19 @@ func (f *ClientRequestRepoUpdateFunc) PushHook(hook func(context.Context, api.Re
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientRequestRepoUpdateFunc) SetDefaultReturn(r0 *protocol.RepoUpdateResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientRequestRepoUpdateFunc) PushReturn(r0 *protocol.RepoUpdateResponse, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error) {
+	f.PushHook(func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientRequestRepoUpdateFunc) nextHook() func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error) {
+func (f *ClientRequestRepoUpdateFunc) nextHook() func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -6518,9 +5486,6 @@ type ClientRequestRepoUpdateFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 time.Duration
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *protocol.RepoUpdateResponse
@@ -6532,7 +5497,7 @@ type ClientRequestRepoUpdateFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientRequestRepoUpdateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -6652,117 +5617,6 @@ func (c ClientResolveRevisionFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientResolveRevisionFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ClientResolveRevisionsFunc describes the behavior when the
-// ResolveRevisions method of the parent MockClient instance is invoked.
-type ClientResolveRevisionsFunc struct {
-	defaultHook func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error)
-	hooks       []func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error)
-	history     []ClientResolveRevisionsFuncCall
-	mutex       sync.Mutex
-}
-
-// ResolveRevisions delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockClient) ResolveRevisions(v0 context.Context, v1 api.RepoName, v2 []protocol.RevisionSpecifier) ([]string, error) {
-	r0, r1 := m.ResolveRevisionsFunc.nextHook()(v0, v1, v2)
-	m.ResolveRevisionsFunc.appendCall(ClientResolveRevisionsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ResolveRevisions
-// method of the parent MockClient instance is invoked and the hook queue is
-// empty.
-func (f *ClientResolveRevisionsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ResolveRevisions method of the parent MockClient instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *ClientResolveRevisionsFunc) PushHook(hook func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientResolveRevisionsFunc) SetDefaultReturn(r0 []string, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientResolveRevisionsFunc) PushReturn(r0 []string, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientResolveRevisionsFunc) nextHook() func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientResolveRevisionsFunc) appendCall(r0 ClientResolveRevisionsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientResolveRevisionsFuncCall objects
-// describing the invocations of this function.
-func (f *ClientResolveRevisionsFunc) History() []ClientResolveRevisionsFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientResolveRevisionsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientResolveRevisionsFuncCall is an object that describes an invocation
-// of method ResolveRevisions on an instance of MockClient.
-type ClientResolveRevisionsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 []protocol.RevisionSpecifier
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientResolveRevisionsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientResolveRevisionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

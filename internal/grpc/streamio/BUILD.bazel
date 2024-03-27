@@ -13,5 +13,8 @@ go_test(
     timeout = "short",
     srcs = ["streamio_test.go"],
     embed = [":streamio"],
-    deps = ["@com_github_stretchr_testify//require"],
+    deps = [
+        "//lib/errors",
+        "@com_github_stretchr_testify//require",
+    ],
 )

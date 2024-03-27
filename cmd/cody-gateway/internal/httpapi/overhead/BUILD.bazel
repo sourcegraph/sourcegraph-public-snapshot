@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "overhead",
+    srcs = ["overhead.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead",
+    visibility = ["//cmd/cody-gateway:__subpackages__"],
+    deps = [
+        "//internal/codygateway",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel_metric//:metric",
+    ],
+)

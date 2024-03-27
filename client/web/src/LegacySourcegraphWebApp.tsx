@@ -10,8 +10,6 @@ import { logger } from '@sourcegraph/common'
 import { type GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
 import { SharedSpanName, TraceSpanProvider } from '@sourcegraph/observability-client'
 import { type FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
-import type { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
-import { createNoopController } from '@sourcegraph/shared/src/extensions/createNoopLoadedController'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import {
@@ -57,6 +55,7 @@ import { setQueryStateFromSettings, useDeveloperSettings, useNavbarQueryState } 
 import { TelemetryRecorderProvider } from './telemetry'
 import { eventLogger } from './tracking/eventLogger'
 import { UserSessionStores } from './UserSessionStores'
+import { getLicenseFeatures } from './util/license'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
 interface LegacySourcegraphWebAppState extends SettingsCascadeProps {
@@ -90,7 +89,6 @@ const WILDCARD_THEME: WildcardTheme = {
  */
 export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, LegacySourcegraphWebAppState> {
     private readonly subscriptions = new Subscription()
-    private readonly extensionsController: ExtensionsController | null
 
     constructor(props: StaticAppConfig) {
         super(props)
@@ -100,11 +98,6 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                 errorOnRecord: true, // this will be replaced on render()
             }),
         })
-
-        this.extensionsController = createNoopController(basePlatformContext)
-        if (this.extensionsController !== null) {
-            this.subscriptions.add(this.extensionsController)
-        }
 
         this.state = {
             authenticatedUser: authenticatedUserValue,
@@ -188,10 +181,6 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
             // select the user's default search context.
             this.setSelectedSearchContextSpecToDefault()
         }
-
-        this.setWorkspaceSearchContext(this.state.selectedSearchContextSpec).catch(error => {
-            logger.error('Error sending search context to extensions!', error)
-        })
     }
 
     public componentWillUnmount(): void {
@@ -214,7 +203,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
             ...this.props,
             selectedSearchContextSpec: this.state.selectedSearchContextSpec,
             setSelectedSearchContextSpec: this.setSelectedSearchContextSpec,
-            codeIntelligenceEnabled: !!this.props.codeInsightsEnabled,
+            codeIntelligenceEnabled: !!this.props.codeIntelligenceEnabled,
             notebooksEnabled: this.props.notebooksEnabled,
             codeMonitoringEnabled: this.props.codeMonitoringEnabled,
             searchAggregationEnabled: this.props.searchAggregationEnabled,
@@ -222,7 +211,6 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
             authenticatedUser,
             viewerSubject: this.state.viewerSubject,
             settingsCascade: this.state.settingsCascade,
-            extensionsController: this.extensionsController,
         }
 
         const router = createBrowserRouter(
@@ -237,6 +225,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                             batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
                             fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
                             telemetryService={eventLogger}
+                            telemetryRecorder={window.context.telemetryRecorder}
                             isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                             isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                             searchContextsEnabled={this.props.searchContextsEnabled}
@@ -248,6 +237,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                             updateSearchContext={updateSearchContext}
                             deleteSearchContext={deleteSearchContext}
                             streamSearch={aggregateStreamingSearch}
+                            licenseFeatures={getLicenseFeatures()}
                         />
                     }
                 />
@@ -269,7 +259,10 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                     <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage} />,
                     <SearchResultsCacheProvider />,
                     <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState} />,
-                    <LegacyRouteContextProvider context={legacyContext} />,
+                    <LegacyRouteContextProvider
+                        context={legacyContext}
+                        telemetryRecorder={window.context.telemetryRecorder}
+                    />,
                     /* eslint-enable react/no-children-prop, react/jsx-key */
                 ]}
             >
@@ -281,9 +274,6 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
 
     private setSelectedSearchContextSpecWithNoChecks = (spec: string): void => {
         this.setState({ selectedSearchContextSpec: spec })
-        this.setWorkspaceSearchContext(spec).catch(error => {
-            logger.error('Error sending search context to extensions', error)
-        })
     }
 
     private setSelectedSearchContextSpec = (spec: string): void => {
@@ -326,14 +316,6 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                 this.setSelectedSearchContextSpecWithNoChecks(spec || GLOBAL_SEARCH_CONTEXT_SPEC)
             })
         )
-    }
-
-    private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {
-        if (this.extensionsController === null) {
-            return
-        }
-        const extensionHostAPI = await this.extensionsController.extHostAPI
-        await extensionHostAPI.setSearchContext(spec)
     }
 
     private fetchHighlightedFileLineRanges = (

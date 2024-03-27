@@ -16,7 +16,9 @@ func TestP4DepotSyncer_p4CommandEnv(t *testing.T) {
 		P4Client:                "client",
 		P4Home:                  "p4home",
 	}
-	vars := syncer.p4CommandEnv("host", "username", "password")
+
+	cwd := t.TempDir()
+	vars := syncer.p4CommandEnv(cwd, "host", "username", "password")
 	assertEnv := func(key, value string) {
 		var match string
 		for _, s := range vars {
@@ -44,4 +46,5 @@ func TestP4DepotSyncer_p4CommandEnv(t *testing.T) {
 	assertEnv("P4PORT", "host")
 	assertEnv("P4USER", "username")
 	assertEnv("P4PASSWD", "password")
+	assertEnv("P4CLIENTPATH", cwd)
 }

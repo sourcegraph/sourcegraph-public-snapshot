@@ -1,6 +1,5 @@
 import { type FC, useMemo } from 'react'
 
-import { mdiInformation } from '@mdi/js'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitIcon from 'mdi-react/GitIcon'
@@ -9,8 +8,9 @@ import { useLocation } from 'react-router-dom'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Alert, H3, Icon, Text, Container, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, H3, Text, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../PageTitle'
 
@@ -18,7 +18,7 @@ import { AddExternalServicePage } from './AddExternalServicePage'
 import { ExternalServiceGroup, type AddExternalServiceOptionsWithID } from './ExternalServiceGroup'
 import { allExternalServices, type AddExternalServiceOptions, gitHubAppConfig } from './externalServices'
 
-export interface AddExternalServicesPageProps extends TelemetryProps {
+export interface AddExternalServicesPageProps extends TelemetryProps, TelemetryV2Props {
     /**
      * The list of code host external services to be displayed.
      * Pick items from externalServices.codeHostExternalServices.
@@ -47,6 +47,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
     autoFocusForm,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
+    telemetryRecorder,
 }) => {
     const { search } = useLocation()
     const [hasDismissedPrivacyWarning, setHasDismissedPrivacyWarning] = useTemporarySetting(
@@ -75,19 +76,16 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
         return null
     }, [search, codeHostExternalServices.ghapp])
 
-    const allowedCodeHosts = useMemo(
-        () => computeAllowedCodehosts(codeHostExternalServices),
-        [codeHostExternalServices]
-    )
     const servicesByGroup = useMemo(
-        () => computeExternalServicesGroup(codeHostExternalServices, allowedCodeHosts),
-        [codeHostExternalServices, allowedCodeHosts]
+        () => computeExternalServicesGroup(codeHostExternalServices),
+        [codeHostExternalServices]
     )
 
     if (externalService) {
         return (
             <AddExternalServicePage
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 externalService={externalService}
                 autoFocusForm={autoFocusForm}
                 externalServicesFromFile={externalServicesFromFile}
@@ -111,16 +109,6 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                     <ExternalServicesPrivacyAlert dismissPrivacyWarning={dismissPrivacyWarning} />
                 )}
 
-                {allowedCodeHosts && (
-                    <>
-                        <Text>
-                            <Icon aria-label="Information icon" svgPath={mdiInformation} /> Upgrade to{' '}
-                            <Link to="https://sourcegraph.com/pricing">Sourcegraph Enterprise</Link> to add repositories
-                            from other code hosts.
-                        </Text>
-                    </>
-                )}
-
                 {Object.values(servicesByGroup).map((serviceInfo, index) => (
                     <ExternalServiceGroup
                         // We ignore the index key rule here since the grouping doesn't have a
@@ -139,7 +127,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                 {Object.values(nonCodeHostExternalServices).length > 0 && (
                     <ExternalServiceGroup
                         name="Dependencies"
-                        services={transformNonCodeHostExternalServices(nonCodeHostExternalServices, allowedCodeHosts)}
+                        services={transformNonCodeHostExternalServices(nonCodeHostExternalServices)}
                         renderIcon={true}
                     />
                 )}
@@ -205,8 +193,7 @@ interface ExternalServicesGroup {
 }
 
 const computeExternalServicesGroup = (
-    services: Record<string, AddExternalServiceOptions>,
-    allowedCodeHosts: Set<AddExternalServiceOptions> | null
+    services: Record<string, AddExternalServiceOptions>
 ): Record<string, ExternalServicesGroup> => {
     const groupedServices: Record<string, ExternalServicesGroup> = {
         github: {
@@ -235,13 +222,6 @@ const computeExternalServicesGroup = (
     }
 
     for (const [serviceID, service] of Object.entries(services)) {
-        const isDisabled = allowedCodeHosts?.has(service)
-        const otherProps = isDisabled
-            ? {
-                  badge: 'enterprise',
-                  tooltip: 'Upgrade your license to Sourcegraph Enterprise to add repositories from other code hosts',
-              }
-            : {}
         let key = 'other'
         if (service.kind === ExternalServiceKind.GITHUB || service.kind === ExternalServiceKind.GITLAB) {
             key = service.kind.toLowerCase()
@@ -251,32 +231,13 @@ const computeExternalServicesGroup = (
         ) {
             key = 'bitbucket'
         }
-        groupedServices[key].services.push({ ...service, serviceID, enabled: !isDisabled, ...otherProps })
+        groupedServices[key].services.push({ ...service, serviceID })
     }
 
     return groupedServices
 }
 
 const transformNonCodeHostExternalServices = (
-    services: Record<string, AddExternalServiceOptions>,
-    allowedCodeHosts: Set<AddExternalServiceOptions> | null
+    services: Record<string, AddExternalServiceOptions>
 ): AddExternalServiceOptionsWithID[] =>
-    Object.entries(services).map(([serviceID, service]) => {
-        const isDisabled = allowedCodeHosts?.has(service)
-        return { ...service, serviceID, enabled: !isDisabled }
-    })
-
-const computeAllowedCodehosts = (
-    codeHostExternalServices: Record<string, AddExternalServiceOptions>
-): Set<AddExternalServiceOptions> | null => {
-    const licenseInfo = window.context.licenseInfo
-    let allowedCodeHosts: Set<AddExternalServiceOptions> | null = null
-    if (licenseInfo && licenseInfo.currentPlan === 'business-0') {
-        allowedCodeHosts = new Set([
-            codeHostExternalServices.github,
-            codeHostExternalServices.gitlabcom,
-            codeHostExternalServices.bitbucket,
-        ])
-    }
-    return allowedCodeHosts
-}
+    Object.entries(services).map(([serviceID, service]) => ({ ...service, serviceID }))

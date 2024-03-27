@@ -1,12 +1,15 @@
 package search
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"io/fs"
 	"strings"
 	"testing"
 
 	"github.com/hexops/autogold/v2"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -537,12 +540,12 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			ctx := context.Background()
 
 			gitserverClient := gitserver.NewMockClient()
-			gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
+			gitserverClient.NewFileReaderFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID, file string) (io.ReadCloser, error) {
 				content, ok := tt.args.repoContent[file]
 				if !ok {
 					return nil, fs.ErrNotExist
 				}
-				return []byte(content), nil
+				return io.NopCloser(bytes.NewReader([]byte(content))), nil
 			})
 
 			codeownersStore := dbmocks.NewMockCodeownersStore()

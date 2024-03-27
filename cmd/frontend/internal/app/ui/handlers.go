@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -268,7 +269,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 	}
 
 	// common.Repo and common.CommitID are populated in the above if statement
-	if blobPath, ok := mux.Vars(r)["Path"]; ok && envvar.OpenGraphPreviewServiceURL() != "" && envvar.SourcegraphDotComMode() && common.Repo != nil {
+	if blobPath, ok := mux.Vars(r)["Path"]; ok && envvar.OpenGraphPreviewServiceURL() != "" && dotcom.SourcegraphDotComMode() && common.Repo != nil {
 		lineRange := FindLineRangeInQueryParameters(r.URL.Query())
 
 		var symbolResult *result.Symbol
@@ -326,7 +327,7 @@ func serveBasicPage(db database.DB, title func(c *Common, r *http.Request) strin
 		common.Title = title(common, r)
 
 		if useSvelteKit(r) {
-			return renderSvelteKit(w)
+			return renderSvelteKit(w, common)
 		}
 
 		return renderTemplate(w, "app.html", common)
@@ -350,7 +351,14 @@ func serveHome(db database.DB) handlerFunc {
 		}
 
 		// On non-Sourcegraph.com instances, there is no separate homepage, so redirect to /search.
-		r.URL.Path = "/search"
+		// except if the instance is on a Cody-Only license.
+		redirectURL := "/search"
+		features := common.Context.LicenseInfo.Features
+		if !features.CodeSearch && features.Cody && !dotcom.SourcegraphDotComMode() {
+			redirectURL = "/cody"
+		}
+
+		r.URL.Path = redirectURL
 		http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
 		return nil
 	}
@@ -474,7 +482,7 @@ func serveTree(db database.DB, title func(c *Common, r *http.Request) string) ha
 		common.Title = title(common, r)
 
 		if useSvelteKit(r) {
-			return renderSvelteKit(w)
+			return renderSvelteKit(w, common)
 		}
 
 		return renderTemplate(w, "app.html", common)
@@ -531,7 +539,7 @@ func serveRepoOrBlob(db database.DB, routeName string, title func(c *Common, r *
 		}
 
 		if useSvelteKit(r) {
-			return renderSvelteKit(w)
+			return renderSvelteKit(w, common)
 		}
 
 		return renderTemplate(w, "app.html", common)

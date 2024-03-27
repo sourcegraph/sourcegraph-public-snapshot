@@ -18,3 +18,9 @@
 :3081 {
 	reverse_proxy 127.0.0.1:3082
 }
+
+# Caddy (:3083) -> Cody Gateway (:9992)
+{$SOURCEGRAPH_HTTPS_DOMAIN}:3083 {
+    tls internal
+	reverse_proxy 127.0.0.1:9992
+}

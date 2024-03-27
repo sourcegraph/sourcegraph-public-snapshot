@@ -3,6 +3,7 @@ package resolvers
 import (
 	"bytes"
 	"context"
+	"io"
 	"os"
 
 	"github.com/graph-gophers/graphql-go"
@@ -63,8 +64,8 @@ func (r *Resolver) EmbeddingsMultiSearch(ctx context.Context, args graphqlbacken
 		return nil, errors.New("embeddings are not configured or disabled")
 	}
 
-	if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
-		return nil, errors.New("cody experimental feature flag is not enabled for current user")
+	if isEnabled, reason := cody.IsCodyEnabled(ctx, r.db); !isEnabled {
+		return nil, errors.Newf("cody is not enabled: %s", reason)
 	}
 
 	if err := cody.CheckVerifiedEmailRequirement(ctx, r.db, r.logger); err != nil {
@@ -109,8 +110,8 @@ func (r *Resolver) EmbeddingsMultiSearch(ctx context.Context, args graphqlbacken
 }
 
 func (r *Resolver) IsContextRequiredForChatQuery(ctx context.Context, args graphqlbackend.IsContextRequiredForChatQueryInputArgs) (bool, error) {
-	if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
-		return false, errors.New("cody experimental feature flag is not enabled for current user")
+	if isEnabled, reason := cody.IsCodyEnabled(ctx, r.db); !isEnabled {
+		return false, errors.Newf("cody is not enabled: %s", reason)
 	}
 
 	if err := cody.CheckVerifiedEmailRequirement(ctx, r.db, r.logger); err != nil {
@@ -219,7 +220,14 @@ func embeddingsSearchResultsToResolvers(
 		for i, result := range results {
 			i, result := i, result
 			p.Go(func() {
-				content, err := gs.ReadFile(ctx, result.RepoName, result.Revision, result.FileName)
+				r, err := gs.NewFileReader(ctx, result.RepoName, result.Revision, result.FileName)
+				if err != nil {
+					allContents[i] = nil
+					allErrors[i] = err
+					return
+				}
+				defer r.Close()
+				content, err := io.ReadAll(r)
 				allContents[i] = content
 				allErrors[i] = err
 			})

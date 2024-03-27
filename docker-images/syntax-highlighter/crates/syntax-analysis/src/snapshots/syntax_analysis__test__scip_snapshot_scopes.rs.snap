@@ -1,0 +1,51 @@
+---
+source: crates/syntax-analysis/src/lib.rs
+expression: dumped
+---
+  pub trait Tag {
+//          ^^^ definition(Trait) scip-ctags Tag#
+      // This is a pretty big thing
+      // And some more things here
+      fn name(&self) -> &str;
+//       ^^^^ definition(Function) scip-ctags Tag#name().
+  }
+  
+  mod namespace {
+//    ^^^^^^^^^ definition(Namespace) scip-ctags namespace/
+      mod nested {
+//        ^^^^^^ definition(Namespace) scip-ctags namespace/nested/
+          mod even_more_nested {
+//            ^^^^^^^^^^^^^^^^ definition(Namespace) scip-ctags namespace/nested/even_more_nested/
+              pub struct CoolStruct {}
+//                       ^^^^^^^^^^ definition(Struct) scip-ctags namespace/nested/even_more_nested/CoolStruct#
+  
+              impl Tag for CoolStruct {
+//                 ^^^ definition(Trait) scip-ctags namespace/nested/even_more_nested/Tag#
+//                         ^^^^^^^^^^ definition(Struct) scip-ctags namespace/nested/even_more_nested/Tag#CoolStruct#
+                  fn name(&self) -> &str {}
+//                   ^^^^ definition(Function) scip-ctags namespace/nested/even_more_nested/Tag#CoolStruct#name().
+              }
+          }
+      }
+  }
+  
+  fn something() {}
+//   ^^^^^^^^^ definition(Function) scip-ctags something().
+  
+  impl X for Y {}
+//     ^ definition(Trait) scip-ctags X#
+//           ^ definition(Struct) scip-ctags X#Y#
+  impl<T> X<T> for Y<T<X>> {}
+//        ^ definition(Trait) scip-ctags X#
+//                 ^ definition(Struct) scip-ctags X#Y#
+  
+  enum MyEnum {
+//     ^^^^^^ definition(Enum) scip-ctags MyEnum#
+      Dog,
+//    ^^^ definition(EnumMember) scip-ctags MyEnum#Dog.
+      Cat(u8),
+//    ^^^ definition(EnumMember) scip-ctags MyEnum#Cat.
+      Bat(String),
+//    ^^^ definition(EnumMember) scip-ctags MyEnum#Bat.
+  }
+

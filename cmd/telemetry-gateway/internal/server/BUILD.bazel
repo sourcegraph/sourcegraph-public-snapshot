@@ -13,8 +13,10 @@ go_library(
     visibility = ["//cmd/telemetry-gateway:__subpackages__"],
     deps = [
         "//cmd/telemetry-gateway/internal/events",
+        "//cmd/telemetry-gateway/internal/server/samsm2m",
         "//internal/licensing",
         "//internal/pubsub",
+        "//internal/sams",
         "//internal/telemetrygateway/v1:telemetrygateway",
         "//internal/trace",
         "//lib/errors",
@@ -22,7 +24,6 @@ go_library(
         "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel_metric//:metric",
-        "@io_opentelemetry_go_otel_trace//:trace",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
     ],

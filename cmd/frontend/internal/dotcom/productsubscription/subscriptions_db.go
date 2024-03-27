@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -67,6 +68,9 @@ type dbSubscriptions struct {
 // attempts to extract the Salesforce account number from the username following
 // the format "<name>-<account number>".
 func (s dbSubscriptions) Create(ctx context.Context, userID int32, username string) (id string, err error) {
+	logger := log.Scoped("dbSubscriptions.Create")
+	logger = trace.Logger(ctx, logger)
+
 	if mocks.subscriptions.Create != nil {
 		return mocks.subscriptions.Create(userID)
 	}
@@ -88,10 +92,9 @@ INSERT INTO product_subscriptions(id, user_id, account_number) VALUES($1, $2, $3
 		return "", errors.Wrap(err, "insert")
 	}
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
 		// Log an event when a new subscription is created.
 		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionCreated, "", uint32(userID), "", "BACKEND", newUUID); err != nil {
-			log.Error(err)
+			logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
 	return id, nil
@@ -138,14 +141,16 @@ func (o dbSubscriptionsListOptions) sqlConditions() []*sqlf.Query {
 
 // List lists all product subscriptions that satisfy the options.
 func (s dbSubscriptions) List(ctx context.Context, opt dbSubscriptionsListOptions) ([]*dbSubscription, error) {
+	logger := log.Scoped("dbSubscriptions.List")
+	logger = trace.Logger(ctx, logger)
+
 	if mocks.subscriptions.List != nil {
 		return mocks.subscriptions.List(ctx, opt)
 	}
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
-		//Log an event when a list of subscriptions is requested.
+		// Log an event when a list of subscriptions is requested.
 		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionsListed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", opt); err != nil {
-			log.Error(err)
+			logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
@@ -242,6 +247,9 @@ type dbSubscriptionUpdate struct {
 
 // Update updates a product subscription.
 func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscriptionUpdate) error {
+	logger := log.Scoped("dbSubscriptions.Update")
+	logger = trace.Logger(ctx, logger)
+
 	fieldUpdates := []*sqlf.Query{
 		sqlf.Sprintf("updated_at=now()"), // always update updated_at timestamp
 	}
@@ -295,10 +303,9 @@ func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscri
 		return errSubscriptionNotFound
 	}
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
 		// Log an event when a subscription is updated
 		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", id); err != nil {
-			log.Error(err)
+			logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
 	return nil
@@ -308,6 +315,9 @@ func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscri
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to archive the token.
 func (s dbSubscriptions) Archive(ctx context.Context, id string) error {
+	logger := log.Scoped("dbSubscriptions.Archive")
+	logger = trace.Logger(ctx, logger)
+
 	if mocks.subscriptions.Archive != nil {
 		return mocks.subscriptions.Archive(id)
 	}
@@ -324,10 +334,9 @@ func (s dbSubscriptions) Archive(ctx context.Context, id string) error {
 		return errSubscriptionNotFound
 	}
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
 		// Log an event when a subscription is archived
 		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionArchived, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", id); err != nil {
-			log.Error(err)
+			logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
 	return nil

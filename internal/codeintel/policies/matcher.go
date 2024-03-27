@@ -259,26 +259,26 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContext, now time.Time) error {
 	for _, policy := range context.policies {
 		if policy.Type == shared.GitObjectTypeCommit {
-			commit, commitDate, revisionExists, err := m.gitserverClient.CommitDate(ctx, context.repo, api.CommitID(policy.Pattern))
+			commit, err := m.gitserverClient.GetCommit(ctx, context.repo, api.CommitID(policy.Pattern))
 			if err != nil {
+				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+					continue
+				}
 				return err
-			}
-			if !revisionExists {
-				continue
 			}
 
 			policyDuration, _ := m.extractor(policy)
 
-			if m.filterByCreatedDate && policyDuration != nil && now.Sub(commitDate) > *policyDuration {
+			if m.filterByCreatedDate && policyDuration != nil && now.Sub(commit.Committer.Date) > *policyDuration {
 				continue
 			}
 
 			id := policy.ID // avoid a reference to the loop variable
 			context.commitMap[policy.Pattern] = append(context.commitMap[policy.Pattern], PolicyMatch{
-				Name:           commit,
+				Name:           string(commit.ID),
 				PolicyID:       &id,
 				PolicyDuration: policyDuration,
-				CommittedAt:    &commitDate,
+				CommittedAt:    &commit.Committer.Date,
 			})
 		}
 	}

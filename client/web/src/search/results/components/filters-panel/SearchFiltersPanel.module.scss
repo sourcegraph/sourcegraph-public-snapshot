@@ -1,0 +1,23 @@
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    width: 18.75rem;
+    max-width: 80%;
+    height: 100%;
+    transform: unset;
+    border: none;
+    padding: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.close-icon {
+    --icon-color: var(--body-color);
+
+    fill: none !important;
+    width: 0.75rem !important;
+    margin-right: 0.25rem;
+}

@@ -1,4 +1,4 @@
-import { FunctionComponent, useEffect, useState } from 'react'
+import { type FunctionComponent, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -34,9 +34,9 @@ interface HubSpotAPIProps {
     formId: string
     target: string
     formInstanceId?: string
-    onFormSubmit?: (object: { data: { name: string; value: string }[] }) => void
+    onFormSubmit?: ($form: HTMLFormElement) => void
     onFormReady?: ($form: CreateHubSpotFormProps) => void
-    onFormSubmitted?: () => void
+    onFormSubmitted?: ($element: HTMLElement) => void
     inlineMessage?: string
 }
 
@@ -44,15 +44,18 @@ interface CreateHubSpotFormProps {
     [index: number]: HTMLFormElement
     formId: string
     onFormReady?: ($form: HTMLFormElement) => void
-    onFormSubmitted?: () => void
+    onFormSubmit?: ($form: HTMLFormElement) => void
+    onFormSubmitted?: ($element: HTMLElement) => void
     inlineMessage?: string
 }
 
 export interface HubSpotFormProps {
     formId?: string
     masterFormName?: 'qualificationSurvey'
-    onFormSubmitted?: () => void
+    onFormSubmitted?: ($element: HTMLElement) => void
+    onFormLoadError?: () => void
     onFormReady?: ($form: HTMLFormElement) => void
+    onFormSubmit?: ($form: HTMLFormElement) => void
     inlineMessage?: string
     overrideFormShorten?: boolean
     userId?: string
@@ -145,7 +148,13 @@ const loadAllScripts = async (): Promise<void> => {
  * @param CreateHubSpotFormProps.onFormSubmitted - callback after data is sent
  * @param CreateHubSpotFormProps.inlineMessage - form submission message
  */
-function createHubSpotForm({ formId, onFormReady, onFormSubmitted, inlineMessage }: CreateHubSpotFormProps): void {
+function createHubSpotForm({
+    formId,
+    onFormReady,
+    onFormSubmitted,
+    onFormSubmit,
+    inlineMessage,
+}: CreateHubSpotFormProps): void {
     const hbsptCreateForm = (): void => {
         window.hbspt?.forms.create({
             region: 'na1',
@@ -157,6 +166,7 @@ function createHubSpotForm({ formId, onFormReady, onFormSubmitted, inlineMessage
                     onFormReady(form[0])
                 }
             },
+            onFormSubmit,
             onFormSubmitted,
             inlineMessage,
         })
@@ -228,38 +238,83 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
     formId,
     masterFormName,
     onFormSubmitted,
+    onFormLoadError,
     onFormReady,
+    onFormSubmit,
     inlineMessage = 'Thank you for your feedback!',
     userEmail,
     userId,
 }) => {
     const [formCreated, setFormCreated] = useState<boolean>(false)
+    const [scriptsLoaded, setScriptsLoaded] = useState<boolean>(false)
+    const [loadError, setLoadError] = useState<boolean>(false)
 
     useEffect(() => {
-        // Set the master form id if it's provided
-        let masterFormId = ''
-        if (masterFormName) {
-            masterFormId = masterForms[masterFormName]
-        }
-
-        // Load all scripts
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        loadAllScripts()
-
-        if (!formCreated) {
-            createHubSpotForm({
-                formId: formId || masterFormId,
-                onFormReady: form => {
-                    onFormReady?.(form)
-                    onHubsportFormReady(form, userId, userEmail)
-                },
-                onFormSubmitted,
-                inlineMessage,
+        // Make a test GET request to each script URL
+        // URLs of the scripts to send test GET requests
+        const scriptURLs = [hubSpotScript, jQueryScript]
+        Promise.all(
+            scriptURLs.map(url =>
+                fetch(url, { method: 'HEAD' }) // Use HEAD method for faster response
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Failed to fetch script from ${url}`)
+                        }
+                    })
+            )
+        )
+            .then(() => setScriptsLoaded(true))
+            .catch(() => {
+                // Mark a loading error that returns a minimal react component as a failure mode
+                setLoadError(true)
+                // Do this callback method to increase the value of step
+                onFormLoadError?.()
             })
+    }, [onFormLoadError])
 
-            setFormCreated(true)
+    useEffect(() => {
+        loadAllScripts()
+        if (scriptsLoaded) {
+            // Set the master form id if it's provided
+            let masterFormId = ''
+            if (masterFormName) {
+                masterFormId = masterForms[masterFormName]
+            }
+
+            // Load all scripts
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
+            if (!formCreated) {
+                createHubSpotForm({
+                    formId: formId || masterFormId,
+                    onFormReady: form => {
+                        onFormReady?.(form)
+                        onHubsportFormReady?.(form, userId, userEmail)
+                    },
+                    onFormSubmitted,
+                    onFormSubmit,
+                    inlineMessage,
+                })
+
+                setFormCreated(true)
+            }
         }
-    }, [formId, onFormSubmitted, inlineMessage, formCreated, masterFormName, onFormReady, userId, userEmail])
+    }, [
+        scriptsLoaded,
+        formId,
+        onFormSubmitted,
+        inlineMessage,
+        formCreated,
+        masterFormName,
+        onFormReady,
+        userId,
+        userEmail,
+        onFormSubmit,
+    ])
 
+    if (loadError) {
+        return <div>Error loading form</div>
+        // return a minimal React element on failure to load the hubspot script
+    }
     return <div id="form-target" data-testid="hubspot-form-container" className={classNames(styles.container)} />
 }

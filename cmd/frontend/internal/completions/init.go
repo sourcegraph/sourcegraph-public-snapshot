@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/completions/resolvers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/completions/httpapi"
@@ -21,7 +22,7 @@ func Init(
 	observationCtx *observation.Context,
 	db database.DB,
 	_ codeintel.Services,
-	_ conftypes.UnifiedWatchable,
+	conf conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
 	logger := log.Scoped("completions")
@@ -31,7 +32,7 @@ func Init(
 		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, completionsHandler)
 	}
 	enterpriseServices.NewCodeCompletionsHandler = func() http.Handler {
-		codeCompletionsHandler := httpapi.NewCodeCompletionsHandler(logger, db)
+		codeCompletionsHandler := httpapi.NewCodeCompletionsHandler(logger, db, guardrails.NewAttributionTest(observationCtx, conf))
 		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, codeCompletionsHandler)
 	}
 	enterpriseServices.CompletionsResolver = resolvers.NewCompletionsResolver(db, observationCtx.Logger)

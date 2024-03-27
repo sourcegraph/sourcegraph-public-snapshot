@@ -36,6 +36,30 @@ func TestNewExhaustive(t *testing.T) {
 		WantJob   autogold.Value
 	}{
 		{
+			Name:  "case sensitive lang match",
+			Query: `type:file index:no lang:cpp content case:yes`,
+			WantPager: autogold.Expect(`
+(REPOPAGER
+  (containsRefGlobs . false)
+  (repoOpts.useIndex . no)
+  (PARTIALREPOS
+    (SEARCHERTEXTSEARCH
+      (useFullDeadline . true)
+      (patternInfo . TextPatternInfo{"content",case,nopath,filematchlimit:1000000,lang:cpp,F:"(?i)(?:\\.cpp$)|(?:\\.c\\+\\+$)|(?:\\.cc$)|(?:\\.cp$)|(?:\\.cxx$)|(?:\\.h$)|(?:\\.h\\+\\+$)|(?:\\.hh$)|(?:\\.hpp$)|(?:\\.hxx$)|(?:\\.inc$)|(?:\\.inl$)|(?:\\.ino$)|(?:\\.ipp$)|(?:\\.ixx$)|(?:\\.re$)|(?:\\.tcc$)|(?:\\.tpp$)"})
+      (numRepos . 0)
+      (pathRegexps . [(?i)(?:\.cpp$)|(?:\.c\+\+$)|(?:\.cc$)|(?:\.cp$)|(?:\.cxx$)|(?:\.h$)|(?:\.h\+\+$)|(?:\.hh$)|(?:\.hpp$)|(?:\.hxx$)|(?:\.inc$)|(?:\.inl$)|(?:\.ino$)|(?:\.ipp$)|(?:\.ixx$)|(?:\.re$)|(?:\.tcc$)|(?:\.tpp$)])
+      (indexed . false))))
+`),
+			WantJob: autogold.Expect(`
+(SEARCHERTEXTSEARCH
+  (useFullDeadline . true)
+  (patternInfo . TextPatternInfo{"content",case,nopath,filematchlimit:1000000,lang:cpp,F:"(?i)(?:\\.cpp$)|(?:\\.c\\+\\+$)|(?:\\.cc$)|(?:\\.cp$)|(?:\\.cxx$)|(?:\\.h$)|(?:\\.h\\+\\+$)|(?:\\.hh$)|(?:\\.hpp$)|(?:\\.hxx$)|(?:\\.inc$)|(?:\\.inl$)|(?:\\.ino$)|(?:\\.ipp$)|(?:\\.ixx$)|(?:\\.re$)|(?:\\.tcc$)|(?:\\.tpp$)"})
+  (numRepos . 1)
+  (pathRegexps . [(?i)(?:\.cpp$)|(?:\.c\+\+$)|(?:\.cc$)|(?:\.cp$)|(?:\.cxx$)|(?:\.h$)|(?:\.h\+\+$)|(?:\.hh$)|(?:\.hpp$)|(?:\.hxx$)|(?:\.inc$)|(?:\.inl$)|(?:\.ino$)|(?:\.ipp$)|(?:\.ixx$)|(?:\.re$)|(?:\.tcc$)|(?:\.tpp$)])
+  (indexed . false))
+`),
+		},
+		{
 			Name:  "glob",
 			Query: `type:file index:no repo:foo rev:*refs/heads/dev* content`,
 			WantPager: autogold.Expect(`
@@ -46,7 +70,7 @@ func TestNewExhaustive(t *testing.T) {
   (PARTIALREPOS
     (SEARCHERTEXTSEARCH
       (useFullDeadline . true)
-      (patternInfo . TextPatternInfo{"content",re,nopath,filematchlimit:1000000})
+      (patternInfo . TextPatternInfo{"content",nopath,filematchlimit:1000000})
       (numRepos . 0)
       (pathRegexps . [])
       (indexed . false))))
@@ -54,7 +78,7 @@ func TestNewExhaustive(t *testing.T) {
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
   (useFullDeadline . true)
-  (patternInfo . TextPatternInfo{"content",re,nopath,filematchlimit:1000000})
+  (patternInfo . TextPatternInfo{"content",nopath,filematchlimit:1000000})
   (numRepos . 1)
   (pathRegexps . [])
   (indexed . false))
@@ -70,7 +94,7 @@ func TestNewExhaustive(t *testing.T) {
   (PARTIALREPOS
     (SEARCHERTEXTSEARCH
       (useFullDeadline . true)
-      (patternInfo . TextPatternInfo{"content",re,nopath,filematchlimit:1000000})
+      (patternInfo . TextPatternInfo{"content",nopath,filematchlimit:1000000})
       (numRepos . 0)
       (pathRegexps . [])
       (indexed . false))))
@@ -78,7 +102,55 @@ func TestNewExhaustive(t *testing.T) {
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
   (useFullDeadline . true)
-  (patternInfo . TextPatternInfo{"content",re,nopath,filematchlimit:1000000})
+  (patternInfo . TextPatternInfo{"content",nopath,filematchlimit:1000000})
+  (numRepos . 1)
+  (pathRegexps . [])
+  (indexed . false))
+`),
+		},
+		{
+			Name:  "keyword search",
+			Query: "type:file index:no foo bar baz patterntype:keyword",
+			WantPager: autogold.Expect(`
+(REPOPAGER
+  (containsRefGlobs . false)
+  (repoOpts.useIndex . no)
+  (PARTIALREPOS
+    (SEARCHERTEXTSEARCH
+      (useFullDeadline . true)
+      (patternInfo . TextPatternInfo{"foo bar baz",nopath,filematchlimit:1000000})
+      (numRepos . 0)
+      (pathRegexps . [])
+      (indexed . false))))
+`),
+			WantJob: autogold.Expect(`
+(SEARCHERTEXTSEARCH
+  (useFullDeadline . true)
+  (patternInfo . TextPatternInfo{"foo bar baz",nopath,filematchlimit:1000000})
+  (numRepos . 1)
+  (pathRegexps . [])
+  (indexed . false))
+`),
+		},
+		{
+			Name:  "boolean query",
+			Query: "type:file index:no (foo OR bar) AND baz patterntype:keyword",
+			WantPager: autogold.Expect(`
+(REPOPAGER
+  (containsRefGlobs . false)
+  (repoOpts.useIndex . no)
+  (PARTIALREPOS
+    (SEARCHERTEXTSEARCH
+      (useFullDeadline . true)
+      (patternInfo . TextPatternInfo{(("foo" OR "bar") AND "baz"),nopath,filematchlimit:1000000})
+      (numRepos . 0)
+      (pathRegexps . [])
+      (indexed . false))))
+`),
+			WantJob: autogold.Expect(`
+(SEARCHERTEXTSEARCH
+  (useFullDeadline . true)
+  (patternInfo . TextPatternInfo{(("foo" OR "bar") AND "baz"),nopath,filematchlimit:1000000})
   (numRepos . 1)
   (pathRegexps . [])
   (indexed . false))
@@ -94,7 +166,7 @@ func TestNewExhaustive(t *testing.T) {
   (PARTIALREPOS
     (SEARCHERTEXTSEARCH
       (useFullDeadline . true)
-      (patternInfo . TextPatternInfo{"foo\\.\\*bar",re,nopath,filematchlimit:1000000})
+      (patternInfo . TextPatternInfo{"foo.*bar",nopath,filematchlimit:1000000})
       (numRepos . 0)
       (pathRegexps . [])
       (indexed . false))))
@@ -102,7 +174,7 @@ func TestNewExhaustive(t *testing.T) {
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
   (useFullDeadline . true)
-  (patternInfo . TextPatternInfo{"foo\\.\\*bar",re,nopath,filematchlimit:1000000})
+  (patternInfo . TextPatternInfo{"foo.*bar",nopath,filematchlimit:1000000})
   (numRepos . 1)
   (pathRegexps . [])
   (indexed . false))
@@ -119,7 +191,7 @@ func TestNewExhaustive(t *testing.T) {
   (PARTIALREPOS
     (SEARCHERTEXTSEARCH
       (useFullDeadline . true)
-      (patternInfo . TextPatternInfo{"foo",re,nopath,filematchlimit:1000000})
+      (patternInfo . TextPatternInfo{"foo",nopath,filematchlimit:1000000})
       (numRepos . 0)
       (pathRegexps . [])
       (indexed . false))))
@@ -127,7 +199,7 @@ func TestNewExhaustive(t *testing.T) {
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
   (useFullDeadline . true)
-  (patternInfo . TextPatternInfo{"foo",re,nopath,filematchlimit:1000000})
+  (patternInfo . TextPatternInfo{"foo",nopath,filematchlimit:1000000})
   (numRepos . 1)
   (pathRegexps . [])
   (indexed . false))
@@ -144,7 +216,7 @@ func TestNewExhaustive(t *testing.T) {
   (PARTIALREPOS
     (SEARCHERTEXTSEARCH
       (useFullDeadline . true)
-      (patternInfo . TextPatternInfo{"foo",re,nopath,filematchlimit:1000000})
+      (patternInfo . TextPatternInfo{"foo",nopath,filematchlimit:1000000})
       (numRepos . 0)
       (pathRegexps . [])
       (indexed . false))))
@@ -152,9 +224,79 @@ func TestNewExhaustive(t *testing.T) {
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
   (useFullDeadline . true)
-  (patternInfo . TextPatternInfo{"foo",re,nopath,filematchlimit:1000000})
+  (patternInfo . TextPatternInfo{"foo",nopath,filematchlimit:1000000})
   (numRepos . 1)
   (pathRegexps . [])
+  (indexed . false))
+`),
+		},
+		{
+			Name:  "type:diff author:alice",
+			Query: "index:no type:diff author:alice",
+			WantPager: autogold.Expect(`
+(REPOPAGER
+  (containsRefGlobs . false)
+  (repoOpts.useIndex . no)
+  (repoOpts.onlyCloned . true)
+  (PARTIALREPOS
+    (DIFFSEARCH
+      (includeModifiedFiles . false)
+      (query . *protocol.AuthorMatches(alice))
+      (diff . true)
+      (limit . 1000000))))
+`),
+			WantJob: autogold.Expect(`
+(DIFFSEARCH
+  (includeModifiedFiles . false)
+  (query . *protocol.AuthorMatches(alice))
+  (diff . true)
+  (limit . 1000000))
+`),
+		},
+		{
+			Name:  "type:commit author:alice",
+			Query: "index:no type:commit author:alice",
+			WantPager: autogold.Expect(`
+(REPOPAGER
+  (containsRefGlobs . false)
+  (repoOpts.useIndex . no)
+  (repoOpts.onlyCloned . true)
+  (PARTIALREPOS
+    (COMMITSEARCH
+      (includeModifiedFiles . false)
+      (query . *protocol.AuthorMatches(alice))
+      (diff . false)
+      (limit . 1000000))))
+`),
+			WantJob: autogold.Expect(`
+(COMMITSEARCH
+  (includeModifiedFiles . false)
+  (query . *protocol.AuthorMatches(alice))
+  (diff . false)
+  (limit . 1000000))
+`),
+		},
+		{
+			Name:  "type:path f:search.go",
+			Query: "index:no type:path f:search.go",
+			WantPager: autogold.Expect(`
+(REPOPAGER
+  (containsRefGlobs . false)
+  (repoOpts.useIndex . no)
+  (PARTIALREPOS
+    (SEARCHERTEXTSEARCH
+      (useFullDeadline . true)
+      (patternInfo . TextPatternInfo{//,nocontent,filematchlimit:1000000,f:"search.go"})
+      (numRepos . 0)
+      (pathRegexps . [(?i)search.go])
+      (indexed . false))))
+`),
+			WantJob: autogold.Expect(`
+(SEARCHERTEXTSEARCH
+  (useFullDeadline . true)
+  (patternInfo . TextPatternInfo{//,nocontent,filematchlimit:1000000,f:"search.go"})
+  (numRepos . 1)
+  (pathRegexps . [(?i)search.go])
   (indexed . false))
 `),
 		},
@@ -192,19 +334,11 @@ func sPrintSexpMax(j job.Describer) string {
 // The queries are validated before they reach exhaustive search, hence we only
 // have to worry about valid queries we don't want to process for now.
 func TestNewExhaustive_negative(t *testing.T) {
-
 	tc := []struct {
 		query              string
 		isPatterntypeRegex bool
 	}{
-		// no pattern
-		{query: `type:file index:no`},
-		// >1 type filter.
-		{query: `type:file index:no type:diff content`},
-		{query: `type:file index:no type:path content`},
-		// AND, OR
-		{query: `type:file index:no repo:repo1 rev:branch1 content1 OR content2`},
-		{query: `type:file index:no repo:repo1 rev:branch1 content1 AND content2`},
+		// multiple jobs needed
 		{query: `type:file index:no (repo:repo1 or repo:repo2) content`},
 		// catch-all regex
 		{query: `type:file index:no r:.* .*`, isPatterntypeRegex: true},
@@ -214,6 +348,10 @@ func TestNewExhaustive_negative(t *testing.T) {
 		{query: `type:file index:no file:has.owner(owner)`},
 		{query: `type:file index:no file:contains.content(content)`},
 		{query: `type:file index:no file:has.contributor(contributor)`},
+		// unsupported types
+		{query: `index:no type:repo`},
+		{query: `index:no type:symbol`},
+		{query: `index:no foo select:file.owners`},
 	}
 
 	for _, c := range tc {

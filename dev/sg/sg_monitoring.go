@@ -19,7 +19,7 @@ import (
 var monitoringCommand = &cli.Command{
 	Name:  "monitoring",
 	Usage: "Sourcegraph's monitoring generator (dashboards, alerts, etc)",
-	Description: `Learn more about the Sourcegraph monitoring generator here: https://docs.sourcegraph.com/dev/background-information/observability/monitoring-generator
+	Description: `Learn more about the Sourcegraph monitoring generator here: https://sourcegraph.com/docs/dev/background-information/observability/monitoring-generator
 
 Also refer to the generated reference documentation available for site admins:
 
@@ -158,7 +158,7 @@ func dashboardsFromArgs(args cli.Args) (dashboards definitions.Dashboards, err e
 		dashboards = definitions.Default()
 	} else {
 		for _, arg := range args.Slice() {
-			d := definitions.Default().GetByName(args.First())
+			d := definitions.Default().GetByName(arg)
 			if d == nil {
 				return nil, errors.Newf("Dashboard %q not found", arg)
 			}

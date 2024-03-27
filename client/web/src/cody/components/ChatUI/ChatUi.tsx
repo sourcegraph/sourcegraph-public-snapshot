@@ -23,6 +23,7 @@ import {
 } from '@sourcegraph/cody-ui/dist/Chat'
 import type { FileLinkProps } from '@sourcegraph/cody-ui/dist/chat/ContextFiles'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -34,19 +35,35 @@ import { GettingStarted } from '../GettingStarted'
 import { ScopeSelector } from '../ScopeSelector'
 import type { ScopeSelectorProps } from '../ScopeSelector/ScopeSelector'
 
+import { useIsFileIgnored } from './useIsFileIgnored'
+
 import styles from './ChatUi.module.scss'
 
 export const SCROLL_THRESHOLD = 100
 
-const onFeedbackSubmit = (feedback: string): void => eventLogger.log(`web:cody:feedbackSubmit:${feedback}`)
-
-interface IChatUIProps {
+interface IChatUIProps extends TelemetryV2Props {
     codyChatStore: CodyChatStore
     isCodyChatPage?: boolean
     authenticatedUser: AuthenticatedUser | null
 }
 
-export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isCodyChatPage, authenticatedUser }): JSX.Element => {
+export const ChatUI: React.FC<IChatUIProps> = ({
+    codyChatStore,
+    isCodyChatPage,
+    authenticatedUser,
+    telemetryRecorder,
+}): JSX.Element => {
+    const onFeedbackSubmit = (feedback: string): void => {
+        eventLogger.log(`web:cody:feedbackSubmit:${feedback}`)
+        // TODO (dadlerj): update @sourcegraph/cody-ui/dist/Chat package to enforce a limited set of feedback strings.
+        // Until then, this is a hack to avoid arbitrary event features.
+        if (feedback === 'positive' || feedback === 'negative') {
+            telemetryRecorder.recordEvent(`cody.feedback.${feedback}`, 'submit')
+        } else {
+            telemetryRecorder.recordEvent('cody.feedback.other', 'submit')
+        }
+    }
+
     const {
         submitMessage,
         editMessage,
@@ -82,6 +99,8 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isCodyChatPage, 
     const onSubmit = useCallback((text: string) => submitMessage(text), [submitMessage])
     const onEdit = useCallback((text: string) => editMessage(text), [editMessage])
 
+    const isFileIgnored = useIsFileIgnored()
+
     const scopeSelectorProps: ScopeSelectorProps = useMemo(
         () => ({
             scope,
@@ -92,6 +111,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isCodyChatPage, 
             transcriptHistory,
             className: 'mt-2',
             authenticatedUser,
+            isFileIgnored,
         }),
         [
             scope,
@@ -101,6 +121,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isCodyChatPage, 
             logTranscriptEvent,
             transcriptHistory,
             authenticatedUser,
+            isFileIgnored,
         ]
     )
 

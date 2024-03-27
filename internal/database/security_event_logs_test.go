@@ -6,10 +6,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/stretchr/testify/require"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -145,7 +146,7 @@ func assertEventField(t *testing.T, field map[string]any) {
 
 func TestLogSecurityEvent1(t *testing.T) {
 	ctx := context.Background()
-	logger, _ := logtest.Captured(t)
+	logger, exportLogs := logtest.Captured(t)
 
 	db := NewDB(logger, dbtest.NewDB(t))
 
@@ -159,4 +160,14 @@ func TestLogSecurityEvent1(t *testing.T) {
 		require.Error(t, err)
 	})
 
+	t.Run("sourcegraph operator", func(t *testing.T) {
+		ctx = actor.WithActor(context.Background(), &actor.Actor{UID: 123, SourcegraphOperator: true})
+		err := db.SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "http://sourcegraph.com", 123, "AnonymousUserID", "source", nil)
+		require.NoError(t, err)
+
+		logs := exportLogs()
+		for _, log := range logs {
+			require.NotEqual(t, log.Level, sglog.LevelError, "Should not return error: %v", log.Fields["error"])
+		}
+	})
 }

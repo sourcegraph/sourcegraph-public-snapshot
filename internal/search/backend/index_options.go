@@ -1,10 +1,12 @@
 package backend
 
 import (
+	"cmp"
+	"slices"
+
 	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
-	"golang.org/x/exp/slices"
 
 	proto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
 
@@ -161,6 +163,7 @@ type getRepoIndexOptsFn func(repoID api.RepoID) (*RepoIndexOptions, error)
 // GetIndexOptions returns a json blob for consumption by
 // sourcegraph-zoekt-indexserver. It is for repos based on site settings c.
 func GetIndexOptions(
+	logger log.Logger,
 	c *schema.SiteConfiguration,
 	getRepoIndexOptions getRepoIndexOptsFn,
 	getSearchContextRevisions func(repoID api.RepoID) ([]string, error),
@@ -171,18 +174,18 @@ func GetIndexOptions(
 	// the future we want a more intelligent global limit based on scale.
 	sema := make(chan struct{}, 32)
 	results := make([]ZoektIndexOptions, len(repos))
-	getSiteConfigRevisions := siteConfigRevisionsRuleFunc(c)
+	getSiteConfigRevisions := siteConfigRevisionsRuleFunc(logger, c)
 
 	for i := range repos {
 		sema <- struct{}{}
-		go func(i int) {
+		go func() {
 			defer func() { <-sema }()
 			results[i] = getIndexOptions(c, repos[i], getRepoIndexOptions, getSearchContextRevisions, getSiteConfigRevisions)
-		}(i)
+		}()
 	}
 
 	// Wait for jobs to finish (acquire full semaphore)
-	for i := 0; i < cap(sema); i++ {
+	for range cap(sema) {
 		sema <- struct{}{}
 	}
 
@@ -265,12 +268,20 @@ func getIndexOptions(
 		})
 	}
 
-	slices.SortFunc(o.Branches, func(a, b zoekt.RepositoryBranch) bool {
-		// Zoekt treats first branch as default branch, so put HEAD first
-		if a.Name == "HEAD" || b.Name == "HEAD" {
-			return a.Name == "HEAD"
+	slices.SortFunc(o.Branches, func(a, b zoekt.RepositoryBranch) int {
+		aName := a.Name
+		bName := b.Name
+
+		// Zoekt treats first branch as default branch, so put HEAD first. We
+		// do this by making the string empty, which is a bottom.
+		if aName == "HEAD" {
+			aName = ""
 		}
-		return a.Name < b.Name
+		if bName == "HEAD" {
+			bName = ""
+		}
+
+		return cmp.Compare(aName, bName)
 	})
 
 	// If the first branch is not HEAD, do not index anything. This should
@@ -289,7 +300,7 @@ func getIndexOptions(
 
 type revsRuleFunc func(*RepoIndexOptions) (revs []string)
 
-func siteConfigRevisionsRuleFunc(c *schema.SiteConfiguration) revsRuleFunc {
+func siteConfigRevisionsRuleFunc(logger log.Logger, c *schema.SiteConfiguration) revsRuleFunc {
 	if c == nil || c.ExperimentalFeatures == nil {
 		return nil
 	}
@@ -301,7 +312,7 @@ func siteConfigRevisionsRuleFunc(c *schema.SiteConfiguration) revsRuleFunc {
 		case rule.Name != "":
 			namePattern, err := regexp.Compile(rule.Name)
 			if err != nil {
-				log15.Error("error compiling regex from search.index.revisions", "regex", rule.Name, "err", err)
+				logger.Error("error compiling regex from search.index.revisions", log.String("regex", rule.Name), log.Error(err))
 				continue
 			}
 

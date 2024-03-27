@@ -1,4 +1,16 @@
-import { createPopper, type Instance, type Options } from '@popperjs/core'
+import {
+    autoUpdate,
+    computePosition,
+    flip,
+    shift,
+    arrow,
+    type Placement,
+    type Middleware,
+    offset,
+    type OffsetOptions,
+    type ShiftOptions,
+    type FlipOptions,
+} from '@floating-ui/dom'
 import type { ActionReturn, Action } from 'svelte/action'
 import * as uuid from 'uuid'
 
@@ -37,44 +49,72 @@ export function onClickOutside(
     }
 }
 
-interface PopperReturnValue {
+interface PopoverOptions {
     /**
-     * Force update positioning and layout of the popover.
+     * The placement of the popover relative to the reference element.
      */
-    update: () => void
-
+    placement?: Placement
     /**
-     * Attach this action to the element that represents the popover content.
-     * "Target" is the element that triggers the popover.
+     * Options for @floatin-ui's offset middleware.
+     * The middleware is only enabled if this option is provided.
      */
-    popover: Action<HTMLElement, { target: Element; options: Partial<Options> }>
+    offset?: OffsetOptions
+    /**
+     * Options for @floatin-ui's shift middleware.
+     * The middleware is always enabled.
+     */
+    shift?: ShiftOptions
+    /**
+     * Options for @floatin-ui's flip middleware.
+     * The middleware is always enabled.
+     */
+    flip?: FlipOptions
 }
 
 /**
- * Returns an action that converts an element into a popover.
+ * An action that converts the attached element into a popover using @floating-ui.
+ * If the popover element contains an element with the attribute `data-arrow`, it will be used as the arrow
+ * and the arrow middleware will be enabled.
  */
-export function createPopover(): PopperReturnValue {
-    let popperInstance: Instance | null
-    return {
-        update: () => popperInstance?.update(),
-        popover: (node, { target, options }) => {
-            popperInstance = createPopper(target, node, options)
+export const popover: Action<HTMLElement, { reference: Element; options: PopoverOptions }> = (popover, parameters) => {
+    let cleanup: (() => void) | null = null
 
-            return {
-                update(parameter) {
-                    if (parameter.target !== target) {
-                        popperInstance?.destroy()
-                        popperInstance = createPopper(parameter.target, node, parameter.options)
-                    } else {
-                        popperInstance?.setOptions(parameter.options)
-                        popperInstance?.update()
-                    }
-                },
-                destroy() {
-                    popperInstance?.destroy()
-                    popperInstance = null
-                },
-            }
+    function update(popover: HTMLElement, { reference, options }: { reference: Element; options: PopoverOptions }) {
+        const arrowElement = popover.querySelector('[data-arrow]') as HTMLElement | null
+        const middleware: Middleware[] = []
+        if (options.offset !== undefined) {
+            middleware.push(offset(options.offset))
+        }
+        middleware.push(shift(options.shift), flip(options.flip))
+        if (arrowElement) {
+            middleware.push(arrow({ element: arrowElement }))
+        }
+        return autoUpdate(reference, popover, () => {
+            computePosition(reference, popover, {
+                placement: options.placement ?? 'bottom',
+                middleware,
+            }).then(({ x, y, placement, middlewareData }) => {
+                popover.style.left = `${x}px`
+                popover.style.top = `${y}px`
+
+                if (middlewareData.arrow && arrowElement) {
+                    const { x, y } = middlewareData.arrow
+                    arrowElement.style.left = x !== undefined ? `${x}px` : ''
+                    arrowElement.style.top = y !== undefined ? `${y}px` : ''
+                    arrowElement.dataset.placement = placement
+                }
+            })
+        })
+    }
+
+    cleanup = update(popover, parameters)
+    return {
+        update(parameter) {
+            cleanup?.()
+            cleanup = update(popover, parameter)
+        },
+        destroy() {
+            cleanup?.()
         },
     }
 }
@@ -128,6 +168,10 @@ export const restrictToViewport: Action<HTMLElement, { offset?: number }> = (nod
     }
 }
 
+interface ComputeFitAttributes {
+    'on:fit': (event: CustomEvent<{ itemCount: number }>) => void
+}
+
 /**
  * An action to compute the number of elements that fit inside the container.
  * This works by caching the position of the right hand of each child element,
@@ -136,9 +180,7 @@ export const restrictToViewport: Action<HTMLElement, { offset?: number }> = (nod
  * Because of this this action only works for static element lists,
  * i.e. on initial render the node needs to contain all possible child elements.
  */
-export const computeFit: Action<HTMLElement> = (
-    node
-): ActionReturn<void, { 'on:fit': (event: CustomEvent<{ itemCount: number }>) => void }> => {
+export const computeFit: Action<HTMLElement, void, ComputeFitAttributes> = node => {
     // Holds the cumulative width of all elements up to element i.
     const widths: number[] = [0]
 
@@ -163,6 +205,45 @@ export const computeFit: Action<HTMLElement> = (
     return {
         destroy() {
             observer.disconnect()
+        },
+    }
+}
+
+/**
+ * Helper action to manage CSS classes on an element. This is used on svelte:body because
+ * it doesn't support the class directive.
+ * See https://github.com/sveltejs/svelte/issues/3105
+ */
+export const classNames: Action<HTMLElement, string | string[]> = (node, classes) => {
+    // Converts the input to an array of non-empty strings.
+    // Empty strings are not valid inputs for classList and would throw an error.
+    function clean(classes: string | string[]): string[] {
+        return (Array.isArray(classes) ? classes : [classes]).filter(cls => cls.trim().length > 0)
+    }
+
+    classes = clean(classes)
+    node.classList.add(...classes)
+
+    return {
+        update(newClasses) {
+            node.classList.remove(...classes)
+            classes = clean(newClasses)
+            node.classList.add(...classes)
+        },
+        destroy() {
+            node.classList.remove(...classes)
+        },
+    }
+}
+
+/**
+ * An action to move the attached element to the end of the document body.
+ */
+export const portal: Action<HTMLElement> = target => {
+    window.document.body.appendChild(target)
+    return {
+        destroy() {
+            target.parentElement?.removeChild(target)
         },
     }
 }

@@ -61,7 +61,7 @@ var KubernetesOrDockerComposeOrPureDocker = conftypes.RawUnified{
 	// The builtin auth provider with signup disallowed (shown below) means that
 	// after the initial site admin signs in, all other users must be invited.
 	//
-	// Other providers are documented at https://docs.sourcegraph.com/admin/auth.
+	// Other providers are documented at https://sourcegraph.com/docs/admin/auth.
 	"auth.providers": [
 		{
 			"type": "builtin",

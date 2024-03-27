@@ -3,14 +3,17 @@ package conf
 import (
 	"encoding/hex"
 	"log" //nolint:logging // TODO move all logging to sourcegraph/log
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/cronexpr"
 
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
@@ -68,6 +71,61 @@ func AccessTokensAllow() AccessTokenAllow {
 	default:
 		return AccessTokensNone
 	}
+}
+
+func AccessTokensMaxPerUser() int {
+	defaultValue := 25
+	cfg := Get().AuthAccessTokens
+	if cfg == nil || cfg.MaxTokensPerUser == nil {
+		return defaultValue
+	}
+	return *cfg.MaxTokensPerUser
+}
+
+// AccessTokensAllowNoExpiration returns whether access tokens can be created without expiration.
+func AccessTokensAllowNoExpiration() bool {
+	cfg := Get().AuthAccessTokens
+	if cfg == nil || cfg.AllowNoExpiration == nil {
+		return true
+	}
+	return *cfg.AllowNoExpiration
+}
+
+// AccessTokensExpirationOptions returns the default access token expiration days
+// and the available expiration options (in days). It first checks if any defaults
+// or options are configured, and falls back to the hardcoded defaults if not.
+// Options will be in ascending order.
+func AccessTokensExpirationOptions() (defaultDays int, options []int) {
+	defaultOptions := []int{7, 14, 30, 60, 90}
+	defaultExpiryDays := 90
+	cfg := Get().AuthAccessTokens
+	if cfg == nil {
+		return defaultExpiryDays, defaultOptions
+	}
+
+	// If there is a default specified, use that.
+	if cfg.DefaultExpirationDays != nil {
+		defaultExpiryDays = *cfg.DefaultExpirationDays
+	}
+
+	// use the default options if there are none specified
+	expiryOptions := cfg.ExpirationOptionDays
+	if len(expiryOptions) == 0 {
+		expiryOptions = defaultOptions
+	}
+
+	// add the default option if it wasn't in the list already
+	foundDefault := false
+	for _, days := range expiryOptions {
+		foundDefault = foundDefault || days == defaultExpiryDays
+	}
+	if !foundDefault {
+		expiryOptions = append(expiryOptions, defaultExpiryDays)
+	}
+
+	slices.Sort(expiryOptions)
+
+	return defaultExpiryDays, expiryOptions
 }
 
 // EmailVerificationRequired returns whether users must verify an email address before they
@@ -164,6 +222,19 @@ func CodyRestrictUsersFeatureFlag() bool {
 		return *restrict
 	}
 	return false
+}
+
+func CodyPermissionsEnabled() bool {
+	// CodyPermissions is never used if the deprecated CodyRestrictUsersFeatureFlag is set,
+	// as that implies the site admin has not upgraded to the new RBAC model yet.
+	if CodyRestrictUsersFeatureFlag() {
+		return false
+	}
+
+	if enabled := Get().CodyPermissions; enabled != nil {
+		return *enabled
+	}
+	return true // default to enabled
 }
 
 func ExecutorsEnabled() bool {
@@ -335,14 +406,6 @@ func SearchSymbolsParallelism() int {
 
 func EventLoggingEnabled() bool {
 	val := ExperimentalFeatures().EventLogging
-	if val == "" {
-		return true
-	}
-	return val == "enabled"
-}
-
-func StructuralSearchEnabled() bool {
-	val := ExperimentalFeatures().StructuralSearch
 	if val == "" {
 		return true
 	}
@@ -579,8 +642,8 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		completionsConfig = &schema.Completions{
 			Provider:        string(conftypes.CompletionsProviderNameSourcegraph),
 			ChatModel:       "anthropic/claude-2.0",
-			FastChatModel:   "anthropic/claude-instant-1",
-			CompletionModel: "anthropic/claude-instant-1",
+			FastChatModel:   "anthropic/claude-instant-1.2",
+			CompletionModel: "anthropic/claude-instant-1.2",
 		}
 	}
 
@@ -623,12 +686,12 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default fast chat model.
 		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "anthropic/claude-instant-1"
+			completionsConfig.FastChatModel = "anthropic/claude-instant-1.2"
 		}
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "anthropic/claude-instant-1"
+			completionsConfig.CompletionModel = "anthropic/claude-instant-1.2"
 		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameOpenAI) {
 		// If no endpoint is configured, use a default value.
@@ -658,7 +721,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAnthropic) {
 		// If no endpoint is configured, use a default value.
 		if completionsConfig.Endpoint == "" {
-			completionsConfig.Endpoint = "https://api.anthropic.com/v1/complete"
+			completionsConfig.Endpoint = "https://api.anthropic.com/v1/messages"
 		}
 
 		// If not access token is set, we cannot talk to Anthropic. Bail.
@@ -673,12 +736,12 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default fast chat model.
 		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "claude-instant-1"
+			completionsConfig.FastChatModel = "claude-instant-1.2"
 		}
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "claude-instant-1"
+			completionsConfig.CompletionModel = "claude-instant-1.2"
 		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAzureOpenAI) {
 		// If no endpoint is configured, this provider is misconfigured.
@@ -723,7 +786,8 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "accounts/fireworks/models/starcoder-7b-w8a16"
+			// Use the virtual fireworks/starcoder model name as the default
+			completionsConfig.CompletionModel = "starcoder"
 		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAWSBedrock) {
 		// If no endpoint is configured, no default available.
@@ -733,12 +797,12 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "anthropic.claude-v2"
+			completionsConfig.ChatModel = "anthropic.claude-v2" //this modelID in Bedrock refers to claude-2.0
 		}
 
 		// Set a default fast chat model.
 		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "anthropic.claude-instant-v1"
+			completionsConfig.FastChatModel = "anthropic.claude-instant-v1" // this modelID in Bedrock refers to claude-instant-1.x it is not possible to specify the minor version
 		}
 
 		// Set a default completions model.
@@ -795,6 +859,53 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	return computedConfig
 }
 
+func GetConfigFeatures(siteConfig schema.SiteConfiguration) (c *conftypes.ConfigFeatures) {
+	// If cody is disabled, don't use any of the other features.
+	if !codyEnabled(siteConfig) {
+		return nil
+	}
+	configFeatures := siteConfig.ConfigFeatures
+	var attributionEnabled bool
+	if enabled := siteConfig.AttributionEnabled; enabled != nil {
+		attributionEnabled = *enabled
+	}
+	// If no features configuration is set at all, but cody is enabled, assume a default configuration
+	// where all the features are enabled this is to handle edge cases where no config is set etc
+	if configFeatures == nil {
+		return &conftypes.ConfigFeatures{
+			Chat:         true,
+			AutoComplete: true,
+			Commands:     true,
+			Attribution:  attributionEnabled,
+		}
+	}
+
+	computedConfig := &conftypes.ConfigFeatures{
+		Chat:         configFeatures.Chat,
+		AutoComplete: configFeatures.AutoComplete,
+		Commands:     configFeatures.Commands,
+		Attribution:  attributionEnabled,
+	}
+	return computedConfig
+}
+
+func GetAttributionGateway(siteConfig schema.SiteConfiguration) (string, string) {
+	if !codyEnabled(siteConfig) {
+		return "", ""
+	}
+	// Explicit attribution gateway config overrides autocomplete config (if used).
+	if g := siteConfig.AttributionGateway; g != nil {
+		return g.Endpoint, getSourcegraphProviderAccessToken(g.AccessToken, siteConfig)
+	}
+	// Fall back to autocomplete config if no explicit gateway config.
+	cc := GetCompletionsConfig(siteConfig)
+	ccUsingGateway := cc != nil && cc.Provider == conftypes.CompletionsProviderNameSourcegraph
+	if ccUsingGateway {
+		return cc.Endpoint, getSourcegraphProviderAccessToken(cc.AccessToken, siteConfig)
+	}
+	return "", ""
+}
+
 const embeddingsMaxFileSizeBytes = 1000000
 
 // GetEmbeddingsConfig evaluates a complete embeddings configuration based on
@@ -802,6 +913,11 @@ const embeddingsMaxFileSizeBytes = 1000000
 func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.EmbeddingsConfig {
 	// If cody is disabled, don't use embeddings.
 	if !codyEnabled(siteConfig) {
+		return nil
+	}
+
+	// Only allow embeddings on dotcom
+	if !dotcom.SourcegraphDotComMode() {
 		return nil
 	}
 
@@ -1080,7 +1196,7 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 	case conftypes.CompletionsProviderNameAzureOpenAI:
 		// We cannot know based on the model name what model is actually used,
 		// this is a sane default for GPT in general.
-		return 7_500
+		return 7_000
 	case conftypes.CompletionsProviderNameAWSBedrock:
 		if strings.HasPrefix(model, "anthropic.") {
 			return anthropicDefaultMaxPromptTokens(strings.TrimPrefix(model, "anthropic."))
@@ -1098,9 +1214,9 @@ func anthropicDefaultMaxPromptTokens(model string) int {
 		return 100_000
 
 	}
-	if model == "claude-2" || model == "claude-2.0" || model == "claude-2.1" || model == "claude-v2" {
-		// TODO: Technically, v2 also uses a 100k window, but we should validate
-		// that returning 100k here is the right thing to do.
+	if model == "claude-2" || model == "claude-2.0" || model == "claude-2.1" || model == "claude-v2" || model == anthropic.Claude3Haiku || model == anthropic.Claude3Opus || model == anthropic.Claude3Sonnet {
+		// TODO: Technically, v2 and v3 also uses a 100k/200k window respectively, but we should
+		// validate that returning 100k here is the right thing to do.
 		return 12_000
 	}
 	// For now, all other claude models have a 9k token window.
@@ -1110,12 +1226,18 @@ func anthropicDefaultMaxPromptTokens(model string) int {
 func openaiDefaultMaxPromptTokens(model string) int {
 	switch model {
 	case "gpt-4":
-		return 7_500
+		return 7_000
 	case "gpt-4-32k":
 		return 32_000
-	case "gpt-3.5-turbo", "gpt-3.5-turbo-instruct", "gpt-4-1106-preview":
+	case "gpt-3.5-turbo-instruct":
 		return 4_000
-	case "gpt-3.5-turbo-16k":
+	case "gpt-3.5-turbo-16k",
+		"gpt-3.5-turbo":
+		return 16_000
+	case "gpt-4-1106-preview",
+		"gpt-4-turbo-preview":
+		// TODO: Technically, GPT 4 Turbo uses a 128k window, but we should validate
+		// that returning 128k here is the right thing to do.
 		return 16_000
 	default:
 		return 4_000
@@ -1128,10 +1250,46 @@ func fireworksDefaultMaxPromptTokens(model string) int {
 		return 3_000
 	}
 
-	if strings.HasPrefix(model, "accounts/fireworks/models/starcoder-") {
+	if strings.HasPrefix(model, "accounts/fireworks/models/starcoder-") || strings.HasPrefix(model, "starcoder") {
 		// StarCoder has a context window of 8192 tokens
 		return 6_000
 	}
 
 	return 4_000
+}
+
+// RepoListUpdateInterval returns the repository list update interval.
+//
+// If the RepoListUpdateInterval site configuration setting is 0, it defaults to 1 minute.
+func RepoListUpdateInterval() time.Duration {
+	v := Get().RepoListUpdateInterval
+	if v == 0 { //  default to 1 minute
+		v = 1
+	}
+	return time.Duration(v) * time.Minute
+}
+
+// RepoConcurrentExternalServiceSyncers returns the number of concurrent external service syncers.
+//
+// If the RepoConcurrentExternalServiceSyncers site configuration setting is 0, it defaults to 3.
+func RepoConcurrentExternalServiceSyncers() int {
+	v := Get().RepoConcurrentExternalServiceSyncers
+	if v <= 0 {
+		return 3
+	}
+	return v
+}
+
+// PermissionsUserMapping returns the last valid value of permissions user mapping in the site configuration.
+// Callers must not mutate the returned pointer.
+func PermissionsUserMapping() *schema.PermissionsUserMapping {
+	c := Get().PermissionsUserMapping
+	if c == nil {
+		return &schema.PermissionsUserMapping{Enabled: false, BindID: "email"}
+	}
+	// Invalid config.
+	if c.BindID != "email" && c.BindID != "username" {
+		return &schema.PermissionsUserMapping{Enabled: false, BindID: "email"}
+	}
+	return c
 }

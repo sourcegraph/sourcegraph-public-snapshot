@@ -16,6 +16,8 @@ export * from './results/sidebar/helpers'
 export * from './results/sidebar/SearchReference'
 export * from './results/sidebar/SearchTypeLink'
 export * from './results/StreamingSearchResultsList'
+export * from './results/filters/NewSearchFilters'
+export * from './results/filters/hooks'
 export * from './util'
 
 export { useSearchResultState } from './stores/results-store'

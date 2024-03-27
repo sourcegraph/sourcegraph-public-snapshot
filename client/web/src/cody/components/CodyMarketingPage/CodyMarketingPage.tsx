@@ -1,6 +1,9 @@
+import { useEffect } from 'react'
+
 import { mdiChevronRight, mdiCodeBracesBox, mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
 import { Badge, H1, H2, H3, H4, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
@@ -27,8 +30,6 @@ interface CodyPlatformCardProps {
 /* eslint-disable  @sourcegraph/sourcegraph/check-help-links */
 
 const onSpeakToAnEngineer = (): void => eventLogger.log(EventName.SPEAK_TO_AN_ENGINEER_CTA)
-const onClickCTAButton = (type: string): void =>
-    eventLogger.log(EventName.AUTH_INITIATED, { type, source: 'cody-signed-out' }, { type, page: 'cody-signed-out' })
 
 const IDEIcon: React.FunctionComponent<{}> = () => (
     <svg viewBox="-4 -4 31 31" fill="none" xmlns="http://www.w3.org/2000/svg" className={styles.codyPlatformCardIcon}>
@@ -106,9 +107,9 @@ const codyPlatformCardItems = (
           ]),
 ]
 
-export interface CodyMarketingPageProps {
+export interface CodyMarketingPageProps extends TelemetryV2Props {
     isSourcegraphDotCom: boolean
-    context: Pick<SourcegraphContext, 'authProviders'>
+    context: Pick<SourcegraphContext, 'externalURL'>
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -116,9 +117,12 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
     context,
     isSourcegraphDotCom,
     authenticatedUser,
+    telemetryRecorder,
 }) => {
     const { theme } = useTheme()
     const isDarkTheme = theme === Theme.Dark
+
+    useEffect(() => telemetryRecorder.recordEvent('cody.marketing', 'view'), [telemetryRecorder])
 
     return (
         <Page>
@@ -168,14 +172,17 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                         </Text>
                         <div className={styles.buttonWrapper}>
                             <ExternalsAuth
+                                page="cody-marketing-page"
                                 context={context}
                                 githubLabel="GitHub"
                                 gitlabLabel="GitLab"
                                 googleLabel="Google"
                                 withCenteredText={true}
-                                onClick={onClickCTAButton}
+                                onClick={() => {}}
                                 ctaClassName={styles.authButton}
                                 iconClassName={styles.buttonIcon}
+                                telemetryRecorder={telemetryRecorder}
+                                telemetryService={eventLogger}
                             />
                         </div>
                         <Text className="mt-3 mb-0">

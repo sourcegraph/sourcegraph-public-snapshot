@@ -6,13 +6,13 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 )
 
 func init() {
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		frontendregistry.HandleRegistry = handleRegistry
 	}
 }

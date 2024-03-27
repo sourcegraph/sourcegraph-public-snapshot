@@ -15,7 +15,6 @@ import (
 	"sync"
 	"time"
 
-	"code.gitea.io/gitea/modules/hostmatcher"
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/gregjones/httpcache"
 	"github.com/prometheus/client_golang/prometheus"
@@ -25,6 +24,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/hostmatcher"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -111,6 +111,7 @@ var (
 	externalRetryDelayMax, _         = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_MAX", "3s", "Max retry delay duration for external HTTP requests"))
 	externalRetryMaxAttempts, _      = strconv.Atoi(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for external HTTP requests"))
 	externalRetryAfterMaxDuration, _ = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION", "3s", "Max duration to wait in retry-after header before we won't auto-retry"))
+	codyGatewayDisableHTTP2          = env.MustGetBool("SRC_HTTP_CLI_DISABLE_CODY_GATEWAY_HTTP2", false, "Whether we should disable HTTP2 for Cody Gateway communication")
 )
 
 // NewExternalClientFactory returns a httpcli.Factory with common options
@@ -177,6 +178,10 @@ var ExternalDoer, _ = ExternalClientFactory.Doer()
 // convenience for existing uses of http.DefaultClient.
 // This client does not cache responses. To cache responses see ExternalDoer instead.
 var UncachedExternalDoer, _ = UncachedExternalClientFactory.Doer()
+
+// CodyGatewayDoer is a client for communication with Cody Gateway.
+// This client does not cache responses.
+var CodyGatewayDoer, _ = UncachedExternalClientFactory.Doer(NewDisableHTTP2Opt(codyGatewayDisableHTTP2))
 
 // TestExternalClientFactory is a httpcli.Factory with common options
 // and is created for tests where you'd normally use an ExternalClientFactory.
@@ -645,7 +650,7 @@ func NewRetryPolicy(max int, maxRetryAfterDuration time.Duration) rehttp.RetryFn
 			return false
 		default:
 			// Don't retry more than 3 times for no such host errors.
-			// This affords some resilience to dns unreliability while
+			// This affords some resilience to DNS unreliability while
 			// preventing 20 attempts with a non existing name.
 			var dnsErr *net.DNSError
 			if a.Index >= 3 && errors.As(a.Error, &dnsErr) && dnsErr.IsNotFound {
@@ -823,6 +828,22 @@ func NewMaxIdleConnsPerHostOpt(max int) Opt {
 
 		tr.MaxIdleConnsPerHost = max
 
+		return nil
+	}
+}
+
+// NewDisableHTTP2Opt returns an Opt that makes the http.Client use HTTP/1.1 (instead of defaulting to HTTP/2).
+func NewDisableHTTP2Opt(disable bool) Opt {
+	return func(cli *http.Client) error {
+		tr, err := getTransportForMutation(cli)
+		if err != nil {
+			return errors.Wrap(err, "httpcli.NewDisableHTTP2Opt")
+		}
+		if disable {
+			tr.ForceAttemptHTTP2 = false
+			tr.TLSNextProto = make(map[string]func(authority string, c *tls.Conn) http.RoundTripper)
+			tr.TLSClientConfig = &tls.Config{}
+		}
 		return nil
 	}
 }

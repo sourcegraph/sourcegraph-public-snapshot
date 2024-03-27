@@ -1,0 +1,842 @@
+---
+source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
+---
+  package foobar
+//^^^^^^^ Keyword
+//        ^^^^^^ Identifier
+  
+  // Comments
+//^^^^^^^^^^^ Comment
+  /* Multi
+//^^^^^^^^ Comment 3:0..5:13
+     line
+     comment */
+  
+  // Imports
+//^^^^^^^^^^ Comment
+  import java.util.*
+//^^^^^^ Keyword
+//       ^^^^ Identifier
+//           ^ PunctuationDelimiter
+//            ^^^^ Identifier
+  
+  import java.nio.channels.FileChannel
+//^^^^^^ Keyword
+//       ^^^^ Identifier
+//           ^ PunctuationDelimiter
+//            ^^^ Identifier
+//               ^ PunctuationDelimiter
+//                ^^^^^^^^ Identifier
+//                        ^ PunctuationDelimiter
+//                         ^^^^^^^^^^^ Identifier
+  
+  fun Mat.put(indices: IntArray, data: UShortArray)  = this.put(indices, data.asShortArray())
+//^^^ Keyword
+//    ^^^ IdentifierType
+//       ^ PunctuationDelimiter
+//        ^^^ IdentifierFunction
+//            ^^^^^^^ IdentifierParameter
+//                   ^ PunctuationDelimiter
+//                     ^^^^^^^^ IdentifierBuiltinType
+//                             ^ PunctuationDelimiter
+//                               ^^^^ IdentifierParameter
+//                                   ^ PunctuationDelimiter
+//                                     ^^^^^^^^^^^ IdentifierBuiltinType
+//                                                   ^ IdentifierOperator
+//                                                     ^^^^ IdentifierBuiltin
+//                                                         ^ PunctuationDelimiter
+//                                                          ^^^ IdentifierFunction
+//                                                              ^^^^^^^ Identifier
+//                                                                     ^ PunctuationDelimiter
+//                                                                       ^^^^ Identifier
+//                                                                           ^ PunctuationDelimiter
+//                                                                            ^^^^^^^^^^^^ IdentifierFunction
+  
+  /***
+//^^^^ Comment 14:0..20:3
+   *  Example use:
+   *
+   *  val (b, g, r) = mat.at<UByte>(50, 50).v3c
+   *  mat.at<UByte>(50, 50).val = T3(245u, 113u, 34u)
+   *
+   */
+  @Suppress("UNCHECKED_CAST")
+//^ IdentifierAttribute
+// ^^^^^^^^ IdentifierAttribute
+//          ^^^^^^^^^^^^^^^^ StringLiteral
+  inline fun <reified T> Mat.at(row: Int, col: Int) : Atable<T> =
+//^^^^^^ Keyword
+//       ^^^ Keyword
+//           ^ IdentifierOperator
+//            ^^^^^^^ Keyword
+//                    ^ IdentifierType
+//                     ^ IdentifierOperator
+//                       ^^^ IdentifierType
+//                          ^ PunctuationDelimiter
+//                           ^^ IdentifierFunction
+//                              ^^^ IdentifierParameter
+//                                 ^ PunctuationDelimiter
+//                                   ^^^ IdentifierBuiltinType
+//                                      ^ PunctuationDelimiter
+//                                        ^^^ IdentifierParameter
+//                                           ^ PunctuationDelimiter
+//                                             ^^^ IdentifierBuiltinType
+//                                                  ^ PunctuationDelimiter
+//                                                    ^^^^^^ IdentifierType
+//                                                          ^ IdentifierOperator
+//                                                           ^ IdentifierType
+//                                                            ^ IdentifierOperator
+//                                                              ^ IdentifierOperator
+      when (T::class) {
+//    ^^^^ Keyword
+//          ^ IdentifierType
+//           ^^ PunctuationDelimiter
+//             ^^^^^ Keyword
+          UShort::class -> AtableUShort(this, row, col) as Atable<T>
+//        ^^^^^^ IdentifierBuiltinType
+//              ^^ PunctuationDelimiter
+//                ^^^^^ Keyword
+//                      ^^ IdentifierOperator
+//                         ^^^^^^^^^^^^ IdentifierFunction
+//                                      ^^^^ IdentifierBuiltin
+//                                          ^ PunctuationDelimiter
+//                                            ^^^ Identifier
+//                                               ^ PunctuationDelimiter
+//                                                 ^^^ Identifier
+//                                                      ^^ IdentifierOperator
+//                                                         ^^^^^^ IdentifierType
+//                                                               ^ IdentifierOperator
+//                                                                ^ IdentifierType
+//                                                                 ^ IdentifierOperator
+          else -> throw RuntimeException("Unsupported class type")
+//        ^^^^ Keyword
+//             ^^ IdentifierOperator
+//                ^^^^^ Keyword
+//                      ^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                       ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+      }
+  
+  
+  /**
+//^^^ Comment 29:0..32:3
+   * Implementation of [DataAccess] which handles access and interactions with file and data
+   * under scoped storage via the MediaStore API.
+   */
+  @RequiresApi(Build.VERSION_CODES.Q)
+//^ IdentifierAttribute
+// ^^^^^^^^^^^ IdentifierAttribute
+//             ^^^^^ Identifier
+//                  ^ PunctuationDelimiter
+//                   ^^^^^^^^^^^^^ IdentifierConstant
+//                                ^ PunctuationDelimiter
+//                                 ^ IdentifierConstant
+  internal class MediaStoreData(context: Context, filePath: String, accessFlag: FileAccessFlags) :
+//^^^^^^^^ Keyword
+//         ^^^^^ Keyword
+//               ^^^^^^^^^^^^^^ IdentifierType
+//                              ^^^^^^^ Identifier
+//                                     ^ PunctuationDelimiter
+//                                       ^^^^^^^ IdentifierType
+//                                              ^ PunctuationDelimiter
+//                                                ^^^^^^^^ Identifier
+//                                                        ^ PunctuationDelimiter
+//                                                          ^^^^^^ IdentifierBuiltinType
+//                                                                ^ PunctuationDelimiter
+//                                                                  ^^^^^^^^^^ Identifier
+//                                                                            ^ PunctuationDelimiter
+//                                                                              ^^^^^^^^^^^^^^^ IdentifierType
+//                                                                                               ^ PunctuationDelimiter
+   DataAccess(filePath) {
+// ^^^^^^^^^^ IdentifierType
+//            ^^^^^^^^ Identifier
+  
+   private data class DataItem(
+// ^^^^^^^ Keyword
+//         ^^^^ Keyword
+//              ^^^^^ Keyword
+//                    ^^^^^^^^ IdentifierType
+    val id: Long,
+//  ^^^ Keyword
+//      ^^ Identifier
+//        ^ PunctuationDelimiter
+//          ^^^^ IdentifierBuiltinType
+//              ^ PunctuationDelimiter
+    val mediaType: String
+//  ^^^ Keyword
+//      ^^^^^^^^^ Identifier
+//               ^ PunctuationDelimiter
+//                 ^^^^^^ IdentifierBuiltinType
+   )
+  
+   companion object {
+// ^^^^^^^^^ Keyword
+//           ^^^^^^ Keyword
+  
+    private val PROJECTION = arrayOf(
+//  ^^^^^^^ Keyword
+//          ^^^ Keyword
+//              ^^^^^^^^^^ IdentifierConstant
+//                         ^ IdentifierOperator
+//                           ^^^^^^^ IdentifierBuiltin
+     MediaStore.Files.FileColumns._ID
+//   ^^^^^^^^^^ Identifier
+//             ^ PunctuationDelimiter
+//              ^^^^^ Identifier
+//                   ^ PunctuationDelimiter
+//                    ^^^^^^^^^^^ Identifier
+//                               ^ PunctuationDelimiter
+//                                ^^^ Identifier
+    )
+  
+    private const val SELECTION_BY_PATH = "${MediaStore.Files.FileColumns.DISPLAY_NAME} = ? " +
+//  ^^^^^^^ Keyword
+//          ^^^^^ Keyword
+//                ^^^ Keyword
+//                    ^^^^^^^^^^^^^^^^^ IdentifierConstant
+//                                      ^ IdentifierOperator
+//                                        ^ StringLiteral
+//                                         ^^ StringLiteralEscape
+//                                           ^^^^^^^^^^ Identifier
+//                                                     ^ PunctuationDelimiter
+//                                                      ^^^^^ Identifier
+//                                                           ^ PunctuationDelimiter
+//                                                            ^^^^^^^^^^^ Identifier
+//                                                                       ^ PunctuationDelimiter
+//                                                                        ^^^^^^^^^^^^ IdentifierConstant
+//                                                                                    ^ StringLiteralEscape
+//                                                                                     ^^^^^^ StringLiteral
+//                                                                                            ^ IdentifierOperator
+     " AND ${MediaStore.Files.FileColumns.RELATIVE_PATH} = ?"
+//   ^^^^^^ StringLiteral
+//         ^^ StringLiteralEscape
+//           ^^^^^^^^^^ Identifier
+//                     ^ PunctuationDelimiter
+//                      ^^^^^ Identifier
+//                           ^ PunctuationDelimiter
+//                            ^^^^^^^^^^^ Identifier
+//                                       ^ PunctuationDelimiter
+//                                        ^^^^^^^^^^^^^ IdentifierConstant
+//                                                     ^ StringLiteralEscape
+//                                                      ^^^^^ StringLiteral
+  
+    private fun getSelectionByPathArguments(path: String): Array<String> {
+//  ^^^^^^^ Keyword
+//          ^^^ Keyword
+//              ^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                          ^^^^ IdentifierParameter
+//                                              ^ PunctuationDelimiter
+//                                                ^^^^^^ IdentifierBuiltinType
+//                                                       ^ PunctuationDelimiter
+//                                                         ^^^^^ IdentifierBuiltinType
+//                                                              ^ IdentifierOperator
+//                                                               ^^^^^^ IdentifierBuiltinType
+//                                                                     ^ IdentifierOperator
+     return arrayOf(getMediaStoreDisplayName(path), getMediaStoreRelativePath(path))
+//   ^^^^^^ Keyword
+//          ^^^^^^^ IdentifierBuiltin
+//                  ^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                           ^^^^ Identifier
+//                                                ^ PunctuationDelimiter
+//                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                                                            ^^^^ Identifier
+    }
+   }
+   override val fileChannel: FileChannel
+// ^^^^^^^^ Keyword
+//          ^^^ Keyword
+//              ^^^^^^^^^^^ Identifier
+//                         ^ PunctuationDelimiter
+//                           ^^^^^^^^^^^ IdentifierType
+  
+   init {
+// ^^^^ IdentifierBuiltin
+    val contentResolver = context.contentResolver
+//  ^^^ Keyword
+//      ^^^^^^^^^^^^^^^ Identifier
+//                      ^ IdentifierOperator
+//                        ^^^^^^^ Identifier
+//                               ^ PunctuationDelimiter
+//                                ^^^^^^^^^^^^^^^ Identifier
+    val dataItems = queryByPath(context, filePath)
+//  ^^^ Keyword
+//      ^^^^^^^^^ Identifier
+//                ^ IdentifierOperator
+//                  ^^^^^^^^^^^ IdentifierFunction
+//                              ^^^^^^^ Identifier
+//                                     ^ PunctuationDelimiter
+//                                       ^^^^^^^^ Identifier
+  
+  
+    id = dataItem.id
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^^^^ Identifier
+//               ^ PunctuationDelimiter
+//                ^^ Identifier
+    uri = dataItem.uri
+//  ^^^ Identifier
+//      ^ IdentifierOperator
+//        ^^^^^^^^ Identifier
+//                ^ PunctuationDelimiter
+//                 ^^^ Identifier
+   }
+  }
+  
+  
+  // Variables
+//^^^^^^^^^^^^ Comment
+  var a = 1         // Mutable
+//^^^ Keyword
+//    ^ Identifier
+//      ^ IdentifierOperator
+//        ^ NumericLiteral
+//                  ^^^^^^^^^^ Comment
+  val b = 2         // Immutable
+//^^^ Keyword
+//    ^ Identifier
+//      ^ IdentifierOperator
+//        ^ NumericLiteral
+//                  ^^^^^^^^^^^^ Comment
+  var c: Int = 3     // Type specified
+//^^^ Keyword
+//    ^ Identifier
+//     ^ PunctuationDelimiter
+//       ^^^ IdentifierBuiltinType
+//           ^ IdentifierOperator
+//             ^ NumericLiteral
+//                   ^^^^^^^^^^^^^^^^^ Comment
+  
+  // Nullable types
+//^^^^^^^^^^^^^^^^^ Comment
+  var nullable: String? = null
+//^^^ Keyword
+//    ^^^^^^^^ Identifier
+//            ^ PunctuationDelimiter
+//              ^^^^^^ IdentifierBuiltinType
+//                      ^ IdentifierOperator
+//                        ^^^^ IdentifierNull
+  
+  // Functions
+//^^^^^^^^^^^^ Comment
+  fun doSomething() { }
+//^^^ Keyword
+//    ^^^^^^^^^^^ IdentifierFunction
+  fun sum(x: Int, y: Int): Int { return x + y }
+//^^^ Keyword
+//    ^^^ IdentifierFunction
+//        ^ IdentifierParameter
+//         ^ PunctuationDelimiter
+//           ^^^ IdentifierBuiltinType
+//              ^ PunctuationDelimiter
+//                ^ IdentifierParameter
+//                 ^ PunctuationDelimiter
+//                   ^^^ IdentifierBuiltinType
+//                       ^ PunctuationDelimiter
+//                         ^^^ IdentifierBuiltinType
+//                               ^^^^^^ Keyword
+//                                      ^ Identifier
+//                                        ^ IdentifierOperator
+//                                          ^ Identifier
+  
+  // Lambdas/Anonymous functions
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  fun exampleLambda(a: Int, func: (Int) -> Int) {
+//^^^ Keyword
+//    ^^^^^^^^^^^^^ IdentifierFunction
+//                  ^ IdentifierParameter
+//                   ^ PunctuationDelimiter
+//                     ^^^ IdentifierBuiltinType
+//                        ^ PunctuationDelimiter
+//                          ^^^^ IdentifierParameter
+//                              ^ PunctuationDelimiter
+//                                 ^^^ IdentifierBuiltinType
+//                                      ^^ IdentifierOperator
+//                                         ^^^ IdentifierBuiltinType
+      println(func(a))
+//    ^^^^^^^ IdentifierBuiltin
+//            ^^^^ IdentifierFunction
+//                 ^ Identifier
+  }
+  
+  // String interpolation
+//^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  var name = "John"
+//^^^ Keyword
+//    ^^^^ Identifier
+//         ^ IdentifierOperator
+//           ^^^^^^ StringLiteral
+  println("Hello $name!")
+//^^^^^^^ IdentifierBuiltin
+//        ^^^^^^^ StringLiteral
+//               ^ StringLiteralEscape
+//                ^^^^ Identifier
+//                    ^^ StringLiteral
+  
+  // Conditional expressions
+//^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  var max = a > b ? a : b
+//^^^ Keyword
+//    ^^^ Identifier
+//        ^ IdentifierOperator
+//          ^ Identifier
+//            ^ IdentifierOperator
+//              ^ Identifier
+//                  ^ Identifier
+//                    ^ PunctuationDelimiter
+//                      ^ Identifier
+  
+  // Range
+//^^^^^^^^ Comment
+  for (i in 1..10) { print(i) }   // 1 to 10
+//^^^ Keyword
+//     ^ Identifier
+//       ^^ IdentifierOperator
+//          ^ NumericLiteral
+//           ^^ IdentifierOperator
+//             ^^ NumericLiteral
+//                   ^^^^^ IdentifierBuiltin
+//                         ^ Identifier
+//                                ^^^^^^^^^^ Comment
+  
+  // Collections
+//^^^^^^^^^^^^^^ Comment
+  val list = listOf(1, 2, 3)
+//^^^ Keyword
+//    ^^^^ Identifier
+//         ^ IdentifierOperator
+//           ^^^^^^ IdentifierBuiltin
+//                  ^ NumericLiteral
+//                   ^ PunctuationDelimiter
+//                     ^ NumericLiteral
+//                      ^ PunctuationDelimiter
+//                        ^ NumericLiteral
+  val set = setOf("a", "b", "c")
+//^^^ Keyword
+//    ^^^ Identifier
+//        ^ IdentifierOperator
+//          ^^^^^ IdentifierBuiltin
+//                ^^^ StringLiteral
+//                   ^ PunctuationDelimiter
+//                     ^^^ StringLiteral
+//                        ^ PunctuationDelimiter
+//                          ^^^ StringLiteral
+  val map = mapOf(1 to "a", 2 to "b")
+//^^^ Keyword
+//    ^^^ Identifier
+//        ^ IdentifierOperator
+//          ^^^^^ IdentifierBuiltin
+//                ^ NumericLiteral
+//                  ^^ Identifier
+//                     ^^^ StringLiteral
+//                        ^ PunctuationDelimiter
+//                          ^ NumericLiteral
+//                            ^^ Identifier
+//                               ^^^ StringLiteral
+  
+  // Null safety
+//^^^^^^^^^^^^^^ Comment
+  var length: Int? = null
+//^^^ Keyword
+//    ^^^^^^ Identifier
+//          ^ PunctuationDelimiter
+//            ^^^ IdentifierBuiltinType
+//                 ^ IdentifierOperator
+//                   ^^^^ IdentifierNull
+  val l = length ?: -1   // Elvis operator
+//^^^ Keyword
+//    ^ Identifier
+//      ^ IdentifierOperator
+//        ^^^^^^ Identifier
+//               ^^ IdentifierOperator
+//                  ^ IdentifierOperator
+//                   ^ NumericLiteral
+//                       ^^^^^^^^^^^^^^^^^ Comment
+  
+  // Smart casts
+//^^^^^^^^^^^^^^ Comment
+  fun example(x: Any) {
+//^^^ Keyword
+//    ^^^^^^^ IdentifierFunction
+//            ^ IdentifierParameter
+//             ^ PunctuationDelimiter
+//               ^^^ IdentifierType
+      if (x is String) {  // Smart cast to String
+//    ^^ Keyword
+//        ^ Identifier
+//          ^^ IdentifierOperator
+//             ^^^^^^ IdentifierBuiltinType
+//                        ^^^^^^^^^^^^^^^^^^^^^^^ Comment
+          print(x.length)
+//        ^^^^^ IdentifierBuiltin
+//              ^ Identifier
+//               ^ PunctuationDelimiter
+//                ^^^^^^ Identifier
+      }
+  }
+  
+  // Extension functions
+//^^^^^^^^^^^^^^^^^^^^^^ Comment
+  fun String.isUppercase() = this.toUpperCase() == this
+//^^^ Keyword
+//    ^^^^^^ IdentifierBuiltinType
+//          ^ PunctuationDelimiter
+//           ^^^^^^^^^^^ IdentifierFunction
+//                         ^ IdentifierOperator
+//                           ^^^^ IdentifierBuiltin
+//                               ^ PunctuationDelimiter
+//                                ^^^^^^^^^^^ IdentifierFunction
+//                                              ^^ IdentifierOperator
+//                                                 ^^^^ IdentifierBuiltin
+  
+  
+  // Class
+//^^^^^^^^ Comment
+  class Person(var name: String) {
+//^^^^^ Keyword
+//      ^^^^^^ IdentifierType
+//             ^^^ Keyword
+//                 ^^^^ Identifier
+//                     ^ PunctuationDelimiter
+//                       ^^^^^^ IdentifierBuiltinType
+      // Constructor
+//    ^^^^^^^^^^^^^^ Comment
+      constructor(name: String, age: Int) : this(name) {
+//    ^^^^^^^^^^^ IdentifierBuiltin
+//                ^^^^ IdentifierParameter
+//                    ^ PunctuationDelimiter
+//                      ^^^^^^ IdentifierBuiltinType
+//                            ^ PunctuationDelimiter
+//                              ^^^ IdentifierParameter
+//                                 ^ PunctuationDelimiter
+//                                   ^^^ IdentifierBuiltinType
+//                                        ^ PunctuationDelimiter
+//                                               ^^^^ Identifier
+          // ...
+//        ^^^^^^ Comment
+      }
+  
+      // Methods
+//    ^^^^^^^^^^ Comment
+      fun printName() { println(name) }
+//    ^^^ Keyword
+//        ^^^^^^^^^ IdentifierFunction
+//                      ^^^^^^^ IdentifierBuiltin
+//                              ^^^^ Identifier
+  }
+  
+  // Abstract class
+//^^^^^^^^^^^^^^^^^ Comment
+  abstract class Animal {
+//^^^^^^^^ Keyword
+//         ^^^^^ Keyword
+//               ^^^^^^ IdentifierType
+      abstract fun makeSound()
+//    ^^^^^^^^ Keyword
+//             ^^^ Keyword
+//                 ^^^^^^^^^ IdentifierFunction
+  }
+  
+  // Interface
+//^^^^^^^^^^^^ Comment
+  interface Flyer {
+//^^^^^^^^^ Keyword
+//          ^^^^^ IdentifierType
+      fun fly()
+//    ^^^ Keyword
+//        ^^^ IdentifierFunction
+  }
+  
+  // Object (singleton)
+//^^^^^^^^^^^^^^^^^^^^^ Comment
+  object DataProvider {
+//^^^^^^ Keyword
+//       ^^^^^^^^^^^^ IdentifierType
+      val name = "John"
+//    ^^^ Keyword
+//        ^^^^ Identifier
+//             ^ IdentifierOperator
+//               ^^^^^^ StringLiteral
+  }
+  
+  // Inheritance
+//^^^^^^^^^^^^^^ Comment
+  class Dog(name: String) : Animal() {
+//^^^^^ Keyword
+//      ^^^ IdentifierType
+//          ^^^^ Identifier
+//              ^ PunctuationDelimiter
+//                ^^^^^^ IdentifierBuiltinType
+//                        ^ PunctuationDelimiter
+//                          ^^^^^^ IdentifierType
+      override fun makeSound() { print("Bark!") }
+//    ^^^^^^^^ Keyword
+//             ^^^ Keyword
+//                 ^^^^^^^^^ IdentifierFunction
+//                               ^^^^^ IdentifierBuiltin
+//                                     ^^^^^^^ StringLiteral
+  }
+  
+  // Implementing interface
+//^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  class Bird : Animal(), Flyer {
+//^^^^^ Keyword
+//      ^^^^ IdentifierType
+//           ^ PunctuationDelimiter
+//             ^^^^^^ IdentifierType
+//                     ^ PunctuationDelimiter
+//                       ^^^^^ IdentifierType
+      override fun makeSound() { print("Chirp!") }
+//    ^^^^^^^^ Keyword
+//             ^^^ Keyword
+//                 ^^^^^^^^^ IdentifierFunction
+//                               ^^^^^ IdentifierBuiltin
+//                                     ^^^^^^^^ StringLiteral
+      override fun fly() { println("Flutter flutter!") }
+//    ^^^^^^^^ Keyword
+//             ^^^ Keyword
+//                 ^^^ IdentifierFunction
+//                         ^^^^^^^ IdentifierBuiltin
+//                                 ^^^^^^^^^^^^^^^^^^ StringLiteral
+  }
+  
+  // Annotation
+//^^^^^^^^^^^^^ Comment
+  annotation class UseCase(val name: String)
+//^^^^^^^^^^ Keyword
+//           ^^^^^ Keyword
+//                 ^^^^^^^ IdentifierType
+//                         ^^^ Keyword
+//                             ^^^^ Identifier
+//                                 ^ PunctuationDelimiter
+//                                   ^^^^^^ IdentifierBuiltinType
+  
+  // Apply to function
+//^^^^^^^^^^^^^^^^^^^^ Comment
+  @UseCase("Check user balance")
+//^ IdentifierAttribute
+// ^^^^^^^ IdentifierAttribute
+//         ^^^^^^^^^^^^^^^^^^^^ StringLiteral
+  fun checkBalance() { /*  ... */ }
+//^^^ Keyword
+//    ^^^^^^^^^^^^ IdentifierFunction
+//                     ^^^^^^^^^^ Comment
+  
+  // Apply to class
+//^^^^^^^^^^^^^^^^^ Comment
+  @UseCase("Provide login functionality")
+//^ IdentifierAttribute
+// ^^^^^^^ IdentifierAttribute
+//         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+  class LoginService { /* ... */ }
+//^^^^^ Keyword
+//      ^^^^^^^^^^^^ IdentifierType
+//                     ^^^^^^^^^ Comment
+  
+  // Use reflection to read annotation metadata
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  checkBalance::class.java.getAnnotation(UseCase::class.java).name
+//^^^^^^^^^^^^ IdentifierType
+//            ^^ PunctuationDelimiter
+//              ^^^^^ Keyword
+//                   ^ PunctuationDelimiter
+//                    ^^^^ Identifier
+//                        ^ PunctuationDelimiter
+//                         ^^^^^^^^^^^^^ IdentifierFunction
+//                                       ^^^^^^^ IdentifierType
+//                                              ^^ PunctuationDelimiter
+//                                                ^^^^^ Keyword
+//                                                     ^ PunctuationDelimiter
+//                                                      ^^^^ Identifier
+//                                                           ^ PunctuationDelimiter
+//                                                            ^^^^ Identifier
+  // Prints "Check user balance"
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  
+  // Annotations can have parameters
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  annotation class Name(val first: String, val last: String)
+//^^^^^^^^^^ Keyword
+//           ^^^^^ Keyword
+//                 ^^^^ IdentifierType
+//                      ^^^ Keyword
+//                          ^^^^^ Identifier
+//                               ^ PunctuationDelimiter
+//                                 ^^^^^^ IdentifierBuiltinType
+//                                       ^ PunctuationDelimiter
+//                                         ^^^ Keyword
+//                                             ^^^^ Identifier
+//                                                 ^ PunctuationDelimiter
+//                                                   ^^^^^^ IdentifierBuiltinType
+  @Name(first = "John", last = "Doe")
+//^ IdentifierAttribute
+// ^^^^ IdentifierAttribute
+//      ^^^^^ Identifier
+//            ^ IdentifierOperator
+//              ^^^^^^ StringLiteral
+//                    ^ PunctuationDelimiter
+//                      ^^^^ Identifier
+//                           ^ IdentifierOperator
+//                             ^^^^^ StringLiteral
+  fun doSomething() { ... }
+//^^^ Keyword
+//    ^^^^^^^^^^^ IdentifierFunction
+//                    ^ PunctuationDelimiter
+//                     ^^ IdentifierOperator
+  
+  // Built-in annotations
+//^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  @JvmStatic  // Java static equivalent
+//^ IdentifierAttribute
+// ^^^^^^^^^ IdentifierAttribute
+//            ^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  fun doSomething() {}
+//^^^ Keyword
+//    ^^^^^^^^^^^ IdentifierFunction
+  
+  @Throws(IOException::class)  // Declares exceptions thrown
+//^ IdentifierAttribute
+// ^^^^^^ IdentifierAttribute
+//        ^^^^^^^^^^^ IdentifierType
+//                   ^^ PunctuationDelimiter
+//                     ^^^^^ Keyword
+//                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  fun readFile() {}
+//^^^ Keyword
+//    ^^^^^^^^ IdentifierFunction
+  
+  
+  // Usage
+//^^^^^^^^ Comment
+  fun main() {
+//^^^ Keyword
+//    ^^^^ IdentifierFunction
+      val person = Person("Jack")
+//    ^^^ Keyword
+//        ^^^^^^ Identifier
+//               ^ IdentifierOperator
+//                 ^^^^^^ IdentifierFunction
+//                        ^^^^^^ StringLiteral
+      person.printName()
+//    ^^^^^^ Identifier
+//          ^ PunctuationDelimiter
+//           ^^^^^^^^^ IdentifierFunction
+  
+      val dog = Dog("Max")
+//    ^^^ Keyword
+//        ^^^ Identifier
+//            ^ IdentifierOperator
+//              ^^^ IdentifierFunction
+//                  ^^^^^ StringLiteral
+      dog.makeSound()
+//    ^^^ Identifier
+//       ^ PunctuationDelimiter
+//        ^^^^^^^^^ IdentifierFunction
+  
+      val bird = Bird()
+//    ^^^ Keyword
+//        ^^^^ Identifier
+//             ^ IdentifierOperator
+//               ^^^^ IdentifierFunction
+      bird.makeSound()
+//    ^^^^ Identifier
+//        ^ PunctuationDelimiter
+//         ^^^^^^^^^ IdentifierFunction
+      bird.fly()
+//    ^^^^ Identifier
+//        ^ PunctuationDelimiter
+//         ^^^ IdentifierFunction
+  
+      println(DataProvider.name)
+//    ^^^^^^^ IdentifierBuiltin
+//            ^^^^^^^^^^^^ Identifier
+//                        ^ PunctuationDelimiter
+//                         ^^^^ Identifier
+  }
+  
+  
+  class Person(val name: String) {
+//^^^^^ Keyword
+//      ^^^^^^ IdentifierType
+//             ^^^ Keyword
+//                 ^^^^ Identifier
+//                     ^ PunctuationDelimiter
+//                       ^^^^^^ IdentifierBuiltinType
+      var lastName: String
+//    ^^^ Keyword
+//        ^^^^^^^^ Identifier
+//                ^ PunctuationDelimiter
+//                  ^^^^^^ IdentifierBuiltinType
+  
+      init {
+//    ^^^^ IdentifierBuiltin
+          lastName = "Unknown"
+//        ^^^^^^^^ Identifier
+//                 ^ IdentifierOperator
+//                   ^^^^^^^^^ StringLiteral
+      }
+      companion object {
+//    ^^^^^^^^^ Keyword
+//              ^^^^^^ Keyword
+          val defaultName = "Default Name"
+//        ^^^ Keyword
+//            ^^^^^^^^^^^ Identifier
+//                        ^ IdentifierOperator
+//                          ^^^^^^^^^^^^^^ StringLiteral
+  
+          fun from(name: String): Person {
+//        ^^^ Keyword
+//            ^^^^ IdentifierFunction
+//                 ^^^^ IdentifierParameter
+//                     ^ PunctuationDelimiter
+//                       ^^^^^^ IdentifierBuiltinType
+//                              ^ PunctuationDelimiter
+//                                ^^^^^^ IdentifierType
+              return Person(name)
+//            ^^^^^^ Keyword
+//                   ^^^^^^ IdentifierFunction
+//                          ^^^^ Identifier
+          }
+      }
+  }
+  
+  val john = Person.from("John")
+//^^^ Keyword
+//    ^^^^ Identifier
+//         ^ IdentifierOperator
+//           ^^^^^^ Identifier
+//                 ^ PunctuationDelimiter
+//                  ^^^^ IdentifierFunction
+//                       ^^^^^^ StringLiteral
+  
+  object UserStore {
+//^^^^^^ Keyword
+//       ^^^^^^^^^ IdentifierType
+      val users = arrayListOf<Person>()
+//    ^^^ Keyword
+//        ^^^^^ Identifier
+//              ^ IdentifierOperator
+//                ^^^^^^^^^^^ IdentifierFunction
+//                           ^ IdentifierOperator
+//                            ^^^^^^ IdentifierType
+//                                  ^ IdentifierOperator
+  
+      init {
+//    ^^^^ IdentifierBuiltin
+          File("users.txt").readLines().forEach {
+//        ^^^^ IdentifierFunction
+//             ^^^^^^^^^^^ StringLiteral
+//                         ^ PunctuationDelimiter
+//                          ^^^^^^^^^ IdentifierFunction
+//                                     ^ PunctuationDelimiter
+//                                      ^^^^^^^ IdentifierFunction
+              users.add(Person(it))
+//            ^^^^^ Identifier
+//                 ^ PunctuationDelimiter
+//                  ^^^ IdentifierFunction
+//                      ^^^^^^ IdentifierFunction
+//                             ^^ Identifier
+          }
+      }
+  }
+

@@ -4,10 +4,10 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { NEVER, type Observable } from 'rxjs'
 import { catchError, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { asError, isErrorLike } from '@sourcegraph/common'
+import { asError, isErrorLike, isMobile, pluralize } from '@sourcegraph/common'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Text, ErrorAlert, Card, H1, H2, useEventObservable } from '@sourcegraph/wildcard'
+import { Button, Card, ErrorAlert, H1, H2, Link, Text, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { BrandLogo } from '../../../components/branding/BrandLogo'
@@ -45,6 +45,12 @@ interface TokenRequester {
     onlyDotCom?: boolean
     /** If true, it will forward the `destination` param to the redirect URL if it starts with / */
     forwardDestination?: boolean
+    /**
+     * If true, will attempt to POST the newly created auth token to the URL supplied via the
+     * tokenReceiverUrl param. This enables the clients to continue the authentication process
+     * even if the redirect is not working as expected.
+     */
+    postTokenToReceiverUrl?: boolean
 }
 
 // SECURITY: Only accept callback requests from requesters on this allowed list
@@ -64,6 +70,24 @@ const REQUESTERS: Record<string, TokenRequester> = {
         infoMessage:
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
         callbackType: 'new-tab',
+        postTokenToReceiverUrl: true,
+    },
+    CODY_VSCODIUM: {
+        name: 'Cody - VSCodium Extension',
+        redirectURL: 'vscodium://sourcegraph.cody-ai?code=$TOKEN',
+        successMessage: 'Now opening VS Code...',
+        infoMessage:
+            'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
+        callbackType: 'new-tab',
+        postTokenToReceiverUrl: true,
+    },
+    CODY_CURSOR: {
+        name: 'Cody - Cursor Extension',
+        redirectURL: 'cursor://sourcegraph.cody-ai?code=$TOKEN',
+        successMessage: 'Now opening Cursor...',
+        infoMessage:
+            'Please make sure you have Cursor running on your machine if you do not see an open dialog in your browser.',
+        callbackType: 'new-tab',
     },
     CODY_INSIDERS: {
         name: 'Cody - VS Code Insiders Extension',
@@ -72,6 +96,7 @@ const REQUESTERS: Record<string, TokenRequester> = {
         infoMessage:
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
         callbackType: 'new-tab',
+        postTokenToReceiverUrl: true,
     },
     JETBRAINS: {
         name: 'JetBrains IDE',
@@ -116,13 +141,14 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     const isLightTheme = useIsLightTheme()
     const navigate = useNavigate()
     const location = useLocation()
+    const defaultAccessTokenExpiryDays = window.context.accessTokensExpirationDaysDefault
     useEffect(() => {
         telemetryService.logPageView('NewAccessTokenCallback')
     }, [telemetryService])
-
     /** Get the requester, port, and destination from the url parameters */
     const urlSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search])
     let requestFrom = useMemo(() => urlSearchParams.get('requestFrom'), [urlSearchParams])
+    const tokenReceiverUrl = useMemo(() => urlSearchParams.get('tokenReceiverUrl'), [urlSearchParams])
     let port = useMemo(() => urlSearchParams.get('port'), [urlSearchParams])
 
     // Allow a single query parameter `requestFrom=JETBRAIN-PORT_NUMBER`. The motivation for this parameter encoding is that
@@ -185,6 +211,8 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
         setNote(REQUESTERS[requestFrom].name)
     }, [isSourcegraphDotCom, location.search, navigate, requestFrom, requester, port, destination])
 
+    const isRequestFromMobileDevice = isMobile()
+
     /**
      * We use this to handle token creation request from redirections.
      * Don't create token if this page wasn't linked to from a valid
@@ -195,16 +223,29 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
             (click: Observable<React.MouseEvent>) =>
                 click.pipe(
                     switchMap(() =>
-                        (requester ? createAccessToken(user.id, [AccessTokenScopes.UserAll], note) : NEVER).pipe(
-                            tap(result => {
-                                // SECURITY: If the request was from a valid requester, redirect to the allowlisted redirect URL.
+                        (requester
+                            ? createAccessToken(
+                                  user.id,
+                                  [AccessTokenScopes.UserAll],
+                                  note,
+                                  defaultAccessTokenExpiryDays * 86400 // days to seconds
+                              )
+                            : NEVER
+                        ).pipe(
+                            tap(async result => {
+                                // SECURITY: If the request was from a valid requester and from a non-mobile device,
+                                // redirect to the allowlisted redirect URL. (https://github.com/sourcegraph/security-issues/issues/361)
                                 // SECURITY: Local context ONLY
-                                if (requester) {
+                                if (requester && !isRequestFromMobileDevice) {
                                     onDidCreateAccessToken(result)
                                     setNewToken(result.token)
                                     let uri = replacePlaceholder(requester?.redirectURL, 'TOKEN', result.token)
                                     if (isRedirectable(requestFrom) && port) {
                                         uri = replacePlaceholder(uri, 'PORT', port)
+                                    }
+
+                                    if (requester.postTokenToReceiverUrl && tokenReceiverUrl) {
+                                        await postTokenToReceiverUrl(tokenReceiverUrl, result.token)
                                     }
 
                                     switch (requester.callbackType) {
@@ -225,7 +266,17 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                         )
                     )
                 ),
-            [requester, user.id, note, onDidCreateAccessToken, requestFrom, port]
+            [
+                requester,
+                user.id,
+                note,
+                defaultAccessTokenExpiryDays,
+                isRequestFromMobileDevice,
+                onDidCreateAccessToken,
+                requestFrom,
+                port,
+                tokenReceiverUrl,
+            ]
         )
     )
 
@@ -257,6 +308,9 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                             variant="primary"
                             label="Authorize"
                             loading={creationOrError === 'loading'}
+                            // we disable this if the request is made from a mobile device so the access token doesn't
+                            // get created at all. This prevents redirecting to an external site from a mobile app.
+                            disabled={isRequestFromMobileDevice}
                             onClick={onAuthorize}
                         />
                         <Button
@@ -280,8 +334,10 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                 <Text>{requester.name} access token successfully generated.</Text>
                                 <CopyableText className="test-access-token" text={newToken} />
                                 <Text className="form-help text-muted" size="small">
-                                    This is a one-time access token to connect your account to {requester.name}. You
-                                    will not be able to see this token again once the window is closed.
+                                    This is an access token to connect your account to {requester.name}. This token will
+                                    expire in {defaultAccessTokenExpiryDays}{' '}
+                                    {pluralize('day', defaultAccessTokenExpiryDays)}. You will not be able to see this
+                                    token again once the window is closed.
                                 </Text>
                             </div>
                         </details>
@@ -297,4 +353,23 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
 function replacePlaceholder(subject: string, search: string, replace: string): string {
     // %24 is the URL encoded version of $
     return subject.replace('$' + search, replace).replace('%24' + search, replace)
+}
+
+async function postTokenToReceiverUrl(tokenReceiverUrl: string, accessToken: string): Promise<void> {
+    const url = new URL(tokenReceiverUrl)
+
+    // Do not post data on anything but the local computer
+    if (url.hostname !== '127.0.0.1') {
+        return
+    }
+
+    try {
+        await fetch(tokenReceiverUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accessToken }),
+        })
+    } catch {
+        // Ignore eventual errors
+    }
 }

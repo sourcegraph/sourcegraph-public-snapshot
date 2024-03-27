@@ -1,11 +1,9 @@
-import { findIndex } from 'lodash'
-
 import type { AuthenticatedUser } from '../auth'
 import { BatchChangesWritePermission } from '../rbac/constants'
+import { doesUserHavePermission } from '../util/permission'
 
 export const canWriteBatchChanges = (user: Pick<AuthenticatedUser, 'permissions'> | null): boolean =>
-    !!user &&
-    findIndex(user.permissions.nodes, permission => permission.displayName === BatchChangesWritePermission) !== -1
+    doesUserHavePermission(user, BatchChangesWritePermission)
 
 export const NO_ACCESS_SOURCEGRAPH_COM = 'Batch changes are not available on Sourcegraph.com.'
 export const NO_ACCESS_BATCH_CHANGES_WRITE =

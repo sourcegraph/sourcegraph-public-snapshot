@@ -1,0 +1,14 @@
+fragment UserMenu_User on User {
+    settingsURL
+    username
+    siteAdmin
+    organizations {
+        nodes {
+            name
+            displayName
+            url
+            settingsURL
+        }
+    }
+    ...Avatar_User
+}

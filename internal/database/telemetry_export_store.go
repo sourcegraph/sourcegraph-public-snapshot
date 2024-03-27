@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"strconv"
 	"strings"
 	"time"
@@ -18,20 +19,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/sensitivemetadataallowlist"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// FeatureFlagTelemetryExport enables telemetry export by allowing events to be
-// queued for export via (TelemetryEventsExportQueueStore).QueueForExport
-//
-// It now defaults to 'true' as of 5.2.1.
-// TODO(5.2.2): Remove this flag entirely.
-const FeatureFlagTelemetryExport = "telemetry-export"
 
 var counterQueuedEvents = promauto.NewCounterVec(prometheus.CounterOpts{
 	Namespace: "src",
@@ -74,8 +67,10 @@ type TelemetryEventsExportQueueStore interface {
 // TelemetryEventsExportQueueDiagnosticsStore is a read-only subset of
 // TelemetryEventsExportQueueStore for diagnostics endpoints and helpers.
 type TelemetryEventsExportQueueDiagnosticsStore interface {
-	// CountUnexported returns the number of events not yet exported.
-	CountUnexported(ctx context.Context) (int64, error)
+	// CountUnexported returns the number of events not yet exported. The time
+	// returned indicates the timestamp of the oldest event - it may be a zero
+	// value if there are no events awaiting export.
+	CountUnexported(ctx context.Context) (int64, time.Time, error)
 
 	// CountRecentlyExported returns the number of events recently exported.
 	// Data retention depends on TELEMETRY_GATEWAY_EXPORTER_EXPORTED_EVENTS_RETENTION.
@@ -122,15 +117,6 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 	defer tr.EndWithErr(&err)
 
 	logger := trace.Logger(ctx, s.logger)
-
-	// Check FeatureFlagTelemetryExport, defaulting to true if there are no
-	// flags or the export flag is not present. This is currently only intended
-	// as an escape hatch.
-	// TODO(5.2.2): Remove this feature flag.
-	if flags := featureflag.FromContext(ctx); flags != nil && !flags.GetBoolOr(FeatureFlagTelemetryExport, true) {
-		tr.SetAttributes(attribute.Bool("flag-enabled", false))
-		return nil
-	}
 
 	// 🚨 SECURITY: Respect export mode carefully.
 	switch s.getExportMode() {
@@ -304,13 +290,15 @@ func (s *telemetryEventsExportQueueStore) DeletedExported(ctx context.Context, b
 	return result.RowsAffected()
 }
 
-func (s *telemetryEventsExportQueueStore) CountUnexported(ctx context.Context) (int64, error) {
+func (s *telemetryEventsExportQueueStore) CountUnexported(ctx context.Context) (int64, time.Time, error) {
 	var count int64
-	return count, s.Store.Handle().QueryRowContext(ctx, `
-	SELECT COUNT(*)
+	var oldest sql.NullTime
+	err := s.Store.Handle().QueryRowContext(ctx, `
+	SELECT COUNT(*), MIN(timestamp)
 	FROM telemetry_events_export_queue
-	WHERE exported_at IS NULL
-	`).Scan(&count)
+	WHERE exported_at IS NULL;
+	`).Scan(&count, &oldest)
+	return count, oldest.Time, err
 }
 
 func (s *telemetryEventsExportQueueStore) CountRecentlyExported(ctx context.Context) (int64, error) {

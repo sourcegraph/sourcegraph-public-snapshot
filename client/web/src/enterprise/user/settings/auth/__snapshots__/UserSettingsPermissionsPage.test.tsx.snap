@@ -87,7 +87,9 @@ exports[`UserSettingsPermissionsPage > empty state 1`] = `
         <div
           class="row"
         >
-          <div>
+          <div
+            class="content"
+          >
             <h4
               class="h4 title"
             >
@@ -412,7 +414,9 @@ exports[`UserSettingsPermissionsPage > user alice with permissions 1`] = `
         <div
           class="row"
         >
-          <div>
+          <div
+            class="content"
+          >
             <h4
               class="h4 title"
             >

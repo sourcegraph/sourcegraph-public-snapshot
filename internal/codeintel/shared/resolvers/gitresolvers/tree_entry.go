@@ -3,6 +3,7 @@ package gitresolvers
 import (
 	"context"
 	"fmt"
+	"io"
 	stdpath "path"
 	"strings"
 	"time"
@@ -54,12 +55,17 @@ func (r *treeEntryResolver) Content(ctx context.Context, args *resolvers.GitTree
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	content, err := r.gitserverClient.ReadFile(
+	fr, err := r.gitserverClient.NewFileReader(
 		ctx,
 		api.RepoName(r.commit.Repository().Name()), // repository name
 		api.CommitID(r.commit.OID()),               // commit oid
 		r.path,                                     // path
 	)
+	if err != nil {
+		return "", err
+	}
+	defer fr.Close()
+	content, err := io.ReadAll(fr)
 	if err != nil {
 		return "", err
 	}

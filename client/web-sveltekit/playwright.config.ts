@@ -1,9 +1,16 @@
 import type { PlaywrightTestConfig } from '@playwright/test'
 
+const PORT = process.env.PORT ? Number(process.env.PORT) : 4173
+
 const config: PlaywrightTestConfig = {
+    testMatch: '**/*.spec.ts',
     webServer: {
-        command: 'npm run build && npm run preview',
-        port: 4173,
+        command: 'pnpm run build && pnpm run preview',
+        port: PORT,
+        reuseExistingServer: !process.env.CI,
+    },
+    use: {
+        baseURL: `http://localhost:${PORT}`,
     },
 }
 

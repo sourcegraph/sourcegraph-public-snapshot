@@ -14,6 +14,7 @@ import {
     useTabsContext,
 } from '@reach/tabs'
 import classNames from 'classnames'
+import { isFunction } from 'lodash'
 
 import { useElementObscuredArea } from '../../hooks'
 import type { ForwardReferenceComponent } from '../../types'
@@ -71,7 +72,13 @@ export interface TabProps extends ReachTabProps {}
 
 export interface TabPanelsProps extends ReachTabPanelsProps {}
 
-export interface TabPanelProps extends ReachTabPanelProps {}
+export interface TabPanelContext {
+    shouldRender: boolean
+}
+
+export interface TabPanelProps extends Omit<ReachTabPanelProps, 'children'> {
+    children?: React.ReactNode | ((tabContext: TabPanelContext) => React.ReactNode)
+}
 
 /**
  * reach UI tabs component with steroids, this tabs handles how the data should be loaded
@@ -247,7 +254,7 @@ export const TabPanel = React.forwardRef((props, reference) => {
     const shouldRender = useShouldPanelRender(children)
     return (
         <ReachTabPanel data-testid="wildcard-tab-panel" as={as} ref={reference} {...reachProps}>
-            {shouldRender ? children : null}
+            {isFunction(children) ? children({ shouldRender }) : shouldRender ? children : null}
         </ReachTabPanel>
     )
 }) as ForwardReferenceComponent<'div', TabPanelProps>

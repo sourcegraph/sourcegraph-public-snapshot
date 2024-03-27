@@ -85,7 +85,7 @@ type CommitSearcher struct {
 	Logger               log.Logger
 	RepoDir              string
 	Query                MatchTree
-	Revisions            []protocol.RevisionSpecifier
+	Revisions            []string
 	IncludeDiff          bool
 	IncludeModifiedFiles bool
 	RepoName             api.RepoName
@@ -113,7 +113,7 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.Com
 	})
 
 	// Start workers
-	for i := 0; i < numWorkers; i++ {
+	for range numWorkers {
 		g.Go(func() error {
 			return cs.runJobs(ctx, jobs)
 		})
@@ -141,6 +141,18 @@ func (cs *CommitSearcher) gitArgs() []string {
 		args = append(args, "--name-status")
 	}
 	return args
+}
+
+func revsToGitArgs(revs []string) []string {
+	revArgs := make([]string, 0, len(revs))
+	for _, rev := range revs {
+		if rev != "" {
+			revArgs = append(revArgs, rev)
+		} else {
+			revArgs = append(revArgs, "HEAD")
+		}
+	}
+	return revArgs
 }
 
 func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) (err error) {
@@ -261,22 +273,6 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 		errs = errors.Append(errs, runJob(j))
 	}
 	return errs
-}
-
-func revsToGitArgs(revs []protocol.RevisionSpecifier) []string {
-	revArgs := make([]string, 0, len(revs))
-	for _, rev := range revs {
-		if rev.RevSpec != "" {
-			revArgs = append(revArgs, rev.RevSpec)
-		} else if rev.RefGlob != "" {
-			revArgs = append(revArgs, "--glob="+rev.RefGlob)
-		} else if rev.ExcludeRefGlob != "" {
-			revArgs = append(revArgs, "--exclude="+rev.ExcludeRefGlob)
-		} else {
-			revArgs = append(revArgs, "HEAD")
-		}
-	}
-	return revArgs
 }
 
 // RawCommit is a shallow parse of the output of git log

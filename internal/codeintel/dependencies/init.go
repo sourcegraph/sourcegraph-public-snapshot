@@ -4,7 +4,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/background"
 	dependenciesstore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -22,18 +21,6 @@ func TestService(db database.DB) *Service {
 
 func scopedContext(component string, parent *observation.Context) *observation.Context {
 	return observation.ScopedContext("codeintel", "dependencies", component, parent)
-}
-
-func CrateSyncerJob(
-	observationCtx *observation.Context,
-	autoindexingSvc background.AutoIndexingService,
-	dependenciesSvc background.DependenciesService,
-	gitserverClient gitserver.Client,
-	extSvcStore background.ExternalServiceStore,
-) goroutine.CombinedRoutine {
-	return []goroutine.BackgroundRoutine{
-		background.NewCrateSyncer(observationCtx, autoindexingSvc, dependenciesSvc, gitserverClient, extSvcStore),
-	}
 }
 
 func PackageFiltersJob(

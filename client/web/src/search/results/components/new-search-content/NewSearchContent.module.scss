@@ -9,22 +9,40 @@
 
     display: grid;
     grid-template-rows: auto 1fr;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
     grid-template-areas:
-        'infobar  preview sidebar-header '
-        'contents preview filters';
+        'new-filters infobar preview sidebar-header'
+        'new-filters contents preview filters';
 
-    @media (--md-breakpoint-down) {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto auto 1fr;
-        grid-template-areas:
-            'infobar'
-            'filters'
-            'contents';
-
-        overflow: auto;
-        height: min-content;
+    &--with-new-filters {
+        @media (--md-breakpoint-down) {
+            grid-template-rows: auto 1fr;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            grid-template-areas:
+                'new-filters infobar preview'
+                'new-filters contents preview';
+        }
     }
+
+    &:not(&--with-new-filters) {
+        @media (--md-breakpoint-down) {
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: auto auto 1fr;
+            grid-template-areas:
+                'infobar'
+                'filters'
+                'contents';
+
+            overflow: auto;
+            height: min-content;
+        }
+    }
+}
+
+.new-filters {
+    grid-area: new-filters;
+    border-right: 1px solid var(--border-color-2);
+    background-color: var(--color-bg-1);
 }
 
 .filters {
@@ -100,15 +118,14 @@
 .infobar {
     grid-area: infobar;
     padding: 0.3rem 0.5rem;
-    background: var(--color-bg-1);
     border-bottom: 1px solid var(--border-color-2);
     min-height: 41px;
+    background-color: var(--result-header-bg);
 }
 
 .content {
     grid-area: contents;
     overflow: auto;
-    padding: 0 0.5rem 0.5rem 0.5rem;
 
     &::-webkit-scrollbar {
         width: 0.5rem;
@@ -142,6 +159,12 @@
             scrollbar-color: var(--oc-gray-6);
         }
     }
+
+    &-meta-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
 }
 
 .alert-area {
@@ -168,15 +191,12 @@
 
     &-file-link {
         padding: 0.25rem 0.5rem;
-        background: var(--oc-gray-1);
+        background: var(--result-header-bg);
         overflow: hidden;
         flex-shrink: 0;
         width: 100%;
         text-overflow: ellipsis;
-
-        :global(.theme-dark) & {
-            background: var(--oc-gray-9);
-        }
+        border-bottom: 1px solid var(--border-color-2);
     }
 
     &-content {

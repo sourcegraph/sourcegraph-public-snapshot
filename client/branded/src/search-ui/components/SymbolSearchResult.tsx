@@ -12,6 +12,7 @@ import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operati
 import { getFileMatchUrl, getRepositoryUrl, getRevision, type SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 
@@ -21,7 +22,7 @@ import { CopyPathAction } from './CopyPathAction'
 import { RepoFileLink } from './RepoFileLink'
 import { ResultContainer } from './ResultContainer'
 
-import searchResultStyles from './SearchResult.module.scss'
+import resultStyles from './ResultContainer.module.scss'
 import styles from './SymbolSearchResult.module.scss'
 
 const DEFAULT_VISIBILITY_OFFSET = { bottom: -500 }
@@ -62,12 +63,14 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                         ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
-                className={searchResultStyles.titleInner}
+                className={resultStyles.titleInner}
             />
             <CopyPathAction
                 filePath={result.path}
-                className={searchResultStyles.copyButton}
+                className={resultStyles.copyButton}
                 telemetryService={telemetryService}
+                // TODO (dadlerj): update to use a real telemetry recorder
+                telemetryRecorder={noOpTelemetryRecorder}
             />
         </span>
     )
@@ -80,7 +83,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
     )
 
     const logEventOnCopy = useCallback(() => {
-        telemetryService.log(...codeCopiedEvent('file-match'))
+        telemetryService.log(...codeCopiedEvent('search-result'))
     }, [telemetryService])
 
     const [hasBeenVisible, setHasBeenVisible] = useState(false)
@@ -127,8 +130,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
             onResultClicked={onSelect}
             repoName={result.repository}
             repoStars={result.repoStars}
-            className={classNames(searchResultStyles.copyButtonContainer, containerClassName)}
-            resultClassName={styles.symbolsOverride}
+            className={classNames(resultStyles.copyButtonContainer, containerClassName)}
             repoLastFetched={result.repoLastFetched}
         >
             <VisibilitySensor
@@ -140,7 +142,12 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                     {result.symbols.map((symbol, i) => (
                         <div
                             key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
-                            className={styles.symbol}
+                            className={classNames(
+                                styles.symbol,
+                                resultStyles.clickable,
+                                resultStyles.focusableBlock,
+                                resultStyles.horizontalDividerBetween
+                            )}
                             data-href={symbol.url}
                             role="link"
                             data-testid="symbol-search-result"

@@ -38,7 +38,7 @@ type CodeMonitorStore interface {
 	DeleteMonitor(ctx context.Context, id int64) error
 	GetMonitor(ctx context.Context, monitorID int64) (*Monitor, error)
 	ListMonitors(context.Context, ListMonitorsOpts) ([]*Monitor, error)
-	CountMonitors(ctx context.Context, userID *int32) (int32, error)
+	CountMonitors(ctx context.Context, opts ListMonitorsOpts) (int32, error)
 
 	CreateQueryTrigger(ctx context.Context, monitorID int64, query string) (*QueryTrigger, error)
 	UpdateQueryTrigger(ctx context.Context, id int64, query string) error

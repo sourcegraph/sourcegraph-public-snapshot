@@ -106,6 +106,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         The email address of the initial site installer (or if deleted, the first active site admin), to
                         know who to contact regarding sales, product updates, security updates, and policy updates
                     </li>
+                    <li>The external URL of the instance (e.g. "https://sourcegraph.example.com")</li>
                     <li>Sourcegraph version string (e.g. "vX.X.X")</li>
                     <li>Dependency versions (e.g. "6.0.9" for Redis, or "13.0" for Postgres)</li>
                     <li>

@@ -3,6 +3,7 @@ package authtest
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -84,6 +85,7 @@ func TestSiteAdminEndpoints(t *testing.T) {
 			query     string
 			variables map[string]any
 		}
+		tokenDurationSeconds := 3600
 		tests := []gqlTest{
 			{
 				name: "resetTriggerQueryTimestamps",
@@ -184,7 +186,7 @@ mutation {
 				name: "createAccessToken.ScopeSiteAdminSudo",
 				query: `
 mutation CreateAccessToken($userID: ID!) {
-	createAccessToken(user: $userID, scopes: ["site-admin:sudo"], note: "") {
+	createAccessToken(user: $userID, scopes: ["site-admin:sudo"], note: "", durationSeconds:` + strconv.Itoa(tokenDurationSeconds) + `) {
 		id
 	}
 }`,

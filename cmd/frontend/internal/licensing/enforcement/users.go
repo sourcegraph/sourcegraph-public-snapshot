@@ -6,11 +6,11 @@ import (
 
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -50,7 +50,9 @@ func NewBeforeCreateUserHook() func(context.Context, database.DB, *extsvc.Accoun
 		}
 
 		// Block creation of a new user beyond the licensed user count (unless true-up is allowed).
-		userCount, err := db.Users().Count(ctx, nil)
+		userCount, err := db.Users().Count(ctx, &database.UsersListOptions{
+			ExcludeSourcegraphOperators: true,
+		})
 		if err != nil {
 			return err
 		}
@@ -78,18 +80,17 @@ func NewBeforeCreateUserHook() func(context.Context, database.DB, *extsvc.Accoun
 // NewAfterCreateUserHook returns a AfterCreateUserHook closure that determines whether
 // a new user should be promoted to site admin based on the product license.
 func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) error {
-	// 🚨 SECURITY: To be extra safe that we never promote any new user to be site admin on Sourcegraph Cloud.
-	if envvar.SourcegraphDotComMode() {
-		return nil
-	}
-
 	return func(ctx context.Context, tx database.DB, user *types.User) error {
+		// 🚨 SECURITY: To be extra safe that we never promote any new user to be site admin on Sourcegraph Cloud.
+		if dotcom.SourcegraphDotComMode() {
+			return nil
+		}
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {
 			return err
 		}
 
-		if info.Plan().IsFree() {
+		if info.Plan().IsFreePlan() {
 			store := tx.Users()
 			user.SiteAdmin = true
 			if err := store.SetIsSiteAdmin(ctx, user.ID, user.SiteAdmin); err != nil {
@@ -123,12 +124,12 @@ func NewBeforeSetUserIsSiteAdmin() func(ctx context.Context, isSiteAdmin bool) e
 			if info.IsExpired() {
 				return errors.New("The Sourcegraph license has expired. No site-admins can be created until the license is updated.")
 			}
-			if !info.Plan().IsFree() {
+			if !info.Plan().IsFreePlan() {
 				return nil
 			}
 
 			// Allow users to be promoted to site admins on the Free plan.
-			if info.Plan().IsFree() && isSiteAdmin {
+			if info.Plan().IsFreePlan() && isSiteAdmin {
 				return nil
 			}
 		}

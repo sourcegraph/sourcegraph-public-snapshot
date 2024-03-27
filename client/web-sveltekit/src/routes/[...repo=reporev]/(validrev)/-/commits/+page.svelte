@@ -1,24 +1,50 @@
 <script lang="ts">
     import Commit from '$lib/Commit.svelte'
-    import { createPromiseStore } from '$lib/utils'
 
-    import type { PageData } from './$types'
-    import type { Commits } from './page.gql'
-    import Paginator from '$lib/Paginator.svelte'
+    import type { PageData, Snapshot } from './$types'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
+    import { get } from 'svelte/store'
+    import { navigating } from '$app/stores'
+    import { Alert } from '$lib/wildcard'
+    import type { CommitsPage_GitCommitConnection } from './page.gql'
 
     export let data: PageData
 
-    const { pending, latestValue: commits, set } = createPromiseStore<Promise<Commits>>()
-    $: set(data.deferred.commits)
+    // This tracks the number of commits that have been loaded and the current scroll
+    // position, so both can be restored when the user refreshes the page or navigates
+    // back to it.
+    export const snapshot: Snapshot<{ commitCount: number; scroller: ScrollerCapture }> = {
+        capture() {
+            return {
+                commitCount: commits?.nodes.length ?? 0,
+                scroller: scroller.capture(),
+            }
+        },
+        async restore(snapshot) {
+            if (snapshot?.commitCount !== undefined && get(navigating)?.type === 'popstate') {
+                await commitsQuery?.restore(result => {
+                    const count = result.data?.repository?.commit?.ancestors.nodes?.length
+                    return !!count && count < snapshot.commitCount
+                })
+            }
+            scroller.restore(snapshot.scroller)
+        },
+    }
 
-    // This is a hack to make backword pagination work. It looks like the cursor
-    // for the commits connection is simply a counter. So if it's > 0 we know that
-    // there are are previous pages. We just need to take the page size into account.
-    const PAGE_SIZE = 20
-    $: cursor = $commits?.pageInfo.endCursor ? +$commits.pageInfo.endCursor : null
-    $: hasPreviousPage = cursor !== null && cursor > PAGE_SIZE
-    $: previousEndCursor = String(cursor === null ? 0 : cursor - PAGE_SIZE - PAGE_SIZE)
+    function fetchMore() {
+        commitsQuery?.fetchMore()
+    }
+
+    let scroller: Scroller
+    let commits: CommitsPage_GitCommitConnection | null = null
+
+    $: commitsQuery = data.commitsQuery
+    // We conditionally check for the ancestors field to be able to show
+    // previously loaded commits when an error occurs while fetching more commits.
+    $: if ($commitsQuery?.data?.repository?.commit?.ancestors) {
+        commits = $commitsQuery.data.repository.commit.ancestors
+    }
 </script>
 
 <svelte:head>
@@ -26,75 +52,49 @@
 </svelte:head>
 
 <section>
-    {#if $pending && !$commits}
-        <div class="loader">
-            <LoadingSpinner />
-        </div>
-    {:else if $commits}
-        <div class="commits">
+    <Scroller bind:this={scroller} margin={600} on:more={fetchMore}>
+        {#if !$commitsQuery.restoring && commits}
             <ul>
-                {#each $commits.nodes as commit (commit.canonicalURL)}
+                {#each commits.nodes as commit (commit.canonicalURL)}
                     <li><Commit {commit} /></li>
+                {:else}
+                    <li>
+                        <Alert variant="info">No commits found</Alert>
+                    </li>
                 {/each}
             </ul>
-        </div>
-        <div class="paginator">
-            <Paginator
-                disabled={$pending}
-                pageInfo={{
-                    ...$commits.pageInfo,
-                    hasPreviousPage,
-                    previousEndCursor,
-                }}
-                showLastpageButton={false}
-            />
-            <div class="loader" class:visible={$pending}>
+        {/if}
+        {#if $commitsQuery.fetching || $commitsQuery.restoring}
+            <div>
                 <LoadingSpinner />
             </div>
-        </div>
-    {/if}
+        {:else if $commitsQuery.error}
+            <div>
+                <Alert variant="danger">
+                    Unable to fetch commits: {$commitsQuery.error.message}
+                </Alert>
+            </div>
+        {/if}
+    </Scroller>
 </section>
 
 <style lang="scss">
     section {
-        display: flex;
-        flex-direction: column;
         flex: 1;
         min-height: 0;
-
-        > .loader {
-            flex: 1;
-            display: flex;
-        }
+        overflow: hidden;
     }
 
-    .commits {
-        overflow-y: auto;
-        flex: 1;
+    ul,
+    div {
+        padding: 1rem;
+        max-width: var(--viewport-xl);
+        margin: 0 auto;
     }
 
     ul {
         list-style: none;
-        padding: 1rem;
-        max-width: var(--viewport-xl);
-        margin: 0 auto;
         --avatar-size: 2.5rem;
-    }
-
-    .paginator {
-        flex: 0 0 auto;
-        margin: 1rem auto;
-        display: flex;
-        align-items: center;
-
-        .loader {
-            margin-left: 1rem;
-            visibility: hidden;
-
-            &.visible {
-                visibility: visible;
-            }
-        }
     }
 
     li {
@@ -104,5 +104,12 @@
         &:last-child {
             border: none;
         }
+    }
+
+    div {
+        &:not(:first-child) {
+            border-top: 1px solid var(--border-color);
+        }
+        padding: 0.5rem 0;
     }
 </style>

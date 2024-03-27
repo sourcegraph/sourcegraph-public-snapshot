@@ -3,6 +3,7 @@
  * UI.
  */
 
+import type { ApolloClient } from '@apollo/client'
 import {
     findNext,
     findPrevious,
@@ -111,7 +112,12 @@ class SearchPanel implements Panel {
     private searchTerm = new Subject<string>()
     private subscriptions = new Subscription()
 
-    constructor(private view: EditorView, private navigate: NavigateFunction, config?: SearchPanelConfig) {
+    constructor(
+        private view: EditorView,
+        private navigate: NavigateFunction,
+        private graphQLClient: ApolloClient<any>,
+        config?: SearchPanelConfig
+    ) {
         this.dom = createElement('div', {
             className: classNames('cm-sg-search-container', styles.root),
             id: BLOB_SEARCH_CONTAINER_ID,
@@ -217,6 +223,7 @@ class SearchPanel implements Panel {
 
         this.root.render(
             <CodeMirrorContainer
+                graphQLClient={this.graphQLClient}
                 navigate={this.navigate}
                 onMount={() => {
                     this.input?.focus()
@@ -322,10 +329,24 @@ class SearchPanel implements Panel {
 
     private findNext = (): void => {
         findNext(this.view)
+        // Scroll the selection into the middle third of the view
+        this.view.dispatch({
+            effects: EditorView.scrollIntoView(this.view.state.selection.main.from, {
+                y: 'nearest',
+                yMargin: this.view.dom.getBoundingClientRect().height / 3,
+            }),
+        })
     }
 
     private findPrevious = (): void => {
         findPrevious(this.view)
+        // Scroll the selection into the middle third of the view
+        this.view.dispatch({
+            effects: EditorView.scrollIntoView(this.view.state.selection.main.from, {
+                y: 'nearest',
+                yMargin: this.view.dom.getBoundingClientRect().height / 3,
+            }),
+        })
     }
 
     // Taken from CodeMirror's default search panel implementation. This is
@@ -518,6 +539,7 @@ interface SearchConfig {
     overrideBrowserFindInPageShortcut: boolean
     onOverrideBrowserFindInPageToggle: (enabled: boolean) => void
     navigate: NavigateFunction
+    graphQLClient: ApolloClient<any>
     initialState?: SearchPanelConfig
 }
 
@@ -563,7 +585,7 @@ export function search(config: SearchConfig): Extension {
         theme,
         keymapCompartment.of(keymap.of(getKeyBindings(config.overrideBrowserFindInPageShortcut))),
         codemirrorSearch({
-            createPanel: view => new SearchPanel(view, config.navigate, config.initialState),
+            createPanel: view => new SearchPanel(view, config.navigate, config.graphQLClient, config.initialState),
         }),
         ViewPlugin.define(view => {
             // If we have some initial state for the search bar this means we want

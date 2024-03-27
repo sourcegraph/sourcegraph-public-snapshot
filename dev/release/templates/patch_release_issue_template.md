@@ -35,7 +35,7 @@ pnpm release tracking:issues
 
 ## Prepare release
 
-- [ ] Ensure that all [backported PRs](https://github.com/sourcegraph/sourcegraph/pulls?q=is%3Apr+is%3Aopen+base%3A$MAJOR.MINOR) have been merged.
+- [ ] Ensure that all [backported PRs](https://github.com/sourcegraph/sourcegraph/pulls?q=is%3Apr+is%3Aopen+base%3A$MAJOR.$MINOR) have been merged.
 
 Create and test the first release candidate:
 

@@ -4,18 +4,24 @@
     background-color: var(--mark-bg);
 }
 
-// Temporarily mark external links with a React logo
-a[data-sveltekit-reload='true'] {
-    display: flex !important;
-    align-items: center;
+// Global focus ring styles.
+//
+// NOTE: Since in svelte we use plain HTML tags for elements like
+// links, buttons, inputs, etc. We have to have some common "global"
+// styles for them (like focus ring).
 
-    &::after {
-        margin-left: 0.25rem;
-        width: 1rem;
-        height: 1rem;
-        display: inline-block;
-        content: '';
-        background-image: url('/react-logo.svg');
-        background-repeat: no-repeat;
-    }
+a:focus-visible {
+    // Inset is required here since we have a lot of links
+    // that don't have any spacing between their border and
+    // overflowed parent visible border (so any outside shadow
+    // is visually cut/cropped)
+    box-shadow: 0 0 0 2px var(--primary-2) inset;
+}
+
+button:focus-visible {
+    box-shadow: 0 0 0 2px var(--primary-2);
+}
+
+input:focus-visible {
+    box-shadow: 0 0 0 2px var(--primary-2);
 }

@@ -1,21 +1,24 @@
 package gqltestutil
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import (
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
 
 // CreateAccessToken creates a new access token with given note and scopes for the
 // authenticated user. It returns the new access token created.
-func (c *Client) CreateAccessToken(note string, scopes []string) (string, error) {
+func (c *Client) CreateAccessToken(note string, scopes []string, durationSeconds *int) (string, error) {
 	const query = `
-mutation CreateAccessToken($user: ID!, $scopes: [String!]!, $note: String!) {
-	createAccessToken(user: $user, scopes: $scopes, note: $note) {
+mutation CreateAccessToken($user: ID!, $scopes: [String!]!, $note: String!, $durationSeconds: Int) {
+	createAccessToken(user: $user, scopes: $scopes, note: $note, durationSeconds: $durationSeconds) {
 		token
 	}
 }
 `
 	variables := map[string]any{
-		"user":   c.userID,
-		"scopes": scopes,
-		"note":   note,
+		"user":            c.userID,
+		"scopes":          scopes,
+		"note":            note,
+		"durationSeconds": durationSeconds,
 	}
 	var resp struct {
 		Data struct {

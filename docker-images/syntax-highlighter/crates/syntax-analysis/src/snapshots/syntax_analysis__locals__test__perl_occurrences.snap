@@ -1,0 +1,43 @@
+---
+source: crates/syntax-analysis/src/locals.rs
+expression: dumped
+---
+  package my_package;
+  
+  our $non_local_var = 5;
+  my $local_var = 10;
+//   ^^^^^^^^^^ definition local 1
+  
+  sub add {
+      if (@_ == 2) {
+          my $self = shift;
+//           ^^^^^ definition local 2
+          push(@$self, shift);
+//              ^^^^^ reference local 2
+          return;
+      }
+      my($self, %spec) = @_;
+//       ^^^^^ definition local 3
+//              ^^^^^ definition local 4
+      push(@$self, \%spec);
+//          ^^^^^ reference local 3
+//                  ^^^^^ reference local 4
+      return;
+  }
+  
+  sub something {
+      for my $ikey (keys %$item) {
+//           ^^^^^ definition local 5
+          my $mkey = $ikey;
+//           ^^^^^ definition local 6
+//                   ^^^^^ reference local 5
+          if (my $m = $MATCH{$mkey}) {
+//               ^^ definition local 7
+//                           ^^^^^ reference local 6
+              my $v = $item->{$ikey};
+//               ^^ definition local 8
+//                            ^^^^^ reference local 5
+          }
+      }
+  }
+

@@ -72,11 +72,11 @@ func flowrateWriter(logger log.Logger, w io.Writer) io.Writer {
 }
 
 func (s *Server) gitServiceHandler() *gitservice.Handler {
-	logger := s.Logger.Scoped("gitServiceHandler")
+	logger := s.logger.Scoped("gitServiceHandler")
 
 	return &gitservice.Handler{
 		Dir: func(d string) string {
-			return string(gitserverfs.RepoDirFromName(s.ReposDir, api.RepoName(d)))
+			return string(gitserverfs.RepoDirFromName(s.reposDir, api.RepoName(d)))
 		},
 
 		ErrorHook: func(err error, stderr string) {

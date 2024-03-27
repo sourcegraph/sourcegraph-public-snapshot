@@ -28,13 +28,12 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -129,8 +128,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(false)
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	confGet := func() *conf.Unified { return &conf.Unified{} }
 
@@ -275,30 +273,6 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	}
 }
 
-func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
-
-	ctx := context.Background()
-	confGet := func() *conf.Unified { return &conf.Unified{} }
-	es := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
-	}
-	store := db.ExternalServices()
-	BeforeCreateExternalService = func(context.Context, ExternalServiceStore, *types.ExternalService) error {
-		return errcode.NewPresentationError("test plan limit exceeded")
-	}
-	t.Cleanup(func() { BeforeCreateExternalService = nil })
-	if err := store.Create(ctx, confGet, es); err == nil {
-		t.Fatal("expected an error, got none")
-	}
-}
-
 func TestExternalServicesStore_Update(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -314,8 +288,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	now := timeutil.Now()
 	codeHostURL := "https://github.com/"
 
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(false)
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	// Create a new external service
 	confGet := func() *conf.Unified {
@@ -342,16 +315,15 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Set permissions user mapping and create an "Other" external service
-	pmu := globals.PermissionsUserMapping()
-	t.Cleanup(func() {
-		globals.SetPermissionsUserMapping(pmu)
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			PermissionsUserMapping: &schema.PermissionsUserMapping{
+				Enabled: true,
+				BindID:  "email",
+			},
+		},
 	})
-
-	globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{
-		BindID:  "email",
-		Enabled: true,
-	})
+	t.Cleanup(func() { conf.Mock(nil) })
 
 	esOther := &types.ExternalService{
 		Kind:          extsvc.KindOther,
@@ -696,8 +668,7 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 		t.Fatal(err)
 	}
 
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(false)
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
@@ -1048,7 +1019,7 @@ func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
 		go createRepo(offset, ready)
 	}
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		if status := <-ready; status != 0 {
 			t.Fatal("Error during repo creation")
 		}
@@ -1088,7 +1059,7 @@ func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
 		go createExtSvc(offset, ready2)
 	}
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		if status := <-ready2; status != 0 {
 			t.Fatal("Error during external service repo creation")
 		}
@@ -1359,7 +1330,6 @@ func TestGetLastSyncError(t *testing.T) {
 INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at)
 VALUES ($1,'errored', now())
 `, es.ID)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1378,7 +1348,6 @@ VALUES ($1,'errored', now())
 INSERT INTO external_service_sync_jobs (external_service_id, failure_message, state, finished_at)
 VALUES ($1,$2,'errored', now())
 `, es.ID, expectedError)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2537,18 +2506,18 @@ func TestExternalServiceStore_recalculateFields(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			pmu := globals.PermissionsUserMapping()
-			t.Cleanup(func() {
-				globals.SetPermissionsUserMapping(pmu)
-			})
-
 			es := &types.ExternalService{}
 
 			if tc.explicitPermsEnabled {
-				globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{
-					BindID:  "email",
-					Enabled: true,
+				conf.Mock(&conf.Unified{
+					SiteConfiguration: schema.SiteConfiguration{
+						PermissionsUserMapping: &schema.PermissionsUserMapping{
+							Enabled: true,
+							BindID:  "email",
+						},
+					},
 				})
+				t.Cleanup(func() { conf.Mock(nil) })
 			}
 			rawConfig := "{}"
 			var err error
@@ -2648,9 +2617,7 @@ func Test_validateOtherExternalServiceConnection(t *testing.T) {
 	require.Error(t, err)
 
 	// On DotCom, no error should be returned
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	err = validateOtherExternalServiceConnection(conn)
 	require.NoError(t, err)
@@ -2788,4 +2755,40 @@ func TestExternalServices_CleanupSyncJobs(t *testing.T) {
 			FinishedAt:        now.Add(-10 * 24 * time.Hour),
 		},
 	}, syncJobs)
+}
+
+func TestCalcUnrestricted(t *testing.T) {
+	// Separate test for dotcom mode to test a mix of cases
+	t.Run("dotcom mode always returns false", func(t *testing.T) {
+		require.False(t, calcUnrestricted("", true, false))
+		require.False(t, calcUnrestricted(`{"authorization": {}}`, true, false))
+		require.False(t, calcUnrestricted(`{"authorization": {}, "enforcePermissions": false}`, true, false))
+	})
+
+	otherTests := map[string]struct {
+		authorization          bool
+		enforcePermissions     bool
+		permissionsUserMapping bool
+		want                   bool
+	}{
+		"all false returns unrestricted":                                       {want: true},
+		"authorization true returns restricted":                                {authorization: true, want: false},
+		"permissionsUserMapping true returns restrcited":                       {permissionsUserMapping: true, want: false},
+		"enforcePermissions and no permissionsUserMapping returns restrictred": {enforcePermissions: true, want: false},
+	}
+
+	for testName, test := range otherTests {
+		t.Run(testName, func(t *testing.T) {
+			var vals []string
+			if test.authorization {
+				vals = append(vals, `"authorization": {}`)
+			}
+			if test.enforcePermissions {
+				vals = append(vals, `"enforcePermissions": true`)
+			}
+
+			conf := fmt.Sprintf("{%s}", strings.Join(vals, ","))
+			require.Equal(t, test.want, calcUnrestricted(conf, false, test.permissionsUserMapping))
+		})
+	}
 }

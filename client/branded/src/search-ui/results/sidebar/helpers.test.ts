@@ -17,7 +17,7 @@ function createRepoFilter(value: string): Filter {
         value: `${value}@HEAD`,
         label: value,
         count: 1,
-        limitHit: false,
+        exhaustive: true,
     }
 }
 

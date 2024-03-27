@@ -1,10 +1,6 @@
 package internal
 
 import (
-	"net/http"
-
-	"google.golang.org/protobuf/encoding/protojson"
-
 	"github.com/sourcegraph/sourcegraph/internal/diskusage"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 )
@@ -24,22 +20,4 @@ func getDiskInfo(dir string) (*proto.DiskInfoResponse, error) {
 		FreeSpace:   usage.Free(),
 		PercentUsed: usage.PercentUsed(),
 	}, nil
-}
-
-func (s *Server) handleDiskInfo(w http.ResponseWriter, r *http.Request) {
-	resp, err := getDiskInfo(s.ReposDir)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	jsonBytes, err := protojson.Marshal(resp)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(jsonBytes)
 }

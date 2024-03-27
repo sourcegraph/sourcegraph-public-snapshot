@@ -364,7 +364,7 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
         <section className={styles.exhaustiveSearch}>
             <header className={styles.exhaustiveSearchHeader}>
                 <Text className="m-0">Create a search job:</Text>
-                <ProductStatusBadge status="experimental" />
+                <ProductStatusBadge status="beta" />
             </header>
 
             {validationError && (
@@ -374,7 +374,7 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
             )}
 
             <Text className={classNames(validationError && 'text-muted', styles.exhaustiveSearchText)}>
-                Search jobs exhaustively return all matches of a query. Results can be downloaded via CSV.
+                Search jobs exhaustively returns all matches of a query. Results can be downloaded in JSON Lines format.
             </Text>
 
             {error && <ErrorAlert error={error} className="mt-3" />}

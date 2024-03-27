@@ -20,7 +20,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // dbLicense describes an product license row in the product_licenses DB table.
@@ -66,6 +69,10 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		return mocks.licenses.Create(subscriptionID, licenseKey)
 	}
 
+	// TODO: put a logger on dbLicenses and scope from that
+	logger := log.Scoped("dbLicenses.Create")
+	logger = trace.Logger(ctx, logger)
+
 	newUUID, err := uuid.NewRandom()
 	if err != nil {
 		return "", errors.Wrap(err, "new UUID")
@@ -92,16 +99,44 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
+		arg := struct {
+			SubscriptionID string    `json:"subscriptionID"`
+			NewUUID        uuid.UUID `json:"newUUID"`
+		}{
+			SubscriptionID: subscriptionID,
+			NewUUID:        newUUID,
+		}
 		// Log an event when a license is created in DotCom
-		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
-			log.Error(err)
+		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
+			logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
 
-	postLicenseCreationToSlack(ctx, subscriptionID, version, expiresAt, info)
+	postLicenseCreationToSlack(ctx, logger, subscriptionID, version, expiresAt, info)
 
 	return id, nil
+}
+
+func postLicenseCreationToSlack(ctx context.Context, logger log.Logger, subscriptionID string, version int, expiresAt *time.Time, info license.Info) {
+	dotcom := conf.Get().Dotcom
+	if dotcom == nil {
+		return
+	}
+
+	licenseCreator, err := actor.FromContext(ctx).User(ctx, database.Users(logger))
+	if err != nil {
+		logger.Error("error looking up license creator user", log.Error(err))
+		return
+	}
+
+	client := slack.New(dotcom.SlackLicenseCreationWebhook)
+	err = client.Post(ctx, &slack.Payload{
+		Text: renderLicenseCreationSlackMessage(time.Now(), licenseCreator, subscriptionID, version, expiresAt, info),
+	})
+	if err != nil {
+		logger.Error("error sending Slack message", log.Error(err))
+		return
+	}
 }
 
 const slackLicenseCreationMessageFmt = `
@@ -113,49 +148,40 @@ A new license was created by *%s* for subscription <https://sourcegraph.com/site
 • *User count*: %s
 • *License tags*: %s
 • *Salesforce subscription ID*: %s
-• *Salesforce opportunity ID*: <https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/%s|%s>
+• *Salesforce opportunity ID*: <https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/%s/view|%s>
 
 Reply with a :approved_stamp: when this is approved
 Reply with a :white_check_mark: when this has been sent to the customer
 `
 
-func postLicenseCreationToSlack(ctx context.Context, subscriptionID string, version int, expiresAt *time.Time, info license.Info) {
-	dotcom := conf.Get().Dotcom
-	if dotcom == nil {
-		return
-	}
-
-	logger := log.Scoped("license creation Slack notification")
-
-	licenseCreator, err := actor.FromContext(ctx).User(ctx, database.Users(logger))
-	if err != nil {
-		logger.Error("error looking up license creator user", log.Error(err))
-		return
-	}
-
+func renderLicenseCreationSlackMessage(
+	now time.Time,
+	licenseCreator *types.User,
+	subscriptionID string,
+	version int,
+	expiresAt *time.Time,
+	info license.Info,
+) string {
 	pacificLoc, _ := time.LoadLocation("America/Los_Angeles")
 
-	client := slack.New(dotcom.SlackLicenseCreationWebhook)
-	err = client.Post(ctx, &slack.Payload{
-		Text: fmt.Sprintf(slackLicenseCreationMessageFmt,
-			licenseCreator.Username,
-			subscriptionID,
-			subscriptionID,
-			strconv.Itoa(version),
-			expiresAt.Format("Jan 2, 2006 3:04pm MST"),
-			strconv.FormatFloat(time.Until(*expiresAt).Hours()/24, 'f', 1, 64),
-			expiresAt.In(pacificLoc).Format("Jan 2, 2006 3:04pm MST"),
-			strconv.FormatUint(uint64(info.UserCount), 10),
-			"`"+strings.Join(info.Tags, "`, `")+"`",
-			*info.SalesforceSubscriptionID,
-			*info.SalesforceOpportunityID,
-			*info.SalesforceOpportunityID,
-		),
-	})
-	if err != nil {
-		logger.Error("error sending Slack message", log.Error(err))
-		return
-	}
+	// Safely dereference optional properties
+	sfSubscriptionID := pointers.Deref(info.SalesforceSubscriptionID, "unknown")
+	sfOpportunityID := pointers.Deref(info.SalesforceOpportunityID, "unknown")
+
+	return fmt.Sprintf(slackLicenseCreationMessageFmt,
+		licenseCreator.Username,
+		subscriptionID,
+		subscriptionID,
+		strconv.Itoa(version),
+		expiresAt.Format("Jan 2, 2006 3:04pm MST"),
+		strconv.FormatFloat(expiresAt.Sub(now).Hours()/24, 'f', 1, 64),
+		expiresAt.In(pacificLoc).Format("Jan 2, 2006 3:04pm MST"),
+		strconv.FormatUint(uint64(info.UserCount), 10),
+		"`"+strings.Join(info.Tags, "`, `")+"`",
+		sfSubscriptionID,
+		sfOpportunityID,
+		sfOpportunityID,
+	)
 }
 
 // GetByID retrieves the product license (if any) given its ID.
@@ -175,7 +201,7 @@ func (s dbLicenses) GetByID(ctx context.Context, id string) (*dbLicense, error) 
 	return results[0], nil
 }
 
-// GetByLicenseKey retrieves the product license (if any) given its check license token.
+// GetByAccessToken retrieves the product license (if any) given its check license token.
 // The accessToken is of the format created by GenerateLicenseKeyBasedAccessToken.
 //
 // 🚨 SECURITY: The caller must ensure that errTokenInvalid error is handled appropriately
@@ -198,7 +224,7 @@ func (s dbLicenses) GetByAccessToken(ctx context.Context, accessToken string) (*
 	return results[0], nil
 }
 
-// GetByID retrieves the product license (if any) given its license key.
+// GetByLicenseKey retrieves the product license (if any) given its license key.
 func (s dbLicenses) GetByLicenseKey(ctx context.Context, licenseKey string) (*dbLicense, error) {
 	if mocks.licenses.GetByLicenseKey != nil {
 		return mocks.licenses.GetByLicenseKey(licenseKey)
@@ -266,23 +292,31 @@ func (s dbLicenses) Active(ctx context.Context, subscriptionID string) (*dbLicen
 	return licenses[0], nil
 }
 
-// AssignSiteID marks the existing license as used by a specific siteID
-func (s dbLicenses) AssignSiteID(ctx context.Context, id, siteID string) error {
+// AssignSiteID marks the existing license as used by a specific siteID, and
+// returns the updated license. The original dbLicense struct is modified.
+func (s dbLicenses) AssignSiteID(ctx context.Context, license *dbLicense, siteID string) (*dbLicense, error) {
 	q := sqlf.Sprintf(`
 UPDATE product_licenses
 SET site_id = %s
 WHERE id = %s
 	`,
 		siteID,
-		id,
+		license.ID,
 	)
 
 	_, err := s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	return err
+	if err != nil {
+		return nil, err
+	}
+
+	license.SiteID = &siteID
+
+	return license, nil
 }
 
 // List lists all product licenses that satisfy the options.
 func (s dbLicenses) List(ctx context.Context, opt dbLicensesListOptions) ([]*dbLicense, error) {
+
 	if mocks.licenses.List != nil {
 		return mocks.licenses.List(ctx, opt)
 	}
@@ -291,6 +325,10 @@ func (s dbLicenses) List(ctx context.Context, opt dbLicensesListOptions) ([]*dbL
 }
 
 func (s dbLicenses) list(ctx context.Context, conds []*sqlf.Query, limitOffset *database.LimitOffset) ([]*dbLicense, error) {
+	// TODO: put a logger on dbLicenses and scope from that
+	logger := log.Scoped("dbLicenses.List")
+	logger = trace.Logger(ctx, logger)
+
 	q := sqlf.Sprintf(`
 SELECT
 	id,
@@ -348,10 +386,9 @@ ORDER BY created_at DESC
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
-		//Log an event when liscenses list is viewed in Dotcom
+		// Log an event when liscense list is viewed in Dotcom
 		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", q.Args()); err != nil {
-			log.Error(err)
+			logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
 	return results, nil

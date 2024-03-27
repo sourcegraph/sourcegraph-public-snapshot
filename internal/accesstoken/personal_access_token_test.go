@@ -1,5 +1,7 @@
 package accesstoken
 
+// pre-commit:ignore_sourcegraph_token
+
 import (
 	"testing"
 )

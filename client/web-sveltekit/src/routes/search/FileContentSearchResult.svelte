@@ -3,12 +3,11 @@
 <script lang="ts" context="module">
     const BY_LINE_RANKING = 'by-line-number'
     const DEFAULT_CONTEXT_LINES = 1
-    const DEFAULT_EXPANDED_MATCHES = 3
+    const DEFAULT_EXPANDED_MATCHES = 5
 </script>
 
 <script lang="ts">
     import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
-    import { observeIntersection } from '$lib/intersection-observer'
 
     import {
         addLineRangeQueryParameter,
@@ -17,17 +16,19 @@
         toPositionOrRangeQueryParameter,
     } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
-    import { getFileMatchUrl, type ContentMatch, rankByLine, rankPassthrough } from '$lib/shared'
-
-    import SearchResult from './SearchResult.svelte'
-    import { getSearchResultsContext } from './searchResultsContext'
-    import CodeHostIcon from './CodeHostIcon.svelte'
-    import RepoStars from './RepoStars.svelte'
-    import { settings } from '$lib/stores'
-    import { rankContentMatch } from '$lib/search/results'
-    import FileSearchResultHeader from './FileSearchResultHeader.svelte'
+    import { observeIntersection } from '$lib/intersection-observer'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
     import CodeExcerpt from '$lib/search/CodeExcerpt.svelte'
+    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import { rankContentMatch } from '$lib/search/results'
+    import { getFileMatchUrl, type ContentMatch, rankByLine, rankPassthrough } from '$lib/shared'
+    import { settings } from '$lib/stores'
+
+    import FileSearchResultHeader from './FileSearchResultHeader.svelte'
+    import PreviewButton from './PreviewButton.svelte'
+    import RepoStars from './RepoStars.svelte'
+    import SearchResult from './SearchResult.svelte'
+    import { getSearchResultsContext } from './searchResultsContext'
 
     export let result: ContentMatch
 
@@ -72,18 +73,21 @@
         return `${fileURL}?${searchParams}`
     }
 
-    let hasBeenVisible = false
-    let highlightedHTMLRows: string[][] = undefined
-    async function onIntersection(event: { detail: boolean }) {
-        if (hasBeenVisible) {
-            return
+    let visible = false
+    let highlightedHTMLRows: Promise<string[][]> | undefined
+    $: if (visible) {
+        // If the file contains some large lines, avoid stressing syntax-highlighter and the browser.
+        if (!result.chunkMatches?.some(chunk => chunk.contentTruncated)) {
+            // We rely on fetchFileRangeMatches to cache the result for us so that repeated
+            // calls will not result in repeated network requests.
+            highlightedHTMLRows = fetchFileRangeMatches({
+                result,
+                ranges: expandedMatchGroups.map(group => ({
+                    startLine: group.startLine,
+                    endLine: group.endLine,
+                })),
+            })
         }
-        hasBeenVisible = true
-        const matchRanges = expandedMatchGroups.map(group => ({
-            startLine: group.startLine,
-            endLine: group.endLine,
-        }))
-        highlightedHTMLRows = await fetchFileRangeMatches({ result, ranges: matchRanges })
     }
 </script>
 
@@ -94,18 +98,33 @@
         {#if result.repoStars}
             <RepoStars repoStars={result.repoStars} />
         {/if}
+        <PreviewButton {result} />
     </svelte:fragment>
 
-    <div bind:this={root} use:observeIntersection on:intersecting={onIntersection} class="matches">
+    <div bind:this={root} use:observeIntersection on:intersecting={event => (visible = event.detail)} class="matches">
         {#each matchesToShow as group, index}
             <div class="code">
                 <a href={getMatchURL(group.startLine + 1, group.endLine)}>
-                    <CodeExcerpt
-                        startLine={group.startLine}
-                        matches={group.matches}
-                        plaintextLines={group.plaintextLines}
-                        highlightedHTMLRows={highlightedHTMLRows?.[index]}
-                    />
+                    <!--
+                        We need to "post-slice" `highlightedHTMLRows` because we fetch highlighting for
+                        the whole chunk.
+                    -->
+                    {#await highlightedHTMLRows}
+                        <CodeExcerpt
+                            startLine={group.startLine}
+                            matches={group.matches}
+                            plaintextLines={group.plaintextLines}
+                            --background-color="transparent"
+                        />
+                    {:then result}
+                        <CodeExcerpt
+                            startLine={group.startLine}
+                            matches={group.matches}
+                            plaintextLines={group.plaintextLines}
+                            highlightedHTMLRows={result?.[index]?.slice(0, group.plaintextLines.length)}
+                            --background-color="transparent"
+                        />
+                    {/await}
                 </a>
             </div>
         {/each}
@@ -132,12 +151,16 @@
         border: none;
         padding: 0.25rem 0.5rem;
         background-color: var(--code-bg);
-        color: var(--collapse-results-color);
+        color: var(--text-muted);
         cursor: pointer;
 
         &.expanded {
             position: sticky;
             bottom: 0;
+        }
+
+        &:hover {
+            background-color: var(--subtle-bg-2);
         }
     }
 
@@ -148,9 +171,15 @@
             border-bottom: none;
         }
 
+        &:hover {
+            background-color: var(--subtle-bg-2);
+        }
+
         a {
             text-decoration: none;
             color: inherit;
+            display: block;
+            padding: 0.125rem 0.375rem;
         }
     }
 </style>

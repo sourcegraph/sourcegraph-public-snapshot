@@ -14,7 +14,7 @@ import { Link } from '@sourcegraph/wildcard'
 import { ResultContainer } from './ResultContainer'
 
 import styles from './OwnerSearchResult.module.scss'
-import resultStyles from './SearchResult.module.scss'
+import resultStyles from './ResultContainer.module.scss'
 
 export interface OwnerSearchResultProps extends Pick<SearchContextProps, 'selectedSearchContextSpec'>, TelemetryProps {
     result: OwnerMatch

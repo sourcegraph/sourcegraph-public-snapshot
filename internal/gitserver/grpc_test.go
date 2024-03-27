@@ -29,8 +29,8 @@ func TestClientSource_AddrMatchesTarget(t *testing.T) {
 
 	ctx := context.Background()
 	for _, repo := range []api.RepoName{"a", "b", "c", "d"} {
-		addr := source.AddrForRepo(ctx, "test", repo)
-		conn, err := conns.ConnForRepo(ctx, "test", repo)
+		addr := source.AddrForRepo(ctx, repo)
+		conn, err := conns.ConnForRepo(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -47,9 +47,9 @@ type mockGitserver struct {
 	proto.UnimplementedGitserverServiceServer
 }
 
-func (m *mockGitserver) Exec(*proto.ExecRequest, proto.GitserverService_ExecServer) error {
+func (m *mockGitserver) ResolveRevision(ctx context.Context, req *proto.ResolveRevisionRequest) (*proto.ResolveRevisionResponse, error) {
 	m.called = true
-	return nil
+	return &proto.ResolveRevisionResponse{}, nil
 }
 
 func (m *mockGitserver) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -80,6 +80,7 @@ func TestClient_GRPCRouting(t *testing.T) {
 			},
 		},
 	})
+	t.Cleanup(func() { conf.Mock(nil) })
 
 	client := NewClient("test")
 	_, _ = client.ResolveRevision(context.Background(), "a", "HEAD", ResolveRevisionOptions{})

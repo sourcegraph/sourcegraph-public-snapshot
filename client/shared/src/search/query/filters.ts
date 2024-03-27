@@ -70,7 +70,7 @@ export const filterTypeKeysWithAliases: (FilterType | AliasedFilterType)[] = [
     ...Object.keys(AliasedFilterType),
 ] as (FilterType | AliasedFilterType)[]
 
-enum NegatedFilters {
+export enum NegatedFilters {
     author = '-author',
     committer = '-committer',
     content = '-content',
@@ -271,8 +271,19 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         placeholder: '"content"',
     },
     [FilterType.patterntype]: {
-        discreteValues: () => ['regexp', 'structural', 'literal', 'standard'].map(value => ({ label: value })),
-        description: 'The pattern type (standard, regexp, literal, structural) in use',
+        discreteValues: () => {
+            const patternTypes = ['keyword', 'literal', 'regexp', 'standard']
+            if (typeof window === 'undefined' || window.context?.experimentalFeatures?.structuralSearch === 'enabled') {
+                patternTypes.push('structural')
+            }
+            return patternTypes.map(value => ({ label: value }))
+        },
+        description: `The pattern type (keyword, literal, regexp, standard${
+            typeof window === 'undefined' || window.context?.experimentalFeatures?.structuralSearch === 'enabled'
+                ? ', structural'
+                : ''
+        }) in use`,
+
         singular: true,
     },
     [FilterType.repo]: {
@@ -511,16 +522,6 @@ export const escapeSpaces = (value: string): string => {
         }
     }
     return escaped.join('')
-}
-
-/**
- * Helper function to quote a string if it contains whitespace characters.
- */
-export function quoteIfWhitespace(value: string): string {
-    if (/\s/.test(value)) {
-        return `"${value}"`
-    }
-    return value
 }
 
 /**

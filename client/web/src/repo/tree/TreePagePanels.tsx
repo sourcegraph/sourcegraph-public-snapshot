@@ -8,11 +8,13 @@ import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
 import { basename } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import type { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
+import { useSettings } from '@sourcegraph/shared/src/settings/settings'
 import {
     Card,
     CardHeader,
     H2,
     Icon,
+    LanguageIcon,
     Link,
     LinkOrSpan,
     LoadingSpinner,
@@ -25,7 +27,6 @@ import type { BlobFileFields, TreeHistoryFields } from '../../graphql-operations
 import { fetchBlob } from '../blob/backend'
 import { RenderedFile } from '../blob/RenderedFile'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
-import { getFileIconInfo } from '../fileIcons'
 
 import styles from './TreePagePanels.module.scss'
 
@@ -154,11 +155,15 @@ export interface FilePanelProps {
 }
 
 export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, className }) => {
+    const settings = useSettings()
+    const preferAbsoluteTimestamps = Boolean(settings?.['history.preferAbsoluteTimestamps'])
     const hasHistoryEntries = historyEntries && historyEntries.length > 0
     const fileHistoryByPath = useMemo(() => {
         const fileHistoryByPath: Record<string, TreeHistoryFields['history']['nodes'][number]['commit']> = {}
         for (const entry of historyEntries || []) {
-            fileHistoryByPath[entry.path] = entry.history.nodes[0].commit
+            if (entry.history.nodes.length > 0) {
+                fileHistoryByPath[entry.path] = entry.history.nodes[0].commit
+            }
         }
         return fileHistoryByPath
     }, [historyEntries])
@@ -171,69 +176,75 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                     {hasHistoryEntries && (
                         <>
                             <th>Last commit message</th>
-                            <th className={styles.commitDateColumn}>Last commit date</th>
+                            <th
+                                className={classNames(
+                                    styles.commitDateColumn,
+                                    preferAbsoluteTimestamps && styles.absolute
+                                )}
+                            >
+                                Last commit date
+                            </th>
                         </>
                     )}
                 </CardHeader>
             </thead>
             <tbody>
-                {entries.map(entry => {
-                    const iconInfo =
-                        entry.__typename === 'GitBlob' ? getFileIconInfo(entry.name, entry.languages) : undefined
-
-                    return (
-                        <tr key={entry.name}>
-                            <td className={styles.fileName}>
-                                <LinkOrSpan
-                                    to={entry.url}
-                                    className={classNames(
-                                        'test-page-file-decorable',
-                                        entry.isDirectory && 'font-weight-bold',
-                                        `test-tree-entry-${entry.isDirectory ? 'directory' : 'file'}`
-                                    )}
-                                    title={entry.path}
-                                    data-testid="tree-entry"
-                                >
-                                    {iconInfo !== undefined ? (
-                                        <Icon
-                                            as={iconInfo.react.icon}
-                                            className={classNames('mr-1', iconInfo.react.className)}
-                                            aria-hidden={true}
+                {entries.map(entry => (
+                    <tr key={entry.name}>
+                        <td className={styles.fileName}>
+                            <LinkOrSpan
+                                to={entry.url}
+                                className={classNames(
+                                    'test-page-file-decorable',
+                                    entry.isDirectory && 'font-weight-bold',
+                                    `test-tree-entry-${entry.isDirectory ? 'directory' : 'file'}`
+                                )}
+                                title={entry.path}
+                                data-testid="tree-entry"
+                            >
+                                {entry.__typename === 'GitBlob' ? (
+                                    <LanguageIcon
+                                        language={entry.languages.at(0) ?? ''}
+                                        fileNameOrExtensions={entry.name}
+                                        className="mr-1"
+                                    />
+                                ) : (
+                                    <Icon
+                                        svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline}
+                                        className="mr-1"
+                                        aria-hidden={true}
+                                    />
+                                )}
+                                {entry.name}
+                                {entry.isDirectory && '/'}
+                            </LinkOrSpan>
+                        </td>
+                        {fileHistoryByPath[entry.path] && (
+                            <>
+                                <td className={styles.commitMessage}>
+                                    <span
+                                        title={fileHistoryByPath[entry.path].subject}
+                                        data-testid="git-commit-message-with-links"
+                                    >
+                                        <CommitMessageWithLinks
+                                            to={fileHistoryByPath[entry.path].canonicalURL}
+                                            message={fileHistoryByPath[entry.path].subject}
+                                            className="text-muted"
+                                            externalURLs={fileHistoryByPath[entry.path].externalURLs}
                                         />
-                                    ) : (
-                                        <Icon
-                                            svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline}
-                                            className={classNames('mr-1')}
-                                            aria-hidden={true}
-                                        />
-                                    )}
-                                    {entry.name}
-                                    {entry.isDirectory && '/'}
-                                </LinkOrSpan>
-                            </td>
-                            {fileHistoryByPath[entry.path] && (
-                                <>
-                                    <td className={styles.commitMessage}>
-                                        <span
-                                            title={fileHistoryByPath[entry.path].subject}
-                                            data-testid="git-commit-message-with-links"
-                                        >
-                                            <CommitMessageWithLinks
-                                                to={fileHistoryByPath[entry.path].canonicalURL}
-                                                message={fileHistoryByPath[entry.path].subject}
-                                                className="text-muted"
-                                                externalURLs={fileHistoryByPath[entry.path].externalURLs}
-                                            />
-                                        </span>
-                                    </td>
-                                    <td className={classNames(styles.commitDate, 'text-muted')}>
-                                        <Timestamp noAbout={true} date={getCommitDate(fileHistoryByPath[entry.path])} />
-                                    </td>
-                                </>
-                            )}
-                        </tr>
-                    )
-                })}
+                                    </span>
+                                </td>
+                                <td className={classNames(styles.commitDate, 'text-muted')}>
+                                    <Timestamp
+                                        noAbout={true}
+                                        preferAbsolute={preferAbsoluteTimestamps}
+                                        date={getCommitDate(fileHistoryByPath[entry.path])}
+                                    />
+                                </td>
+                            </>
+                        )}
+                    </tr>
+                ))}
             </tbody>
         </Card>
     )

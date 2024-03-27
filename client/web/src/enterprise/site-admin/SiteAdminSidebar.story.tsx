@@ -20,6 +20,11 @@ const config: Meta = {
 
 export default config
 
+const licenseFeatures = {
+    isCodeSearchEnabled: true,
+    isCodyEnabled: true,
+}
+
 // Moved story under enterprise folder to avoid failing ci linting
 // due to importing enterprise path in oss folders.
 export const AdminSidebarItems: StoryFn = () => (
@@ -39,6 +44,7 @@ export const AdminSidebarItems: StoryFn = () => (
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={true}
                     endUserOnboardingEnabled={false}
+                    license={licenseFeatures}
                 />
                 <SiteAdminSidebar
                     {...webProps}
@@ -49,6 +55,7 @@ export const AdminSidebarItems: StoryFn = () => (
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={true}
                     endUserOnboardingEnabled={false}
+                    license={licenseFeatures}
                 />
                 <SiteAdminSidebar
                     {...webProps}
@@ -59,6 +66,7 @@ export const AdminSidebarItems: StoryFn = () => (
                     batchChangesWebhookLogsEnabled={false}
                     codeInsightsEnabled={true}
                     endUserOnboardingEnabled={false}
+                    license={licenseFeatures}
                 />
                 <SiteAdminSidebar
                     {...webProps}
@@ -69,6 +77,7 @@ export const AdminSidebarItems: StoryFn = () => (
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={false}
                     endUserOnboardingEnabled={false}
+                    license={licenseFeatures}
                 />
             </Grid>
         )}

@@ -99,17 +99,23 @@ func HandleFeature(
 		if err != nil {
 			limitedCause := "quota"
 			defer func() {
+				limitMap := map[string]any{}
+				var limitExceededError limiter.RateLimitExceededError
+				if errors.As(err, &limitExceededError) {
+					limitMap["limit"] = limitExceededError.Limit
+					limitMap["retry_after"] = limitExceededError.RetryAfter
+				}
 				if loggerErr := eventLogger.LogEvent(
 					r.Context(),
 					events.Event{
 						Name:       codygateway.EventNameRateLimited,
 						Source:     act.Source.Name(),
 						Identifier: act.ID,
-						Metadata: map[string]any{
+						Metadata: events.MergeMaps(limitMap, map[string]any{
 							"error": err.Error(),
 							codygateway.CompletionsEventFeatureMetadataField: feature,
 							"cause": limitedCause,
-						},
+						}),
 					},
 				); loggerErr != nil {
 					logger.Error("failed to log event", log.Error(loggerErr))

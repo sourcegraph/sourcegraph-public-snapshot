@@ -56,7 +56,7 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 	}).Encode()
 
 	var expectedContents []byte
-	for i := 0; i < 20000; i++ {
+	for i := range 20000 {
 		expectedContents = append(expectedContents, byte(i))
 	}
 
@@ -137,7 +137,7 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 
 	var lines []string
 	lines = append(lines, `{"label": "metaData", "toolInfo": {"name": "lsif-go"}}`)
-	for i := 0; i < 20000; i++ {
+	for range 20000 {
 		lines = append(lines, `{"id": "a", "type": "edge", "label": "textDocument/references", "outV": "b", "inV": "c"}`)
 	}
 
@@ -263,7 +263,7 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 	}).Encode()
 
 	var expectedContents []byte
-	for i := 0; i < 20000; i++ {
+	for i := range 20000 {
 		expectedContents = append(expectedContents, byte(i))
 	}
 
@@ -457,7 +457,7 @@ func setupRepoMocks(t testing.TB) {
 		return &types.Repo{ID: 50}, nil
 	}
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		if rev != testCommit {
 			t.Errorf("unexpected commit. want=%s have=%s", testCommit, rev)
 		}

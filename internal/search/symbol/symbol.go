@@ -82,7 +82,9 @@ func (s *ZoektSymbolsClient) Compute(ctx context.Context, repoName types.Minimal
 		searchArgs.Query = *query
 	}
 
-	symbols, err := s.symbols.Search(ctx, searchArgs)
+	// We ignore LimitHit, which is consistent with how we treat stats coming
+	// from Zoekt in indexedSymbolsBranch.
+	symbols, _, err := s.symbols.Search(ctx, searchArgs)
 	if err != nil {
 		return nil, err
 	}
@@ -91,12 +93,13 @@ func (s *ZoektSymbolsClient) Compute(ctx context.Context, repoName types.Minimal
 		symbols[i].Line += 1 // callers expect 1-indexed lines
 	}
 
-	fileWithPath := func(path string) *result.File {
+	fileWithPathAndLanguage := func(path, language string) *result.File {
 		return &result.File{
-			Path:     path,
-			Repo:     repoName,
-			InputRev: inputRev,
-			CommitID: commitID,
+			Path:            path,
+			Repo:            repoName,
+			InputRev:        inputRev,
+			CommitID:        commitID,
+			PreciseLanguage: language,
 		}
 	}
 
@@ -104,7 +107,7 @@ func (s *ZoektSymbolsClient) Compute(ctx context.Context, repoName types.Minimal
 	for _, symbol := range symbols {
 		matches = append(matches, &result.SymbolMatch{
 			Symbol: symbol,
-			File:   fileWithPath(symbol.Path),
+			File:   fileWithPathAndLanguage(symbol.Path, symbol.Language),
 		})
 	}
 	return matches, err
@@ -248,35 +251,11 @@ func searchZoekt(
 
 	for _, file := range resp.Files {
 		newFile := &result.File{
-			Repo:     repoName,
-			CommitID: commitID,
-			InputRev: inputRev,
-			Path:     file.FileName,
-		}
-
-		for _, l := range file.LineMatches {
-			if l.FileName {
-				continue
-			}
-
-			for _, m := range l.LineFragments {
-				if m.SymbolInfo == nil {
-					continue
-				}
-
-				res = append(res, result.NewSymbolMatch(
-					newFile,
-					l.LineNumber,
-					-1, // -1 means infer the column
-					m.SymbolInfo.Sym,
-					m.SymbolInfo.Kind,
-					m.SymbolInfo.Parent,
-					m.SymbolInfo.ParentKind,
-					file.Language,
-					string(l.Line),
-					false,
-				))
-			}
+			Repo:            repoName,
+			CommitID:        commitID,
+			InputRev:        inputRev,
+			Path:            file.FileName,
+			PreciseLanguage: file.Language,
 		}
 
 		for _, cm := range file.ChunkMatches {

@@ -3,19 +3,23 @@ package inttests
 import (
 	"container/list"
 	"context"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
 
-	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
-	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	mockassert "github.com/derision-test/go-mockgen/v2/testutil/assert"
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
 
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
+	common "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
@@ -48,16 +52,37 @@ func TestClone(t *testing.T) {
 	lock := NewMockRepositoryLock()
 	locker.TryAcquireFunc.SetDefaultReturn(lock, true)
 
-	s := server.Server{
+	getRemoteURLFunc := func(_ context.Context, name api.RepoName) (string, error) { //nolint:unparam
+		require.Equal(t, repo, name)
+		return remote, nil
+	}
+
+	s := server.NewServer(&server.ServerOpts{
 		Logger:   logger,
 		ReposDir: reposDir,
-		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
-			require.Equal(t, repo, name)
-			return remote, nil
+		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 		},
+		GetRemoteURLFunc: getRemoteURLFunc,
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
+			getRemoteURLSource := func(ctx context.Context, name api.RepoName) (vcssyncer.RemoteURLSource, error) {
+				require.Equal(t, repo, name)
+				return vcssyncer.RemoteURLSourceFunc(func(ctx context.Context) (*vcs.URL, error) {
+					raw, err := getRemoteURLFunc(ctx, name)
+					if err != nil {
+						return nil, errors.Wrapf(err, "failed to get remote URL for %s", name)
+					}
+
+					u, err := vcs.ParseURL(raw)
+					if err != nil {
+						return nil, errors.Wrapf(err, "failed to parse remote URL %q", raw)
+					}
+					return u, nil
+				}), nil
+			}
+
 			require.Equal(t, repo, name)
-			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory()), nil
+			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), getRemoteURLSource), nil
 		},
 		DB:                      db,
 		Perforce:                perforce.NewService(ctx, observation.TestContextTB(t), logger, db, list.New()),
@@ -65,10 +90,10 @@ func TestClone(t *testing.T) {
 		Locker:                  locker,
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(100, 10)),
 		Hostname:                "test-shard",
-	}
+	})
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
-	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: &s})
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
 
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 	srv := httptest.NewServer(handler)
@@ -82,15 +107,15 @@ func TestClone(t *testing.T) {
 
 	// Requesting a repo update should figure out that the repo is not yet
 	// cloned and call clone. We expect that clone to succeed.
-	_, err := cli.RequestRepoUpdate(ctx, repo, 0)
+	_, err := cli.RequestRepoUpdate(ctx, repo)
 	require.NoError(t, err)
 
 	// Should have acquired a lock.
 	mockassert.CalledOnce(t, locker.TryAcquireFunc)
-	// Should have reported status. 21 lines is the output git currently produces.
+	// Should have reported status. 24 lines is the output git currently produces.
 	// This number might need to be adjusted over time, but before doing so please
 	// check that the calls actually use the args you would expect them to use.
-	mockassert.CalledN(t, lock.SetStatusFunc, 21)
+	mockassert.CalledN(t, lock.SetStatusFunc, 24)
 	// Should have released the lock.
 	mockassert.CalledOnce(t, lock.ReleaseFunc)
 
@@ -141,16 +166,36 @@ func TestClone_Fail(t *testing.T) {
 	lock := NewMockRepositoryLock()
 	locker.TryAcquireFunc.SetDefaultReturn(lock, true)
 
-	s := server.Server{
+	getRemoteURLFunc := func(_ context.Context, name api.RepoName) (string, error) { //nolint:unparam
+		require.Equal(t, repo, name)
+		return remote, nil
+	}
+
+	s := server.NewServer(&server.ServerOpts{
 		Logger:   logger,
 		ReposDir: reposDir,
-		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
-			require.Equal(t, repo, name)
-			return remote, nil
+		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 		},
+		GetRemoteURLFunc: getRemoteURLFunc,
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
 			require.Equal(t, repo, name)
-			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory()), nil
+			getRemoteURLSource := func(ctx context.Context, name api.RepoName) (vcssyncer.RemoteURLSource, error) {
+				require.Equal(t, repo, name)
+				return vcssyncer.RemoteURLSourceFunc(func(ctx context.Context) (*vcs.URL, error) {
+					raw, err := getRemoteURLFunc(ctx, name)
+					if err != nil {
+						return nil, errors.Wrapf(err, "failed to get remote URL for %s", name)
+					}
+
+					u, err := vcs.ParseURL(raw)
+					if err != nil {
+						return nil, errors.Wrapf(err, "failed to parse remote URL %q", raw)
+					}
+					return u, nil
+				}), nil
+			}
+			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), getRemoteURLSource), nil
 		},
 		DB:                      db,
 		Perforce:                perforce.NewService(ctx, observation.TestContextTB(t), logger, db, list.New()),
@@ -158,10 +203,10 @@ func TestClone_Fail(t *testing.T) {
 		Locker:                  locker,
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(100, 10)),
 		Hostname:                "test-shard",
-	}
+	})
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
-	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: &s})
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
 
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 	srv := httptest.NewServer(handler)
@@ -176,10 +221,11 @@ func TestClone_Fail(t *testing.T) {
 	// Requesting a repo update should figure out that the repo is not yet
 	// cloned and call clone. We expect that clone to fail, because vcssyncer.IsCloneable
 	// fails here.
-	resp, err := cli.RequestRepoUpdate(ctx, repo, 0)
+	resp, err := cli.RequestRepoUpdate(ctx, repo)
 	require.NoError(t, err)
 	// Note that this error is from IsCloneable(), not from Clone().
-	require.Contains(t, resp.Error, "error cloning repo: repo github.com/test/repo not cloneable: exit status 128")
+	require.Contains(t, resp.Error, "error cloning repo: repo github.com/test/repo not cloneable:")
+	require.Contains(t, resp.Error, "exit status 128")
 
 	// No lock should have been acquired.
 	mockassert.NotCalled(t, locker.TryAcquireFunc)
@@ -189,7 +235,8 @@ func TestClone_Fail(t *testing.T) {
 	mockrequire.CalledOnce(t, gsStore.SetLastErrorFunc)
 	// And that it was called for the right repo, setting the last error value.
 	mockassert.CalledWith(t, gsStore.SetLastErrorFunc, mockassert.Values(mockassert.Skip, repo, mockassert.Skip, "test-shard"))
-	require.Contains(t, gsStore.SetLastErrorFunc.History()[0].Arg2, `error cloning repo: repo github.com/test/repo not cloneable: exit status 128 - output: "fatal:`)
+	require.Contains(t, gsStore.SetLastErrorFunc.History()[0].Arg2, `error cloning repo: repo github.com/test/repo not cloneable:`)
+	require.Contains(t, gsStore.SetLastErrorFunc.History()[0].Arg2, "exit status 128")
 
 	// And no other DB activity has happened.
 	mockassert.NotCalled(t, gsStore.SetCloneStatusFunc)
@@ -199,7 +246,7 @@ func TestClone_Fail(t *testing.T) {
 
 	// Now, fake that the IsCloneable check passes, then Clone will be called
 	// and is expected to fail.
-	vcssyncer.TestGitRepoExists = func(ctx context.Context, remoteURL *vcs.URL) error {
+	vcssyncer.TestGitRepoExists = func(ctx context.Context, name api.RepoName) error {
 		return nil
 	}
 	t.Cleanup(func() {
@@ -212,7 +259,7 @@ func TestClone_Fail(t *testing.T) {
 	// Requesting another repo update should figure out that the repo is not yet
 	// cloned and call clone. We expect that clone to fail, but in the vcssyncer.Clone
 	// stage this time, not vcssyncer.IsCloneable.
-	resp, err = cli.RequestRepoUpdate(ctx, repo, 0)
+	resp, err = cli.RequestRepoUpdate(ctx, repo)
 	require.NoError(t, err)
 	require.Contains(t, resp.Error, "failed to clone github.com/test/repo: clone failed. Output: Creating bare repo\nCreated bare repo at")
 

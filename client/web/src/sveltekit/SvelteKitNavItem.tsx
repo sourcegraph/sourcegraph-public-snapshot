@@ -1,25 +1,28 @@
 import type { FC } from 'react'
 
+import { mdiFlaskEmptyOutline } from '@mdi/js'
 import { useLocation } from 'react-router-dom'
 
-import { Button, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
-import { isSvelteKitSupportedURL, reload } from './util'
+import { reload, isSupportedRoute } from './util'
 
 export const SvelteKitNavItem: FC = () => {
     const location = useLocation()
-    const [isSvelteKitToggleEnabled] = useFeatureFlag('enable-sveltekit-toggle')
+    const [isEnabled] = useFeatureFlag('web-next-toggle')
 
-    if (!isSvelteKitToggleEnabled || !isSvelteKitSupportedURL(location.pathname)) {
+    if (!isEnabled || !isSupportedRoute(location.pathname)) {
         return null
     }
 
     return (
-        <Tooltip content="Go to SvelteKit version">
+        <Tooltip content="Go to experimental web app">
             <Button variant="icon" onClick={reload}>
-                <img src="/.assets/img/svelte-logo-disabled.svg" alt="Svelte Logo" width={20} height={20} />
+                <span className="text-muted">
+                    <Icon svgPath={mdiFlaskEmptyOutline} aria-hidden={true} inline={false} />
+                </span>
             </Button>
         </Tooltip>
     )

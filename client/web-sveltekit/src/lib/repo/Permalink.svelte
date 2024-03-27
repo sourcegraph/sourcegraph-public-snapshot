@@ -2,17 +2,13 @@
     import { mdiLink } from '@mdi/js'
 
     import { page } from '$app/stores'
-    import { isErrorLike, type ErrorLike } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
     import { replaceRevisionInURL } from '$lib/web'
-    import type { ResolvedRevision } from '$lib/repo/api/repo'
 
-    export let resolvedRevision: ResolvedRevision | ErrorLike
+    export let commitID: string
 
-    $: href = !isErrorLike(resolvedRevision)
-        ? replaceRevisionInURL($page.url.toString(), resolvedRevision.commitID)
-        : ''
+    $: href = commitID ? replaceRevisionInURL($page.url.toString(), commitID) : ''
 </script>
 
 {#if href}

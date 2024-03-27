@@ -1,0 +1,146 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://gerrit.sgdev.org/a/projects/?S=0&n=25&type=CODE
+    method: GET
+  response:
+    body: |
+      )]}'
+      {
+        "beatrix": {
+          "id": "beatrix",
+          "state": "ACTIVE"
+        },
+        "idan-temp": {
+          "id": "idan-temp",
+          "state": "ACTIVE"
+        },
+        "k8s-gerrit": {
+          "id": "k8s-gerrit",
+          "state": "ACTIVE"
+        },
+        "sourcegraph": {
+          "id": "sourcegraph",
+          "state": "ACTIVE"
+        },
+        "sourcegraph/create": {
+          "id": "sourcegraph%2Fcreate",
+          "state": "ACTIVE"
+        },
+        "src-cli": {
+          "id": "src-cli",
+          "state": "ACTIVE"
+        }
+      }
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 7c872c876c9ca214-YYZ
+      Content-Disposition:
+      - attachment
+      Content-Type:
+      - application/json;charset=utf-8
+      Date:
+      - Tue, 16 May 2023 22:49:27 GMT
+      Expires:
+      - Mon, 01 Jan 1990 00:00:00 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15724800; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://gerrit.sgdev.org/a/projects/?S=25&n=25&type=CODE
+    method: GET
+  response:
+    body: |
+      )]}'
+      {}
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 7c872c88aedba214-YYZ
+      Content-Disposition:
+      - attachment
+      Content-Length:
+      - "8"
+      Content-Type:
+      - application/json;charset=utf-8
+      Date:
+      - Tue, 16 May 2023 22:49:27 GMT
+      Expires:
+      - Mon, 01 Jan 1990 00:00:00 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15724800; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://gerrit.sgdev.org/a/projects/?S=50&n=1
+    method: GET
+  response:
+    body: |
+      )]}'
+      {}
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 7c872c891ff8a214-YYZ
+      Content-Disposition:
+      - attachment
+      Content-Length:
+      - "8"
+      Content-Type:
+      - application/json;charset=utf-8
+      Date:
+      - Tue, 16 May 2023 22:49:27 GMT
+      Expires:
+      - Mon, 01 Jan 1990 00:00:00 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15724800; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+    status: 200 OK
+    code: 200
+    duration: ""

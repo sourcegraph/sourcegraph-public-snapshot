@@ -20,6 +20,9 @@ func With(projectID string) stack.NewStackOption {
 			// Make project ID available to custom TF
 			s.Locals().Add("project_id", projectID,
 				"Primary Google Project to use for all GCP resources")
+			// Make all subsequent locals exported to GSM so we can access it
+			// more easily in tooling
+			s.Metadata[stack.MetadataKeyStackLocalsGSMProjectID] = projectID
 		}
 		_ = google.NewGoogleProvider(s.Stack, pointers.Ptr("google"), &google.GoogleProviderConfig{
 			Project: project,

@@ -13,15 +13,16 @@ import '../monitoring/initMonitoring'
 import { createRoot } from 'react-dom/client'
 
 import { logger } from '@sourcegraph/common'
-import { RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
+import { setLinkComponent } from '@sourcegraph/wildcard'
 
 import { initAppShell } from '../storm/app-shell-init'
+import { WebNextAwareLink } from '../sveltekit/WebNextAwareLink'
 
 import { EnterpriseWebApp } from './EnterpriseWebApp'
 
 const appShellPromise = initAppShell()
 
-setLinkComponent(RouterLink)
+setLinkComponent(WebNextAwareLink)
 
 // It's important to have a root component in a separate file to create a react-refresh boundary and avoid page reload.
 window.addEventListener('DOMContentLoaded', async () => {
@@ -31,7 +32,11 @@ window.addEventListener('DOMContentLoaded', async () => {
         const { graphqlClient, temporarySettingsStorage } = await appShellPromise
 
         root.render(
-            <EnterpriseWebApp graphqlClient={graphqlClient} temporarySettingsStorage={temporarySettingsStorage} />
+            <EnterpriseWebApp
+                graphqlClient={graphqlClient}
+                temporarySettingsStorage={temporarySettingsStorage}
+                telemetryRecorder={window.context.telemetryRecorder}
+            />
         )
     } catch (error) {
         logger.error('Failed to initialize the app shell', error)

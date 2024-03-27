@@ -8,6 +8,5 @@ contents:
 
     ## repo-updater packages
     - coursier@sourcegraph
-    - p4cli@sourcegraph # TODO: This package can be removed after the 5.3 release
 
 # MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

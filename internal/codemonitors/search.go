@@ -107,15 +107,20 @@ func Snapshot(ctx context.Context, logger log.Logger, db database.DB, query stri
 	)
 
 	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, _ commit.DoSearchFunc) error {
-		// Resolve the requested revisions into a static set of commit hashes
-		commitHashes, err := gs.ResolveRevisions(ctx, args.Repo, args.Revisions)
-		if err != nil {
-			return err
-		}
+		for _, rev := range args.Revisions {
+			// Fail early for context cancelation.
+			if err := ctx.Err(); err != nil {
+				return ctx.Err()
+			}
 
-		mu.Lock()
-		resolvedRevisions[repoID] = commitHashes
-		mu.Unlock()
+			res, err := gs.ResolveRevision(ctx, args.Repo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+			if err != nil {
+				return err
+			}
+			mu.Lock()
+			resolvedRevisions[repoID] = append(resolvedRevisions[repoID], string(res))
+			mu.Unlock()
+		}
 
 		return nil
 	}
@@ -174,9 +179,18 @@ func hookWithID(
 	cm := db.CodeMonitors()
 
 	// Resolve the requested revisions into a static set of commit hashes
-	commitHashes, err := gs.ResolveRevisions(ctx, args.Repo, args.Revisions)
-	if err != nil {
-		return err
+	commitHashes := make([]string, 0, len(args.Revisions))
+	for _, rev := range args.Revisions {
+		// Fail early for context cancelation.
+		if err := ctx.Err(); err != nil {
+			return ctx.Err()
+		}
+
+		res, err := gs.ResolveRevision(ctx, args.Repo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+		if err != nil {
+			return err
+		}
+		commitHashes = append(commitHashes, string(res))
 	}
 
 	// Look up the previously searched set of commit hashes
@@ -190,12 +204,10 @@ func hookWithID(
 	}
 
 	// Merge requested hashes and excluded hashes
-	newRevs := make([]gitprotocol.RevisionSpecifier, 0, len(commitHashes)+len(lastSearched))
-	for _, hash := range commitHashes {
-		newRevs = append(newRevs, gitprotocol.RevisionSpecifier{RevSpec: hash})
-	}
+	newRevs := make([]string, 0, len(commitHashes)+len(lastSearched))
+	newRevs = append(newRevs, commitHashes...)
 	for _, exclude := range lastSearched {
-		newRevs = append(newRevs, gitprotocol.RevisionSpecifier{RevSpec: "^" + exclude})
+		newRevs = append(newRevs, "^"+exclude)
 	}
 
 	// Update args with the new set of revisions

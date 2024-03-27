@@ -28,14 +28,29 @@ type Spec struct {
 	Build        BuildSpec         `yaml:"build"`
 	Environments []EnvironmentSpec `yaml:"environments"`
 	Monitoring   *MonitoringSpec   `yaml:"monitoring,omitempty"`
+	// Rollout can be configured to indicate how releases should roll out
+	// through a set of environments.
+	Rollout *RolloutSpec `yaml:"rollout,omitempty"`
 }
 
 // Open a specification file, validate it, unmarshal the data as a MSP spec,
-// and load any extraneous configuration.
+// and load any extraneous configuration. Callsites that return an error to the
+// user should wrap the error with the name of the service to avoid any confusion,
+// e.g.
+//
+//	s, err := spec.Open(serviceSpecPath)
+//	if err != nil {
+//		return errors.Wrapf(err, "load service %q", serviceID)
+//	}
+//
+// This is helpful because this function only accepts the spec path.
 func Open(specPath string) (*Spec, error) {
 	specData, err := os.ReadFile(specPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "ReadFile")
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, errors.Wrap(err, "service does not exist")
+		}
+		return nil, errors.Wrap(err, "read service specification")
 	}
 	spec, err := parse(specData)
 	if err != nil {
@@ -104,7 +119,9 @@ func parse(data []byte) (*Spec, error) {
 	}
 
 	// Assign zero value for top-level monitoring spec for covenience
-	s.Monitoring = &MonitoringSpec{}
+	if s.Monitoring == nil {
+		s.Monitoring = &MonitoringSpec{}
+	}
 
 	if validationErrs := s.Validate(); len(validationErrs) > 0 {
 		return nil, errors.Append(nil, validationErrs...)
@@ -120,15 +137,25 @@ func (s Spec) Validate() []error {
 			if e.EnvironmentServiceSpec != nil {
 				errs = append(errs, errors.New("service specifications are not supported for 'kind: job'"))
 			}
+			if e.Deploy.Type == EnvironmentDeployTypeRollout {
+				errs = append(errs, errors.New("'deploy { type: \"rollout\" }' not supported for 'kind: job'"))
+			}
 			if e.Instances.Scaling != nil {
 				errs = append(errs, errors.New("'environments.instances.scaling' not supported for 'kind: job'"))
 			}
 		}
 	}
+	if s.Service.Kind.Is(ServiceKindService) {
+		for _, e := range s.Environments {
+			if e.EnvironmentJobSpec != nil {
+				errs = append(errs, errors.New("job specifications are not supported for 'kind: service'"))
+			}
+		}
+	}
 
+	configuredDomains := map[string]struct{}{}
 	for _, env := range s.Environments {
-		projectDisplayName := fmt.Sprintf("%s - %s",
-			pointers.Deref(s.Service.Name, s.Service.ID), env.ID)
+		projectDisplayName := fmt.Sprintf("%s - %s", s.Service.GetName(), env.ID)
 		if len(projectDisplayName) > 30 {
 			errs = append(errs, errors.Newf(
 				"full environment name %q exceeds 30 characters limit - try a shorter service name or environment ID",
@@ -139,6 +166,46 @@ func (s Spec) Validate() []error {
 		if !strings.HasPrefix(env.ProjectID, fmt.Sprintf("%s-", s.Service.ID)) {
 			errs = append(errs, errors.Newf("environment %q projectID %q must contain service ID: expecting format '$SERVICE_ID-$ENVIRONMENT_ID-$RANDOM_SUFFIX'",
 				env.ID, env.ProjectID))
+		}
+
+		if domain := pointers.DerefZero(env.EnvironmentServiceSpec).Domain.GetDNSName(); domain != "" {
+			_, exists := configuredDomains[domain]
+			if exists {
+				errs = append(errs, errors.Newf("domain %q is configured more than once across environments",
+					domain))
+			} else {
+				configuredDomains[domain] = struct{}{}
+			}
+		}
+
+		if s.Rollout.GetStageByEnvironment(env.ID) != nil {
+			if env.Deploy.Type != EnvironmentDeployTypeRollout {
+				errs = append(errs, errors.Newf("environment %q is referenced in a rollout stage - deploy type must be '%s'",
+					env.ID, EnvironmentDeployTypeRollout))
+			}
+		} else if env.Deploy.Type == EnvironmentDeployTypeRollout {
+			errs = append(errs, errors.Newf("environment %q has deploy type '%s', but is not referenced in rollout stages",
+				EnvironmentDeployTypeRollout, env.ID))
+		}
+	}
+
+	if s.Rollout != nil {
+		if len(s.Rollout.Stages) == 0 {
+			errs = append(errs, errors.New("rollout spec is defined but contains no stages"))
+		}
+
+		seenStages := make(map[string]struct{})
+		for _, stage := range s.Rollout.Stages {
+			if s.GetEnvironment(stage.EnvironmentID) == nil {
+				errs = append(errs, errors.Newf("rollout stage references unknown environment %q",
+					stage.EnvironmentID))
+			}
+			if _, seen := seenStages[stage.EnvironmentID]; seen {
+				errs = append(errs, errors.Newf("rollout stage references environment %q more than once",
+					stage.EnvironmentID))
+			} else {
+				seenStages[stage.EnvironmentID] = struct{}{}
+			}
 		}
 	}
 

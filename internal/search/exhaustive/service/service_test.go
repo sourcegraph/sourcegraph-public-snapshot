@@ -12,13 +12,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
+// Test_copyBlobs tests that we concatenate objects from the object store
+// properly.
 func Test_copyBlobs(t *testing.T) {
 	keysIter := iterator.From([]string{"a", "b", "c"})
 
 	blobs := map[string]io.Reader{
-		"a": bytes.NewReader([]byte("h/h/h\na/a/a\n")),
-		"b": bytes.NewReader([]byte("h/h/h\nb/b/b\n")),
-		"c": bytes.NewReader([]byte("h/h/h\nc/c/c\n")),
+		"a": bytes.NewReader([]byte("{\"Key\":\"a\"}\n{\"Key\":\"b\"}\n")),
+		"b": bytes.NewReader([]byte("{\"Key\":\"c\"}\n")),
+		"c": bytes.NewReader([]byte("{\"Key\":\"d\"}\n{\"Key\":\"e\"}\n{\"Key\":\"f\"}\n")),
 	}
 
 	blobstore := mocks.NewMockStore()
@@ -28,10 +30,10 @@ func Test_copyBlobs(t *testing.T) {
 
 	w := &bytes.Buffer{}
 
-	n, err := writeSearchJobCSV(context.Background(), keysIter, blobstore, w)
+	n, err := writeSearchJobJSON(context.Background(), keysIter, blobstore, w)
 	require.NoError(t, err)
-	require.Equal(t, int64(24), n)
+	require.Equal(t, int64(72), n)
 
-	want := "h/h/h\na/a/a\nb/b/b\nc/c/c\n"
+	want := "{\"Key\":\"a\"}\n{\"Key\":\"b\"}\n{\"Key\":\"c\"}\n{\"Key\":\"d\"}\n{\"Key\":\"e\"}\n{\"Key\":\"f\"}\n"
 	require.Equal(t, want, w.String())
 }

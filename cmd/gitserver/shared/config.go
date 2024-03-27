@@ -31,10 +31,9 @@ type Config struct {
 
 	ListenAddress string
 
-	SyncRepoStateInterval          time.Duration
-	SyncRepoStateBatchSize         int
-	SyncRepoStateUpdatePerSecond   int
-	BatchLogGlobalConcurrencyLimit int
+	SyncRepoStateInterval        time.Duration
+	SyncRepoStateBatchSize       int
+	SyncRepoStateUpdatePerSecond int
 
 	JanitorReposDesiredPercentFree        int
 	JanitorInterval                       time.Duration
@@ -73,7 +72,6 @@ func (c *Config) Load() {
 	c.SyncRepoStateInterval = c.GetInterval("SRC_REPOS_SYNC_STATE_INTERVAL", "10m", "Interval between state syncs")
 	c.SyncRepoStateBatchSize = c.GetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", "500", "Number of updates to perform per batch")
 	c.SyncRepoStateUpdatePerSecond = c.GetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", "500", "The number of updated rows allowed per second across all gitserver instances")
-	c.BatchLogGlobalConcurrencyLimit = c.GetInt("SRC_BATCH_LOG_GLOBAL_CONCURRENCY_LIMIT", "256", "The maximum number of in-flight Git commands from all /batch-log requests combined")
 
 	// Align these variables with the 'disk_space_remaining' alerts in monitoring
 	c.JanitorReposDesiredPercentFree = c.GetInt("SRC_REPOS_DESIRED_PERCENT_FREE", "10", "Target percentage of free space on disk.")

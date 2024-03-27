@@ -1,12 +1,12 @@
 - steps:
     - root: ""
-      image: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
+      image: sourcegraph/scip-python@sha256:e3c13f0cadca78098439c541d19a72c21672a3263e22aa706760d941581e068d
       commands:
         - pip install . || true
   local_steps:
     - if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi
   root: ""
-  indexer: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
+  indexer: sourcegraph/scip-python@sha256:e3c13f0cadca78098439c541d19a72c21672a3263e22aa706760d941581e068d
   indexer_args:
     - scip-python
     - index
@@ -21,13 +21,13 @@
   requestedEnvVars: []
 - steps:
     - root: ""
-      image: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
+      image: sourcegraph/scip-python@sha256:e3c13f0cadca78098439c541d19a72c21672a3263e22aa706760d941581e068d
       commands:
         - pip install . || true
   local_steps:
     - if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi
   root: nested/lib
-  indexer: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
+  indexer: sourcegraph/scip-python@sha256:e3c13f0cadca78098439c541d19a72c21672a3263e22aa706760d941581e068d
   indexer_args:
     - scip-python
     - index
@@ -40,13 +40,13 @@
   requestedEnvVars: []
 - steps:
     - root: ""
-      image: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
+      image: sourcegraph/scip-python@sha256:e3c13f0cadca78098439c541d19a72c21672a3263e22aa706760d941581e068d
       commands:
         - pip install . || true
   local_steps:
     - if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi
   root: src
-  indexer: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
+  indexer: sourcegraph/scip-python@sha256:e3c13f0cadca78098439c541d19a72c21672a3263e22aa706760d941581e068d
   indexer_args:
     - scip-python
     - index

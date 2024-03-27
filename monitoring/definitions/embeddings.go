@@ -1,12 +1,16 @@
 package definitions
 
 import (
+	"fmt"
+
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
 func Embeddings() *monitoring.Dashboard {
 	const containerName = "embeddings"
+
+	scrapeJobRegex := fmt.Sprintf(".*%s", containerName)
 
 	return &monitoring.Dashboard{
 		Name:        "embeddings",
@@ -28,9 +32,9 @@ func Embeddings() *monitoring.Dashboard {
 			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
 				HumanServiceName:    "embeddings",
 				InstanceFilterRegex: `${instance:regex}`,
+				JobFilterRegex:      scrapeJobRegex,
 			}, monitoring.ObservableOwnerInfraOrg),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName, monitoring.ObservableOwnerCody),
-			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCody, nil),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCody, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCody, nil),
 			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCody, nil),

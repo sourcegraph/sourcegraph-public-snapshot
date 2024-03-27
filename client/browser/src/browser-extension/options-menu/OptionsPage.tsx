@@ -153,7 +153,7 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
 
             <section className={styles.section}>
                 <Link
-                    to="https://docs.sourcegraph.com/integration/browser_extension#privacy"
+                    to="https://sourcegraph.com/docs/integration/browser_extension#privacy"
                     {...NEW_TAB_LINK_PROPS}
                     className="d-block mb-1"
                 >
@@ -189,7 +189,7 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
                     </Link>
                 </div>
                 <div className={styles.splitSectionPart}>
-                    <Link to="https://docs.sourcegraph.com" {...NEW_TAB_LINK_PROPS}>
+                    <Link to="https://sourcegraph.com/docs" {...NEW_TAB_LINK_PROPS}>
                         <Icon className="mr-2" aria-hidden={true} svgPath={mdiBookOpenPageVariant} />
                         Documentation
                     </Link>
@@ -247,7 +247,7 @@ const RepoSyncErrorAlert: React.FunctionComponent<
                         You need to setup a{' '}
                         <Link
                             to={
-                                createURLWithUTM(new URL('https://docs.sourcegraph.com/'), {
+                                createURLWithUTM(new URL('https://sourcegraph.com/docs/'), {
                                     utm_source: getPlatformName(),
                                     utm_campaign: 'sync-private-repo-with-cloud',
                                 }).href
@@ -262,7 +262,7 @@ const RepoSyncErrorAlert: React.FunctionComponent<
                     <>
                         <Link
                             to={
-                                createURLWithUTM(new URL('admin/repo/add', 'https://docs.sourcegraph.com/'), {
+                                createURLWithUTM(new URL('admin/repo/add', 'https://sourcegraph.com/docs/'), {
                                     utm_source: getPlatformName(),
                                     utm_campaign: 'add-repo-to-instance',
                                 }).href

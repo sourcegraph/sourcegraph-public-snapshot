@@ -6,7 +6,7 @@ import userEvent from '@testing-library/user-event'
 import type { ComponentProps } from 'svelte'
 import { describe, test, expect, vi } from 'vitest'
 
-import { useFakeTimers, useRealTimers } from '$mocks'
+import { useFakeTimers, useRealTimers } from '$testing/mocks'
 
 import Timestamp from './Timestamp.svelte'
 

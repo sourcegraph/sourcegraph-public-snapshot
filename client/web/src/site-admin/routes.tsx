@@ -26,6 +26,7 @@ const AnalyticsExtensionsPage = lazyComponent(
     'AnalyticsExtensionsPage'
 )
 const AnalyticsUsersPage = lazyComponent(() => import('./analytics/AnalyticsUsersPage'), 'AnalyticsUsersPage')
+const AnalyticsCodyPage = lazyComponent(() => import('./analytics/AnalyticsCodyPage'), 'AnalyticsCodyPage')
 const AnalyticsCodeInsightsPage = lazyComponent(
     () => import('./analytics/AnalyticsCodeInsightsPage'),
     'AnalyticsCodeInsightsPage'
@@ -202,10 +203,12 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/search',
         render: () => <AnalyticsSearchPage />,
+        condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
         path: '/analytics/code-intel',
         render: () => <AnalyticsCodeIntelPage />,
+        condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
         path: '/analytics/extensions',
@@ -214,6 +217,11 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/users',
         render: () => <AnalyticsUsersPage />,
+    },
+    {
+        path: '/analytics/cody',
+        render: () => <AnalyticsCodyPage />,
+        condition: ({ license }) => license.isCodyEnabled,
     },
     {
         path: '/analytics/code-insights',
@@ -228,6 +236,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/notebooks',
         render: () => <AnalyticsNotebooksPage />,
+        condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
         path: '/configuration',
@@ -380,17 +389,17 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/dotcom/product/subscriptions/:subscriptionUUID',
-        render: () => <DotComSiteAdminProductSubscriptionPage />,
+        render: props => <DotComSiteAdminProductSubscriptionPage {...props} />,
         condition: () => SHOW_BUSINESS_FEATURES,
     },
     {
         path: '/dotcom/product/subscriptions',
-        render: () => <SiteAdminProductSubscriptionsPage />,
+        render: props => <SiteAdminProductSubscriptionsPage {...props} />,
         condition: () => SHOW_BUSINESS_FEATURES,
     },
     {
         path: '/dotcom/product/licenses',
-        render: () => <SiteAdminLicenseKeyLookupPage />,
+        render: props => <SiteAdminLicenseKeyLookupPage {...props} />,
         condition: () => SHOW_BUSINESS_FEATURES,
     },
     {
@@ -418,13 +427,14 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
                 headerParentBreadcrumb={{ to: '/site-admin/batch-changes', text: 'Batch Changes settings' }}
                 headerAnnotation={<FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                 telemetryService={props.telemetryService}
+                telemetryRecorder={props.platformContext.telemetryRecorder}
             />
         ),
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
     {
         path: '/batch-changes/specs',
-        render: () => <BatchSpecsPage />,
+        render: props => <BatchSpecsPage telemetryRecorder={props.platformContext.telemetryRecorder} />,
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
             batchChangesEnabled && batchChangesExecutionEnabled,
     },
@@ -449,18 +459,20 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         exact: true,
         path: '/own-signal-page',
-        render: () => <OwnStatusPage />,
+        render: props => <OwnStatusPage telemetryRecorder={props.platformContext.telemetryRecorder} />,
     },
 
     // Code intelligence redirect
     {
         path: '/code-intelligence/*',
         render: () => <NavigateToCodeGraph />,
+        condition: ({ license }) => license.isCodeSearchEnabled,
     },
     // Code graph routes
     {
         path: '/code-graph/*',
         render: props => <AdminCodeIntelArea {...props} />,
+        condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
         path: '/lsif-uploads/:id',
@@ -470,7 +482,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     // Executor routes
     {
         path: '/executors/*',
-        render: () => <ExecutorsSiteAdminArea />,
+        render: props => <ExecutorsSiteAdminArea telemetryRecorder={props.platformContext.telemetryRecorder} />,
         condition: () => Boolean(window.context?.executorsEnabled),
     },
 
@@ -510,7 +522,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         exact: true,
         path: '/analytics/own',
-        render: () => <OwnAnalyticsPage />,
+        render: props => <OwnAnalyticsPage telemetryRecorder={props.platformContext.telemetryRecorder} />,
     },
 ]
 

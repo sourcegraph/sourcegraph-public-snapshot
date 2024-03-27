@@ -174,7 +174,7 @@ func TestGithubSource_CreateChangeset_CreationLimit(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(
 		t,
-		"reached GitHub's internal creation limit: see https://docs.sourcegraph.com/admin/config/batch_changes#avoiding-hitting-rate-limits: error in GraphQL response: error in GraphQL response: was submitted too quickly",
+		"reached GitHub's internal creation limit: see https://sourcegraph.com/docs/admin/config/batch_changes#avoiding-hitting-rate-limits: error in GraphQL response: error in GraphQL response: was submitted too quickly",
 		err.Error(),
 	)
 }

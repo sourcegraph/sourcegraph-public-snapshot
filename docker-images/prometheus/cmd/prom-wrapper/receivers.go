@@ -27,7 +27,7 @@ const (
 	colorGood     = "#00FF00" // green
 )
 
-const docsURL = "https://docs.sourcegraph.com"
+const docsURL = "https://sourcegraph.com/docs"
 const alertsDocsPathPath = "admin/observability/alerts"
 
 // alertsReferenceURL generates a link to the alerts reference page that embeds the appropriate version

@@ -58,9 +58,17 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 		"deadbeef09": testCommitDateFor("deadbeef09", now),
 	}
 
-	commitDate := func(ctx context.Context, repo api.RepoName, commitID api.CommitID) (string, time.Time, bool, error) {
+	getCommit := func(ctx context.Context, repo api.RepoName, commitID api.CommitID) (*gitdomain.Commit, error) {
 		commitDate, ok := createdAt[string(commitID)]
-		return string(commitID), commitDate, ok, nil
+		if !ok {
+			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(commitID)}
+		}
+		return &gitdomain.Commit{
+			ID: commitID,
+			Committer: &gitdomain.Signature{
+				Date: commitDate,
+			},
+		}, nil
 	}
 
 	refDescriptions := func(ctx context.Context, repo api.RepoName, _ ...string) (map[string][]gitdomain.RefDescription, error) {
@@ -99,7 +107,7 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 	}
 
 	gitserverClient := gitserver.NewMockClient()
-	gitserverClient.CommitDateFunc.SetDefaultHook(commitDate)
+	gitserverClient.GetCommitFunc.SetDefaultHook(getCommit)
 	gitserverClient.RefDescriptionsFunc.SetDefaultHook(refDescriptions)
 	gitserverClient.CommitsUniqueToBranchFunc.SetDefaultHook(commitsUniqueToBranch)
 

@@ -11,17 +11,17 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func (s *Server) searchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
+func (s *Server) SearchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
 	searchStart := time.Now()
 
 	searchRunning.Inc()
@@ -44,7 +44,7 @@ func (s *Server) searchWithObservability(ctx context.Context, tr trace.Trace, ar
 		if honey.Enabled() || traceLogs {
 			act := actor.FromContext(ctx)
 			ev := honey.NewEvent("gitserver-search")
-			ev.SetSampleRate(honeySampleRate("", act))
+			ev.SetSampleRate(gitcli.HoneySampleRate("", act))
 			ev.AddField("repo", args.Repo)
 			ev.AddField("revisions", args.Revisions)
 			ev.AddField("include_diff", args.IncludeDiff)
@@ -64,7 +64,7 @@ func (s *Server) searchWithObservability(ctx context.Context, tr trace.Trace, ar
 				_ = ev.Send()
 			}
 			if traceLogs {
-				s.Logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+				s.logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 			}
 		}
 	}()
@@ -87,22 +87,6 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 	args.Repo = protocol.NormalizeRepo(args.Repo)
 	if args.Limit == 0 {
 		args.Limit = math.MaxInt32
-	}
-
-	// We used to have an `ensureRevision`/`CloneRepo` calls here that were
-	// obsolete, because a search for an unknown revision of the repo (of an
-	// uncloned repo) won't make it to gitserver and fail with an ErrNoResolvedRepos
-	// and a related search alert before calling the gitserver.
-	//
-	// However, to protect for a weird case of getting an uncloned repo here (e.g.
-	// via a direct API call), we leave a `repoCloned` check and return an error if
-	// the repo is not cloned.
-	dir := gitserverfs.RepoDirFromName(s.ReposDir, args.Repo)
-	if !repoCloned(dir) {
-		s.Logger.Debug("attempted to search for a not cloned repo")
-		return false, &gitdomain.RepoNotExistError{
-			Repo: args.Repo,
-		}
 	}
 
 	mt, err := search.ToMatchTree(args.Query)
@@ -132,13 +116,13 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 		}
 
 		sentCount.Add(int64(matchCount(match)))
-		onMatch(match)
+		_ = onMatch(match)
 	}
 
 	searcher := &search.CommitSearcher{
-		Logger:               s.Logger,
+		Logger:               s.logger,
 		RepoName:             args.Repo,
-		RepoDir:              dir.Path(),
+		RepoDir:              gitserverfs.RepoDirFromName(s.reposDir, args.Repo).Path(),
 		Revisions:            args.Revisions,
 		Query:                mt,
 		IncludeDiff:          args.IncludeDiff,

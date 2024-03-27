@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -25,9 +26,9 @@ type Sourcer func(context.Context, *types.ExternalService) (Source, error)
 // http.Clients needed to contact the respective upstream code host APIs.
 //
 // The provided decorator functions will be applied to the Source.
-func NewSourcer(logger log.Logger, db database.DB, cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
+func NewSourcer(logger log.Logger, db database.DB, cf *httpcli.Factory, gc gitserver.Client, decs ...func(Source) Source) Sourcer {
 	return func(ctx context.Context, svc *types.ExternalService) (Source, error) {
-		src, err := NewSource(ctx, logger.Scoped("source"), db, svc, cf)
+		src, err := NewSource(ctx, logger.Scoped("source"), db, svc, cf, gc)
 		if err != nil {
 			return nil, err
 		}
@@ -41,7 +42,10 @@ func NewSourcer(logger log.Logger, db database.DB, cf *httpcli.Factory, decs ...
 }
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
-func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
+func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService, cf *httpcli.Factory, gc gitserver.Client) (Source, error) {
+	if gc == nil {
+		gc = gitserver.NewClient("repos.sourcer")
+	}
 	switch strings.ToUpper(svc.Kind) {
 	case extsvc.KindGitHub:
 		return NewGitHubSource(ctx, logger.Scoped("GithubSource"), db, svc, cf)
@@ -56,7 +60,7 @@ func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *type
 	case extsvc.KindBitbucketCloud:
 		return NewBitbucketCloudSource(ctx, logger.Scoped("BitbucketCloudSource"), svc, cf)
 	case extsvc.KindGitolite:
-		return NewGitoliteSource(ctx, svc, cf)
+		return NewGitoliteSource(ctx, svc, gc)
 	case extsvc.KindPhabricator:
 		return NewPhabricatorSource(ctx, logger.Scoped("PhabricatorSource"), svc, cf)
 	case extsvc.KindAWSCodeCommit:

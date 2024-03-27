@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { describe, expect, test, vi } from 'vitest'
+import { describe, expect, test, vi, afterAll } from 'vitest'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
@@ -41,7 +41,47 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
 }
 
 describe('GlobalNavbar', () => {
+    afterAll(() => {
+        vi.restoreAllMocks()
+    })
+
     test('default', () => {
+        vi.mock('../util/license', () => ({
+            isCodeSearchOnlyLicense: () => false,
+            isCodeSearchPlusCodyLicense: () => true,
+            isCodyOnlyLicense: () => false,
+        }))
+
+        const { asFragment } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <GlobalNavbar {...PROPS} />
+            </MockedTestProvider>
+        )
+        expect(asFragment()).toMatchSnapshot()
+    })
+
+    test('cody only license', () => {
+        vi.mock('../util/license', () => ({
+            isCodeSearchOnlyLicense: () => false,
+            isCodeSearchPlusCodyLicense: () => false,
+            isCodyOnlyLicense: () => true,
+        }))
+
+        const { asFragment } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <GlobalNavbar {...PROPS} />
+            </MockedTestProvider>
+        )
+        expect(asFragment()).toMatchSnapshot()
+    })
+
+    test('code search only license', () => {
+        vi.mock('../util/license', () => ({
+            isCodeSearchOnlyLicense: () => true,
+            isCodeSearchPlusCodyLicense: () => false,
+            isCodyOnlyLicense: () => false,
+        }))
+
         const { asFragment } = renderWithBrandedContext(
             <MockedTestProvider>
                 <GlobalNavbar {...PROPS} />

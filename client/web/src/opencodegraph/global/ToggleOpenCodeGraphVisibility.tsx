@@ -10,6 +10,8 @@ import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../../repo/com
 
 import { useOpenCodeGraphVisibility } from './useOpenCodeGraphVisibility'
 
+import styles from './ToggleOpenCodeGraphVisibility.module.scss'
+
 interface Props {
     source?: 'repoHeader' | 'actionItemsBar'
     actionType?: 'nav' | 'dropdown'
@@ -34,7 +36,7 @@ export const ToggleOpenCodeGraphVisibilityAction: React.FC<Props> = props => {
     if (props.source === 'actionItemsBar') {
         return (
             <SimpleActionItem tooltip={descriptiveText} isActive={visible} onSelect={onCycle} disabled={disabled}>
-                <Icon aria-hidden={true} svgPath={icon} />
+                <Icon aria-hidden={true} svgPath={icon} className={styles.repoActionIcon} />
             </SimpleActionItem>
         )
     }
@@ -42,7 +44,7 @@ export const ToggleOpenCodeGraphVisibilityAction: React.FC<Props> = props => {
     if (props.actionType === 'dropdown') {
         return (
             <RepoHeaderActionMenuLink file={true} as={Button} onClick={onCycle} disabled={disabled}>
-                <Icon aria-hidden={true} svgPath={icon} />
+                <Icon aria-hidden={true} svgPath={icon} className={styles.repoActionIcon} />
                 <span>{descriptiveText}</span>
             </RepoHeaderActionMenuLink>
         )
@@ -55,7 +57,7 @@ export const ToggleOpenCodeGraphVisibilityAction: React.FC<Props> = props => {
                 disabled={disabled}
                 className="d-flex justify-content-center align-items-center"
             >
-                <Icon aria-hidden={true} svgPath={icon} />
+                <Icon aria-hidden={true} svgPath={icon} className={styles.repoActionIcon} />
             </RepoHeaderActionAnchor>
         </Tooltip>
     )

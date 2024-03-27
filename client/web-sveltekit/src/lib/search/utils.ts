@@ -1,13 +1,4 @@
-import type { ContentMatch, MatchGroup, ChunkMatch, LineMatch, Filter } from '$lib/shared'
-
-export interface SidebarFilter {
-    value: string
-    label: string
-    count?: number
-    limitHit?: boolean
-    kind: 'file' | 'repo' | 'lang' | 'utility'
-    runImmediately?: boolean
-}
+import type { ContentMatch, MatchGroup, ChunkMatch, LineMatch } from '$lib/shared'
 
 /**
  * A context object provided on pages with the main search input to interact
@@ -19,33 +10,6 @@ export interface SearchPageContext {
 
 export function resultToMatchGroups(result: ContentMatch): MatchGroup[] {
     return result.chunkMatches?.map(chunkToMatchGroup) || result.lineMatches?.map(lineToMatchGroup) || []
-}
-
-interface FilterGroups {
-    repo: Filter[]
-    file: Filter[]
-    lang: Filter[]
-}
-
-export function groupFilters(filters: Filter[] | null | undefined): FilterGroups {
-    const groupedFilters: FilterGroups = {
-        file: [],
-        repo: [],
-        lang: [],
-    }
-    if (filters) {
-        for (const filter of filters) {
-            switch (filter.kind) {
-                case 'repo':
-                case 'file':
-                case 'lang': {
-                    groupedFilters[filter.kind].push(filter)
-                    break
-                }
-            }
-        }
-    }
-    return groupedFilters
 }
 
 export function chunkToMatchGroup(chunk: ChunkMatch): MatchGroup {

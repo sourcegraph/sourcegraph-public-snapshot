@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
@@ -16,6 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -51,7 +54,7 @@ type CodyGatewayDotcomUserResolver struct {
 
 func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.Context, args *graphqlbackend.CodyGatewayUsersByAccessTokenArgs) (graphqlbackend.CodyGatewayUser, error) {
 	// 🚨 SECURITY: Only site admins or the service accounts may check users.
-	grantReason, err := serviceAccountOrSiteAdmin(ctx, r.DB, false)
+	grantReason, err := hasRBACPermsOrSiteAdmin(ctx, r.DB, false)
 	if err != nil {
 		return nil, err
 	}
@@ -197,14 +200,19 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 
 	// Apply self-serve limits if available
 	cfg := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
-	if cfg != nil && featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) {
+	if cfg != nil {
 		user, err := db.Users().GetByID(ctx, userID)
 		if err != nil {
 			return licensing.CodyGatewayRateLimit{}, err
 		}
 		intervalSeconds = oneMonthInSeconds
-		isProUser := user.CodyProEnabledAt != nil
-		if isProUser {
+
+		subscription, err := cody.SubscriptionForUser(ctx, db, *user)
+		if err != nil {
+			return licensing.CodyGatewayRateLimit{}, errors.Wrap(err, "error fetching user's cody subscription")
+		}
+
+		if subscription.ApplyProRateLimits {
 			if cfg.PerProUserEmbeddingsMonthlyLimit > 0 {
 				limit = int64(cfg.PerProUserEmbeddingsMonthlyLimit)
 			}
@@ -221,7 +229,7 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 	}
 
 	return licensing.CodyGatewayRateLimit{
-		AllowedModels:   []string{"openai/text-embedding-ada-002"},
+		AllowedModels:   []string{"openai/text-embedding-ada-002", "sourcegraph/triton"},
 		Limit:           limit,
 		IntervalSeconds: intervalSeconds,
 	}, nil
@@ -232,13 +240,11 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	var limit *int
 	var err error
 
-	isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
-
 	// Apply override for testing if set.
 	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
 		return licensing.CodyGatewayRateLimit{
 			// For this special tester user, just allow all models a Pro user can get.
-			AllowedModels:   allowedModels(scope, true, true),
+			AllowedModels:   allowedModels(scope, true),
 			Limit:           1,
 			IntervalSeconds: math.MaxInt32,
 		}, graphqlbackend.CodyGatewayRateLimitSourceOverride, nil
@@ -266,18 +272,17 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	if err != nil {
 		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
 	}
-	isProUser := user.CodyProEnabledAt != nil
-	models := allowedModels(scope, isCodyProEnabled, isProUser)
-	if limit == nil && cfg != nil && isCodyProEnabled {
+
+	subscription, err := cody.SubscriptionForUser(ctx, db, *user)
+	if err != nil {
+		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Wrap(err, "error fetching user's cody subscription")
+	}
+
+	models := allowedModels(scope, subscription.ApplyProRateLimits)
+	if limit == nil && cfg != nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
-		user, err := db.Users().GetByID(ctx, userID)
-		if err != nil {
-			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
-		}
-		isProUser := user.CodyProEnabledAt != nil
 		// Update the allowed models based on the user's plan.
-		models = allowedModels(scope, isCodyProEnabled, isProUser)
-		intervalSeconds, limit, err = getSelfServeUsageLimits(scope, isProUser, *cfg)
+		intervalSeconds, limit, err = getSelfServeUsageLimits(scope, subscription.ApplyProRateLimits, *cfg)
 		if err != nil {
 			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
 		}
@@ -337,27 +342,16 @@ func getSelfServeUsageLimits(scope types.CompletionsFeature, isProUser bool, cfg
 	return oneDayInSeconds, nil, nil
 }
 
-func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser bool) []string {
+func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 	switch scope {
 	case types.CompletionsFeatureChat:
-		if !isCodyProEnabled {
-			return []string{
-				"anthropic/claude-v1",
-				"anthropic/claude-2",
-				"anthropic/claude-2.0",
-				"anthropic/claude-2.1",
-				"anthropic/claude-instant-v1",
-				"anthropic/claude-instant-1.2",
-				"anthropic/claude-instant-1",
-				"openai/gpt-4-1106-preview",
-				"fireworks/accounts/fireworks/models/mixtral-8x7b-instruct",
-			}
-		}
-
 		// When updating the below lists, make sure you also update `isAllowedCustomChatModel` in `chat.go`
 
 		if !isProUser {
 			return []string{
+				"anthropic/" + anthropic.Claude3Haiku,
+				"anthropic/" + anthropic.Claude3Sonnet,
+				// Remove after the Claude 3 rollout is complete
 				"anthropic/claude-2.0",
 				"anthropic/claude-instant-v1",
 				"anthropic/claude-instant-1.2",
@@ -366,6 +360,15 @@ func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser b
 		}
 
 		return []string{
+			"anthropic/" + anthropic.Claude3Haiku,
+			"anthropic/" + anthropic.Claude3Sonnet,
+			"anthropic/" + anthropic.Claude3Opus,
+			"fireworks/" + fireworks.Mixtral8x7bInstruct,
+			"openai/gpt-3.5-turbo",
+			"openai/gpt-4-1106-preview",
+			"openai/gpt-4-turbo-preview",
+
+			// Remove after the Claude 3 rollout is complete
 			"anthropic/claude-2",
 			"anthropic/claude-2.0",
 			"anthropic/claude-2.1",
@@ -373,20 +376,18 @@ func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser b
 			"anthropic/claude-instant-1.2",
 			"anthropic/claude-instant-v1",
 			"anthropic/claude-instant-1",
-			"openai/gpt-3.5-turbo",
-			"openai/gpt-4-1106-preview",
-			"fireworks/accounts/fireworks/models/mixtral-8x7b-instruct",
 		}
 	case types.CompletionsFeatureCode:
 		return []string{
+			"anthropic/" + anthropic.Claude3Haiku,
 			"anthropic/claude-instant-v1",
 			"anthropic/claude-instant-1",
 			"anthropic/claude-instant-1.2-cyan",
 			"anthropic/claude-instant-1.2",
-			"fireworks/accounts/fireworks/models/starcoder-7b-w8a16",
-			"fireworks/accounts/sourcegraph/models/starcoder-7b",
-			"fireworks/accounts/fireworks/models/starcoder-16b-w8a16",
-			"fireworks/accounts/sourcegraph/models/starcoder-16b",
+			"fireworks/starcoder",
+			"fireworks/" + fireworks.Llama213bCode,
+			"fireworks/" + fireworks.StarcoderTwo15b,
+			"fireworks/" + fireworks.StarcoderTwo7b,
 		}
 	default:
 		return []string{}

@@ -9,8 +9,9 @@ export class HovercardView implements TooltipView {
     private readonly hovercard: Hovercard
 
     constructor(
-        private readonly view: EditorView,
-        private readonly tokenRange: TooltipViewOptions['token'],
+        // TODO: Add support for pinned tooltips
+        _view: EditorView,
+        _tokenRange: TooltipViewOptions['token'],
         hovercardData: TooltipViewOptions['hovercardData']
     ) {
         this.dom = document.createElement('div')
@@ -18,8 +19,6 @@ export class HovercardView implements TooltipView {
             target: this.dom,
             props: {
                 hovercardData,
-                tokenRange,
-                view,
             },
         })
     }

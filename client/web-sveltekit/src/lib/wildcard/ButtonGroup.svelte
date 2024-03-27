@@ -7,11 +7,11 @@
 
     export let direction: typeof BUTTON_GROUP_DIRECTION[number] = 'horizontal'
 
-    $: className = classNames(styles.btnGroup, direction === 'vertical' && styles.btnGroupVertical)
+    $: buttonClass = classNames(styles.btnGroup, direction === 'vertical' && styles.btnGroupVertical)
 </script>
 
-<slot name="custom" role="group" {className}>
-    <div role="group" class={className}>
+<slot name="custom" role="group" {buttonClass}>
+    <div role="group" class={buttonClass}>
         <slot />
     </div>
 </slot>

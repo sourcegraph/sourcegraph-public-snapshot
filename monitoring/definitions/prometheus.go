@@ -12,7 +12,7 @@ func Prometheus() *monitoring.Dashboard {
 		containerName = "prometheus"
 
 		// ruleGroupInterpretation provides interpretation documentation for observables that are per prometheus rule_group.
-		ruleGroupInterpretation = `Rules that Sourcegraph ships with are grouped under '/sg_config_prometheus'. [Custom rules are grouped under '/sg_prometheus_addons'](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration).`
+		ruleGroupInterpretation = `Rules that Sourcegraph ships with are grouped under '/sg_config_prometheus'. [Custom rules are grouped under '/sg_prometheus_addons'](https://sourcegraph.com/docs/admin/observability/metrics#prometheus-configuration).`
 	)
 
 	return &monitoring.Dashboard{
@@ -94,7 +94,7 @@ func Prometheus() *monitoring.Dashboard {
 							Owner:       monitoring.ObservableOwnerInfraOrg,
 							NextSteps: fmt.Sprintf(`
 								- Check the %s panels and try increasing resources for Prometheus if necessary.
-								- Ensure that your ['observability.alerts' configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
+								- Ensure that your ['observability.alerts' configuration](https://sourcegraph.com/docs/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
 								- Check if the relevant alert integration service is experiencing downtime or issues.
 							`, shared.TitleContainerMonitoring),
 						},
@@ -106,7 +106,7 @@ func Prometheus() *monitoring.Dashboard {
 							Panel:       monitoring.Panel().LegendFormat("{{integration}}"),
 							Owner:       monitoring.ObservableOwnerInfraOrg,
 							NextSteps: `
-								- Ensure that your ['observability.alerts' configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
+								- Ensure that your ['observability.alerts' configuration](https://sourcegraph.com/docs/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
 								- Check if the relevant alert integration service is experiencing downtime or issues.
 							`,
 						},
@@ -128,7 +128,7 @@ func Prometheus() *monitoring.Dashboard {
 							Interpretation: "A '1' indicates Prometheus reloaded its configuration successfully.",
 							NextSteps: `
 								- Check Prometheus logs for messages related to configuration loading.
-								- Ensure any [custom configuration you have provided Prometheus](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration) is valid.
+								- Ensure any [custom configuration you have provided Prometheus](https://sourcegraph.com/docs/admin/observability/metrics#prometheus-configuration) is valid.
 							`,
 						},
 						{
@@ -139,7 +139,7 @@ func Prometheus() *monitoring.Dashboard {
 							Panel:          monitoring.Panel().LegendFormat("reload success").Max(1),
 							Owner:          monitoring.ObservableOwnerInfraOrg,
 							Interpretation: "A '1' indicates Alertmanager reloaded its configuration successfully.",
-							NextSteps:      "Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.",
+							NextSteps:      "Ensure that your [`observability.alerts` configuration](https://sourcegraph.com/docs/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.",
 						},
 					},
 					{

@@ -14,7 +14,7 @@ describe('FilterLink', () => {
         label: 'gitlab.com/sourcegraph/sourcegraph',
         value: 'repo:^gitlab\\.com/sourcegraph/sourcgreaph$',
         count: 5,
-        limitHit: false,
+        exhaustive: true,
         kind: 'repo',
     }
 
@@ -22,7 +22,7 @@ describe('FilterLink', () => {
         label: 'github.com/microsoft/vscode',
         value: 'repo:^github\\.com/microsoft/vscode$',
         count: 201,
-        limitHit: true,
+        exhaustive: false,
         kind: 'repo',
     }
 
@@ -30,7 +30,7 @@ describe('FilterLink', () => {
         label: 'lang:go',
         value: 'lang:go',
         count: 500,
-        limitHit: true,
+        exhaustive: false,
         kind: 'lang',
     }
 
@@ -38,7 +38,7 @@ describe('FilterLink', () => {
         label: 'lang:typescript',
         value: 'lang:typescript',
         count: 241,
-        limitHit: false,
+        exhaustive: true,
         kind: 'lang',
     }
 
@@ -46,7 +46,7 @@ describe('FilterLink', () => {
         label: '-file:_test\\.go$',
         value: '-file:_test\\.go$',
         count: 1,
-        limitHit: false,
+        exhaustive: true,
         kind: 'file',
     }
 

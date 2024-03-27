@@ -1,7 +1,7 @@
 // Command prom-wrapper provides a wrapper command for Prometheus that
 // also handles Sourcegraph configuration changes and making changes to Prometheus.
 //
-// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
+// See https://sourcegraph.com/docs/dev/background-information/observability/prometheus
 package main
 
 import (

@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"testing"
 
-	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -69,6 +70,13 @@ func TestGetAndSaveUser(t *testing.T) {
 		UserProps:        userProps("nonexistent", "nonexistent@example.com"),
 		CreateIfNotExist: true,
 	}
+
+	userpasswd.MockAddRandomSuffix = func(s string) (string, error) {
+		return fmt.Sprintf("%s-ubioa", s), nil
+	}
+	t.Cleanup(func() {
+		userpasswd.MockAddRandomSuffix = nil
+	})
 
 	mainCase := outerCase{
 		description: "no unexpected errors",
@@ -156,15 +164,23 @@ func TestGetAndSaveUser(t *testing.T) {
 				expNewUserCreated:                false,
 			},
 			{
-				description: "ext acct doesn't exist, user with username exists but email doesn't exist",
+				description: "ext acct doesn't exist, user with username exists but email doesn't exist, append random suffix",
 				// Note: if the email doesn't match, the user effectively doesn't exist from our POV
 				op: GetAndSaveUserOp{
 					ExternalAccount:  ext("st1", "s-new", "c1", "s-new/u1"),
 					UserProps:        userProps("u1", "doesnotmatch@example.com"),
 					CreateIfNotExist: true,
 				},
-				expSafeErr: "Username \"u1\" already exists, but no verified email matched \"doesnotmatch@example.com\"",
-				expErr:     database.MockCannotCreateUserUsernameExistsErr,
+				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
+					10001: {ext("st1", "s-new", "c1", "s-new/u1")},
+				},
+				expCreatedUsers: map[int32]database.NewUser{
+					10001: userProps("u1-ubioa", "doesnotmatch@example.com"),
+				},
+				expNewUserCreated:                true,
+				expUserID:                        10001,
+				expCalledCreateUserSyncJob:       true,
+				expCalledGrantPendingPermissions: true,
 			},
 			{
 				description: "ext acct doesn't exist, user with email exists but username doesn't exist",
@@ -291,6 +307,38 @@ func TestGetAndSaveUser(t *testing.T) {
 				expUserID:                  1,
 				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "doesnotexist")},
+				},
+				expCalledGrantPendingPermissions: true,
+				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                false,
+			},
+			{
+				description: "single identity per user mode rejects multiple external identities from same provider",
+				op: GetAndSaveUserOp{
+					ExternalAccount:       ext("st1", "s1", "c1", "s1/u1-new"),
+					UserProps:             userProps("u1", "u1@example.com"), // This user exists in the DB already and has an external account for st1, s1, c1
+					SingleIdentityPerUser: true,
+				},
+				createIfNotExistIrrelevant:       true,
+				expSafeErr:                       "Another identity for this user from this provider already exists. Remove the link to the other identity from your account.",
+				expErr:                           errors.New("duplicate identity for single identity provider"),
+				expCalledGrantPendingPermissions: false,
+				expCalledCreateUserSyncJob:       false,
+				expNewUserCreated:                false,
+				expSavedExtAccts:                 map[int32][]extsvc.AccountSpec{},
+			},
+			{
+				description: "single identity per user mode accepts the same external identity from same provider",
+				actorUID:    1,
+				op: GetAndSaveUserOp{
+					ExternalAccount:       ext("st1", "s1", "c1", "s1/u1"),
+					UserProps:             userProps("u1", "u1@example.com"), // This user exists in the DB already and has an external account for st1, s1, c1
+					SingleIdentityPerUser: true,
+				},
+				createIfNotExistIrrelevant: true,
+				expUserID:                  1,
+				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
+					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 				expCalledGrantPendingPermissions: true,
 				expCalledCreateUserSyncJob:       true,
@@ -665,6 +713,37 @@ func (m *mocks) DB() database.DB {
 	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 	externalAccounts.UpdateFunc.SetDefaultHook(m.ExternalAccountUpdate)
 	externalAccounts.UpsertFunc.SetDefaultHook(m.Upsert)
+	externalAccounts.ListFunc.SetDefaultHook(func(ctx context.Context, ealo database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
+		for _, ui := range m.mockParams.userInfos {
+			if ealo.UserID != 0 && ui.user.ID != ealo.UserID {
+				continue
+			}
+			eas := make([]*extsvc.Account, 0)
+			for _, acc := range ui.extAccts {
+				if ealo.ServiceType != "" && ealo.ServiceType != acc.ServiceType {
+					continue
+				}
+				if ealo.ServiceID != "" && ealo.ServiceID != acc.ServiceID {
+					continue
+				}
+				if ealo.ClientID != "" && ealo.ClientID != acc.ClientID {
+					continue
+				}
+				eas = append(eas, &extsvc.Account{
+					UserID: ealo.UserID,
+					AccountSpec: extsvc.AccountSpec{
+						ServiceType: acc.ServiceType,
+						ServiceID:   acc.ServiceID,
+						AccountID:   acc.AccountID,
+						ClientID:    acc.ClientID,
+					},
+				})
+			}
+			return eas, nil
+		}
+
+		return nil, errors.New("no ext accts for user")
+	})
 
 	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(m.GetByID)

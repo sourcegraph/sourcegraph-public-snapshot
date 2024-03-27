@@ -24,6 +24,7 @@ interface Props {
      * Whether to render with icon-inline className
      */
     inline?: boolean
+    capitalizeInitials?: boolean
 }
 
 /**
@@ -38,6 +39,7 @@ export const UserAvatar = React.forwardRef(function UserAvatar(
         inline,
         // Exclude children since neither <img /> nor mdi-react icons receive them
         children,
+        capitalizeInitials,
         ...otherProps
     }: React.PropsWithChildren<Props>,
     reference
@@ -77,7 +79,7 @@ export const UserAvatar = React.forwardRef(function UserAvatar(
     const name = user?.displayName || user?.username || ''
     const getInitials = (fullName: string): string => {
         const names = fullName.split(' ')
-        const initials = names.map(name => name.charAt(0).toLowerCase())
+        const initials = names.map(name => transformInitial(name.charAt(0), capitalizeInitials))
         if (initials.length > 1) {
             return `${initials[0]}${initials.at(-1)}`
         }
@@ -99,3 +101,6 @@ export const UserAvatar = React.forwardRef(function UserAvatar(
     return <div ref={reference} {...sharedProps} />
 }) as ForwardReferenceComponent<'img', React.PropsWithChildren<Props>>
 UserAvatar.displayName = 'UserAvatar'
+
+const transformInitial = (char: string, capitalize?: boolean): string =>
+    capitalize ? char.toUpperCase() : char.toLowerCase()

@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "config",
+    srcs = ["config.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/cody-gateway/internal/httpapi/embeddings",
+        "//internal/codygateway",
+        "//internal/completions/client/anthropic",
+        "//internal/completions/client/fireworks",
+        "//internal/env",
+        "//internal/trace/policy",
+        "//lib/errors",
+    ],
+)

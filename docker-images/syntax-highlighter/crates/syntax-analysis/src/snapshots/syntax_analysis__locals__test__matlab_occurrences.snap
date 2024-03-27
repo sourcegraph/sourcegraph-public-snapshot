@@ -1,0 +1,139 @@
+---
+source: crates/syntax-analysis/src/locals.rs
+expression: dumped
+---
+  function myFunc()
+      e = 5;
+//    ^ definition local 1
+      f = 6;
+//    ^ definition local 2
+  end
+  
+  a = 1;
+//^ definition local 3
+  
+  function myNestedFunc()
+//         ^^^^^^^^^^^^ definition local 4
+      g = 7;
+//    ^ definition local 5
+  
+      function nestedChildFunc()
+//             ^^^^^^^^^^^^^^^ definition local 6
+          h = 8;
+//        ^ definition local 7
+      end
+  end
+  
+  global i j
+//       ^ definition local 8
+//         ^ definition local 9
+  i = 9;
+//^ reference local 8
+  j = 10;
+//^ reference local 9
+  
+  function myPersistFunc()
+//         ^^^^^^^^^^^^^ definition local 10
+      persistent k
+//               ^ definition local 11
+      if isempty(k)
+//               ^ reference local 11
+          k = 11;
+//        ^ reference local 11
+      end
+  end
+  
+  function myScopeFunc()
+//         ^^^^^^^^^^^ definition local 12
+      m = 12;
+//    ^ definition local 13
+  
+      n = 13;
+//    ^ definition local 14
+      global n
+//           ^ reference local 14
+  
+      o = 14;
+//    ^ definition local 15
+      persistent o
+//               ^ reference local 15
+  end
+  
+  function [a, b] = myFunction()
+//          ^ definition local 16
+//             ^ definition local 17
+//                  ^^^^^^^^^^ definition local 18
+      a = 1;
+//    ^ reference local 16
+      b = [2, 3];
+//    ^ reference local 17
+  end
+  
+  classdef MyClass
+      properties
+          Prop1
+      end
+  
+      methods
+          function obj = MyClass(prop1)
+//                 ^^^ definition local 19
+//                               ^^^^^ definition local 20
+              obj.Prop1 = prop1;
+//            ^^^ reference local 19
+//                        ^^^^^ reference local 20
+          end
+  
+          function result = method1(obj)
+//                 ^^^^^^ definition local 21
+//                                  ^^^ definition local 22
+              result = obj.Prop1;
+//            ^^^^^^ reference local 21
+//                     ^^^ reference local 22
+          end
+      end
+  end
+  
+  myObject = MyClass(5);
+//^^^^^^^^ definition local 23
+  result = myObject.method1();
+//^^^^^^ definition local 24
+//         ^^^^^^^^ reference local 23
+  result = myObject.Prop1;
+//^^^^^^ reference local 24
+//         ^^^^^^^^ reference local 23
+  
+  addTwoNumbers = @(x, y) x + y;
+//^^^^^^^^^^^^^ definition local 25
+//                  ^ definition local 26
+//                     ^ definition local 27
+//                        ^ reference local 26
+//                            ^ reference local 27
+  
+  % TODO handle clear
+  % See https://github.com/sourcegraph/sourcegraph/issues/57399
+  
+  slay = 12 % definition is here
+//^^^^ definition local 28
+  clear slay
+  slay = 10 % and now it's here!
+//^^^^ reference local 28
+  
+  pog1 = 10
+//^^^^ definition local 29
+  pog1 = 20
+//^^^^ reference local 29
+  
+  function f()
+//         ^ definition local 30
+    if false
+      pog2 = 1;
+//    ^^^^ definition local 31
+    else
+      % TODO: this should also be marked as a definition
+      pog2 = 2;
+//    ^^^^ reference local 31
+    end
+    disp(pog2);
+//       ^^^^ reference local 31
+  end
+

@@ -20,7 +20,9 @@ const (
 	IsAlias
 	Standard
 	QuotesAsLiterals
-	GlobFilters
+	Boost
+	// IsContent is set on patterns that come from content:
+	IsContent
 )
 
 var allLabels = map[labels]string{
@@ -34,6 +36,10 @@ var allLabels = map[labels]string{
 	Structural:                "Structural",
 	IsPredicate:               "IsPredicate",
 	IsAlias:                   "IsAlias",
+	Standard:                  "Standard",
+	QuotesAsLiterals:          "QuotesAsLiterals",
+	Boost:                     "Boost",
+	IsContent:                 "IsContent",
 }
 
 func (l *labels) IsSet(label labels) bool {

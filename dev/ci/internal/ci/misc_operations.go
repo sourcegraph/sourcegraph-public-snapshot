@@ -8,28 +8,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 )
 
-func triggerBackCompatTest(buildOpts bk.BuildOptions, isAspectWorkflows bool) func(*bk.Pipeline) {
-	if isAspectWorkflows {
-		buildOpts.Message += " (Aspect)"
-	}
+func triggerBackCompatTest(buildOpts bk.BuildOptions) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		steps := []bk.StepOpt{
-			bk.Async(true),
+			bk.Async(false),
 			bk.Key("trigger-backcompat"),
 			bk.AllowDependencyFailure(),
 			bk.Build(buildOpts),
 		}
 
-		if !isAspectWorkflows {
-			steps = append(steps, bk.DependsOn("bazel-prechecks"))
-		}
-		pipeline.AddTrigger(":bazel::snail: Async BackCompat Tests", "sourcegraph-backcompat", steps...)
+		pipeline.AddTrigger(":bazel::hourglass_flowing_sand: BackCompat Tests", "sourcegraph-backcompat", steps...)
 	}
 }
 
 func bazelGoModTidy() func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
-		bk.Agent("queue", "bazel"),
+		bk.Agent("queue", AspectWorkflows.QueueSmall),
 		bk.Key("bazel-go-mod"),
 		bk.Cmd("./dev/ci/bazel-gomodtidy.sh"),
 	}
@@ -40,8 +34,8 @@ func bazelGoModTidy() func(*bk.Pipeline) {
 }
 
 // addSgLints runs linters for the given targets.
-func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
-	cmd := "go run ./dev/sg "
+func addSgLints(targets []string) func(*bk.Pipeline) {
+	cmd := "./sg "
 
 	if retryCount := os.Getenv("BUILDKITE_RETRY_COUNT"); retryCount != "" && retryCount != "0" {
 		cmd = cmd + "-v "
@@ -60,7 +54,7 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 	)
 
 	formatCheck := ""
-	if runType.Is(runtype.MainBranch) || runType.Is(runtype.MainDryRun) {
+	if runType.Is(runtype.MainBranch, runtype.MainDryRun, runtype.CloudEphemeral) {
 		formatCheck = "--skip-format-check "
 	}
 
@@ -69,6 +63,13 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",
 			withPnpmCache(),
+			bk.Env("HONEYCOMB_TEAM", os.Getenv("CI_HONEYCOMB_API_KEY")),
+			bk.Env("HONEYCOMB_SUFFIX", "-buildkite"),
+			bk.Env("ASPECT_WORKFLOWS_BUILD", os.Getenv("ASPECT_WORKFLOWS_BUILD")),
+			bk.Env("BUILDKITE_PULL_REQUEST_BASE_BRANCH", os.Getenv("BUILDKITE_PULL_REQUEST_BASE_BRANCH")),
+			bk.DependsOn("bazel-prechecks"),
+			bk.Cmd("buildkite-agent artifact download sg . --step bazel-prechecks"),
+			bk.Cmd("chmod +x ./sg"),
 			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{
 					IncludeNames: true,

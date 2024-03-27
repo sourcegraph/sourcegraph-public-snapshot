@@ -181,7 +181,7 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
         <Page>
             <PageTitle title="Search jobs" />
             <PageHeader
-                annotation={<FeedbackBadge status="experimental" feedback={{ mailto: 'support@sourcegraph.com' }} />}
+                annotation={<FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                 path={[{ icon: LayersSearchOutlineIcon, text: 'Search Jobs' }]}
                 description={
                     <>

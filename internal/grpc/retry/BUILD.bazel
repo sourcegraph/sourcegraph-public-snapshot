@@ -15,6 +15,8 @@ go_library(
         "//internal/grpc/grpcutil",
         "//internal/trace",
         "@com_github_grpc_ecosystem_go_grpc_middleware_v2//metadata",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
         "@org_golang_google_grpc//:go_default_library",

@@ -1,0 +1,52 @@
+fragment ContributorConnection on RepositoryContributorConnection {
+    nodes {
+        count
+        person {
+            ...Avatar_Person
+        }
+        commits(first: 1) {
+            # Fetch information about the last commit the user made
+            nodes {
+                id
+                author {
+                    date
+                }
+                canonicalURL
+                subject
+            }
+        }
+    }
+    pageInfo {
+        endCursor
+        startCursor
+        hasNextPage
+        hasPreviousPage
+    }
+    totalCount
+}
+
+query ContributorsPage_ContributorsQuery(
+    $repoName: String!
+    $first: Int
+    $last: Int
+    $after: String
+    $before: String
+    $revisionRange: String
+    $afterDate: String
+    $path: String
+) {
+    repository(name: $repoName) {
+        id
+        contributors(
+            first: $first
+            last: $last
+            before: $before
+            after: $after
+            revisionRange: $revisionRange
+            afterDate: $afterDate
+            path: $path
+        ) {
+            ...ContributorConnection
+        }
+    }
+}

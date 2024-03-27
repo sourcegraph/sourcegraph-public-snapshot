@@ -1,32 +1,48 @@
-import type { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { lastValueFrom } from 'rxjs'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../backend/graphql'
-import type { RepositoriesByNamesResult, RepositoriesByNamesVariables } from '../../graphql-operations'
+import type { InputMaybe, RepositoriesByNamesResult, RepositoriesByNamesVariables } from '../../graphql-operations'
 
-export function fetchRepositoriesByNames(
-    names: string[]
-): Observable<RepositoriesByNamesResult['repositories']['nodes']> {
-    const first = names.length
-    return requestGraphQL<RepositoriesByNamesResult, RepositoriesByNamesVariables>(
-        gql`
-            query RepositoriesByNames($names: [String!]!, $first: Int!) {
-                repositories(names: $names, first: $first) {
-                    nodes {
-                        id
-                        name
-                    }
-                }
+const query = gql`
+    query RepositoriesByNames($names: [String!]!, $first: Int!, $after: String) {
+        repositories(names: $names, first: $first, after: $after) {
+            nodes {
+                id
+                name
             }
-        `,
-        {
-            names,
-            first,
+            pageInfo {
+                endCursor
+                hasNextPage
+            }
         }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.repositories.nodes)
-    )
+    }
+`
+
+export async function fetchRepositoriesByNames(
+    names: string[]
+): Promise<RepositoriesByNamesResult['repositories']['nodes']> {
+    let repos: RepositoriesByNamesResult['repositories']['nodes'] = []
+    const first = names.length
+    let after: InputMaybe<string> = null
+
+    while (true) {
+        const result = await lastValueFrom(
+            requestGraphQL<RepositoriesByNamesResult, RepositoriesByNamesVariables>(query, {
+                names,
+                first,
+                after,
+            })
+        )
+
+        const data: RepositoriesByNamesResult = dataOrThrowErrors(result)
+
+        repos = repos.concat(data.repositories.nodes)
+        if (!data.repositories.pageInfo.hasNextPage) {
+            break
+        }
+        after = data.repositories.pageInfo.endCursor
+    }
+    return repos
 }

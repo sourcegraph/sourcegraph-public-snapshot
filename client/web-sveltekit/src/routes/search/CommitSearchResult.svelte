@@ -3,6 +3,7 @@
 <script lang="ts" context="module">
     import hljs from 'highlight.js/lib/core'
     import diff from 'highlight.js/lib/languages/diff'
+
     import { highlightRanges } from '$lib/dom'
 
     hljs.registerLanguage('diff', diff)
@@ -33,12 +34,14 @@
 </script>
 
 <script lang="ts">
-    import Timestamp from '$lib/Timestamp.svelte'
+    import type { Action } from 'svelte/action'
+
+    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { displayRepoName, type CommitMatch, getRepositoryUrl, getMatchUrl } from '$lib/shared'
-    import CodeHostIcon from './CodeHostIcon.svelte'
+    import Timestamp from '$lib/Timestamp.svelte'
+
     import RepoStars from './RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
-    import type { Action } from 'svelte/action'
 
     export let result: CommitMatch
 

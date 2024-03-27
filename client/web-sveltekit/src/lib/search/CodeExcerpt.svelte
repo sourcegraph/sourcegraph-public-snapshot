@@ -1,3 +1,5 @@
+<svelte:options immutable />
+
 <script lang="ts">
     import '$lib/highlight.scss'
 
@@ -38,31 +40,32 @@
 </script>
 
 <code>
-    {#if highlightedHTMLRows === undefined}
-        <table use:highlightMatches={matches}>
-            <tbody>
-                {#each plaintextLines as line, index}
-                    <tr>
-                        <td class="line" data-line={startLine + index + 1} />
-                        <td class="code">{line}</td>
-                    </tr>
-                {/each}
-            </tbody>
-        </table>
-    {:else}
-        <table use:highlightMatches={matches}>
-            <tbody>
-                {@html highlightedHTMLRows.join('')}
-            </tbody>
-        </table>
-    {/if}
+    {#key matches}
+        {#if highlightedHTMLRows === undefined}
+            <table use:highlightMatches={matches}>
+                <tbody>
+                    {#each plaintextLines as line, index}
+                        <tr>
+                            <td class="line" data-line={startLine + index + 1} />
+                            <td class="code">{line}</td>
+                        </tr>
+                    {/each}
+                </tbody>
+            </table>
+        {:else}
+            <table use:highlightMatches={matches}>
+                <tbody>
+                    {@html highlightedHTMLRows.join('')}
+                </tbody>
+            </table>
+        {/if}
+    {/key}
 </code>
 
 <style lang="scss">
     code {
         display: flex;
         align-items: center;
-        padding: 0.125rem 0.375rem;
         background-color: var(--background-color, --code-bg);
         overflow-x: auto;
 

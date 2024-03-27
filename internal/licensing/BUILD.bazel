@@ -20,9 +20,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/licensing",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/conf",
         "//internal/conf/conftypes",
+        "//internal/dotcom",
         "//internal/env",
         "//internal/errcode",
         "//internal/license",
@@ -31,7 +31,6 @@ go_library(
         "@com_github_gomodule_redigo//redis",
         "@com_github_sourcegraph_log//:log",
         "@org_golang_x_crypto//ssh",
-        "@org_golang_x_exp//slices",
         "@org_uber_go_atomic//:atomic",
     ],
 )

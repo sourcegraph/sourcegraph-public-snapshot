@@ -1,23 +1,36 @@
-#import "$lib/repo/FileTable.gql"
-
-fragment TreeWithCommitInfo on GitTree {
+fragment TreePage_TreeWithCommitInfo on GitTree {
     canonicalURL
     entries(first: $first) {
         ...TreeEntryWithCommitInfo
     }
 }
 
-query TreeEntriesCommitInfo($repoID: ID!, $commitID: String!, $filePath: String!, $first: Int) {
-    node(id: $repoID) {
-        __typename
+query TreePageCommitInfoQuery($repoName: String!, $revision: String!, $filePath: String!, $first: Int) {
+    repository(name: $repoName) {
         id
-        ... on Repository {
-            commit(rev: $commitID) {
-                id
-                tree(path: $filePath) {
-                    ...TreeWithCommitInfo
-                }
+        commit(rev: $revision) {
+            id
+            tree(path: $filePath) {
+                ...TreePage_TreeWithCommitInfo
             }
         }
     }
+}
+
+query TreePageReadmeQuery($repoName: String!, $revision: String!, $path: String!) {
+    repository(name: $repoName) {
+        id
+        commit(rev: $revision) {
+            id
+            blob(path: $path) {
+                canonicalURL # key field
+                ...RepoPage_Readme
+            }
+        }
+    }
+}
+
+fragment TreePage_Readme on GitBlob {
+    name
+    ...Readme_Blob
 }

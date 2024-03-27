@@ -8,12 +8,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/schema"
+
 	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -61,7 +64,7 @@ func Test_RecentContributorIndexFromGitserver(t *testing.T) {
 
 	client := gitserver.NewMockClient()
 	client.CommitLogFunc.SetDefaultReturn(fakeCommitsToLog(commits), nil)
-	indexer := newRecentContributorsIndexer(client, db, logger, rcache.New("testing_own_signals"))
+	indexer := newRecentContributorsIndexer(client, db, logger)
 	checker := authz.NewMockSubRepoPermissionChecker()
 	checker.EnabledFunc.SetDefaultReturn(true)
 	checker.EnabledForRepoIDFunc.SetDefaultReturn(false, nil)
@@ -132,12 +135,21 @@ func Test_RecentContributorIndex_CanSeePrivateRepos(t *testing.T) {
 	userNoAccess, err := db.Users().Create(ctx, database.NewUser{Username: "user-no-access"})
 	require.NoError(t, err)
 
-	globals.PermissionsUserMapping().Enabled = true // this is required otherwise setting the permissions won't do anything
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			PermissionsUserMapping: &schema.PermissionsUserMapping{
+				Enabled: true,
+				BindID:  "email",
+			},
+		},
+	})
+	t.Cleanup(func() { conf.Mock(nil) })
+
 	_, err = db.Perms().SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: userWithAccess.ID}}, authz.SourceAPI)
 	require.NoError(t, err)
 
 	client := gitserver.NewMockClient()
-	indexer := newRecentContributorsIndexer(client, db, logger, rcache.New("testing_own_signals"))
+	indexer := newRecentContributorsIndexer(client, db, logger)
 
 	t.Run("non-internal user", func(t *testing.T) {
 		// this is kind of an unrelated test just to provide a baseline that there is actually a difference when
@@ -198,7 +210,7 @@ func Test_RecentContributorIndexSkipsSubrepoPermsRepos(t *testing.T) {
 
 	client := gitserver.NewMockClient()
 	client.CommitLogFunc.SetDefaultReturn(fakeCommitsToLog(commits), nil)
-	indexer := newRecentContributorsIndexer(client, db, logger, rcache.New("testing_own_signals"))
+	indexer := newRecentContributorsIndexer(client, db, logger)
 	checker := authz.NewMockSubRepoPermissionChecker()
 	checker.EnabledFunc.SetDefaultReturn(true)
 	checker.EnabledForRepoIDFunc.SetDefaultReturn(true, nil)

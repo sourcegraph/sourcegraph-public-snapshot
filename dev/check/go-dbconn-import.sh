@@ -18,6 +18,7 @@ allowed_prefix=(
   # Transitively depends on updatecheck package which imports but does not use DB
   github.com/sourcegraph/sourcegraph/cmd/pings
   github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker
+  github.com/sourcegraph/sourcegraph/cmd/syntactic-code-intel-worker
   github.com/sourcegraph/sourcegraph/cmd/repo-updater
   # Transitively depends on zoekt package which imports but does not use DB
   github.com/sourcegraph/sourcegraph/cmd/searcher

@@ -1,0 +1,713 @@
+---
+source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
+---
+  #include <iostream>
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^ StringLiteral
+  #include <map>
+//^^^^^^^^ Keyword
+//         ^^^^^ StringLiteral
+  #include <vector>
+//^^^^^^^^ Keyword
+//         ^^^^^^^^ StringLiteral
+  
+  void rangeBasedLoops() {
+//^^^^ IdentifierBuiltinType
+//     ^^^^^^^^^^^^^^^ IdentifierFunction
+      std::vector<int> nums = {1, 2, 3, 4, 5};
+//    ^^^ IdentifierNamespace
+//         ^^^^^^ IdentifierType
+//                ^^^ IdentifierBuiltinType
+//                     ^^^^ Identifier
+//                             ^ NumericLiteral
+//                                ^ NumericLiteral
+//                                   ^ NumericLiteral
+//                                      ^ NumericLiteral
+//                                         ^ NumericLiteral
+  
+      // Iterate over vector using range-based for loop
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      for (int num : nums) {
+//    ^^^ Keyword
+//         ^^^ IdentifierBuiltinType
+//             ^^^ Identifier
+//                   ^^^^ Identifier
+          std::cout << num << " ";
+//        ^^^ IdentifierNamespace
+//             ^^^^ Identifier
+//                     ^^^ Identifier
+//                            ^^^ StringLiteral
+      }
+      std::cout << std::endl;
+//    ^^^ IdentifierNamespace
+//         ^^^^ Identifier
+//                 ^^^ IdentifierNamespace
+//                      ^^^^ Identifier
+  
+      std::map<std::string, int> ages = {{"Alice", 25}, {"Bob", 30}, {"Charlie", 35}};
+//    ^^^ IdentifierNamespace
+//         ^^^ IdentifierType
+//             ^^^ IdentifierNamespace
+//                  ^^^^^^ IdentifierType
+//                          ^^^ IdentifierBuiltinType
+//                               ^^^^ Identifier
+//                                        ^^^^^^^ StringLiteral
+//                                                 ^^ NumericLiteral
+//                                                       ^^^^^ StringLiteral
+//                                                              ^^ NumericLiteral
+//                                                                    ^^^^^^^^^ StringLiteral
+//                                                                               ^^ NumericLiteral
+  
+      // Iterate over map using range-based for loop
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      for (const auto& [name, age] : ages) {
+//    ^^^ Keyword
+//         ^^^^^ Keyword
+//               ^^^^ Keyword
+//                      ^^^^ Identifier
+//                            ^^^ Identifier
+//                                   ^^^^ Identifier
+          std::cout << name << " is " << age << " years old." << std::endl;
+//        ^^^ IdentifierNamespace
+//             ^^^^ Identifier
+//                     ^^^^ Identifier
+//                             ^^^^^^ StringLiteral
+//                                       ^^^ Identifier
+//                                              ^^^^^^^^^^^^^ StringLiteral
+//                                                               ^^^ IdentifierNamespace
+//                                                                    ^^^^ Identifier
+      }
+  }
+  
+  void closures() {
+//^^^^ IdentifierBuiltinType
+//     ^^^^^^^^ IdentifierFunction
+      int x = 5;
+//    ^^^ IdentifierBuiltinType
+//        ^ Identifier
+//            ^ NumericLiteral
+  
+      // Define closure with capture
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      auto add_x = [x](int y) {
+//    ^^^^ Keyword
+//         ^^^^^ Identifier
+//                  ^ Identifier
+//                     ^^^ IdentifierBuiltinType
+//                         ^ Identifier
+          return x + y;
+//        ^^^^^^ Keyword
+//               ^ Identifier
+//                   ^ Identifier
+      };
+  
+      // Call closure with different arguments
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      std::cout << add_x(10) << std::endl; // prints 15
+//    ^^^ IdentifierNamespace
+//         ^^^^ Identifier
+//                 ^^^^^ IdentifierFunction
+//                       ^^ NumericLiteral
+//                              ^^^ IdentifierNamespace
+//                                   ^^^^ Identifier
+//                                         ^^^^^^^^^^^^ Comment
+  }
+  
+  // Define user-defined literal for string suffix "_s"
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  std::string operator"" _s(const char* str, std::size_t len) {
+//^^^ IdentifierNamespace
+//     ^^^^^^ IdentifierType
+//            ^^^^^^^^ Keyword
+//                    ^^^ Identifier
+//                       ^^ Identifier
+//                          ^^^^^ Keyword
+//                                ^^^^ IdentifierBuiltinType
+//                                      ^^^ Identifier
+//                                           ^^^ IdentifierNamespace
+//                                                ^^^^^^ IdentifierType
+//                                                       ^^^ Identifier
+      return std::string(str, len);
+//    ^^^^^^ Keyword
+//           ^^^ IdentifierNamespace
+//                ^^^^^^ Identifier
+//                       ^^^ Identifier
+//                            ^^^ Identifier
+  }
+  
+  // Define user-defined literal for number suffix "_m"
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  constexpr int operator"" _m(unsigned long long x) {
+//^^^^^^^^^ Keyword
+//          ^^^ IdentifierBuiltinType
+//              ^^^^^^^^ Keyword
+//                      ^^^ Identifier
+//                         ^^ Identifier
+//                            ^^^^^^^^^^^^^^^^^^ IdentifierBuiltinType
+//                                               ^ Identifier
+      return x * 1000;
+//    ^^^^^^ Keyword
+//           ^ Identifier
+//               ^^^^ NumericLiteral
+  }
+  
+  void userDefinedLiterals() {
+//^^^^ IdentifierBuiltinType
+//     ^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+      // Use custom string literal suffix "_s"
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      std::string s = "hello"_s;
+//    ^^^ IdentifierNamespace
+//         ^^^^^^ IdentifierType
+//                ^ Identifier
+//                    ^^^^^^^ StringLiteral
+//                           ^^ Identifier
+      std::cout << s << std::endl; // prints "hello"
+//    ^^^ IdentifierNamespace
+//         ^^^^ Identifier
+//                 ^ Identifier
+//                      ^^^ IdentifierNamespace
+//                           ^^^^ Identifier
+//                                 ^^^^^^^^^^^^^^^^^ Comment
+  
+      int meters = 5_m;
+//    ^^^ IdentifierBuiltinType
+//        ^^^^^^ Identifier
+//                 ^ NumericLiteral
+//                  ^^ Identifier
+      std::cout << meters << " meters" << std::endl; // prints "5000 meters"
+//    ^^^ IdentifierNamespace
+//         ^^^^ Identifier
+//                 ^^^^^^ Identifier
+//                           ^^^^^^^^^ StringLiteral
+//                                        ^^^ IdentifierNamespace
+//                                             ^^^^ Identifier
+//                                                   ^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  }
+  
+  #pragma once
+//^^^^^^^ Keyword
+  
+  #include <iostream>
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^ StringLiteral
+  
+  #pragma warning(push)
+//^^^^^^^ Keyword
+  #pragma warning(disable: 4996)
+//^^^^^^^ Keyword
+  
+  int pragmas() {
+//^^^ IdentifierBuiltinType
+//    ^^^^^^^ IdentifierFunction
+      #pragma message("This is a message from the preprocessor!")
+//    ^^^^^^^ Keyword
+      std::cout << "Hello, world!" << std::endl;
+//    ^^^ IdentifierNamespace
+//         ^^^^ Identifier
+//                 ^^^^^^^^^^^^^^^ StringLiteral
+//                                    ^^^ IdentifierNamespace
+//                                         ^^^^ Identifier
+  
+      return 0;
+//    ^^^^^^ Keyword
+//           ^ NumericLiteral
+  }
+  
+  #pragma warning(pop)
+//^^^^^^^ Keyword
+  
+  #define MESSAGE "Hello, world! This is a very long message that spans multiple lines. " \
+//^^^^^^^ Keyword
+//        ^^^^^^^ Identifier
+                  "It is being continued using the line continuation character."
+  
+  #include <iostream>
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^ StringLiteral
+  
+  void preprocessorContinuations() {
+//^^^^ IdentifierBuiltinType
+//     ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+      std::cout << MESSAGE << std::endl;
+//    ^^^ IdentifierNamespace
+//         ^^^^ Identifier
+//                 ^^^^^^^ Identifier
+//                            ^^^ IdentifierNamespace
+//                                 ^^^^ Identifier
+  }
+  
+  
+  int andOrOperators() {
+//^^^ IdentifierBuiltinType
+//    ^^^^^^^^^^^^^^ IdentifierFunction
+      int x = 5;
+//    ^^^ IdentifierBuiltinType
+//        ^ Identifier
+//            ^ NumericLiteral
+      int y = 10;
+//    ^^^ IdentifierBuiltinType
+//        ^ Identifier
+//            ^^ NumericLiteral
+      bool b1 = x > 3 and y < 20; // b1 is true
+//    ^^^^ IdentifierBuiltinType
+//         ^^ Identifier
+//              ^ Identifier
+//                  ^ NumericLiteral
+//                        ^ Identifier
+//                            ^^ NumericLiteral
+//                                ^^^^^^^^^^^^^ Comment
+      bool b2 = x < 3 or y > 20;  // b2 is false
+//    ^^^^ IdentifierBuiltinType
+//         ^^ Identifier
+//              ^ Identifier
+//                  ^ NumericLiteral
+//                       ^ Identifier
+//                           ^^ NumericLiteral
+//                                ^^^^^^^^^^^^^^ Comment
+      bool b3 = x > 3 and y > 20; // b3 is false
+//    ^^^^ IdentifierBuiltinType
+//         ^^ Identifier
+//              ^ Identifier
+//                  ^ NumericLiteral
+//                        ^ Identifier
+//                            ^^ NumericLiteral
+//                                ^^^^^^^^^^^^^^ Comment
+      bool b4 = x < 3 or y < 20;  // b4 is true
+//    ^^^^ IdentifierBuiltinType
+//         ^^ Identifier
+//              ^ Identifier
+//                  ^ NumericLiteral
+//                       ^ Identifier
+//                           ^^ NumericLiteral
+//                                ^^^^^^^^^^^^^ Comment
+  }
+  
+  
+  int multibyteCharacters() {
+//^^^ IdentifierBuiltinType
+//    ^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+      std::string s1 = "Hello, world!";    // single-byte characters
+//    ^^^ IdentifierNamespace
+//         ^^^^^^ IdentifierType
+//                ^^ Identifier
+//                     ^^^^^^^^^^^^^^^ StringLiteral
+//                                         ^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      std::string s2 = "こんにちは世界！";  // multi-byte characters in UTF-8 encoding
+//    ^^^ IdentifierNamespace
+//         ^^^^^^ IdentifierType
+//                ^^ Identifier
+//                     ^^^^^^^^^^ StringLiteral
+//                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  
+      char c1 = 'A';          // single-byte character
+//    ^^^^ IdentifierBuiltinType
+//         ^^ Identifier
+//              ^^^ CharacterLiteral
+//                            ^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      char c2 = u8'あ';       // multi-byte character encoded in UTF-8
+//    ^^^^ IdentifierBuiltinType
+//         ^^ Identifier
+//              ^^^^^ CharacterLiteral
+//                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  
+  
+      std::cout << s1 << std::endl;
+//    ^^^ IdentifierNamespace
+//         ^^^^ Identifier
+//                 ^^ Identifier
+//                       ^^^ IdentifierNamespace
+//                            ^^^^ Identifier
+      std::cout << s2 << std::endl;
+//    ^^^ IdentifierNamespace
+//         ^^^^ Identifier
+//                 ^^ Identifier
+//                       ^^^ IdentifierNamespace
+//                            ^^^^ Identifier
+  
+      return 0;
+//    ^^^^^^ Keyword
+//           ^ NumericLiteral
+  }
+  
+  void literals() {
+//^^^^ IdentifierBuiltinType
+//     ^^^^^^^^ IdentifierFunction
+      auto intLit = 1234;
+//    ^^^^ Keyword
+//         ^^^^^^ Identifier
+//                  ^^^^ NumericLiteral
+      auto floatLit = 1.23f;
+//    ^^^^ Keyword
+//         ^^^^^^^^ Identifier
+//                    ^^^^^ NumericLiteral
+      auto boolLit = true;
+//    ^^^^ Keyword
+//         ^^^^^^^ Identifier
+//                   ^^^^ BooleanLiteral
+      char charLit = 'x';
+//    ^^^^ IdentifierBuiltinType
+//         ^^^^^^^ Identifier
+//                   ^^^ CharacterLiteral
+      auto stringLit = "Hello";
+//    ^^^^ Keyword
+//         ^^^^^^^^^ Identifier
+//                     ^^^^^^^ StringLiteral
+      auto wideStringLit = L"World";
+//    ^^^^ Keyword
+//         ^^^^^^^^^^^^^ Identifier
+//                         ^^^^^^^^ StringLiteral
+      auto utf8StringLit = u8"World";
+//    ^^^^ Keyword
+//         ^^^^^^^^^^^^^ Identifier
+//                         ^^^^^^^^^ StringLiteral
+      auto utf16StringLit = u"World";
+//    ^^^^ Keyword
+//         ^^^^^^^^^^^^^^ Identifier
+//                          ^^^^^^^^ StringLiteral
+      auto utf32StringLit = U"World";
+//    ^^^^ Keyword
+//         ^^^^^^^^^^^^^^ Identifier
+//                          ^^^^^^^^ StringLiteral
+      auto rawStringLit = R"sequence(Hello
+//    ^^^^ Keyword
+//         ^^^^^^^^^^^^ Identifier
+//                        ^^^^^^^^^^^^^^^^ StringLiteral 112:24..116:19
+      \n
+      \r
+      \t
+      World)sequence";
+      auto nullptrLit = nullptr;
+//    ^^^^ Keyword
+//         ^^^^^^^^^^ Identifier
+//                      ^^^^^^^ IdentifierNull
+      auto nullLit = NULL;
+//    ^^^^ Keyword
+//         ^^^^^^^ Identifier
+//                   ^^^^ IdentifierNull
+  
+      // Examples from https://en.cppreference.com/w/cpp/language/string_literal
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      const wchar_t* sC = LR"--(STUV)--"; // ok, raw string literal
+//    ^^^^^ Keyword
+//          ^^^^^^^ IdentifierType
+//                   ^^ Identifier
+//                        ^^^^^^^^^^^^^^ StringLiteral
+//                                        ^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      const wchar_t* s4 = L"ABC" L"DEF"; // ok, same as
+//    ^^^^^ Keyword
+//          ^^^^^^^ IdentifierType
+//                   ^^ Identifier
+//                        ^^^^^^ StringLiteral
+//                               ^^^^^^ StringLiteral
+//                                       ^^^^^^^^^^^^^^ Comment
+      const wchar_t* s5 = L"ABCDEF";
+//    ^^^^^ Keyword
+//          ^^^^^^^ IdentifierType
+//                   ^^ Identifier
+//                        ^^^^^^^^^ StringLiteral
+      const char32_t* s6 = U"GHI" "JKL"; // ok, same as
+//    ^^^^^ Keyword
+//          ^^^^^^^^ IdentifierBuiltinType
+//                    ^^ Identifier
+//                         ^^^^^^ StringLiteral
+//                                ^^^^^ StringLiteral
+//                                       ^^^^^^^^^^^^^^ Comment
+      const char32_t* s7 = U"GHIJKL";
+//    ^^^^^ Keyword
+//          ^^^^^^^^ IdentifierBuiltinType
+//                    ^^ Identifier
+//                         ^^^^^^^^^ StringLiteral
+      const char16_t* s9 = "MN" u"OP" "QR"; // ok, same as
+//    ^^^^^ Keyword
+//          ^^^^^^^^ IdentifierBuiltinType
+//                    ^^ Identifier
+//                         ^^^^ StringLiteral
+//                              ^^^^^ StringLiteral
+//                                    ^^^^ StringLiteral
+//                                          ^^^^^^^^^^^^^^ Comment
+      const char16_t* sA = u"MNOPQR";
+//    ^^^^^ Keyword
+//          ^^^^^^^^ IdentifierBuiltinType
+//                    ^^ Identifier
+//                         ^^^^^^^^^ StringLiteral
+  }
+  
+  
+  // Structs, enums, unions
+//^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  struct Point {
+//^^^^^^ Keyword
+//       ^^^^^ IdentifierType
+      int x;
+//    ^^^ IdentifierBuiltinType
+//        ^ IdentifierAttribute
+      int y;
+//    ^^^ IdentifierBuiltinType
+//        ^ IdentifierAttribute
+      Point() : x(0), y(0) { } // Default constructor
+//    ^^^^^ IdentifierFunction
+//              ^ IdentifierAttribute
+//                ^ NumericLiteral
+//                    ^ IdentifierAttribute
+//                      ^ NumericLiteral
+//                             ^^^^^^^^^^^^^^^^^^^^^^ Comment
+      Point(int x, int y) : x(x), y(y) { } // Initialization constructor
+//    ^^^^^ IdentifierFunction
+//          ^^^ IdentifierBuiltinType
+//              ^ Identifier
+//                 ^^^ IdentifierBuiltinType
+//                     ^ Identifier
+//                          ^ IdentifierAttribute
+//                            ^ Identifier
+//                                ^ IdentifierAttribute
+//                                  ^ Identifier
+//                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  };
+  enum Color {
+//^^^^ Keyword
+//     ^^^^^ IdentifierType
+      Red,
+//    ^^^ Identifier
+      Green,
+//    ^^^^^ Identifier
+      Blue
+//    ^^^^ Identifier
+  };
+  union IntOrFloat {
+//^^^^^ Keyword
+//      ^^^^^^^^^^ IdentifierType
+      int i;
+//    ^^^ IdentifierBuiltinType
+//        ^ IdentifierAttribute
+      float f;
+//    ^^^^^ IdentifierBuiltinType
+//          ^ IdentifierAttribute
+  };
+  
+  void structsEnumsUnions() {
+//^^^^ IdentifierBuiltinType
+//     ^^^^^^^^^^^^^^^^^^ IdentifierFunction
+      Point p {5, 10};
+//    ^^^^^ IdentifierType
+//          ^ Identifier
+//             ^ NumericLiteral
+//                ^^ NumericLiteral
+      Color c = Blue;
+//    ^^^^^ IdentifierType
+//          ^ Identifier
+//              ^^^^ Identifier
+      IntOrFloat iof;
+//    ^^^^^^^^^^ IdentifierType
+//               ^^^ Identifier
+      iof.i = 10; // Uses int member
+//    ^^^ Identifier
+//        ^ IdentifierAttribute
+//            ^^ NumericLiteral
+//                ^^^^^^^^^^^^^^^^^^ Comment
+      iof.f = 3.14f; // Now uses float member
+//    ^^^ Identifier
+//        ^ IdentifierAttribute
+//            ^^^^^ NumericLiteral
+//                   ^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  }
+  
+  // Templates
+//^^^^^^^^^^^^ Comment
+  template <typename T>
+//^^^^^^^^ Keyword
+//          ^^^^^^^^ Keyword
+//                   ^ IdentifierType
+  void swap(T& a, T& b) {
+//^^^^ IdentifierBuiltinType
+//     ^^^^ IdentifierFunction
+//          ^ IdentifierType
+//             ^ Identifier
+//                ^ IdentifierType
+//                   ^ Identifier
+      T temp = a;
+//    ^ IdentifierType
+//      ^^^^ Identifier
+//             ^ Identifier
+      a = b;
+//    ^ Identifier
+//        ^ Identifier
+      b = temp;
+//    ^ Identifier
+//        ^^^^ Identifier
+  }
+  template <typename T, unsigned N>
+//^^^^^^^^ Keyword
+//          ^^^^^^^^ Keyword
+//                   ^ IdentifierType
+//                      ^^^^^^^^ IdentifierBuiltinType
+//                               ^ Identifier
+  struct Array {
+//^^^^^^ Keyword
+//       ^^^^^ IdentifierType
+      T data[N];
+//    ^ IdentifierType
+//      ^^^^ IdentifierAttribute
+//           ^ Identifier
+  };
+  
+  void templates() {
+//^^^^ IdentifierBuiltinType
+//     ^^^^^^^^^ IdentifierFunction
+      int x = 5, y = 10;
+//    ^^^ IdentifierBuiltinType
+//        ^ Identifier
+//            ^ NumericLiteral
+//               ^ Identifier
+//                   ^^ NumericLiteral
+      swap(x, y); // x is now 10, y is now 5
+//    ^^^^ IdentifierFunction
+//         ^ Identifier
+//            ^ Identifier
+//                ^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      double d1 = 1.2, d2 = 3.4;
+//    ^^^^^^ IdentifierBuiltinType
+//           ^^ Identifier
+//                ^^^ NumericLiteral
+//                     ^^ Identifier
+//                          ^^^ NumericLiteral
+      swap(d1, d2); // d1 is now 3.4, d2 is now 1.2
+//    ^^^^ IdentifierFunction
+//         ^^ Identifier
+//             ^^ Identifier
+//                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      Array<int, 10> ints; // Holds 10 ints
+//    ^^^^^ IdentifierType
+//          ^^^ IdentifierBuiltinType
+//               ^^ NumericLiteral
+//                   ^^^^ Identifier
+//                         ^^^^^^^^^^^^^^^^ Comment
+      Array<char, 100> chars; // Holds 100 chars
+//    ^^^^^ IdentifierType
+//          ^^^^ IdentifierBuiltinType
+//                ^^^ NumericLiteral
+//                     ^^^^^ Identifier
+//                            ^^^^^^^^^^^^^^^^^^ Comment
+  }
+  
+  // Classes
+//^^^^^^^^^^ Comment
+  class Person {
+//^^^^^ Keyword
+//      ^^^^^^ IdentifierType
+  public:
+//^^^^^^ Keyword
+      Person(std::string name, int age); // Constructor
+//    ^^^^^^ IdentifierFunction
+//           ^^^ IdentifierNamespace
+//                ^^^^^^ IdentifierType
+//                       ^^^^ Identifier
+//                             ^^^ IdentifierBuiltinType
+//                                 ^^^ Identifier
+//                                       ^^^^^^^^^^^^^^ Comment
+      ~Person(); // Destructor
+//    ^^^^^^^ IdentifierFunction
+//               ^^^^^^^^^^^^^ Comment
+      std::string getName(); // Accessor method
+//    ^^^ IdentifierNamespace
+//         ^^^^^^ IdentifierType
+//                ^^^^^^^ IdentifierFunction
+//                           ^^^^^^^^^^^^^^^^^^ Comment
+      // Virtual method
+//    ^^^^^^^^^^^^^^^^^ Comment
+      virtual void greeting();
+//    ^^^^^^^ Keyword
+//            ^^^^ IdentifierBuiltinType
+//                 ^^^^^^^^ IdentifierFunction
+      // Overloaded operator
+//    ^^^^^^^^^^^^^^^^^^^^^^ Comment
+      friend std::ostream& operator<<(std::ostream& os, const Person& p);
+//    ^^^^^^ Keyword
+//           ^^^ IdentifierNamespace
+//                ^^^^^^^ IdentifierType
+//                         ^^^^^^^^ Keyword
+//                                 ^^ Identifier
+//                                    ^^^ IdentifierNamespace
+//                                         ^^^^^^^ IdentifierType
+//                                                  ^^ Identifier
+//                                                      ^^^^^ Keyword
+//                                                            ^^^^^^ IdentifierType
+//                                                                    ^ Identifier
+  private:
+//^^^^^^^ Keyword
+      std::string name;
+//    ^^^ IdentifierNamespace
+//         ^^^^^^ IdentifierType
+//                ^^^^ IdentifierAttribute
+      int age;
+//    ^^^ IdentifierBuiltinType
+//        ^^^ IdentifierAttribute
+  };
+  class Employee : public Person { // Inherits from Person
+//^^^^^ Keyword
+//      ^^^^^^^^ IdentifierType
+//                 ^^^^^^ Keyword
+//                        ^^^^^^ IdentifierType
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  public:
+//^^^^^^ Keyword
+      Employee(std::string name, int age, std::string company);
+//    ^^^^^^^^ IdentifierFunction
+//             ^^^ IdentifierNamespace
+//                  ^^^^^^ IdentifierType
+//                         ^^^^ Identifier
+//                               ^^^ IdentifierBuiltinType
+//                                   ^^^ Identifier
+//                                        ^^^ IdentifierNamespace
+//                                             ^^^^^^ IdentifierType
+//                                                    ^^^^^^^ Identifier
+      // Overridden virtual method
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      void greeting() override;
+//    ^^^^ IdentifierBuiltinType
+//         ^^^^^^^^ IdentifierFunction
+  };
+  
+  // Attributes
+//^^^^^^^^^^^^^ Comment
+  [[my_attribute]]
+//  ^^^^^^^^^^^^ IdentifierAttribute
+  struct my_attribute {
+//^^^^^^ Keyword
+//       ^^^^^^^^^^^^ IdentifierType
+      int value;
+//    ^^^ IdentifierBuiltinType
+//        ^^^^^ IdentifierAttribute
+  };
+  
+  namespace std {
+//^^^^^^^^^ Keyword
+//          ^^^ IdentifierNamespace
+      template <>
+//    ^^^^^^^^ Keyword
+      struct has_attribute<my_attribute> : true_type { };
+//    ^^^^^^ Keyword
+//           ^^^^^^^^^^^^^ IdentifierType
+//                         ^^^^^^^^^^^^ IdentifierType
+//                                         ^^^^^^^^^ IdentifierType
+  }
+  
+  void attributes() {
+//^^^^ IdentifierBuiltinType
+//     ^^^^^^^^^^ IdentifierFunction
+      [[my_attribute(5)]] int data;
+//      ^^^^^^^^^^^^ IdentifierAttribute
+//                   ^ NumericLiteral
+//                        ^^^ IdentifierBuiltinType
+//                            ^^^^ Identifier
+      if (has_attribute<my_attribute>(myData)) {
+//    ^^ Keyword
+//        ^^^^^^^^^^^^^ Identifier
+//                      ^^^^^^^^^^^^ IdentifierType
+//                                    ^^^^^^ Identifier
+          // data has the my_attribute attribute
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      }
+  }
+

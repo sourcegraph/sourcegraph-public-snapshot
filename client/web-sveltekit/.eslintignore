@@ -18,6 +18,8 @@ yarn.lock
 
 # Generated files
 *.gql.d.ts
-src/lib/graphql-operations.ts
-src/lib/graphql-types.ts
+*.gql.ts
+graphql-operations.ts
+graphql-types.ts
+graphql-type-mocks.ts
 static/mockServiceWorker.js

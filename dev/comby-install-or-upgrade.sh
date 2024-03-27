@@ -68,7 +68,7 @@ fi
 
 chmod 755 "$TMP/$RELEASE_BIN"
 echo "[+] Installing comby to $INSTALL_DIR"
-if [ ! $OS == "macos" ]; then
+if [ ! "$OS" == "macos" ]; then
   printf "[*] To install comby to %s requires sudo access. Please type the sudo password in the prompt below.\n" "$INSTALL_DIR"
   sudo cp "$TMP/$RELEASE_BIN" "$INSTALL_DIR/comby"
 else
@@ -87,7 +87,7 @@ CHECK=$(printf 'printf("hello world!\\\n");' | "$INSTALL_DIR"/comby 'printf("hel
 if [ "$CHECK" == "broken" ]; then
   printf "[-] comby did not install correctly.\n"
   printf "[-] My guess is that you need to install the pcre library on your system. Try:\n"
-  if [ $OS == "macos" ]; then
+  if [ "$OS" == "macos" ]; then
     printf "[*] brew install comby\n"
   else
     printf "[*] sudo apt-get install libpcre3-dev && bash <(curl -sL get-comby.netlify.app)\n"

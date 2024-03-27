@@ -20,6 +20,11 @@ interface Props extends UserAreaRouteContext {
 
 export interface UserAreaHeaderContext extends BatchChangesProps, Pick<Props, 'user'> {
     isSourcegraphDotCom: boolean
+
+    license: {
+        isCodeSearchEnabled: boolean
+        isCodyEnabled: boolean
+    }
 }
 
 export interface UserAreaHeaderNavItem extends NavItemWithIconDescriptor<UserAreaHeaderContext> {}

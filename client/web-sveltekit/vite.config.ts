@@ -1,137 +1,28 @@
-import { dirname, join } from 'path'
-import { fileURLToPath } from 'url'
+import { join } from 'path'
 
-import { generate, type CodegenConfig } from '@graphql-codegen/cli'
-import graphql from '@rollup/plugin-graphql'
 import { sveltekit } from '@sveltejs/kit/vite'
-import { defineConfig, mergeConfig, type Plugin, type UserConfig } from 'vite'
+import { defineConfig, mergeConfig, type UserConfig } from 'vite'
 import inspect from 'vite-plugin-inspect'
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-
-// Generates typescript types for gql-tags and .graphql files
-// We don't use vite-plugin-graphql-codegen because it doesn't support watch mode
-// when documents are defined separately for every generated file.
-// Defining a single set of documents at the top level doesn't work either because
-// it would generated unnecessary files (e.g. .qql.d.ts files for .ts file) and also
-// caused duplicate code generation issues.
-function generateGraphQLTypes(): Plugin {
-    const codgegenConfig: CodegenConfig = {
-        generates: {
-            './src/lib/graphql-operations.ts': {
-                documents: ['src/{lib,routes}/**/*.ts', '!src/lib/graphql-{operations,types}.ts'],
-                config: {
-                    onlyOperationTypes: true,
-                    enumValues: '$lib/graphql-types.ts',
-                    //interfaceNameForOperations: 'SvelteKitGraphQlOperations',
-                },
-                plugins: ['typescript', 'typescript-operations'],
-            },
-            'src/lib/graphql-types.ts': {
-                plugins: ['typescript'],
-            },
-            'src/': {
-                documents: ['src/**/*.gql', '!src/**/*.gql.d.ts'],
-                preset: 'near-operation-file',
-                presetConfig: {
-                    baseTypesPath: 'lib/graphql-types.ts',
-                    extension: '.gql.d.ts',
-                },
-                config: {
-                    useTypeImports: true,
-                },
-                plugins: ['typescript-operations', `${__dirname}/dev/typed-document-node.cjs`],
-            },
-        },
-        schema: '../../cmd/frontend/graphqlbackend/*.graphql',
-        errorsOnly: true,
-        config: {
-            // https://the-guild.dev/graphql/codegen/plugins/typescript/typescript-operations#config-api-reference
-            arrayInputCoercion: false,
-            preResolveTypes: true,
-            operationResultSuffix: 'Result',
-            omitOperationSuffix: true,
-            namingConvention: {
-                typeNames: 'keep',
-                enumValues: 'keep',
-                transformUnderscore: true,
-            },
-            declarationKind: 'interface',
-            avoidOptionals: {
-                field: true,
-                inputValue: false,
-                object: true,
-            },
-            scalars: {
-                DateTime: 'string',
-                JSON: 'object',
-                JSONValue: 'unknown',
-                GitObjectID: 'string',
-                JSONCString: 'string',
-                PublishedValue: "boolean | 'draft'",
-                BigInt: 'string',
-            },
-        },
-    }
-
-    // Cheap custom function to check whether we should run codegen for the provided path
-    function shouldRunCodegen(path: string): boolean {
-        // Do not run codegen for generated files
-        if (/(graphql-(operations|types)|\.gql\.d)\.ts$/.test(path)) {
-            return false
-        }
-        if (/\.(ts|gql)$/.test(path)) {
-            return true
-        }
-        return false
-    }
-
-    async function codegen(): Promise<void> {
-        try {
-            await generate(codgegenConfig, true)
-        } catch {
-            // generate already logs errors to the console
-            // but we still need to catch it otherwise vite will terminate
-        }
-    }
-
-    return {
-        name: 'graphql-codegen',
-        buildStart() {
-            return codegen()
-        },
-        configureServer(server) {
-            server.watcher.on('add', path => {
-                if (shouldRunCodegen(path)) {
-                    codegen()
-                }
-            })
-            server.watcher.on('change', path => {
-                if (shouldRunCodegen(path)) {
-                    codegen()
-                }
-            })
-        },
-    }
-}
+import graphqlCodegen from './dev/vite-graphql-codegen'
 
 export default defineConfig(({ mode }) => {
     let config: UserConfig = {
         plugins: [
             sveltekit(),
-            // Generates typescript types for gql-tags and .graphql files
-            generateGraphQLTypes(),
+            // Generates typescript types for gql-tags and .gql files
+            graphqlCodegen(),
             inspect(),
-            // Parses .graphql files and imports them as AST
-            graphql(),
         ],
         define:
             mode === 'test'
                 ? {}
                 : {
                       'process.platform': '"browser"',
-                      'process.env.VITEST': 'undefined',
-                      'process.env': '({})',
+                      'process.env.VITEST': 'null',
+                      'process.env.NODE_ENV': `"${mode}"`,
+                      'process.env.SOURCEGRAPH_API_URL': JSON.stringify(process.env.SOURCEGRAPH_API_URL),
+                      'process.env': '{}',
                   },
         css: {
             preprocessorOptions: {
@@ -176,6 +67,18 @@ export default defineConfig(({ mode }) => {
                     find: /^react-icons\/(.+)$/,
                     replacement: 'react-icons/$1/index.js',
                 },
+                // We generate corresponding .gql.ts files for .gql files.
+                // This alias allows us to import .gql files and have them resolved to the generated .gql.ts files.
+                {
+                    find: /^(.*)\.gql$/,
+                    replacement: '$1.gql.ts',
+                },
+                // Without aliasing lodash to lodash-es we get the following error:
+                // SyntaxError: Named export 'castArray' not found. The requested module 'lodash' is a CommonJS module, which may not support all module.exports as named exports.
+                {
+                    find: /^lodash$/,
+                    replacement: 'lodash-es',
+                },
             ],
         },
 
@@ -188,6 +91,16 @@ export default defineConfig(({ mode }) => {
 
         test: {
             setupFiles: './src/testing/setup.ts',
+            include: ['src/**/*.test.ts'],
+        },
+
+        legacy: {
+            // Our existing codebase imports many CommonJS modules as if they were ES modules. The default
+            // Vite 5 behavior doesn't work with this. Enabling this should be OK since we don't
+            // actually use SSR at the moment, so the difference between the dev and prod builds don't matter.
+            // We should revisit this at some point though.
+            // See https://vitejs.dev/guide/migration.html#ssr-externalized-modules-value-now-matches-production
+            proxySsrExternalModules: true,
         },
     }
 
@@ -223,8 +136,12 @@ export default defineConfig(({ mode }) => {
                 // and processes them as well.
                 // In a bazel sandbox however all @sourcegraph/* dependencies are built packages and thus not processed
                 // by vite without this additional setting.
-                // We have to process those files to apply certain "fixes", such as aliases defined in svelte.config.js.
+                // We have to process those files to apply certain "fixes", such as aliases defined in here
+                // and in svelte.config.js.
                 noExternal: [/@sourcegraph\/.*/],
+                // Exceptions to the above rule. These are packages that are not part of this monorepo and should
+                // not be processed by vite.
+                external: ['@sourcegraph/telemetry'],
             },
         } satisfies UserConfig)
     }

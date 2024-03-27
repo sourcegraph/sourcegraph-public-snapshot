@@ -61,10 +61,6 @@ mocha_test(
     env = {
         "INCLUDE_ADMIN_ONBOARDING": "false",
     },
-    node_toolchain = select({
-        "//:darwin_docker_e2e_go": "@nodejs_darwin_arm64//:node_toolchain",
-        "//conditions:default": None,
-    }),
     tags = [
         "manual",
         "requires-network",

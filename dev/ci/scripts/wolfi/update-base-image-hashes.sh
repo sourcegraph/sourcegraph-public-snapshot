@@ -4,8 +4,13 @@ set -eu -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
+echo "~~~ :aspect: :stethoscope: Agent Health check"
+/etc/aspect/workflows/bin/agent_health_check
+
 # Update hashes for all base images
-bazel run //dev/sg -- wolfi update-hashes
+aspectRC="/tmp/aspect-generated.bazelrc"
+rosetta bazelrc > "$aspectRC"
+bazel --bazelrc="$aspectRC" run //dev/sg -- wolfi update-hashes
 # Print diff
 git diff dev/oci_deps.bzl
 
@@ -14,7 +19,7 @@ BRANCH_NAME="wolfi-auto-update/main"
 TIMESTAMP=$(TZ=UTC date "+%Y-%m-%d %H:%M:%S UTC")
 PR_TITLE="Auto-update Wolfi base images to latest"
 # PR_REVIEWER="sourcegraph/security"
-PR_LABELS="SSDLC,wolfi-auto-update,backport 5.2"
+PR_LABELS="SSDLC,wolfi-auto-update,backport 5.3"
 PR_BODY="Automatically generated PR to update Wolfi base images to the latest hashes.
 
 Built from Buildkite run [#${BUILDKITE_BUILD_NUMBER}](https://buildkite.com/sourcegraph/sourcegraph/builds/${BUILDKITE_BUILD_NUMBER}).

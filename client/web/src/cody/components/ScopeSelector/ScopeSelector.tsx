@@ -10,6 +10,7 @@ import { Text } from '@sourcegraph/wildcard'
 
 import type { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
 import { EventName } from '../../../util/constants'
+import type { CodyTranscriptEventActions, CodyTranscriptEventFeatures } from '../../useCodyChat'
 
 import { ReposStatusQuery } from './backend'
 import { RepositoriesSelectorPopover, getFileName, type IRepo } from './RepositoriesSelectorPopover'
@@ -21,7 +22,12 @@ export interface ScopeSelectorProps {
     setScope: (scope: CodyClientScope) => void
     toggleIncludeInferredRepository: () => void
     toggleIncludeInferredFile: () => void
-    logTranscriptEvent: (eventLabel: string, eventProperties?: { [key: string]: any }) => void
+    logTranscriptEvent: (
+        v1EventLabel: string,
+        feature: CodyTranscriptEventFeatures,
+        action: CodyTranscriptEventActions,
+        eventProperties?: { [key: string]: any }
+    ) => void
     transcriptHistory: TranscriptJSON[]
     className?: string
     renderHint?: (repos: IRepo[]) => React.ReactNode
@@ -29,6 +35,7 @@ export interface ScopeSelectorProps {
     // rather than collapsing or flipping position.
     encourageOverlap?: boolean
     authenticatedUser: AuthenticatedUser | null
+    isFileIgnored: (path: string) => boolean
 }
 
 export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function ScopeSelectorComponent({
@@ -42,6 +49,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     renderHint,
     encourageOverlap,
     authenticatedUser,
+    isFileIgnored,
 }) {
     const [loadReposStatus, { data: newReposStatusData, previousData: previousReposStatusData }] = useLazyQuery<
         ReposStatusResult,
@@ -51,6 +59,14 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     const reposStatusData = newReposStatusData || previousReposStatusData
 
     const activeEditor = useMemo(() => scope.editor.getActiveTextEditor(), [scope.editor])
+
+    const isCurrentFileIgnored = activeEditor?.filePath ? isFileIgnored(activeEditor.filePath) : false
+    const inferredFilePath = (!isCurrentFileIgnored && activeEditor?.filePath) || null
+    useEffect(() => {
+        if (isCurrentFileIgnored && scope.includeInferredFile) {
+            setScope({ ...scope, includeInferredFile: false, includeInferredRepository: true })
+        }
+    }, [isCurrentFileIgnored, scope, setScope])
 
     useEffect(() => {
         const repoNames = [...scope.repositories]
@@ -64,10 +80,9 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
         }
 
         loadReposStatus({
-            variables: { repoNames, first: repoNames.length, includeJobs: !!authenticatedUser?.siteAdmin },
-            pollInterval: 2000,
+            variables: { repoNames, first: repoNames.length },
         }).catch(() => null)
-    }, [activeEditor, scope.repositories, loadReposStatus, authenticatedUser?.siteAdmin])
+    }, [activeEditor, scope.repositories, loadReposStatus])
 
     const allRepositories = useMemo(() => reposStatusData?.repositories.nodes || [], [reposStatusData])
 
@@ -95,7 +110,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     const addRepository = useCallback(
         (repoName: string) => {
             if (!scope.repositories.includes(repoName)) {
-                logTranscriptEvent(EventName.CODY_CHAT_SCOPE_REPO_ADDED)
+                logTranscriptEvent(EventName.CODY_CHAT_SCOPE_REPO_ADDED, 'cody.chat.scope.repo', 'add')
                 setScope({ ...scope, repositories: [...scope.repositories, repoName] })
             }
         },
@@ -104,14 +119,14 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
 
     const removeRepository = useCallback(
         (repoName: string) => {
-            logTranscriptEvent(EventName.CODY_CHAT_SCOPE_REPO_REMOVED)
+            logTranscriptEvent(EventName.CODY_CHAT_SCOPE_REPO_REMOVED, 'cody.chat.scope.repo', 'remove')
             setScope({ ...scope, repositories: scope.repositories.filter(repo => repo !== repoName) })
         },
         [scope, setScope, logTranscriptEvent]
     )
 
     const resetScope = useCallback((): void => {
-        logTranscriptEvent(EventName.CODY_CHAT_SCOPE_RESET)
+        logTranscriptEvent(EventName.CODY_CHAT_SCOPE_RESET, 'cody.chat.scope.repo', 'reset')
         setScope({ ...scope, repositories: [], includeInferredRepository: true, includeInferredFile: true })
     }, [scope, setScope, logTranscriptEvent])
 
@@ -123,7 +138,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                         includeInferredRepository={scope.includeInferredRepository}
                         includeInferredFile={scope.includeInferredFile}
                         inferredRepository={inferredRepository}
-                        inferredFilePath={activeEditor?.filePath || null}
+                        inferredFilePath={inferredFilePath}
                         additionalRepositories={additionalRepositories}
                         addRepository={addRepository}
                         resetScope={resetScope}
@@ -134,9 +149,10 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                         transcriptHistory={transcriptHistory}
                         authenticatedUser={authenticatedUser}
                     />
-                    {scope.includeInferredFile && activeEditor?.filePath && (
+
+                    {scope.includeInferredFile && inferredFilePath && (
                         <Text size="small" className="ml-2 mb-0 align-self-center">
-                            {getFileName(activeEditor.filePath)}
+                            {getFileName(inferredFilePath)}
                         </Text>
                     )}
                 </div>

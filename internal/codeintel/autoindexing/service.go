@@ -17,6 +17,7 @@ import (
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -88,19 +89,23 @@ func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int,
 	}
 
 	if commit == "" {
-		var ok bool
-		commit, ok, err = s.gitserverClient.Head(ctx, repo.Name)
-		if err != nil || !ok {
-			return nil, errors.Wrapf(err, "gitserver.Head: error resolving HEAD for %d", repositoryID)
+		_, commitSHA, err := s.gitserverClient.GetDefaultBranch(ctx, repo.Name, false)
+		if err != nil {
+			return nil, errors.Wrapf(err, "gitserver.GetDefaultBranch: error resolving HEAD for %d", repositoryID)
 		}
+		// If we're dealing with an empty repo, we can't infer anything.
+		if commitSHA == "" {
+			return nil, nil
+		}
+		commit = string(commitSHA)
 	} else {
-		exists, err := s.gitserverClient.CommitExists(ctx, repo.Name, api.CommitID(commit))
+		// Verify that the commit exists.
+		_, err := s.gitserverClient.GetCommit(ctx, repo.Name, api.CommitID(commit))
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			return nil, errors.Newf("revision %s not found for %d", commit, repositoryID)
+		}
 		if err != nil {
 			return nil, errors.Wrapf(err, "gitserver.CommitExists: error checking %s for %d", commit, repositoryID)
-		}
-
-		if !exists {
-			return nil, errors.Newf("revision %s not found for %d", commit, repositoryID)
 		}
 	}
 	trace.AddEvent("found", attribute.String("commit", commit))

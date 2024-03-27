@@ -46,7 +46,7 @@ func Postgres() *monitoring.Dashboard {
 							Warning:       monitoring.Alert().GreaterOrEqual(80).For(5 * time.Minute),
 							Critical:      monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
 							NextSteps: `
-							- Consider increasing [max_connections](https://www.postgresql.org/docs/current/runtime-config-connection.html#GUC-MAX-CONNECTIONS) of the database instance, [learn more](https://docs.sourcegraph.com/admin/config/postgres-conf)
+							- Consider increasing [max_connections](https://www.postgresql.org/docs/current/runtime-config-connection.html#GUC-MAX-CONNECTIONS) of the database instance, [learn more](https://sourcegraph.com/docs/admin/config/postgres-conf)
 						`,
 						},
 						monitoring.Observable{

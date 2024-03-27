@@ -7,10 +7,8 @@ export {
     parseQueryAndHash,
     buildSearchURLQuery,
     makeRepoURI,
-    type RevisionSpec,
-    type ResolvedRevisionSpec,
-    type RepoSpec,
 } from '@sourcegraph/shared/src/util/url'
+
 export {
     isCloneInProgressErrorLike,
     isRepoSeeOtherErrorLike,
@@ -29,6 +27,7 @@ export {
     getFileMatchUrl,
     getRepositoryUrl,
     aggregateStreamingSearch,
+    emptyAggregateResults,
     LATEST_VERSION,
     type AggregateStreamingSearchResults,
     type StreamSearchOptions,
@@ -49,6 +48,7 @@ export {
     type Progress,
     type Range,
     type Filter,
+    type SearchEvent,
 } from '@sourcegraph/shared/src/search/stream'
 export {
     type MatchItem,
@@ -58,18 +58,13 @@ export {
     rankByLine,
     truncateGroups,
 } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
-export { type AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 export { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+export { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+export { KeywordKind } from '@sourcegraph/shared/src/search/query/token'
 export { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 export { getGlobalSearchContextFilter, findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 export { omitFilter, appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
-export {
-    type SettingsCascade,
-    type SettingsSubject,
-    type SettingsCascadeOrError,
-    SettingsProvider,
-    gqlToCascade,
-} from '@sourcegraph/shared/src/settings/settings'
+export { type Settings, SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
 export { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 export { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search/helpers'
 export { migrateLocalStorageToTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/migrateLocalStorageToTemporarySettings'
@@ -79,6 +74,8 @@ export { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 export { createCodeIntelAPI, type CodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 export { getModeFromPath } from '@sourcegraph/shared/src/languages'
 export type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+export { repositoryInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
+export { ThemeSetting, Theme } from '@sourcegraph/shared/src/theme-types'
 
 // Copies of non-reusable code
 

@@ -1,0 +1,20 @@
+fragment GitReference_Ref on GitRef {
+    id
+    url
+    displayName
+    target {
+        commit {
+            id
+            author {
+                date
+                person {
+                    displayName
+                }
+            }
+            behindAhead(revspec: $revspec) @include(if: $withBehindAhead) {
+                ahead
+                behind
+            }
+        }
+    }
+}

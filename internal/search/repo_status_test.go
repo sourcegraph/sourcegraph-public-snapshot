@@ -12,27 +12,27 @@ import (
 
 func TestRepoStatusMap(t *testing.T) {
 	aM := map[api.RepoID]RepoStatus{
-		1: RepoStatusTimedout,
+		1: RepoStatusTimedOut,
 		2: RepoStatusCloning,
-		3: RepoStatusTimedout | RepoStatusLimitHit,
+		3: RepoStatusTimedOut | RepoStatusLimitHit,
 		4: RepoStatusLimitHit,
 	}
 	a := mkStatusMap(aM)
 	b := mkStatusMap(map[api.RepoID]RepoStatus{
 		2: RepoStatusCloning,
-		4: RepoStatusTimedout,
+		4: RepoStatusTimedOut,
 		5: RepoStatusMissing,
 	})
 	c := mkStatusMap(map[api.RepoID]RepoStatus{
-		8: RepoStatusTimedout | RepoStatusLimitHit,
-		9: RepoStatusTimedout,
+		8: RepoStatusTimedOut | RepoStatusLimitHit,
+		9: RepoStatusTimedOut,
 	})
 
 	// Get
 	if got, want := a.Get(10), RepoStatus(0); got != want {
 		t.Errorf("a.Get(10) got %s want %s", got, want)
 	}
-	if got, want := a.Get(3), RepoStatusTimedout|RepoStatusLimitHit; got != want {
+	if got, want := a.Get(3), RepoStatusTimedOut|RepoStatusLimitHit; got != want {
 		t.Errorf("a.Get(3) got %s want %s", got, want)
 	}
 
@@ -45,7 +45,7 @@ func TestRepoStatusMap(t *testing.T) {
 	}
 
 	// All
-	if !c.All(RepoStatusTimedout) {
+	if !c.All(RepoStatusTimedOut) {
 		t.Error("c.All(RepoStatusTimedout) should be true")
 	}
 	if c.All(RepoStatusLimitHit) {
@@ -59,7 +59,7 @@ func TestRepoStatusMap(t *testing.T) {
 
 	// Update
 	c.Update(9, RepoStatusLimitHit)
-	if got, want := c.Get(9), RepoStatusTimedout|RepoStatusLimitHit; got != want {
+	if got, want := c.Get(9), RepoStatusTimedOut|RepoStatusLimitHit; got != want {
 		t.Errorf("c.Get(9) got %s want %s", got, want)
 	}
 
@@ -93,7 +93,7 @@ func TestRepoStatusMap(t *testing.T) {
 			t.Errorf("a.Filter(%s) diff (-want, +got):\n%s", status, d)
 		}
 	}
-	assertAFilter(RepoStatusTimedout, []int{1, 3})
+	assertAFilter(RepoStatusTimedOut, []int{1, 3})
 	assertAFilter(RepoStatusMissing, []int{})
 
 	// Union
@@ -102,10 +102,10 @@ func TestRepoStatusMap(t *testing.T) {
 	b.Union(&a)
 	t.Logf("%s", &b)
 	abUnionWant := mkStatusMap(map[api.RepoID]RepoStatus{
-		1: RepoStatusTimedout,
+		1: RepoStatusTimedOut,
 		2: RepoStatusCloning,
-		3: RepoStatusTimedout | RepoStatusLimitHit,
-		4: RepoStatusTimedout | RepoStatusLimitHit,
+		3: RepoStatusTimedOut | RepoStatusLimitHit,
+		4: RepoStatusTimedOut | RepoStatusLimitHit,
 		5: RepoStatusMissing,
 	})
 	assertReposStatusEqual(t, abUnionWant, b)
@@ -123,16 +123,16 @@ func TestRepoStatusMap_nil(t *testing.T) {
 	x.Iterate(func(api.RepoID, RepoStatus) {
 		t.Error("Iterate should be empty")
 	})
-	x.Filter(RepoStatusTimedout, func(api.RepoID) {
+	x.Filter(RepoStatusTimedOut, func(api.RepoID) {
 		t.Error("Filter should be empty")
 	})
 	if got, want := x.Get(10), RepoStatus(0); got != want {
 		t.Errorf("Get got %s want %s", got, want)
 	}
-	if x.Any(RepoStatusTimedout) {
+	if x.Any(RepoStatusTimedOut) {
 		t.Error("Any should be false")
 	}
-	if x.All(RepoStatusTimedout) {
+	if x.All(RepoStatusTimedOut) {
 		t.Error("All should be false")
 	}
 	if got, want := x.Len(), 0; got != want {
@@ -141,9 +141,9 @@ func TestRepoStatusMap_nil(t *testing.T) {
 }
 
 func TestRepoStatusSingleton(t *testing.T) {
-	x := repoStatusSingleton(123, RepoStatusTimedout|RepoStatusLimitHit)
+	x := repoStatusSingleton(123, RepoStatusTimedOut|RepoStatusLimitHit)
 	want := mkStatusMap(map[api.RepoID]RepoStatus{
-		123: RepoStatusTimedout | RepoStatusLimitHit,
+		123: RepoStatusTimedOut | RepoStatusLimitHit,
 	})
 	assertReposStatusEqual(t, want, x)
 }

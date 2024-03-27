@@ -57,31 +57,33 @@
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div on:click={preventClickOnDisabledLink}>
     <Button variant="secondary" outline>
-        <a slot="custom" let:className href={firstPageURL} class={className} aria-disabled={firstAndPreviousDisabled}>
-            <Icon svgPath={mdiPageFirst} inline />
-        </a>
+        <svelte:fragment slot="custom" let:buttonClass>
+            <a href={firstPageURL} class={buttonClass} aria-disabled={firstAndPreviousDisabled}>
+                <Icon svgPath={mdiPageFirst} inline />
+            </a>
+        </svelte:fragment>
     </Button>
     <Button variant="secondary" outline>
-        <a
-            slot="custom"
-            let:className
-            class={className}
-            href={previousPageURL}
-            aria-disabled={firstAndPreviousDisabled}
-        >
-            <Icon svgPath={mdiChevronLeft} inline />Previous
-        </a>
+        <svelte:fragment slot="custom" let:buttonClass>
+            <a class={buttonClass} href={previousPageURL} aria-disabled={firstAndPreviousDisabled}>
+                <Icon svgPath={mdiChevronLeft} inline />Previous
+            </a>
+        </svelte:fragment>
     </Button>
     <Button variant="secondary" outline>
-        <a slot="custom" let:className class={className} href={nextPageURL} aria-disabled={nextAndLastDisabled}>
-            Next <Icon svgPath={mdiChevronRight} inline />
-        </a>
+        <svelte:fragment slot="custom" let:buttonClass>
+            <a class={buttonClass} href={nextPageURL} aria-disabled={nextAndLastDisabled}>
+                Next <Icon svgPath={mdiChevronRight} inline />
+            </a>
+        </svelte:fragment>
     </Button>
     {#if showLastpageButton}
         <Button variant="secondary" outline>
-            <a slot="custom" let:className class={className} href={lastPageURL} aria-disabled={nextAndLastDisabled}>
-                <Icon svgPath={mdiPageLast} inline />
-            </a>
+            <svelte:fragment slot="custom" let:buttonClass>
+                <a class={buttonClass} href={lastPageURL} aria-disabled={nextAndLastDisabled}>
+                    <Icon svgPath={mdiPageLast} inline />
+                </a>
+            </svelte:fragment>
         </Button>
     {/if}
 </div>

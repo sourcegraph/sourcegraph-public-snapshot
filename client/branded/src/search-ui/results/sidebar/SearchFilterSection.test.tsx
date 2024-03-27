@@ -14,7 +14,7 @@ describe('SearchSidebarSection', () => {
             label: `lang:${lang}`,
             value: `lang:${lang}`,
             count: 10,
-            limitHit: true,
+            exhaustive: false,
             kind: 'lang',
         })
     )

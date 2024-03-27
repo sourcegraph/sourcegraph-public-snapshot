@@ -21,6 +21,7 @@ import type {
 } from '../../graphql-operations'
 import type { NamespaceProps } from '../../namespaces'
 import type { RouteV6Descriptor } from '../../util/contributions'
+import { getLicenseFeatures } from '../../util/license'
 import { isAccessTokenCallbackPage } from '../settings/accessTokens/UserSettingsCreateAccessTokenCallbackPage'
 import type { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import type { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
@@ -126,6 +127,12 @@ export interface UserAreaRouteContext
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
 
     isSourcegraphDotCom: boolean
+
+    // license related properties
+    license: {
+        isCodeSearchEnabled: boolean
+        isCodyEnabled: boolean
+    }
 }
 
 /**
@@ -186,6 +193,7 @@ export const UserArea: FC<UserAreaProps> = ({ useBreadcrumb, userAreaRoutes, isS
         namespace: user,
         ...childBreadcrumbSetters,
         isSourcegraphDotCom,
+        license: getLicenseFeatures(),
     }
 
     return (

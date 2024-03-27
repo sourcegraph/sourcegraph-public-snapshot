@@ -1,38 +1,53 @@
 <script lang="ts">
-    import { Meta, Story, Template } from '@storybook/addon-svelte-csf'
-    import SearchResults from './SearchResults.svelte'
+    import { Story } from '@storybook/addon-svelte-csf'
+    import { graphql } from 'msw'
+    import { SvelteComponent, setContext } from 'svelte'
+    import { readable } from 'svelte/store'
+
+    import type { HighlightedFileResult, HighlightedFileVariables } from '$lib/graphql-operations'
+    import { queryStateStore } from '$lib/search/state'
+    import type { ContentMatch, PathMatch, SearchMatch, SymbolMatch } from '$lib/shared'
+    import { KEY, type SourcegraphContext } from '$lib/stores'
+    import { createTemporarySettingsStorage } from '$lib/temporarySettings'
     import {
         createCommitMatch,
         createContentMatch,
-        createHighlightedFileResult,
         createPathMatch,
         createPersonMatch,
         createSymbolMatch,
         createTeamMatch,
-    } from '$testdata'
-    import FileContentSearchResult from './FileContentSearchResult.svelte'
-    import { SvelteComponent, setContext } from 'svelte'
-    import { KEY, type SourcegraphContext } from '$lib/stores'
-    import { readable } from 'svelte/store'
+    } from '$testing/search-testdata'
+    import { createHighlightedFileResult } from '$testing/testdata'
+
     import CommitSearchResult from './CommitSearchResult.svelte'
-    import PersonSearchResult from './PersonSearchResult.svelte'
-    import TeamSearchResult from './TeamSearchResult.svelte'
-    import { queryStateStore } from '$lib/search/state'
-    import { graphql } from 'msw'
-    import type { HighlightedFileResult, HighlightedFileVariables } from '$lib/graphql-operations'
-    import type { SearchMatch } from '$lib/shared'
+    import FileContentSearchResult from './FileContentSearchResult.svelte'
     import FilePathSearchResult from './FilePathSearchResult.svelte'
-    import SymbolSearchResult from './SymbolSearchResult.svelte'
-    import { createTemporarySettingsStorage } from '$lib/temporarySettings'
+    import PersonSearchResult from './PersonSearchResult.svelte'
+    import SearchResults from './SearchResults.svelte'
     import { setSearchResultsContext } from './searchResultsContext'
+    import SymbolSearchResult from './SymbolSearchResult.svelte'
+    import TeamSearchResult from './TeamSearchResult.svelte'
+
+    export const meta = {
+        title: 'search/SearchResults',
+        component: SearchResults,
+        parameters: {
+            msw: {
+                handlers: {
+                    highlightedFile: graphql.query<HighlightedFileResult, HighlightedFileVariables>(
+                        'HighlightedFile',
+                        (req, res, ctx) => res(ctx.data(createHighlightedFileResult(req.variables.ranges)))
+                    ),
+                },
+            },
+        },
+    }
 
     setContext<SourcegraphContext>(KEY, {
         user: readable(null),
         settings: readable({}),
-        isLightTheme: readable(true),
         featureFlags: readable([]),
         temporarySettingsStorage: createTemporarySettingsStorage(),
-        client: readable(null),
     })
 
     setSearchResultsContext({
@@ -41,6 +56,7 @@
         },
         setExpanded(_match, _expanded) {},
         queryState: queryStateStore(undefined, {}),
+        setPreview(_props: PathMatch | ContentMatch | SymbolMatch | null): void {},
     })
     // TS complains about up MockSuitFunctions which is not relevant here
     // @ts-ignore
@@ -61,22 +77,9 @@
     function randomizeData(i: number) {
         data[i] = results[i][2]()
     }
-
-    $: parameters = {
-        msw: {
-            handlers: {
-                highlightedFile: graphql.query<HighlightedFileResult, HighlightedFileVariables>(
-                    'HighlightedFile',
-                    (req, res, ctx) => res(ctx.data(createHighlightedFileResult(req.variables.ranges)))
-                ),
-            },
-        },
-    }
 </script>
 
-<Meta title="search/SearchResults" component={SearchResults} {parameters} />
-
-<Template>
+<Story name="Default">
     {#each results as [title, component], i}
         <div>
             <h2>{title}</h2>
@@ -84,9 +87,7 @@
         </div>
         <svelte:component this={component} result={data[i]} />
     {/each}
-</Template>
-
-<Story name="Default" />
+</Story>
 
 <style lang="scss">
     div {

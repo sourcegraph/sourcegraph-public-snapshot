@@ -19,6 +19,9 @@ import (
 func UpdateComposeManifests(ctx context.Context, registry Registry, path string, op UpdateOperation) error {
 	var checked int
 	if err := filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
 		if d.IsDir() {
 			return nil
 		}
@@ -30,13 +33,13 @@ func UpdateComposeManifests(ctx context.Context, registry Registry, path string,
 
 		composeFile, innerErr := os.ReadFile(path)
 		if innerErr != nil {
-			return errors.Wrapf(err, "couldn't read %s", path)
+			return errors.Wrapf(innerErr, "couldn't read %s", path)
 		}
 
 		checked++
 		newComposeFile, innerErr := updateComposeFile(registry, op, composeFile)
 		if innerErr != nil {
-			return err
+			return innerErr
 		}
 		if newComposeFile == nil {
 			std.Out.WriteSkippedf("No updates to make to %s", d.Name())

@@ -5,18 +5,27 @@ import (
 
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 )
+
+// chatAttributionTest always returns true, as chat attribution
+// is performed on the client side (as opposed to code completions)
+// which works on the server side.
+func chatAttributionTest(context.Context, string) (bool, error) {
+	return true, nil
+}
 
 // NewChatCompletionsStreamHandler is an http handler which streams back completions results.
 func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Handler {
@@ -25,23 +34,29 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 
 	return newCompletionsHandler(
 		logger,
+		db,
 		db.Users(),
 		db.AccessTokens(),
 		telemetryrecorder.New(db),
+		chatAttributionTest,
 		types.CompletionsFeatureChat,
 		rl,
 		"chat",
 		func(ctx context.Context, requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
 			// Allow a number of additional models on Dotcom
-			if envvar.SourcegraphDotComMode() {
+			if dotcom.SourcegraphDotComMode() {
 				actor := sgactor.FromContext(ctx)
 				user, err := actor.User(ctx, db.Users())
 				if err != nil {
 					return "", err
 				}
-				isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
-				isProUser := user.CodyProEnabledAt != nil
-				if isAllowedCustomChatModel(requestParams.Model, isProUser || !isCodyProEnabled) {
+
+				subscription, err := cody.SubscriptionForUser(ctx, db, *user)
+				if err != nil {
+					return "", err
+				}
+
+				if isAllowedCustomChatModel(requestParams.Model, subscription.ApplyProRateLimits) {
 					return requestParams.Model, nil
 				}
 			}
@@ -60,21 +75,32 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 	// When updating these two lists, make sure you also update `allowedModels` in codygateway_dotcom_user.go.
 	if isProUser {
 		switch model {
-		case "anthropic/claude-2",
+		case
+			"anthropic/" + anthropic.Claude3Haiku,
+			"anthropic/" + anthropic.Claude3Sonnet,
+			"anthropic/" + anthropic.Claude3Opus,
+			"fireworks/" + fireworks.Mixtral8x7bInstruct,
+			"openai/gpt-3.5-turbo",
+			"openai/gpt-4-1106-preview",
+			"openai/gpt-4-turbo-preview",
+
+			// Remove after the Claude 3 rollout is complete
+			"anthropic/claude-2",
 			"anthropic/claude-2.0",
 			"anthropic/claude-2.1",
 			"anthropic/claude-instant-1.2-cyan",
 			"anthropic/claude-instant-1.2",
 			"anthropic/claude-instant-v1",
-			"anthropic/claude-instant-1",
-			"openai/gpt-3.5-turbo",
-			"openai/gpt-4-1106-preview",
-			"fireworks/accounts/fireworks/models/mixtral-8x7b-instruct":
+			"anthropic/claude-instant-1":
 			return true
 		}
 	} else {
 		switch model {
-		case "anthropic/claude-2",
+		case
+			"anthropic/" + anthropic.Claude3Haiku,
+			"anthropic/" + anthropic.Claude3Sonnet,
+			// Remove after the Claude 3 rollout is complete
+			"anthropic/claude-2",
 			"anthropic/claude-2.0",
 			"anthropic/claude-instant-v1",
 			"anthropic/claude-instant-1":

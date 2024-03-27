@@ -5,11 +5,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
-	"net/http"
 	"net/mail"
 	"os"
 	stdlibpath "path"
@@ -22,9 +20,9 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/golang/groupcache/lru"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -32,16 +30,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/byteutils"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type DiffOptions struct {
@@ -402,7 +398,7 @@ func (c *clientImplementor) DiffPath(ctx context.Context, repo api.RepoName, sou
 	if hasAccess, err := authz.FilterActorPath(ctx, c.subRepoPermsChecker, a, repo, path); err != nil {
 		return nil, err
 	} else if !hasAccess {
-		return nil, os.ErrNotExist
+		return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
 	}
 	args := []string{"diff", sourceCommit, targetCommit, "--", path}
 	reader, err := c.gitCommand(repo, args...).StdoutReader(ctx)
@@ -437,12 +433,6 @@ func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, 
 		},
 	})
 	defer endObservation(1, observation.Args{})
-
-	// Ensure commits exist to provide a better error message
-	_, err = c.ResolveRevisions(ctx, repo, []protocol.RevisionSpecifier{{RevSpec: string(commitA)}, {RevSpec: string(commitB)}})
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to lookup revisions for git diff on %s between %s and %s", repo, commitA, commitB)
-	}
 
 	command := c.gitCommand(repo, "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
 	out, err := command.Output(ctx)
@@ -789,35 +779,6 @@ func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, com
 	return errors.Wrap(gitdomain.ParseLogReverseEach(stdout, onLogEntry), "ParseLogReverseEach")
 }
 
-// BlameOptions configures a blame.
-type BlameOptions struct {
-	NewestCommit     api.CommitID `json:",omitempty" url:",omitempty"`
-	IgnoreWhitespace bool         `json:",omitempty" url:",omitempty"`
-	StartLine        int          `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
-	EndLine          int          `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
-}
-
-func (o *BlameOptions) Attrs() []attribute.KeyValue {
-	return []attribute.KeyValue{
-		attribute.String("newestCommit", string(o.NewestCommit)),
-		attribute.Int("startLine", o.StartLine),
-		attribute.Int("endLine", o.EndLine),
-		attribute.Bool("ignoreWhitespace", o.IgnoreWhitespace),
-	}
-}
-
-// A Hunk is a contiguous portion of a file associated with a commit.
-type Hunk struct {
-	StartLine int // 1-indexed start line number
-	EndLine   int // 1-indexed end line number
-	StartByte int // 0-indexed start byte position (inclusive)
-	EndByte   int // 0-indexed end byte position (exclusive)
-	api.CommitID
-	Author   gitdomain.Signature
-	Message  string
-	Filename string
-}
-
 // StreamBlameFile returns Git blame information about a file.
 func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions) (_ HunkReader, err error) {
 	ctx, _, endObservation := c.operations.streamBlameFile.With(ctx, &err, observation.Args{
@@ -827,222 +788,113 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 			attribute.String("path", path),
 		}, opt.Attrs()...),
 	})
-	defer endObservation(1, observation.Args{})
 
-	return streamBlameFileCmd(ctx, c.subRepoPermsChecker, repo, path, opt, c.gitserverGitCommandFunc(repo))
-}
-
-type errUnauthorizedStreamBlame struct {
-	Repo api.RepoName
-}
-
-func (e errUnauthorizedStreamBlame) Unauthorized() bool {
-	return true
-}
-
-func (e errUnauthorizedStreamBlame) Error() string {
-	return fmt.Sprintf("not authorized (name=%s)", e.Repo)
-}
-
-func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions, command gitCommandFunc) (HunkReader, error) {
-	a := actor.FromContext(ctx)
-	hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
-		return nil, err
-	}
-	if !hasAccess {
-		return nil, errUnauthorizedStreamBlame{Repo: repo}
-	}
-	if opt == nil {
-		opt = &BlameOptions{}
-	}
-	if err := checkSpecArgSafety(string(opt.NewestCommit)); err != nil {
+		endObservation(1, observation.Args{})
 		return nil, err
 	}
 
-	args := []string{"blame", "--porcelain", "--incremental"}
-	if opt.IgnoreWhitespace {
-		args = append(args, "-w")
+	req := &proto.BlameRequest{
+		RepoName:         string(repo),
+		Commit:           string(opt.NewestCommit),
+		Path:             path,
+		IgnoreWhitespace: opt.IgnoreWhitespace,
 	}
-	if opt.StartLine != 0 || opt.EndLine != 0 {
-		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
-	}
-	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
-
-	rc, err := command(args).StdoutReader(ctx)
-	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed", args))
-	}
-
-	return newBlameHunkReader(rc), nil
-}
-
-// BlameFile returns Git blame information about a file.
-func (c *clientImplementor) BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions) (_ []*Hunk, err error) {
-	ctx, _, endObservation := c.operations.blameFile.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: append([]attribute.KeyValue{
-			repo.Attr(),
-			attribute.String("path", path),
-		}, opt.Attrs()...),
-	})
-	defer endObservation(1, observation.Args{})
-
-	return blameFileCmd(ctx, c.subRepoPermsChecker, c.gitserverGitCommandFunc(repo), path, opt, repo)
-}
-
-func blameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChecker, command gitCommandFunc, path string, opt *BlameOptions, repo api.RepoName) ([]*Hunk, error) {
-	a := actor.FromContext(ctx)
-	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil || !hasAccess {
-		return nil, err
-	}
-	if opt == nil {
-		opt = &BlameOptions{}
-	}
-	if err := checkSpecArgSafety(string(opt.NewestCommit)); err != nil {
-		return nil, err
-	}
-
-	args := []string{"blame", "--porcelain"}
-	if opt.IgnoreWhitespace {
-		args = append(args, "-w")
-	}
-	if opt.StartLine != 0 || opt.EndLine != 0 {
-		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
-	}
-	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
-
-	out, err := command(args).Output(ctx)
-	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
-	}
-	if len(out) == 0 {
-		return nil, nil
-	}
-
-	return parseGitBlameOutput(string(out))
-}
-
-// parseGitBlameOutput parses the output of `git blame -w --porcelain`
-func parseGitBlameOutput(out string) ([]*Hunk, error) {
-	commits := make(map[string]gitdomain.Commit)
-	filenames := make(map[string]string)
-	hunks := make([]*Hunk, 0)
-	remainingLines := strings.Split(out[:len(out)-1], "\n")
-	byteOffset := 0
-	for len(remainingLines) > 0 {
-		// Consume hunk
-		hunkHeader := strings.Split(remainingLines[0], " ")
-		if len(hunkHeader) != 4 {
-			return nil, errors.Errorf("Expected at least 4 parts to hunkHeader, but got: '%s'", hunkHeader)
+	if opt.Range != nil {
+		req.Range = &proto.BlameRange{
+			StartLine: uint32(opt.Range.StartLine),
+			EndLine:   uint32(opt.Range.EndLine),
 		}
-		commitID := hunkHeader[0]
-		lineNoCur, _ := strconv.Atoi(hunkHeader[2])
-		nLines, _ := strconv.Atoi(hunkHeader[3])
-		hunk := &Hunk{
-			CommitID:  api.CommitID(commitID),
-			StartLine: lineNoCur,
-			EndLine:   lineNoCur + nLines,
-			StartByte: byteOffset,
-		}
+	}
 
-		if _, in := commits[commitID]; in {
-			// Already seen commit
-			byteOffset += len(remainingLines[1])
-			remainingLines = remainingLines[2:]
-		} else {
-			// New commit
-			author := strings.Join(strings.Split(remainingLines[1], " ")[1:], " ")
-			email := strings.Join(strings.Split(remainingLines[2], " ")[1:], " ")
-			if len(email) >= 2 && email[0] == '<' && email[len(email)-1] == '>' {
-				email = email[1 : len(email)-1]
-			}
-			authorTime, err := strconv.ParseInt(strings.Join(strings.Split(remainingLines[3], " ")[1:], " "), 10, 64)
-			if err != nil {
-				return nil, errors.Errorf("Failed to parse author-time %q", remainingLines[3])
-			}
-			summary := strings.Join(strings.Split(remainingLines[9], " ")[1:], " ")
-			commit := gitdomain.Commit{
-				ID:      api.CommitID(commitID),
-				Message: gitdomain.Message(summary),
-				Author: gitdomain.Signature{
-					Name:  author,
-					Email: email,
-					Date:  time.Unix(authorTime, 0).UTC(),
-				},
+	ctx, cancel := context.WithCancel(ctx)
+	cli, err := client.Blame(ctx, req)
+	if err != nil {
+		cancel()
+		endObservation(1, observation.Args{})
+		return nil, err
+	}
+
+	// We start by reading the first hunk to early-exit on potential errors,
+	// ie. permission denied errors or invalid git command.
+	firstHunkResp, err := cli.Recv()
+	if err != nil {
+		s, ok := status.FromError(err)
+		if ok {
+			if s.Code() == codes.PermissionDenied {
+				cancel()
+				endObservation(1, observation.Args{})
+				return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
 			}
 
-			for i := 10; i < 13 && i < len(remainingLines); i++ {
-				if strings.HasPrefix(remainingLines[i], "filename ") {
-					filenames[commitID] = strings.SplitN(remainingLines[i], " ", 2)[1]
-					break
+			if s.Code() == codes.NotFound {
+				for _, d := range s.Details() {
+					switch d.(type) {
+					case *proto.FileNotFoundPayload:
+						cancel()
+						endObservation(1, observation.Args{})
+						return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
+					}
 				}
 			}
-
-			if len(remainingLines) >= 13 && strings.HasPrefix(remainingLines[10], "previous ") {
-				byteOffset += len(remainingLines[12])
-				remainingLines = remainingLines[13:]
-			} else if len(remainingLines) >= 13 && remainingLines[10] == "boundary" {
-				byteOffset += len(remainingLines[12])
-				remainingLines = remainingLines[13:]
-			} else if len(remainingLines) >= 12 {
-				byteOffset += len(remainingLines[11])
-				remainingLines = remainingLines[12:]
-			} else if len(remainingLines) == 11 {
-				// Empty file
-				remainingLines = remainingLines[11:]
-			} else {
-				return nil, errors.Errorf("Unexpected number of remaining lines (%d):\n%s", len(remainingLines), "  "+strings.Join(remainingLines, "\n  "))
-			}
-
-			commits[commitID] = commit
 		}
 
-		if commit, present := commits[commitID]; present {
-			// Should always be present, but check just to avoid
-			// panicking in case of a (somewhat likely) bug in our
-			// git-blame parser above.
-			hunk.CommitID = commit.ID
-			hunk.Author = commit.Author
-			hunk.Message = string(commit.Message)
+		if err != io.EOF {
+			cancel()
+			endObservation(1, observation.Args{})
+			return nil, err
 		}
-
-		if filename, present := filenames[commitID]; present {
-			hunk.Filename = filename
-		}
-
-		// Consume remaining lines in hunk
-		for i := 1; i < nLines; i++ {
-			byteOffset += len(remainingLines[1])
-			remainingLines = remainingLines[2:]
-		}
-
-		hunk.EndByte = byteOffset
-		hunks = append(hunks, hunk)
 	}
 
-	return hunks, nil
-}
-
-func (c *clientImplementor) gitserverGitCommandFunc(repo api.RepoName) gitCommandFunc {
-	return func(args []string) GitCommand {
-		return c.gitCommand(repo, args...)
+	var hunk *proto.BlameHunk
+	if firstHunkResp != nil {
+		hunk = firstHunkResp.GetHunk()
 	}
+	return &grpcBlameHunkReader{
+		firstHunk:      hunk,
+		firstHunkErr:   err,
+		c:              cli,
+		cancel:         cancel,
+		endObservation: func() { endObservation(1, observation.Args{}) },
+	}, nil
 }
 
-// gitCommandFunc is a func that creates a new executable Git command.
-type gitCommandFunc func(args []string) GitCommand
+type grpcBlameHunkReader struct {
+	firstHunk      *proto.BlameHunk
+	firstHunkErr   error
+	firstHunkRead  bool
+	c              proto.GitserverService_BlameClient
+	cancel         context.CancelFunc
+	endObservation func()
+}
+
+func (r *grpcBlameHunkReader) Read() (_ *gitdomain.Hunk, err error) {
+	if !r.firstHunkRead {
+		r.firstHunkRead = true
+		if r.firstHunkErr != nil {
+			return nil, r.firstHunkErr
+		}
+		return gitdomain.HunkFromBlameProto(r.firstHunk), nil
+	}
+	p, err := r.c.Recv()
+	if err != nil {
+		return nil, err
+	}
+	return gitdomain.HunkFromBlameProto(p.GetHunk()), nil
+}
+
+func (r *grpcBlameHunkReader) Close() error {
+	r.cancel()
+	r.endObservation()
+	return nil
+}
 
 // ResolveRevisionOptions configure how we resolve revisions.
 // The zero value should contain appropriate default values.
 type ResolveRevisionOptions struct {
 	NoEnsureRevision bool // do not try to fetch from remote if revision doesn't exist locally
 }
-
-var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_resolve_revision_total",
-	Help: "The number of times we call internal/vcs/git/ResolveRevision",
-}, []string{"ensure_revision"})
 
 // ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
 // used.
@@ -1053,12 +905,6 @@ var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 // * Empty repository: gitdomain.RevisionNotFoundError
 // * Other unexpected errors.
 func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (_ api.CommitID, err error) {
-	labelEnsureRevisionValue := "true"
-	if opt.NoEnsureRevision {
-		labelEnsureRevisionValue = "false"
-	}
-	resolveRevisionCounter.WithLabelValues(labelEnsureRevisionValue).Inc()
-
 	ctx, _, endObservation := c.operations.resolveRevision.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
@@ -1069,58 +915,24 @@ func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoNa
 	})
 	defer endObservation(1, observation.Args{})
 
-	if err := checkSpecArgSafety(spec); err != nil {
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
 		return "", err
 	}
-	if spec == "" {
-		spec = "HEAD"
+
+	req := &proto.ResolveRevisionRequest{
+		RepoName: string(repo),
+		RevSpec:  []byte(spec),
 	}
-	if spec != "HEAD" {
-		// "git rev-parse HEAD^0" is slower than "git rev-parse HEAD"
-		// since it checks that the resolved git object exists. We can
-		// assume it exists for HEAD, but for other commits we should
-		// check.
-		spec = spec + "^0"
+	if !opt.NoEnsureRevision {
+		req.EnsureRevision = pointers.Ptr(true)
 	}
-
-	cmd := c.gitCommand(repo, "rev-parse", spec)
-	cmd.SetEnsureRevision(spec)
-
-	// We don't ever need to ensure that HEAD is in git-server.
-	// HEAD is always there once a repo is cloned
-	// (except empty repos, but we don't need to ensure revision on those).
-	if opt.NoEnsureRevision || spec == "HEAD" {
-		cmd.SetEnsureRevision("")
-	}
-
-	return runRevParse(ctx, cmd, spec)
-}
-
-// runRevParse sends the git rev-parse command to gitserver. It interprets
-// missing revision responses and converts them into RevisionNotFoundError.
-func runRevParse(ctx context.Context, cmd GitCommand, spec string) (api.CommitID, error) {
-	stdout, stderr, err := cmd.DividedOutput(ctx)
+	res, err := client.ResolveRevision(ctx, req)
 	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
-			return "", err
-		}
-		if bytes.Contains(stderr, []byte("unknown revision")) {
-			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
-		}
-		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args(), stderr))
+		return "", err
 	}
-	commit := api.CommitID(bytes.TrimSpace(stdout))
-	if !gitdomain.IsAbsoluteRevision(string(commit)) {
-		if commit == "HEAD" {
-			// We don't verify the existence of HEAD (see above comments), but
-			// if HEAD doesn't point to anything git just returns `HEAD` as the
-			// output of rev-parse. An example where this occurs is an empty
-			// repository.
-			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
-		}
-		return "", &gitdomain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo()}
-	}
-	return commit, nil
+
+	return api.CommitID(res.GetCommitSha()), nil
 }
 
 // LsFiles returns the output of `git ls-files`.
@@ -1334,12 +1146,6 @@ func parseTags(in []byte) ([]*gitdomain.Tag, error) {
 	return tags, nil
 }
 
-// GetDefaultBranch returns the name of the default branch and the commit it's
-// currently at from the given repository. If short is true, then `main` instead
-// of `refs/heads/main` would be returned.
-//
-// If the repository is empty or currently being cloned, empty values and no
-// error are returned.
 func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
 	ctx, _, endObservation := c.operations.getDefaultBranch.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
@@ -1349,51 +1155,53 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 	})
 	defer endObservation(1, observation.Args{})
 
-	args := []string{"symbolic-ref", "HEAD"}
-	if short {
-		args = append(args, "--short")
-	}
-	cmd := c.gitCommand(repo, args...)
-	refBytes, _, err := cmd.DividedOutput(ctx)
-	exitCode := cmd.ExitStatus()
-	if exitCode != 0 && err != nil {
-		err = nil // the error must just indicate that the exit code was nonzero
-	}
-	refName = string(bytes.TrimSpace(refBytes))
-
-	if err == nil && exitCode == 0 {
-		// Check that our repo is not empty
-		commit, err = c.ResolveRevision(ctx, repo, "HEAD", ResolveRevisionOptions{NoEnsureRevision: true})
-	}
-
-	// If we fail to get the default branch due to cloning or being empty, we return nothing.
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
-		if gitdomain.IsCloneInProgress(err) || errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		return "", "", err
+	}
+
+	res, err := client.DefaultBranch(ctx, &proto.DefaultBranchRequest{
+		RepoName: string(repo),
+	})
+	if err != nil {
+		// If we fail to get the default branch due to cloning or being empty, we return nothing.
+		if errors.HasType(err, &gitdomain.RepoNotExistError{}) {
+			return "", "", nil
+		}
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return "", "", nil
 		}
 		return "", "", err
 	}
 
-	return refName, commit, nil
+	return res.GetRefName(), api.CommitID(res.GetCommit()), nil
 }
 
-// MergeBase returns the merge base commit for the specified commits.
-func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (_ api.CommitID, err error) {
+func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, base, head string) (_ api.CommitID, err error) {
 	ctx, _, endObservation := c.operations.mergeBase.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
-			attribute.String("a", string(a)),
-			attribute.String("b", string(b)),
+			attribute.String("base", base),
+			attribute.String("head", head),
 		},
 	})
 	defer endObservation(1, observation.Args{})
 
-	cmd := c.gitCommand(repo, "merge-base", "--", string(a), string(b))
-	out, err := cmd.CombinedOutput(ctx)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
-		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+		return "", err
 	}
-	return api.CommitID(bytes.TrimSpace(out)), nil
+
+	res, err := client.MergeBase(ctx, &proto.MergeBaseRequest{
+		RepoName: string(repo),
+		Base:     []byte(base),
+		Head:     []byte(head),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return api.CommitID(res.GetMergeBaseCommitSha()), nil
 }
 
 // RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
@@ -1459,37 +1267,7 @@ func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
 }
 
-// ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
-// file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
-func (c *clientImplementor) ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (_ []byte, err error) {
-	ctx, _, endObservation := c.operations.readFile.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			commit.Attr(),
-			attribute.String("name", name),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	br, err := c.NewFileReader(ctx, repo, commit, name)
-	if err != nil {
-		return nil, err
-	}
-	defer br.Close()
-
-	r := io.Reader(br)
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
-}
-
-// NewFileReader returns an io.ReadCloser reading from the named file at commit.
-// The caller should always close the reader after use
 func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (_ io.ReadCloser, err error) {
-	// TODO: this does not capture the lifetime of the request since we return a reader
 	ctx, _, endObservation := c.operations.newFileReader.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
@@ -1498,135 +1276,95 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 			attribute.String("name", name),
 		},
 	})
-	defer endObservation(1, observation.Args{})
 
-	a := actor.FromContext(ctx)
-	if hasAccess, err := authz.FilterActorPath(ctx, c.subRepoPermsChecker, a, repo, name); err != nil {
-		return nil, err
-	} else if !hasAccess {
-		return nil, os.ErrNotExist
-	}
-
-	name = rel(name)
-	br, err := c.newBlobReader(ctx, repo, commit, name)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
-		return nil, errors.Wrapf(err, "getting blobReader for %q", name)
-	}
-	return br, nil
-}
-
-// blobReader, which should be created using newBlobReader, is a struct that allows
-// us to get a ReadCloser to a specific named file at a specific commit
-type blobReader struct {
-	c      *clientImplementor
-	ctx    context.Context
-	repo   api.RepoName
-	commit api.CommitID
-	name   string
-	cmd    GitCommand
-	rc     io.ReadCloser
-}
-
-func (c *clientImplementor) blobOID(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (string, error) {
-	// Note: when our git is new enough we can just use --object-only
-	out, err := c.gitCommand(repo, "ls-tree", string(commit), "--", name).Output(ctx)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to lookup blob OID")
-	}
-
-	out = bytes.TrimSpace(out)
-	if len(out) == 0 {
-		return "", &os.PathError{Op: "open", Path: name, Err: os.ErrNotExist}
-	}
-
-	// 100644 blob 3bad331187e39c05c78a9b5e443689f78f4365a7	README.md
-	fields := bytes.Fields(out)
-	if len(fields) < 3 {
-		return "", errors.Newf("unexpected output while parsing blob OID: %q", string(out))
-	}
-	return string(fields[2]), nil
-}
-
-func (c *clientImplementor) newBlobReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (*blobReader, error) {
-	if err := gitdomain.EnsureAbsoluteCommit(commit); err != nil {
+		endObservation(1, observation.Args{})
 		return nil, err
 	}
 
-	var cmd GitCommand
-	if strings.Contains(name, "..") {
-		// We special case ".." in path to running a less efficient two
-		// commands. For other paths we can rely on the faster git show.
-		//
-		// git show will try and resolve revisions on anything containing
-		// "..". Depending on what branches/files exist, this can lead to:
-		//
-		//   - error: object $SHA is a tree, not a commit
-		//   - fatal: Invalid symmetric difference expression $SHA:$name
-		//   - outputting a diff instead of the file
-		//
-		// The last point is a security issue for repositories with sub-repo
-		// permissions since the diff will not be filtered.
-		blobOID, err := c.blobOID(ctx, repo, commit, name)
+	req := &proto.ReadFileRequest{
+		RepoName: string(repo),
+		Commit:   string(commit),
+		Path:     rel(name),
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	cli, err := client.ReadFile(ctx, req)
+	if err != nil {
+		cancel()
+		endObservation(1, observation.Args{})
+		return nil, err
+	}
+
+	// We start by reading the first message to early-exit on potential errors,
+	// ie. permission denied errors or invalid git command.
+	firstResp, firstRespErr := cli.Recv()
+	if firstRespErr != nil {
+		if s, ok := status.FromError(firstRespErr); ok {
+			// If sub repo permissions deny access to the file, we return os.ErrNotExist.
+			if s.Code() == codes.PermissionDenied {
+				cancel()
+				err = firstRespErr
+				endObservation(1, observation.Args{})
+				return nil, &os.PathError{Op: "open", Path: req.GetPath(), Err: os.ErrNotExist}
+			}
+			if s.Code() == codes.NotFound {
+				for _, d := range s.Details() {
+					switch d.(type) {
+					case *proto.FileNotFoundPayload:
+						cancel()
+						err = firstRespErr
+						endObservation(1, observation.Args{})
+						return nil, &os.PathError{Op: "open", Path: req.GetPath(), Err: os.ErrNotExist}
+					}
+				}
+			}
+		}
+		if errors.HasType(firstRespErr, &gitdomain.RevisionNotFoundError{}) {
+			cancel()
+			err = firstRespErr
+			endObservation(1, observation.Args{})
+			return nil, err
+		}
+	}
+
+	firstRespRead := false
+	r := streamio.NewReader(func() ([]byte, error) {
+		if !firstRespRead {
+			firstRespRead = true
+			if firstRespErr != nil {
+				return nil, firstRespErr
+			}
+			return firstResp.GetData(), nil
+		}
+
+		m, err := cli.Recv()
 		if err != nil {
 			return nil, err
 		}
-		cmd = c.gitCommand(repo, "cat-file", "-p", blobOID)
-	} else {
-		// Otherwise we can rely on a single command git show sha:name.
-		cmd = c.gitCommand(repo, "show", string(commit)+":"+name)
-	}
-
-	stdout, err := cmd.StdoutReader(ctx)
-	if err != nil {
-		return nil, err
-	}
+		return m.GetData(), nil
+	})
 
 	return &blobReader{
-		c:      c,
-		ctx:    ctx,
-		repo:   repo,
-		commit: commit,
-		name:   name,
-		cmd:    cmd,
-		rc:     stdout,
+		Reader: r,
+		cancel: cancel,
+		onClose: func() {
+			endObservation(1, observation.Args{})
+		},
 	}, nil
 }
 
-func (br *blobReader) Read(p []byte) (int, error) {
-	n, err := br.rc.Read(p)
-	if err != nil {
-		return n, br.convertError(err)
-	}
-	return n, nil
+type blobReader struct {
+	io.Reader
+	cancel  context.CancelFunc
+	onClose func()
 }
 
 func (br *blobReader) Close() error {
-	return br.rc.Close()
-}
-
-// convertError converts an error returned from 'git show' into a more appropriate error type
-func (br *blobReader) convertError(err error) error {
-	if err == nil {
-		return nil
-	}
-	if err == io.EOF {
-		return err
-	}
-	if strings.Contains(err.Error(), "exists on disk, but not in") || strings.Contains(err.Error(), "does not exist") {
-		return &os.PathError{Op: "open", Path: br.name, Err: os.ErrNotExist}
-	}
-	if strings.Contains(err.Error(), "fatal: bad object ") {
-		// Could be a git submodule.
-		fi, err := br.c.Stat(br.ctx, br.repo, br.commit, br.name)
-		if err != nil {
-			return err
-		}
-		// Return EOF for a submodule for now which indicates zero content
-		if fi.Mode()&gitdomain.ModeSubmodule != 0 {
-			return io.EOF
-		}
-	}
-	return errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", br.cmd.Args(), err))
+	br.cancel()
+	br.onClose()
+	return nil
 }
 
 // Stat returns a FileInfo describing the named file at commit.
@@ -1667,88 +1405,40 @@ type CommitsOptions struct {
 	After  string // include only commits after this date
 	Before string // include only commits before this date
 
-	Reverse   bool // Whether or not commits should be given in reverse order (optional)
 	DateOrder bool // Whether or not commits should be sorted by date (optional)
 
 	Path string // only commits modifying the given path are selected (optional)
 
 	Follow bool // follow the history of the path beyond renames (works only for a single path)
 
-	// When true we opt out of attempting to fetch missing revisions
-	NoEnsureRevision bool
-
 	// When true return the names of the files changed in the commit
 	NameOnly bool
 }
 
-var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
-
-// getCommit returns the commit with the given id.
-func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *gitdomain.Commit, err error) {
-	if honey.Enabled() && recordGetCommitQueries {
-		defer func() {
-			ev := honey.NewEvent("getCommit")
-			ev.SetSampleRate(10) // 1 in 10
-			ev.AddField("repo", repo)
-			ev.AddField("commit", id)
-			ev.AddField("no_ensure_revision", opt.NoEnsureRevision)
-			ev.AddField("actor", actor.FromContext(ctx).UIDString())
-
-			q, _ := ctx.Value(trace.GraphQLQueryKey).(string)
-			ev.AddField("query", q)
-
-			if err != nil {
-				ev.AddField("error", err.Error())
-			}
-
-			_ = ev.Send()
-		}()
-	}
-
-	if err := checkSpecArgSafety(string(id)); err != nil {
-		return nil, err
-	}
-
-	commitOptions := CommitsOptions{
-		Range:            string(id),
-		N:                1,
-		NoEnsureRevision: opt.NoEnsureRevision,
-	}
-	commitOptions = addNameOnly(commitOptions, c.subRepoPermsChecker)
-
-	commits, err := c.commitLog(ctx, repo, commitOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(commits) == 0 {
-		return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(id)}
-	}
-	if len(commits) != 1 {
-		return nil, errors.Errorf("git log: expected 1 commit, got %d", len(commits))
-	}
-
-	return commits[0], nil
-}
-
-// GetCommit returns the commit with the given commit ID, or ErrCommitNotFound if no such commit
-// exists.
-//
-// The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
-// needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
-// the repository or if the commit must be fetched from the remote.
-func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *gitdomain.Commit, err error) {
+func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID) (_ *gitdomain.Commit, err error) {
 	ctx, _, endObservation := c.operations.getCommit.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
 			repo.Attr(),
 			id.Attr(),
-			attribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
 		},
 	})
 	defer endObservation(1, observation.Args{})
 
-	return c.getCommit(ctx, repo, id, opt)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := client.GetCommit(ctx, &proto.GetCommitRequest{
+		RepoName: string(repo),
+		Commit:   string(id),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return gitdomain.CommitFromProto(res.GetCommit()), nil
 }
 
 // Commits returns all commits matching the options.
@@ -1766,7 +1456,21 @@ func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt 
 	if err := checkSpecArgSafety(opt.Range); err != nil {
 		return nil, err
 	}
-	return c.commitLog(ctx, repo, opt)
+
+	wrappedCommits, err := c.getWrappedCommits(ctx, repo, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	filtered, err := filterCommits(ctx, c.subRepoPermsChecker, wrappedCommits, repo)
+	if err != nil {
+		return nil, errors.Wrap(err, "filtering commits")
+	}
+
+	if needMoreCommits(filtered, wrappedCommits, opt, c.subRepoPermsChecker) {
+		return c.getMoreCommits(ctx, repo, opt, filtered)
+	}
+	return filtered, err
 }
 
 func filterCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, commits []*wrappedCommit, repoName api.RepoName) ([]*gitdomain.Commit, error) {
@@ -1850,11 +1554,7 @@ func (c *clientImplementor) CommitsUniqueToBranch(ctx context.Context, repo api.
 func (c *clientImplementor) filterCommitsUniqueToBranch(ctx context.Context, repo api.RepoName, commitsMap map[string]time.Time) map[string]time.Time {
 	filtered := make(map[string]time.Time, len(commitsMap))
 	for commitID, timeStamp := range commitsMap {
-		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{
-			// The commits are returned from git log, so we are sure they exist and
-			// don't need to ensure the revision.
-			NoEnsureRevision: true,
-		})
+		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID))
 		if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			filtered[commitID] = timeStamp
 		}
@@ -1945,26 +1645,6 @@ func isBadObjectErr(output, obj string) bool {
 	return output == "fatal: bad object "+obj
 }
 
-// commitLog returns a list of commits.
-//
-// The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
-func (c *clientImplementor) commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error) {
-	wrappedCommits, err := c.getWrappedCommits(ctx, repo, opt)
-	if err != nil {
-		return nil, err
-	}
-
-	filtered, err := filterCommits(ctx, c.subRepoPermsChecker, wrappedCommits, repo)
-	if err != nil {
-		return nil, errors.Wrap(err, "filtering commits")
-	}
-
-	if needMoreCommits(filtered, wrappedCommits, opt, c.subRepoPermsChecker) {
-		return c.getMoreCommits(ctx, repo, opt, filtered)
-	}
-	return filtered, err
-}
-
 func (c *clientImplementor) getWrappedCommits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*wrappedCommit, error) {
 	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt)
 	if err != nil {
@@ -1972,9 +1652,6 @@ func (c *clientImplementor) getWrappedCommits(ctx context.Context, repo api.Repo
 	}
 
 	cmd := c.gitCommand(repo, args...)
-	if !opt.NoEnsureRevision {
-		cmd.SetEnsureRevision(opt.Range)
-	}
 	wrappedCommits, err := runCommitLog(ctx, cmd, opt)
 	if err != nil {
 		return nil, err
@@ -2009,7 +1686,7 @@ func (c *clientImplementor) getMoreCommits(ctx context.Context, repo api.RepoNam
 	const maxIterations = 5
 
 	totalCommits := make([]*gitdomain.Commit, 0, opt.N)
-	for i := 0; i < maxIterations; i++ {
+	for range maxIterations {
 		if uint(len(totalCommits)) == opt.N {
 			break
 		}
@@ -2061,6 +1738,9 @@ var runCommitLog = func(ctx context.Context, cmd GitCommand, opt CommitsOptions)
 
 func parseCommitLogOutput(r io.Reader) ([]*wrappedCommit, error) {
 	commitScanner := bufio.NewScanner(r)
+	// We use an increased buffer size since sub-repo permissions
+	// can result in very lengthy output.
+	commitScanner.Buffer(make([]byte, 0, 65536), 4294967296)
 	commitScanner.Split(commitSplitFunc)
 
 	var commits []*wrappedCommit
@@ -2135,9 +1815,6 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 	if opt.Before != "" {
 		args = append(args, "--before="+opt.Before)
 	}
-	if opt.Reverse {
-		args = append(args, "--reverse")
-	}
 	if opt.DateOrder {
 		args = append(args, "--date-order")
 	}
@@ -2184,184 +1861,7 @@ func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoNa
 	}
 	first := tokens[0]
 	id := api.CommitID(bytes.TrimSpace(first))
-	return c.GetCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
-}
-
-// CommitExists determines if the given commit exists in the given repository.
-func (c *clientImplementor) CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID) (_ bool, err error) {
-	ctx, _, endObservation := c.operations.commitExists.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.String("commit", string(id)),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	commit, err := c.getCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
-	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-	return commit != nil, nil
-}
-
-// CommitsExist determines if the given commits exists in the given repositories. This function returns
-// a slice of the same size as the input slice, true indicating that the commit at the symmetric index
-// exists.
-func (c *clientImplementor) CommitsExist(ctx context.Context, repoCommits []api.RepoCommit) ([]bool, error) {
-	commits, err := c.GetCommits(ctx, repoCommits, true)
-	if err != nil {
-		return nil, err
-	}
-
-	exists := make([]bool, len(commits))
-	for i, commit := range commits {
-		exists[i] = commit != nil
-	}
-
-	return exists, nil
-}
-
-// GetCommits returns a git commit object describing each of the given repository and commit pairs. This
-// function returns a slice of the same size as the input slice. Values in the output slice may be nil if
-// their associated repository or commit are unresolvable.
-//
-// If ignoreErrors is true, then errors arising from any single failed git log operation will cause the
-// resulting commit to be nil, but not fail the entire operation.
-func (c *clientImplementor) GetCommits(ctx context.Context, repoCommits []api.RepoCommit, ignoreErrors bool) (_ []*gitdomain.Commit, err error) {
-	ctx, _, endObservation := c.operations.getCommits.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			attribute.Int("numRepoCommits", len(repoCommits)),
-			attribute.Bool("ignoreErrors", ignoreErrors),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	indexesByRepoCommit := make(map[api.RepoCommit]int, len(repoCommits))
-	for i, repoCommit := range repoCommits {
-		if err := checkSpecArgSafety(string(repoCommit.CommitID)); err != nil {
-			return nil, err
-		}
-
-		// Ensure repository names are normalized. If do this in a lower layer, then we may
-		// not be able to compare the RepoCommit parameter in the callback below with the
-		// input values.
-		repoCommits[i].Repo = protocol.NormalizeRepo(repoCommit.Repo)
-
-		// Make it easy to look up the index to populate for a particular RepoCommit value.
-		// Note that we use the slice-indexed version as the key, not the local variable, which
-		// was not updated in the normalization phase above
-		indexesByRepoCommit[repoCommits[i]] = i
-	}
-
-	// Create a slice with values populated in the callback defined below. Since the callback
-	// may be invoked concurrently inside BatchLog, we need to synchronize writes to this slice
-	// with this local mutex.
-	commits := make([]*gitdomain.Commit, len(repoCommits))
-	var mu sync.Mutex
-
-	callback := func(repoCommit api.RepoCommit, rawResult RawBatchLogResult) error {
-		if err := rawResult.Error; err != nil {
-			if ignoreErrors {
-				// Treat as not-found
-				return nil
-			}
-
-			return errors.Wrap(err, "failed to perform git log")
-		}
-
-		wrappedCommits, err := parseCommitLogOutput(strings.NewReader(rawResult.Stdout))
-		if err != nil {
-			if ignoreErrors {
-				// Treat as not-found
-				return nil
-			}
-			return errors.Wrap(err, "parseCommitLogOutput")
-		}
-		if len(wrappedCommits) > 1 {
-			// Check this prior to filtering commits so that we still log an issue
-			// if the user happens to have access one but not the other; a rev being
-			// ambiguous here should be a visible issue regardless of permissions.
-			return errors.Errorf("git log: expected 1 commit, got %d", len(commits))
-		}
-
-		// Enforce sub-repository permissions
-		filteredCommits, err := filterCommits(ctx, c.subRepoPermsChecker, wrappedCommits, repoCommit.Repo)
-		if err != nil {
-			// Note that we don't check ignoreErrors on this condition. When we
-			// ignore errors it's to hide an issue with a single git log request on a
-			// single shard, which could return an error if that repo is missing, the
-			// supplied commit does not exist in the clone, or if the repo is malformed.
-			//
-			// We don't want to hide unrelated infrastructure errors caused by this
-			// method call.
-			return errors.Wrap(err, "filterCommits")
-		}
-		if len(filteredCommits) == 0 {
-			// Not found
-			return nil
-		}
-
-		mu.Lock()
-		defer mu.Unlock()
-		index := indexesByRepoCommit[repoCommit]
-		commits[index] = filteredCommits[0]
-		return nil
-	}
-
-	opts := BatchLogOptions{
-		RepoCommits: repoCommits,
-		Format:      logFormatWithoutRefs,
-	}
-	if err := c.BatchLog(ctx, opts, callback); err != nil {
-		return nil, errors.Wrap(err, "gitserver.BatchLog")
-	}
-
-	return commits, nil
-}
-
-// Head determines the tip commit of the default branch for the given repository.
-// If no HEAD revision exists for the given repository (which occurs with empty
-// repositories), a false-valued flag is returned along with a nil error and
-// empty revision.
-func (c *clientImplementor) Head(ctx context.Context, repo api.RepoName) (_ string, revisionExists bool, err error) {
-	ctx, _, endObservation := c.operations.head.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	cmd := c.gitCommand(repo, "rev-parse", "HEAD")
-
-	out, err := cmd.Output(ctx)
-	if err != nil {
-		return checkError(err)
-	}
-	commitID := string(out)
-	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		if _, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{
-			// We expect the HEAD reference to not be broken, let's not ensure the
-			// revision here.
-			NoEnsureRevision: true,
-		}); err != nil {
-			return checkError(err)
-		}
-	}
-
-	return commitID, true, nil
-}
-
-func checkError(err error) (string, bool, error) {
-	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-		err = nil
-	}
-	return "", false, err
+	return c.GetCommit(ctx, repo, id)
 }
 
 const (
@@ -2440,11 +1940,7 @@ func (c *clientImplementor) BranchesContaining(ctx context.Context, repo api.Rep
 
 	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
 		// GetCommit to validate that the user has permissions to access it.
-		if _, err := c.GetCommit(ctx, repo, commit, ResolveRevisionOptions{
-			// Don't ensure the revision here, the branch command below will fail
-			// anyways.
-			NoEnsureRevision: true,
-		}); err != nil {
+		if _, err := c.GetCommit(ctx, repo, commit); err != nil {
 			return nil, err
 		}
 	}
@@ -2492,7 +1988,7 @@ func (c *clientImplementor) RefDescriptions(ctx context.Context, repo api.RepoNa
 			derefField("objectname"),
 			"%(refname)",
 			"%(HEAD)",
-			derefField("creatordate:iso8601-strict"),
+			derefField("creatordate:unix"),
 		}, "%00")
 
 		args := make([]string, 0, len(gitObjs)+3)
@@ -2539,10 +2035,7 @@ func (c *clientImplementor) filterRefDescriptions(ctx context.Context,
 ) map[string][]gitdomain.RefDescription {
 	filtered := make(map[string][]gitdomain.RefDescription, len(refDescriptions))
 	for commitID, descriptions := range refDescriptions {
-		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{
-			// The commits are returned from git already, so they must exist.
-			NoEnsureRevision: true,
-		})
+		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID))
 		if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			filtered[commitID] = descriptions
 		}
@@ -2562,7 +2055,7 @@ var refPrefixes = map[string]gitdomain.RefType{
 // - %(objectname) is the 40-character revhash
 // - %(refname) is the name of the tag or branch (prefixed with refs/heads/ or ref/tags/)
 // - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
-// - %(creatordate) is the ISO-formatted date the object was created
+// - %(creatordate) is the unix timestamp the object was created
 func parseRefDescriptions(out []byte) (map[string][]gitdomain.RefDescription, error) {
 	refDescriptions := make(map[string][]gitdomain.RefDescription, bytes.Count(out, []byte("\n")))
 
@@ -2603,10 +2096,11 @@ lineLoop:
 		// Some repositories attach tags to non-commit objects, such as trees. In such a situation, one
 		// cannot deference the tag to obtain the commit it points to, and there is no associated creatordate.
 		if createdDatePart != "" {
-			createdDate, err := time.Parse(time.RFC3339, createdDatePart)
+			parsedSeconds, err := strconv.Atoi(createdDatePart)
 			if err != nil {
 				return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
 			}
+			createdDate := time.Unix(int64(parsedSeconds), 0)
 			createdDatePtr = &createdDate
 		}
 
@@ -2628,59 +2122,6 @@ lineLoop:
 	return refDescriptions, nil
 }
 
-// CommitDate returns the time that the given commit was committed. If the given
-// revision does not exist, a false-valued flag is returned along with a nil
-// error and zero-valued time.
-func (c *clientImplementor) CommitDate(ctx context.Context, repo api.RepoName, commit api.CommitID) (_ string, _ time.Time, revisionExists bool, err error) {
-	ctx, _, endObservation := c.operations.commitDate.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.String("commit", string(commit)),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		// GetCommit to validate that the user has permissions to access it.
-		if _, err := c.GetCommit(ctx, repo, commit, ResolveRevisionOptions{
-			// The show command below will fail anyways, so no need to ensure
-			// that the revision exists here.
-			NoEnsureRevision: true,
-		}); err != nil {
-			return "", time.Time{}, false, nil
-		}
-	}
-
-	cmd := c.gitCommand(repo, "show", "-s", "--format=%H:%cI", string(commit))
-
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			err = nil
-		}
-		return "", time.Time{}, false, err
-	}
-	outs := string(out)
-
-	line := strings.TrimSpace(outs)
-	if line == "" {
-		return "", time.Time{}, false, nil
-	}
-
-	parts := strings.SplitN(line, ":", 2)
-	if len(parts) != 2 {
-		return "", time.Time{}, false, errors.Errorf(`unexpected output from git show "%s"`, line)
-	}
-
-	duration, err := time.Parse(time.RFC3339, parts[1])
-	if err != nil {
-		return "", time.Time{}, false, errors.Errorf(`unexpected output from git show (bad date format) "%s"`, line)
-	}
-
-	return parts[0], duration, true, nil
-}
-
 type ArchiveFormat string
 
 const (
@@ -2691,13 +2132,29 @@ const (
 	ArchiveFormatTar ArchiveFormat = "tar"
 )
 
-// ArchiveReader streams back the file contents of an archived git repo.
-func (c *clientImplementor) ArchiveReader(
-	ctx context.Context,
-	repo api.RepoName,
-	options ArchiveOptions,
-) (_ io.ReadCloser, err error) {
-	// TODO: this does not capture the lifetime of the request because we return a reader
+func ArchiveFormatFromProto(pf proto.ArchiveFormat) ArchiveFormat {
+	switch pf {
+	case proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP:
+		return ArchiveFormatZip
+	case proto.ArchiveFormat_ARCHIVE_FORMAT_TAR:
+		return ArchiveFormatTar
+	default:
+		return ""
+	}
+}
+
+func (f ArchiveFormat) ToProto() proto.ArchiveFormat {
+	switch f {
+	case ArchiveFormatZip:
+		return proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP
+	case ArchiveFormatTar:
+		return proto.ArchiveFormat_ARCHIVE_FORMAT_TAR
+	default:
+		return proto.ArchiveFormat_ARCHIVE_FORMAT_UNSPECIFIED
+	}
+}
+
+func (c *clientImplementor) ArchiveReader(ctx context.Context, repo api.RepoName, options ArchiveOptions) (_ io.ReadCloser, err error) {
 	ctx, _, endObservation := c.operations.archiveReader.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: append(
@@ -2705,140 +2162,85 @@ func (c *clientImplementor) ArchiveReader(
 			options.Attrs()...,
 		),
 	})
-	defer endObservation(1, observation.Args{})
 
-	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		if enabled, err := authz.SubRepoEnabledForRepo(ctx, c.subRepoPermsChecker, repo); err != nil {
-			return nil, errors.Wrap(err, "sub-repo permissions check:")
-		} else if enabled {
-			return nil, errors.New("archiveReader invoked for a repo with sub-repo permissions")
-		}
-	}
-
-	if ClientMocks.Archive != nil {
-		return ClientMocks.Archive(ctx, repo, options)
-	}
-
-	// Check that ctx is not expired.
-	if err := ctx.Err(); err != nil {
-		deadlineExceededCounter.Inc()
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
+		endObservation(1, observation.Args{})
 		return nil, err
 	}
 
-	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
-		if err != nil {
-			return nil, err
-		}
+	req := options.ToProto(string(repo))
 
-		req := options.ToProto(string(repo)) // HACK: ArchiveOptions doesn't have a repository here, so we have to add it ourselves.
+	ctx, cancel := context.WithCancel(ctx)
+	cli, err := client.Archive(ctx, req)
+	if err != nil {
+		cancel()
+		endObservation(1, observation.Args{})
+		return nil, err
+	}
 
-		ctx, cancel := context.WithCancel(ctx)
-
-		stream, err := client.Archive(ctx, req)
-		if err != nil {
-			cancel()
-			return nil, err
-		}
-
-		// first message from the gRPC stream needs to be read to check for errors before continuing
-		// to read the rest of the stream. If the first message is an error, we cancel the stream
-		// and return the error.
-		//
-		// This is necessary to provide parity between the REST and gRPC implementations of
-		// ArchiveReader. Users of cli.ArchiveReader may assume error handling occurs immediately,
-		// as is the case with the HTTP implementation where errors are returned as soon as the
-		// function returns. gRPC is asynchronous, so we have to start consuming messages from
-		// the stream to see any errors from the server. Reading the first message ensures we
-		// handle any errors synchronously, similar to the HTTP implementation.
-
-		firstMessage, firstError := stream.Recv()
-		if firstError != nil {
-			// Hack: The ArchiveReader.Read() implementation handles surfacing the
-			// any "revision not found" errors returned from the invoked git binary.
-			//
-			// In order to maintainparity with the HTTP API, we return this error in the ArchiveReader.Read() method
-			// instead of returning it immediately.
-
-			// We return early only if this isn't a revision not found error.
-
-			err := convertGRPCErrorToGitDomainError(firstError)
-
-			var cse *CommandStatusError
-			if !errors.As(err, &cse) || !isRevisionNotFound(cse.Stderr) {
-				cancel()
-				return nil, convertGRPCErrorToGitDomainError(err)
-			}
-		}
-
-		firstMessageRead := false
-
-		// Create a reader to read from the gRPC stream.
-		r := streamio.NewReader(func() ([]byte, error) {
-			// Check if we've read the first message yet. If not, read it and return.
-			if !firstMessageRead {
-				firstMessageRead = true
-
-				if firstError != nil {
-					return nil, firstError
+	// We start by reading the first message to early-exit on potential errors,
+	// ie. revision not found errors or invalid git command.
+	firstMessage, firstErr := cli.Recv()
+	if firstErr != nil {
+		if s, ok := status.FromError(firstErr); ok {
+			if s.Code() == codes.NotFound {
+				for _, d := range s.Details() {
+					switch d.(type) {
+					case *proto.FileNotFoundPayload:
+						cancel()
+						err = firstErr
+						endObservation(1, observation.Args{})
+						// We don't have a specific path here, so we return ErrNotExist instead of PathError.
+						return nil, os.ErrNotExist
+					}
 				}
-
-				return firstMessage.GetData(), nil
 			}
-
-			// Receive the next message from the stream.
-			msg, err := stream.Recv()
-			if err != nil {
-				return nil, convertGRPCErrorToGitDomainError(err)
-			}
-
-			// Return the data from the received message.
-			return msg.GetData(), nil
-		})
-
-		return &archiveReader{
-			base: &readCloseWrapper{r: r, closeFn: cancel},
-			repo: repo,
-			spec: options.Treeish,
-		}, nil
-
-	} else {
-		// Fall back to http request
-		u := c.archiveURL(ctx, repo, options)
-		resp, err := c.do(ctx, repo, u.String(), nil)
-		if err != nil {
-			return nil, err
 		}
-
-		switch resp.StatusCode {
-		case http.StatusOK:
-			return &archiveReader{
-				base: &cmdReader{
-					rc:      resp.Body,
-					trailer: resp.Trailer,
-				},
-				repo: repo,
-				spec: options.Treeish,
-			}, nil
-		case http.StatusNotFound:
-			var payload protocol.NotFoundPayload
-			if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-				resp.Body.Close()
-				return nil, err
-			}
-			resp.Body.Close()
-			return nil, &badRequestError{
-				error: &gitdomain.RepoNotExistError{
-					Repo:            repo,
-					CloneInProgress: payload.CloneInProgress,
-					CloneProgress:   payload.CloneProgress,
-				},
-			}
-		default:
-			resp.Body.Close()
-			return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+		if errors.HasType(firstErr, &gitdomain.RevisionNotFoundError{}) {
+			cancel()
+			err = firstErr
+			endObservation(1, observation.Args{})
+			return nil, err
 		}
 	}
+
+	firstRespRead := false
+	r := streamio.NewReader(func() ([]byte, error) {
+		if !firstRespRead {
+			firstRespRead = true
+			if firstErr != nil {
+				return nil, firstErr
+			}
+			return firstMessage.GetData(), nil
+		}
+
+		m, err := cli.Recv()
+		if err != nil {
+			return nil, err
+		}
+		return m.GetData(), nil
+	})
+
+	return &archiveReader{
+		Reader: r,
+		cancel: cancel,
+		onClose: func() {
+			endObservation(1, observation.Args{})
+		},
+	}, nil
+}
+
+type archiveReader struct {
+	io.Reader
+	cancel  context.CancelFunc
+	onClose func()
+}
+
+func (br *archiveReader) Close() error {
+	br.cancel()
+	br.onClose()
+	return nil
 }
 
 func addNameOnly(opt CommitsOptions, checker authz.SubRepoPermissionChecker) CommitsOptions {
@@ -2849,89 +2251,13 @@ func addNameOnly(opt CommitsOptions, checker authz.SubRepoPermissionChecker) Com
 	return opt
 }
 
-// BranchesOptions specifies options for the list of branches returned by
-// (Repository).Branches.
-type BranchesOptions struct {
-	// MergedInto will cause the returned list to be restricted to only
-	// branches that were merged into this branch name.
-	MergedInto string `json:"MergedInto,omitempty" url:",omitempty"`
-	// IncludeCommit controls whether complete commit information is included.
-	IncludeCommit bool `json:"IncludeCommit,omitempty" url:",omitempty"`
-	// BehindAheadBranch specifies a branch name. If set to something other than blank
-	// string, then each returned branch will include a behind/ahead commit counts
-	// information against the specified base branch. If left blank, then branches will
-	// not include that information and their Counts will be nil.
-	BehindAheadBranch string `json:"BehindAheadBranch,omitempty" url:",omitempty"`
-	// ContainsCommit filters the list of branches to only those that
-	// contain a specific commit ID (if set).
-	ContainsCommit string `json:"ContainsCommit,omitempty" url:",omitempty"`
-}
-
-func (bo *BranchesOptions) Attrs() (res []attribute.KeyValue) {
-	if bo.MergedInto != "" {
-		res = append(res, attribute.String("mergedInto", bo.MergedInto))
-	}
-	res = append(res, attribute.Bool("includeCommit", bo.IncludeCommit))
-
-	if bo.BehindAheadBranch != "" {
-		res = append(res, attribute.String("behindAheadBranch", bo.BehindAheadBranch))
-	}
-
-	if bo.ContainsCommit != "" {
-		res = append(res, attribute.String("containsCommit", bo.ContainsCommit))
-	}
-
-	return res
-}
-
-// branchFilter is a filter for branch names.
-// If not empty, only contained branch names are allowed. If empty, all names are allowed.
-// The map should be made so it's not nil.
-type branchFilter map[string]struct{}
-
-// allows will return true if the current filter set-up validates against
-// the passed string. If there are no filters, all strings pass.
-func (f branchFilter) allows(name string) bool {
-	if len(f) == 0 {
-		return true
-	}
-	_, ok := f[name]
-	return ok
-}
-
-// add adds a slice of strings to the filter.
-func (f branchFilter) add(list []string) {
-	for _, l := range list {
-		f[l] = struct{}{}
-	}
-}
-
 // ListBranches returns a list of all branches in the repository.
-func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) (_ []*gitdomain.Branch, err error) {
+func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName) (_ []*gitdomain.Branch, err error) {
 	ctx, _, endObservation := c.operations.listBranches.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
-		Attrs: append(
-			[]attribute.KeyValue{repo.Attr()},
-			opt.Attrs()...,
-		),
+		Attrs:             []attribute.KeyValue{repo.Attr()},
 	})
 	defer endObservation(1, observation.Args{})
-
-	f := make(branchFilter)
-	if opt.MergedInto != "" {
-		b, err := c.branches(ctx, repo, "--merged", opt.MergedInto)
-		if err != nil {
-			return nil, err
-		}
-		f.add(b)
-	}
-	if opt.ContainsCommit != "" {
-		b, err := c.branches(ctx, repo, "--contains="+opt.ContainsCommit)
-		if err != nil {
-			return nil, err
-		}
-		f.add(b)
-	}
 
 	refs, err := c.showRef(ctx, repo, "--heads")
 	if err != nil {
@@ -2941,45 +2267,8 @@ func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName,
 	var branches []*gitdomain.Branch
 	for _, ref := range refs {
 		name := strings.TrimPrefix(ref.Name, "refs/heads/")
-		if !f.allows(name) {
-			continue
-		}
-
 		branch := &gitdomain.Branch{Name: name, Head: ref.CommitID}
-		if opt.IncludeCommit {
-			branch.Commit, err = c.GetCommit(ctx, repo, ref.CommitID, ResolveRevisionOptions{
-				// The commitID comes from git, so surely it knows about it and
-				// there's no need to ensure the revision exists.
-				NoEnsureRevision: true,
-			})
-			if err != nil {
-				return nil, err
-			}
-		}
-		if opt.BehindAheadBranch != "" {
-			branch.Counts, err = c.GetBehindAhead(ctx, repo, "refs/heads/"+opt.BehindAheadBranch, "refs/heads/"+name)
-			if err != nil {
-				return nil, err
-			}
-		}
 		branches = append(branches, branch)
-	}
-	return branches, nil
-}
-
-// branches runs the `git branch` command followed by the given arguments and
-// returns the list of branches if successful.
-func (c *clientImplementor) branches(ctx context.Context, repo api.RepoName, args ...string) ([]string, error) {
-	cmd := c.gitCommand(repo, append([]string{"branch"}, args...)...)
-	out, err := cmd.Output(ctx)
-	if err != nil {
-		return nil, errors.Errorf("exec %v in %s failed: %v (output follows)\n\n%s", cmd.Args(), cmd.Repo(), err, out)
-	}
-	lines := strings.Split(string(out), "\n")
-	lines = lines[:len(lines)-1]
-	branches := make([]string, len(lines))
-	for i, line := range lines {
-		branches[i] = line[2:]
 	}
 	return branches, nil
 }

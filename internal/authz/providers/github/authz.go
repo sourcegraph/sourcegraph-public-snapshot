@@ -83,7 +83,7 @@ func NewAuthzProviders(
 				fmt.Sprintf("GitHub config for %[1]s has `authorization.groupsCacheTTL` enabled, but "+
 					"the authentication provider matching %[1]q does not have `allowGroupsPermissionsSync` enabled. "+
 					"Update the [**site configuration**](/site-admin/configuration) in the appropriate entry "+
-					"in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) to enable this.",
+					"in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) to enable this.",
 					p.ServiceID()))
 			// Forcibly disable groups cache.
 			p.groupsCache = nil

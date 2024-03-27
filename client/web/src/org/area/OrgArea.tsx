@@ -136,6 +136,11 @@ export interface OrgAreaRouteContext
 
     orgSettingsSideBarItems: OrgSettingsSidebarItems
     orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
+
+    license: {
+        isCodeSearchEnabled: boolean
+        isCodyEnabled: boolean
+    }
 }
 
 /**
@@ -241,6 +246,10 @@ export class OrgArea extends React.Component<OrgAreaProps> {
             useBreadcrumb: this.state.useBreadcrumb,
             orgSettingsAreaRoutes: this.props.orgSettingsAreaRoutes,
             orgSettingsSideBarItems: this.props.orgSettingsSideBarItems,
+            license: {
+                isCodeSearchEnabled: Boolean(window.context.licenseInfo?.features.codeSearch),
+                isCodyEnabled: Boolean(window.context.licenseInfo?.features.cody),
+            },
         }
 
         if (this.props.location.pathname === `/organizations/${this.props.orgName}/invitation`) {

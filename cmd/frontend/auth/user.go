@@ -5,16 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 
 	sglog "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -22,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/security"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -35,53 +33,9 @@ type GetAndSaveUserOp struct {
 	ExternalAccountData extsvc.AccountData
 	CreateIfNotExist    bool
 	LookUpByUsername    bool
-}
-
-// Checks if the user's email defined in the GetAndSaveUserOp is banned.
-// This is done by first checking a list of banned email domains.
-// If the domain is not banned, we then check if the email is a Google account
-// that's hosted on a non-gmail.com domain. Then, if too many signups have
-// happend recently, we prevent the signup.
-func checkIfEmailDomainIsBanned(ctx context.Context, recorder *telemetry.BestEffortEventRecorder, op GetAndSaveUserOp, acct *extsvc.Account) (string, error) {
-	domain, _ := security.ParseEmailDomain(op.UserProps.Email)
-
-	banned, err := security.IsEmailBanned(op.UserProps.Email)
-	if err != nil {
-		return "could not determine if email domain is banned", err
-	}
-
-	if banned {
-		recorder.Record(ctx, telemetry.FeaturesSignUpBlockedBannedDomain, telemetry.ActionFailed, &telemetry.EventParameters{
-			PrivateMetadata: map[string]any{
-				"serviceType": acct.AccountSpec.ServiceType,
-				"serviceId":   acct.AccountSpec.ServiceID,
-				"emailDomain": domain,
-			},
-		})
-
-		return "this email address is not allowed to register", errors.New("email domain banned")
-	}
-
-	if acct.AccountSpec.ServiceID == "https://accounts.google.com" && domain != "gmail.com" {
-		banned, err := security.IsEmailBlockedDueToTooManySignups(op.UserProps.Email)
-		if err != nil {
-			return "could not determine if email domain is banned", err
-		}
-
-		if banned {
-			recorder.Record(ctx, telemetry.FeaturesSignUpBlockedTooManySignups, telemetry.ActionFailed, &telemetry.EventParameters{
-				PrivateMetadata: map[string]any{
-					"serviceType": acct.AccountSpec.ServiceType,
-					"serviceId":   acct.AccountSpec.ServiceID,
-					"emailDomain": domain,
-				},
-			})
-
-			return "There seem to be too many signups occurring today. Please try again at a later time.", errors.New("Email not allowed to register due to too many signups")
-		}
-	}
-
-	return "", nil
+	// SingleIdentityPerUser indicates that the provider should only allow to
+	// connect a single external identity per user.
+	SingleIdentityPerUser bool
 }
 
 // GetAndSaveUser accepts authentication information associated with a given user, validates and applies
@@ -178,13 +132,6 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 			SourcegraphOperator: acct.AccountSpec.ServiceType == auth.SourcegraphOperatorProviderType,
 		}
 
-		if envvar.SourcegraphDotComMode() {
-			reason, err := checkIfEmailDomainIsBanned(ctx, recorder, op, acct)
-			if err != nil {
-				return 0, false, false, reason, err
-			}
-		}
-
 		// Fourth and finally, create a new user account and return it.
 		//
 		// If CreateIfNotExist is true, create the new user, regardless of whether the
@@ -195,6 +142,14 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		// operator or not.
 		ctx = sgactor.WithActor(ctx, act)
 		user, err := users.CreateWithExternalAccount(ctx, op.UserProps, acct)
+		// We re-try creation with a different username with random suffix if the first one is taken.
+		if database.IsUsernameExists(err) {
+			op.UserProps.Username, err = userpasswd.AddRandomSuffix(op.UserProps.Username)
+			if err != nil {
+				return 0, false, false, "Unable to create a new user account due to a unexpected error. Ask a site admin for help.", errors.Wrapf(err, "username: %q, email: %q", op.UserProps.Username, op.UserProps.Email)
+			}
+			user, err = users.CreateWithExternalAccount(ctx, op.UserProps, acct)
+		}
 
 		switch {
 		case database.IsUsernameExists(err):
@@ -300,6 +255,42 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		return newUserSaved, 0, safeErrMsg, err
 	}
 
+	if op.SingleIdentityPerUser && !extAcctSaved {
+		// If we're here, the user has already signed up before this request,
+		// but has no entry for this exact accountID in the user external accounts
+		// table yet.
+		// In single identity mode, we want to attach a new external account
+		// only if no other identity of the same provider for the same user already
+		// exists.
+		other, err := externalAccountsStore.List(ctx, database.ExternalAccountsListOptions{
+			UserID:      userID,
+			ServiceType: acct.ServiceType,
+			ServiceID:   acct.ServiceID,
+			ClientID:    acct.ClientID,
+		})
+		if err != nil {
+			return newUserSaved, 0, "Failed to list user identities. Ask a site admin for help.", err
+		}
+
+		// Confirm that the user already has a different identity from the same
+		// provider. In cases where the user is already logged in (on an existing
+		// browser session) extAcctSaved would be false, even though they logged in with
+		// the same external identity. So as long as is the same identity, we are OK.
+		found := false
+		for _, eac := range other {
+			if eac.ServiceType == acct.ServiceType &&
+				eac.ServiceID == acct.ServiceID &&
+				eac.AccountID == acct.AccountID &&
+				eac.ClientID == acct.ClientID {
+				found = true
+				break
+			}
+		}
+		if !found && len(other) >= 1 {
+			return newUserSaved, 0, "Another identity for this user from this provider already exists. Remove the link to the other identity from your account.", errors.New("duplicate identity for single identity provider")
+		}
+	}
+
 	// There is a legacy event instrumented earlier in this function that covers
 	// the new-user case only, that we are retaining because it might still be
 	// in use. Since this event is quite rare, we DON'T use teestore.WithoutV1
@@ -369,40 +360,5 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		}
 	}
 
-	addCodyProForTestUsers(ctx, db, userID, logger)
 	return newUserSaved, userID, "", nil
-}
-
-// addCodyProForTestUsers adds the cody-pro feature flag for users who are on the
-// "exempted from the minimum external account age" list
-// This is temporary for testing before 2023-12-14
-func addCodyProForTestUsers(ctx context.Context, db database.DB, userID int32, logger sglog.Logger) {
-	dc := conf.Get().Dotcom
-	if dc == nil {
-		return
-	}
-
-	verifiedEmails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{UserID: userID, OnlyVerified: true})
-	if err != nil {
-		return
-	}
-
-	exempted := false
-	for _, exemptedEmail := range dc.MinimumExternalAccountAgeExemptList {
-		for _, verifiedEmail := range verifiedEmails {
-			if verifiedEmail.Email == exemptedEmail {
-				exempted = true
-				break
-			}
-		}
-		if exempted {
-			break
-		}
-	}
-	if exempted {
-		_, err = db.FeatureFlags().CreateOverride(context.Background(), &featureflag.Override{FlagName: "cody-pro", Value: true, UserID: &userID})
-		if err != nil {
-			logger.Error("failed to create feature flag override", sglog.Error(err))
-		}
-	}
 }
