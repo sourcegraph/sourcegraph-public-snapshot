@@ -908,9 +908,10 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts)
 	for _, repoID := range denylist {
 		excludedRepoIDs = append(excludedRepoIDs, sqlf.Sprintf("%d", repoID))
 	}
+
 	var preds []*sqlf.Query
 	if len(excludedRepoIDs) > 0 {
-		preds = append(preds, sqlf.Sprintf("sp.repo_id not in (%s)", sqlf.Join(excludedRepoIDs, ",")))
+		//preds = append(preds, sqlf.Sprintf("sp.repo_id not in (%s)", sqlf.Join(excludedRepoIDs, ",")))
 	}
 	if len(opts.IncludeRepoRegex) > 0 {
 		includePreds := []*sqlf.Query{}
@@ -967,11 +968,13 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts)
 
 	formattedPreds := sqlf.Join(preds, "AND")
 	// start with the oldest archived points and add them to the results
+	// todo bahrmichael: here is a query that would need the moved permissions check
 	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, quote(recordingTimesTableArchive), quote(recordingTableArchive), opts.InsightViewUniqueID, formattedPreds), exportScanner); err != nil {
 		return nil, errors.Wrap(err, "fetching archived code insights data")
 	}
 	// then add live points
 	// we join both series points tables
+	// todo bahrmichael: here is a query that would need the moved permissions check
 	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, quote(recordingTimesTable), quote("(select * from series_points union all select * from series_points_snapshots)"), opts.InsightViewUniqueID, formattedPreds), exportScanner); err != nil {
 		return nil, errors.Wrap(err, "fetching code insights data")
 	}

@@ -140,6 +140,6 @@ func authzQuery(bypassAuthz bool, authenticatedUserID int32) *sqlf.Query {
 	}
 	conditions := []*sqlf.Query{GetUnrestrictedReposCond(), ExternalServiceUnrestrictedCondition, getRestrictedReposCond(authenticatedUserID)}
 
-	// Have to manually wrap the result in parenthesis so that they're evaluated together
+	// Have to manually wrap the result in parentheses so that they're evaluated together
 	return sqlf.Sprintf("(%s)", sqlf.Join(conditions, "\nOR\n"))
 }
