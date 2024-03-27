@@ -19,7 +19,7 @@ export function evaluateKey(keys: { mac?: string; linux?: string; windows?: stri
     return keys.key
 }
 
-export function isElement(t: any): t is Element {
+function isElement(t: any): t is Element {
     return t instanceof Element
 }
 
@@ -30,10 +30,10 @@ export function isElement(t: any): t is Element {
  * @param event KeyboardEvent
  */
 export function isContentField(event: KeyboardEvent): boolean {
-    const target = event.target
-    if (!target) {
+    if (!event?.target) {
         return false
     }
+    const target = event.target;
     if (isElement(target)) {
         return (
             target.getAttribute('contenteditable') === 'true' ||
@@ -46,7 +46,8 @@ export function isContentField(event: KeyboardEvent): boolean {
 
 function wrapHandler(handler: KeyHandler, allowDefault: boolean = false, ignoreInputFields: boolean = true) {
     return (keyboardEvent: KeyboardEvent, hotkeysEvent: HotkeysEvent) => {
-        if (!allowDefault) {
+        // When we use hotkeys.trigger, the event is null. That's why we need to check if the event and its function exist.
+        if (!allowDefault && keyboardEvent?.preventDefault) {
             // Prevent the default refresh event under WINDOWS system
             keyboardEvent.preventDefault()
         }
@@ -107,7 +108,7 @@ interface HotkeySetupOptions extends HotkeyOptions {
  * component initialization.
  */
 export function registerHotkey({ keys, handler, allowDefault, ignoreInputFields }: HotkeySetupOptions): {
-    bind: (options: HotkeyOptions) => void
+    bind: (options: HotkeyOptions) => void, unregister: () => void,
 } {
     let currentKey = evaluateKey(keys)
     if (
@@ -147,5 +148,10 @@ export function registerHotkey({ keys, handler, allowDefault, ignoreInputFields 
             wrappedHandler = wrapHandler(bindHandler, allowDefault, ignoreInputFields)
             hotkeys(currentKey, wrappedHandler)
         },
+        unregister() {
+            if (currentKey) {
+                hotkeys.unbind(currentKey, wrappedHandler)
+            }
+        }
     }
 }
