@@ -362,7 +362,7 @@ func AuthCallback(db database.DB, r *http.Request, usernamePrefix string, getPro
 	}
 	anonymousId, _ := cookie.AnonymousUID(r)
 
-	// PLG: If the user has been created just now, we want to log an additional event
+	// PLG: If the user has been created just now, we want to log an additional property on the event
 	// that indicates that the user has initiated the signup from the IDE extension.
 	userCreateEventProperties := map[string]any{}
 	if dotcom.SourcegraphDotComMode() {
