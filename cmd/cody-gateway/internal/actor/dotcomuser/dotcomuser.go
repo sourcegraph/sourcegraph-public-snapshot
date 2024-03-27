@@ -90,6 +90,19 @@ func (s *Source) fetchAndCache(ctx context.Context, token string, oldAct *actor.
 	} else {
 		act = newActor(s, token,
 			resp.Dotcom.CodyGatewayDotcomUserByToken.DotcomUserState, s.concurrencyConfig)
+
+		// It might be the case that this is a new token for which the actor is not stored in the cache yet.
+		// But the actor against the actor.ID (user_id) might be already stored in the cache. This is possible
+		// in the case user have used a different token before this.
+		// So we need to check cache for the actor against the act.ID (user_id), otherwise the cache will be reset,
+		// every time a new token is used by the same user.
+		data, hit := s.cache.Get(act.ID)
+		if hit {
+			var actorFromCache *actor.Actor
+			if err := json.Unmarshal(data, &actorFromCache); actorFromCache != nil && err == nil {
+				return actorFromCache, nil
+			}
+		}
 	}
 
 	// Marshall the actor into JSON so we can persist it.
