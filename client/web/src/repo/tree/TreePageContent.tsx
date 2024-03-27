@@ -13,7 +13,7 @@ import { SearchPatternType, type TreeFields } from '@sourcegraph/shared/src/grap
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Badge, Button, ButtonLink, Card, CardHeader, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, ButtonLink, Card, CardHeader, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import {
@@ -40,7 +40,7 @@ import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { buildSearchURLQueryFromQueryState, useNavbarQueryState } from '../../stores'
 import { canWriteRepoMetadata } from '../../util/rbac'
 import { OWNER_FIELDS, RECENT_CONTRIBUTOR_FIELDS, RECENT_VIEW_FIELDS } from '../blob/own/grapqlQueries'
-import { getRefType } from '../utils'
+import { getRefType, RepoCommitsButton } from '../utils'
 
 import { FilesCard, ReadmePreviewCard } from './TreePagePanels'
 
@@ -175,26 +175,18 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
     const [enableOwnershipPanels] = useFeatureFlag('enable-ownership-panels', true)
     const hasRepoMetaWritePermissions = canWriteRepoMetadata(props.authenticatedUser)
 
+    const commitsButton = RepoCommitsButton({
+        repoName: repo?.name,
+        repoType: repo?.sourceType,
+        revision: revision,
+        filePath: filePath,
+        svgPath: mdiSourceCommit,
+        className: menuStyles.text,
+    })
+
     return (
         <>
-            {!isRoot && (
-                <div className={menuStyles.menu}>
-                    <Tooltip content="Git commits">
-                        <Button
-                            className="flex-shrink-0"
-                            to={`/${encodeURIPathComponent(repo.name)}${
-                                revision && `@${encodeURIPathComponent(revision)}`
-                            }/-/commits/${encodeURIPathComponent(filePath)}`}
-                            variant="secondary"
-                            outline={true}
-                            as={Link}
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiSourceCommit} />{' '}
-                            <span className={menuStyles.text}>Commits</span>
-                        </Button>
-                    </Tooltip>
-                </div>
-            )}
+            {!isRoot && <div className={menuStyles.menu}>{commitsButton}</div>}
 
             {(readmeEntry || isRoot) && (
                 <section className={classNames('container mb-3 px-0', styles.section)}>
