@@ -90,25 +90,29 @@ func (s *Source) fetchAndCache(ctx context.Context, token string, oldAct *actor.
 	} else {
 		act = newActor(s, token,
 			resp.Dotcom.CodyGatewayDotcomUserByToken.DotcomUserState, s.concurrencyConfig)
-
-		// It might be the case that this is a new token for which the actor is not stored in the cache yet.
-		// But the actor against the actor.ID (user_id) might be already stored in the cache. This is possible
-		// in the case user have used a different token before this.
-		// So we need to check cache for the actor against the act.ID (user_id), otherwise the cache will be reset,
-		// every time a new token is used by the same user.
-		data, hit := s.cache.Get(act.ID)
-		if hit {
-			var actorFromCache *actor.Actor
-			if err := json.Unmarshal(data, &actorFromCache); actorFromCache != nil && err == nil {
-				return actorFromCache, nil
-			}
-		}
 	}
 
 	// Marshall the actor into JSON so we can persist it.
 	if data, err := json.Marshal(act); err != nil {
 		s.log.Error("failed to marshal actor", log.Error(err))
 	} else {
+
+		if oldAct == nil {
+			// It might be the case that this is a new token for which the actor is not stored in the cache yet,
+			// but the actor against the actor.ID (user_id) might be already stored in the cache. This is possible
+			// in the case user have used a different token before this.
+			// So we need to check cache for the actor against the act.ID (user_id), otherwise the cache will be reset,
+			// every time a new token is used by the same user.
+			data, hit := s.cache.Get(act.ID)
+			if hit {
+				if err := json.Unmarshal(data, &oldAct); oldAct == nil || err != nil {
+					trace.Logger(ctx, s.log).Error("failed to unmarshal old actor", log.Error(err))
+
+					// Delete the corrupted record in our cache, and try a fresh fetch.
+					s.cache.Delete(act.ID)
+				}
+			}
+		}
 		// As part of fetching the actor data, we may also want to reset their usage data.
 		// (e.g. if they recent upgraded/downgraded from Cody Pro.)
 		if err = s.maybeResetUsageData(*act, oldAct); err != nil {
