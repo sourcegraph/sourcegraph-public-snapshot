@@ -169,10 +169,9 @@ impl SublimeLanguageName {
     fn into_tree_sitter_name(self, file_info: &FileInfo<'_>) -> TreeSitterLanguageName {
         if self.raw.is_empty() || self.raw.to_lowercase() == "plain text" {
             let extension = file_info.extension().unwrap_or("");
-            if extension != "" {
-                match ParserId::from_file_extension(extension) {
-                    Some(parser_id) => return TreeSitterLanguageName::new(parser_id.name()),
-                    _ => {}
+            if !extension.is_empty() {
+                if let Some(parser_id) = ParserId::from_file_extension(extension) {
+                    return TreeSitterLanguageName::new(parser_id.name());
                 }
             }
         }
