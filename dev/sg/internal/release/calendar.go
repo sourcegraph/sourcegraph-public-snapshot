@@ -64,7 +64,7 @@ func generateCalendarEvents(cctx *cli.Context) error {
 			continue
 		}
 
-		// p.Updatef("Creating Code Freeze event for %q", e.Name)
+		p.Updatef("Creating Code Freeze event for %q", e.Name)
 		codeFreezeEvt := createReleaseEvent(cc.TeamEmail, fmt.Sprintf("Code Freeze: (%s)", e.Name), e.CodeFreezeDate)
 		_, err := client.Events.Insert("primary", codeFreezeEvt).Context(cctx.Context).Do()
 		if err != nil {
@@ -204,10 +204,9 @@ func createServer() (*http.Server, error) {
 				return
 			}
 
-			// fmt.Fprint(w, "Authentication successful! Please return to the console")
 			authCodeChan <- code
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("Authentication successful! Please return to the console"))
+			fmt.Fprint(w, "Authentication successful! Please return to the console")
 		}),
 	}
 
