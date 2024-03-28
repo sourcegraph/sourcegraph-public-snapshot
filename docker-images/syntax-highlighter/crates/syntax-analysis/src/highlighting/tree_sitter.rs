@@ -482,9 +482,9 @@ SELECT * FROM my_table
             let entry = entry?;
             let filepath = entry.path();
             let mut file = File::open(&filepath)?;
-
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
+
             let language = &crate::highlighting::test::SYNTAX_SET
                 .with(|syntax_set| {
                     FileInfo::new(filepath.to_string_lossy().as_ref(), &contents, None)
