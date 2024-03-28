@@ -956,6 +956,84 @@ func TestSchema_SetUserCodeCompletionsQuota(t *testing.T) {
 	})
 }
 
+func TestSchema_SetUserCompletionsQuotaNote(t *testing.T) {
+	db := dbmocks.NewMockDB()
+
+	t.Run("not site admin", func(t *testing.T) {
+		users := dbmocks.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{
+				ID:       id,
+				Username: strconv.Itoa(int(id)),
+			}, nil
+		})
+		// Different user.
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+
+		schemaResolver := newSchemaResolver(db, gitserver.NewTestClient(t))
+		result, err := schemaResolver.SetUserCompletionsQuotaNote(context.Background(),
+			SetUserCompletionsQuotaNoteArgs{
+				User: MarshalUserID(1),
+				Note: "",
+			},
+		)
+		got := fmt.Sprintf("%v", err)
+		want := auth.ErrMustBeSiteAdmin.Error()
+		assert.Equal(t, want, got)
+		assert.Nil(t, result)
+	})
+
+	t.Run("site admin can change note", func(t *testing.T) {
+		mockUser := &types.User{
+			ID:        1,
+			Username:  "alice",
+			SiteAdmin: true,
+		}
+		users := dbmocks.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultReturn(mockUser, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(mockUser, nil)
+		users.UpdateFunc.SetDefaultReturn(nil)
+		db.UsersFunc.SetDefaultReturn(users)
+
+		// Mock the get/set note methods.
+		var gqlNote string
+		users.SetCompletionsQuotaNoteFunc.SetDefaultHook(func(ctx context.Context, userID int32, note string) error {
+			gqlNote = note
+			return nil
+		})
+		users.GetCompletionsQuotaNoteFunc.SetDefaultHook(func(ctx context.Context, i int32) (string, error) {
+			return gqlNote, nil
+		})
+
+		RunTests(t, []*Test{
+			{
+				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+			mutation {
+				setUserCompletionsQuotaNote(
+					user: "VXNlcjox",
+					note: "Alice needed a quota bump to do something awesome."
+				) {
+					username
+					completionsQuotaOverrideNote
+				}
+			}
+		`,
+				ExpectedResult: `
+			{
+				"setUserCodeCompletionsQuota": {
+					"username": "alice",
+					"completionsQuotaOverrideNote": "Alice needed a quota bump to do something awesome."
+				}
+			}
+		`,
+			},
+		})
+	})
+}
+
 func TestSchema_SetCompletedPostSignup(t *testing.T) {
 	db := dbmocks.NewMockDB()
 

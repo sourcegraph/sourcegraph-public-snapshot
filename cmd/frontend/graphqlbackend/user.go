@@ -792,6 +792,20 @@ func (r *UserResolver) CodeCompletionsQuotaOverride(ctx context.Context) (*int32
 	return &iv, nil
 }
 
+func (r *UserResolver) CompletionsQuotaOverrideNote(ctx context.Context) (string, error) {
+	// 🚨 SECURITY: Only the user and admins are allowed to see quotas.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+		return "", err
+	}
+
+	s, err := r.db.Users().GetCompletionsQuotaNote(ctx, r.user.ID)
+	if err != nil {
+		return "", err
+	}
+
+	return s, nil
+}
+
 func (r *UserResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	id := r.ID()
 	args.Namespace = &id
@@ -932,6 +946,7 @@ func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args S
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
+	requestingActor := actor.FromContext(ctx)
 
 	if args.Quota != nil && *args.Quota <= 0 {
 		return nil, errors.New("quota must be 1 or greater")
@@ -948,21 +963,63 @@ func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args S
 		return nil, err
 	}
 
-	var quota *int
-	if args.Quota != nil {
-		i := int(*args.Quota)
-		quota = &i
-	}
-	if err := r.db.Users().SetCodeCompletionsQuota(ctx, user.ID, quota); err != nil {
+	// Lookup the current quota, so we can log the delta.
+	oldQuota, err := r.db.Users().GetChatCompletionsQuota(ctx, user.ID)
+	if err != nil {
 		return nil, err
 	}
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
-		// Log an event when user's code completions quota is updated
+	var newQuota *int
+	if args.Quota != nil {
+		i := int(*args.Quota)
+		newQuota = &i
+	}
+	if err := r.db.Users().SetCodeCompletionsQuota(ctx, user.ID, newQuota); err != nil {
+		return nil, err
+	}
+
+	// Log that the user's completions quota was updated.
+	r.logger.Info("setting user code completions quota",
+		log.Int("requestingUserID", int(requestingActor.UID)),
+		log.Int("targetUserID", int(user.ID)),
+		log.Intp("oldQuota", oldQuota),
+		log.Intp("newQuota", newQuota))
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameUserCodeCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", args); err != nil {
 			r.logger.Error("Error logging security event", log.Error(err))
 		}
 	}
+	return UserByIDInt32(ctx, r.db, user.ID)
+}
+
+type SetUserCompletionsQuotaNoteArgs struct {
+	User graphql.ID
+	Note string
+}
+
+func (r *schemaResolver) SetUserCompletionsQuotaNote(ctx context.Context, args SetUserCompletionsQuotaNoteArgs) (*UserResolver, error) {
+	// 🚨 SECURITY: Only site admins are allowed to change a users quota.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	id, err := UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify the ID is valid.
+	user, err := r.db.Users().GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.db.Users().SetCompletionsQuotaNote(ctx, user.ID, args.Note); err != nil {
+		return nil, err
+	}
+
+	// NOTE: Unlike when we set completions quota or code completions quota,
+	// we do not emit a security event because the "note" has no functional impact.
 	return UserByIDInt32(ctx, r.db, user.ID)
 }
 

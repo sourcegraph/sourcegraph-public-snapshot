@@ -11,6 +11,7 @@ export const USER_REQUEST_QUOTAS = gql`
             ... on User {
                 completionsQuotaOverride
                 codeCompletionsQuotaOverride
+                completionsQuotaOverrideNote
             }
         }
     }
@@ -30,6 +31,15 @@ export const SET_USER_CODE_COMPLETIONS_QUOTA = gql`
         setUserCodeCompletionsQuota(user: $userID, quota: $quota) {
             id
             codeCompletionsQuotaOverride
+        }
+    }
+`
+
+export const SET_USER_COMPLETIONS_QUOTA_NOTE = gql`
+    mutation SetUserCompletionsQuotaNote($userID: ID!, $note: String!) {
+        setUserCompletionsQuotaNote(user: $userID, note: $note) {
+            id
+            completionsQuotaOverrideNote
         }
     }
 `

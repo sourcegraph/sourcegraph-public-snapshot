@@ -932,6 +932,11 @@ type Mutation {
     """
     setUserCodeCompletionsQuota(user: ID!, quota: Int): User!
     """
+    Sets the completions override note, an optional string used to provide context
+    for understanding why any changes were made.
+    """
+    setUserCompletionsQuotaNote(user: ID!, note: String!): User!
+    """
     Submits a post-signup user survey about intended Cody usage.
     """
     submitCodySurvey(isForWork: Boolean!, isForPersonal: Boolean!): EmptyResponse!
@@ -6637,6 +6642,10 @@ type User implements Node & SettingsSubject & Namespace {
     Null, if not overwritten.
     """
     codeCompletionsQuotaOverride: Int
+    """
+    Optional note to describe why any overrides were set.
+    """
+    completionsQuotaOverrideNote: String
     """
     The Cody subscription details for the user.
     """
