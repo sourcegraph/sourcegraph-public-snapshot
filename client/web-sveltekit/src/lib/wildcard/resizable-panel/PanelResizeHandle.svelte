@@ -75,14 +75,27 @@
     data-resize-handle-state={$state}
     data-resize-handle-active={$state === 'drag' ? 'pointer' : undefined}
     data-panel-resize-handle-id={resizeHandleId}
->
-    <slot />
-</div>
+/>
 
 <style lang="scss">
     .separator {
+        // Since drag handler is always rendered within flex
+        // PanelGroup component is safe to assume that flex rules
+        // can applied here.
+        flex: 0 0 3px;
         display: flex;
         touch-action: none;
         user-select: none;
+        width: 100%;
+        height: 100%;
+        background: transparent;
+
+        &[data-resize-handle-state='hover'] {
+            background: var(--border-color);
+        }
+
+        &[data-resize-handle-state='drag'] {
+            background: var(--oc-blue-3);
+        }
     }
 </style>
