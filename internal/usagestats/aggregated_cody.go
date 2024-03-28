@@ -17,9 +17,14 @@ func GetAggregatedCodyStats(ctx context.Context, db database.DB) (*types.CodyUsa
 	}
 
 	stats := &types.CodyUsageStatistics{
-		Daily:   newCodyEventPeriod(),
-		Weekly:  newCodyEventPeriod(),
+		Daily:   newCodyEventPeriodLimited(),
+		Weekly:  newCodyEventPeriodLimited(),
 		Monthly: newCodyEventPeriod(),
+	}
+
+	if events == nil {
+		// If there are no events, return the empty stats.
+		return stats, nil
 	}
 
 	stats.Daily.StartTime = events.Day
@@ -55,6 +60,14 @@ func newCodyEventPeriod() *types.CodyUsagePeriod {
 		TotalNeovimProductUsers:    newCodyCountStatistics(),
 		TotalEmacsProductUsers:     newCodyCountStatistics(),
 		TotalWebProductUsers:       newCodyCountStatistics(),
+	}
+}
+
+func newCodyEventPeriodLimited() *types.CodyUsagePeriodLimited {
+	return &types.CodyUsagePeriodLimited{
+		StartTime:         time.Now().UTC(),
+		TotalCodyUsers:    newCodyCountStatistics(),
+		TotalProductUsers: newCodyCountStatistics(),
 	}
 }
 

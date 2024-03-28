@@ -6,6 +6,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -18,6 +19,10 @@ type repoPagerJob struct {
 	repoOpts         search.RepoOptions
 	containsRefGlobs bool                          // whether to include repositories with refs
 	child            job.PartialJob[resolvedRepos] // child job tree that need populating a repos field to run
+	// If true, skip partitioning the repos into indexed and unindexed sets. All
+	// repos are treated as unindexed. This is useful for job types that don't work
+	// on the index, such as diff and commit search.
+	skipPartitioning bool
 }
 
 // resolvedRepos is the set of information to complete the partial
@@ -71,6 +76,10 @@ func setRepos(j job.Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.Rep
 			cp := *v
 			cp.Repos = unindexed
 			return &cp
+		case *commit.SearchJob:
+			cp := *v
+			cp.Repos = unindexed
+			return &cp
 		default:
 			return j
 		}
@@ -89,18 +98,23 @@ func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stre
 	for it.Next() {
 		page := it.Current()
 		page.MaybeSendStats(stream)
-		indexed, unindexed, err := zoekt.PartitionRepos(
-			ctx,
-			clients.Logger,
-			page.RepoRevs,
-			clients.Zoekt,
-			search.TextRequest,
-			p.repoOpts.UseIndex,
-			p.containsRefGlobs,
-		)
-
-		if err != nil {
-			return maxAlerter.Alert, err
+		var indexed *zoekt.IndexedRepoRevs
+		var unindexed []*search.RepositoryRevisions
+		if p.skipPartitioning {
+			unindexed = page.RepoRevs
+		} else {
+			indexed, unindexed, err = zoekt.PartitionRepos(
+				ctx,
+				clients.Logger,
+				page.RepoRevs,
+				clients.Zoekt,
+				search.TextRequest,
+				p.repoOpts.UseIndex,
+				p.containsRefGlobs,
+			)
+			if err != nil {
+				return maxAlerter.Alert, err
+			}
 		}
 
 		job := p.child.Resolve(resolvedRepos{indexed, unindexed})

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -54,7 +54,7 @@ func ParseAuthorizationHeader(headerValue string) (token, sudoUser string, err e
 		}
 	}
 
-	if envvar.SourcegraphDotComMode() && scheme == SchemeTokenSudo {
+	if dotcom.SourcegraphDotComMode() && scheme == SchemeTokenSudo {
 		return "", "", errors.New("use of access tokens with sudo scope is disabled")
 	}
 
