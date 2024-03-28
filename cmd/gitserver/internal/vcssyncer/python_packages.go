@@ -26,16 +26,18 @@ func NewPythonPackagesSyncer(
 	svc *dependencies.Service,
 	client *pypi.Client,
 	fs gitserverfs.FS,
+	getRemoteURLSource func(ctx context.Context, name api.RepoName) (RemoteURLSource, error),
 ) VCSSyncer {
 	return &vcsPackagesSyncer{
-		logger:      log.Scoped("PythonPackagesSyncer"),
-		typ:         "python_packages",
-		scheme:      dependencies.PythonPackagesScheme,
-		placeholder: reposource.ParseVersionedPackage("sourcegraph.com/placeholder@v0.0.0"),
-		svc:         svc,
-		configDeps:  connection.Dependencies,
-		source:      &pythonPackagesSyncer{client: client, fs: fs},
-		fs:          fs,
+		logger:             log.Scoped("PythonPackagesSyncer"),
+		typ:                "python_packages",
+		scheme:             dependencies.PythonPackagesScheme,
+		placeholder:        reposource.ParseVersionedPackage("sourcegraph.com/placeholder@v0.0.0"),
+		svc:                svc,
+		configDeps:         connection.Dependencies,
+		source:             &pythonPackagesSyncer{client: client, fs: fs},
+		getRemoteURLSource: getRemoteURLSource,
+		fs:                 fs,
 	}
 }
 

@@ -18,6 +18,9 @@ func TestRenderIndexPage(t *testing.T) {
 				Name:        pointers.Ptr("Service 1"),
 				Owners:      []string{"team-a"},
 			},
+			Environments: []spec.EnvironmentSpec{{
+				ID: "dev",
+			}},
 		},
 		{
 			Service: spec.ServiceSpec{
@@ -26,6 +29,11 @@ func TestRenderIndexPage(t *testing.T) {
 				Name:        pointers.Ptr("Service 2"),
 				Owners:      []string{"team-a"},
 			},
+			Environments: []spec.EnvironmentSpec{{
+				ID: "dev",
+			}, {
+				ID: "prod",
+			}},
 		},
 		{
 			Service: spec.ServiceSpec{
@@ -34,6 +42,9 @@ func TestRenderIndexPage(t *testing.T) {
 				Name:        pointers.Ptr("Service 3"),
 				Owners:      []string{"team-b"},
 			},
+			Environments: []spec.EnvironmentSpec{{
+				ID: "dev",
+			}},
 		},
 		{
 			Service: spec.ServiceSpec{
@@ -42,6 +53,11 @@ func TestRenderIndexPage(t *testing.T) {
 				Name:        pointers.Ptr("Service 4"),
 				Owners:      []string{"team-a", "team-b"},
 			},
+			Environments: []spec.EnvironmentSpec{{
+				ID: "dev",
+			}, {
+				ID: "prod",
+			}},
 		},
 	}
 

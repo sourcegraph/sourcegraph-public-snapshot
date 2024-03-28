@@ -102,7 +102,13 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     },
     {
         path: 'executors/*',
-        render: props => <ExecutorsUserArea {...props} namespaceID={props.user.id} />,
+        render: props => (
+            <ExecutorsUserArea
+                {...props}
+                telemetryRecorder={props.platformContext.telemetryRecorder}
+                namespaceID={props.user.id}
+            />
+        ),
         condition: shouldRenderBatchChangesPage,
     },
     {

@@ -28,6 +28,7 @@ func NewNpmPackagesSyncer(
 	svc *dependencies.Service,
 	client npm.Client,
 	fs gitserverfs.FS,
+	getRemoteURLSource func(ctx context.Context, name api.RepoName) (RemoteURLSource, error),
 ) VCSSyncer {
 	placeholder, err := reposource.ParseNpmVersionedPackage("@sourcegraph/placeholder@1.0.0")
 	if err != nil {
@@ -35,14 +36,15 @@ func NewNpmPackagesSyncer(
 	}
 
 	return &vcsPackagesSyncer{
-		logger:      log.Scoped("NPMPackagesSyncer"),
-		typ:         "npm_packages",
-		scheme:      dependencies.NpmPackagesScheme,
-		placeholder: placeholder,
-		svc:         svc,
-		configDeps:  connection.Dependencies,
-		fs:          fs,
-		source:      &npmPackagesSyncer{client: client},
+		logger:             log.Scoped("NPMPackagesSyncer"),
+		typ:                "npm_packages",
+		scheme:             dependencies.NpmPackagesScheme,
+		placeholder:        placeholder,
+		svc:                svc,
+		configDeps:         connection.Dependencies,
+		fs:                 fs,
+		source:             &npmPackagesSyncer{client: client},
+		getRemoteURLSource: getRemoteURLSource,
 	}
 }
 

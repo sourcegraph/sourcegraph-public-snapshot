@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -18,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -38,9 +38,12 @@ type perforceDepotSyncer struct {
 
 	// fusionConfig contains information about the experimental p4-fusion client.
 	fusionConfig fusionConfig
+
+	// getRemoteURLSource returns the RemoteURLSource for the given repository.
+	getRemoteURLSource func(ctx context.Context, name api.RepoName) (RemoteURLSource, error)
 }
 
-func NewPerforceDepotSyncer(logger log.Logger, r *wrexec.RecordingCommandFactory, fs gitserverfs.FS, connection *schema.PerforceConnection) VCSSyncer {
+func NewPerforceDepotSyncer(logger log.Logger, r *wrexec.RecordingCommandFactory, fs gitserverfs.FS, connection *schema.PerforceConnection, getRemoteURLSource func(ctx context.Context, name api.RepoName) (RemoteURLSource, error)) VCSSyncer {
 	return &perforceDepotSyncer{
 		logger:                  logger.Scoped("PerforceDepotSyncer"),
 		recordingCommandFactory: r,
@@ -48,6 +51,7 @@ func NewPerforceDepotSyncer(logger log.Logger, r *wrexec.RecordingCommandFactory
 		maxChanges:              int(connection.MaxChanges),
 		p4Client:                connection.P4Client,
 		fusionConfig:            configureFusionClient(connection),
+		getRemoteURLSource:      getRemoteURLSource,
 	}
 }
 
@@ -56,7 +60,17 @@ func (s *perforceDepotSyncer) Type() string {
 }
 
 // IsCloneable checks to see if the Perforce remote URL is cloneable.
-func (s *perforceDepotSyncer) IsCloneable(ctx context.Context, _ api.RepoName, remoteURL *vcs.URL) error {
+func (s *perforceDepotSyncer) IsCloneable(ctx context.Context, repoName api.RepoName) error {
+	source, err := s.getRemoteURLSource(ctx, repoName)
+	if err != nil {
+		return errors.Wrap(err, "getting remote URL source")
+	}
+
+	remoteURL, err := source.RemoteURL(ctx)
+	if err != nil {
+		return errors.Wrap(err, "getting remote URL") // This should never happen for Perforce
+	}
+
 	username, password, host, path, err := perforce.DecomposePerforceRemoteURL(remoteURL)
 	if err != nil {
 		return errors.Wrap(err, "invalid perforce remote URL")
@@ -73,7 +87,17 @@ func (s *perforceDepotSyncer) IsCloneable(ctx context.Context, _ api.RepoName, r
 
 // Clone writes a Perforce depot into tmpPath, using a Perforce-to-git-conversion.
 // It reports redacted progress logs via the progressWriter.
-func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, remoteURL *vcs.URL, _ common.GitDir, tmpPath string, progressWriter io.Writer) (err error) {
+func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, _ common.GitDir, tmpPath string, progressWriter io.Writer) (err error) {
+	source, err := s.getRemoteURLSource(ctx, repo)
+	if err != nil {
+		return errors.Wrap(err, "getting remote URL source")
+	}
+
+	remoteURL, err := source.RemoteURL(ctx)
+	if err != nil {
+		return errors.Wrap(err, "getting remote URL") // This should never happen for Perforce
+	}
+
 	// First, make sure the tmpPath exists.
 	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
 		return errors.Wrapf(err, "clone failed to create tmp dir")
@@ -184,7 +208,17 @@ func (s *perforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, usern
 }
 
 // Fetch tries to fetch updates of a Perforce depot as a Git repository.
-func (s *perforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ api.RepoName, dir common.GitDir, _ string) ([]byte, error) {
+func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir, _ string) ([]byte, error) {
+	source, err := s.getRemoteURLSource(ctx, repoName)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting remote URL source")
+	}
+
+	remoteURL, err := source.RemoteURL(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting remote URL") // This should never happen for Perforce
+	}
+
 	p4user, p4passwd, p4port, depot, err := perforce.DecomposePerforceRemoteURL(remoteURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "invalid perforce remote URL")
@@ -244,13 +278,15 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ a
 		}
 	}
 
-	return output, nil
-}
+	// The update was successful, after a git fetch it is expected that a repos
+	// FETCH_HEAD has either been updated, or that HEAD has been touched, even
+	// if no changes were fetched.
+	// Since we use this for last_fetched, we touch it here.
+	if err := os.Chtimes(dir.Path("HEAD"), time.Time{}, time.Now()); err != nil {
+		s.logger.Error("failed to touch HEAD after perforce fetch", log.Error(err))
+	}
 
-// RemoteShowCommand returns the command to be executed for showing Git remote of a Perforce depot.
-func (s *perforceDepotSyncer) RemoteShowCommand(ctx context.Context, _ *vcs.URL) (cmd *exec.Cmd, err error) {
-	// Remote info is encoded as in the current repository
-	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
+	return output, nil
 }
 
 func (s *perforceDepotSyncer) p4CommandOptions() []string {

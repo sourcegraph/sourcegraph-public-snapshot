@@ -1,5 +1,6 @@
 import React from 'react'
 
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import type { UserExecutorSecretsListPageProps } from './secrets/ExecutorSecretsListPage'
@@ -9,7 +10,7 @@ const UserExecutorSecretsListPage = lazyComponent<UserExecutorSecretsListPagePro
     'UserExecutorSecretsListPage'
 )
 
-export interface ExecutorsUserAreaProps {
+export interface ExecutorsUserAreaProps extends TelemetryV2Props {
     namespaceID: string
 }
 

@@ -8,15 +8,15 @@ import (
 	"net/url"
 	"testing"
 
-	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -79,11 +79,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 	}
 
 	t.Run("license check bypasses handler in dotcom mode", func(t *testing.T) {
-		currMode := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		t.Cleanup(func() {
-			envvar.MockSourcegraphDotComMode(currMode)
-		})
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		req, _ := http.NewRequest("GET", "/.api/license/check", nil)
 		req.Header.Set("Authorization", "Bearer sometoken")
@@ -100,7 +96,6 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 
 		securityEventLogs := dbmocks.NewMockSecurityEventLogsStore()
 		securityEventLogs.LogSecurityEventFunc.SetDefaultHook(func(ctx context.Context, eventName database.SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any) error {
-
 			if want := database.SecurityEventAccessTokenInvalid; eventName != want {
 				t.Errorf("got %q, want %q", eventName, want)
 			}
@@ -222,7 +217,6 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 
 		securityEventLogs := dbmocks.NewMockSecurityEventLogsStore()
 		securityEventLogs.LogSecurityEventFunc.SetDefaultHook(func(ctx context.Context, eventName database.SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any) error {
-
 			if want := database.SecurityEventAccessTokenImpersonated; eventName != want {
 				t.Errorf("got %q, want %q", eventName, want)
 			}
@@ -274,7 +268,6 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 
 		securityEventLogsStore := dbmocks.NewMockSecurityEventLogsStore()
 		securityEventLogsStore.LogSecurityEventFunc.SetDefaultHook(func(ctx context.Context, eventName database.SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any) error {
-
 			require.True(t, sgactor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
 			return nil
 		})
@@ -318,7 +311,6 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 
 		securityEventLogsStore := dbmocks.NewMockSecurityEventLogsStore()
 		securityEventLogsStore.LogSecurityEventFunc.SetDefaultHook(func(ctx context.Context, eventName database.SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any) error {
-
 			if want := database.SecurityEventAccessTokenSubjectNotSiteAdmin; eventName != want {
 				t.Errorf("got %q, want %q", eventName, want)
 			}

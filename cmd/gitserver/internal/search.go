@@ -12,10 +12,10 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -114,7 +114,7 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 		}
 
 		sentCount.Add(int64(matchCount(match)))
-		onMatch(match)
+		_ = onMatch(match)
 	}
 
 	searcher := &search.CommitSearcher{

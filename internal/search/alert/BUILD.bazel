@@ -7,11 +7,11 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/alert",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/auth",
         "//internal/authz",
         "//internal/comby",
         "//internal/database",
+        "//internal/dotcom",
         "//internal/endpoint",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
