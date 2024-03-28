@@ -1,5 +1,7 @@
 {
     "teamEmail": "team@sourcegraph.com",
+    // these dates should always be in sync with the Sourcegraph Handbook release schedule
+    // https://handbook.sourcegraph.com/departments/engineering/dev/process/releases/#release-schedule
     "events": [
         {
             "name": "March 2024 Release",
