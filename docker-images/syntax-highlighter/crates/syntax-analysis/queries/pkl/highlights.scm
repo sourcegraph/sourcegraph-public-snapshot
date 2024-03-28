@@ -1,4 +1,4 @@
- Types
+; Types
 
 (clazz (identifier) @type)
 (typeAlias (identifier) @type)
