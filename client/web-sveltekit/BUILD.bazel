@@ -137,7 +137,7 @@ vite_bin.vite_test(
 )
 
 playwright_test_bin.playwright_test(
-    name = "e2e_test",
+    name = "playwright_e2e_test",
     args = [
         "test",
         "--config ./playwright.config.ts",
