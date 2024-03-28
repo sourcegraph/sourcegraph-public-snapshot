@@ -5139,8 +5139,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_go_ctags",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/go-ctags",
-        sum = "h1:7MrEECTEf+UmMdllIIbAHng17Uwqm8WbHEUAyv9LMBk=",
-        version = "v0.0.0-20231024141911-299d0263dc95",
+        sum = "h1:jppwnpC+DT9tIiRbw21lD0drA9Jqu4X47iA4gTk4w8M=",
+        version = "v0.0.0-20240325032535-71f1ec6e46e4",
     )
     go_repository(
         name = "com_github_sourcegraph_go_diff",
@@ -5202,15 +5202,15 @@ def go_dependencies():
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_google",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/google",
-        sum = "h1:5sY4zK5cz127gqcUQyLHQUc6oAijf9cWLNyBATntBSg=",
-        version = "v0.0.0-20231222002716-51aa712b9bcc",
+        sum = "h1:bv17EeWRJavA4xxnXT8iJjKZB9eF9bhV2jOnHl/xcJU=",
+        version = "v0.0.0-20240325114905-87053fe51a82",
     )
     go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_google_beta",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta",
-        sum = "h1:BMYXT/otUbE7daoJLSvTHo6/WwEclPzpoH8m/8+M0Ws=",
-        version = "v0.0.0-20231222002716-51aa712b9bcc",
+        sum = "h1:oIc1606BRD16jY6TcfQurYiew8PAH/tBjhaxXK89J4Y=",
+        version = "v0.0.0-20240325114905-87053fe51a82",
     )
     go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_nobl9",
@@ -5294,8 +5294,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:aD4CM/TsPP91VTUL49ffUVLFmQu0AesOOrpWVebjwTY=",
-        version = "v0.0.0-20240313063445-cc5e093366ea",
+        sum = "h1:QnS7KZETcE9g2CvBCF423BMhIXIwtxuvck3N7SKBJC0=",
+        version = "v0.0.0-20240327102325-8cf8887a903a",
     )
     go_repository(
         name = "com_github_spaolacci_murmur3",
@@ -5537,13 +5537,6 @@ def go_dependencies():
         importpath = "github.com/tonistiigi/vt100",
         sum = "h1:Y/M5lygoNPKwVNLMPXgVfsRT40CSFKXCxuU8LoHySjs=",
         version = "v0.0.0-20230623042737-f9a4f7ef6531",
-    )
-    go_repository(
-        name = "com_github_twin_go_away",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/TwiN/go-away",
-        sum = "h1:aB6l/FPXmA5ds+V7I9zdhxzpsLLUvVtEuS++iU/ZmgE=",
-        version = "v1.6.13",
     )
     go_repository(
         name = "com_github_uber_gonduit",

@@ -65,6 +65,47 @@ func TestUser(t *testing.T) {
 		})
 	})
 
+	t.Run("by databaseID", func(t *testing.T) {
+		checkUserByUsername := func(t *testing.T) {
+			t.Helper()
+			RunTests(t, []*Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
+				{
+					user(databaseID:1) {
+						username
+					}
+				}
+			`,
+					ExpectedResult: `
+				{
+					"user": {
+						"username": "alice"
+					}
+				}
+			`,
+				},
+			})
+		}
+
+		users := dbmocks.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			assert.Equal(t, int32(1), id)
+			return &types.User{ID: 1, Username: "alice"}, nil
+		})
+		db.UsersFunc.SetDefaultReturn(users)
+
+		t.Run("allowed on Sourcegraph.com", func(t *testing.T) {
+			dotcom.MockSourcegraphDotComMode(t, true)
+			checkUserByUsername(t)
+		})
+
+		t.Run("allowed on non-Sourcegraph.com", func(t *testing.T) {
+			checkUserByUsername(t)
+		})
+	})
+
 	t.Run("by email", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
 		users.GetByVerifiedEmailFunc.SetDefaultHook(func(ctx context.Context, email string) (*types.User, error) {

@@ -2,6 +2,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:msp_delivery.bzl", "msp_delivery")
 
 go_binary(
     name = "telemetry-gateway",
@@ -64,3 +65,10 @@ go_library(
         "//lib/managedservicesplatform/runtime",
     ],
 )
+
+# msp_delivery(
+#     name = "msp_deploy",
+#     gcp_project = "telemetry-gateway-prod-acae",
+#     msp_service_id = "telemetry-gateway",
+#     repository = "index.docker.io/sourcegraph/telemetry-gateway",
+# )

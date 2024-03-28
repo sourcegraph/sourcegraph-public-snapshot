@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { describe, expect, test } from 'vitest'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import {
@@ -109,7 +110,7 @@ describe('RepoSettingsLogsPage', () => {
         const cmp = render(
             <BrowserRouter>
                 <MockedTestProvider mocks={[mockRecordedCommandsQuery]}>
-                    <RepoSettingsLogsPage repo={mockRepo} />
+                    <RepoSettingsLogsPage repo={mockRepo} telemetryRecorder={noOpTelemetryRecorder} />
                 </MockedTestProvider>
             </BrowserRouter>
         )
@@ -151,7 +152,7 @@ describe('RepoSettingsLogsPage', () => {
         const cmp = render(
             <BrowserRouter>
                 <MockedTestProvider mocks={[mockRecordedCommandsQuery]}>
-                    <RepoSettingsLogsPage repo={mockRepo} />
+                    <RepoSettingsLogsPage repo={mockRepo} telemetryRecorder={noOpTelemetryRecorder} />
                 </MockedTestProvider>
             </BrowserRouter>
         )
@@ -193,7 +194,7 @@ describe('RepoSettingsLogsPage', () => {
         const cmp = render(
             <BrowserRouter>
                 <MockedTestProvider mocks={[mockRecordedCommandsQuery]}>
-                    <RepoSettingsLogsPage repo={mockRepo} />
+                    <RepoSettingsLogsPage repo={mockRepo} telemetryRecorder={noOpTelemetryRecorder} />
                 </MockedTestProvider>
             </BrowserRouter>
         )

@@ -515,7 +515,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/roles',
         exact: true,
-        render: props => <SiteAdminRolesPage {...props} />,
+        render: props => <SiteAdminRolesPage telemetryRecorder={props.platformContext.telemetryRecorder} />,
     },
 
     // Own analytics

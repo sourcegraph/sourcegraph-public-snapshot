@@ -1,25 +1,26 @@
 <script lang="ts">
-    import { setContext } from 'svelte'
     import { writable } from 'svelte/store'
 
     import { browser, dev } from '$app/environment'
     import { isErrorLike } from '$lib/common'
-    import { TemporarySettingsStorage } from '$lib/shared'
-    import { isLightTheme, KEY, scrollAll, type SourcegraphContext } from '$lib/stores'
-    import { createTemporarySettingsStorage, temporarySetting } from '$lib/temporarySettings'
-    import { setThemeFromString } from '$lib/theme'
     import { classNames } from '$lib/dom'
+    import { TemporarySettingsStorage } from '$lib/shared'
+    import { isLightTheme, setAppContext, scrollAll } from '$lib/stores'
+    import { createTemporarySettingsStorage } from '$lib/temporarySettings'
 
     import Header from './Header.svelte'
 
     import './styles.scss'
 
-    import type { LayoutData } from './$types'
+    import { onDestroy } from 'svelte'
+
+    import { beforeNavigate } from '$app/navigation'
     import { createFeatureFlagStore, featureFlag } from '$lib/featureflags'
     import GlobalNotification from '$lib/global-notifications/GlobalNotifications.svelte'
     import { getGraphQLClient } from '$lib/graphql/apollo'
     import { isRouteRolledOut } from '$lib/navigation'
-    import { beforeNavigate } from '$app/navigation'
+
+    import type { LayoutData } from './$types'
 
     export let data: LayoutData
 
@@ -28,31 +29,32 @@
     // It's OK to set the temporary storage during initialization time because
     // sign-in/out currently performs a full page refresh
     const temporarySettingsStorage = createTemporarySettingsStorage(
-        data.user ? new TemporarySettingsStorage(getGraphQLClient(), true) : undefined
+        data.user
+            ? new TemporarySettingsStorage(getGraphQLClient(), true)
+            : // Logged out storage
+              new TemporarySettingsStorage(null, false)
     )
 
-    setContext<SourcegraphContext>(KEY, {
+    setAppContext({
         user,
         settings,
         temporarySettingsStorage,
         featureFlags: createFeatureFlagStore(data.featureFlags, data.fetchEvaluatedFeatureFlags),
     })
 
+    // We need to manually subscribe instead of using $isLightTheme because
+    // at the moment Svelte tries to automatically subscribe to the store
+    // the app context is not yet set.
+    let lightTheme = false
+    onDestroy(isLightTheme.subscribe(value => (lightTheme = value)))
+
     // Update stores when data changes
     $: $user = data.user ?? null
     $: $settings = isErrorLike(data.settings) ? null : data.settings
 
-    // Set initial, user configured theme
-    // TODO: This should be send be server in the HTML so that we don't flash the wrong theme
-    // on initial page load.
-    $: userTheme = temporarySetting('user.themePreference', 'System')
-    $: if (!$userTheme.loading && $userTheme.data) {
-        setThemeFromString($userTheme.data)
-    }
-
     $: if (browser) {
-        document.documentElement.classList.toggle('theme-light', $isLightTheme)
-        document.documentElement.classList.toggle('theme-dark', !$isLightTheme)
+        document.documentElement.classList.toggle('theme-light', lightTheme)
+        document.documentElement.classList.toggle('theme-dark', !lightTheme)
     }
 
     $: allRoutesEnabled = featureFlag('web-next')
@@ -77,6 +79,14 @@
         navigation.cancel()
         window.location.href = navigation.to.url.toString()
     })
+
+    $: currentUserID = data.user?.id
+    $: handleOptOut = currentUserID
+        ? async (): Promise<void> => {
+              await data.disableSvelteFeatureFlags(currentUserID)
+              window.location.reload()
+          }
+        : undefined
 </script>
 
 <svelte:head>
@@ -92,7 +102,7 @@
     {/if}
 {/await}
 
-<Header authenticatedUser={$user} />
+<Header authenticatedUser={$user} {handleOptOut} />
 
 <main>
     <slot />

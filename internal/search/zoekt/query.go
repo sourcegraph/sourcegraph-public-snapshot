@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/zoektquery"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	zoekt "github.com/sourcegraph/zoekt/query"
@@ -59,14 +60,14 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 	// TODO PathPatternsAreCaseSensitive
 	// TODO whitespace in file path patterns?
 	for _, i := range filesInclude {
-		q, err := FileRe(i, isCaseSensitive)
+		q, err := zoektquery.FileRe(i, isCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
 		and = append(and, q)
 	}
 	if len(filesExclude) > 0 {
-		q, err := FileRe(query.UnionRegExps(filesExclude), isCaseSensitive)
+		q, err := zoektquery.FileRe(query.UnionRegExps(filesExclude), isCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
@@ -144,7 +145,7 @@ func toZoektPattern(
 			fileNameOnly := patternMatchesPath && !patternMatchesContent
 			contentOnly := !patternMatchesPath && patternMatchesContent
 
-			q, err = parseRe(n.RegExpPattern(), fileNameOnly, contentOnly, isCaseSensitive)
+			q, err = zoektquery.ParseRe(n.RegExpPattern(), fileNameOnly, contentOnly, isCaseSensitive)
 			if err != nil {
 				return nil, err
 			}

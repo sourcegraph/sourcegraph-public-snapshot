@@ -170,7 +170,9 @@ export const routes: RouteObject[] = [
         path: PageRoutes.Insights,
         element: (
             <LegacyRoute
-                render={props => <CodeInsightsRouter {...props} />}
+                render={props => (
+                    <CodeInsightsRouter {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+                )}
                 condition={({ codeInsightsEnabled }) => !!codeInsightsEnabled}
             />
         ),
@@ -183,6 +185,7 @@ export const routes: RouteObject[] = [
                     <SearchJob
                         isAdmin={props.authenticatedUser?.siteAdmin ?? false}
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
                     />
                 )}
                 condition={isSearchJobsEnabled}
@@ -319,7 +322,11 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.Survey,
-        element: <LegacyRoute render={props => <SurveyPage {...props} />} />,
+        element: (
+            <LegacyRoute
+                render={props => <SurveyPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />}
+            />
+        ),
     },
     {
         path: PageRoutes.Help,
