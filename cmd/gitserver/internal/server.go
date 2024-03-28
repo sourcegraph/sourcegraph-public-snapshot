@@ -1183,7 +1183,6 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 			return err
 		}
 
-		repo = protocol.NormalizeRepo(repo)
 		dir := s.fs.RepoDir(repo)
 
 		remoteURL, err := s.getRemoteURL(ctx, repo)
