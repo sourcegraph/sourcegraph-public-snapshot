@@ -1,8 +1,8 @@
 ## Overview
 
 The upgradetest folder contains the code for release tooling intended used to asses the stability of a new migrator and frontend build before tagging a new release.
-The tooling takes the form of a cli interface and is intended to orchestrate a psuedo-release and upgrade using bazel built images. The tests are inocations of our services relevant to schema migrations and versioning.
-This test does not test Sourcegraph features, only the basic operations of database and frontend versioning.
+The tooling takes the form of a cli interface and is intended to orchestrate a psuedo-release and upgrade using bazel built images. The tests are invocations of our services relevant to schema migrations and versioning.
+This test does not test Sourcegraph features, only the basic operations of database and frontend version upgrades and schema coherence.
 
 Commands are intended to be invoked through Bazel, with each command executing tests intended to be run in CI. The CI tests treat the current repo branch of `sourcegraph/sourcegraph` as a prospective release.
 
