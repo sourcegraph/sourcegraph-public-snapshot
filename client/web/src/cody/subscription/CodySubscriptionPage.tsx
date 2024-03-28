@@ -18,6 +18,7 @@ import {
     Text,
     Tooltip,
     useSearchParameters,
+    Alert,
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -58,6 +59,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     const parameters = useSearchParameters()
 
     const utm_source = parameters.get('utm_source')
+    const redirectedForNoSubscription = useMemo(() => parameters.get('noSubscription') === '1', [parameters])
 
     const codyPaymentsUrl = useCodyPaymentsUrl()
     const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
@@ -91,6 +93,11 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         <>
             <Page className={classNames('d-flex flex-column')}>
                 <PageTitle title="Cody Subscription" />
+                {redirectedForNoSubscription && (
+                    <Alert variant="primary" className={styles.overflowVisible}>
+                        No subscription exists.
+                    </Alert>
+                )}
                 <PageHeader
                     className="mb-4"
                     actions={
