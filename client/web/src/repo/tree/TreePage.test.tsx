@@ -13,6 +13,12 @@ import { type RepositoryFields, RepositoryType } from '../../graphql-operations'
 
 import { type Props, TreePage } from './TreePage'
 
+// TreePage has a dependency on the `perforceChangelistMapping` experimental feature
+// in order to build an appropriately-worded Commits button.
+// The feature needs to be present to avoid errors.
+window.context = window.context || {}
+window.context.experimentalFeatures = { perforceChangelistMapping: 'disabled' }
+
 describe('TreePage', () => {
     afterEach(cleanup)
 
@@ -75,7 +81,6 @@ describe('TreePage', () => {
     describe('repo page', () => {
         it('displays a page that is not a fork', () => {
             const repo = repoDefaults()
-            repo.isFork = false
             const props = treePagePropsDefaults(repo)
             const result = renderWithBrandedContext(
                 <MockedProvider>
@@ -85,6 +90,43 @@ describe('TreePage', () => {
             expect(result.queryByTestId('repo-fork-badge')).not.toBeInTheDocument()
             // check for validity that repo header renders
             expect(result.queryByTestId('repo-header')).toBeInTheDocument()
+            expect(screen.getByText('Commits')).toBeEnabled()
+        })
+
+        it('displays a Perforce repository with Perforce language (at least in the Commits button)', () => {
+            // enable the feature that affects how the Commits button renders
+            window.context.experimentalFeatures = { perforceChangelistMapping: 'enabled' }
+            const repo = repoDefaults()
+            repo.sourceType = RepositoryType.PERFORCE_DEPOT
+            const props = treePagePropsDefaults(repo)
+            const render = renderWithBrandedContext(
+                <MockedProvider>
+                    <TreePage {...props} />
+                </MockedProvider>
+            )
+            // when `perforceChangelistMapping` is enabled,
+            // Perforce depots should display the Commits button using Perforce-centric language.
+            expect(render.queryByText('Changelists')).toBeEnabled()
+            expect(render.queryByText('Changelists')).toBeVisible()
+            expect(render.queryByText('Commits')).toBeNull()
+        })
+
+        it('displays a Perforce repository with Perforce language (at least in the Commits button)', () => {
+            // enable the feature that affects how the Commits button renders
+            window.context.experimentalFeatures = { perforceChangelistMapping: 'disabled' }
+            const repo = repoDefaults()
+            repo.sourceType = RepositoryType.PERFORCE_DEPOT
+            const props = treePagePropsDefaults(repo)
+            const render = renderWithBrandedContext(
+                <MockedProvider>
+                    <TreePage {...props} />
+                </MockedProvider>
+            )
+            // when `perforceChangelistMapping` is disabled,
+            // Perforce depots should display the Commits button using the same langauge as Git repos.
+            expect(render.queryByText('Commits')).toBeEnabled()
+            expect(render.queryByText('Commits')).toBeVisible()
+            expect(render.queryByText('Changelists')).toBeNull()
         })
 
         it('displays a page that is a fork', () => {
@@ -99,7 +141,7 @@ describe('TreePage', () => {
             expect(result.queryByTestId('repo-fork-badge')).toHaveTextContent('Fork')
         })
 
-        it('Should displays cody CTA', () => {
+        it('Should display cody CTA', () => {
             const repo = repoDefaults()
             const props = treePagePropsDefaults(repo)
             window.context = window.context || {}
