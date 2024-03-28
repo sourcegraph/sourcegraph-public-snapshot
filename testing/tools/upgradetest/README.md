@@ -38,7 +38,8 @@ bazel test //testing/tools/upgradetest:sh_upgradetest -- <test args>
 
 ### Run in CI
 
-Presently, the test runner is not plugged in CI, so the only way to get it to run is to trigger a custom build performing that specific test (i.e. a `bazel-do` CI runtype) 
+Presently, the test runner is not plugged in CI, so the only way to get it to run is to trigger a custom build performing that specific test (i.e. a `bazel-do` CI runtype)
+
 ```bash
 sg ci bazel run //testing/tools/upgradetest:sh_upgradetest
 ```
