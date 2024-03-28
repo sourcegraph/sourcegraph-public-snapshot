@@ -196,8 +196,8 @@ func (g *gitCLIBackend) getBlobOID(ctx context.Context, commit api.CommitID, pat
 }
 
 // Stat returns a FileInfo describing the named file at commit. If the file is a
-// symbolic link, the returned FileInfo describes the symbolic link. lStat makes
-// no attempt to follow the link.
+// symbolic link, the returned FileInfo describes the symbolic link. It makes no
+// attempt to follow the link.
 func (g *gitCLIBackend) Stat(ctx context.Context, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
 	if err := checkSpecArgSafety(string(commit)); err != nil {
 		return nil, err
@@ -225,7 +225,12 @@ func (g *gitCLIBackend) Stat(ctx context.Context, commit api.CommitID, path stri
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = errors.Append(err, it.Close()) }()
+	defer func() {
+		closeErr := it.Close()
+		if err == nil {
+			err = closeErr
+		}
+	}()
 
 	fi, err := it.Next()
 	if err != nil {
@@ -253,7 +258,7 @@ func (g *gitCLIBackend) lsTree(ctx context.Context, commit api.CommitID, path st
 		return nil, err
 	}
 
-	// Don't call filepath.Clean(path) because ReadDir needs to pass
+	// Note: We don't call filepath.Clean(path) because ReadDir needs to pass
 	// path with a trailing slash.
 
 	if err := checkSpecArgSafety(path); err != nil {
@@ -267,7 +272,7 @@ func (g *gitCLIBackend) lsTree(ctx context.Context, commit api.CommitID, path st
 		string(commit),
 	}
 	if recurse {
-		args = append(args, "-r", "-t")
+		args = append(args, "-r", "-t") // -t: Show tree entries even when going to recurse them.
 	}
 	if path != "" {
 		args = append(args, "--", filepath.ToSlash(path))
@@ -278,26 +283,36 @@ func (g *gitCLIBackend) lsTree(ctx context.Context, commit api.CommitID, path st
 		return nil, err
 	}
 
-	defer func() {
-		if closeErr := r.Close(); closeErr != nil {
-			var cfe CommandFailedError
-			if errors.As(closeErr, &cfe) {
-				if bytes.Contains(cfe.Stderr, []byte("exists on disk, but not in")) {
-					err = &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(path), Err: os.ErrNotExist}
-				}
-			} else {
-				err = errors.Append(err, closeErr)
-			}
-		}
-	}()
-
 	sc := bufio.NewScanner(r)
-
 	trimPath := strings.TrimPrefix(path, "./")
-	fis := make([]fs.FileInfo, 0)
 
-	for sc.Scan() {
-		line := sc.Text()
+	return &readDirIterator{
+		ctx:      ctx,
+		g:        g,
+		sc:       sc,
+		repoName: g.repoName,
+		commit:   commit,
+		path:     path,
+		trimPath: trimPath,
+		r:        r,
+	}, nil
+}
+
+type readDirIterator struct {
+	ctx      context.Context
+	g        *gitCLIBackend
+	sc       *bufio.Scanner
+	repoName api.RepoName
+	commit   api.CommitID
+	path     string
+	trimPath string
+	fdsSeen  int
+	r        io.ReadCloser
+}
+
+func (it *readDirIterator) Next() (fs.FileInfo, error) {
+	for it.sc.Scan() {
+		line := it.sc.Text()
 		if line == "" {
 			continue
 		}
@@ -308,10 +323,10 @@ func (g *gitCLIBackend) lsTree(ctx context.Context, commit api.CommitID, path st
 		}
 		info := strings.SplitN(line[:tabPos], " ", 4)
 		name := line[tabPos+1:]
-		if len(name) < len(trimPath) {
+		if len(name) < len(it.trimPath) {
 			// This is in a submodule; return the original path to avoid a slice out of bounds panic
 			// when setting the FileInfo._Name below.
-			name = trimPath
+			name = it.trimPath
 		}
 
 		if len(info) != 4 {
@@ -344,7 +359,7 @@ func (g *gitCLIBackend) lsTree(ctx context.Context, commit api.CommitID, path st
 		}
 
 		loadModConf := sync.OnceValues(func() (config.Config, error) {
-			return g.gitModulesConfig(ctx, commit)
+			return it.g.gitModulesConfig(it.ctx, it.commit)
 		})
 
 		mode := os.FileMode(modeVal)
@@ -380,40 +395,55 @@ func (g *gitCLIBackend) lsTree(ctx context.Context, commit api.CommitID, path st
 			sys = objectInfo(oid)
 		}
 
-		fis = append(fis, &fileutil.FileInfo{
+		it.fdsSeen++
+
+		return &fileutil.FileInfo{
 			Name_: name, // full path relative to root (not just basename)
 			Mode_: mode,
 			Size_: size,
 			Sys_:  sys,
-		})
+		}, nil
 	}
-	if err := sc.Err(); err != nil {
+
+	if err := it.sc.Err(); err != nil {
 		var cfe *CommandFailedError
 		if errors.As(err, &cfe) {
 			if bytes.Contains(cfe.Stderr, []byte("exists on disk, but not in")) {
-				return nil, &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(path), Err: os.ErrNotExist}
+				return nil, &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(it.path), Err: os.ErrNotExist}
 			}
 			if cfe.ExitStatus == 128 && bytes.Contains(cfe.Stderr, []byte("fatal: not a tree object")) {
-				return nil, &gitdomain.RevisionNotFoundError{Repo: g.repoName, Spec: string(commit)}
+				return nil, &gitdomain.RevisionNotFoundError{Repo: it.repoName, Spec: string(it.commit)}
 			}
 		}
 		return nil, err
 	}
 
-	if len(fis) == 0 {
-		// If we are listing the empty root tree, we will have no output.
-		if filepath.Clean(path) == "." {
-			return []fs.FileInfo{}, nil
+	// If we are listing the empty root tree, we will have no output.
+	if it.fdsSeen == 0 {
+		if filepath.Clean(it.path) == "." {
+			return nil, io.EOF
 		}
-		return nil, &os.PathError{Op: "git ls-tree", Path: path, Err: os.ErrNotExist}
-
+		return nil, &os.PathError{Op: "git ls-tree", Path: it.path, Err: os.ErrNotExist}
 	}
 
-	// TODO: Needed? This will break chunking and requires all entries to be loaded
-	// into memory.
-	fileutil.SortFileInfosByName(fis)
+	return nil, io.EOF
+}
 
-	return fis, nil
+func (it *readDirIterator) Close() error {
+	if err := it.r.Close(); err != nil {
+		var cfe CommandFailedError
+		if errors.As(err, &cfe) {
+			if bytes.Contains(cfe.Stderr, []byte("exists on disk, but not in")) {
+				return &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(it.path), Err: os.ErrNotExist}
+			}
+			if cfe.ExitStatus == 128 && bytes.Contains(cfe.Stderr, []byte("fatal: not a tree object")) {
+				return &gitdomain.RevisionNotFoundError{Repo: it.repoName, Spec: string(it.commit)}
+			}
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (g *gitCLIBackend) gitModulesConfig(ctx context.Context, commit api.CommitID) (config.Config, error) {

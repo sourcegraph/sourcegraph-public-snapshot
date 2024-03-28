@@ -557,8 +557,17 @@ func TestGitCLIBackend_ReadDir(t *testing.T) {
 	})
 
 	t.Run("read root", func(t *testing.T) {
-		fis, err := backend.ReadDir(ctx, commitID, "", false)
+		it, err := backend.ReadDir(ctx, commitID, "", false)
 		require.NoError(t, err)
+		fis := make([]fs.FileInfo, 0)
+		for {
+			fi, err := it.Next()
+			if err == io.EOF {
+				break
+			}
+			require.NoError(t, err)
+			fis = append(fis, fi)
+		}
 		require.Equal(t, []fs.FileInfo{
 			&fileutil.FileInfo{
 				Name_: ".gitmodules",
@@ -598,8 +607,17 @@ func TestGitCLIBackend_ReadDir(t *testing.T) {
 	})
 
 	t.Run("read root recursive", func(t *testing.T) {
-		fis, err := backend.ReadDir(ctx, commitID, "", true)
+		it, err := backend.ReadDir(ctx, commitID, "", true)
 		require.NoError(t, err)
+		fis := make([]fs.FileInfo, 0)
+		for {
+			fi, err := it.Next()
+			if err == io.EOF {
+				break
+			}
+			require.NoError(t, err)
+			fis = append(fis, fi)
+		}
 		require.Equal(t, []fs.FileInfo{
 			&fileutil.FileInfo{
 				Name_: ".gitmodules",
