@@ -9,7 +9,12 @@ import { LoaderButton } from '../../../components/LoaderButton'
 import { PageTitle } from '../../../components/PageTitle'
 import type { Scalars } from '../../../graphql-operations'
 
-import { SET_USER_CODE_COMPLETIONS_QUOTA, SET_USER_COMPLETIONS_QUOTA, USER_REQUEST_QUOTAS } from './backend'
+import {
+    SET_USER_CODE_COMPLETIONS_QUOTA,
+    SET_USER_COMPLETIONS_QUOTA,
+    SET_USER_COMPLETIONS_QUOTA_NOTE,
+    USER_REQUEST_QUOTAS,
+} from './backend'
 
 interface Props {
     user: {
@@ -23,6 +28,7 @@ export const UserQuotaProfilePage: React.FunctionComponent<React.PropsWithChildr
     const { data, loading, error } = useQuery(USER_REQUEST_QUOTAS, { variables: { userID } })
     const [quota, setQuota] = useState<string>('')
     const [codeCompletionsQuota, setCodeCompletionsQuota] = useState<string>('')
+    const [completionsQuotaNote, setCompletionsQuotaNote] = useState<string>('')
 
     const [
         setUserCompletionsQuota,
@@ -42,6 +48,15 @@ export const UserQuotaProfilePage: React.FunctionComponent<React.PropsWithChildr
         },
     ] = useMutation(SET_USER_CODE_COMPLETIONS_QUOTA)
 
+    const [
+        setUserCompletionsQuotaNote,
+        {
+            data: setCompletionsQuotaNoteResponse,
+            loading: setUserCompletionsQuotaNoteLoading,
+            error: setUserCompletionsQuotaNoteError,
+        },
+    ] = useMutation(SET_USER_COMPLETIONS_QUOTA_NOTE)
+
     useEffect(() => {
         if (data?.node?.__typename === 'User' && data.node.completionsQuotaOverride !== null) {
             setQuota(data.node.completionsQuotaOverride)
@@ -54,6 +69,12 @@ export const UserQuotaProfilePage: React.FunctionComponent<React.PropsWithChildr
         } else {
             // No overridden limit.
             setCodeCompletionsQuota('')
+        }
+
+        if (data?.node?.__typename === 'User' && data.node.codeCompletionsQuotaOverride !== null) {
+            setCompletionsQuotaNote(data.node.completionsQuotaOverrideNote)
+        } else {
+            setCompletionsQuotaNote('')
         }
     }, [data])
 
@@ -79,6 +100,12 @@ export const UserQuotaProfilePage: React.FunctionComponent<React.PropsWithChildr
         }
     }, [setCodeCompletionsQuotaResponse])
 
+    useEffect(() => {
+        if (setCompletionsQuotaNoteResponse) {
+            setCompletionsQuotaNote(setCompletionsQuotaNoteResponse.completionsQuotaOverrideNote)
+        }
+    }, [setCodeCompletionsQuotaResponse])
+
     const storeCompletionsQuota = useCallback(() => {
         setUserCompletionsQuota({ variables: { userID, quota: quota === '' ? null : parseInt(quota, 10) } }).catch(
             error => {
@@ -94,6 +121,15 @@ export const UserQuotaProfilePage: React.FunctionComponent<React.PropsWithChildr
             logger.error(error)
         })
     }, [codeCompletionsQuota, userID, setUserCodeCompletionsQuota])
+
+    const storeCompletionsQuotaNote = useCallback(() => {
+        setUserCompletionsQuotaNote({
+            variables: { userID, note: completionsQuotaNote },
+        }).catch(error => {
+            logger.error(error)
+        })
+    }, [completionsQuotaNote, userID, setUserCompletionsQuotaNote])
+
 
     if (loading) {
         return <LoadingSpinner />
@@ -179,6 +215,30 @@ export const UserQuotaProfilePage: React.FunctionComponent<React.PropsWithChildr
                 {setUserCodeCompletionsQuotaError && (
                     <ErrorAlert error={setUserCodeCompletionsQuotaError} className="mb-0" />
                 )}
+
+                <H3>Note</H3>
+                <Text>Optional message to describe why any overrides were applied.</Text>
+                <div className="d-flex justify-content-between align-items-end mb-5">
+                    <Input
+                        id="completions-quota-note"
+                        name="completions-quota-note"
+                        type="text"
+                        value={completionsQuotaNote}
+                        onChange={event => setCompletionsQuotaNote(event.currentTarget.value)}
+                        spellCheck={true}
+                        disabled={setUserCompletionsQuotaNoteLoading}
+                        className="flex-grow-1 mb-0"
+                    />
+                    <LoaderButton
+                        loading={setUserCompletionsQuotaNoteLoading}
+                        label="Save"
+                        onClick={storeCompletionsQuotaNote}
+                        disabled={setUserCompletionsQuotaNoteLoading}
+                        variant="primary"
+                        className="ml-2"
+                    />
+                </div>
+                {setUserCompletionsQuotaNoteError && <ErrorAlert error={setUserCompletionsQuotaNoteError} className="mb-0" />}
             </Container>
         </>
     )
