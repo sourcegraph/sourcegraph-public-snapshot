@@ -3,22 +3,24 @@
 
     import { browser, dev } from '$app/environment'
     import { isErrorLike } from '$lib/common'
+    import { classNames } from '$lib/dom'
     import { TemporarySettingsStorage } from '$lib/shared'
     import { isLightTheme, setAppContext, scrollAll } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
-    import { classNames } from '$lib/dom'
 
     import Header from './Header.svelte'
 
     import './styles.scss'
 
-    import type { LayoutData } from './$types'
+    import { onDestroy } from 'svelte'
+
+    import { beforeNavigate } from '$app/navigation'
     import { createFeatureFlagStore, featureFlag } from '$lib/featureflags'
     import GlobalNotification from '$lib/global-notifications/GlobalNotifications.svelte'
     import { getGraphQLClient } from '$lib/graphql/apollo'
     import { isRouteRolledOut } from '$lib/navigation'
-    import { beforeNavigate } from '$app/navigation'
-    import { onDestroy } from 'svelte'
+
+    import type { LayoutData } from './$types'
 
     export let data: LayoutData
 
@@ -77,6 +79,14 @@
         navigation.cancel()
         window.location.href = navigation.to.url.toString()
     })
+
+    $: currentUserID = data.user?.id
+    $: handleOptOut = currentUserID
+        ? async (): Promise<void> => {
+              await data.disableSvelteFeatureFlags(currentUserID)
+              window.location.reload()
+          }
+        : undefined
 </script>
 
 <svelte:head>
@@ -92,7 +102,7 @@
     {/if}
 {/await}
 
-<Header authenticatedUser={$user} />
+<Header authenticatedUser={$user} {handleOptOut} />
 
 <main>
     <slot />
