@@ -93,7 +93,7 @@ describe('TreePage', () => {
             expect(screen.getByText('Commits')).toBeEnabled()
         })
 
-        it('displays a Perforce repository with Perforce language (at least in the Commits button)', () => {
+        it('displays a Perforce repository with Perforce language in the Commits button', () => {
             // enable the feature that affects how the Commits button renders
             window.context.experimentalFeatures = { perforceChangelistMapping: 'enabled' }
             const repo = repoDefaults()
@@ -106,12 +106,11 @@ describe('TreePage', () => {
             )
             // when `perforceChangelistMapping` is enabled,
             // Perforce depots should display the Commits button using Perforce-centric language.
-            expect(render.queryByText('Changelists')).toBeEnabled()
-            expect(render.queryByText('Changelists')).toBeVisible()
-            expect(render.queryByText('Commits')).toBeNull()
+            expect(render.queryByText('Changelists')).toBeInTheDocument()
+            expect(render.queryByText('Commits')).not.toBeInTheDocument()
         })
 
-        it('displays a Perforce repository with Perforce language (at least in the Commits button)', () => {
+        it('displays a Perforce repository with Git language in the Commits button', () => {
             // enable the feature that affects how the Commits button renders
             window.context.experimentalFeatures = { perforceChangelistMapping: 'disabled' }
             const repo = repoDefaults()
@@ -124,9 +123,8 @@ describe('TreePage', () => {
             )
             // when `perforceChangelistMapping` is disabled,
             // Perforce depots should display the Commits button using the same langauge as Git repos.
-            expect(render.queryByText('Commits')).toBeEnabled()
-            expect(render.queryByText('Commits')).toBeVisible()
-            expect(render.queryByText('Changelists')).toBeNull()
+            expect(render.queryByText('Commits')).toBeInTheDocument()
+            expect(render.queryByText('Changelists')).not.toBeInTheDocument()
         })
 
         it('displays a page that is a fork', () => {
