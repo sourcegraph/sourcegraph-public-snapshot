@@ -1,6 +1,5 @@
 <script lang="ts">
     import { browser } from '$app/environment'
-    import { page } from '$app/stores'
     import { mark } from '$lib/images'
     import Popover from '$lib/Popover.svelte'
     import { Badge, Button } from '$lib/wildcard'
@@ -11,15 +10,11 @@
     import UserMenu from './UserMenu.svelte'
 
     export let authenticatedUser: Header_User | null | undefined
+    export let handleOptOut: (() => Promise<void>) | undefined
 
     const isDevOrS2 =
         (browser && window.location.hostname === 'localhost') ||
         window.location.hostname === 'sourcegraph.sourcegraph.com'
-
-    async function handleOptOut() {
-        await $page.data.disableSvelteFeatureFlags()
-        window.location.reload()
-    }
 </script>
 
 <header>
@@ -50,7 +45,10 @@
                     >.
                 </p>
             {/if}
-            Or you can <button role="link" class="opt-out" on:click={handleOptOut}>opt out</button> of the Sveltekit experiment.
+            {#if handleOptOut}
+                Or you can <button role="link" class="opt-out" on:click={handleOptOut}>opt out</button> of the Sveltekit
+                experiment.
+            {/if}
         </div>
     </Popover>
     <div>
@@ -79,10 +77,7 @@
     }
 
     .opt-out {
-        background: none;
-        border: none;
-        padding: 0;
-        font: inherit;
+        all: unset;
         cursor: pointer;
         color: var(--link-color);
         text-decoration: underline;

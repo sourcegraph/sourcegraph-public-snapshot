@@ -62,10 +62,10 @@ export const load: LayoutLoad = async ({ fetch }) => {
             }
             return result.data.evaluatedFeatureFlags
         },
-        disableSvelteFeatureFlags: async () => {
+        disableSvelteFeatureFlags: async (userID: string) => {
             const mutationResult = await client.mutation(
                 DisableSveltePrototype,
-                { userID: result?.data?.currentUser?.id },
+                { userID },
                 { requestPolicy: 'network-only', fetch }
             )
             if (!mutationResult.data || mutationResult.error) {
