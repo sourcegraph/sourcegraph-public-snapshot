@@ -60,3 +60,35 @@ oci_push(
     image = ":image",
     repository = image_repository("prometheus"),
 )
+
+oci_image(
+    name = "image_gcp",
+    base = "@wolfi_prometheus_gcp_base",
+    entrypoint = ["/bin/prom-wrapper"],
+    tars = [":config_tar"],
+    user = "sourcegraph",
+)
+
+oci_tarball(
+    name = "image_gcp_tarball",
+    image = ":image_gcp",
+    repo_tags = ["prometheus-gcp:candidate"],
+)
+
+container_structure_test(
+    name = "image_gcp_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image_gcp",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_push(
+    name = "gcp_candidate_push",
+    image = ":image_gcp",
+    repository = image_repository("prometheus-gcp"),
+)

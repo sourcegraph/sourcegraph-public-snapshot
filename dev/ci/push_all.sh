@@ -65,6 +65,10 @@ function create_push_command() {
     repository="scip-ctags"
   fi
 
+  if [[ "$target" == "//docker-images/prometheus:gcp_candidate_push" ]]; then
+    repository="prometheus-gcp"
+  fi
+
   repositories_args=""
   for registry in "${registries[@]}"; do
     repositories_args="$repositories_args --repository ${registry}/${repository}"
