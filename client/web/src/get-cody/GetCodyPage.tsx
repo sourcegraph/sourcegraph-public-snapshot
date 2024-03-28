@@ -29,7 +29,7 @@ interface WaitListButtonProps {
 
 interface GetCodyPageProps {
     authenticatedUser: AuthenticatedUser | null
-    context: Pick<SourcegraphContext, 'authProviders'>
+    context: Pick<SourcegraphContext, 'externalURL'>
 }
 
 const SOURCEGRAPH_MAC_SILICON = 'https://sourcegraph.com/.api/app/latest?arch=aarch64&target=darwin'
@@ -53,6 +53,8 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
     useEffect(() => {
         if (authenticatedUser) {
             navigate(`/cody/manage${search || ''}`)
+        } else {
+            navigate('/cody')
         }
     }, [authenticatedUser, navigate, search])
 

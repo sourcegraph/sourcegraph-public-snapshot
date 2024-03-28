@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "regex": "^Check that imports in Go sources match importpath attributes in deps.$",
+    "command": "sg",
+    "args": ["bazel", "configure"]
+  },
+  {
+    "regex": "missing input file",
+    "command": "sg",
+    "args": ["bazel", "configure"]
+  },
+  {
+    "regex": ": undefined:",
+    "command": "sg",
+    "args": ["bazel", "configure"]
+  }
+]

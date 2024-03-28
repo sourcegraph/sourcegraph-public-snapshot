@@ -11,53 +11,53 @@ import (
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
-	zoektquery "github.com/sourcegraph/zoekt/query"
+	"github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
-	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/internal/search/zoektquery"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func handleFilePathPatterns(query *protocol.PatternInfo) (zoektquery.Q, error) {
-	var and []zoektquery.Q
+func handleFilePathPatterns(patternInfo *protocol.PatternInfo) (query.Q, error) {
+	var and []query.Q
 
 	// Zoekt uses regular expressions for file paths.
 	// Unhandled cases: PathPatternsAreCaseSensitive and whitespace in file path patterns.
-	for _, p := range query.IncludePaths {
-		q, err := zoektutil.FileRe(p, query.IsCaseSensitive)
+	for _, p := range patternInfo.IncludePaths {
+		q, err := zoektquery.FileRe(p, patternInfo.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
 		and = append(and, q)
 	}
-	if query.ExcludePaths != "" {
-		q, err := zoektutil.FileRe(query.ExcludePaths, query.IsCaseSensitive)
+	if patternInfo.ExcludePaths != "" {
+		q, err := zoektquery.FileRe(patternInfo.ExcludePaths, patternInfo.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
-		and = append(and, &zoektquery.Not{Child: q})
+		and = append(and, &query.Not{Child: q})
 	}
 
-	return zoektquery.NewAnd(and...), nil
+	return query.NewAnd(and...), nil
 }
 
-func buildQuery(pattern string, branchRepos []zoektquery.BranchRepos, filePathPatterns zoektquery.Q, shortcircuit bool) (zoektquery.Q, error) {
+func buildQuery(pattern string, branchRepos []query.BranchRepos, filePathPatterns query.Q, shortcircuit bool) (query.Q, error) {
 	regexString := comby.StructuralPatToRegexpQuery(pattern, shortcircuit)
 	if len(regexString) == 0 {
-		return &zoektquery.Const{Value: true}, nil
+		return &query.Const{Value: true}, nil
 	}
 	re, err := syntax.Parse(regexString, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
 	if err != nil {
 		return nil, err
 	}
-	return zoektquery.NewAnd(
-		&zoektquery.BranchesRepos{List: branchRepos},
+	return query.NewAnd(
+		&query.BranchesRepos{List: branchRepos},
 		filePathPatterns,
-		&zoektquery.Regexp{
+		&query.Regexp{
 			Regexp:        re,
 			CaseSensitive: true,
 			Content:       true,
@@ -71,7 +71,7 @@ func buildQuery(pattern string, branchRepos []zoektquery.BranchRepos, filePathPa
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, logger log.Logger, client zoekt.Streamer, args *protocol.PatternInfo, branchRepos []zoektquery.BranchRepos, contextLines int32, since func(t time.Time) time.Duration, repo api.RepoName, sender matchSender) (err error) {
+func zoektSearch(ctx context.Context, logger log.Logger, client zoekt.Streamer, args *protocol.PatternInfo, branchRepos []query.BranchRepos, contextLines int32, since func(t time.Time) time.Duration, repo api.RepoName, sender matchSender) (err error) {
 	if len(branchRepos) == 0 {
 		return nil
 	}

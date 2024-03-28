@@ -84,7 +84,9 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	if len(fileContainsPatterns) > 0 {
 		newNodes := make([]query.Node, 0, len(fileContainsPatterns)+1)
 		for _, pat := range fileContainsPatterns {
-			newNodes = append(newNodes, query.Pattern{Value: pat})
+			node := query.Pattern{Value: pat}
+			node.Annotation.Labels.Set(query.Regexp)
+			newNodes = append(newNodes, node)
 		}
 		if b.Pattern != nil {
 			newNodes = append(newNodes, b.Pattern)
@@ -96,7 +98,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		// This block generates jobs that can be built directly from
 		// a basic query rather than first being expanded into
 		// flat queries.
-		resultTypes := computeResultTypes(b, inputs.PatternType)
+		resultTypes := computeResultTypes(b, inputs.PatternType, defaultResultTypes)
 		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.DefaultLimit()))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 		repoOptions := toRepoOptions(b, inputs.UserSettings)
@@ -171,13 +173,21 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 			diff := resultTypes.Has(result.TypeDiff)
 			repoOptionsCopy := repoOptions
 			repoOptionsCopy.OnlyCloned = true
-			addJob(&commit.SearchJob{
+
+			commitSearchJob := &commit.SearchJob{
 				Query:                commit.QueryToGitQuery(originalQuery, diff),
-				RepoOpts:             repoOptionsCopy,
 				Diff:                 diff,
 				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker) || own,
-			})
+			}
+
+			addJob(
+				&repoPagerJob{
+					child:            &reposPartialJob{commitSearchJob},
+					repoOpts:         repoOptionsCopy,
+					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
+					skipPartitioning: true,
+				})
 		}
 
 		addJob(&searchrepos.ComputeExcludedJob{
@@ -354,7 +364,7 @@ func orderRacingJobs(j job.Job) job.Job {
 // NewFlatJob creates all jobs that are built from a query.Flat.
 func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 	maxResults := f.MaxResults(searchInputs.DefaultLimit())
-	resultTypes := computeResultTypes(f.ToBasic(), searchInputs.PatternType)
+	resultTypes := computeResultTypes(f.ToBasic(), searchInputs.PatternType, defaultResultTypes)
 
 	// searcher to use full deadline if timeout: set or we are not batch.
 	useFullDeadline := f.GetTimeout() != nil || f.Count() != nil || searchInputs.Protocol != search.Batch
@@ -510,7 +520,7 @@ func getPathRegexps(b query.Basic, p *search.TextPatternInfo) (pathRegexps []*re
 		if p.IsCaseSensitive {
 			pathRegexps = append(pathRegexps, regexp.MustCompile(pattern))
 		} else {
-			pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+pattern))
+			pathRegexps = append(pathRegexps, regexp.MustCompile(query.CaseInsensitiveRegExp(pattern)))
 		}
 	}
 
@@ -526,7 +536,7 @@ func getPathRegexps(b query.Basic, p *search.TextPatternInfo) (pathRegexps []*re
 			if p.IsCaseSensitive {
 				pathRegexps = append(pathRegexps, regexp.MustCompile(pattern))
 			} else {
-				pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+pattern))
+				pathRegexps = append(pathRegexps, regexp.MustCompile(query.CaseInsensitiveRegExp(pattern)))
 			}
 		})
 	}
@@ -588,7 +598,7 @@ func contributorsAsRegexp(contributors []string, isCaseSensitive bool) (res []*r
 		if isCaseSensitive {
 			res = append(res, regexp.MustCompile(pattern))
 		} else {
-			res = append(res, regexp.MustCompile(`(?i)`+pattern))
+			res = append(res, regexp.MustCompile(query.CaseInsensitiveRegExp(pattern)))
 		}
 	}
 	return res
@@ -717,9 +727,11 @@ func toLangFilters(aliases []string) []string {
 	return filters
 }
 
+const defaultResultTypes = result.TypeFile | result.TypePath | result.TypeRepo
+
 // computeResultTypes returns result types based three inputs: `type:...` in the query,
 // the `pattern`, and top-level `searchType` (coming from a GQL value).
-func computeResultTypes(b query.Basic, searchType query.SearchType) result.Types {
+func computeResultTypes(b query.Basic, searchType query.SearchType, defaultTypes result.Types) result.Types {
 	if searchType == query.SearchTypeStructural && !b.IsEmptyPattern() {
 		return result.TypeStructural
 	}
@@ -728,21 +740,21 @@ func computeResultTypes(b query.Basic, searchType query.SearchType) result.Types
 
 	if len(types) == 0 && b.Pattern != nil {
 		// When the pattern is set via `content:`, we set the annotation on
-		// the pattern to IsAlias. So if all Patterns are from content: we
+		// the pattern to IsContent. So if all Patterns are from content: we
 		// should only search TypeFile.
 		hasPattern := false
-		allIsAlias := true
+		allIsContent := true
 		query.VisitPattern([]query.Node{b.Pattern}, func(value string, negated bool, annotation query.Annotation) {
 			hasPattern = true
-			allIsAlias = allIsAlias && annotation.Labels.IsSet(query.IsAlias)
+			allIsContent = allIsContent && annotation.Labels.IsSet(query.IsContent)
 		})
-		if hasPattern && allIsAlias {
+		if hasPattern && allIsContent {
 			return result.TypeFile
 		}
 	}
 
 	if len(types) == 0 {
-		return result.TypeFile | result.TypePath | result.TypeRepo
+		return defaultTypes
 	}
 
 	var rts result.Types
@@ -918,7 +930,7 @@ func zoektQueryPatternsAsRegexps(q zoektquery.Q) (res []*regexp.Regexp) {
 				if typedQ.CaseSensitive {
 					res = append(res, regexp.MustCompile(typedQ.Regexp.String()))
 				} else {
-					res = append(res, regexp.MustCompile(`(?i)`+typedQ.Regexp.String()))
+					res = append(res, regexp.MustCompile(query.CaseInsensitiveRegExp(typedQ.Regexp.String())))
 				}
 			}
 		case *zoektquery.Substring:
@@ -926,7 +938,7 @@ func zoektQueryPatternsAsRegexps(q zoektquery.Q) (res []*regexp.Regexp) {
 				if typedQ.CaseSensitive {
 					res = append(res, regexp.MustCompile(regexp.QuoteMeta(typedQ.Pattern)))
 				} else {
-					res = append(res, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(typedQ.Pattern)))
+					res = append(res, regexp.MustCompile(query.CaseInsensitiveRegExp(regexp.QuoteMeta(typedQ.Pattern))))
 				}
 			}
 		}

@@ -23,6 +23,7 @@ import {
     getRevision,
 } from '@sourcegraph/shared/src/search/stream'
 import { useSettings, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Icon } from '@sourcegraph/wildcard'
 
@@ -201,6 +202,8 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                     className={resultStyles.copyButton}
                     filePath={result.path}
                     telemetryService={telemetryService}
+                    // TODO (dadlerj): update to use a real telemetry recorder
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             </span>
         </>

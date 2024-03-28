@@ -3,11 +3,14 @@ package tracer
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync/atomic"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/embedded"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 )
 
@@ -61,14 +64,32 @@ type loggedOtelTracer struct {
 
 var _ oteltrace.Tracer = &loggedOtelTracer{}
 
+var metricCreatedSpans = promauto.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "otelsdk",
+	Subsystem: "tracer",
+	Name:      "spans",
+}, []string{"recording", "sampled", "valid"})
+
 func (t *loggedOtelTracer) Start(ctx context.Context, spanName string, opts ...oteltrace.SpanStartOption) (context.Context, oteltrace.Span) {
 	ctx, span := t.tracer.Start(ctx, spanName, opts...)
+
+	// Wrap the start of the span with instrumentation, as the SDK does not
+	// provide any out of the box.
+	metricCreatedSpans.
+		With(prometheus.Labels{
+			"recording": strconv.FormatBool(span.IsRecording()),
+			"sampled":   strconv.FormatBool(span.SpanContext().IsSampled()),
+			"valid":     strconv.FormatBool(span.SpanContext().IsValid()),
+		}).
+		Add(1)
+
 	if t.debug.Load() {
-		t.logger.Info("Start",
+		t.logger.Info("SpanStart",
 			log.String("spanName", spanName),
 			log.Bool("isRecording", span.IsRecording()),
 			log.Bool("isSampled", span.SpanContext().IsSampled()),
 			log.Bool("isValid", span.SpanContext().IsValid()))
 	}
+
 	return ctx, span
 }

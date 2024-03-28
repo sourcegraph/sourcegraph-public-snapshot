@@ -37,7 +37,7 @@ type service interface {
 	LogIfCorrupt(context.Context, api.RepoName, error)
 	MaybeStartClone(ctx context.Context, repo api.RepoName) (notFound *protocol.NotFoundPayload, cloned bool)
 	IsRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error)
-	RepoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
+	RepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
 	CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error)
 	SearchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error)
 	EnsureRevision(ctx context.Context, repo api.RepoName, rev string) (didUpdate bool)
@@ -440,18 +440,19 @@ func (gs *grpcServer) RepoDelete(ctx context.Context, req *proto.RepoDeleteReque
 	return &proto.RepoDeleteResponse{}, nil
 }
 
-func (gs *grpcServer) RepoUpdate(_ context.Context, req *proto.RepoUpdateRequest) (*proto.RepoUpdateResponse, error) {
+func (gs *grpcServer) RepoUpdate(ctx context.Context, req *proto.RepoUpdateRequest) (*proto.RepoUpdateResponse, error) {
 	var in protocol.RepoUpdateRequest
 	in.FromProto(req)
-	grpcResp := gs.svc.RepoUpdate(&in)
 
-	return grpcResp.ToProto(), nil
+	resp := gs.svc.RepoUpdate(ctx, &in)
+
+	return resp.ToProto(), nil
 }
 
 func (gs *grpcServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoCloneableRequest) (*proto.IsRepoCloneableResponse, error) {
 	repo := api.RepoName(req.GetRepo())
 
-	if req.Repo == "" {
+	if repo == "" {
 		return nil, status.Error(codes.InvalidArgument, "no Repo given")
 	}
 

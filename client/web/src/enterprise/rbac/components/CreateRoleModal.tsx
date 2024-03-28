@@ -2,6 +2,7 @@ import React from 'react'
 
 import { noop } from 'lodash'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Button,
     Modal,
@@ -22,7 +23,7 @@ import { useCreateRole, type PermissionsMap } from '../backend'
 
 import { PermissionsList } from './Permissions'
 
-export interface CreateRoleModalProps {
+export interface CreateRoleModalProps extends TelemetryV2Props {
     onCancel: () => void
     afterCreate: () => void
     allPermissions: PermissionsMap
@@ -42,12 +43,14 @@ export const CreateRoleModal: React.FunctionComponent<React.PropsWithChildren<Cr
     onCancel,
     afterCreate,
     allPermissions,
+    telemetryRecorder,
 }) => {
     const labelId = 'createRole'
 
     const [createRole, { loading, error }] = useCreateRole(afterCreate)
     const onSubmit = (values: CreateRoleModalFormValues): SubmissionResult => {
         const { name, permissions } = values
+        telemetryRecorder.recordEvent('admin.roles', 'create')
         // We handle any error by destructuring the query result directly
         createRole({ variables: { name, permissions } }).catch(noop)
     }

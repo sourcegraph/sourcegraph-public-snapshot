@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -305,9 +306,12 @@ func newOperations(observationCtx *observation.Context) *operations {
 			Metrics:           redMetrics,
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
 				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-					return observation.EmitForLogs
+					return observation.EmitForNone
 				}
-				return observation.EmitForAllExceptLogs
+				if os.IsNotExist(err) {
+					return observation.EmitForNone
+				}
+				return observation.EmitForDefault
 			},
 		})
 	}
