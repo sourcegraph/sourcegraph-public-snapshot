@@ -393,6 +393,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                                         setSelectedEditor(null)
                                                         setSelectedEditorStep(null)
                                                     }}
+                                                    telemetryRecorder={telemetryRecorder}
                                                 />
                                             </Modal>
                                         )}

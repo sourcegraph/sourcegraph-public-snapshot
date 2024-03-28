@@ -1,8 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 import classNames from 'classnames'
 
+import type { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Button, ButtonLink, H2, Link, Text } from '@sourcegraph/wildcard'
+
+import { eventLogger } from '../../../tracking/eventLogger'
+import { EventName } from '../../../util/constants'
 
 import styles from '../CodyOnboarding.module.scss'
 
@@ -10,12 +14,25 @@ export function NeoVimInstructions({
     onBack,
     onClose,
     showStep,
+    telemetryRecorder,
 }: {
     onBack?: () => void
     onClose: () => void
     showStep?: number
+    telemetryRecorder: TelemetryRecorder
 }): JSX.Element {
     const [step, setStep] = useState<number>(showStep || 0)
+    const marketplaceUrl = 'https://github.com/sourcegraph/sg.nvim#setup'
+
+    useEffect(() => {
+        if (step === 0) {
+            eventLogger.log(EventName.CODY_EDITOR_SETUP_VIEWED, { editor: 'NeoVim' })
+            telemetryRecorder.recordEvent('cody.editorSetupViewed', 'view', { metadata: { neoVim: 1 } })
+        } else if (step === 1) {
+            eventLogger.log(EventName.CODY_EDITOR_FEATURES_VIEWED, { editor: 'NeoVim' })
+            telemetryRecorder.recordEvent('cody.editorFeaturesViewed', 'view', { metadata: { neoVim: 1 } })
+        }
+    }, [step, telemetryRecorder])
 
     return (
         <>
@@ -44,8 +61,18 @@ export function NeoVimInstructions({
                             <div className="d-flex flex-column justify-content-center align-items-center mt-4">
                                 <ButtonLink
                                     variant="primary"
-                                    to="https://github.com/sourcegraph/sg.nvim#setup"
+                                    to={marketplaceUrl}
                                     target="_blank"
+                                    onClick={event => {
+                                        event.preventDefault()
+                                        eventLogger.log(EventName.CODY_EDITOR_SETUP_OPEN_MARKETPLACE, {
+                                            editor: 'NeoVim',
+                                        })
+                                        telemetryRecorder.recordEvent('cody.onboarding.openMarketplace', 'click', {
+                                            metadata: { neoVim: 1 },
+                                        })
+                                        window.location.href = marketplaceUrl
+                                    }}
                                 >
                                     Navigate to GitHub repo
                                 </ButtonLink>

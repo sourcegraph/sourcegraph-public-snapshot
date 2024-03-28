@@ -1,8 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 import classNames from 'classnames'
 
+import type { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Button, H2, Link, Text } from '@sourcegraph/wildcard'
+
+import { eventLogger } from '../../../tracking/eventLogger'
+import { EventName } from '../../../util/constants'
 
 import styles from '../CodyOnboarding.module.scss'
 
@@ -10,12 +14,25 @@ export function JetBrainsInstructions({
     onBack,
     onClose,
     showStep,
+    telemetryRecorder,
 }: {
     onBack?: () => void
     onClose: () => void
     showStep?: number
+    telemetryRecorder: TelemetryRecorder
 }): JSX.Element {
     const [step, setStep] = useState<number>(showStep || 0)
+    const marketplaceUrl = 'https://plugins.jetbrains.com/plugin/9682-sourcegraph-cody--code-search'
+
+    useEffect(() => {
+        if (step === 0) {
+            eventLogger.log(EventName.CODY_EDITOR_SETUP_VIEWED, { editor: 'JetBrains' })
+            telemetryRecorder.recordEvent('cody.editorSetupViewed', 'view', { metadata: { jetBrains: 1 } })
+        } else if (step === 1) {
+            eventLogger.log(EventName.CODY_EDITOR_FEATURES_VIEWED, { editor: 'JetBrains' })
+            telemetryRecorder.recordEvent('cody.editorFeaturesViewed', 'view', { metadata: { jetBrains: 1 } })
+        }
+    }, [step, telemetryRecorder])
 
     return (
         <>
@@ -35,9 +52,21 @@ export function JetBrainsInstructions({
                                     <Text className="mb-1" weight="bold">
                                         Open the Plugins Page (or via the{' '}
                                         <Link
-                                            to="https://plugins.jetbrains.com/plugin/9682-sourcegraph-cody--code-search"
+                                            to={marketplaceUrl}
                                             target="_blank"
                                             rel="noopener"
+                                            onClick={event => {
+                                                event.preventDefault()
+                                                eventLogger.log(EventName.CODY_EDITOR_SETUP_OPEN_MARKETPLACE, {
+                                                    editor: 'JetBrains',
+                                                })
+                                                telemetryRecorder.recordEvent(
+                                                    'cody.onboarding.openMarketplace',
+                                                    'click',
+                                                    { metadata: { jetBrains: 1 } }
+                                                )
+                                                window.location.href = marketplaceUrl
+                                            }}
                                         >
                                             JetBrains Marketplace
                                         </Link>
