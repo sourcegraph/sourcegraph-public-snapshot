@@ -1,0 +1,13 @@
+on:
+  release:
+    types: [published]
+
+steps:
+  - name: Trigger AMI Builds on Release
+    uses: buildkite/trigger-pipeline-action@v2.0.0
+    with:
+      buildkite_api_access_token:  ${{ secrets.TRIGGER_BK_BUILD_TOKEN }}
+      pipeline: "sourcegraph/ami-automation"
+      branch: master
+      commit: HEAD
+      message:  "<img class="emoji" title="buildkite" alt=":buildkite:" src="https://buildkiteassets.com/emojis/img-buildkite-64/buildkite.png" draggable="false" /><img class="emoji" title="github" alt=":github:" src="https://buildkiteassets.com/emojis/img-buildkite-64/github.png" draggable="false" /> 🚀🚀🚀 Triggered from a GitHub Action"
