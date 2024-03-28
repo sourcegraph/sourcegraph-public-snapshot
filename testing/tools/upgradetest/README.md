@@ -4,40 +4,41 @@ The upgradetest folder contains the code for release tooling intended used to as
 The tooling takes the form of a cli interface and is intended to orchestrate a psuedo-release and upgrade using bazel built images. The tests are inocations of our services relevant to schema migrations and versioning.
 This test does not test Sourcegraph features, only the basic operations of database and frontend versioning.
 
-Commands are intended to be invoked using `bazil targets`, with each command executing tests intrended to be run in CI. The CI tests treat the current repo branch of `sourcegraph/sourcegraph` as a prospective release.
+Commands are intended to be invoked through Bazel, with each command executing tests intended to be run in CI. The CI tests treat the current repo branch of `sourcegraph/sourcegraph` as a prospective release.
 
 This "release branch" may be stamped with a version, or will be versioned `0.0.0+dev`. A stamped version of the release branch must be invoked with a certain bazel flags `--stamp`, `--workspace_status_command=./dev/bazel_stamp_vars.sh`,
 and additionally requires a `VERSION` env var to be set with a semantic version string `X.X.X`.
 
 The general idea of the tests is to verify that a given upgrade process works as expected in a containerized end to end test.
 
-We initialize the three primary Sourcegraph databases (frontend, codeintel-db, and codeinsights-db) from a historic version. Then use candidate builds of `frontend` and `migrator` to conduct a series of upgrades and validations. Validating expected state between steps.
+We initialize the three primary Sourcegraph databases (frontend, codeintel-db, and codeinsights-db) from a historic version. Then use candidate builds of `frontend` and `migrator` to conduct a series of upgrades and validations, ensuring expected state between steps.
 
 We conduct multiversion upgrades, and standard upgrades, based on their respective upgrade policies, only using MVU for versions in which it is necessary.
 
-- For Standard upgrades (migrator up) we test each patch version defined in the previous minor version of sourcegraph.
-- For MVU upgrades (migrator upgrade) we test all versions defined at least two minor versions prior to the latest patch release. i.e. all versions for which a standard upgrade will not work.
+- For Standard upgrades (e.g. `migrator up`) we test each patch version defined in the previous minor version of sourcegraph.
+- For MVU upgrades (e.g. `migrator upgrade`) we test all versions defined at least two minor versions prior to the latest patch release. i.e. all versions for which a standard upgrade will not work.
 - For autoupgrades we attempt an upgrade accross all versions.
 
 ### Run Bazel Test
 
 ```bash
-bazel test //testing/tools/upgradetest:sh_upgradetest --config darwin-docker -- <test args>
+bazel test //testing/tools/upgradetest:sh_upgradetest -- <test args>
 ```
 
 ### Run Bazel Action
 
 - Version 0.0.0+dev (no autoupgrade):
   ```bash
-  bazel run //testing/tools/upgradetest:sh_upgradetest_run --config darwin-docker -- <command>
+  bazel run //testing/tools/upgradetest:sh_upgradetest_run -- <command>
   ```
-- Stamp version:
+- Stamped build:
   ```bash
-  VERSION=x.x.x bazel run //testing/tools/upgradetest:sh_upgradetest_run --config darwin-docker --stamp --workspace_status_command=./dev/bazel_stamp_vars.sh -- <command>
+  VERSION=x.x.x bazel run //testing/tools/upgradetest:sh_upgradetest_run --stamp --workspace_status_command=./dev/bazel_stamp_vars.sh -- <command>
   ```
 
 ### Run in CI
 
+Presently, the test runner is not plugged in CI, so the only way to get it to run is to trigger a custom build performing that specific test (i.e. a `bazel-do` CI runtype) 
 ```bash
 sg ci bazel run //testing/tools/upgradetest:sh_upgradetest
 ```
