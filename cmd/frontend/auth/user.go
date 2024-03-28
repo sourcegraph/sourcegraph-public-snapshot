@@ -37,10 +37,15 @@ type GetAndSaveUserOp struct {
 	// connect a single external identity per user.
 	SingleIdentityPerUser bool
 	// UserCreateEventProperties is a map of key-value pairs to be added to the
-	// `ExternalAuthSignupSucceeded` event that is logged when a new user is created.
-	// Security: Do NOT include any sensitive data here.
-	UserCreateEventProperties map[string]any
+	// `ExternalAuthSignupSucceeded` (V1) or 'externalAuthSignup' (V2) telemetry
+	// event that is logged when a new user is created.
+	//
+	// It must fulfil telemetry.EventMetadata requirements, i.e. not contain
+	// any sensitive data/PII.
+	UserCreateEventProperties telemetry.EventMetadata
 }
+
+const telemetryV2UserSignUpFeatureName = "externalAuthSignup"
 
 // GetAndSaveUser accepts authentication information associated with a given user, validates and applies
 // the necessary updates to the DB, and returns the user ID after the updates have been applied.
@@ -194,7 +199,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		// any sensitive data.
 		argMap := map[string]any{}
 		for k, v := range op.UserCreateEventProperties {
-			argMap[k] = v
+			argMap[string(k)] = v
 		}
 		// NOTE: The conventional name should be "service_type", but keeping as-is for
 		// backwards capability.
@@ -243,8 +248,11 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 
 		// New event - most external services have an exstvc.Variant, so add that as safe metadata
 		serviceVariant, _ := extsvc.VariantValueOf(acct.AccountSpec.ServiceType)
-		recorder.Record(ctx, "externalAuthSignup", telemetry.ActionFailed, &telemetry.EventParameters{
-			Metadata:        telemetry.EventMetadata{"serviceVariant": telemetry.Number(serviceVariant)},
+		recorder.Record(ctx, telemetryV2UserSignUpFeatureName, telemetry.ActionFailed, &telemetry.EventParameters{
+			Metadata: telemetry.MergeMetadata(
+				telemetry.EventMetadata{"serviceVariant": telemetry.Number(serviceVariant)},
+				op.UserCreateEventProperties,
+			),
 			PrivateMetadata: map[string]any{"serviceType": acct.AccountSpec.ServiceType},
 		})
 
@@ -306,15 +314,18 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 	// here on the new event even though the legacy event still exists so that
 	// we can consistently capture all the cases.
 	serviceVariant, _ := extsvc.VariantValueOf(acct.AccountSpec.ServiceType)
-	recorder.Record(ctx, "externalAuthSignup", telemetry.ActionSucceeded, &telemetry.EventParameters{
-		Metadata: telemetry.EventMetadata{
-			// Most auth providers services have an exstvc.Variant, so add that
-			// as safe metadata.
-			"serviceVariant": telemetry.Number(serviceVariant),
-			// Track the various outcomes of the massive signup closer above.
-			"newUserSaved": telemetry.Bool(newUserSaved),
-			"extAcctSaved": telemetry.Bool(extAcctSaved),
-		},
+	recorder.Record(ctx, telemetryV2UserSignUpFeatureName, telemetry.ActionSucceeded, &telemetry.EventParameters{
+		Metadata: telemetry.MergeMetadata(
+			telemetry.EventMetadata{
+				// Most auth providers services have an exstvc.Variant, so add that
+				// as safe metadata.
+				"serviceVariant": telemetry.Number(serviceVariant),
+				// Track the various outcomes of the massive signup closer above.
+				"newUserSaved": telemetry.Bool(newUserSaved),
+				"extAcctSaved": telemetry.Bool(extAcctSaved),
+			},
+			op.UserCreateEventProperties,
+		),
 		PrivateMetadata: map[string]any{"serviceType": acct.AccountSpec.ServiceType},
 	})
 

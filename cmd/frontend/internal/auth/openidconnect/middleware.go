@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -368,7 +369,7 @@ func AuthCallback(logger log.Logger, db database.DB, r *http.Request, usernamePr
 
 	// PLG: If the user has been created just now, we want to log an additional property on the event
 	// that indicates that the user has initiated the signup from the IDE extension.
-	userCreateEventProperties := map[string]any{}
+	userCreateEventProperties := telemetry.EventMetadata{}
 	if dotcom.SourcegraphDotComMode() {
 		u, err := url.Parse(state.Redirect)
 		if err != nil {
@@ -379,7 +380,7 @@ func AuthCallback(logger log.Logger, db database.DB, r *http.Request, usernamePr
 			// We can use it here to determine if the signup has been initiated
 			// by the IDE extension.
 			if strings.EqualFold(u.Query().Get("requestFrom"), "CODY") {
-				userCreateEventProperties["signup_source_is_cody"] = true
+				userCreateEventProperties["signup_source_is_cody"] = telemetry.Bool(true)
 			}
 		}
 	}
