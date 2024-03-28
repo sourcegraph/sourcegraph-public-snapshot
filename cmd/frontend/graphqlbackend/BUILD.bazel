@@ -243,6 +243,7 @@ go_library(
         "//internal/actor",
         "//internal/adminanalytics",
         "//internal/api",
+        "//internal/audit",
         "//internal/auth",
         "//internal/auth/providers",
         "//internal/auth/userpasswd",
