@@ -30,6 +30,7 @@ func NewFireworksHandler(
 	rateLimitNotifier notify.RateLimitNotifier,
 	httpClient httpcli.Doer,
 	config config.FireworksConfig,
+	promptRecorder PromptRecorder,
 	autoFlushStreamingResponses bool,
 ) http.Handler {
 	return makeUpstreamHandler[fireworksRequest](
@@ -45,6 +46,7 @@ func NewFireworksHandler(
 			eventLogger: eventLogger,
 			config:      config,
 		},
+		promptRecorder,
 		// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
 		// do any retries
 		30, // seconds
