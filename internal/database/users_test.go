@@ -1210,6 +1210,32 @@ func TestUsers_GetSetChatCompletionsQuota(t *testing.T) {
 		}
 		require.Nil(t, quota, "expected unconfigured quota to be nil")
 	}
+
+	t.Run("CompletionsQuotaNote", func(t *testing.T) {
+		var (
+			str  string
+			err  error
+			note = time.Now().String()
+		)
+
+		// The column has "" as a default value.
+		str, err = db.Users().GetCompletionsQuotaNote(ctx, user.ID)
+		require.NoError(t, err)
+		assert.Equal(t, "", str)
+
+		// Set the note.
+		err = db.Users().SetCompletionsQuotaNote(ctx, user.ID, note)
+		require.NoError(t, err)
+
+		// Get the note, confirming it was persisted.
+		str, err = db.Users().GetCompletionsQuotaNote(ctx, user.ID)
+		require.NoError(t, err)
+		assert.Equal(t, note, str)
+
+		// Confirm the note can be set to the empty string.
+		err = db.Users().SetCompletionsQuotaNote(ctx, user.ID, "")
+		require.NoError(t, err)
+	})
 }
 
 func TestUsers_GetSetCodeCompletionsQuota(t *testing.T) {

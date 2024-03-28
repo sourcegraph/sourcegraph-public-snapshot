@@ -101,6 +101,8 @@ type UserStore interface {
 	GetChatCompletionsQuota(ctx context.Context, id int32) (*int, error)
 	SetCodeCompletionsQuota(ctx context.Context, id int32, quota *int) error
 	GetCodeCompletionsQuota(ctx context.Context, id int32) (*int, error)
+	SetCompletionsQuotaNote(ctx context.Context, id int32, note string) error
+	GetCompletionsQuotaNote(ctx context.Context, id int32) (string, error)
 	With(basestore.ShareableStore) UserStore
 }
 
@@ -1570,6 +1572,17 @@ func (u *userStore) GetCodeCompletionsQuota(ctx context.Context, id int32) (*int
 		return &quota, nil
 	}
 	return nil, nil
+}
+
+// SetCompletionsQuotaNote sets a generic note to provide context whenever setting a per-user quota override.
+func (u *userStore) SetCompletionsQuotaNote(ctx context.Context, id int32, note string) error {
+	return u.Exec(ctx, sqlf.Sprintf("UPDATE users SET completions_quota_note = %s WHERE id = %s", note, id))
+}
+
+// GetCompletionsQuotaNote retrieves whatever note has been associated with the given user.
+func (u *userStore) GetCompletionsQuotaNote(ctx context.Context, id int32) (string, error) {
+	s, _, err := basestore.ScanFirstString(u.Query(ctx, sqlf.Sprintf("SELECT completions_quota_note FROM users WHERE id = %s", id)))
+	return s, err
 }
 
 // CreatePassword creates a user's password if they don't have a password.
