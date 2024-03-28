@@ -238,6 +238,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                             showFeedbackModal={showFeedbackModal}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             telemetryService={props.telemetryService}
+                            telemetryRecorder={props.platformContext.telemetryRecorder}
                         />
                     ) : (
                         <GlobalNavbar
@@ -247,6 +248,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                             isRepositoryRelatedPage={isRepositoryRelatedPage}
                             showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
                             showFeedbackModal={showFeedbackModal}
+                            telemetryRecorder={props.platformContext.telemetryRecorder}
                         />
                     )}
                 </>
