@@ -7,6 +7,7 @@ import { Button, ButtonLink, H2, Link, Text } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { EventName } from '../../../util/constants'
+import { EditorStep } from '../../management/CodyManagementPage'
 
 import styles from '../CodyOnboarding.module.scss'
 
@@ -18,17 +19,17 @@ export function NeoVimInstructions({
 }: {
     onBack?: () => void
     onClose: () => void
-    showStep?: number
+    showStep?: EditorStep
     telemetryRecorder: TelemetryRecorder
 }): JSX.Element {
-    const [step, setStep] = useState<number>(showStep || 0)
+    const [step, setStep] = useState<EditorStep>(showStep || 0)
     const marketplaceUrl = 'https://github.com/sourcegraph/sg.nvim#setup'
 
     useEffect(() => {
-        if (step === 0) {
+        if (step === EditorStep.SetupInstructions) {
             eventLogger.log(EventName.CODY_EDITOR_SETUP_VIEWED, { editor: 'NeoVim' })
             telemetryRecorder.recordEvent('cody.editorSetupViewed', 'view', { metadata: { neoVim: 1 } })
-        } else if (step === 1) {
+        } else if (step === EditorStep.CodyFeatures) {
             eventLogger.log(EventName.CODY_EDITOR_FEATURES_VIEWED, { editor: 'NeoVim' })
             telemetryRecorder.recordEvent('cody.editorFeaturesViewed', 'view', { metadata: { neoVim: 1 } })
         }
@@ -36,7 +37,7 @@ export function NeoVimInstructions({
 
     return (
         <>
-            {step === 0 && (
+            {step === EditorStep.SetupInstructions && (
                 <>
                     <div className="pb-3 border-bottom">
                         <H2>Setup instructions for Neovim</H2>
@@ -103,7 +104,7 @@ export function NeoVimInstructions({
                     )}
                 </>
             )}
-            {step === 1 && (
+            {step === EditorStep.CodyFeatures && (
                 <>
                     <div className="mb-3 pb-3 border-bottom">
                         <H2>Cody features</H2>
