@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -279,6 +280,14 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, 
 		if output, err := cmd.CombinedOutput(); err != nil {
 			return nil, errors.Wrapf(err, "failed to force update branch with output %q", string(output))
 		}
+	}
+
+	// The update was successful, after a git fetch it is expected that a repos
+	// FETCH_HEAD has either been updated, or that HEAD has been touched, even
+	// if no changes were fetched.
+	// Since we use this for last_fetched, we touch it here.
+	if err := os.Chtimes(dir.Path("HEAD"), time.Time{}, time.Now()); err != nil {
+		s.logger.Error("failed to touch HEAD after perforce fetch", log.Error(err))
 	}
 
 	return output, nil
