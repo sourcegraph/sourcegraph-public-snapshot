@@ -148,9 +148,9 @@ playwright_test_bin.playwright_test(
     name = "e2e_test",
     args = [
         "test",
-        "--config ./playwright.config.ts",
+        "--config ./client/web-sveltekit/playwright.config.ts",
     ],
-    chdir = package_name(),
+    # chdir = package_name(),
     data = glob(["src/**/*.spec.ts"]) + [
         ":playwright_install",
         ":test_files",
