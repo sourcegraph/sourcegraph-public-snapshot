@@ -986,7 +986,7 @@ function comparePatterns(a: string[] | null, b: string[] | null): boolean {
     return a.length === b.length && a.every((pattern, index) => b[index] === pattern)
 }
 
-function getViewEventFeatureName(domain: string, hasRepo: boolean) {
+function getViewEventFeatureName(domain: string, hasRepo: boolean): string {
     if (domain === 'scip') {
         return hasRepo ? 'repo.codeIntel.configurationPolicy' : 'admin.codeIntel.configurationPolicy'
     }
