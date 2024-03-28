@@ -1,0 +1,13 @@
+cmd/src/lsif* @sourcegraph/team-graph
+cmd/src/code_intel* @sourcegraph/team-graph
+
+cmd/src/search* @sourcegraph/search-platform
+
+cmd/src/extsvc* @sourcegraph/source
+cmd/src/servegit* @sourcegraph/source
+cmd/src/users* @sourcegraph/source
+
+cmd/src/batch* @sourcegraph/code-search
+
+# Shepherd team for everything else
+* @sourcegraph/code-search
