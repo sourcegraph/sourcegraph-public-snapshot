@@ -67,13 +67,14 @@ export const RepoCommitsButton: React.FunctionComponent<React.PropsWithChildren<
     return (
         <Tooltip content={tooltip}>
             <Button
+                as={Link}
+                name={title}
                 className="flex-shrink-0"
                 to={`/${encodeURIPathComponent(repoName)}${
                     revision && `@${encodeURIPathComponent(revision)}`
                 }/-/${revisionPath}${filePath && `/${encodeURIPathComponent(filePath)}`}`}
                 variant="secondary"
                 outline={true}
-                as={Link}
             >
                 <Icon aria-hidden={true} svgPath={svgPath} /> <span className={className}>{title}</span>
             </Button>
