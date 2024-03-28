@@ -792,18 +792,18 @@ func (r *UserResolver) CodeCompletionsQuotaOverride(ctx context.Context) (*int32
 	return &iv, nil
 }
 
-func (r *UserResolver) CompletionsQuotaOverrideNote(ctx context.Context) (string, error) {
+func (r *UserResolver) CompletionsQuotaOverrideNote(ctx context.Context) (*string, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to see quotas.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	s, err := r.db.Users().GetCompletionsQuotaNote(ctx, r.user.ID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return s, nil
+	return &s, nil
 }
 
 func (r *UserResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
