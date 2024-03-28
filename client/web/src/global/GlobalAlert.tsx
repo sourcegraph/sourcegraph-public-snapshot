@@ -35,7 +35,7 @@ export const GlobalAlert: FunctionComponent<PropsWithChildren<Props>> = ({
             telemetryRecorder.recordEvent('alert.global', 'view', {
                 metadata: { type: alert.type ? v2AlertTypes[alert.type] : 0 },
             }),
-        [telemetryRecorder]
+        [telemetryRecorder, alert.type]
     )
 
     const content = <Markdown dangerousInnerHTML={renderMarkdown(alert.message)} />

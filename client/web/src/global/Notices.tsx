@@ -105,7 +105,7 @@ export const VerifyEmailNotices: React.FunctionComponent<VerifyEmailNoticesProps
         if (isEmailVerificationNeededForCody() && authenticatedUser) {
             telemetryRecorder.recordEvent('alert.verifyEmail', 'view')
         }
-    }, [telemetryRecorder, isEmailVerificationNeededForCody, authenticatedUser])
+    }, [telemetryRecorder, authenticatedUser])
     if (isEmailVerificationNeededForCody() && authenticatedUser) {
         return (
             <div className={classNames(styles.notices, className)}>
