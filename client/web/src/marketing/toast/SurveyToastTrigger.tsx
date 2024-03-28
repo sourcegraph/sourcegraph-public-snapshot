@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 
 import type { AuthenticatedUser } from '../../auth'
 
 import { SurveyToastContent } from './SurveyToastContent'
 
-interface SurveyToastTriggerProps {
+interface SurveyToastTriggerProps extends TelemetryV2Props {
     /**
      * For Storybook only
      */
@@ -17,6 +18,7 @@ interface SurveyToastTriggerProps {
 export const SurveyToastTrigger: React.FunctionComponent<React.PropsWithChildren<SurveyToastTriggerProps>> = ({
     forceVisible,
     authenticatedUser,
+    telemetryRecorder,
 }) => {
     const [temporarilyDismissed, setTemporarilyDismissed] = useTemporarySetting(
         'npsSurvey.hasTemporarilyDismissed',
@@ -33,14 +35,14 @@ export const SurveyToastTrigger: React.FunctionComponent<React.PropsWithChildren
     const [shouldShow, setShouldShow] = useState(false)
 
     useEffect(() => {
-        if (!loadingTemporarySettings) {
+        if (!loadingTemporarySettings || true) {
             /**
              * We show a toast notification if:
              * 1. User has not recently dismissed the notification
              * 2. User has not permanently dismissed the notification
              * 3. User has been active for exactly 3 days OR it has been 30 days since they were last shown the notification
              */
-            setShouldShow(!temporarilyDismissed && !permanentlyDismissed && daysActiveCount % 30 === 3)
+            setShouldShow((!temporarilyDismissed && !permanentlyDismissed && daysActiveCount % 30 === 3) || true)
         }
 
         /**
@@ -69,6 +71,7 @@ export const SurveyToastTrigger: React.FunctionComponent<React.PropsWithChildren
             shouldTemporarilyDismiss={() => setTemporarilyDismissed(true)}
             shouldPermanentlyDismiss={() => setPermanentlyDismissed(true)}
             hideToast={() => setShouldShow(false)}
+            telemetryRecorder={telemetryRecorder}
         />
     )
 }
