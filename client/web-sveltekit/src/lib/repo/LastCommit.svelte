@@ -1,16 +1,5 @@
-<script lang="ts">
-    import type { Avatar_User } from '$lib/Avatar.gql'
-    import Avatar from '$lib/Avatar.svelte'
-    import {
-        truncateIfNeeded,
-        extractPRNumber,
-        getFirstNameAndLastInitial,
-        convertToElapsedTime,
-    } from '$lib/repo/utils'
-
-    export let latestCommit: LastCommitProps
-
-    interface LastCommitProps {
+<script lang="ts" context="module">
+    export interface LastCommitProps {
         id: string
         abbreviatedOID: string
         subject: string
@@ -24,6 +13,19 @@
             }
         }
     }
+</script>
+
+<script lang="ts">
+    import type { Avatar_User } from '$lib/Avatar.gql'
+    import Avatar from '$lib/Avatar.svelte'
+    import {
+        truncateIfNeeded,
+        extractPRNumber,
+        getFirstNameAndLastInitial,
+        convertToElapsedTime,
+    } from '$lib/repo/utils'
+
+    export let latestCommit: LastCommitProps
 
     let avatar: Avatar_User = {
         __typename: 'User',
