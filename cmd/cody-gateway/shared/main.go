@@ -328,11 +328,11 @@ var _ completions.PromptRecorder = (*dotcomPromptRecorder)(nil)
 func (p *dotcomPromptRecorder) Record(ctx context.Context, prompt string) error {
 	// Only log prompts from Sourcegraph.com.
 	if !actor.FromContext(ctx).IsDotComActor() {
-		return nil
+		return errors.New("attempted to record prompt from non-dotcom actor")
 	}
 
 	// Require entries expire.
-	if p.ttlSeconds == 0 {
+	if p.ttlSeconds <= 0 {
 		return errors.New("prompt recorder must have TTL")
 	}
 	// Encode the traceID as a way to map it to the original request.
