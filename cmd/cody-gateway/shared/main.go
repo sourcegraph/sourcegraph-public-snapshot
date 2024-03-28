@@ -163,15 +163,18 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		Sources:     sources,
 	}
 
+	// Prompt recorder to save flagged requests temporarily, in case they are
+	// needed to understand ongoing spam/abuse waves.
+	promptRecorder := &dotcomPromptRecorder{
+		redis:      redisCache,
+		ttlSeconds: int(cfg.Dotcom.FlaggedPromptRecorderTTL.Seconds()),
+	}
+
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
-	handler, err := httpapi.NewHandler(obctx.Logger, eventLogger, rs, httpClient, authr,
-		&dotcomPromptRecorder{
-			// TODO: Make configurable
-			ttlSeconds: 60 * // minutes
-				60,
-			redis: redisCache,
-		},
+	handler, err := httpapi.NewHandler(
+		obctx.Logger, eventLogger, rs, httpClient, authr,
+		promptRecorder,
 		&httpapi.Config{
 			RateLimitNotifier:           rateLimitNotifier,
 			Anthropic:                   cfg.Anthropic,
@@ -323,19 +326,21 @@ type dotcomPromptRecorder struct {
 var _ completions.PromptRecorder = (*dotcomPromptRecorder)(nil)
 
 func (p *dotcomPromptRecorder) Record(ctx context.Context, prompt string) error {
-	// Only log prompts from Sourcegraph.com
+	// Only log prompts from Sourcegraph.com.
 	if !actor.FromContext(ctx).IsDotComActor() {
-		return errors.New("attempted to record prompt from non-dotcom actor")
+		return nil
 	}
-	// Must expire entries
+
+	// Require entries expire.
 	if p.ttlSeconds == 0 {
 		return errors.New("prompt recorder must have TTL")
 	}
-	// Always use trace ID as traceID - each trace = 1 request, and we always record
-	// it in our entries.
+	// Encode the traceID as a way to map it to the original request.
 	traceID := trace.FromContext(ctx).SpanContext().TraceID().String()
 	if traceID == "" {
 		return errors.New("prompt recorder requires a trace context")
 	}
-	return p.redis.SetEx(fmt.Sprintf("prompt:%s", traceID), p.ttlSeconds, prompt)
+
+	key := fmt.Sprintf("prompt:%s", traceID)
+	return p.redis.SetEx(key, p.ttlSeconds, prompt)
 }
