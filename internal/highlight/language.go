@@ -100,6 +100,7 @@ var baseHighlightConfig = syntaxHighlightConfig{
 		"jsx":  "jsx", // default `getLanguage()` helper doesn't handle JSX
 		"tsx":  "tsx", // default `getLanguage()` helper doesn't handle TSX
 		"ncl":  "nickel",
+		"pkl":  "pkl",
 		"sbt":  "scala",
 		"sc":   "scala",
 		"xlsg": "xlsg",
