@@ -35,14 +35,14 @@ export const SurveyToastTrigger: React.FunctionComponent<React.PropsWithChildren
     const [shouldShow, setShouldShow] = useState(false)
 
     useEffect(() => {
-        if (!loadingTemporarySettings || true) {
+        if (!loadingTemporarySettings) {
             /**
              * We show a toast notification if:
              * 1. User has not recently dismissed the notification
              * 2. User has not permanently dismissed the notification
              * 3. User has been active for exactly 3 days OR it has been 30 days since they were last shown the notification
              */
-            setShouldShow((!temporarilyDismissed && !permanentlyDismissed && daysActiveCount % 30 === 3) || true)
+            setShouldShow(!temporarilyDismissed && !permanentlyDismissed && daysActiveCount % 30 === 3)
         }
 
         /**
