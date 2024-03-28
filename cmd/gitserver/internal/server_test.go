@@ -1148,6 +1148,9 @@ func TestServer_IsRepoCloneable_InternalActor(t *testing.T) {
 
 	isCloneableCalled := false
 
+	fs := gitserverfs.New(&observation.TestContext, t.TempDir())
+	require.NoError(t, fs.Initialize())
+
 	s := NewServer(&ServerOpts{
 		Logger: logtest.Scoped(t),
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
@@ -1177,6 +1180,7 @@ func TestServer_IsRepoCloneable_InternalActor(t *testing.T) {
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		Locker:                  NewRepositoryLocker(),
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
+		FS:                      fs,
 	})
 
 	_, err := s.IsRepoCloneable(context.Background(), "foo")
