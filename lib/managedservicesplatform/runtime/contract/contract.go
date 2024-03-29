@@ -1,3 +1,32 @@
+// Package contract implements configuration and helpers based on environment
+// variables expected to be provided by MSP infrastructure (the 'MSP contract').
+// It generally has provisions for local development built-in, typically toggled
+// by the 'MSP=false' environment variable.
+//
+// Service implementors should generally default to implementing interfaces
+// expected by lib/managedservicesplatform/runtime instead of using package-level
+// constructors provided by this package - these are exported only for programs
+// that haven't yet, or can't, migrate to the runtime package.
+//
+// Simple example usage if you need to integrate the contract package directly:
+//
+//	// Parse the environment into an Env instance.
+//	e, _ := contract.ParseEnv([]string{"MSP=true"})
+//
+//	// Extract Contract instance from Env configuration.
+//	c := contract.New(logger, service, e)
+//
+//	// Also load other custom configuration here from Env you want here
+//
+//	// Check for errors on Env retrieval (missing/invalid values, etc.)
+//	if err := e.Validate(); err != nil { ... }
+//
+//	// Use Contract helpers and configuration values
+//	writer, _ := c.BigQuery.GetTableWriter(ctx, "my-table")
+//	writer.Write(...)
+//
+// For more help, please reach out to #discuss-core-services or refer to
+// go/msp: https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/
 package contract
 
 import (
