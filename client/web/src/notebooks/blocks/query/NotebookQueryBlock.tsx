@@ -191,7 +191,6 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                                 results={searchResults}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 telemetryService={telemetryService}
-                                telemetryRecorder={telemetryRecorder}
                                 settingsCascade={settingsCascade}
                                 platformContext={props.platformContext}
                                 openMatchesInNewTab={true}
