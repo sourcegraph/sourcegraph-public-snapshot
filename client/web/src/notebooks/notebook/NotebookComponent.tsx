@@ -218,7 +218,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
             telemetryService.log('SearchNotebookCopyNotebookButtonClick')
             telemetryRecorder.recordEvent('notebook', 'copy')
             copyNotebook({ namespace: authenticatedUser.id, blocks: notebook.getBlocks() })
-        }, [authenticatedUser, copyNotebook, notebook, telemetryService])
+        }, [authenticatedUser, copyNotebook, notebook, telemetryService, telemetryRecorder])
 
         const onBlockInputChange = useCallback(
             (id: string, blockInput: BlockInput) => {
@@ -226,7 +226,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 telemetryRecorder.recordEvent('notebook', 'changeInput')
                 updateBlocks()
             },
-            [notebook, updateBlocks]
+            [notebook, updateBlocks, telemetryRecorder]
         )
 
         const onNewBlock = useCallback(
@@ -320,7 +320,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 telemetryRecorder.recordEvent('notebook.block', 'move', {
                     metadata: {
                         type: blockType ? V2BlockTypes[blockType.type] : 0,
-                        direction: direction == 'up' ? 1 : 2,
+                        direction: direction === 'up' ? 1 : 2,
                     },
                 })
             },
@@ -352,7 +352,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                     metadata: { type: duplicateBlock ? V2BlockTypes[duplicateBlock.type] : 0 },
                 })
             },
-            [notebook, isReadOnly, telemetryService, selectBlock, updateBlocks, focusBlock]
+            [notebook, isReadOnly, telemetryService, telemetryRecorder, selectBlock, updateBlocks, focusBlock]
         )
 
         const onFocusLastBlock = useCallback(() => {

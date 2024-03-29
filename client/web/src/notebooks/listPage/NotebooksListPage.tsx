@@ -82,7 +82,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
     useEffect(() => {
         telemetryService.logPageView('SearchNotebooksListPage')
         telemetryRecorder.recordEvent('notebooks.list', 'view', {
-            metadata: { tab: selectedTab == 'notebooks' ? 0 : 1 },
+            metadata: { tab: selectedTab === 'notebooks' ? 0 : 1 },
         })
     }, [telemetryService, telemetryRecorder, selectedTab])
 
