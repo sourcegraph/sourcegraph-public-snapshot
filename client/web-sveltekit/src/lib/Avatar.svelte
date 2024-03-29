@@ -72,5 +72,6 @@
     span {
         z-index: 1;
         color: var(--white);
+        font-size: 0.5rem;
     }
 </style>

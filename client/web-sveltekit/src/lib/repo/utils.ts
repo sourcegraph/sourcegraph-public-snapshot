@@ -1,4 +1,3 @@
-
 import { resolveRoute } from '$app/paths'
 
 import type { ResolvedRevision } from '../../routes/[...repo=reporev]/+layout'
