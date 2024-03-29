@@ -1,3 +1,4 @@
+import { ApolloClient, gql } from '@apollo/client'
 import { memoize } from 'lodash'
 import { matchPath } from 'react-router-dom'
 
@@ -69,8 +70,23 @@ export function isRolledOutRoute(pathname: string): boolean {
     return false
 }
 
-export function reload(): void {
-    const url = new URL(window.location.href)
-    url.searchParams.append('feat', 'web-next')
-    window.location.href = url.toString()
+export async function enableSvelteAndReload(client: ApolloClient<{}>, userID: string): Promise<void> {
+    await client.mutate({
+        mutation: gql`
+            mutation EnableSveltePrototype($userID: ID!) {
+                overrideWebNext: createFeatureFlagOverride(namespace: $userID, flagName: "web-next", value: true) {
+                    __typename
+                }
+                overrideRollout: createFeatureFlagOverride(
+                    namespace: $userID
+                    flagName: "web-next-rollout"
+                    value: true
+                ) {
+                    __typename
+                }
+            }
+        `,
+        variables: { userID },
+    })
+    window.location.reload()
 }

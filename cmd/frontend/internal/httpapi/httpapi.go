@@ -222,6 +222,7 @@ func NewHandler(
 	// add above repo paths.
 	repo := m.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/shield").Methods("GET").Handler(jsonHandler(serveRepoShield()))
+	repo.Path("/refresh").Methods("POST").Handler(jsonHandler(serveRepoRefresh(db)))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())

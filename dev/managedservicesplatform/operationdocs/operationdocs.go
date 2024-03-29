@@ -81,12 +81,13 @@ This service is operated on the %s.`,
 
 	md.Headingf(2, "Service overview")
 	serviceKind := pointers.Deref(s.Service.Kind, spec.ServiceKindService)
-	serviceConfigURL := fmt.Sprintf("https://github.com/sourcegraph/managed-services/blob/main/services/%s/service.yaml",
-		s.Service.ID)
+	serviceDirURL := fmt.Sprintf("https://github.com/sourcegraph/managed-services/blob/main/services/%s", s.Service.ID)
+	serviceConfigURL := fmt.Sprintf("%s/service.yaml", serviceDirURL)
 	md.Table(
 		[]string{"Property", "Details"},
 		[][]string{
-			{"Service ID", markdown.Link(markdown.Code(s.Service.ID), serviceConfigURL)},
+			{"Service ID", fmt.Sprintf("%s (%s)",
+				markdown.Code(s.Service.ID), markdown.Link("specification", serviceConfigURL))},
 			// TODO: See service.Description docstring
 			// {"Description", s.Service.Description},
 			{"Owners", strings.Join(mapTo(s.Service.Owners, markdown.Bold), ", ")},
@@ -105,6 +106,21 @@ This service is operated on the %s.`,
 				fmt.Sprintf("%s - %s", markdown.Code(s.Build.Source.Repo), markdown.Code(s.Build.Source.Dir)),
 				"https://%s/tree/HEAD/%s", s.Build.Source.Repo, path.Clean(s.Build.Source.Dir))},
 		})
+
+	if len(s.README) > 0 {
+		md.Commentf("Automatically generated from the service README: %s", fmt.Sprintf("%s/README.md", serviceDirURL))
+
+		readme := string(s.README)
+		lines := strings.Split(readme, "\n")
+		for i, line := range lines {
+			// Increase all headers by 1 so that they fit nicely into the
+			// generated page.
+			if strings.HasPrefix(line, "##") {
+				lines[i] = "#" + line
+			}
+		}
+		md.Paragraphf(strings.Join(lines, "\n"))
+	}
 
 	md.Headingf(2, "Environments")
 	for _, section := range environmentHeaders {
