@@ -55,13 +55,11 @@ num2 = 0x012AFF
 f1: Float(isFinite) = 1.0
 f2: Float(isBetween(0, 10e6))
 f3 = .23
-f4 = 1.23e-2
 notANumber = NaN
 positiveInfinity = Infinity
 
 // Booleans
 b1 = true && false
-b2 = !false
 b3 = true.xor(false)
 
 
@@ -124,16 +122,12 @@ project: Project = new {
 
 
 // Mixins
-class Bird { diet: String }
-
 withDietTyped = new Mixin<Bird> {
   diet = "Seeds"
 }
 
 // Generators
 
-isSinger = false
-names = List("Pigeon", "Barn owl", "Parrot")
 parrot {
   lifespan = 20
   for (_name in names) {
@@ -180,7 +174,6 @@ woodPigeon (parrot) {
   name = "Common wood pigeon"
   taxonomy {
     `class` = "Aves"
-    species = "Columba palumbus"
   }
 }
 

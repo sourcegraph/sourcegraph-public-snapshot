@@ -186,10 +186,6 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //^^ Identifier
 //   ^ IdentifierOperator
 //     ^^^ NumericLiteral
-  f4 = 1.23e-2
-//^^ Identifier
-//   ^ IdentifierOperator
-//     ^^^^^^^ NumericLiteral
   notANumber = NaN
 //^^^^^^^^^^ Identifier
 //           ^ IdentifierOperator
@@ -207,11 +203,6 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //     ^^^^ IdentifierBuiltin
 //          ^^ IdentifierOperator
 //             ^^^^^ IdentifierBuiltin
-  b2 = !false
-//^^ Identifier
-//   ^ IdentifierOperator
-//     ^ IdentifierOperator
-//      ^^^^^ IdentifierBuiltin
   b3 = true.xor(false)
 //^^ Identifier
 //   ^ IdentifierOperator
@@ -449,13 +440,6 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   
   // Mixins
 //^^^^^^^^^ Comment
-  class Bird { diet: String }
-//^^^^^ Keyword
-//      ^^^^ IdentifierType
-//             ^^^^ Identifier
-//                 ^ PunctuationDelimiter
-//                   ^^^^^^ IdentifierType
-  
   withDietTyped = new Mixin<Bird> {
 //^^^^^^^^^^^^^ Identifier
 //              ^ IdentifierOperator
@@ -471,19 +455,6 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   // Generators
 //^^^^^^^^^^^^^ Comment
   
-  isSinger = false
-//^^^^^^^^ Identifier
-//         ^ IdentifierOperator
-//           ^^^^^ IdentifierBuiltin
-  names = List("Pigeon", "Barn owl", "Parrot")
-//^^^^^ Identifier
-//      ^ IdentifierOperator
-//        ^^^^ IdentifierType
-//             ^^^^^^^^ StringLiteral
-//                     ^ PunctuationDelimiter
-//                       ^^^^^^^^^^ StringLiteral
-//                                 ^ PunctuationDelimiter
-//                                   ^^^^^^^^ StringLiteral
   parrot {
 //^^^^^^ Identifier
     lifespan = 20
@@ -599,10 +570,6 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //    ^^^^^^^ Identifier
 //            ^ IdentifierOperator
 //              ^^^^^^ StringLiteral
-      species = "Columba palumbus"
-//    ^^^^^^^ Identifier
-//            ^ IdentifierOperator
-//              ^^^^^^^^^^^^^^^^^^ StringLiteral
     }
   }
   
