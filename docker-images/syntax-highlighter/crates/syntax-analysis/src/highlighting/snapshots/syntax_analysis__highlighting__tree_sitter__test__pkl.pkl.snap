@@ -12,15 +12,27 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //^^^^^^ Keyword
 //       ^^^^^^^^^^^ StringLiteral
 
-  import "fileA.pkl"
+  import "fileA.pkl" as fileA
 //^^^^^^ Keyword
 //       ^^^^^^^^^^^ StringLiteral
+//                   ^^ Keyword
+//                      ^^^^^ Identifier
+
+  import* "globbed/*.pkl"
+//^^^^^^^ Keyword
+//        ^^^^^^^^^^^^^^^ StringLiteral
+
+  impExp = import("fileC.pkl")
+//^^^^^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^ Keyword
+//                ^^^^^^^^^^^ StringLiteral
 
   // Single-line comment
 //^^^^^^^^^^^^^^^^^^^^^^ Comment
 
   /*
-//^^ Comment 8:0..11:2
+//^^ Comment 12:0..15:2
     Multiline
     comment
   */
@@ -63,10 +75,10 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   message2 = """
 //^^^^^^^^ Identifier
 //         ^ IdentifierOperator
-//           ^^^ StringLiteral 19:11..20:13
+//           ^^^ StringLiteral 23:11..24:13
   Although the \(name) is extinct,
 //               ^^^^ Identifier
-//                    ^^^^^^^^^^^^ StringLiteral 20:20..22:3
+//                    ^^^^^^^^^^^^ StringLiteral 24:20..26:3
   the species will be remembered.
   """
 

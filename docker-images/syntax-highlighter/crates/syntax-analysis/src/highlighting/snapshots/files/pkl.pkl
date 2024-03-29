@@ -2,7 +2,11 @@ module some.module
 
 amends "fileB.pkl"
 
-import "fileA.pkl"
+import "fileA.pkl" as fileA
+
+import* "globbed/*.pkl"
+
+impExp = import("fileC.pkl")
 
 // Single-line comment
 

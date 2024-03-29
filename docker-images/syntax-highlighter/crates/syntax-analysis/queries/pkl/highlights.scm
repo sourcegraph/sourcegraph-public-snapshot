@@ -114,7 +114,7 @@
 ; Keywords
 
 "abstract" @keyword
-"amends" @keyword
+"amends" @include
 "as" @keyword
 "class" @keyword
 "const" @keyword
@@ -127,15 +127,15 @@
 "function" @keyword
 "hidden" @keyword
 "if" @keyword
-(importExpr "import" @function.method.builtin)
-(importGlobExpr "import*" @function.method.builtin)
-"import" @keyword
-"import*" @keyword
+(importExpr "import" @include)
+(importGlobExpr "import*" @include)
+"import" @include
+"import*" @include
 "in" @keyword
 "is" @keyword
 "let" @keyword
 "local" @keyword
-(moduleExpr "module" @type.builtin)
+(moduleExpr "module" @identifier.module)
 "module" @keyword
 "new" @keyword
 "nothing" @type.builtin
