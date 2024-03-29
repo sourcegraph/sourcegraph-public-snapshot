@@ -193,9 +193,9 @@ func TestNewWithRedisStore(t *testing.T) {
 	// Create a Cache instance using NewWithRedisStore
 	c := NewWithRedisStore("test_prefix")
 
-	// Assert that the useStore field is true, indicating it uses the Redis store
-	if !c.useStore {
-		t.Errorf("Expected useStore to be true, got false")
+	// Assert that the storeType field is RedisStore, indicating it uses the Redis store
+	if c.storeType != RedisStore {
+		t.Errorf("Expected storeType to be RedisStore, got %v", c.storeType)
 	}
 }
 

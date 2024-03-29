@@ -21,6 +21,15 @@ import (
 const dataVersion = "v2"
 const dataVersionToDelete = "v1"
 
+// StoreType for selecting Redis store types.
+type StoreType int
+
+const (
+	// Define constants for each store type.
+	CacheStore StoreType = iota // Default Redis cache
+	RedisStore                  // Specific Redis store
+)
+
 // DeleteOldCacheData deletes the rcache data in the given Redis instance
 // that's prefixed with dataVersionToDelete
 func DeleteOldCacheData(c redis.Conn) error {
@@ -31,14 +40,14 @@ func DeleteOldCacheData(c redis.Conn) error {
 type Cache struct {
 	keyPrefix  string
 	ttlSeconds int
-	useStore   bool // New field to indicate which Redis pool to use
+	storeType  StoreType // Updated field to use StoreType
 }
 
 // New creates a redis backed Cache
 func New(keyPrefix string) *Cache {
 	return &Cache{
 		keyPrefix: keyPrefix,
-		useStore:  false,
+		storeType: CacheStore,
 	}
 }
 
@@ -46,7 +55,7 @@ func New(keyPrefix string) *Cache {
 func NewWithRedisStore(keyPrefix string) *Cache {
 	return &Cache{
 		keyPrefix: keyPrefix,
-		useStore:  true,
+		storeType: RedisStore,
 	}
 }
 
@@ -56,7 +65,7 @@ func NewWithTTL(keyPrefix string, ttlSeconds int) *Cache {
 	return &Cache{
 		keyPrefix:  keyPrefix,
 		ttlSeconds: ttlSeconds,
-		useStore:   false,
+		storeType:  CacheStore,
 	}
 }
 
@@ -230,10 +239,12 @@ func (r *Cache) kv() redispool.KeyValue {
 	if kvMock != nil {
 		return kvMock
 	}
-	if r.useStore {
+	switch r.storeType {
+	case RedisStore:
 		return redispool.Store
+	default:
+		return redispool.Cache
 	}
-	return redispool.Cache
 }
 
 func kv() redispool.KeyValue {
