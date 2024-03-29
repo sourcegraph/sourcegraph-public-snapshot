@@ -30,10 +30,10 @@ export function VSCodeInstructions({
     useEffect(() => {
         if (step === EditorStep.SetupInstructions) {
             eventLogger.log(EventName.CODY_EDITOR_SETUP_VIEWED, { editor: 'VS Code' })
-            telemetryRecorder.recordEvent('cody.editorSetupViewed', 'view', { metadata: { vsCode: 1 } })
+            telemetryRecorder.recordEvent('cody.editorSetupPage', 'view', { metadata: { vsCode: 1 } })
         } else if (step === EditorStep.CodyFeatures) {
             eventLogger.log(EventName.CODY_EDITOR_FEATURES_VIEWED, { editor: 'VS Code' })
-            telemetryRecorder.recordEvent('cody.editorFeaturesViewed', 'view', { metadata: { vsCode: 1 } })
+            telemetryRecorder.recordEvent('cody.editorFeaturesPage', 'view', { metadata: { vsCode: 1 } })
         }
     }, [step, telemetryRecorder])
 
