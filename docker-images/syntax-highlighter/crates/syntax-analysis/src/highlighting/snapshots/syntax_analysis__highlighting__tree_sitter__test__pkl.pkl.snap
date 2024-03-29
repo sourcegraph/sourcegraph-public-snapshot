@@ -88,6 +88,14 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //           ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
 //                                     ^^^^ Identifier
 //                                          ^^^^^^^^^ StringLiteral
+  message4 = ##"""
+//^^^^^^^^ Identifier
+//         ^ IdentifierOperator
+//           ^^^^^ StringLiteral 29:11..32:5
+  \\\\\ \#\#\# """""
+  multi-line with custom escape
+  """##
+  
   
   strLength = "dodo".length
 //^^^^^^^^^ Identifier

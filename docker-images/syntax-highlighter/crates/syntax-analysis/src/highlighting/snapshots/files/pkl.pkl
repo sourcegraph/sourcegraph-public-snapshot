@@ -27,6 +27,11 @@ the species will be remembered.
 """
 
 message3 = #" \\\\\ \#n \#u{12AF} \#(name) """"" "#
+message4 = ##"""
+\\\\\ \#\#\# """""
+multi-line with custom escape
+"""##
+
 
 strLength = "dodo".length
 reversedStr = "dodo".reverse()
