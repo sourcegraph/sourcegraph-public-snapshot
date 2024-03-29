@@ -10,12 +10,10 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -26,9 +24,6 @@ func TestGetVCSSyncer(t *testing.T) {
 		t.Fatal(err)
 	}
 	tempCoursierCacheDir := filepath.Join(tempReposDir, "coursier")
-
-	fs := gitserverfs.New(&observation.TestContext, tempReposDir)
-	require.NoError(t, fs.Initialize())
 
 	repo := api.RepoName("foo/bar")
 	extsvcStore := dbmocks.NewMockExternalServiceStore()
@@ -62,7 +57,7 @@ func TestGetVCSSyncer(t *testing.T) {
 		RepoStore:            repoStore,
 		DepsSvc:              new(dependencies.Service),
 		Repo:                 repo,
-		FS:                   fs,
+		ReposDir:             tempReposDir,
 		CoursierCacheDir:     tempCoursierCacheDir,
 		Logger:               logtest.Scoped(t),
 	})

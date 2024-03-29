@@ -5,25 +5,20 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 )
 
 func TestP4DepotSyncer_p4CommandEnv(t *testing.T) {
-	fs := gitserverfs.NewMockFS()
-	fs.P4HomeDirFunc.SetDefaultReturn("p4home", nil)
 	syncer := &perforceDepotSyncer{
 		logger:                  logtest.Scoped(t),
 		recordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
-		p4Client:                "client",
-		fs:                      fs,
+		P4Client:                "client",
+		P4Home:                  "p4home",
 	}
 
 	cwd := t.TempDir()
-	vars, err := syncer.p4CommandEnv(cwd, "host", "username", "password")
-	require.NoError(t, err)
+	vars := syncer.p4CommandEnv(cwd, "host", "username", "password")
 	assertEnv := func(key, value string) {
 		var match string
 		for _, s := range vars {

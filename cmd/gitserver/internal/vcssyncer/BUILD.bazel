@@ -85,7 +85,6 @@ go_test(
     ],
     deps = [
         "//cmd/gitserver/internal/common",
-        "//cmd/gitserver/internal/gitserverfs",
         "//internal/api",
         "//internal/codeintel/dependencies",
         "//internal/conf/reposource",

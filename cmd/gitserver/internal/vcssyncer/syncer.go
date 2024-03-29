@@ -2,11 +2,9 @@ package vcssyncer
 
 import (
 	"context"
-	"io"
-
 	jsoniter "github.com/json-iterator/go"
-
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"io"
 
 	"github.com/sourcegraph/log"
 
@@ -72,10 +70,10 @@ type NewVCSSyncerOpts struct {
 	RepoStore               database.RepoStore
 	DepsSvc                 *dependencies.Service
 	Repo                    api.RepoName
+	ReposDir                string
 	CoursierCacheDir        string
 	RecordingCommandFactory *wrexec.RecordingCommandFactory
 	Logger                  log.Logger
-	FS                      gitserverfs.FS
 	GetRemoteURLSource      func(ctx context.Context, repo api.RepoName) (RemoteURLSource, error)
 }
 
@@ -117,13 +115,18 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 			return nil, err
 		}
 
-		return NewPerforceDepotSyncer(opts.Logger, opts.RecordingCommandFactory, opts.FS, &c, opts.GetRemoteURLSource), nil
+		p4Home, err := gitserverfs.MakeP4HomeDir(opts.ReposDir)
+		if err != nil {
+			return nil, err
+		}
+
+		return NewPerforceDepotSyncer(opts.Logger, opts.RecordingCommandFactory, &c, opts.GetRemoteURLSource, opts.ReposDir, p4Home), nil
 	case extsvc.TypeJVMPackages:
 		var c schema.JVMPackagesConnection
 		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return NewJVMPackagesSyncer(&c, opts.DepsSvc, opts.GetRemoteURLSource, opts.CoursierCacheDir, opts.FS), nil
+		return NewJVMPackagesSyncer(&c, opts.DepsSvc, opts.GetRemoteURLSource, opts.CoursierCacheDir, opts.ReposDir), nil
 	case extsvc.TypeNpmPackages:
 		var c schema.NpmPackagesConnection
 		urn, err := extractOptions(&c)
@@ -134,7 +137,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		return NewNpmPackagesSyncer(c, opts.DepsSvc, cli, opts.FS, opts.GetRemoteURLSource), nil
+		return NewNpmPackagesSyncer(c, opts.DepsSvc, cli, opts.GetRemoteURLSource, opts.ReposDir), nil
 	case extsvc.TypeGoModules:
 		var c schema.GoModulesConnection
 		urn, err := extractOptions(&c)
@@ -142,7 +145,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 			return nil, err
 		}
 		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
-		return NewGoModulesSyncer(&c, opts.DepsSvc, cli, opts.FS, opts.GetRemoteURLSource), nil
+		return NewGoModulesSyncer(&c, opts.DepsSvc, cli, opts.GetRemoteURLSource, opts.ReposDir), nil
 	case extsvc.TypePythonPackages:
 		var c schema.PythonPackagesConnection
 		urn, err := extractOptions(&c)
@@ -153,7 +156,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		return NewPythonPackagesSyncer(&c, opts.DepsSvc, cli, opts.FS, opts.GetRemoteURLSource), nil
+		return NewPythonPackagesSyncer(&c, opts.DepsSvc, cli, opts.GetRemoteURLSource, opts.ReposDir), nil
 	case extsvc.TypeRustPackages:
 		var c schema.RustPackagesConnection
 		urn, err := extractOptions(&c)
@@ -164,7 +167,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		return NewRustPackagesSyncer(&c, opts.DepsSvc, cli, opts.FS, opts.GetRemoteURLSource), nil
+		return NewRustPackagesSyncer(&c, opts.DepsSvc, cli, opts.GetRemoteURLSource, opts.ReposDir), nil
 	case extsvc.TypeRubyPackages:
 		var c schema.RubyPackagesConnection
 		urn, err := extractOptions(&c)
@@ -175,7 +178,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		return NewRubyPackagesSyncer(&c, opts.DepsSvc, cli, opts.FS, opts.GetRemoteURLSource), nil
+		return NewRubyPackagesSyncer(&c, opts.DepsSvc, cli, opts.GetRemoteURLSource, opts.ReposDir), nil
 	}
 
 	return NewGitRepoSyncer(opts.Logger, opts.RecordingCommandFactory, opts.GetRemoteURLSource), nil

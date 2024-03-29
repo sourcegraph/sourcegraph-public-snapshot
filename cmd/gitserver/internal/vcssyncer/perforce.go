@@ -16,7 +16,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
@@ -27,30 +26,37 @@ import (
 type perforceDepotSyncer struct {
 	logger                  log.Logger
 	recordingCommandFactory *wrexec.RecordingCommandFactory
-	fs                      gitserverfs.FS
 
-	// maxChanges indicates to only import at most n changes when possible.
-	maxChanges int
+	// MaxChanges indicates to only import at most n changes when possible.
+	MaxChanges int
 
-	// p4Client configures the client to use with p4 and enables use of a client spec
+	// P4Client configures the client to use with p4 and enables use of a client spec
 	// to find the list of interesting files in p4.
-	p4Client string
+	P4Client string
 
-	// fusionConfig contains information about the experimental p4-fusion client.
-	fusionConfig fusionConfig
+	// FusionConfig contains information about the experimental p4-fusion client.
+	FusionConfig fusionConfig
+
+	// P4Home is a directory we will pass to `git p4` commands as the
+	// $HOME directory as it requires this to write cache data.
+	P4Home string
+
+	// reposDir is the directory where repositories are cloned.
+	reposDir string
 
 	// getRemoteURLSource returns the RemoteURLSource for the given repository.
 	getRemoteURLSource func(ctx context.Context, name api.RepoName) (RemoteURLSource, error)
 }
 
-func NewPerforceDepotSyncer(logger log.Logger, r *wrexec.RecordingCommandFactory, fs gitserverfs.FS, connection *schema.PerforceConnection, getRemoteURLSource func(ctx context.Context, name api.RepoName) (RemoteURLSource, error)) VCSSyncer {
+func NewPerforceDepotSyncer(logger log.Logger, r *wrexec.RecordingCommandFactory, connection *schema.PerforceConnection, getRemoteURLSource func(ctx context.Context, name api.RepoName) (RemoteURLSource, error), reposDir, p4Home string) VCSSyncer {
 	return &perforceDepotSyncer{
 		logger:                  logger.Scoped("PerforceDepotSyncer"),
 		recordingCommandFactory: r,
-		fs:                      fs,
-		maxChanges:              int(connection.MaxChanges),
-		p4Client:                connection.P4Client,
-		fusionConfig:            configureFusionClient(connection),
+		MaxChanges:              int(connection.MaxChanges),
+		P4Client:                connection.P4Client,
+		FusionConfig:            configureFusionClient(connection),
+		reposDir:                reposDir,
+		P4Home:                  p4Home,
 		getRemoteURLSource:      getRemoteURLSource,
 	}
 }
@@ -76,7 +82,10 @@ func (s *perforceDepotSyncer) IsCloneable(ctx context.Context, repoName api.Repo
 		return errors.Wrap(err, "invalid perforce remote URL")
 	}
 
-	return perforce.IsDepotPathCloneable(ctx, s.fs, perforce.IsDepotPathCloneableArguments{
+	return perforce.IsDepotPathCloneable(ctx, perforce.IsDepotPathCloneableArguments{
+		ReposDir: s.reposDir,
+		P4Home:   s.P4Home,
+
 		P4Port:   host,
 		P4User:   username,
 		P4Passwd: password,
@@ -110,7 +119,10 @@ func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, _ co
 
 	// First, do a quick check if we can reach the Perforce server.
 	tryWrite(s.logger, progressWriter, "Checking Perforce server connection\n")
-	err = perforce.P4TestWithTrust(ctx, s.fs, perforce.P4TestWithTrustArguments{
+	err = perforce.P4TestWithTrust(ctx, perforce.P4TestWithTrustArguments{
+		ReposDir: s.reposDir,
+		P4Home:   s.P4Home,
+
 		P4Port:   p4port,
 		P4User:   p4user,
 		P4Passwd: p4passwd,
@@ -121,7 +133,7 @@ func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, _ co
 	tryWrite(s.logger, progressWriter, "Perforce server connection succeeded\n")
 
 	var cmd *exec.Cmd
-	if s.fusionConfig.Enabled {
+	if s.FusionConfig.Enabled {
 		tryWrite(s.logger, progressWriter, "Converting depot using p4-fusion\n")
 		cmd = s.buildP4FusionCmd(ctx, depot, p4user, tmpPath, p4port)
 	} else {
@@ -131,10 +143,7 @@ func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, _ co
 		args = append(args, depot+"@all", tmpPath)
 		cmd = exec.CommandContext(ctx, "git", args...)
 	}
-	cmd.Env, err = s.p4CommandEnv(tmpPath, p4port, p4user, p4passwd)
-	if err != nil {
-		return errors.Wrap(err, "failed to build p4 command env")
-	}
+	cmd.Env = s.p4CommandEnv(tmpPath, p4port, p4user, p4passwd)
 
 	redactor := urlredactor.New(remoteURL)
 	wrCmd := s.recordingCommandFactory.WrapWithRepoName(ctx, s.logger, repo, cmd).WithRedactorFunc(redactor.Redact)
@@ -188,18 +197,18 @@ func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, _ co
 func (s *perforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, username, src, port string) *exec.Cmd {
 	return exec.CommandContext(ctx, "p4-fusion",
 		"--path", depot+"...",
-		"--client", s.fusionConfig.Client,
+		"--client", s.FusionConfig.Client,
 		"--user", username,
 		"--src", src,
-		"--networkThreads", strconv.Itoa(s.fusionConfig.NetworkThreads),
-		"--printBatch", strconv.Itoa(s.fusionConfig.PrintBatch),
+		"--networkThreads", strconv.Itoa(s.FusionConfig.NetworkThreads),
+		"--printBatch", strconv.Itoa(s.FusionConfig.PrintBatch),
 		"--port", port,
-		"--lookAhead", strconv.Itoa(s.fusionConfig.LookAhead),
-		"--retries", strconv.Itoa(s.fusionConfig.Retries),
-		"--refresh", strconv.Itoa(s.fusionConfig.Refresh),
-		"--maxChanges", strconv.Itoa(s.fusionConfig.MaxChanges),
-		"--includeBinaries", strconv.FormatBool(s.fusionConfig.IncludeBinaries),
-		"--fsyncEnable", strconv.FormatBool(s.fusionConfig.FsyncEnable),
+		"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),
+		"--retries", strconv.Itoa(s.FusionConfig.Retries),
+		"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
+		"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
+		"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
+		"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
 		"--noColor", "true",
 		// We don't want an empty commit for a sane merge base across branches,
 		// since we don't use them and the empty commit breaks changelist parsing.
@@ -225,7 +234,10 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, 
 	}
 
 	// First, do a quick check if we can reach the Perforce server.
-	err = perforce.P4TestWithTrust(ctx, s.fs, perforce.P4TestWithTrustArguments{
+	err = perforce.P4TestWithTrust(ctx, perforce.P4TestWithTrustArguments{
+		ReposDir: s.reposDir,
+		P4Home:   s.P4Home,
+
 		P4Port:   p4port,
 		P4User:   p4user,
 		P4Passwd: p4passwd,
@@ -235,7 +247,7 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, 
 	}
 
 	var cmd *wrexec.Cmd
-	if s.fusionConfig.Enabled {
+	if s.FusionConfig.Enabled {
 		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
 		root, _ := filepath.Split(string(dir))
 		cmd = wrexec.Wrap(ctx, nil, s.buildP4FusionCmd(ctx, depot, p4user, root+".git", p4port))
@@ -244,10 +256,7 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, 
 		args := append([]string{"p4", "sync"}, s.p4CommandOptions()...)
 		cmd = wrexec.CommandContext(ctx, nil, "git", args...)
 	}
-	cmd.Env, err = s.p4CommandEnv(string(dir), p4port, p4user, p4passwd)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to build p4 command env")
-	}
+	cmd.Env = s.p4CommandEnv(string(dir), p4port, p4user, p4passwd)
 	dir.Set(cmd.Cmd)
 
 	// TODO(keegancsmith)(indradhanush) This is running a remote command and
@@ -258,19 +267,14 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, 
 		return nil, errors.Wrapf(err, "failed to update with output %q", urlredactor.New(remoteURL).Redact(string(output)))
 	}
 
-	if !s.fusionConfig.Enabled {
-		p4home, err := s.fs.P4HomeDir()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create p4home")
-		}
-
+	if !s.FusionConfig.Enabled {
 		// Force update "master" to "refs/remotes/p4/master" where changes are synced into
 		cmd = wrexec.CommandContext(ctx, nil, "git", "branch", "-f", "master", "refs/remotes/p4/master")
 		cmd.Cmd.Env = append(os.Environ(),
 			"P4PORT="+p4port,
 			"P4USER="+p4user,
 			"P4PASSWD="+p4passwd,
-			"HOME="+p4home,
+			"HOME="+s.P4Home,
 		)
 		dir.Set(cmd.Cmd)
 		if output, err := cmd.CombinedOutput(); err != nil {
@@ -291,16 +295,16 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, 
 
 func (s *perforceDepotSyncer) p4CommandOptions() []string {
 	flags := []string{}
-	if s.maxChanges > 0 {
-		flags = append(flags, "--max-changes", strconv.Itoa(s.maxChanges))
+	if s.MaxChanges > 0 {
+		flags = append(flags, "--max-changes", strconv.Itoa(s.MaxChanges))
 	}
-	if s.p4Client != "" {
+	if s.P4Client != "" {
 		flags = append(flags, "--use-client-spec")
 	}
 	return flags
 }
 
-func (s *perforceDepotSyncer) p4CommandEnv(cmdCWD, p4port, p4user, p4passwd string) ([]string, error) {
+func (s *perforceDepotSyncer) p4CommandEnv(cmdCWD, p4port, p4user, p4passwd string) []string {
 	env := append(
 		os.Environ(),
 		"P4PORT="+p4port,
@@ -309,20 +313,17 @@ func (s *perforceDepotSyncer) p4CommandEnv(cmdCWD, p4port, p4user, p4passwd stri
 		"P4CLIENTPATH="+cmdCWD,
 	)
 
-	if s.p4Client != "" {
-		env = append(env, "P4CLIENT="+s.p4Client)
+	if s.P4Client != "" {
+		env = append(env, "P4CLIENT="+s.P4Client)
 	}
 
-	p4home, err := s.fs.P4HomeDir()
-	if err != nil {
-		return nil, err
+	if s.P4Home != "" {
+		// git p4 commands write to $HOME/.gitp4-usercache.txt, we should pass in a
+		// directory under our control and ensure that it is writeable.
+		env = append(env, "HOME="+s.P4Home)
 	}
 
-	// git p4 commands write to $HOME/.gitp4-usercache.txt, we should pass in a
-	// directory under our control and ensure that it is writeable.
-	env = append(env, "HOME="+p4home)
-
-	return env, nil
+	return env
 }
 
 // fusionConfig allows configuration of the p4-fusion client.
