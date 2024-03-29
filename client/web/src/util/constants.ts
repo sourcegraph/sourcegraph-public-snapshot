@@ -41,6 +41,9 @@ export const enum EventName {
     DOWNLOAD_IDE = 'DownloadIDE',
     DOWNLOAD_APP = 'DownloadApp',
 
+    CODY_EDITOR_SETUP_VIEWED = 'CodyEditorSetUpViewed',
+    CODY_EDITOR_SETUP_OPEN_MARKETPLACE = 'CodyEditorSetUpOpenMarketplace',
+    CODY_EDITOR_FEATURES_VIEWED = 'CodyEditorFeaturesViewed',
     CODY_MANAGEMENT_PAGE_VIEWED = 'CodyManageViewed',
     CODY_SUBSCRIPTION_PAGE_VIEWED = 'CodyPlanSelectionViewed',
     CODY_SUBSCRIPTION_PLAN_CLICKED = 'CodyPlanSelectionClicked',

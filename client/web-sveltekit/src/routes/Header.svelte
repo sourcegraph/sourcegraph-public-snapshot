@@ -1,33 +1,20 @@
 <script lang="ts">
+    import { browser } from '$app/environment'
     import { mark } from '$lib/images'
-
+    import Popover from '$lib/Popover.svelte'
     import { Badge, Button } from '$lib/wildcard'
-    import UserMenu from './UserMenu.svelte'
+
     import type { Header_User } from './Header.gql'
     import { mainNavigation } from './mainNavigation'
     import MainNavigationEntry from './MainNavigationEntry.svelte'
-    import Popover from '$lib/Popover.svelte'
-    import { browser } from '$app/environment'
-    import { page } from '$app/stores'
+    import UserMenu from './UserMenu.svelte'
 
     export let authenticatedUser: Header_User | null | undefined
+    export let handleOptOut: (() => Promise<void>) | undefined
 
     const isDevOrS2 =
         (browser && window.location.hostname === 'localhost') ||
         window.location.hostname === 'sourcegraph.sourcegraph.com'
-
-    $: reactURL = (function (url) {
-        const urlCopy = new URL(url)
-        urlCopy.searchParams.delete('feat')
-        for (let feature of urlCopy.searchParams.getAll('feat')) {
-            if (feature !== 'web-next' && feature !== 'web-next-rollout') {
-                urlCopy.searchParams.append('feat', feature)
-            }
-        }
-        urlCopy.searchParams.append('feat', '-web-next')
-        urlCopy.searchParams.append('feat', '-web-next-rollout')
-        return urlCopy.toString()
-    })($page.url)
 </script>
 
 <header>
@@ -58,12 +45,10 @@
                     >.
                 </p>
             {/if}
-            <p>
-                You can temporarily switch back to the stable version of the web app by clicking <a
-                    href={reactURL}
-                    data-sveltekit-reload>here</a
-                >.
-            </p>
+            {#if handleOptOut}
+                Or you can <button role="link" class="opt-out" on:click={handleOptOut}>opt out</button> of the Sveltekit
+                experiment.
+            {/if}
         </div>
     </Popover>
     <div>
@@ -89,6 +74,13 @@
         padding: 0 0.5rem;
         border-bottom: 1px solid var(--border-color-2);
         background-color: var(--color-bg-1);
+    }
+
+    .opt-out {
+        all: unset;
+        cursor: pointer;
+        color: var(--link-color);
+        text-decoration: underline;
     }
 
     .logo img {

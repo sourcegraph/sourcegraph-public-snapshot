@@ -6,6 +6,10 @@ go_library(
     srcs = ["version.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/version",
     visibility = ["//:__subpackages__"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
     deps = ["//lib/errors"],
 )
 
