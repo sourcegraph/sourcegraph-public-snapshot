@@ -384,6 +384,19 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //         ^^^^^^^^ StringLiteral
   }
   
+  @Deprecated { message = "Replace with \(pigeonName)" }
+//^ IdentifierOperator
+// ^^^^^^^^^^ IdentifierType
+//              ^^^^^^^ Identifier
+//                      ^ IdentifierOperator
+//                        ^^^^^^^^^^^^^^ StringLiteral
+//                                        ^^^^^^^^^^ Identifier
+//                                                   ^ StringLiteral
+  oldPigeonName: String
+//^^^^^^^^^^^^^ Identifier
+//             ^ PunctuationDelimiter
+//               ^^^^^^ IdentifierType
+  
   class Project {
 //^^^^^ Keyword
 //      ^^^^^^^ IdentifierType

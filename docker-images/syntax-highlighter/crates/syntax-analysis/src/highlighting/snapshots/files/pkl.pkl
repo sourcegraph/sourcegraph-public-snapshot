@@ -108,6 +108,9 @@ pigeon: Bird = new {
   name = "Pigeon"
 }
 
+@Deprecated { message = "Replace with \(pigeonName)" }
+oldPigeonName: String
+
 class Project {
   local emailAddress = (str) -> str.matches(Regex(#".+@.+"#))
   // constrain the nullable type's element type
