@@ -7,37 +7,37 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //       ^^^^ Identifier
 //           ^ PunctuationDelimiter
 //            ^^^^^^ Identifier
-
+  
   amends "fileB.pkl"
 //^^^^^^ Keyword
 //       ^^^^^^^^^^^ StringLiteral
-
+  
   import "fileA.pkl" as fileA
 //^^^^^^ Keyword
 //       ^^^^^^^^^^^ StringLiteral
 //                   ^^ Keyword
 //                      ^^^^^ Identifier
-
+  
   import* "globbed/*.pkl"
 //^^^^^^^ Keyword
 //        ^^^^^^^^^^^^^^^ StringLiteral
-
+  
   impExp = import("fileC.pkl")
 //^^^^^^ Identifier
 //       ^ IdentifierOperator
 //         ^^^^^^ Keyword
 //                ^^^^^^^^^^^ StringLiteral
-
+  
   // Single-line comment
 //^^^^^^^^^^^^^^^^^^^^^^ Comment
-
+  
   /*
 //^^ Comment 12:0..15:2
     Multiline
     comment
   */
-
-
+  
+  
   // Strings and interpolation
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
   name = "Dodo"
@@ -81,14 +81,14 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                    ^^^^^^^^^^^^ StringLiteral 24:20..26:3
   the species will be remembered.
   """
-
+  
   message3 = #" \\\\\ \#n \#u{12AF} \#(name) """"" "#
 //^^^^^^^^ Identifier
 //         ^ IdentifierOperator
 //           ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
 //                                     ^^^^ Identifier
 //                                          ^^^^^^^^^ StringLiteral
-
+  
   strLength = "dodo".length
 //^^^^^^^^^ Identifier
 //          ^ IdentifierOperator
@@ -108,8 +108,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //              ^ PunctuationDelimiter
 //               ^^^^^^^^ IdentifierFunction
 //                        ^^^^^^^ StringLiteral
-
-
+  
+  
   # Functions
 //  ^^^^^^^^^ IdentifierType
   addToA = (b: Number) -> a + b
@@ -134,8 +134,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                    ^ PunctuationDelimiter
 //                     ^^^ IdentifierFunction
 //                         ^^^^^^ Identifier
-
-
+  
+  
   # Operators
 //  ^^^^^^^^^ IdentifierType
   comparison1 = 5 == 2
@@ -144,7 +144,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //              ^ NumericLiteral
 //                ^^ IdentifierOperator
 //                   ^ NumericLiteral
-
+  
   # Numbers
 //  ^^^^^^^ IdentifierType
   num1 = 123
@@ -155,8 +155,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //^^^^ Identifier
 //     ^ IdentifierOperator
 //       ^^^^^^^^ NumericLiteral
-
-
+  
+  
   // Floats
 //^^^^^^^^^ Comment
   f1: Float(isFinite) = 1.0
@@ -190,7 +190,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //^^^^^^^^^^^^^^^^ Identifier
 //                 ^ IdentifierOperator
 //                   ^^^^^^^^ IdentifierType
-
+  
   // Booleans
 //^^^^^^^^^^^ Comment
   b1 = true && false
@@ -211,8 +211,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //         ^ PunctuationDelimiter
 //          ^^^ IdentifierFunction
 //              ^^^^^ IdentifierBuiltin
-
-
+  
+  
   # Durations
 //  ^^^^^^^^^ IdentifierType
   duration1 = 5.min
@@ -229,8 +229,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                 ^ Identifier
 //                   ^ PunctuationDelimiter
 //                    ^ Identifier
-
-
+  
+  
   // Data Sizes
 //^^^^^^^^^^^^^ Comment
   datasize1 = 5.b  // bytes (smallest unit)
@@ -240,8 +240,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //             ^ PunctuationDelimiter
 //              ^ Identifier
 //                 ^^^^^^^^^^^^^^^^^^^^^^^^ Comment
-
-
+  
+  
   // Consts
 //^^^^^^^^^ Comment
   const laysEggs: Boolean = true
@@ -251,7 +251,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                ^^^^^^^ IdentifierType
 //                        ^ IdentifierOperator
 //                          ^^^^ IdentifierBuiltin
-
+  
   const examples: Listing<String> = new {
 //^^^^^ Keyword
 //      ^^^^^^^^ Identifier
@@ -265,10 +265,10 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
     "Hawk"
 //  ^^^^^^ StringLiteral
   }
-
+  
   // Classes
 //^^^^^^^^^^ Comment
-
+  
   class BunchOfTypes {
 //^^^^^ Keyword
 //      ^^^^^^^^^^^^ IdentifierType
@@ -291,7 +291,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                       ^ IdentifierOperator
 //                         ^^^ StringLiteral
   }
-
+  
   class Bird {
 //^^^^^ Keyword
 //      ^^^^ IdentifierType
@@ -329,7 +329,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //               ^ PunctuationDelimiter
 //                 ^^^^^^ IdentifierType
   }
-
+  
   class Osprey extends Bird {
 //^^^^^ Keyword
 //      ^^^^^^ IdentifierType
@@ -341,7 +341,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //               ^ PunctuationDelimiter
 //                 ^^^^^^^^^^^^^^^^^^^ StringLiteral
   }
-
+  
   typealias Adult = Bird(lifespan >= 2)
 //^^^^^^^^^ Keyword
 //          ^^^^^ IdentifierType
@@ -350,7 +350,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                       ^^^^^^^^ Identifier
 //                                ^^ IdentifierOperator
 //                                   ^ NumericLiteral
-
+  
   function Infant(_name: String): Bird = new { name = _name; lifespan = 0 }
 //^^^^^^^^ Keyword
 //        ^ IdentifierFunction
@@ -370,7 +370,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                                           ^^^^^^^^ Identifier
 //                                                                    ^ IdentifierOperator
 //                                                                      ^ NumericLiteral
-
+  
   pigeon: Bird = new {
 //^^^^^^ Identifier
 //      ^ PunctuationDelimiter
@@ -382,7 +382,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //       ^ IdentifierOperator
 //         ^^^^^^^^ StringLiteral
   }
-
+  
   class Project {
 //^^^^^ Keyword
 //      ^^^^^^^ IdentifierType
@@ -422,7 +422,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                                               ^^ IdentifierOperator
 //                                                                  ^ NumericLiteral
   }
-
+  
   project: Project = new {
 //^^^^^^^ Identifier
 //       ^ PunctuationDelimiter
@@ -437,8 +437,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                         ^ PunctuationDelimiter
 //                           ^^^^^^^^^^^^^^^^^^^^ StringLiteral
   }
-
-
+  
+  
   // Mixins
 //^^^^^^^^^ Comment
   class Bird { diet: String }
@@ -447,7 +447,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //             ^^^^ Identifier
 //                 ^ PunctuationDelimiter
 //                   ^^^^^^ IdentifierType
-
+  
   withDietTyped = new Mixin<Bird> {
 //^^^^^^^^^^^^^ Identifier
 //              ^ IdentifierOperator
@@ -459,10 +459,10 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //       ^ IdentifierOperator
 //         ^^^^^^^ StringLiteral
   }
-
+  
   // Generators
 //^^^^^^^^^^^^^ Comment
-
+  
   isSinger = false
 //^^^^^^^^ Identifier
 //         ^ IdentifierOperator
@@ -514,8 +514,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //           ^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
     }
   }
-
-
+  
+  
   // Let bindings
 //^^^^^^^^^^^^^^^ Comment
   name = let (_ = trace("defining name")) "Eagle"
@@ -527,8 +527,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                ^^^^^ IdentifierBuiltin
 //                      ^^^^^^^^^^^^^^^ StringLiteral
 //                                        ^^^^^^^ StringLiteral
-
-
+  
+  
   // Spreading
 //^^^^^^^^^^^^ Comment
   entries1 {
@@ -538,13 +538,13 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //             ^ IdentifierOperator
 //               ^^^^^^^^^^^^^^^^^^ StringLiteral
   }
-
+  
   entries2 {
 //^^^^^^^^ Identifier
     ...entries1
 //     ^^^^^^^^ Identifier
   }
-
+  
   // Member Predicates
 //^^^^^^^^^^^^^^^^^^^^ Comment
   environmentVariables {
@@ -558,7 +558,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                               ^ IdentifierOperator
 //                                 ^^^^^^^^^^^^^^ StringLiteral
   }
-
+  
   updated = (environmentVariables) {
 //^^^^^^^ Identifier
 //        ^ IdentifierOperator
@@ -573,7 +573,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //            ^^^^^^^^^^^ StringLiteral
     }
   }
-
+  
   /// Doc comments
 //^^^^^^^^^^^^^^^^ Comment
   // showing amending
@@ -597,7 +597,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //              ^^^^^^^^^^^^^^^^^^ StringLiteral
     }
   }
-
+  
   // Transforming objects
 //^^^^^^^^^^^^^^^^^^^^^^^ Comment
   res = woodPigeon

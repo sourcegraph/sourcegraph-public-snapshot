@@ -135,7 +135,7 @@
 "is" @keyword
 "let" @keyword
 "local" @keyword
-(moduleExpr "module" @identifier.module)
+(moduleExpr "module" @include)
 "module" @keyword
 "new" @keyword
 "nothing" @type.builtin
