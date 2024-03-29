@@ -25,7 +25,7 @@ const DELETE_ORG_MUTATION = gql`
 const deleteLabelId = 'deleteOrgId'
 
 export const DeleteOrgModal: React.FunctionComponent<React.PropsWithChildren<DeleteOrgModalProps>> = props => {
-    const { org, isOpen, toggleDeleteModal } = props
+    const { org, isOpen, toggleDeleteModal, telemetryRecorder } = props
 
     const navigate = useNavigate()
     const [orgNameInput, setOrgNameInput] = useState('')
@@ -41,20 +41,23 @@ export const DeleteOrgModal: React.FunctionComponent<React.PropsWithChildren<Del
         event => {
             setOrgNameInput(event.currentTarget.value)
             setOrgNamesMatch(event.currentTarget.value === org.name)
+            telemetryRecorder.recordEvent('org.name', 'change')
         },
-        [org]
+        [org, telemetryRecorder]
     )
 
     const deleteOrg = useCallback(async () => {
         try {
             await deleteOrganization({ variables: { organization: org.id, hard: true } })
+            telemetryRecorder.recordEvent('org', 'delete')
             navigate({
                 pathname: '/settings',
             })
         } catch {
             EVENT_LOGGER.log('OrgDeletionFailed')
+            telemetryRecorder.recordEvent('org', 'deleteFailed')
         }
-    }, [org, deleteOrganization, navigate])
+    }, [org, deleteOrganization, navigate, telemetryRecorder])
 
     return (
         <Modal
