@@ -60,7 +60,9 @@ const defaultMocks: TypeMocks = {
 }
 
 const SCHEMA_DIR = path.resolve(
-    path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../../cmd/frontend/graphqlbackend')
+    // path.join(path.dirname(fileURLToPath(import.meta.url)),
+    '../../../../cmd/frontend/graphqlbackend'
+    // )
 )
 const typeDefs = glob
     .sync('**/*.graphql', { cwd: SCHEMA_DIR })
@@ -189,7 +191,7 @@ export const test = base.extend<{ sg: Sourcegraph; utils: Utils }, { graphqlMock
     graphqlMock: [
         async ({}, use) => {
             const graphqlMock = new GraphQLMockServer({
-                schema: buildSchema(typeDefs),
+                schema: buildSchema('type Query'), // typeDefs),
                 mocks: defaultMocks,
                 typePolicies: {
                     GitBlob: {
