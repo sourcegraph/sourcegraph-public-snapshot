@@ -29,7 +29,7 @@ encoded_sarif=$(gzip -c results.sarif | base64 -w0)
 
 # upload SARIF results to code scanning API
 if [ "$BUILDKITE_PULL_REQUEST" = "false" ]; then
-  ref="refs/heads/${BUILDKIATE_BRANCH}"
+  ref="refs/heads/${BUILDKITE_BRANCH}"
   if [[ -n "${BUILDKITE_TAG}" ]]; then
     ref="refs/tags/${BUILDKITE_TAG}"
   fi
