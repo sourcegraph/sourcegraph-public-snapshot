@@ -2,96 +2,600 @@
 source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
 expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
-  import "pigeon1.pkl"
+  module some.module
 //^^^^^^ Keyword
-//       ^^^^^^^^^^^^^ StringLiteral
-  amends "pigeon2.pkl"
-//^^^^^^ Identifier
-//        ^^^^^^^ Identifier
-//               ^ PunctuationDelimiter
-//                ^^^ Identifier
-  
-  name = "Great green macaw"
+//       ^^^^ Identifier
+//           ^ PunctuationDelimiter
+//            ^^^^^^ Identifier
+
+  amends "fileB.pkl"
+//^^^^^^ Keyword
+//       ^^^^^^^^^^^ StringLiteral
+
+  import "fileA.pkl"
+//^^^^^^ Keyword
+//       ^^^^^^^^^^^ StringLiteral
+
+  // Single-line comment
+//^^^^^^^^^^^^^^^^^^^^^^ Comment
+
+  /*
+//^^ Comment 8:0..11:2
+    Multiline
+    comment
+  */
+
+
+  // Strings and interpolation
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  name = "Dodo"
 //^^^^ Identifier
 //     ^ IdentifierOperator
-//       ^^^^^^^^^^^^^^^^^^^ StringLiteral
-  
-  parrot = (pigeon) {
+//       ^^^^^^ StringLiteral
+  greeting = "Hi, \(name)!"
+//^^^^^^^^ Identifier
+//         ^ IdentifierOperator
+//           ^^^^^ StringLiteral
+//                  ^^^^ Identifier
+//                       ^^ StringLiteral
+  x = 42
+//^ Identifier
+//  ^ IdentifierOperator
+//    ^^ NumericLiteral
+  message1 = "\(x + 2) plus \(x * 2) is \(0x80)"
+//^^^^^^^^ Identifier
+//         ^ IdentifierOperator
+//           ^ StringLiteral
+//              ^ Identifier
+//               ^ StringLiteral
+//                ^ IdentifierOperator
+//                 ^ StringLiteral
+//                  ^ NumericLiteral
+//                    ^^^^^^ StringLiteral
+//                            ^ Identifier
+//                             ^ StringLiteral
+//                              ^ IdentifierOperator
+//                               ^ StringLiteral
+//                                ^ NumericLiteral
+//                                  ^^^^ StringLiteral
+//                                        ^^^^ NumericLiteral
+//                                             ^ StringLiteral
+  message2 = """
+//^^^^^^^^ Identifier
+//         ^ IdentifierOperator
+//           ^^^ StringLiteral 19:11..20:13
+  Although the \(name) is extinct,
+//               ^^^^ Identifier
+//                    ^^^^^^^^^^^^ StringLiteral 20:20..22:3
+  the species will be remembered.
+  """
+
+  message3 = #" \\\\\ \#n \#u{12AF} \#(name) """"" "#
+//^^^^^^^^ Identifier
+//         ^ IdentifierOperator
+//           ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                     ^^^^ Identifier
+//                                          ^^^^^^^^^ StringLiteral
+
+  strLength = "dodo".length
+//^^^^^^^^^ Identifier
+//          ^ IdentifierOperator
+//            ^^^^^^ StringLiteral
+//                  ^ PunctuationDelimiter
+//                   ^^^^^^ Identifier
+  reversedStr = "dodo".reverse()
+//^^^^^^^^^^^ Identifier
+//            ^ IdentifierOperator
+//              ^^^^^^ StringLiteral
+//                    ^ PunctuationDelimiter
+//                     ^^^^^^^ IdentifierFunction
+  hasAx = "dodo".contains("alive")
+//^^^^^ Identifier
+//      ^ IdentifierOperator
+//        ^^^^^^ StringLiteral
+//              ^ PunctuationDelimiter
+//               ^^^^^^^^ IdentifierFunction
+//                        ^^^^^^^ StringLiteral
+
+
+  # Functions
+//  ^^^^^^^^^ IdentifierType
+  addToA = (b: Number) -> a + b
 //^^^^^^ Identifier
 //       ^ IdentifierOperator
-//          ^^^^^^ Identifier
-    name = "Great green macaw"
-//  ^^^^ Identifier
-//       ^ IdentifierOperator
-//         ^^^^^^^^^^^^^^^^^^^ StringLiteral
-    diet = "Berries"
-//  ^^^^ Identifier
-//       ^ IdentifierOperator
-//         ^^^^^^^^^ StringLiteral
-    taxonomy {
-//  ^^^^^^^^ Identifier
-      species = "Ara ambiguus"
-//    ^^^^^^^ Identifier
+//          ^ IdentifierParameter
+//           ^ PunctuationDelimiter
+//             ^^^^^^ IdentifierType
+//                     ^^ IdentifierOperator
+//                        ^ Identifier
+//                          ^ IdentifierOperator
+//                            ^ Identifier
+  list = List(1, 2, 3).map(addToA)
+//^^^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^ IdentifierType
+//            ^ NumericLiteral
+//             ^ PunctuationDelimiter
+//               ^ NumericLiteral
+//                ^ PunctuationDelimiter
+//                  ^ NumericLiteral
+//                    ^ PunctuationDelimiter
+//                     ^^^ IdentifierFunction
+//                         ^^^^^^ Identifier
+
+
+  # Operators
+//  ^^^^^^^^^ IdentifierType
+  comparison1 = 5 == 2
+//^^^^^^^^^^^ Identifier
 //            ^ IdentifierOperator
-//              ^^^^^^^^^^^^^^ StringLiteral
-    }
-  }
-  
-  woodPigeon {
+//              ^ NumericLiteral
+//                ^^ IdentifierOperator
+//                   ^ NumericLiteral
+
+  # Numbers
+//  ^^^^^^^ IdentifierType
+  num1 = 123
+//^^^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^ NumericLiteral
+  num2 = 0x012AFF
+//^^^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^^^^ NumericLiteral
+
+
+  // Floats
+//^^^^^^^^^ Comment
+  f1: Float(isFinite) = 1.0
+//^^ Identifier
+//  ^ PunctuationDelimiter
+//    ^^^^^ IdentifierType
+//          ^^^^^^^^ Identifier
+//                    ^ IdentifierOperator
+//                      ^^^ NumericLiteral
+  f2: Float(isBetween(0, 10e6))
+//^^ Identifier
+//  ^ PunctuationDelimiter
+//    ^^^^^ IdentifierType
+//          ^^^^^^^^^ IdentifierFunction
+//                    ^ NumericLiteral
+//                     ^ PunctuationDelimiter
+//                       ^^^^ NumericLiteral
+  f3 = .23
+//^^ Identifier
+//   ^ IdentifierOperator
+//     ^^^ NumericLiteral
+  f4 = 1.23e-2
+//^^ Identifier
+//   ^ IdentifierOperator
+//     ^^^^^^^ NumericLiteral
+  notANumber = NaN
 //^^^^^^^^^^ Identifier
-    name = "Common wood pigeon"
+//           ^ IdentifierOperator
+//             ^^^ IdentifierType
+  positiveInfinity = Infinity
+//^^^^^^^^^^^^^^^^ Identifier
+//                 ^ IdentifierOperator
+//                   ^^^^^^^^ IdentifierType
+
+  // Booleans
+//^^^^^^^^^^^ Comment
+  b1 = true && false
+//^^ Identifier
+//   ^ IdentifierOperator
+//     ^^^^ IdentifierBuiltin
+//          ^^ IdentifierOperator
+//             ^^^^^ IdentifierBuiltin
+  b2 = !false
+//^^ Identifier
+//   ^ IdentifierOperator
+//     ^ IdentifierOperator
+//      ^^^^^ IdentifierBuiltin
+  b3 = true.xor(false)
+//^^ Identifier
+//   ^ IdentifierOperator
+//     ^^^^ IdentifierBuiltin
+//         ^ PunctuationDelimiter
+//          ^^^ IdentifierFunction
+//              ^^^^^ IdentifierBuiltin
+
+
+  # Durations
+//  ^^^^^^^^^ IdentifierType
+  duration1 = 5.min
+//^^^^^^^^^ Identifier
+//          ^ IdentifierOperator
+//            ^ NumericLiteral
+//             ^ PunctuationDelimiter
+//              ^^^ Identifier
+  xySeconds = (x + y).s
+//^^^^^^^^^ Identifier
+//          ^ IdentifierOperator
+//             ^ Identifier
+//               ^ IdentifierOperator
+//                 ^ Identifier
+//                   ^ PunctuationDelimiter
+//                    ^ Identifier
+
+
+  // Data Sizes
+//^^^^^^^^^^^^^ Comment
+  datasize1 = 5.b  // bytes (smallest unit)
+//^^^^^^^^^ Identifier
+//          ^ IdentifierOperator
+//            ^ NumericLiteral
+//             ^ PunctuationDelimiter
+//              ^ Identifier
+//                 ^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+
+
+  // Consts
+//^^^^^^^^^ Comment
+  const laysEggs: Boolean = true
+//^^^^^ Keyword
+//      ^^^^^^^^ Identifier
+//              ^ PunctuationDelimiter
+//                ^^^^^^^ IdentifierType
+//                        ^ IdentifierOperator
+//                          ^^^^ IdentifierBuiltin
+
+  const examples: Listing<String> = new {
+//^^^^^ Keyword
+//      ^^^^^^^^ Identifier
+//              ^ PunctuationDelimiter
+//                ^^^^^^^ IdentifierType
+//                        ^^^^^^ IdentifierType
+//                                ^ IdentifierOperator
+//                                  ^^^ Keyword
+    "Pigeon"
+//  ^^^^^^^^ StringLiteral
+    "Hawk"
+//  ^^^^^^ StringLiteral
+  }
+
+  // Classes
+//^^^^^^^^^^ Comment
+
+  class BunchOfTypes {
+//^^^^^ Keyword
+//      ^^^^^^^^^^^^ IdentifierType
+    someString: String
+//  ^^^^^^^^^^ Identifier
+//            ^ PunctuationDelimiter
+//              ^^^^^^ IdentifierType
+    someInt: Int
+//  ^^^^^^^ Identifier
+//         ^ PunctuationDelimiter
+//           ^^^ IdentifierType
+    hidden someHiddenString: String
+//  ^^^^^^ Keyword
+//         ^^^^^^^^^^^^^^^^ Identifier
+//                         ^ PunctuationDelimiter
+//                           ^^^^^^ IdentifierType
+    local someLocalThing = ","
+//  ^^^^^ Keyword
+//        ^^^^^^^^^^^^^^ Identifier
+//                       ^ IdentifierOperator
+//                         ^^^ StringLiteral
+  }
+
+  class Bird {
+//^^^^^ Keyword
+//      ^^^^ IdentifierType
+    name: String(length >= 3)
+//  ^^^^ Identifier
+//      ^ PunctuationDelimiter
+//        ^^^^^^ IdentifierType
+//               ^^^^^^ Identifier
+//                      ^^ IdentifierOperator
+//                         ^ NumericLiteral
+    lifespan: UInt8
+//  ^^^^^^^^ Identifier
+//          ^ PunctuationDelimiter
+//            ^^^^^ IdentifierType
+    function isOlderThan(bird: Bird): Boolean = lifespan > bird.lifespan
+//  ^^^^^^^^ Keyword
+//          ^ IdentifierFunction
+//           ^^^^^^^^^^^ Identifier
+//                       ^^^^ IdentifierParameter
+//                           ^ PunctuationDelimiter
+//                            ^ IdentifierFunction
+//                             ^^^^ IdentifierType
+//                                  ^ PunctuationDelimiter
+//                                   ^ IdentifierFunction
+//                                    ^^^^^^^ IdentifierType
+//                                            ^ IdentifierOperator
+//                                              ^^^^^^^^ Identifier
+//                                                       ^ IdentifierOperator
+//                                                         ^^^^ Identifier
+//                                                             ^ PunctuationDelimiter
+//                                                              ^^^^^^^^ Identifier
+    fixed species: String
+//  ^^^^^ Keyword
+//        ^^^^^^^ Identifier
+//               ^ PunctuationDelimiter
+//                 ^^^^^^ IdentifierType
+  }
+
+  class Osprey extends Bird {
+//^^^^^ Keyword
+//      ^^^^^^ IdentifierType
+//             ^^^^^^^ Keyword
+//                     ^^^^ IdentifierType
+    fixed species: "Pandion haliaetus"
+//  ^^^^^ Keyword
+//        ^^^^^^^ Identifier
+//               ^ PunctuationDelimiter
+//                 ^^^^^^^^^^^^^^^^^^^ StringLiteral
+  }
+
+  typealias Adult = Bird(lifespan >= 2)
+//^^^^^^^^^ Keyword
+//          ^^^^^ IdentifierType
+//                ^ IdentifierOperator
+//                  ^^^^ IdentifierType
+//                       ^^^^^^^^ Identifier
+//                                ^^ IdentifierOperator
+//                                   ^ NumericLiteral
+
+  function Infant(_name: String): Bird = new { name = _name; lifespan = 0 }
+//^^^^^^^^ Keyword
+//        ^ IdentifierFunction
+//         ^^^^^^ IdentifierType
+//                ^^^^^ IdentifierParameter
+//                     ^ PunctuationDelimiter
+//                      ^ IdentifierFunction
+//                       ^^^^^^ IdentifierType
+//                              ^ PunctuationDelimiter
+//                               ^ IdentifierFunction
+//                                ^^^^ IdentifierType
+//                                     ^ IdentifierOperator
+//                                       ^^^ Keyword
+//                                             ^^^^ Identifier
+//                                                  ^ IdentifierOperator
+//                                                    ^^^^^ Identifier
+//                                                           ^^^^^^^^ Identifier
+//                                                                    ^ IdentifierOperator
+//                                                                      ^ NumericLiteral
+
+  pigeon: Bird = new {
+//^^^^^^ Identifier
+//      ^ PunctuationDelimiter
+//        ^^^^ IdentifierType
+//             ^ IdentifierOperator
+//               ^^^ Keyword
+    name = "Pigeon"
 //  ^^^^ Identifier
 //       ^ IdentifierOperator
-//         ^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//         ^^^^^^^^ StringLiteral
+  }
+
+  class Project {
+//^^^^^ Keyword
+//      ^^^^^^^ IdentifierType
+    local emailAddress = (str) -> str.matches(Regex(#".+@.+"#))
+//  ^^^^^ Keyword
+//        ^^^^^^^^^^^^ Identifier
+//                     ^ IdentifierOperator
+//                        ^^^ IdentifierParameter
+//                             ^^ IdentifierOperator
+//                                ^^^ Identifier
+//                                   ^ PunctuationDelimiter
+//                                    ^^^^^^^ IdentifierFunction
+//                                            ^^^^^ IdentifierType
+//                                                  ^^^^^^^^^ StringLiteral
+    // constrain the nullable type's element type
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+    type: String(contains("source"))?
+//  ^^^^ Identifier
+//      ^ PunctuationDelimiter
+//        ^^^^^^ IdentifierType
+//               ^^^^^^^^ IdentifierFunction
+//                        ^^^^^^^^ StringLiteral
+//                                  ^ IdentifierOperator
+    // constrain the map type and its key/value types
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+    contacts: Map<String(!isEmpty), String(emailAddress)>(length <= 5)
+//  ^^^^^^^^ Identifier
+//          ^ PunctuationDelimiter
+//            ^^^ IdentifierType
+//                ^^^^^^ IdentifierType
+//                       ^ IdentifierOperator
+//                        ^^^^^^^ Identifier
+//                                ^ PunctuationDelimiter
+//                                  ^^^^^^ IdentifierType
+//                                         ^^^^^^^^^^^^ Identifier
+//                                                        ^^^^^^ Identifier
+//                                                               ^^ IdentifierOperator
+//                                                                  ^ NumericLiteral
+  }
+
+  project: Project = new {
+//^^^^^^^ Identifier
+//       ^ PunctuationDelimiter
+//         ^^^^^^^ IdentifierType
+//                 ^ IdentifierOperator
+//                   ^^^ Keyword
+    contacts = Map("Pigeon", "pigeon@example.com")
+//  ^^^^^^^^ Identifier
+//           ^ IdentifierOperator
+//             ^^^ IdentifierType
+//                 ^^^^^^^^ StringLiteral
+//                         ^ PunctuationDelimiter
+//                           ^^^^^^^^^^^^^^^^^^^^ StringLiteral
+  }
+
+
+  // Mixins
+//^^^^^^^^^ Comment
+  class Bird { diet: String }
+//^^^^^ Keyword
+//      ^^^^ IdentifierType
+//             ^^^^ Identifier
+//                 ^ PunctuationDelimiter
+//                   ^^^^^^ IdentifierType
+
+  withDietTyped = new Mixin<Bird> {
+//^^^^^^^^^^^^^ Identifier
+//              ^ IdentifierOperator
+//                ^^^ Keyword
+//                    ^^^^^ IdentifierType
+//                          ^^^^ IdentifierType
     diet = "Seeds"
 //  ^^^^ Identifier
 //       ^ IdentifierOperator
 //         ^^^^^^^ StringLiteral
+  }
+
+  // Generators
+//^^^^^^^^^^^^^ Comment
+
+  isSinger = false
+//^^^^^^^^ Identifier
+//         ^ IdentifierOperator
+//           ^^^^^ IdentifierBuiltin
+  names = List("Pigeon", "Barn owl", "Parrot")
+//^^^^^ Identifier
+//      ^ IdentifierOperator
+//        ^^^^ IdentifierType
+//             ^^^^^^^^ StringLiteral
+//                     ^ PunctuationDelimiter
+//                       ^^^^^^^^^^ StringLiteral
+//                                 ^ PunctuationDelimiter
+//                                   ^^^^^^^^ StringLiteral
+  parrot {
+//^^^^^^ Identifier
+    lifespan = 20
+//  ^^^^^^^^ Identifier
+//           ^ IdentifierOperator
+//             ^^ NumericLiteral
+    for (_name in names) {
+//  ^^^ Keyword
+//       ^^^^^ Identifier
+//             ^^ Keyword
+//                ^^^^^ Identifier
+      new {
+//    ^^^ Keyword
+        name = _name
+//      ^^^^ Identifier
+//           ^ IdentifierOperator
+//             ^^^^^ Identifier
+        lifespan = 42
+//      ^^^^^^^^ Identifier
+//               ^ IdentifierOperator
+//                 ^^ NumericLiteral
+      }
+    }
+    when (isSinger) {
+//  ^^^^ Keyword
+//        ^^^^^^^^ Identifier
+      idol = "Aretha Franklin"
+//    ^^^^ Identifier
+//         ^ IdentifierOperator
+//           ^^^^^^^^^^^^^^^^^ StringLiteral
+    } else {
+//    ^^^^ Identifier
+      idol = "Wolfgang Amadeus Mozart"
+//    ^^^^ Identifier
+//         ^ IdentifierOperator
+//           ^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+    }
+  }
+
+
+  // Let bindings
+//^^^^^^^^^^^^^^^ Comment
+  name = let (_ = trace("defining name")) "Eagle"
+//^^^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^ Keyword
+//            ^ Identifier
+//              ^ IdentifierOperator
+//                ^^^^^ IdentifierBuiltin
+//                      ^^^^^^^^^^^^^^^ StringLiteral
+//                                        ^^^^^^^ StringLiteral
+
+
+  // Spreading
+//^^^^^^^^^^^^ Comment
+  entries1 {
+//^^^^^^^^ Identifier
+    ["Pigeon"] = "Piggy the Pigeon"
+//   ^^^^^^^^ StringLiteral
+//             ^ IdentifierOperator
+//               ^^^^^^^^^^^^^^^^^^ StringLiteral
+  }
+
+  entries2 {
+//^^^^^^^^ Identifier
+    ...entries1
+//     ^^^^^^^^ Identifier
+  }
+
+  // Member Predicates
+//^^^^^^^^^^^^^^^^^^^^ Comment
+  environmentVariables {
+//^^^^^^^^^^^^^^^^^^^^ Identifier
+    new { name = "PARROT"; value = "parrot-value" }
+//  ^^^ Keyword
+//        ^^^^ Identifier
+//             ^ IdentifierOperator
+//               ^^^^^^^^ StringLiteral
+//                         ^^^^^ Identifier
+//                               ^ IdentifierOperator
+//                                 ^^^^^^^^^^^^^^ StringLiteral
+  }
+
+  updated = (environmentVariables) {
+//^^^^^^^ Identifier
+//        ^ IdentifierOperator
+//           ^^^^^^^^^^^^^^^^^^^^ Identifier
+    [[name == "PARROT"]] {
+//    ^^^^ Identifier
+//         ^^ IdentifierOperator
+//            ^^^^^^^^ StringLiteral
+      value = "new-value"
+//    ^^^^^ Identifier
+//          ^ IdentifierOperator
+//            ^^^^^^^^^^^ StringLiteral
+    }
+  }
+
+  /// Doc comments
+//^^^^^^^^^^^^^^^^ Comment
+  // showing amending
+//^^^^^^^^^^^^^^^^^^^ Comment
+  woodPigeon (parrot) {
+//^^^^^^^^^^ Identifier
+//            ^^^^^^ Identifier
+    name = "Common wood pigeon"
+//  ^^^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^^^^^^^^^^^^^^^ StringLiteral
     taxonomy {
 //  ^^^^^^^^ Identifier
+      `class` = "Aves"
+//    ^^^^^^^ Identifier
+//            ^ IdentifierOperator
+//              ^^^^^^ StringLiteral
       species = "Columba palumbus"
 //    ^^^^^^^ Identifier
 //            ^ IdentifierOperator
 //              ^^^^^^^^^^^^^^^^^^ StringLiteral
     }
   }
-  stockPigeon {
-//^^^^^^^^^^^ Identifier
-    name = "Stock pigeon"
-//  ^^^^ Identifier
-//       ^ IdentifierOperator
-//         ^^^^^^^^^^^^^^ StringLiteral
-    diet = "Seeds"
-//  ^^^^ Identifier
-//       ^ IdentifierOperator
-//         ^^^^^^^ StringLiteral
-    taxonomy {
-//  ^^^^^^^^ Identifier
-      species = "Columba oenas"
-//    ^^^^^^^ Identifier
-//            ^ IdentifierOperator
-//              ^^^^^^^^^^^^^^^ StringLiteral
-    }
-  }
-  dodo {
-//^^^^ Identifier
-    name = "Dodo"
-//  ^^^^ Identifier
-//       ^ IdentifierOperator
-//         ^^^^^^ StringLiteral
-    diet = "Seeds"
-//  ^^^^ Identifier
-//       ^ IdentifierOperator
-//         ^^^^^^^ StringLiteral
-    extinct = true
-//  ^^^^^^^ Identifier
-//          ^ IdentifierOperator
-//            ^^^^ IdentifierBuiltin
-    taxonomy {
-//  ^^^^^^^^ Identifier
-      species = "Raphus cucullatus"
-//    ^^^^^^^ Identifier
-//            ^ IdentifierOperator
-//              ^^^^^^^^^^^^^^^^^^^ StringLiteral
-    }
-  }
+
+  // Transforming objects
+//^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  res = woodPigeon
+//^^^ Identifier
+//    ^ IdentifierOperator
+//      ^^^^^^^^^^ Identifier
+      .toMap()
+//    ^ PunctuationDelimiter
+//     ^^^^^ IdentifierFunction
+      .remove("name")
+//    ^ PunctuationDelimiter
+//     ^^^^^^ IdentifierFunction
+//            ^^^^^^ StringLiteral
