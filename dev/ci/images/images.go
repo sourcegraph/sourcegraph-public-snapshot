@@ -78,7 +78,6 @@ var SourcegraphDockerImages = append(append(SourcegraphDockerImagesTestDeps, Dep
 // base deployment, nor do they require a special bazel toolchain ie: musl
 var SourcegraphDockerImagesMisc = []string{
 	"batcheshelper",
-	"blobstore2",
 	"bundled-executor",
 	"dind",
 	"embeddings",
