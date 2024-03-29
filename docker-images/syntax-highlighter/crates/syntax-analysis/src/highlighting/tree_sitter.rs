@@ -432,6 +432,32 @@ mod test {
         .expect("dump document")
     }
 
+    fn get_language_for_test(filepath: &std::path::Path, contents: &str) -> TreeSitterLanguageName {
+        let language_from_syntect = crate::highlighting::test::SYNTAX_SET
+            .with(|syntax_set| {
+                FileInfo::new(filepath.to_string_lossy().as_ref(), &contents, None)
+                    .determine_language(syntax_set)
+            })
+            .unwrap();
+
+        // If we can't determine language from Syntect, determine from path just for the test
+        // This is only needed for test, since when running in production, we
+        // will always have the language passed in
+        if language_from_syntect.raw.is_empty()
+            || language_from_syntect.raw.to_lowercase() == "plain text"
+        {
+            let extension = filepath.extension().unwrap_or_default();
+            if !extension.is_empty() {
+                if let Some(parser_id) = ParserId::from_file_extension(extension.to_str().unwrap())
+                {
+                    return TreeSitterLanguageName::new(parser_id.name());
+                }
+            }
+        }
+
+        return language_from_syntect;
+    }
+
     #[test]
     fn test_highlights_one_comment() -> anyhow::Result<()> {
         let src = "// Hello World";
@@ -485,12 +511,7 @@ SELECT * FROM my_table
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
 
-            let language = &crate::highlighting::test::SYNTAX_SET
-                .with(|syntax_set| {
-                    FileInfo::new(filepath.to_string_lossy().as_ref(), &contents, None)
-                        .determine_language(syntax_set)
-                })
-                .unwrap();
+            let language = get_language_for_test(&filepath, &contents);
 
             let document = language.highlight_document(&contents, true).unwrap();
             // TODO: I'm not sure if there's a better way to run the snapshots without

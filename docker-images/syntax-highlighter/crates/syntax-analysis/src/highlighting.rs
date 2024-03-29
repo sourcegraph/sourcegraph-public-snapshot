@@ -11,7 +11,6 @@ use syntect::parsing::{SyntaxReference, SyntaxSet};
 
 pub mod tree_sitter;
 use crate::highlighting::syntect_html::ClassedTableGenerator;
-use tree_sitter_all_languages::ParserId;
 
 #[derive(Default)]
 pub struct FileInfo<'a> {
@@ -167,15 +166,6 @@ struct SublimeLanguageName {
 
 impl SublimeLanguageName {
     fn into_tree_sitter_name(self, file_info: &FileInfo<'_>) -> TreeSitterLanguageName {
-        if self.raw.is_empty() || self.raw.to_lowercase() == "plain text" {
-            let extension = file_info.extension().unwrap_or("");
-            if !extension.is_empty() {
-                if let Some(parser_id) = ParserId::from_file_extension(extension) {
-                    return TreeSitterLanguageName::new(parser_id.name());
-                }
-            }
-        }
-
         // Written in an unusual style so that we can:
         // 1. Avoid case-sensitive comparison
         // 2. We can look up corresponding Sublime Grammars easily
