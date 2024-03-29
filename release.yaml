@@ -15,8 +15,8 @@ requirements:
 
   # #bolaji-release-testing
   # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=isv4abynddpox72wwbhaamo76e&i=7zjax5rm5hlilbgrzeb257i62i&h=team-sourcegraph.1password.com
-  - name: "Slack Webhook URL"
-    env: SLACK_WEBHOOK_URL
+  # - name: "Slack Webhook URL"
+  #   env: SLACK_WEBHOOK_URL
 
 internal:
   create:
@@ -65,6 +65,13 @@ test:
     - name: "placeholder"
       cmd: |
         echo "-- pretending to test release ..."
+    - name: "check tag does not exist"
+      cmd: |
+        tags=$(git ls-remote --tags origin | sort -t '/' -k 3 | cut -f 2 | awk -F '/' '{gsub(/\^\{\}$/, "", $3); print $3}' | uniq)
+        if echo "${tags}" | grep -q "^qa-{{version}}$"; then
+          echo "❌ Tag 'qa-{{version}}' already exists"
+          exit 1
+        fi
 
 promoteToPublic:
   create:
@@ -107,7 +114,7 @@ promoteToPublic:
 
           git fetch origin '+refs/heads/{{git.branch}}:refs/heads/{{git.branch}}'
           git checkout {{git.branch}}
-          git tag {{version}}
+          git tag qa-{{version}}
           git push origin {{git.branch}} --tags
 
           # Annotate build
@@ -116,23 +123,23 @@ promoteToPublic:
           EOF
       # tag is usually in the format `5.3.2`
       # while version is usually the tag prepended with a v, `v5.3.2`
-      - name: "Slack notification (#announce-engineering)"
-        cmd: |
-          echo "Posting slack notification for release"
-          tag="{{tag}}"
-          changelog_version="${tag//./}"
-          body=$(curl -s --fail-with-body -X POST "$SLACK_WEBHOOK_URL" -H "Content-Type: application/json" -d '{
-            "type": "mrkdwn"
-            "text": "*Sourcegraph {{tag}} has been published*\n\n• <https://sourcegraph.com/docs/CHANGELOG#${changelog_version} | Changelog>\n• <https://github.com/sourcegraph/sourcegraph/releases/tag/{{version}} | GitHub release>"
-          }')
-          exit_code=$?
-
-          if [ $exit_code != 0 ]; then
-            echo "❌ Unable to post message to slack, got:"
-            echo "--- raw body ---"
-            echo $body
-            echo "--- raw body ---"
-            exit $exit_code
-          else
-            echo "Posted to slack."
-          fi
+      # - name: "Slack notification (#announce-engineering)"
+      #   cmd: |
+      #     echo "Posting slack notification for release"
+      #     tag="{{tag}}"
+      #     changelog_version="${tag//./}"
+      #     body=$(curl -s --fail-with-body -X POST "$SLACK_WEBHOOK_URL" -H "Content-Type: application/json" -d '{
+      #       "type": "mrkdwn"
+      #       "text": "*Sourcegraph {{tag}} has been published*\n\n• <https://sourcegraph.com/docs/CHANGELOG#${changelog_version} | Changelog>\n• <https://github.com/sourcegraph/sourcegraph/releases/tag/{{version}} | GitHub release>"
+      #     }')
+      #     exit_code=$?
+      #
+      #     if [ $exit_code != 0 ]; then
+      #       echo "❌ Unable to post message to slack, got:"
+      #       echo "--- raw body ---"
+      #       echo $body
+      #       echo "--- raw body ---"
+      #       exit $exit_code
+      #     else
+      #       echo "Posted to slack."
+      #     fi
