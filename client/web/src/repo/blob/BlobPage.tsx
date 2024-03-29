@@ -410,6 +410,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                             actionType={actionType}
                             source="repoHeader"
                             renderMode={renderMode}
+                            telemetryRecorder={props.telemetryRecorder}
                         />
                     )}
                 </RepoHeaderContributionPortal>
