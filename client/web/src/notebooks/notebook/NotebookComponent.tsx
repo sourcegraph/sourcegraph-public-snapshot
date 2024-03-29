@@ -128,7 +128,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 // No V2 telemetry needed, as this is not a direct user action, and is duplicative with
                 // other telemetry below (since updateBlocks() is called by the other user actions).
             },
-            [notebook, setBlocks, debouncedOnSerializeBlocks, telemetryService, telemetryRecorder]
+            [notebook, setBlocks, debouncedOnSerializeBlocks, telemetryService]
         )
 
         const selectBlock = useCallback(

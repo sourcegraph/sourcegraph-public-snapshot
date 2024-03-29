@@ -124,6 +124,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                 // Override the no-op telemetryRecorder from initialization
                 const { platformContext } = this.state
                 platformContext.telemetryRecorder = telemetryRecorderProvider.getRecorder()
+
                 this.setState({
                     graphqlClient,
                     temporarySettingsStorage: new TemporarySettingsStorage(

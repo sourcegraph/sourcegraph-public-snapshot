@@ -42,7 +42,6 @@ export const GlobalNotebooksArea: FC<React.PropsWithChildren<GlobalNotebooksArea
     authenticatedUser,
     ...outerProps
 }) => {
-    console.log('outerProps.telemetryRecorder', outerProps.telemetryRecorder)
     return (
         <Routes>
             <Route index={true} element={<NotebooksListPage authenticatedUser={authenticatedUser} {...outerProps} />} />
