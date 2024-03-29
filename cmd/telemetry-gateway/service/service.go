@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/background"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
+	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/contract"
 
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/server"
@@ -93,7 +94,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 
 	// Set up diagnostics endpoints
 	diagnosticsServer := http.NewServeMux()
-	contract.RegisterDiagnosticsHandlers(diagnosticsServer, &serviceStatus{
+	contract.Diagnostics.RegisterDiagnosticsHandlers(diagnosticsServer, &serviceStatus{
 		eventsTopic: eventsTopic,
 	})
 	if !contract.MSP {
@@ -130,7 +131,7 @@ type serviceStatus struct {
 	eventsTopic pubsub.TopicClient
 }
 
-var _ runtime.ServiceState = (*serviceStatus)(nil)
+var _ contract.ServiceState = (*serviceStatus)(nil)
 
 func (s *serviceStatus) Healthy(ctx context.Context, _ url.Values) error {
 	if err := s.eventsTopic.Ping(ctx); err != nil {

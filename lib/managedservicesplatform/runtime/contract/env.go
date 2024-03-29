@@ -1,7 +1,6 @@
-package runtime
+package contract
 
 import (
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -9,10 +8,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type requestedEnvVar struct {
-	name         string
-	defaultValue string
-	description  string
+type RequestedEnvVar struct {
+	Name         string
+	DefaultValue string
+	Description  string
 }
 
 type Env struct {
@@ -21,13 +20,21 @@ type Env struct {
 
 	// requestedEnvVars are only available after ConfigLoader is used on this
 	// Env instance.
-	requestedEnvVars []requestedEnvVar
+	requestedEnvVars []RequestedEnvVar
 }
 
-func newEnv() (*Env, error) {
-	env := os.Environ()
-	envMap := make(map[string]string, len(env))
-	for _, e := range env {
+// ParseEnv parses os.Environ() once for various contracts to reference for
+// expected configuration values (the 'MSP contract'). The 'environ' argument
+// is expected to be the output of os.Environ(), or an equivalent format.
+//
+// After using Env to retrieve all expected variables, callers are expected to
+// use (*Env).Validate() to ensure all required variables were provided and
+// collect any parsing errors.
+//
+// Env is not concurrency-safe.
+func ParseEnv(environ []string) (*Env, error) {
+	envMap := make(map[string]string, len(environ))
+	for _, e := range environ {
 		kv := strings.SplitN(e, "=", 2)
 		if len(kv) != 2 {
 			return nil, errors.Errorf("unable to parse environment variable %q", e)
@@ -41,10 +48,10 @@ func newEnv() (*Env, error) {
 }
 
 func (e *Env) get(name, defaultValue, description string) string {
-	e.requestedEnvVars = append(e.requestedEnvVars, requestedEnvVar{
-		name:         name,
-		defaultValue: defaultValue,
-		description:  description,
+	e.requestedEnvVars = append(e.requestedEnvVars, RequestedEnvVar{
+		Name:         name,
+		DefaultValue: defaultValue,
+		Description:  description,
 	})
 
 	v, ok := e.env[name]
@@ -54,9 +61,9 @@ func (e *Env) get(name, defaultValue, description string) string {
 	return v
 }
 
-// validate returns any errors constructed from a Get* method after the values have
+// Validate returns any errors constructed from a Get* method after the values have
 // been loaded from the environment.
-func (e *Env) validate() error {
+func (e *Env) Validate() error {
 	if len(e.errs) == 0 {
 		return nil
 	}
@@ -153,4 +160,10 @@ func (e *Env) GetBool(name, defaultValue, description string) bool {
 // any effect.
 func (e *Env) AddError(err error) {
 	e.errs = append(e.errs, err)
+}
+
+// GetRequestedEnvVars returns the list of environment variables that were
+// requested so far through Env's various Get methods.
+func (e *Env) GetRequestedEnvVars() []RequestedEnvVar {
+	return e.requestedEnvVars
 }
