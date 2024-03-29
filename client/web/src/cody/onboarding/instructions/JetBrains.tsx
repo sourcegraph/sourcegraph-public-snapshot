@@ -30,10 +30,10 @@ export function JetBrainsInstructions({
     useEffect(() => {
         if (step === EditorStep.SetupInstructions) {
             eventLogger.log(EventName.CODY_EDITOR_SETUP_VIEWED, { editor: 'JetBrains' })
-            telemetryRecorder.recordEvent('cody.editorSetupViewed', 'view', { metadata: { jetBrains: 1 } })
+            telemetryRecorder.recordEvent('cody.editorSetupPage', 'view', { metadata: { jetBrains: 1 } })
         } else if (step === EditorStep.CodyFeatures) {
             eventLogger.log(EventName.CODY_EDITOR_FEATURES_VIEWED, { editor: 'JetBrains' })
-            telemetryRecorder.recordEvent('cody.editorFeaturesViewed', 'view', { metadata: { jetBrains: 1 } })
+            telemetryRecorder.recordEvent('cody.editorFeaturesPage', 'view', { metadata: { jetBrains: 1 } })
         }
     }, [step, telemetryRecorder])
 
