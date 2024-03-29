@@ -8,10 +8,6 @@ go_binary(
     name = "telemetry-gateway",
     embed = [":telemetry-gateway_lib"],
     visibility = ["//visibility:public"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
 )
 
 pkg_tar(
@@ -66,9 +62,9 @@ go_library(
     ],
 )
 
-msp_delivery(
-    name = "msp_deploy",
-    gcp_project = "telemetry-gateway-prod-acae",
-    msp_service_id = "telemetry-gateway",
-    repository = "index.docker.io/sourcegraph/telemetry-gateway",
-)
+# msp_delivery(
+#     name = "msp_deploy",
+#     gcp_project = "telemetry-gateway-prod-acae",
+#     msp_service_id = "telemetry-gateway",
+#     repository = "index.docker.io/sourcegraph/telemetry-gateway",
+# )

@@ -13,6 +13,8 @@ require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.45.0
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.21.0
 	github.com/getsentry/sentry-go v0.25.0
+	github.com/go-logr/logr v1.4.1
+	github.com/go-logr/stdr v1.2.2
 	github.com/jackc/pgx/v5 v5.5.0
 	github.com/prometheus/client_golang v1.18.0
 	github.com/sourcegraph/conc v0.3.1-0.20240108182409-4afefce20f9b
@@ -48,8 +50,6 @@ require (
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/go-logr/logr v1.4.1 // indirect
-	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/goccy/go-json v0.9.11 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect

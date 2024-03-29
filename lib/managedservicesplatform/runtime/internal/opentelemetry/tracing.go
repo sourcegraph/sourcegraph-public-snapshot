@@ -25,16 +25,10 @@ import (
 //
 // Based on https://cloud.google.com/trace/docs/setup/go-ot
 func maybeEnableTracing(ctx context.Context, logger log.Logger, config Config, res *resource.Resource) (func(), error) {
-	// Set globals
-	otel.SetTextMapPropagator(defaultPropagator())
-	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
-		logger.Debug("OpenTelemetry error", log.Error(err))
-	}))
-
 	// Initialize exporter
 	var exporter sdktrace.SpanExporter
 	if config.GCPProjectID != "" {
-		logger.Debug("initializing GCP trace exporter", log.String("projectID", config.GCPProjectID))
+		logger.Info("initializing GCP trace exporter", log.String("projectID", config.GCPProjectID))
 		var err error
 		exporter, err = gcptraceexporter.New(
 			gcptraceexporter.WithProjectID(config.GCPProjectID),
@@ -46,7 +40,7 @@ func maybeEnableTracing(ctx context.Context, logger log.Logger, config Config, r
 			return nil, errors.Wrap(err, "gcptraceexporter.New")
 		}
 	} else {
-		logger.Debug("initializing OTLP exporter")
+		logger.Info("initializing OTLP exporter")
 		var err error
 		exporter, err = otlptrace.New(ctx, otlptracegrpc.NewClient()) // no opts, use OTLP convention
 		if err != nil {
@@ -60,7 +54,6 @@ func maybeEnableTracing(ctx context.Context, logger log.Logger, config Config, r
 		sdktrace.WithResource(res))
 	otel.SetTracerProvider(provider)
 
-	logger.Info("tracing configured")
 	return func() {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
