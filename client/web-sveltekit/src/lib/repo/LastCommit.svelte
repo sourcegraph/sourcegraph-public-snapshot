@@ -17,7 +17,6 @@
 
 <script lang="ts">
     import { formatDistanceToNow } from 'date-fns'
-    import { capitalize } from 'lodash'
 
     import type { Avatar_User } from '$lib/Avatar.gql'
     import Avatar from '$lib/Avatar.svelte'
@@ -29,16 +28,6 @@
         avatarURL: latestCommit.author.person.avatarURL,
         displayName: latestCommit.author.person.displayName,
         username: latestCommit.author.person.name,
-    }
-
-    function getFirstNameAndLastInitial(name: string): string {
-        const names = name.split(' ')
-        if (names.length < 2) {
-            return `${capitalize(names[0].toLowerCase())}`
-        }
-        const firstName = names[0].toLowerCase()
-        const lastInitial = names[names.length - 1].charAt(0).toUpperCase()
-        return `${capitalize(firstName)} ${lastInitial}.`
     }
 
     function extractPRNumber(cm: string): string | null {
@@ -87,7 +76,7 @@
     <div class="user-info">
         <Avatar {avatar} />
         <div class="display-name">
-            <small>{getFirstNameAndLastInitial(latestCommit.author.person.displayName)}</small>
+            <small>{latestCommit.author.person.name}</small>
         </div>
     </div>
 
