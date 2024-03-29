@@ -153,7 +153,7 @@ func getGoogleCalClient(ctx context.Context) (*calendar.Service, error) {
 	cfg := oauth2.Config{
 		ClientID:     creds.Installed.ClientID,
 		ClientSecret: creds.Installed.ClientSecret,
-		RedirectURL:  fmt.Sprintf("http://localhost%s", srv.Addr),
+		RedirectURL:  fmt.Sprintf("http://localhost%s", srv.Addr), // CI:LOCALHOST_OK
 		Endpoint:     google.Endpoint,
 		Scopes:       []string{"https://www.googleapis.com/auth/calendar.events"},
 	}
