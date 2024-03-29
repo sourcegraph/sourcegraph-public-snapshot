@@ -435,7 +435,7 @@ mod test {
     fn get_language_for_test(filepath: &std::path::Path, contents: &str) -> TreeSitterLanguageName {
         let language_from_syntect = crate::highlighting::test::SYNTAX_SET
             .with(|syntax_set| {
-                FileInfo::new(filepath.to_string_lossy().as_ref(), &contents, None)
+                FileInfo::new(filepath.to_string_lossy().as_ref(), contents, None)
                     .determine_language(syntax_set)
             })
             .unwrap();
@@ -455,7 +455,7 @@ mod test {
             }
         }
 
-        return language_from_syntect;
+        language_from_syntect
     }
 
     #[test]
