@@ -6507,7 +6507,13 @@ type User implements Node & SettingsSubject & Namespace {
     """
     tosAccepted: Boolean!
     """
-    The user's usage statistics on Sourcegraph.
+    The user's recent usage statistics on Sourcegraph.
+
+    These statistics are aggregated from the user activity records in the event_logs table. That table only
+    records 93 days worth of history, however, so long-term aggregated statistics may not be accurate (e.g.
+    the lastActiveTime field may appear to be null, when in reality the user was active prior to 93 days ago).
+
+    See SiteUser.lastActiveAt for a GraphQL field that goes back further than 93 days.
     """
     usageStatistics: UserUsageStatistics!
     """
@@ -7948,30 +7954,38 @@ type Configuration {
 """
 UserUsageStatistics describes a user's usage statistics.
 This information is visible to all viewers.
+
+These statistics are aggregated from the user activity records in the event_logs table. That table only
+records 93 days worth of history, however, so long-term aggregated statistics may not be accurate (e.g.
+the lastActiveTime field may appear to be null, when in reality the user was active prior to 93 days ago).
+
+See SiteUser.lastActiveAt for a GraphQL field that goes back further than 93 days.
 """
 type UserUsageStatistics {
     """
-    The number of search queries that the user has performed.
+    The number of search queries that the user has performed in the last 93 days.
     """
     searchQueries: Int!
     """
-    The number of page views that the user has performed.
+    The number of page views that the user has performed in the last 93 days.
     """
     pageViews: Int!
     """
-    The number of code intelligence actions that the user has performed.
+    The number of code intelligence actions that the user has performed in the last 93 days.
     """
     codeIntelligenceActions: Int!
     """
-    The number of find-refs actions that the user has performed.
+    The number of find-refs actions that the user has performed in the last 93 days.
     """
     findReferencesActions: Int!
     """
-    The last time the user was active (any action, any platform).
+    The last time the user was active (any action, any platform) in the last 93 days.
+    Null if the user hasn't been active in that time.
     """
     lastActiveTime: String
     """
-    The last time the user was active on a code host integration.
+    The last time the user was active on a code host integration in the last 93 days.
+    Null if the user hasn't been active in that time.
     """
     lastActiveCodeHostIntegrationTime: String
 }
@@ -8444,6 +8458,12 @@ type SiteUser {
     createdAt: String!
     """
     The datetime when user was last active.
+
+    This is an aggregated metric that goes back to the beginning of the user's time
+    using this Sourcegraph instance.
+
+    This value is only updated every ~12 hours. For real-time data, see
+    UserUsageStatistics.lastActiveTime.
     """
     lastActiveAt: String
     """
