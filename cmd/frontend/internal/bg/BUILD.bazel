@@ -8,7 +8,6 @@ go_library(
         "delete_old_cache_data_in_redis.go",
         "delete_old_event_logs_in_postgres.go",
         "doc.go",
-        "store_token_usage_in_postgres.go",
         "update_permissions.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg",
