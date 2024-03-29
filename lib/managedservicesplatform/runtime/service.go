@@ -99,7 +99,7 @@ func Start[
 	}
 
 	// Initialize things dependent on configuration being loaded
-	otelCleanup, err := opentelemetry.Init(ctx, logger, ctr.Diagnostics.OpenTelemetry, res)
+	otelCleanup, err := opentelemetry.Init(ctx, logger.Scoped("otel"), ctr.Diagnostics.OpenTelemetry, res)
 	if err != nil {
 		logger.Fatal("failed to initialize OpenTelemetry", log.Error(err))
 	}

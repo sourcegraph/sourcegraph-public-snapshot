@@ -187,18 +187,14 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 
 		// Affects Wolfi packages
 		if strings.HasPrefix(p, "wolfi-packages/") && strings.HasSuffix(p, ".yaml") {
-			if !strings.Contains(p, "prometheus-gcp") {
-				diff |= WolfiPackages
-				changedFiles[WolfiPackages] = append(changedFiles[WolfiPackages], p)
-			}
+			diff |= WolfiPackages
+			changedFiles[WolfiPackages] = append(changedFiles[WolfiPackages], p)
 		}
 
 		// Affects Wolfi base images
 		if strings.HasPrefix(p, "wolfi-images/") && strings.HasSuffix(p, ".yaml") {
-			if !strings.Contains(p, "prometheus-gcp") {
-				diff |= WolfiBaseImages
-				changedFiles[WolfiBaseImages] = append(changedFiles[WolfiBaseImages], p)
-			}
+			diff |= WolfiBaseImages
+			changedFiles[WolfiBaseImages] = append(changedFiles[WolfiBaseImages], p)
 		}
 
 		// Affects Protobuf files and configuration
