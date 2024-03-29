@@ -3,6 +3,8 @@ package internal
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -11,35 +13,33 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func repoCloneProgress(fs gitserverfs.FS, locker RepositoryLocker, repo api.RepoName) (*protocol.RepoCloneProgress, error) {
-	cloned, err := fs.RepoCloned(repo)
-	if err != nil {
-		return nil, errors.Wrap(err, "determine clone status")
-	}
-
+func repoCloneProgress(reposDir string, locker RepositoryLocker, repo api.RepoName) *protocol.RepoCloneProgress {
+	dir := gitserverfs.RepoDirFromName(reposDir, repo)
 	resp := protocol.RepoCloneProgress{
-		Cloned: cloned,
+		Cloned: repoCloned(dir),
 	}
-	resp.CloneProgress, resp.CloneInProgress = locker.Status(repo)
+	resp.CloneProgress, resp.CloneInProgress = locker.Status(dir)
 	if isAlwaysCloningTest(repo) {
 		resp.CloneInProgress = true
 		resp.CloneProgress = "This will never finish cloning"
 	}
-	return &resp, nil
+	return &resp
 }
 
 func deleteRepo(
 	ctx context.Context,
+	logger log.Logger,
 	db database.DB,
 	shardID string,
-	fs gitserverfs.FS,
+	reposDir string,
 	repo api.RepoName,
 ) error {
-	err := fs.RemoveRepo(repo)
+	// The repo may be deleted in the database, in this case we need to get the
+	// original name in order to find it on disk
+	err := gitserverfs.RemoveRepoDirectory(ctx, logger, db, shardID, reposDir, gitserverfs.RepoDirFromName(reposDir, api.UndeletedRepoName(repo)), true)
 	if err != nil {
 		return errors.Wrap(err, "removing repo directory")
 	}
-
 	err = db.GitserverRepos().SetCloneStatus(ctx, repo, types.CloneStatusNotCloned, shardID)
 	if err != nil {
 		return errors.Wrap(err, "setting clone status after delete")

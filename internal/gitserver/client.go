@@ -601,18 +601,20 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		}
 	}()
 
+	repoName := protocol.NormalizeRepo(c.repo)
+
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 
-	client, err := c.execer.ClientForRepo(ctx, c.repo)
+	client, err := c.execer.ClientForRepo(ctx, repoName)
 	if err != nil {
 		return nil, err
 	}
 
 	req := &proto.ExecRequest{
-		Repo:      string(c.repo),
+		Repo:      string(repoName),
 		Args:      stringsToByteSlices(c.args[1:]),
 		NoTimeout: c.noTimeout,
 	}
@@ -654,7 +656,9 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 	})
 	defer endObservation(1, observation.Args{})
 
-	client, err := c.ClientForRepo(ctx, args.Repo)
+	repoName := protocol.NormalizeRepo(args.Repo)
+
+	client, err := c.ClientForRepo(ctx, repoName)
 	if err != nil {
 		return false, err
 	}
@@ -867,7 +871,11 @@ func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) (err 
 	})
 	defer endObservation(1, observation.Args{})
 
-	client, err := c.ClientForRepo(ctx, repo)
+	// In case the repo has already been deleted from the database we need to pass
+	// the old name in order to land on the correct gitserver instance
+	undeletedName := api.UndeletedRepoName(repo)
+
+	client, err := c.ClientForRepo(ctx, undeletedName)
 	if err != nil {
 		return err
 	}

@@ -149,7 +149,3 @@
     - GitBackend
     - GitConfigBackend
     - BlameHunkReader
-- filename: cmd/gitserver/internal/gitserverfs/mock.go
-  path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs
-  interfaces:
-    - FS

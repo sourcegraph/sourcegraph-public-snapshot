@@ -3,13 +3,12 @@ package inttests
 import (
 	"container/list"
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
@@ -19,7 +18,6 @@ import (
 	common "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -72,15 +70,13 @@ func TestClient_ResolveRevision(t *testing.T) {
 	db := newMockDB()
 	ctx := context.Background()
 
-	fs := gitserverfs.New(&observation.TestContext, filepath.Join(root, "repos"))
-	require.NoError(t, fs.Initialize())
 	getRemoteURLFunc := func(_ context.Context, name api.RepoName) (string, error) { //nolint:unparam
 		return remote, nil
 	}
 
 	s := server.NewServer(&server.ServerOpts{
-		Logger: logger,
-		FS:     fs,
+		Logger:   logger,
+		ReposDir: filepath.Join(root, "repos"),
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 		},

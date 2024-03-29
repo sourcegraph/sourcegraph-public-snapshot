@@ -76,7 +76,7 @@ func NewMockService() *MockService {
 			},
 		},
 		MaybeStartCloneFunc: &ServiceMaybeStartCloneFunc{
-			defaultHook: func(context.Context, api.RepoName) (r0 bool, r1 CloneStatus, r2 error) {
+			defaultHook: func(context.Context, api.RepoName) (r0 *protocol.NotFoundPayload, r1 bool) {
 				return
 			},
 		},
@@ -123,7 +123,7 @@ func NewStrictMockService() *MockService {
 			},
 		},
 		MaybeStartCloneFunc: &ServiceMaybeStartCloneFunc{
-			defaultHook: func(context.Context, api.RepoName) (bool, CloneStatus, error) {
+			defaultHook: func(context.Context, api.RepoName) (*protocol.NotFoundPayload, bool) {
 				panic("unexpected invocation of MockService.MaybeStartClone")
 			},
 		},
@@ -149,7 +149,7 @@ type surrogateMockService interface {
 	EnsureRevision(context.Context, api.RepoName, string) bool
 	IsRepoCloneable(context.Context, api.RepoName) (protocol.IsRepoCloneableResponse, error)
 	LogIfCorrupt(context.Context, api.RepoName, error)
-	MaybeStartClone(context.Context, api.RepoName) (bool, CloneStatus, error)
+	MaybeStartClone(context.Context, api.RepoName) (*protocol.NotFoundPayload, bool)
 	RepoUpdate(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
 	SearchWithObservability(context.Context, trace.Trace, *protocol.SearchRequest, func(*protocol.CommitMatch) error) (bool, error)
 }
@@ -728,24 +728,24 @@ func (c ServiceLogIfCorruptFuncCall) Results() []interface{} {
 // ServiceMaybeStartCloneFunc describes the behavior when the
 // MaybeStartClone method of the parent MockService instance is invoked.
 type ServiceMaybeStartCloneFunc struct {
-	defaultHook func(context.Context, api.RepoName) (bool, CloneStatus, error)
-	hooks       []func(context.Context, api.RepoName) (bool, CloneStatus, error)
+	defaultHook func(context.Context, api.RepoName) (*protocol.NotFoundPayload, bool)
+	hooks       []func(context.Context, api.RepoName) (*protocol.NotFoundPayload, bool)
 	history     []ServiceMaybeStartCloneFuncCall
 	mutex       sync.Mutex
 }
 
 // MaybeStartClone delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockService) MaybeStartClone(v0 context.Context, v1 api.RepoName) (bool, CloneStatus, error) {
-	r0, r1, r2 := m.MaybeStartCloneFunc.nextHook()(v0, v1)
-	m.MaybeStartCloneFunc.appendCall(ServiceMaybeStartCloneFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
+func (m *MockService) MaybeStartClone(v0 context.Context, v1 api.RepoName) (*protocol.NotFoundPayload, bool) {
+	r0, r1 := m.MaybeStartCloneFunc.nextHook()(v0, v1)
+	m.MaybeStartCloneFunc.appendCall(ServiceMaybeStartCloneFuncCall{v0, v1, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the MaybeStartClone
 // method of the parent MockService instance is invoked and the hook queue
 // is empty.
-func (f *ServiceMaybeStartCloneFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (bool, CloneStatus, error)) {
+func (f *ServiceMaybeStartCloneFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (*protocol.NotFoundPayload, bool)) {
 	f.defaultHook = hook
 }
 
@@ -753,7 +753,7 @@ func (f *ServiceMaybeStartCloneFunc) SetDefaultHook(hook func(context.Context, a
 // MaybeStartClone method of the parent MockService instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ServiceMaybeStartCloneFunc) PushHook(hook func(context.Context, api.RepoName) (bool, CloneStatus, error)) {
+func (f *ServiceMaybeStartCloneFunc) PushHook(hook func(context.Context, api.RepoName) (*protocol.NotFoundPayload, bool)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -761,20 +761,20 @@ func (f *ServiceMaybeStartCloneFunc) PushHook(hook func(context.Context, api.Rep
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ServiceMaybeStartCloneFunc) SetDefaultReturn(r0 bool, r1 CloneStatus, r2 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) (bool, CloneStatus, error) {
-		return r0, r1, r2
+func (f *ServiceMaybeStartCloneFunc) SetDefaultReturn(r0 *protocol.NotFoundPayload, r1 bool) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (*protocol.NotFoundPayload, bool) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ServiceMaybeStartCloneFunc) PushReturn(r0 bool, r1 CloneStatus, r2 error) {
-	f.PushHook(func(context.Context, api.RepoName) (bool, CloneStatus, error) {
-		return r0, r1, r2
+func (f *ServiceMaybeStartCloneFunc) PushReturn(r0 *protocol.NotFoundPayload, r1 bool) {
+	f.PushHook(func(context.Context, api.RepoName) (*protocol.NotFoundPayload, bool) {
+		return r0, r1
 	})
 }
 
-func (f *ServiceMaybeStartCloneFunc) nextHook() func(context.Context, api.RepoName) (bool, CloneStatus, error) {
+func (f *ServiceMaybeStartCloneFunc) nextHook() func(context.Context, api.RepoName) (*protocol.NotFoundPayload, bool) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -815,13 +815,10 @@ type ServiceMaybeStartCloneFuncCall struct {
 	Arg1 api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 bool
+	Result0 *protocol.NotFoundPayload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 CloneStatus
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
+	Result1 bool
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -833,7 +830,7 @@ func (c ServiceMaybeStartCloneFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ServiceMaybeStartCloneFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ServiceRepoUpdateFunc describes the behavior when the RepoUpdate method
