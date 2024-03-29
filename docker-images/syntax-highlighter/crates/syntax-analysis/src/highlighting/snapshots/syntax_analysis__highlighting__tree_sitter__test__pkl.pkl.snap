@@ -256,7 +256,9 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //      ^^^^^^^^ Identifier
 //              ^ PunctuationDelimiter
 //                ^^^^^^^ IdentifierType
+//                       ^ IdentifierOperator
 //                        ^^^^^^ IdentifierType
+//                              ^ IdentifierOperator
 //                                ^ IdentifierOperator
 //                                  ^^^ Keyword
     "Pigeon"
@@ -411,12 +413,14 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //  ^^^^^^^^ Identifier
 //          ^ PunctuationDelimiter
 //            ^^^ IdentifierType
+//               ^ IdentifierOperator
 //                ^^^^^^ IdentifierType
 //                       ^ IdentifierOperator
 //                        ^^^^^^^ Identifier
 //                                ^ PunctuationDelimiter
 //                                  ^^^^^^ IdentifierType
 //                                         ^^^^^^^^^^^^ Identifier
+//                                                      ^ IdentifierOperator
 //                                                        ^^^^^^ Identifier
 //                                                               ^^ IdentifierOperator
 //                                                                  ^ NumericLiteral
@@ -445,7 +449,9 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //              ^ IdentifierOperator
 //                ^^^ Keyword
 //                    ^^^^^ IdentifierType
+//                         ^ IdentifierOperator
 //                          ^^^^ IdentifierType
+//                              ^ IdentifierOperator
     diet = "Seeds"
 //  ^^^^ Identifier
 //       ^ IdentifierOperator
