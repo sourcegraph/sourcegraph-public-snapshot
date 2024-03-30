@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
@@ -327,7 +328,8 @@ var _ completions.PromptRecorder = (*dotcomPromptRecorder)(nil)
 
 func (p *dotcomPromptRecorder) Record(ctx context.Context, prompt string) error {
 	// Only log prompts from Sourcegraph.com.
-	if !actor.FromContext(ctx).IsDotComActor() {
+	reqActor := actor.FromContext(ctx)
+	if !reqActor.IsDotComActor() {
 		return errors.New("attempted to record prompt from non-dotcom actor")
 	}
 
@@ -335,12 +337,14 @@ func (p *dotcomPromptRecorder) Record(ctx context.Context, prompt string) error 
 	if p.ttlSeconds <= 0 {
 		return errors.New("prompt recorder must have TTL")
 	}
+
 	// Encode the traceID as a way to map it to the original request.
 	traceID := trace.FromContext(ctx).SpanContext().TraceID().String()
-	if traceID == "" {
-		return errors.New("prompt recorder requires a trace context")
+	feature := featurelimiter.GetFeature(ctx)
+	if traceID == "" || feature == "" || reqActor.ID == "" {
+		return errors.New("prompt recorder requires a trace, feature, and actor ID")
 	}
 
-	key := fmt.Sprintf("prompt:%s", traceID)
+	key := fmt.Sprintf("prompt:%s:%s:%s", traceID, feature, reqActor.ID)
 	return p.redis.SetEx(key, p.ttlSeconds, prompt)
 }

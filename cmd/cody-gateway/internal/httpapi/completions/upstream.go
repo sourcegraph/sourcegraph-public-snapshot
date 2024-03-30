@@ -217,8 +217,12 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			// Record flagged prompts to aid in combating ongoing abuse waves.
 			if actor.FromContext(ctx).IsDotComActor() {
 				prompt := body.BuildPrompt()
-				if err := flaggedPromptRecorder.Record(ctx, prompt); err != nil {
-					logger.Warn("failed to record flagged prompt", log.Error(err))
+				// We don't record code completions until we get the false-positive count
+				// under control. (It's just noise.)
+				if feature != codygateway.FeatureCodeCompletions {
+					if err := flaggedPromptRecorder.Record(ctx, prompt); err != nil {
+						logger.Warn("failed to record flagged prompt", log.Error(err))
+					}
 				}
 			}
 
