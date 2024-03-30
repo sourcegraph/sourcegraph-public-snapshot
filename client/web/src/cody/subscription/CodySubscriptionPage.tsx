@@ -1,5 +1,4 @@
-import type { ReactElement } from 'react'
-import React, { useEffect } from 'react'
+import React, { type ReactElement, useMemo, useEffect } from 'react'
 
 import { mdiArrowLeft, mdiInformationOutline, mdiTrendingUp, mdiCreditCardOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -19,6 +18,7 @@ import {
     Text,
     Tooltip,
     useSearchParameters,
+    Alert,
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -60,6 +60,9 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
 
     const utm_source = parameters.get('utm_source')
 
+    // Used when redirected from the SSC site for not having a subscription.
+    const showNoSubscriptionMessage = useMemo(() => parameters.get('noSubscription') === '1', [parameters])
+
     const codyPaymentsUrl = useCodyPaymentsUrl()
     const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
 
@@ -92,6 +95,11 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         <>
             <Page className={classNames('d-flex flex-column')}>
                 <PageTitle title="Cody Subscription" />
+                {showNoSubscriptionMessage && (
+                    <Alert variant="primary" className={styles.overflowVisible}>
+                        No subscription exists.
+                    </Alert>
+                )}
                 <PageHeader
                     className="mb-4"
                     actions={
@@ -115,12 +123,10 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                         </div>
                     </PageHeader.Heading>
                 </PageHeader>
-
                 <Link to="/cody/manage" className="my-4">
                     <Icon className="mr-1 text-link" svgPath={mdiArrowLeft} aria-hidden={true} />
                     Back to Cody Dashboard
                 </Link>
-
                 <div className={classNames('d-flex mt-4', styles.responsiveContainer)}>
                     <div className="border d-flex flex-column flex-1 bg-1 rounded">
                         <div className="p-4">
@@ -173,7 +179,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
-                                            aria-hidden={true}
+                                            aria-label="More info"
                                         />
                                     </Tooltip>
                                 </Text>
@@ -183,7 +189,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
-                                            aria-hidden={true}
+                                            aria-label="More info"
                                         />
                                     </Tooltip>
                                 </Text>
@@ -193,7 +199,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
-                                            aria-hidden={true}
+                                            aria-label="More info"
                                         />
                                     </Tooltip>
                                 </Text>
@@ -286,7 +292,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
-                                            aria-hidden={true}
+                                            aria-label="More info"
                                         />
                                     </Tooltip>
                                 </Text>
@@ -303,7 +309,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
-                                            aria-hidden={true}
+                                            aria-label="More info"
                                         />
                                     </Tooltip>
                                 </Text>
@@ -313,7 +319,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
-                                            aria-hidden={true}
+                                            aria-label="More info"
                                         />
                                     </Tooltip>
                                 </Text>
@@ -323,7 +329,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
-                                            aria-hidden={true}
+                                            aria-label="More info"
                                         />
                                     </Tooltip>
                                 </Text>
@@ -336,7 +342,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             </div>
                         </div>
                     </div>
-                    <div className="border d-flex flex-column flex-1 bg-1 border p-3 rounded">
+                    <div className="border d-flex flex-column flex-1 bg-1 p-3 rounded">
                         <div className="border-bottom pb-4">
                             <H1 className="mb-1 d-flex align-items-center">Enterprise</H1>
                             <Text className="mb-0" size="small">
@@ -399,7 +405,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     <Icon
                                         className="ml-1 text-muted"
                                         svgPath={mdiInformationOutline}
-                                        aria-hidden={true}
+                                        aria-label="More info"
                                     />
                                 </Tooltip>
                             </Text>
@@ -409,7 +415,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     <Icon
                                         className="ml-1 text-muted"
                                         svgPath={mdiInformationOutline}
-                                        aria-hidden={true}
+                                        aria-label="More info"
                                     />
                                 </Tooltip>
                             </Text>
@@ -433,7 +439,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     <Icon
                                         className="ml-1 text-muted"
                                         svgPath={mdiInformationOutline}
-                                        aria-hidden={true}
+                                        aria-label="More info"
                                     />
                                 </Tooltip>
                             </Text>

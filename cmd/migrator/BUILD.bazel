@@ -22,10 +22,6 @@ go_binary(
     name = "migrator",
     embed = [":migrator_lib"],
     visibility = ["//visibility:public"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
 )
 
 # This rule builds a tarball of the database schema descriptions that only contains the current database schema

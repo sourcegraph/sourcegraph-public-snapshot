@@ -26,7 +26,12 @@ export interface IEditor {
     publisher: string
     releaseStage: string
     docs?: string
-    instructions?: React.FC<{ onBack?: () => void; onClose: () => void; showStep?: number }>
+    instructions?: React.FC<{
+        onBack?: () => void
+        onClose: () => void
+        showStep?: number
+        telemetryRecorder: TelemetryRecorder
+    }>
 }
 
 export const editorGroups: IEditor[][] = [
@@ -350,7 +355,7 @@ function EditorStep({
     if (editor?.instructions) {
         const Instructions = editor.instructions
 
-        return <Instructions onBack={onBack} onClose={onCompleted} />
+        return <Instructions onBack={onBack} onClose={onCompleted} telemetryRecorder={telemetryRecorder} />
     }
 
     return (
