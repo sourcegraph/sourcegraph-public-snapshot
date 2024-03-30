@@ -112,6 +112,7 @@ promoteToPublic:
         cmd: |
           set -exu
 
+          # we need to first fetch the branch because the repo in CI is in a detached state
           git fetch origin '+refs/heads/{{git.branch}}:refs/heads/{{git.branch}}'
           git checkout {{git.branch}}
           git tag {{version}}
