@@ -39,7 +39,7 @@ func NewServiceAccount(name, namespace string, options ...Option) (corev1.Servic
 // Option sets an option for a ServiceAccount.
 type Option func(serviceAccount *corev1.ServiceAccount) error
 
-// WithLabels sets ServiceAccount labes without overriding existing labels.
+// WithLabels sets ServiceAccount labels without overriding existing labels.
 func WithLabels(labels map[string]string) Option {
 	return func(serviceAccount *corev1.ServiceAccount) error {
 		serviceAccount.Labels = maps.MergePreservingExistingKeys(serviceAccount.Labels, labels)

@@ -23,7 +23,7 @@ func TestNewRoleBinding(t *testing.T) {
 		want rbacv1.RoleBinding
 	}{
 		{
-			name: "sourcegraph",
+			name: "default rolebindings",
 			args: args{
 				name:      "foo",
 				namespace: "sourcegraph",
