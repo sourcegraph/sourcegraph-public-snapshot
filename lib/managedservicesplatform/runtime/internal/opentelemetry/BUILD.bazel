@@ -20,6 +20,7 @@ go_library(
         "@com_github_sourcegraph_conc//:conc",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//std",
+        "@io_opentelemetry_go_contrib_detectors_gcp//:gcp",
         "@io_opentelemetry_go_contrib_propagators_jaeger//:jaeger",
         "@io_opentelemetry_go_contrib_propagators_ot//:ot",
         "@io_opentelemetry_go_otel//:otel",
