@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -14,12 +16,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/build"
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/config"
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/notify"
+	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/background"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
 )
 
-var ErrInvalidToken = errors.New("buildkite token is invalid")
-var ErrInvalidHeader = errors.New("Header of request is invalid")
-var ErrUnwantedEvent = errors.New("Unwanted event received")
+var (
+	ErrInvalidToken  = errors.New("buildkite token is invalid")
+	ErrInvalidHeader = errors.New("Header of request is invalid")
+	ErrUnwantedEvent = errors.New("Unwanted event received")
+)
 
 var nowFunc = time.Now
 
@@ -41,13 +48,13 @@ type Server struct {
 }
 
 // NewServer creatse a new server to listen for Buildkite webhook events.
-func NewServer(logger log.Logger, c config.Config) *Server {
+func NewServer(addr string, logger log.Logger, c config.Config) *Server {
 	logger = logger.Scoped("server")
 	server := &Server{
 		logger:       logger,
 		store:        build.NewBuildStore(logger),
 		config:       &c,
-		notifyClient: notify.NewClient(logger, c.SlackToken, c.GithubToken, c.SlackChannel),
+		notifyClient: notify.NewClient(logger, c.SlackToken, c.SlackChannel),
 	}
 
 	// Register routes the the server will be responding too
@@ -60,10 +67,26 @@ func NewServer(logger log.Logger, c config.Config) *Server {
 
 	server.http = &http.Server{
 		Handler: r,
-		Addr:    ":8080",
+		Addr:    addr,
 	}
 
 	return server
+}
+
+func (s *Server) Start() {
+	if err := s.http.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		s.logger.Error("error stopping server", log.Error(err))
+	}
+}
+
+func (s *Server) Stop() {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := s.http.Shutdown(ctx); err != nil {
+		s.logger.Error("error shutting down server", log.Error(err))
+	} else {
+		s.logger.Info("server stopped")
+	}
 }
 
 func (s *Server) handleGetBuild(w http.ResponseWriter, req *http.Request) {
@@ -192,40 +215,6 @@ func (s *Server) notifyIfFailed(b *build.Build) error {
 	return nil
 }
 
-func (s *Server) deleteOldBuilds(window time.Duration) {
-	oldBuilds := make([]int, 0)
-	now := nowFunc()
-	for _, b := range s.store.FinishedBuilds() {
-		finishedAt := *b.FinishedAt
-		delta := now.Sub(finishedAt.Time)
-		if delta >= window {
-			s.logger.Debug("build past age window", log.Int("buildNumber", *b.Number), log.Time("FinishedAt", finishedAt.Time), log.Duration("window", window))
-			oldBuilds = append(oldBuilds, *b.Number)
-		}
-	}
-	s.logger.Info("deleting old builds", log.Int("oldBuildCount", len(oldBuilds)))
-	s.store.DelByBuildNumber(oldBuilds...)
-}
-
-func (s *Server) startCleaner(every, window time.Duration) func() {
-	ticker := time.NewTicker(every)
-	done := make(chan interface{})
-
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				s.deleteOldBuilds(window)
-			case <-done:
-				ticker.Stop()
-				return
-			}
-		}
-	}()
-
-	return func() { done <- nil }
-}
-
 // processEvent processes a BuildEvent received from Buildkite. If the event is for a `build.finished` event we get the
 // full build which includes all recorded jobs for the build and send a notification.
 // processEvent delegates the decision to actually send a notifcation
@@ -285,33 +274,21 @@ func determineBuildStatusNotification(logger log.Logger, b *build.Build) *notify
 	return &info
 }
 
-// Serve starts the http server and listens for buildkite build events to be sent on the route "/buildkite"
 func main() {
-	sync := log.Init(log.Resource{
-		Name:      "BuildTracker",
-		Namespace: "CI",
-	})
-	defer sync.Sync()
-
-	logger := log.Scoped("BuildTracker")
-
-	serverConf, err := config.NewFromEnv()
-	if err != nil {
-		logger.Fatal("failed to get config from env", log.Error(err))
-	}
-	logger.Info("config loaded from environment", log.Object("config", log.String("SlackChannel", serverConf.SlackChannel), log.Bool("Production", serverConf.Production)))
-	server := NewServer(logger, *serverConf)
-
-	stopFn := server.startCleaner(CleanUpInterval, BuildExpiryWindow)
-	defer stopFn()
-
-	if server.config.Production {
-		server.logger.Info("server is in production mode!")
-	} else {
-		server.logger.Info("server is in development mode!")
-	}
-
-	if err := server.http.ListenAndServe(); err != nil {
-		logger.Fatal("server exited with error", log.Error(err))
-	}
+	runtime.Start[config.Config](Service{})
 }
+
+type Service struct{}
+
+// Initialize implements runtime.Service.
+func (s Service) Initialize(ctx context.Context, logger log.Logger, contract runtime.Contract, config config.Config) (background.Routine, error) {
+	logger.Info("config loaded from environment", log.Object("config", log.String("SlackChannel", config.SlackChannel), log.Bool("Production", config.Production)))
+
+	return background.CombinedRoutine{
+		NewServer(fmt.Sprintf(":%d", contract.Port), logger, config),
+		deleteOldBuilds(logger, nil, CleanUpInterval, BuildExpiryWindow),
+	}, nil
+}
+
+func (s Service) Name() string    { return "build-tracker" }
+func (s Service) Version() string { return version.Version() }

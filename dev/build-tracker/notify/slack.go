@@ -18,18 +18,6 @@ import (
 
 const StepShowLimit = 5
 
-type cacheItem[T any] struct {
-	Value     T
-	Timestamp time.Time
-}
-
-func newCacheItem[T any](value T) *cacheItem[T] {
-	return &cacheItem[T]{
-		Value:     value,
-		Timestamp: time.Now(),
-	}
-}
-
 type NotificationClient interface {
 	Send(info *BuildNotification) error
 	GetNotification(buildNumber int) *SlackNotification
@@ -101,7 +89,7 @@ func NewSlackNotification(id, channel string, info *BuildNotification, author st
 	}
 }
 
-func NewClient(logger log.Logger, slackToken, githubToken, channel string) *Client {
+func NewClient(logger log.Logger, slackToken, channel string) *Client {
 	debug := os.Getenv("BUILD_TRACKER_SLACK_DEBUG") == "1"
 	slackClient := slack.New(slackToken, slack.OptionDebug(debug))
 
