@@ -78,17 +78,17 @@ oci_tarball(
     repo_tags = ["build-tracker:candidate"],
 )
 
-# container_structure_test(
-#     name = "image_test",
-#     timeout = "short",
-#     configs = ["image_test.yaml"],
-#     driver = "docker",
-#     image = ":image",
-#     tags = [
-#         "exclusive",
-#         "requires-network",
-#     ],
-# )
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
 
 oci_push(
     name = "candidate_push",
