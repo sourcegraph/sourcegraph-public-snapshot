@@ -1,3 +1,5 @@
+name: Build AMIs
+
 on: workflow_dispatch
   #   release:
   #     types: [published]
