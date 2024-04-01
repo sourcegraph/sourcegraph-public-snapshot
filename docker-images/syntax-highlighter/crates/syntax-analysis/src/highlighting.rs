@@ -166,6 +166,14 @@ struct SublimeLanguageName {
 
 impl SublimeLanguageName {
     fn into_tree_sitter_name(self, file_info: &FileInfo<'_>) -> TreeSitterLanguageName {
+        if self.raw.is_empty() || self.raw.to_lowercase() == "plain text" {
+            #[allow(clippy::single_match)]
+            match file_info.extension() {
+                Some("ncl") => return TreeSitterLanguageName::new("nickel"),
+                _ => {}
+            };
+        }
+
         // Written in an unusual style so that we can:
         // 1. Avoid case-sensitive comparison
         // 2. We can look up corresponding Sublime Grammars easily
