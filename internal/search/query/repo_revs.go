@@ -2,7 +2,10 @@ package query
 
 import (
 	"cmp"
+	"encoding/base64"
+	"encoding/json"
 	"strings"
+	"time"
 
 	"github.com/grafana/regexp"
 )
@@ -21,6 +24,10 @@ type RevisionSpecifier struct {
 	// ExcludeRefGlob is a glob for references to exclude. See the
 	// documentation for "--exclude" in git-log.
 	ExcludeRefGlob string
+
+	// AncestorAtTime targets the most recent ancestor of the given rev
+	// that has a commit timestamp before the given timestamp.
+	AncestorAtTime *AncestorAtTime
 }
 
 func (r1 RevisionSpecifier) String() string {
@@ -109,7 +116,11 @@ func ParseRepositoryRevisions(repoAndOptionalRev string) (ParsedRepoFilter, erro
 			if part == "" {
 				continue
 			}
-			revs = append(revs, ParseRevisionSpecifier(part))
+			rs, err := ParseRevisionSpecifier(part)
+			if err != nil {
+				return ParsedRepoFilter{}, err
+			}
+			revs = append(revs, rs)
 		}
 		if len(revs) == 0 {
 			revs = []RevisionSpecifier{{RevSpec: ""}} // default branch
@@ -128,11 +139,41 @@ func ParseRepositoryRevisions(repoAndOptionalRev string) (ParsedRepoFilter, erro
 }
 
 // ParseRevisionSpecifier is the inverse of RevisionSpecifier.String().
-func ParseRevisionSpecifier(spec string) RevisionSpecifier {
+func ParseRevisionSpecifier(spec string) (RevisionSpecifier, error) {
 	if strings.HasPrefix(spec, "*!") {
-		return RevisionSpecifier{ExcludeRefGlob: spec[2:]}
+		return RevisionSpecifier{ExcludeRefGlob: spec[2:]}, nil
 	} else if strings.HasPrefix(spec, "*") {
-		return RevisionSpecifier{RefGlob: spec[1:]}
+		return RevisionSpecifier{RefGlob: spec[1:]}, nil
+	} else if strings.HasPrefix(spec, "aat=") {
+		aat, err := ParseAncestorAtTime(spec[4:])
+		if err != nil {
+			return RevisionSpecifier{}, err
+		}
+		return RevisionSpecifier{AncestorAtTime: &aat}, nil
 	}
-	return RevisionSpecifier{RevSpec: spec}
+	return RevisionSpecifier{RevSpec: spec}, nil
+}
+
+type AncestorAtTime struct {
+	RevSpec   string
+	Timestamp time.Time
+}
+
+func (a *AncestorAtTime) String() string {
+	// HACK: this is not intended to be user-friendly string encoding. It's
+	// meant to be usable by ConcatRevFilters to add the `rev:ancestor.at()` to
+	// the repo filters in a way that's easily parsed. A user should never see
+	// this string.
+	b, _ := json.Marshal(a)
+	return "aat=" + base64.URLEncoding.EncodeToString(b)
+}
+
+func ParseAncestorAtTime(input string) (AncestorAtTime, error) {
+	b, err := base64.URLEncoding.DecodeString(input)
+	if err != nil {
+		return AncestorAtTime{}, err
+	}
+	var res AncestorAtTime
+	err = json.Unmarshal(b, &res)
+	return res, err
 }

@@ -160,4 +160,9 @@ func (r *automaticRetryClient) ResolveRevision(ctx context.Context, in *proto.Re
 	return r.base.ResolveRevision(ctx, in, opts...)
 }
 
+func (r *automaticRetryClient) AncestorAtTime(ctx context.Context, in *proto.AncestorAtTimeRequest, opts ...grpc.CallOption) (*proto.AncestorAtTimeResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.AncestorAtTime(ctx, in, opts...)
+}
+
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

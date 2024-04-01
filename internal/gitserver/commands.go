@@ -23,6 +23,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -933,6 +934,35 @@ func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoNa
 	}
 
 	return api.CommitID(res.GetCommitSha()), nil
+}
+
+func (c *clientImplementor) AncestorAtTime(ctx context.Context, repo api.RepoName, spec string, date time.Time) (_ api.CommitID, ok bool, err error) {
+	ctx, _, endObservation := c.operations.ancestorAtTime.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("spec", spec),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
+		return "", false, err
+	}
+
+	req := &proto.AncestorAtTimeRequest{
+		RepoName: string(repo),
+		RevSpec:  []byte(spec),
+		Time:     timestamppb.New(date),
+	}
+	res, err := client.AncestorAtTime(ctx, req)
+	if err != nil {
+		return "", false, err
+	}
+
+	return api.CommitID(res.GetCommitSha()), res.GetCommitSha() != "", nil
+
 }
 
 // LsFiles returns the output of `git ls-files`.

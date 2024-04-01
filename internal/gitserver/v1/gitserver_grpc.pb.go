@@ -45,6 +45,7 @@ const (
 	GitserverService_ReadFile_FullMethodName                    = "/gitserver.v1.GitserverService/ReadFile"
 	GitserverService_GetCommit_FullMethodName                   = "/gitserver.v1.GitserverService/GetCommit"
 	GitserverService_ResolveRevision_FullMethodName             = "/gitserver.v1.GitserverService/ResolveRevision"
+	GitserverService_AncestorAtTime_FullMethodName              = "/gitserver.v1.GitserverService/AncestorAtTime"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -63,14 +64,14 @@ type GitserverServiceClient interface {
 	//
 	// If subrepo permissions are enabled for the repo, no archive will be created
 	// for non-internal actors and an unimplemented error will be returned. We can
-	// currently not filter parts of the archive, so this would be considered leaking
-	// information.
+	// currently not filter parts of the archive, so this would be considered
+	// leaking information.
 	//
-	// If the given treeish does not exist, an error with a RevisionNotFoundPayload
-	// is returned.
+	// If the given treeish does not exist, an error with a
+	// RevisionNotFoundPayload is returned.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error)
 	RepoClone(ctx context.Context, in *RepoCloneRequest, opts ...grpc.CallOption) (*RepoCloneResponse, error)
 	RepoCloneProgress(ctx context.Context, in *RepoCloneProgressRequest, opts ...grpc.CallOption) (*RepoCloneProgressResponse, error)
@@ -87,64 +88,69 @@ type GitserverServiceClient interface {
 	// MergeBase returns the merge base commit sha for the specified revspecs.
 	// If no common merge base exists, an empty string is returned.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	MergeBase(ctx context.Context, in *MergeBaseRequest, opts ...grpc.CallOption) (*MergeBaseResponse, error)
 	// Blame runs a blame operation on the specified file. It returns a stream of
-	// hunks as they are found. The --incremental flag is used on the git CLI level
-	// to achieve this behavior.
-	// The endpoint will verify that the user is allowed to blame the given file
-	// if subrepo permissions are enabled for the repo. If access is denied, an error
-	// with a UnauthorizedPayload in the details is returned.
+	// hunks as they are found. The --incremental flag is used on the git CLI
+	// level to achieve this behavior. The endpoint will verify that the user is
+	// allowed to blame the given file if subrepo permissions are enabled for the
+	// repo. If access is denied, an error with a UnauthorizedPayload in the
+	// details is returned.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	Blame(ctx context.Context, in *BlameRequest, opts ...grpc.CallOption) (GitserverService_BlameClient, error)
-	// DefaultBranch resolves HEAD to ref name and current commit SHA it points to.
-	// If HEAD points to an empty branch, it returns an error with a RevisionNotFoundPayload.
+	// DefaultBranch resolves HEAD to ref name and current commit SHA it points
+	// to. If HEAD points to an empty branch, it returns an error with a
+	// RevisionNotFoundPayload.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	DefaultBranch(ctx context.Context, in *DefaultBranchRequest, opts ...grpc.CallOption) (*DefaultBranchResponse, error)
 	// ReadFile gets a file from the repo ODB and streams the contents back.
 	// The endpoint will verify that the user is allowed to view the given file
-	// if subrepo permissions are enabled for the repo. If access is denied, an error
-	// with a UnauthorizedPayload in the details is returned.
-	// If the path points to a submodule, no error is returned and an empty file is
-	// streamed back.
+	// if subrepo permissions are enabled for the repo. If access is denied, an
+	// error with a UnauthorizedPayload in the details is returned. If the path
+	// points to a submodule, no error is returned and an empty file is streamed
+	// back.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (GitserverService_ReadFileClient, error)
 	// GetCommit gets a commit from the repo ODB.
 	// The endpoint will verify that the user is allowed to view the given commit.
 	//
-	// If subrepo permissions are enabled for the repo. If access is denied, an error
-	// with a RevisionNotFoundPayload is returned, to not leak existence of the commit.
+	// If subrepo permissions are enabled for the repo. If access is denied, an
+	// error with a RevisionNotFoundPayload is returned, to not leak existence of
+	// the commit.
 	//
-	// If the commit is not found, an error with a RevisionNotFoundPayload is returned.
+	// If the commit is not found, an error with a RevisionNotFoundPayload is
+	// returned.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	GetCommit(ctx context.Context, in *GetCommitRequest, opts ...grpc.CallOption) (*GetCommitResponse, error)
 	// ResolveRevision resolves a given revspec-ish to a commit SHA.
-	// If passed a commit sha, the endpoint will also verify that the commit exists.
+	// If passed a commit sha, the endpoint will also verify that the commit
+	// exists.
 	//
 	// If the revision cannot be resolved an error with RevisionNotFoundPayload is
 	// returned.
 	//
-	// Under the hood, this endpoint currently uses git rev-parse to resolve the revspec,
-	// but we forbid certain revspecs (like HEAD) to avoid leaking existence files,
-	// and to avoid running very expensive rev-parse operations.
+	// Under the hood, this endpoint currently uses git rev-parse to resolve the
+	// revspec, but we forbid certain revspecs (like HEAD) to avoid leaking
+	// existence files, and to avoid running very expensive rev-parse operations.
 	// Assume only the following are supported:
 	// - Symbolic refs
 	// - All refs under refs/, including tags
 	// - Commit hashes
 	// - Abbreviated commit hashes
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ResolveRevision(ctx context.Context, in *ResolveRevisionRequest, opts ...grpc.CallOption) (*ResolveRevisionResponse, error)
+	AncestorAtTime(ctx context.Context, in *AncestorAtTimeRequest, opts ...grpc.CallOption) (*AncestorAtTimeResponse, error)
 }
 
 type gitserverServiceClient struct {
@@ -529,6 +535,15 @@ func (c *gitserverServiceClient) ResolveRevision(ctx context.Context, in *Resolv
 	return out, nil
 }
 
+func (c *gitserverServiceClient) AncestorAtTime(ctx context.Context, in *AncestorAtTimeRequest, opts ...grpc.CallOption) (*AncestorAtTimeResponse, error) {
+	out := new(AncestorAtTimeResponse)
+	err := c.cc.Invoke(ctx, GitserverService_AncestorAtTime_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
@@ -545,14 +560,14 @@ type GitserverServiceServer interface {
 	//
 	// If subrepo permissions are enabled for the repo, no archive will be created
 	// for non-internal actors and an unimplemented error will be returned. We can
-	// currently not filter parts of the archive, so this would be considered leaking
-	// information.
+	// currently not filter parts of the archive, so this would be considered
+	// leaking information.
 	//
-	// If the given treeish does not exist, an error with a RevisionNotFoundPayload
-	// is returned.
+	// If the given treeish does not exist, an error with a
+	// RevisionNotFoundPayload is returned.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	Archive(*ArchiveRequest, GitserverService_ArchiveServer) error
 	RepoClone(context.Context, *RepoCloneRequest) (*RepoCloneResponse, error)
 	RepoCloneProgress(context.Context, *RepoCloneProgressRequest) (*RepoCloneProgressResponse, error)
@@ -569,64 +584,69 @@ type GitserverServiceServer interface {
 	// MergeBase returns the merge base commit sha for the specified revspecs.
 	// If no common merge base exists, an empty string is returned.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	MergeBase(context.Context, *MergeBaseRequest) (*MergeBaseResponse, error)
 	// Blame runs a blame operation on the specified file. It returns a stream of
-	// hunks as they are found. The --incremental flag is used on the git CLI level
-	// to achieve this behavior.
-	// The endpoint will verify that the user is allowed to blame the given file
-	// if subrepo permissions are enabled for the repo. If access is denied, an error
-	// with a UnauthorizedPayload in the details is returned.
+	// hunks as they are found. The --incremental flag is used on the git CLI
+	// level to achieve this behavior. The endpoint will verify that the user is
+	// allowed to blame the given file if subrepo permissions are enabled for the
+	// repo. If access is denied, an error with a UnauthorizedPayload in the
+	// details is returned.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	Blame(*BlameRequest, GitserverService_BlameServer) error
-	// DefaultBranch resolves HEAD to ref name and current commit SHA it points to.
-	// If HEAD points to an empty branch, it returns an error with a RevisionNotFoundPayload.
+	// DefaultBranch resolves HEAD to ref name and current commit SHA it points
+	// to. If HEAD points to an empty branch, it returns an error with a
+	// RevisionNotFoundPayload.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	DefaultBranch(context.Context, *DefaultBranchRequest) (*DefaultBranchResponse, error)
 	// ReadFile gets a file from the repo ODB and streams the contents back.
 	// The endpoint will verify that the user is allowed to view the given file
-	// if subrepo permissions are enabled for the repo. If access is denied, an error
-	// with a UnauthorizedPayload in the details is returned.
-	// If the path points to a submodule, no error is returned and an empty file is
-	// streamed back.
+	// if subrepo permissions are enabled for the repo. If access is denied, an
+	// error with a UnauthorizedPayload in the details is returned. If the path
+	// points to a submodule, no error is returned and an empty file is streamed
+	// back.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ReadFile(*ReadFileRequest, GitserverService_ReadFileServer) error
 	// GetCommit gets a commit from the repo ODB.
 	// The endpoint will verify that the user is allowed to view the given commit.
 	//
-	// If subrepo permissions are enabled for the repo. If access is denied, an error
-	// with a RevisionNotFoundPayload is returned, to not leak existence of the commit.
+	// If subrepo permissions are enabled for the repo. If access is denied, an
+	// error with a RevisionNotFoundPayload is returned, to not leak existence of
+	// the commit.
 	//
-	// If the commit is not found, an error with a RevisionNotFoundPayload is returned.
+	// If the commit is not found, an error with a RevisionNotFoundPayload is
+	// returned.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	GetCommit(context.Context, *GetCommitRequest) (*GetCommitResponse, error)
 	// ResolveRevision resolves a given revspec-ish to a commit SHA.
-	// If passed a commit sha, the endpoint will also verify that the commit exists.
+	// If passed a commit sha, the endpoint will also verify that the commit
+	// exists.
 	//
 	// If the revision cannot be resolved an error with RevisionNotFoundPayload is
 	// returned.
 	//
-	// Under the hood, this endpoint currently uses git rev-parse to resolve the revspec,
-	// but we forbid certain revspecs (like HEAD) to avoid leaking existence files,
-	// and to avoid running very expensive rev-parse operations.
+	// Under the hood, this endpoint currently uses git rev-parse to resolve the
+	// revspec, but we forbid certain revspecs (like HEAD) to avoid leaking
+	// existence files, and to avoid running very expensive rev-parse operations.
 	// Assume only the following are supported:
 	// - Symbolic refs
 	// - All refs under refs/, including tags
 	// - Commit hashes
 	// - Abbreviated commit hashes
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ResolveRevision(context.Context, *ResolveRevisionRequest) (*ResolveRevisionResponse, error)
+	AncestorAtTime(context.Context, *AncestorAtTimeRequest) (*AncestorAtTimeResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -711,6 +731,9 @@ func (UnimplementedGitserverServiceServer) GetCommit(context.Context, *GetCommit
 }
 func (UnimplementedGitserverServiceServer) ResolveRevision(context.Context, *ResolveRevisionRequest) (*ResolveRevisionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResolveRevision not implemented")
+}
+func (UnimplementedGitserverServiceServer) AncestorAtTime(context.Context, *AncestorAtTimeRequest) (*AncestorAtTimeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AncestorAtTime not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -1216,6 +1239,24 @@ func _GitserverService_ResolveRevision_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GitserverService_AncestorAtTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AncestorAtTimeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).AncestorAtTime(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_AncestorAtTime_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).AncestorAtTime(ctx, req.(*AncestorAtTimeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1302,6 +1343,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ResolveRevision",
 			Handler:    _GitserverService_ResolveRevision_Handler,
+		},
+		{
+			MethodName: "AncestorAtTime",
+			Handler:    _GitserverService_AncestorAtTime_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

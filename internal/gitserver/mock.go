@@ -20,6 +20,9 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/gitserver/v1) used for unit
 // testing.
 type MockGitserverServiceClient struct {
+	// AncestorAtTimeFunc is an instance of a mock function object
+	// controlling the behavior of the method AncestorAtTime.
+	AncestorAtTimeFunc *GitserverServiceClientAncestorAtTimeFunc
 	// ArchiveFunc is an instance of a mock function object controlling the
 	// behavior of the method Archive.
 	ArchiveFunc *GitserverServiceClientArchiveFunc
@@ -106,6 +109,11 @@ type MockGitserverServiceClient struct {
 // results, unless overwritten.
 func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 	return &MockGitserverServiceClient{
+		AncestorAtTimeFunc: &GitserverServiceClientAncestorAtTimeFunc{
+			defaultHook: func(context.Context, *v1.AncestorAtTimeRequest, ...grpc.CallOption) (r0 *v1.AncestorAtTimeResponse, r1 error) {
+				return
+			},
+		},
 		ArchiveFunc: &GitserverServiceClientArchiveFunc{
 			defaultHook: func(context.Context, *v1.ArchiveRequest, ...grpc.CallOption) (r0 v1.GitserverService_ArchiveClient, r1 error) {
 				return
@@ -244,6 +252,11 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 // overwritten.
 func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 	return &MockGitserverServiceClient{
+		AncestorAtTimeFunc: &GitserverServiceClientAncestorAtTimeFunc{
+			defaultHook: func(context.Context, *v1.AncestorAtTimeRequest, ...grpc.CallOption) (*v1.AncestorAtTimeResponse, error) {
+				panic("unexpected invocation of MockGitserverServiceClient.AncestorAtTime")
+			},
+		},
 		ArchiveFunc: &GitserverServiceClientArchiveFunc{
 			defaultHook: func(context.Context, *v1.ArchiveRequest, ...grpc.CallOption) (v1.GitserverService_ArchiveClient, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.Archive")
@@ -382,6 +395,9 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 // implementation, unless overwritten.
 func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserverServiceClient {
 	return &MockGitserverServiceClient{
+		AncestorAtTimeFunc: &GitserverServiceClientAncestorAtTimeFunc{
+			defaultHook: i.AncestorAtTime,
+		},
 		ArchiveFunc: &GitserverServiceClientArchiveFunc{
 			defaultHook: i.Archive,
 		},
@@ -461,6 +477,128 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 			defaultHook: i.Search,
 		},
 	}
+}
+
+// GitserverServiceClientAncestorAtTimeFunc describes the behavior when the
+// AncestorAtTime method of the parent MockGitserverServiceClient instance
+// is invoked.
+type GitserverServiceClientAncestorAtTimeFunc struct {
+	defaultHook func(context.Context, *v1.AncestorAtTimeRequest, ...grpc.CallOption) (*v1.AncestorAtTimeResponse, error)
+	hooks       []func(context.Context, *v1.AncestorAtTimeRequest, ...grpc.CallOption) (*v1.AncestorAtTimeResponse, error)
+	history     []GitserverServiceClientAncestorAtTimeFuncCall
+	mutex       sync.Mutex
+}
+
+// AncestorAtTime delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitserverServiceClient) AncestorAtTime(v0 context.Context, v1 *v1.AncestorAtTimeRequest, v2 ...grpc.CallOption) (*v1.AncestorAtTimeResponse, error) {
+	r0, r1 := m.AncestorAtTimeFunc.nextHook()(v0, v1, v2...)
+	m.AncestorAtTimeFunc.appendCall(GitserverServiceClientAncestorAtTimeFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the AncestorAtTime
+// method of the parent MockGitserverServiceClient instance is invoked and
+// the hook queue is empty.
+func (f *GitserverServiceClientAncestorAtTimeFunc) SetDefaultHook(hook func(context.Context, *v1.AncestorAtTimeRequest, ...grpc.CallOption) (*v1.AncestorAtTimeResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AncestorAtTime method of the parent MockGitserverServiceClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverServiceClientAncestorAtTimeFunc) PushHook(hook func(context.Context, *v1.AncestorAtTimeRequest, ...grpc.CallOption) (*v1.AncestorAtTimeResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverServiceClientAncestorAtTimeFunc) SetDefaultReturn(r0 *v1.AncestorAtTimeResponse, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.AncestorAtTimeRequest, ...grpc.CallOption) (*v1.AncestorAtTimeResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverServiceClientAncestorAtTimeFunc) PushReturn(r0 *v1.AncestorAtTimeResponse, r1 error) {
+	f.PushHook(func(context.Context, *v1.AncestorAtTimeRequest, ...grpc.CallOption) (*v1.AncestorAtTimeResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverServiceClientAncestorAtTimeFunc) nextHook() func(context.Context, *v1.AncestorAtTimeRequest, ...grpc.CallOption) (*v1.AncestorAtTimeResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverServiceClientAncestorAtTimeFunc) appendCall(r0 GitserverServiceClientAncestorAtTimeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverServiceClientAncestorAtTimeFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverServiceClientAncestorAtTimeFunc) History() []GitserverServiceClientAncestorAtTimeFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverServiceClientAncestorAtTimeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverServiceClientAncestorAtTimeFuncCall is an object that describes
+// an invocation of method AncestorAtTime on an instance of
+// MockGitserverServiceClient.
+type GitserverServiceClientAncestorAtTimeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.AncestorAtTimeRequest
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []grpc.CallOption
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v1.AncestorAtTimeResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitserverServiceClientAncestorAtTimeFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverServiceClientAncestorAtTimeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // GitserverServiceClientArchiveFunc describes the behavior when the Archive

@@ -1200,6 +1200,59 @@ func (gs *grpcServer) ResolveRevision(ctx context.Context, req *proto.ResolveRev
 	}, nil
 }
 
+func (gs *grpcServer) AncestorAtTime(ctx context.Context, req *proto.AncestorAtTimeRequest) (*proto.AncestorAtTimeResponse, error) {
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.String("revspec", string(req.GetRevSpec())),
+	)
+
+	if req.GetRepoName() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gs.fs.RepoDir(repoName)
+
+	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+		return nil, err
+	}
+
+	revspec := string(req.GetRevSpec())
+
+	backend := gs.getBackendFunc(repoDir, repoName)
+
+	// First, try to resolve the revspec so we can return a useful RevisionNotFound error
+	sha, err := backend.ResolveRevision(ctx, revspec)
+	if err != nil {
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		// TODO: Better error checking.
+		return nil, err
+	}
+
+	// Then, check the log for the first commit before the timestamp
+	commitID, err := backend.AncestorAtTime(ctx, string(sha), req.GetTime().AsTime())
+	if err != nil {
+		return nil, status.New(codes.Internal, err.Error()).Err()
+	}
+
+	return &proto.AncestorAtTimeResponse{
+		CommitSha: string(commitID),
+	}, nil
+}
+
 func (gs *grpcServer) maybeStartClone(ctx context.Context, repo api.RepoName) error {
 	cloned, state, err := gs.svc.MaybeStartClone(ctx, repo)
 	if err != nil {

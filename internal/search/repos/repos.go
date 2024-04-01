@@ -528,6 +528,18 @@ func (r *Resolver) normalizeRepoRefs(
 			globs = append(globs, gitdomain.RefGlob{Include: rev.RefGlob})
 		case rev.ExcludeRefGlob != "":
 			globs = append(globs, gitdomain.RefGlob{Exclude: rev.ExcludeRefGlob})
+		case rev.AncestorAtTime != nil:
+			commitOID, ok, err := r.gitserver.AncestorAtTime(ctx, repo.Name, rev.AncestorAtTime.RevSpec, rev.AncestorAtTime.Timestamp)
+			if err != nil {
+				if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
+					return nil, err
+				}
+				reportMissing(RepoRevSpecs{Repo: repo, Revs: []query.RevisionSpecifier{rev}})
+				continue
+			}
+			if ok {
+				revs = append(revs, string(commitOID))
+			}
 		case rev.RevSpec == "" || rev.RevSpec == "HEAD":
 			// NOTE: HEAD is the only case here that we don't resolve to a
 			// commit ID. We should consider building []gitdomain.Ref here

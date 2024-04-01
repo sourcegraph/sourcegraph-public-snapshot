@@ -10,6 +10,7 @@ import (
 	"context"
 	"io"
 	"sync"
+	"time"
 
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -283,6 +284,9 @@ func (c BlameHunkReaderReadFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git) used for
 // unit testing.
 type MockGitBackend struct {
+	// AncestorAtTimeFunc is an instance of a mock function object
+	// controlling the behavior of the method AncestorAtTime.
+	AncestorAtTimeFunc *GitBackendAncestorAtTimeFunc
 	// ArchiveReaderFunc is an instance of a mock function object
 	// controlling the behavior of the method ArchiveReader.
 	ArchiveReaderFunc *GitBackendArchiveReaderFunc
@@ -322,6 +326,11 @@ type MockGitBackend struct {
 // methods return zero values for all results, unless overwritten.
 func NewMockGitBackend() *MockGitBackend {
 	return &MockGitBackend{
+		AncestorAtTimeFunc: &GitBackendAncestorAtTimeFunc{
+			defaultHook: func(context.Context, string, time.Time) (r0 api.CommitID, r1 error) {
+				return
+			},
+		},
 		ArchiveReaderFunc: &GitBackendArchiveReaderFunc{
 			defaultHook: func(context.Context, ArchiveFormat, string, []string) (r0 io.ReadCloser, r1 error) {
 				return
@@ -384,6 +393,11 @@ func NewMockGitBackend() *MockGitBackend {
 // All methods panic on invocation, unless overwritten.
 func NewStrictMockGitBackend() *MockGitBackend {
 	return &MockGitBackend{
+		AncestorAtTimeFunc: &GitBackendAncestorAtTimeFunc{
+			defaultHook: func(context.Context, string, time.Time) (api.CommitID, error) {
+				panic("unexpected invocation of MockGitBackend.AncestorAtTime")
+			},
+		},
 		ArchiveReaderFunc: &GitBackendArchiveReaderFunc{
 			defaultHook: func(context.Context, ArchiveFormat, string, []string) (io.ReadCloser, error) {
 				panic("unexpected invocation of MockGitBackend.ArchiveReader")
@@ -446,6 +460,9 @@ func NewStrictMockGitBackend() *MockGitBackend {
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockGitBackendFrom(i GitBackend) *MockGitBackend {
 	return &MockGitBackend{
+		AncestorAtTimeFunc: &GitBackendAncestorAtTimeFunc{
+			defaultHook: i.AncestorAtTime,
+		},
 		ArchiveReaderFunc: &GitBackendArchiveReaderFunc{
 			defaultHook: i.ArchiveReader,
 		},
@@ -480,6 +497,117 @@ func NewMockGitBackendFrom(i GitBackend) *MockGitBackend {
 			defaultHook: i.SymbolicRefHead,
 		},
 	}
+}
+
+// GitBackendAncestorAtTimeFunc describes the behavior when the
+// AncestorAtTime method of the parent MockGitBackend instance is invoked.
+type GitBackendAncestorAtTimeFunc struct {
+	defaultHook func(context.Context, string, time.Time) (api.CommitID, error)
+	hooks       []func(context.Context, string, time.Time) (api.CommitID, error)
+	history     []GitBackendAncestorAtTimeFuncCall
+	mutex       sync.Mutex
+}
+
+// AncestorAtTime delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitBackend) AncestorAtTime(v0 context.Context, v1 string, v2 time.Time) (api.CommitID, error) {
+	r0, r1 := m.AncestorAtTimeFunc.nextHook()(v0, v1, v2)
+	m.AncestorAtTimeFunc.appendCall(GitBackendAncestorAtTimeFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the AncestorAtTime
+// method of the parent MockGitBackend instance is invoked and the hook
+// queue is empty.
+func (f *GitBackendAncestorAtTimeFunc) SetDefaultHook(hook func(context.Context, string, time.Time) (api.CommitID, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AncestorAtTime method of the parent MockGitBackend instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitBackendAncestorAtTimeFunc) PushHook(hook func(context.Context, string, time.Time) (api.CommitID, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitBackendAncestorAtTimeFunc) SetDefaultReturn(r0 api.CommitID, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, time.Time) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitBackendAncestorAtTimeFunc) PushReturn(r0 api.CommitID, r1 error) {
+	f.PushHook(func(context.Context, string, time.Time) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitBackendAncestorAtTimeFunc) nextHook() func(context.Context, string, time.Time) (api.CommitID, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitBackendAncestorAtTimeFunc) appendCall(r0 GitBackendAncestorAtTimeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitBackendAncestorAtTimeFuncCall objects
+// describing the invocations of this function.
+func (f *GitBackendAncestorAtTimeFunc) History() []GitBackendAncestorAtTimeFuncCall {
+	f.mutex.Lock()
+	history := make([]GitBackendAncestorAtTimeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitBackendAncestorAtTimeFuncCall is an object that describes an
+// invocation of method AncestorAtTime on an instance of MockGitBackend.
+type GitBackendAncestorAtTimeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 api.CommitID
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitBackendAncestorAtTimeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitBackendAncestorAtTimeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // GitBackendArchiveReaderFunc describes the behavior when the ArchiveReader

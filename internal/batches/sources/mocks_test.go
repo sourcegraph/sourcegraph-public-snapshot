@@ -10984,6 +10984,9 @@ type MockGitserverClient struct {
 	// AddrForRepoFunc is an instance of a mock function object controlling
 	// the behavior of the method AddrForRepo.
 	AddrForRepoFunc *GitserverClientAddrForRepoFunc
+	// AncestorAtTimeFunc is an instance of a mock function object
+	// controlling the behavior of the method AncestorAtTime.
+	AncestorAtTimeFunc *GitserverClientAncestorAtTimeFunc
 	// ArchiveReaderFunc is an instance of a mock function object
 	// controlling the behavior of the method ArchiveReader.
 	ArchiveReaderFunc *GitserverClientArchiveReaderFunc
@@ -11139,6 +11142,11 @@ func NewMockGitserverClient() *MockGitserverClient {
 	return &MockGitserverClient{
 		AddrForRepoFunc: &GitserverClientAddrForRepoFunc{
 			defaultHook: func(context.Context, api.RepoName) (r0 string) {
+				return
+			},
+		},
+		AncestorAtTimeFunc: &GitserverClientAncestorAtTimeFunc{
+			defaultHook: func(context.Context, api.RepoName, string, time.Time) (r0 api.CommitID, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -11399,6 +11407,11 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.AddrForRepo")
 			},
 		},
+		AncestorAtTimeFunc: &GitserverClientAncestorAtTimeFunc{
+			defaultHook: func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error) {
+				panic("unexpected invocation of MockGitserverClient.AncestorAtTime")
+			},
+		},
 		ArchiveReaderFunc: &GitserverClientArchiveReaderFunc{
 			defaultHook: func(context.Context, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error) {
 				panic("unexpected invocation of MockGitserverClient.ArchiveReader")
@@ -11655,6 +11668,9 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		AddrForRepoFunc: &GitserverClientAddrForRepoFunc{
 			defaultHook: i.AddrForRepo,
 		},
+		AncestorAtTimeFunc: &GitserverClientAncestorAtTimeFunc{
+			defaultHook: i.AncestorAtTime,
+		},
 		ArchiveReaderFunc: &GitserverClientArchiveReaderFunc{
 			defaultHook: i.ArchiveReader,
 		},
@@ -11908,6 +11924,125 @@ func (c GitserverClientAddrForRepoFuncCall) Args() []interface{} {
 // invocation.
 func (c GitserverClientAddrForRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// GitserverClientAncestorAtTimeFunc describes the behavior when the
+// AncestorAtTime method of the parent MockGitserverClient instance is
+// invoked.
+type GitserverClientAncestorAtTimeFunc struct {
+	defaultHook func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error)
+	hooks       []func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error)
+	history     []GitserverClientAncestorAtTimeFuncCall
+	mutex       sync.Mutex
+}
+
+// AncestorAtTime delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitserverClient) AncestorAtTime(v0 context.Context, v1 api.RepoName, v2 string, v3 time.Time) (api.CommitID, bool, error) {
+	r0, r1, r2 := m.AncestorAtTimeFunc.nextHook()(v0, v1, v2, v3)
+	m.AncestorAtTimeFunc.appendCall(GitserverClientAncestorAtTimeFuncCall{v0, v1, v2, v3, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the AncestorAtTime
+// method of the parent MockGitserverClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverClientAncestorAtTimeFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AncestorAtTime method of the parent MockGitserverClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitserverClientAncestorAtTimeFunc) PushHook(hook func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverClientAncestorAtTimeFunc) SetDefaultReturn(r0 api.CommitID, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverClientAncestorAtTimeFunc) PushReturn(r0 api.CommitID, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *GitserverClientAncestorAtTimeFunc) nextHook() func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientAncestorAtTimeFunc) appendCall(r0 GitserverClientAncestorAtTimeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverClientAncestorAtTimeFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverClientAncestorAtTimeFunc) History() []GitserverClientAncestorAtTimeFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientAncestorAtTimeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientAncestorAtTimeFuncCall is an object that describes an
+// invocation of method AncestorAtTime on an instance of
+// MockGitserverClient.
+type GitserverClientAncestorAtTimeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 api.CommitID
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientAncestorAtTimeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientAncestorAtTimeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // GitserverClientArchiveReaderFunc describes the behavior when the

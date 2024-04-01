@@ -290,4 +290,9 @@ func (r *errorTranslatingClient) ResolveRevision(ctx context.Context, in *proto.
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 
+func (r *errorTranslatingClient) AncestorAtTime(ctx context.Context, in *proto.AncestorAtTimeRequest, opts ...grpc.CallOption) (*proto.AncestorAtTimeResponse, error) {
+	res, err := r.base.AncestorAtTime(ctx, in, opts...)
+	return res, convertGRPCErrorToGitDomainError(err)
+}
+
 var _ proto.GitserverServiceClient = &errorTranslatingClient{}
