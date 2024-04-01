@@ -2,11 +2,12 @@ on:
   release:
     types: [published]
 
+env:
+  RELEASE_NUMBER: ${{ github.ref_name }}
+
 steps:
   - name: Trigger AMI Builds on Release
     uses: buildkite/trigger-pipeline-action@v2.0.0
-    env:
-      RELEASE_NUMBER: ${{ github.ref_name }}
     with:
       buildkite_api_access_token:  ${{ secrets.TRIGGER_BK_BUILD_TOKEN }}
       pipeline: "sourcegraph/ami-automation"
