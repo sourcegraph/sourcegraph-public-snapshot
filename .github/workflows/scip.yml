@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     container: sourcegraph/scip-go
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Get src-cli
         run: curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src;
           chmod +x /usr/local/bin/src

@@ -47,7 +47,7 @@ jobs:
       second_latest_tag: ${{ env.second_latest_tag }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Set current tag, latest (highest version) tag, and second latest tag
@@ -103,7 +103,7 @@ jobs:
           echo "latest_tag=${{ needs.release_type.outputs.latest_tag }}" >> $GITHUB_ENV
           echo "second_latest_tag=${{ needs.release_type.outputs.second_latest_tag }}" >> $GITHUB_ENV
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Set versioning variables
@@ -116,7 +116,7 @@ jobs:
           echo "Versioned formula file: ${{ env.versioned_formula_file }}"
           echo "Versioned classname: ${{ env.versioned_classname }}"
       - name: Checkout Homebrew tap
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: sourcegraph/homebrew-src-cli
           fetch-depth: 0
@@ -171,7 +171,7 @@ jobs:
         run: |
           echo "Goreleaser config file: ${{ env.config_file }}"
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Set up Go
@@ -220,7 +220,7 @@ jobs:
           echo "Old symlink: ${{ env.old_symlink_name }}"
           echo "New symlink: ${{ env.new_symlink_name }}"
       - name: Checkout Homebrew tap
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: sourcegraph/homebrew-src-cli
           fetch-depth: 0
@@ -241,7 +241,7 @@ jobs:
     needs: goreleaser
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v4
