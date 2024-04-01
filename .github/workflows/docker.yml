@@ -24,7 +24,7 @@ jobs:
       # We also need QEMU, since this is running on an AMD64 host and we want to
       # build ARM64 images.
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v3
         with:
           platforms: arm64
 
