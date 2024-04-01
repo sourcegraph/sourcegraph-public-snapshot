@@ -11,6 +11,7 @@ import (
 //   - For some extensions which are overwhelmingly used by a certain file type
 //     in practice, such as '.ts', '.md' and '.yaml', it returns ambiguous results.
 //   - It does not provide any information about binary files.
+//   - Some languages are not supported by enry yet (e.g. Pkl)
 func getLanguagesByExtension(path string) (candidates []string, isLikelyBinaryFile bool) {
 	ext := filepath.Ext(path)
 	if ext == "" {
