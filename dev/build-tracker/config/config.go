@@ -15,7 +15,6 @@ type Config struct {
 func (c *Config) Load(env *runtime.Env) {
 	c.BuildkiteToken = env.Get("BUILDKITE_WEBHOOK_TOKEN", "", "")
 	c.SlackToken = env.Get("SLACK_TOKEN", "", "")
-	c.GithubToken = env.Get("GITHUB_TOKEN", "", "")
 	c.SlackChannel = env.Get("SLACK_CHANNEL", DefaultChannel, "")
 	c.Production = env.GetBool("BUILDTRACKER_PRODUCTION", "false", "")
 
