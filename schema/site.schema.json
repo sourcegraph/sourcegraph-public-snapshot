@@ -2574,40 +2574,32 @@
       "description": "TODO",
       "type": "object",
       "properties": {
-        "excludedRepoPatterns": {
+        "include": {
+          "description": "TODO",
           "type": "array",
           "items": {
-            "type": "string"
-          },
-          "!go": {
-            "pointer": true
+            "type": "object",
+            "properties": {
+              "repoNamePattern": {
+                "description": "TODO",
+                "type": "string",
+                "format": "regex"
+              }
+            }
           }
         },
-        "includedRepoPatterns": {
+        "exclude": {
+          "description": "TODO",
           "type": "array",
           "items": {
-            "type": "string"
-          },
-          "!go": {
-            "pointer": true
-          }
-        },
-        "excludedFilePatterns": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "!go": {
-            "pointer": true
-          }
-        },
-        "includedFilePatterns": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "!go": {
-            "pointer": true
+            "type": "object",
+            "properties": {
+              "repoNamePattern": {
+                "description": "TODO",
+                "type": "string",
+                "format": "regex"
+              }
+            }
           }
         }
       },

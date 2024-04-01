@@ -614,10 +614,10 @@ type Codeintel struct {
 
 // CodyContextFilters description: TODO
 type CodyContextFilters struct {
-	ExcludedFilePatterns *[]string `json:"excludedFilePatterns,omitempty"`
-	ExcludedRepoPatterns *[]string `json:"excludedRepoPatterns,omitempty"`
-	IncludedFilePatterns *[]string `json:"includedFilePatterns,omitempty"`
-	IncludedRepoPatterns *[]string `json:"includedRepoPatterns,omitempty"`
+	// Exclude description: TODO
+	Exclude []*Exclude `json:"exclude,omitempty"`
+	// Include description: TODO
+	Include []*Include `json:"include,omitempty"`
 }
 
 // CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
@@ -845,6 +845,10 @@ type EncryptionKeys struct {
 	UserExternalAccountKey *EncryptionKey `json:"userExternalAccountKey,omitempty"`
 	WebhookKey             *EncryptionKey `json:"webhookKey,omitempty"`
 	WebhookLogKey          *EncryptionKey `json:"webhookLogKey,omitempty"`
+}
+type Exclude struct {
+	// RepoNamePattern description: TODO
+	RepoNamePattern string `json:"repoNamePattern,omitempty"`
 }
 type ExcludedAWSCodeCommitRepo struct {
 	// Id description: The ID of an AWS Code Commit repository (as returned by the AWS API) to exclude from mirroring. Use this to exclude the repository, even if renamed, or to differentiate between repositories with the same name in multiple regions.
@@ -1569,6 +1573,10 @@ type ImportChangesets struct {
 	ExternalIDs []any `json:"externalIDs"`
 	// Repository description: The repository name as configured on your Sourcegraph instance.
 	Repository string `json:"repository"`
+}
+type Include struct {
+	// RepoNamePattern description: TODO
+	RepoNamePattern string `json:"repoNamePattern,omitempty"`
 }
 
 // JVMPackagesConnection description: Configuration for a connection to a JVM packages repository.

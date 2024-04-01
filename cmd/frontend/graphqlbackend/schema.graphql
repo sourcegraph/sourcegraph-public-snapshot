@@ -7237,11 +7237,13 @@ type DefaultSettings implements SettingsSubject {
         )
 }
 
+type CodyContextFilterItem {
+    repoNamePattern: String!
+}
+
 type CodyContextFilters {
-    excludedRepoPatterns: [String!]
-    includedRepoPatterns: [String!]
-    excludedFilePatterns: [String!]
-    includedFilePatterns: [String!]
+    include: [CodyContextFilterItem]
+    exclude: [CodyContextFilterItem]
 }
 
 """
@@ -7516,6 +7518,9 @@ type Site implements SettingsSubject {
     """
     codyGatewayRateLimitStatus: [CodyGatewayRateLimitStatus!]
 
+    """
+    TODO
+    """
     codyContextFilters: CodyContextFilters
 }
 

@@ -660,25 +660,44 @@ func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 	return nil
 }
 
-type codyContextResolver struct {
+type codyContextFiltersResolver struct {
 	config schema.SiteConfiguration
 }
 
-func (c *codyContextResolver) ExcludedRepoPatterns() *[]string {
-	return c.config.CodyContextFilters.ExcludedRepoPatterns
-}
-func (c *codyContextResolver) IncludedRepoPatterns() *[]string {
-	return c.config.CodyContextFilters.IncludedRepoPatterns
-}
-func (c *codyContextResolver) ExcludedFilePatterns() *[]string {
-	return c.config.CodyContextFilters.ExcludedFilePatterns
-}
-func (c *codyContextResolver) IncludedFilePatterns() *[]string {
-	return c.config.CodyContextFilters.IncludedFilePatterns
+type includeResolver struct {
+	f *schema.Include
 }
 
-func (r *siteResolver) CodyContextFilters() *codyContextResolver {
-	return &codyContextResolver{config: conf.Get().SiteConfig()}
+func (r *includeResolver) RepoNamePattern() string {
+	return r.f.RepoNamePattern
+}
+
+type excludeResolver struct {
+	f *schema.Exclude
+}
+
+func (r *excludeResolver) RepoNamePattern() string {
+	return r.f.RepoNamePattern
+}
+
+func (c *codyContextFiltersResolver) Include() *[]*includeResolver {
+	var items []*includeResolver
+	for _, f := range c.config.CodyContextFilters.Include {
+		items = append(items, &includeResolver{f})
+	}
+	return &items
+}
+
+func (c *codyContextFiltersResolver) Exclude() *[]*excludeResolver {
+	var items []*excludeResolver
+	for _, f := range c.config.CodyContextFilters.Exclude {
+		items = append(items, &excludeResolver{f})
+	}
+	return &items
+}
+
+func (r *siteResolver) CodyContextFilters() *codyContextFiltersResolver {
+	return &codyContextFiltersResolver{config: conf.Get().SiteConfig()}
 }
 
 func allowEdit(before, after string, allowlist []string) ([]string, bool) {
