@@ -81,7 +81,7 @@ func TestLargeAmountOfFailures(t *testing.T) {
 	}
 	logger := logtest.NoOp(t)
 
-	client := notify.NewClient(logger, os.Getenv("SLACK_TOKEN"), config.DefaultChannel)
+	client := notify.NewClient(logger, os.Getenv("SLACK_TOKEN"), os.Getenv("GITHUB_TOKEN"), config.DefaultChannel)
 
 	err := client.Send(info)
 	if err != nil {
@@ -120,7 +120,7 @@ func TestGetTeammateFromBuild(t *testing.T) {
 	logger := logtest.NoOp(t)
 
 	t.Run("with nil author, commit author is still retrieved", func(t *testing.T) {
-		client := notify.NewClient(logger, os.Getenv("SLACK_TOKEN"), config.DefaultChannel)
+		client := notify.NewClient(logger, os.Getenv("SLACK_TOKEN"), os.Getenv("GITHUB_TOKEN"), config.DefaultChannel)
 
 		num := 160000
 		commit := "ca7c44f79984ff8d645b580bfaaf08ce9a37a05d"
@@ -146,7 +146,7 @@ func TestGetTeammateFromBuild(t *testing.T) {
 		require.Equal(t, teammate.Name, "Leo Papaloizos")
 	})
 	t.Run("commit author preferred over build author", func(t *testing.T) {
-		client := notify.NewClient(logger, os.Getenv("SLACK_TOKEN"), config.DefaultChannel)
+		client := notify.NewClient(logger, os.Getenv("SLACK_TOKEN"), os.Getenv("GITHUB_TOKEN"), config.DefaultChannel)
 
 		num := 160000
 		commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
@@ -175,7 +175,7 @@ func TestGetTeammateFromBuild(t *testing.T) {
 		require.Equal(t, teammate.Name, "Ryan Slade")
 	})
 	t.Run("retrieving teammate for build populates cache", func(t *testing.T) {
-		client := notify.NewClient(logger, os.Getenv("SLACK_TOKEN"), config.DefaultChannel)
+		client := notify.NewClient(logger, os.Getenv("SLACK_TOKEN"), os.Getenv("GITHUB_TOKEN"), config.DefaultChannel)
 
 		num := 160000
 		commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
@@ -212,7 +212,7 @@ func TestSlackNotification(t *testing.T) {
 	}
 	logger := logtest.NoOp(t)
 
-	client := notify.NewClient(logger, os.Getenv("SLACK_TOKEN"), config.DefaultChannel)
+	client := notify.NewClient(logger, os.Getenv("SLACK_TOKEN"), os.Getenv("GITHUB_TOKEN"), config.DefaultChannel)
 
 	// Each child test needs to increment this number, otherwise notifications will be overwritten
 	buildNumber := 160000
@@ -433,6 +433,7 @@ func TestServerNotify(t *testing.T) {
 	conf := config.Config{
 		BuildkiteToken: os.Getenv("BUILDKITE_WEBHOOK_TOKEN"),
 		SlackToken:     os.Getenv("SLACK_TOKEN"),
+		GithubToken:    os.Getenv("GITHUB_TOKEN"),
 		SlackChannel:   os.Getenv("SLACK_CHANNEL"),
 	}
 
