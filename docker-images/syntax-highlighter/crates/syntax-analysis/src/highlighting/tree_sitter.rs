@@ -1,4 +1,3 @@
-use if_chain::if_chain;
 use paste::paste;
 use scip::types::{Document, Occurrence, SyntaxKind};
 use std::collections::HashMap;
@@ -406,6 +405,7 @@ mod test {
     use super::*;
     use crate::highlighting::FileInfo;
     use crate::snapshot::{self, dump_document_with_config};
+    use if_chain::if_chain;
 
     fn snapshot_treesitter_syntax_kinds(doc: &Document, source: &str) -> String {
         dump_document_with_config(
