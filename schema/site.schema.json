@@ -2578,28 +2578,14 @@
           "description": "TODO",
           "type": "array",
           "items": {
-            "type": "object",
-            "properties": {
-              "repoNamePattern": {
-                "description": "TODO",
-                "type": "string",
-                "format": "regex"
-              }
-            }
+            "$ref": "#/definitions/CodyContextFilterItem"
           }
         },
         "exclude": {
           "description": "TODO",
           "type": "array",
           "items": {
-            "type": "object",
-            "properties": {
-              "repoNamePattern": {
-                "description": "TODO",
-                "type": "string",
-                "format": "regex"
-              }
-            }
+            "$ref": "#/definitions/CodyContextFilterItem"
           }
         }
       },
@@ -3888,6 +3874,17 @@
         "text": {
           "description": "Optional template for plain-text body. If not provided, a plain-text body will be automatically generated from the HTML template.",
           "type": "string"
+        }
+      }
+    },
+    "CodyContextFilterItem": {
+      "type": "object",
+      "required": ["repoNamePattern"],
+      "properties": {
+        "repoNamePattern": {
+          "description": "TODO",
+          "type": "string",
+          "format": "regex"
         }
       }
     }

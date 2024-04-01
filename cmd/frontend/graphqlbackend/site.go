@@ -664,36 +664,28 @@ type codyContextFiltersResolver struct {
 	config schema.SiteConfiguration
 }
 
-type includeResolver struct {
-	f *schema.Include
+type codyContextFilterItemResolver struct {
+	f *schema.CodyContextFilterItem
 }
 
-func (r *includeResolver) RepoNamePattern() string {
+func (r *codyContextFilterItemResolver) RepoNamePattern() string {
 	return r.f.RepoNamePattern
 }
 
-type excludeResolver struct {
-	f *schema.Exclude
+func (c *codyContextFiltersResolver) Include() *[]*codyContextFilterItemResolver {
+	return c.resolvers(c.config.CodyContextFilters.Include)
 }
 
-func (r *excludeResolver) RepoNamePattern() string {
-	return r.f.RepoNamePattern
+func (c *codyContextFiltersResolver) Exclude() *[]*codyContextFilterItemResolver {
+	return c.resolvers(c.config.CodyContextFilters.Exclude)
 }
 
-func (c *codyContextFiltersResolver) Include() *[]*includeResolver {
-	var items []*includeResolver
-	for _, f := range c.config.CodyContextFilters.Include {
-		items = append(items, &includeResolver{f})
+func (c *codyContextFiltersResolver) resolvers(items []*schema.CodyContextFilterItem) *[]*codyContextFilterItemResolver {
+	var r []*codyContextFilterItemResolver
+	for _, f := range items {
+		r = append(r, &codyContextFilterItemResolver{f})
 	}
-	return &items
-}
-
-func (c *codyContextFiltersResolver) Exclude() *[]*excludeResolver {
-	var items []*excludeResolver
-	for _, f := range c.config.CodyContextFilters.Exclude {
-		items = append(items, &excludeResolver{f})
-	}
-	return &items
+	return &r
 }
 
 func (r *siteResolver) CodyContextFilters() *codyContextFiltersResolver {
