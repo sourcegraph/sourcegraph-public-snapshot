@@ -1,57 +1,39 @@
-<script lang="ts" context="module">
-    export interface LastCommitProps {
-        id: string
-        abbreviatedOID: string
-        subject: string
-        canonicalURL: string
-        author: {
-            date: string
-            person: {
-                avatarURL: string | null
-                displayName: string
-                name: string
-            }
-        }
-    }
-</script>
-
 <script lang="ts">
     import { formatDistanceToNow } from 'date-fns'
 
-    import type { Avatar_User } from '$lib/Avatar.gql'
     import Avatar from '$lib/Avatar.svelte'
 
-    export let latestCommit: LastCommitProps
+    import type { LastCommitFragment } from './LastCommit.gql'
 
-    let avatar: Avatar_User = {
-        __typename: 'User',
-        avatarURL: latestCommit.author.person.avatarURL,
-        displayName: latestCommit.author.person.displayName,
-        username: latestCommit.author.person.name,
-    }
+    export let latestCommit: LastCommitFragment
+
+    $: user = latestCommit.author.person
+    $: canonicalURL = latestCommit.canonicalURL
+    $: commitMessage = latestCommit.subject
+    $: commitDate = formatDistanceToNow(latestCommit.author.date, { addSuffix: false })
 </script>
 
 <div class="latest-commit">
     <div class="user-info">
-        <Avatar {avatar} />
+        <Avatar avatar={user} />
         <div class="display-name">
             <small>
-                {latestCommit.author.person.name}
+                {user.name}
             </small>
         </div>
     </div>
 
     <div class="commit-message">
-        <a href={latestCommit.canonicalURL}>
+        <a href={canonicalURL}>
             <small>
-                {latestCommit.subject}
+                {commitMessage}
             </small>
         </a>
     </div>
 
     <div class="commit-date">
         <small>
-            {formatDistanceToNow(latestCommit.author.date, { addSuffix: false })}
+            {commitDate}
         </small>
     </div>
 </div>

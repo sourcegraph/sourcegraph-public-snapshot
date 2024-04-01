@@ -1,0 +1,14 @@
+fragment LastCommitFragment on GitCommit {
+    id
+    abbreviatedOID
+    subject
+    canonicalURL
+    author {
+        date
+        person {
+            displayName
+            name
+            avatarURL
+        }
+    }
+}

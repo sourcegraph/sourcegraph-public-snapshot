@@ -150,7 +150,7 @@
                 </TabPanel>
             </Tabs>
             {#if latestCommit}
-                <LastCommit latestCommit={latestCommit} />
+                <LastCommit {latestCommit} />
             {:else}
                 <LoadingSpinner inline />
             {/if}
