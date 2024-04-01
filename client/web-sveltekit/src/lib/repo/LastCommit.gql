@@ -6,9 +6,7 @@ fragment LastCommitFragment on GitCommit {
     author {
         date
         person {
-            displayName
-            name
-            avatarURL
+            ...Avatar_User
         }
     }
 }

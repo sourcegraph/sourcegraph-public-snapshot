@@ -10,7 +10,7 @@
     $: user = latestCommit.author.person
     $: canonicalURL = latestCommit.canonicalURL
     $: commitMessage = latestCommit.subject
-    $: commitDate = formatDistanceToNow(latestCommit.author.date, { addSuffix: false })
+    $: commitDate = formatDistanceToNow(latestCommit.author.date, { addSuffix: true })
 </script>
 
 <div class="latest-commit">
@@ -44,7 +44,7 @@
     }
 
     .commit-message {
-        margin-right: 0.4rem;
+        margin-right: 0.5rem;
         color: var(--text-muted);
         overflow: hidden;
         white-space: nowrap;
@@ -52,13 +52,12 @@
     }
 
     .display-name {
-        margin-left: 0.4rem;
+        margin-left: 0.5rem;
     }
 
     .latest-commit {
         display: flex;
         flex-flow: row nowrap;
-        padding-right: 0.5rem;
         max-width: 350px;
         align-items: center;
         white-space: nowrap;
@@ -70,6 +69,6 @@
         display: flex;
         flex-flow: row nowrap;
         align-items: center;
-        margin-right: 0.6rem;
+        margin-right: 0.5rem;
     }
 </style>

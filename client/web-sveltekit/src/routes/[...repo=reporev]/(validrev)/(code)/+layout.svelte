@@ -206,6 +206,7 @@
         display: flex;
         flex-flow: row nowrap;
         justify-content: space-between;
+        padding-right: 0.5rem;
 
         :global(.tabs) {
             height: 100%;
