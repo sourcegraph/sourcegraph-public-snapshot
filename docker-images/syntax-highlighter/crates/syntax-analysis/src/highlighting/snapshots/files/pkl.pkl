@@ -38,15 +38,15 @@ reversedStr = "dodo".reverse()
 hasAx = "dodo".contains("alive")
 
 
-# Functions
+// Functions
 addToA = (b: Number) -> a + b
 list = List(1, 2, 3).map(addToA)
 
 
-# Operators
+// Operators
 comparison1 = 5 == 2
 
-# Numbers
+// Numbers
 num1 = 123
 num2 = 0x012AFF
 
@@ -63,7 +63,7 @@ b1 = true && false
 b3 = true.xor(false)
 
 
-# Durations
+// Durations
 duration1 = 5.min
 xySeconds = (x + y).s
 

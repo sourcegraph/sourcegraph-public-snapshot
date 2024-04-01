@@ -558,12 +558,7 @@ SELECT * FROM my_table
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
 
-            let language = crate::highlighting::test::SYNTAX_SET
-                .with(|syntax_set| {
-                    FileInfo::new(filepath.to_string_lossy().as_ref(), &contents, None)
-                        .determine_language(syntax_set)
-                })
-                .unwrap();
+            let language = get_language_for_test(&filepath, &contents);
 
             let document = language.highlight_document(&contents, true).unwrap();
 

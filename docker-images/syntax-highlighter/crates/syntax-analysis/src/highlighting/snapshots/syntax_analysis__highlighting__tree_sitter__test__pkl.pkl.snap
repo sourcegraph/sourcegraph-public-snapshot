@@ -118,8 +118,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                        ^^^^^^^ StringLiteral
   
   
-  # Functions
-//  ^^^^^^^^^ IdentifierType
+  // Functions
+//^^^^^^^^^^^^ Comment
   addToA = (b: Number) -> a + b
 //^^^^^^ Identifier
 //       ^ IdentifierOperator
@@ -144,8 +144,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                         ^^^^^^ Identifier
   
   
-  # Operators
-//  ^^^^^^^^^ IdentifierType
+  // Operators
+//^^^^^^^^^^^^ Comment
   comparison1 = 5 == 2
 //^^^^^^^^^^^ Identifier
 //            ^ IdentifierOperator
@@ -153,8 +153,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                ^^ IdentifierOperator
 //                   ^ NumericLiteral
   
-  # Numbers
-//  ^^^^^^^ IdentifierType
+  // Numbers
+//^^^^^^^^^^ Comment
   num1 = 123
 //^^^^ Identifier
 //     ^ IdentifierOperator
@@ -189,31 +189,31 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   notANumber = NaN
 //^^^^^^^^^^ Identifier
 //           ^ IdentifierOperator
-//             ^^^ IdentifierType
+//             ^^^ IdentifierBuiltinType
   positiveInfinity = Infinity
 //^^^^^^^^^^^^^^^^ Identifier
 //                 ^ IdentifierOperator
-//                   ^^^^^^^^ IdentifierType
+//                   ^^^^^^^^ IdentifierBuiltinType
   
   // Booleans
 //^^^^^^^^^^^ Comment
   b1 = true && false
 //^^ Identifier
 //   ^ IdentifierOperator
-//     ^^^^ IdentifierBuiltin
+//     ^^^^ BooleanLiteral
 //          ^^ IdentifierOperator
-//             ^^^^^ IdentifierBuiltin
+//             ^^^^^ BooleanLiteral
   b3 = true.xor(false)
 //^^ Identifier
 //   ^ IdentifierOperator
-//     ^^^^ IdentifierBuiltin
+//     ^^^^ BooleanLiteral
 //         ^ PunctuationDelimiter
 //          ^^^ IdentifierFunction
-//              ^^^^^ IdentifierBuiltin
+//              ^^^^^ BooleanLiteral
   
   
-  # Durations
-//  ^^^^^^^^^ IdentifierType
+  // Durations
+//^^^^^^^^^^^^ Comment
   duration1 = 5.min
 //^^^^^^^^^ Identifier
 //          ^ IdentifierOperator
@@ -249,16 +249,14 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //              ^ PunctuationDelimiter
 //                ^^^^^^^ IdentifierType
 //                        ^ IdentifierOperator
-//                          ^^^^ IdentifierBuiltin
+//                          ^^^^ BooleanLiteral
   
   const examples: Listing<String> = new {
 //^^^^^ Keyword
 //      ^^^^^^^^ Identifier
 //              ^ PunctuationDelimiter
 //                ^^^^^^^ IdentifierType
-//                       ^ IdentifierOperator
 //                        ^^^^^^ IdentifierType
-//                              ^ IdentifierOperator
 //                                ^ IdentifierOperator
 //                                  ^^^ Keyword
     "Pigeon"
@@ -385,8 +383,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   }
   
   @Deprecated { message = "Replace with \(pigeonName)" }
-//^ IdentifierOperator
-// ^^^^^^^^^^ IdentifierType
+//^ IdentifierAttribute
+// ^^^^^^^^^^ IdentifierAttribute
 //              ^^^^^^^ Identifier
 //                      ^ IdentifierOperator
 //                        ^^^^^^^^^^^^^^ StringLiteral
@@ -426,14 +424,12 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //  ^^^^^^^^ Identifier
 //          ^ PunctuationDelimiter
 //            ^^^ IdentifierType
-//               ^ IdentifierOperator
 //                ^^^^^^ IdentifierType
 //                       ^ IdentifierOperator
 //                        ^^^^^^^ Identifier
 //                                ^ PunctuationDelimiter
 //                                  ^^^^^^ IdentifierType
 //                                         ^^^^^^^^^^^^ Identifier
-//                                                      ^ IdentifierOperator
 //                                                        ^^^^^^ Identifier
 //                                                               ^^ IdentifierOperator
 //                                                                  ^ NumericLiteral
@@ -462,9 +458,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //              ^ IdentifierOperator
 //                ^^^ Keyword
 //                    ^^^^^ IdentifierType
-//                         ^ IdentifierOperator
 //                          ^^^^ IdentifierType
-//                              ^ IdentifierOperator
     diet = "Seeds"
 //  ^^^^ Identifier
 //       ^ IdentifierOperator
@@ -540,6 +534,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   entries2 {
 //^^^^^^^^ Identifier
     ...entries1
+//  ^^^ IdentifierOperator
 //     ^^^^^^^^ Identifier
   }
   

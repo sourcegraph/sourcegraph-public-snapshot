@@ -15,6 +15,80 @@
  ; Based on https://github.com/apple/tree-sitter-pkl/blob/main/queries/highlights.scm
 
 
+; Types
+
+(clazz (identifier) @type)
+(typeAlias (identifier) @type)
+
+
+(annotation ("@" @identifier.attribute) (qualifiedIdentifier (identifier) @identifier.attribute))
+
+((identifier) @type.builtin
+ (#eq? @type.builtin "Infinity"))
+
+((identifier) @type.builtin
+ (#eq? @type.builtin "NaN"))
+
+
+((identifier) @type
+ (#match? @type "^[A-Z]"))
+
+
+(typeArgumentList
+  "<" @punctuation.bracket
+  ">" @punctuation.bracket)
+
+; Method calls
+
+(methodCallExpr
+  (identifier) @function.method)
+
+; Method definitions
+
+(classMethod (methodHeader (identifier)) @function.method)
+(objectMethod (methodHeader (identifier)) @function.method)
+
+; Identifiers
+(objectSpread ("..." @identifier.operator) (variableExpr))
+
+(classProperty (identifier) @property)
+(classProperty (identifier) @property)
+(objectProperty (identifier) @property)
+
+(parameterList (typedIdentifier (identifier) @variable.parameter))
+(objectBodyParameters (typedIdentifier (identifier) @variable.parameter))
+
+(identifier) @variable
+
+; Literals
+
+(stringConstant) @string
+(slStringLiteral) @string
+(mlStringLiteral) @string
+
+(escapeSequence) @escape
+
+(intLiteral) @number
+(floatLiteral) @number
+
+(interpolationExpr
+  "\\(" @punctuation.special
+  ")" @punctuation.special) @embedded
+
+(interpolationExpr
+ "\\#(" @punctuation.special
+ ")" @punctuation.special) @embedded
+
+(interpolationExpr
+  "\\##(" @punctuation.special
+  ")" @punctuation.special) @embedded
+
+(lineComment) @comment
+(blockComment) @comment
+(docComment) @comment
+
+
+
 ; Operators
 
 "??" @operator
@@ -64,10 +138,10 @@
 "else" @keyword
 "extends" @keyword
 "external" @keyword
-(falseLiteral) @constant.builtin
+(falseLiteral) @boolean
 "fixed" @keyword
 "for" @keyword
-"function" @keyword
+"function" @keyword.function
 "hidden" @keyword
 "if" @keyword
 (importExpr "import" @include)
@@ -82,7 +156,7 @@
 "module" @keyword
 "new" @keyword
 "nothing" @type.builtin
-(nullLiteral) @constant.builtin
+(nullLiteral) @constant.null
 "open" @keyword
 "out" @keyword
 (outerExpr) @variable.builtin
@@ -93,67 +167,9 @@
 (thisExpr) @variable.builtin
 "throw" @function.method.builtin
 "trace" @function.method.builtin
-(trueLiteral) @constant.builtin
+(trueLiteral) @boolean
 "typealias" @keyword
 "unknown" @type.builtin
 "when" @keyword
-
-; Types
-
-(clazz (identifier) @type)
-(typeAlias (identifier) @type)
-((identifier) @type
- (#match? @type "^[A-Z]"))
-
-(typeArgumentList
-  "<" @punctuation.bracket
-  ">" @punctuation.bracket)
-
-; Method calls
-
-(methodCallExpr
-  (identifier) @function.method)
-
-; Method definitions
-
-(classMethod (methodHeader (identifier)) @function.method)
-(objectMethod (methodHeader (identifier)) @function.method)
-
-; Identifiers
-
-(classProperty (identifier) @property)
-(objectProperty (identifier) @property)
-
-(parameterList (typedIdentifier (identifier) @variable.parameter))
-(objectBodyParameters (typedIdentifier (identifier) @variable.parameter))
-
-(identifier) @variable
-
-; Literals
-
-(stringConstant) @string
-(slStringLiteral) @string
-(mlStringLiteral) @string
-
-(escapeSequence) @escape
-
-(intLiteral) @number
-(floatLiteral) @number
-
-(interpolationExpr
-  "\\(" @punctuation.special
-  ")" @punctuation.special) @embedded
-
-(interpolationExpr
- "\\#(" @punctuation.special
- ")" @punctuation.special) @embedded
-
-(interpolationExpr
-  "\\##(" @punctuation.special
-  ")" @punctuation.special) @embedded
-
-(lineComment) @comment
-(blockComment) @comment
-(docComment) @comment
 
 
