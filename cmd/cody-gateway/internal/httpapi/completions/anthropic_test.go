@@ -17,12 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
 )
 
-type mockPromptRecorder struct{}
-
-func (*mockPromptRecorder) Record(ctx context.Context, prompt string) error {
-	return nil
-}
-
 func TestIsFlaggedAnthropicRequest(t *testing.T) {
 	validPreamble := "You are cody-gateway."
 
@@ -52,7 +46,6 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 		t.Helper()
 		anthropicUpstream := &AnthropicHandlerMethods{
 			anthropicTokenizer: tk,
-			promptRecorder:     &mockPromptRecorder{},
 			config: config.AnthropicConfig{
 				FlaggingConfig: flaggingConfig,
 			},

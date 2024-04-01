@@ -29,6 +29,7 @@ func NewOpenAIHandler(
 	rateLimitNotifier notify.RateLimitNotifier,
 	httpClient httpcli.Doer,
 	config config.OpenAIConfig,
+	promptRecorder PromptRecorder,
 	autoFlushStreamingResponses bool,
 ) http.Handler {
 	return makeUpstreamHandler[openaiRequest](
@@ -40,6 +41,7 @@ func NewOpenAIHandler(
 		string(conftypes.CompletionsProviderNameOpenAI),
 		config.AllowedModels,
 		&OpenAIHandlerMethods{config: config},
+		promptRecorder,
 
 		// OpenAI primarily uses tokens-per-minute ("TPM") to rate-limit spikes
 		// in requests, so set a very high retry-after to discourage Sourcegraph

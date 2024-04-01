@@ -29,6 +29,10 @@ type Config struct {
 		AccessToken                  string
 		InternalMode                 bool
 		ActorRefreshCoolDownInterval time.Duration
+
+		// Prompts that get flagged are stored in Redis for a short-time, for
+		// better understanding the nature of any ongoing spam/abuse waves.
+		FlaggedPromptRecorderTTL time.Duration
 	}
 
 	Anthropic AnthropicConfig
@@ -143,6 +147,8 @@ func (c *Config) Load() {
 		c.GetBool("CODY_GATEWAY_DOTCOM_DEV_LICENSES_ONLY", "false", "DEPRECATED, use CODY_GATEWAY_DOTCOM_INTERNAL_MODE")
 	c.Dotcom.ActorRefreshCoolDownInterval = c.GetInterval("CODY_GATEWAY_DOTCOM_ACTOR_COOLDOWN_INTERVAL", "300s",
 		"Cooldown period for refreshing the actor info from dotcom.")
+	c.Dotcom.FlaggedPromptRecorderTTL = c.GetInterval("CODY_GATEWAY_DOTCOM_FLAGGED_PROMPT_RECORDER_TTL", "1h",
+		"Period to retain prompts in Redis.")
 
 	c.Anthropic.AccessToken = c.Get("CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN", "", "The Anthropic access token to be used.")
 	c.Anthropic.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_ANTHROPIC_ALLOWED_MODELS",
