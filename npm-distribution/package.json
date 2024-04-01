@@ -17,10 +17,10 @@
     "sourcegraph"
   ],
   "dependencies": {
-    "tar": "^6.1.11"
+    "tar": "^6.2.1"
   },
   "devDependencies": {
-    "@types/tar": "6.1.3"
+    "@types/tar": "6.1.11"
   },
   "private": false
 }
