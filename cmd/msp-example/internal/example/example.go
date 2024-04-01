@@ -3,11 +3,13 @@ package example
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -94,6 +96,8 @@ func (s Service) Initialize(
 				return
 			}
 
+			insecure, _ := strconv.ParseBool(r.URL.Query().Get("insecure"))
+
 			// Copy the request body and build the request
 			defer r.Body.Close()
 			body, err := io.ReadAll(r.Body)
@@ -120,6 +124,11 @@ func (s Service) Initialize(
 
 			// Send to target
 			proxy := httputil.NewSingleHostReverseProxy(hostURL)
+			if insecure {
+				customTransport := http.DefaultTransport.(*http.Transport).Clone()
+				customTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+				proxy.Transport = customTransport
+			}
 			proxy.ServeHTTP(w, proxiedRequest)
 		}),
 	))

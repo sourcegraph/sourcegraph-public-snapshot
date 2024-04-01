@@ -47,6 +47,11 @@ interface CodyManagementPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
 }
 
+export enum EditorStep {
+    SetupInstructions = 0,
+    CodyFeatures = 1,
+}
+
 export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps> = ({
     isSourcegraphDotCom,
     authenticatedUser,
@@ -75,7 +80,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     const codyCurrentPeriodCodeUsage = stats?.codyCurrentPeriodCodeUsage || 0
 
     const [selectedEditor, setSelectedEditor] = React.useState<IEditor | null>(null)
-    const [selectedEditorStep, setSelectedEditorStep] = React.useState<number | null>(null)
+    const [selectedEditorStep, setSelectedEditorStep] = React.useState<EditorStep | null>(null)
 
     const subscription = data?.currentUser?.codySubscription
 
@@ -325,14 +330,14 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                         className={classNames('d-flex mb-3 align-items-center', styles.ideHeader)}
                                         onClick={() => {
                                             setSelectedEditor(editor)
-                                            setSelectedEditorStep(0)
+                                            setSelectedEditorStep(EditorStep.SetupInstructions)
                                         }}
                                         role="button"
                                         tabIndex={0}
                                         onKeyDown={e => {
                                             if (e.key === 'Enter') {
                                                 setSelectedEditor(editor)
-                                                setSelectedEditorStep(0)
+                                                setSelectedEditorStep(EditorStep.SetupInstructions)
                                             }
                                         }}
                                     >
@@ -359,7 +364,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                             className="mb-2 text-muted d-flex align-items-center"
                                             onClick={() => {
                                                 setSelectedEditor(editor)
-                                                setSelectedEditorStep(0)
+                                                setSelectedEditorStep(EditorStep.SetupInstructions)
                                             }}
                                         >
                                             <Icon svgPath={mdiInformationOutline} aria-hidden={true} className="mr-1" />{' '}
@@ -393,6 +398,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                                         setSelectedEditor(null)
                                                         setSelectedEditorStep(null)
                                                     }}
+                                                    telemetryRecorder={telemetryRecorder}
                                                 />
                                             </Modal>
                                         )}

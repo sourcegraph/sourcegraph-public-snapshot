@@ -205,7 +205,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             <DeveloperSettingsGlobalNavItem />
                         </NavAction>
                     )}
-                    <SvelteKitNavItem />
+                    <SvelteKitNavItem userID={props.authenticatedUser?.id} />
                     {props.authenticatedUser?.siteAdmin && (
                         <AccessRequestsGlobalNavItem className="d-flex align-items-center py-1" />
                     )}
