@@ -93,7 +93,7 @@ container_structure_test(
 oci_push(
     name = "candidate_push",
     image = ":image",
-    repository = image_repository("msp-example"),
+    repository = image_repository("build-tracker"),
 )
 
 msp_delivery(
