@@ -1,3 +1,4 @@
+use if_chain::if_chain;
 use paste::paste;
 use scip::types::{Document, Occurrence, SyntaxKind};
 use std::collections::HashMap;
@@ -443,15 +444,16 @@ mod test {
         // If we can't determine language from Syntect, determine from path just for the test
         // This is only needed for test, since when running in production, we
         // will always have the language passed in
-        if language_from_syntect.raw.is_empty()
-            || language_from_syntect.raw.to_lowercase() == "plain text"
-        {
-            let extension = filepath.extension().unwrap_or_default();
-            if !extension.is_empty() {
-                if let Some(parser_id) = ParserId::from_file_extension(extension.to_str().unwrap())
-                {
-                    return TreeSitterLanguageName::new(parser_id.name());
-                }
+
+        // Remove me once let-chains are stabilized
+        // (https://github.com/rust-lang/rust/issues/53667)
+        if_chain! {
+            if language_from_syntect.raw.is_empty()
+                || language_from_syntect.raw.to_lowercase() == "plain text";
+            if let Some(extension) = filepath.extension();
+            if let Some(parser_id) = ParserId::from_file_extension(extension.to_str().unwrap());
+            then {
+                return TreeSitterLanguageName::new(parser_id.name());
             }
         }
 
