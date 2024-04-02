@@ -197,7 +197,7 @@ export const OrgSettingsMembersPage: React.FunctionComponent<Props> = ({
                 refetch()
             }
         },
-        [refetch, navigate]
+        [refetch, navigate, telemetryRecorder]
     )
 
     const totalCount = connection?.totalCount || 0

@@ -147,7 +147,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
         if (orgName) {
             navigate(orgURL(orgName))
         }
-    }, [data?.id, navigate, orgId, orgName, respondToInvitation, willVerifyEmail])
+    }, [data?.id, navigate, orgId, orgName, respondToInvitation, willVerifyEmail, telemetryRecorder])
 
     const declineInvitation = useCallback(async () => {
         EVENT_LOGGER.log(
