@@ -110,7 +110,7 @@ promoteToPublic:
           echo "pretending to call release registry api"
       - name: "git:tag"
         cmd: |
-          set -exu
+          set -eu
 
           # we need to first fetch the branch because the repo in CI is in a detached state
           git fetch origin '+refs/heads/{{git.branch}}:refs/heads/{{git.branch}}'
