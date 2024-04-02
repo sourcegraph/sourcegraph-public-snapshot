@@ -779,6 +779,7 @@ Slack webhook actions configured on code monitors
  search_results    | jsonb                    |           |          | 
  queued_at         | timestamp with time zone |           |          | now()
  cancel            | boolean                  |           | not null | false
+ logs              | json[]                   |           |          | 
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
     "cm_trigger_jobs_finished_at" btree (finished_at)

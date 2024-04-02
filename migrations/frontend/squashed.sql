@@ -1593,6 +1593,7 @@ CREATE TABLE cm_trigger_jobs (
     search_results jsonb,
     queued_at timestamp with time zone DEFAULT now(),
     cancel boolean DEFAULT false NOT NULL,
+    logs json[],
     CONSTRAINT search_results_is_array CHECK ((jsonb_typeof(search_results) = 'array'::text))
 );
 

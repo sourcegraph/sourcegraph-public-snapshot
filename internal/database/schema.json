@@ -6911,6 +6911,19 @@
           "Comment": ""
         },
         {
+          "Name": "logs",
+          "Index": 20,
+          "TypeName": "json[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "num_failures",
           "Index": 9,
           "TypeName": "integer",
