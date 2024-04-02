@@ -1348,15 +1348,10 @@ func TestCloudDefaultExternalServicesDontSync(t *testing.T) {
 }
 
 func TestDotComPrivateReposDontSync(t *testing.T) {
-	orig := dotcom.SourcegraphDotComMode()
-	dotcom.MockSourcegraphDotComMode(true)
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	ctx, cancel := context.WithCancel(context.Background())
-
-	t.Cleanup(func() {
-		dotcom.MockSourcegraphDotComMode(orig)
-		cancel()
-	})
+	defer cancel()
 
 	store := getTestRepoStore(t)
 

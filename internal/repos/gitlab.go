@@ -92,7 +92,7 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 
 	var ex repoExcluder
 	for _, r := range c.Exclude {
-		rule := ex.AddRule().
+		rule := NewRule().
 			Exact(r.Name).
 			Pattern(r.Pattern)
 
@@ -108,6 +108,8 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 				return false
 			})
 		}
+
+		ex.AddRule(rule)
 	}
 	if err := ex.RuleErrors(); err != nil {
 		return nil, err
@@ -327,7 +329,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 
 		const perPage = 100
 		wg.Add(1)
-		go func(projectQuery string) {
+		go func() {
 			defer wg.Done()
 
 			urlStr, err := projectQueryToURL(projectQuery, perPage) // first page URL
@@ -352,7 +354,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 				}
 				urlStr = *nextPageURL
 			}
-		}(projectQuery)
+		}()
 	}
 
 	go func() {

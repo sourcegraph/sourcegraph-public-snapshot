@@ -1717,6 +1717,10 @@ type Query {
         Query the user by verified email address.
         """
         email: String
+        """
+        Query the user by ID. Clients should prefer using GraphQL IDs. This is primarily intended for debugging.
+        """
+        databaseID: Int
     ): User
     """
     List all users.
@@ -6637,6 +6641,11 @@ type User implements Node & SettingsSubject & Namespace {
     The Cody subscription details for the user.
     """
     codySubscription: CodySubscription
+    """
+    The rate limit status for the user stored in Cody Gateway.
+    On dotcom only the user and site admins can access this field.
+    """
+    codyGatewayRateLimitStatus: [CodyGatewayRateLimitStatus!]
     """
     DEPRECATED
     Whether the user has enrolled for Cody Pro.

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -22,7 +23,25 @@ type flaggingConfig struct {
 	PromptTokenBlockingLimit       int
 	MaxTokensToSampleFlaggingLimit int
 	ResponseTokenBlockingLimit     int
+
+	// If false, flaggingResult.shouldBlock will always be false when returned by isFlaggedRequest.
+	RequestBlockingEnabled bool
 }
+
+// makeFlaggingConfig converts the config.FlaggingConfig into the type used in this package.
+// (This just avoids taking a hard dependency, allowing the config package to change independently, etc.)
+func makeFlaggingConfig(cfg config.FlaggingConfig) flaggingConfig {
+	return flaggingConfig{
+		AllowedPromptPatterns:          cfg.AllowedPromptPatterns,
+		BlockedPromptPatterns:          cfg.BlockedPromptPatterns,
+		PromptTokenFlaggingLimit:       cfg.PromptTokenFlaggingLimit,
+		PromptTokenBlockingLimit:       cfg.PromptTokenBlockingLimit,
+		MaxTokensToSampleFlaggingLimit: cfg.MaxTokensToSampleFlaggingLimit,
+		ResponseTokenBlockingLimit:     cfg.ResponseTokenBlockingLimit,
+		RequestBlockingEnabled:         cfg.RequestBlockingEnabled,
+	}
+}
+
 type flaggingRequest struct {
 	FlattenedPrompt string
 	MaxTokens       int
@@ -36,9 +55,12 @@ type flaggingResult struct {
 	promptTokenCount  int
 }
 
+// isFlaggedRequest inspects the request and determines if it should be "flagged". This is how we
+// perform basic abuse-detection and filtering. The implementation should err on the side of efficency,
+// as the goal isn't for 100% accuracy. But to catch obvious abuse patterns, and let other backend
+// systems do a more through review async.
 func isFlaggedRequest(tk *tokenizer.Tokenizer, r flaggingRequest, cfg flaggingConfig) (*flaggingResult, error) {
 	var reasons []string
-
 	prompt := strings.ToLower(r.FlattenedPrompt)
 
 	if hasValidPattern, _ := containsAny(prompt, cfg.AllowedPromptPatterns); len(cfg.AllowedPromptPatterns) > 0 && !hasValidPattern {
@@ -50,42 +72,54 @@ func isFlaggedRequest(tk *tokenizer.Tokenizer, r flaggingRequest, cfg flaggingCo
 		reasons = append(reasons, "high_max_tokens_to_sample")
 	}
 
-	// If this prompt consists of a very large number of tokens, then flag it.
-	tokens, err := tk.Tokenize(r.FlattenedPrompt)
-	if err != nil {
-		return &flaggingResult{}, errors.Wrap(err, "tokenize prompt")
-	}
-	tokenCount := len(tokens)
-
-	if tokenCount > cfg.PromptTokenFlaggingLimit {
-		reasons = append(reasons, "high_prompt_token_count")
-	}
-
-	if len(reasons) > 0 { // request is flagged
-		blocked := false
-		hasBlockedPhrase, phrase := containsAny(prompt, cfg.BlockedPromptPatterns)
-		if tokenCount > cfg.PromptTokenBlockingLimit || r.MaxTokens > cfg.ResponseTokenBlockingLimit || hasBlockedPhrase {
-			blocked = true
+	// For more accurate flagging, we need to take the actual tokenization of the prompt
+	// into account. However, not every LLM integration has that available.
+	tokenCount := -1
+	if tk != nil {
+		tokens, err := tk.Tokenize(r.FlattenedPrompt)
+		if err != nil {
+			return &flaggingResult{}, errors.Wrap(err, "tokenizing prompt")
 		}
 
-		promptPrefix := r.FlattenedPrompt
-		if len(promptPrefix) > logPromptPrefixLength {
-			promptPrefix = promptPrefix[0:logPromptPrefixLength]
+		tokenCount = len(tokens)
+		if tokenCount > cfg.PromptTokenFlaggingLimit {
+			reasons = append(reasons, "high_prompt_token_count")
 		}
-		res := &flaggingResult{
-			reasons:           reasons,
-			maxTokensToSample: r.MaxTokens,
-			promptPrefix:      promptPrefix,
-			promptTokenCount:  tokenCount,
-			shouldBlock:       blocked,
-		}
-		if hasBlockedPhrase {
-			res.blockedPhrase = &phrase
-		}
-		return res, nil
 	}
 
-	return nil, nil
+	if len(reasons) == 0 {
+		return nil, nil
+	}
+
+	// The request has been flagged. Now we determine if it is serious enough to outright block the request.
+	var blocked bool
+	hasBlockedPhrase, phrase := containsAny(prompt, cfg.BlockedPromptPatterns)
+	if tokenCount > cfg.PromptTokenBlockingLimit || r.MaxTokens > cfg.ResponseTokenBlockingLimit || hasBlockedPhrase {
+		blocked = true
+	}
+
+	// Maximum number of characters of the prompt prefix we include in logs and telemetry.
+	const logPromptPrefixLength = 250
+	promptPrefix := r.FlattenedPrompt
+	if len(promptPrefix) > logPromptPrefixLength {
+		promptPrefix = promptPrefix[:logPromptPrefixLength]
+	}
+
+	res := &flaggingResult{
+		reasons:           reasons,
+		maxTokensToSample: r.MaxTokens,
+		promptPrefix:      promptPrefix,
+		promptTokenCount:  tokenCount,
+		shouldBlock:       blocked,
+	}
+	if hasBlockedPhrase {
+		res.blockedPhrase = &phrase
+	}
+
+	// Honor the configuration setting for disabling request blocking.
+	res.shouldBlock = res.shouldBlock && cfg.RequestBlockingEnabled
+
+	return res, nil
 }
 
 func (f *flaggingResult) IsFlagged() bool {
@@ -106,4 +140,10 @@ func containsAny(prompt string, patterns []string) (bool, string) {
 func requestBlockedError(ctx context.Context) error {
 	traceID := trace.FromContext(ctx).SpanContext().TraceID().String()
 	return errors.Errorf("request blocked - if you think this is a mistake, please contact support@sourcegraph.com and reference this ID: %s", traceID)
+}
+
+// PromptRecorder implementations should save select completions prompts for
+// a short amount of time for security review.
+type PromptRecorder interface {
+	Record(ctx context.Context, prompt string) error
 }

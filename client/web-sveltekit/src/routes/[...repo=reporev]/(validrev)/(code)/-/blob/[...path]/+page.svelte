@@ -2,26 +2,26 @@
 
 <script lang="ts">
     import { mdiCodeBracesBox, mdiFileCodeOutline, mdiMapSearch } from '@mdi/js'
+    import { from } from 'rxjs'
 
+    import { goto } from '$app/navigation'
     import { page } from '$app/stores'
     import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
+    import { isErrorLike, SourcegraphURL, type LineOrPositionOrRange } from '$lib/common'
+    import { toGraphQLResult } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import { createBlobDataHandler } from '$lib/repo/blob'
+    import FileDiff from '$lib/repo/FileDiff.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
-
-    import FileDiff from '$lib/repo/FileDiff.svelte'
+    import { createCodeIntelAPI } from '$lib/shared'
+    import { Alert } from '$lib/wildcard'
+    import markdownStyles from '$lib/wildcard/Markdown.module.scss'
 
     import type { PageData } from './$types'
     import FormatAction from './FormatAction.svelte'
     import WrapLinesAction, { lineWrap } from './WrapLinesAction.svelte'
-    import { createCodeIntelAPI, parseQueryAndHash } from '$lib/shared'
-    import { goto } from '$app/navigation'
-    import { updateSearchParamsWithLineInformation, createBlobDataHandler } from '$lib/repo/blob'
-    import { isErrorLike, type LineOrPositionOrRange } from '$lib/common'
-    import { from } from 'rxjs'
-    import { toGraphQLResult } from '$lib/graphql'
-    import { Alert } from '$lib/wildcard'
 
     export let data: PageData
 
@@ -50,7 +50,7 @@
     })
     $: if (!blobPending) {
         // Update selected position as soon as blob is loaded
-        selectedPosition = parseQueryAndHash($page.url.search, $page.url.hash)
+        selectedPosition = SourcegraphURL.from($page.url).lineRange
     }
 </script>
 
@@ -93,7 +93,7 @@
         {/await}
     {:else if blob}
         {#if blob.richHTML && !showRaw}
-            <div class="rich">
+            <div class={`rich ${markdownStyles.markdown}`}>
                 {@html blob.richHTML}
             </div>
         {:else}
@@ -108,8 +108,12 @@
                 {highlights}
                 wrapLines={$lineWrap}
                 selectedLines={selectedPosition?.line ? selectedPosition : null}
-                on:selectline={event => {
-                    goto('?' + updateSearchParamsWithLineInformation($page.url.searchParams, event.detail))
+                on:selectline={({ detail: range }) => {
+                    goto(
+                        SourcegraphURL.from($page.url.searchParams)
+                            .setLineRange(range ? { line: range.line, endLine: range.endLine } : null)
+                            .deleteSearchParameter('popover').search
+                    )
                 }}
                 {codeIntelAPI}
             />
@@ -153,6 +157,7 @@
     .rich {
         padding: 1rem;
         overflow: auto;
+        max-width: 50rem;
     }
 
     .circle {

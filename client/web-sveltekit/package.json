@@ -4,11 +4,13 @@
   "scripts": {
     "dev": "vite dev",
     "dev:dotcom": "vite dev --mode=dotcom",
+    "dev:enterprise": "DEPLOY_TYPE=dev vite build --watch",
     "build": "vite build",
     "build:watch": "vite build --watch",
     "preview": "vite preview",
     "test": "playwright test",
     "test:dev": "PORT=5173 playwright test --ui",
+    "test:svelte": "vitest --run",
     "sync": "svelte-kit sync",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
@@ -65,8 +67,8 @@
   },
   "type": "module",
   "dependencies": {
+    "@floating-ui/dom": "^1.6.3",
     "@melt-ui/svelte": "^0.76.0",
-    "@popperjs/core": "^2.11.8",
     "@sourcegraph/branded": "workspace:*",
     "@sourcegraph/client-api": "workspace:*",
     "@sourcegraph/common": "workspace:*",
@@ -76,9 +78,11 @@
     "@sourcegraph/wildcard": "workspace:*",
     "@urql/core": "^4.2.3",
     "highlight.js": "^10.0.0",
+    "hotkeys-js": "^3.13.7",
     "prismjs": "^1.29.0",
     "ts-key-enum": "^2.0.12",
-    "wonka": "^6.3.4"
+    "wonka": "^6.3.4",
+    "copy-to-clipboard": "^3.3.1"
   },
   "msw": {
     "workerDirectory": "static"

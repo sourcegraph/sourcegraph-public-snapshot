@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, H2, H5, Modal, Text, useSearchParameters } from '@sourcegraph/wildcard'
 
@@ -26,7 +26,12 @@ export interface IEditor {
     publisher: string
     releaseStage: string
     docs?: string
-    instructions?: React.FC<{ onBack?: () => void; onClose: () => void; showStep?: number }>
+    instructions?: React.FC<{
+        onBack?: () => void
+        onClose: () => void
+        showStep?: number
+        telemetryRecorder: TelemetryRecorder
+    }>
 }
 
 export const editorGroups: IEditor[][] = [
@@ -115,13 +120,6 @@ export const editorGroups: IEditor[][] = [
             releaseStage: 'Experimental',
             docs: 'https://sourcegraph.com/docs/cody/clients/install-neovim',
             instructions: NeoVimInstructions,
-        },
-        {
-            id: 10,
-            icon: 'Emacs',
-            name: 'Emacs',
-            publisher: 'GNU',
-            releaseStage: 'Coming Soon',
         },
     ],
 ]
@@ -357,7 +355,7 @@ function EditorStep({
     if (editor?.instructions) {
         const Instructions = editor.instructions
 
-        return <Instructions onBack={onBack} onClose={onCompleted} />
+        return <Instructions onBack={onBack} onClose={onCompleted} telemetryRecorder={telemetryRecorder} />
     }
 
     return (

@@ -46,9 +46,9 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_ts",
-    sha256 = "bd3e7b17e677d2b8ba1bac3862f0f238ab16edb3e43fb0f0b9308649ea58a2ad",
-    strip_prefix = "rules_ts-2.1.0",
-    url = "https://github.com/aspect-build/rules_ts/releases/download/v2.1.0/rules_ts-v2.1.0.tar.gz",
+    sha256 = "c77f0dfa78c407893806491223c1264c289074feefbf706721743a3556fa7cea",
+    strip_prefix = "rules_ts-2.2.0",
+    url = "https://github.com/aspect-build/rules_ts/releases/download/v2.2.0/rules_ts-v2.2.0.tar.gz",
 )
 
 http_archive(
@@ -155,6 +155,10 @@ http_archive(
     strip_prefix = "aspect-cli-5.8.20",
     url = "https://github.com/aspect-build/aspect-cli/archive/5.8.20.tar.gz",
 )
+
+load("@aspect_bazel_lib//lib:repositories.bzl", "register_jq_toolchains")
+
+register_jq_toolchains()
 
 # hermetic_cc_toolchain setup ================================
 HERMETIC_CC_TOOLCHAIN_VERSION = "v2.2.1"
@@ -286,8 +290,8 @@ go_repository(
     name = "org_golang_google_protobuf",
     build_file_proto_mode = "disable_global",
     importpath = "google.golang.org/protobuf",
-    sum = "h1:pPC6BG5ex8PDFnkbrGU3EixyhKcQ2aDuBS36lqK/C7I=",
-    version = "v1.32.0",
+    sum = "h1:uNO2rsAINq/JlFpSdYEKIZ0uKD/R9cpdv0T+yoGwGmI=",
+    version = "v1.33.0",
 )
 
 # Pin protoc-gen-go-grpc to 1.3.0
@@ -412,10 +416,6 @@ container_structure_test_register_toolchain(name = "cst")
 load("//dev:tool_deps.bzl", "tool_deps")
 
 tool_deps()
-
-load("//tools/release:schema_deps.bzl", "schema_deps")
-
-schema_deps()
 
 # Buildifier
 load("@buildifier_prebuilt//:deps.bzl", "buildifier_prebuilt_deps")

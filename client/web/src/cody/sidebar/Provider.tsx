@@ -2,7 +2,7 @@ import React, { useContext, useState, useCallback, useMemo } from 'react'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 
 import { useCodyChat, type CodyChatStore, codyChatStoreMock } from '../useCodyChat'
 

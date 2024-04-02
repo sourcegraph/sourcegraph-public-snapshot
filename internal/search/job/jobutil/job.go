@@ -84,7 +84,9 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	if len(fileContainsPatterns) > 0 {
 		newNodes := make([]query.Node, 0, len(fileContainsPatterns)+1)
 		for _, pat := range fileContainsPatterns {
-			newNodes = append(newNodes, query.Pattern{Value: pat})
+			node := query.Pattern{Value: pat}
+			node.Annotation.Labels.Set(query.Regexp)
+			newNodes = append(newNodes, node)
 		}
 		if b.Pattern != nil {
 			newNodes = append(newNodes, b.Pattern)
@@ -518,7 +520,7 @@ func getPathRegexps(b query.Basic, p *search.TextPatternInfo) (pathRegexps []*re
 		if p.IsCaseSensitive {
 			pathRegexps = append(pathRegexps, regexp.MustCompile(pattern))
 		} else {
-			pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+pattern))
+			pathRegexps = append(pathRegexps, regexp.MustCompile(query.CaseInsensitiveRegExp(pattern)))
 		}
 	}
 
@@ -534,7 +536,7 @@ func getPathRegexps(b query.Basic, p *search.TextPatternInfo) (pathRegexps []*re
 			if p.IsCaseSensitive {
 				pathRegexps = append(pathRegexps, regexp.MustCompile(pattern))
 			} else {
-				pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+pattern))
+				pathRegexps = append(pathRegexps, regexp.MustCompile(query.CaseInsensitiveRegExp(pattern)))
 			}
 		})
 	}
@@ -596,7 +598,7 @@ func contributorsAsRegexp(contributors []string, isCaseSensitive bool) (res []*r
 		if isCaseSensitive {
 			res = append(res, regexp.MustCompile(pattern))
 		} else {
-			res = append(res, regexp.MustCompile(`(?i)`+pattern))
+			res = append(res, regexp.MustCompile(query.CaseInsensitiveRegExp(pattern)))
 		}
 	}
 	return res
@@ -928,7 +930,7 @@ func zoektQueryPatternsAsRegexps(q zoektquery.Q) (res []*regexp.Regexp) {
 				if typedQ.CaseSensitive {
 					res = append(res, regexp.MustCompile(typedQ.Regexp.String()))
 				} else {
-					res = append(res, regexp.MustCompile(`(?i)`+typedQ.Regexp.String()))
+					res = append(res, regexp.MustCompile(query.CaseInsensitiveRegExp(typedQ.Regexp.String())))
 				}
 			}
 		case *zoektquery.Substring:
@@ -936,7 +938,7 @@ func zoektQueryPatternsAsRegexps(q zoektquery.Q) (res []*regexp.Regexp) {
 				if typedQ.CaseSensitive {
 					res = append(res, regexp.MustCompile(regexp.QuoteMeta(typedQ.Pattern)))
 				} else {
-					res = append(res, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(typedQ.Pattern)))
+					res = append(res, regexp.MustCompile(query.CaseInsensitiveRegExp(regexp.QuoteMeta(typedQ.Pattern))))
 				}
 			}
 		}

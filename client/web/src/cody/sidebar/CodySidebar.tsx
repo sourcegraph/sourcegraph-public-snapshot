@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { CodyLogo } from '@sourcegraph/cody-ui/dist/icons/CodyLogo'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Icon, Tooltip, Badge } from '@sourcegraph/wildcard'
 
 import { ChatUI, ScrollDownButton } from '../components/ChatUI'

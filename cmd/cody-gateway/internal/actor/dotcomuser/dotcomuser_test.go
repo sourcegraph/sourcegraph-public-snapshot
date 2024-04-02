@@ -270,6 +270,50 @@ func TestActorCacheExpiration(t *testing.T) {
 		assert.Equal(t, 0, len(fakeRedisStore.History))
 	})
 
+	// Call fakeSource.get but with a new user access token for the same user.
+	// Here we rely on the existing data that is in our Redis cache.
+	t.Run("NewAccessToken", func(t *testing.T) {
+		altAccessToken := accesstoken.DotcomUserGatewayAccessTokenPrefix + strings.Repeat("y", 64)
+
+		// Mock out the required call to verify the new access token is valid.
+		dotcomMock.MakeRequestFunc.PushHook(func(ctx context.Context, inReq *graphql.Request, outResp *graphql.Response) error {
+			if inReq.OpName != "CheckDotcomUserAccessToken" {
+				t.Fatal("Got unexpected call to dotcomMock.MakeRequestFunc")
+			}
+			outData, ok := outResp.Data.(*dotcom.CheckDotcomUserAccessTokenResponse)
+			if !ok {
+				t.Fatal("graphql response data not of expected type")
+			}
+			*outData = dotcom.CheckDotcomUserAccessTokenResponse{
+				Dotcom: dotcom.CheckDotcomUserAccessTokenDotcomDotcomQuery{
+					CodyGatewayDotcomUserByToken: &dotcom.CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser{
+						DotcomUserState: dotcom.DotcomUserState{
+							Id:                string(relay.MarshalID("User", testAccountID)),
+							Username:          testUserName,
+							CodyGatewayAccess: testCodyGatewayAccess,
+						},
+					},
+				},
+			}
+			return nil
+		})
+
+		// By using a new access token, we will end up needing to add more data to the Redis cache.
+		gotActor, err := fakeSource.get(ctx, altAccessToken, false /* bypassCache */)
+		require.NoError(t, err)
+
+		require.NotNil(t, gotActor)
+		assert.Equal(t, fmt.Sprintf("%d", testAccountID), gotActor.ID)
+		require.NotNil(t, gotActor.RateLimits)
+		assertRateLimitsEqual(t, oneHundredAnHour, gotActor.RateLimits[codygateway.FeatureChatCompletions])
+
+		// We check the TTLs on existing keys in the cache, but do not actually modify anything.
+		assertFirstOperation(t, fakeRedisStore, "TTL(code_completions:123456)")
+		assertFirstOperation(t, fakeRedisStore, "TTL(chat_completions:123456)")
+		assertFirstOperation(t, fakeRedisStore, "TTL(embeddings:123456)")
+		assert.Equal(t, 0, len(fakeRedisStore.History))
+	})
+
 	t.Run("LimitDurationChanged", func(t *testing.T) {
 		// Update the HTTP cache and rewrite the Actor data setting the
 		// LastUpdate time to a value old enough we expect it to need refreshing.

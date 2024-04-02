@@ -4,8 +4,8 @@
 Generated from: unknown revision of https://github.com/sourcegraph/managed-services
 -->
 
-These pages contain generated operational guidance for the infrastructure of [Managed Services Platform (MSP)](../teams/core-services/managed-services/platform.md) services.
-This includes information about each service, configured environments, Entitle requests, common tasks, monitoring, etc.
+These pages contain generated operational guidance for the infrastructure of the 4 [Managed Services Platform (MSP)](../teams/core-services/managed-services/platform.md) services (across 6 environments) currently in operation at Sourcegraph.
+This includes information about each service, configured environments, Entitle requests, common tasks, monitoring, custom documentation provided by service operators, and so on.
 In addition to service-specific guidance, [General guidance](#general-guidance) is also available.
 
 MSP is owned by [Core Services](../teams/core-services/index.md), but individual teams are responsible for the services they operate on the platform.

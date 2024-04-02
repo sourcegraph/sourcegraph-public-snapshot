@@ -71,7 +71,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	bk.FeatureFlags.ApplyEnv(env)
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
-	if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) {
+	if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease) {
 		env["PERCY_TARGET_BRANCH"] = c.Branch
 		// When we are building a release, we do not want to cache the client bundle.
 		//
@@ -142,7 +142,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		securityOps := operations.NewNamedSet("Security Scanning")
 		securityOps.Append(semgrepScan())
-		securityOps.Append(sonarcloudScan())
 		ops.Merge(securityOps)
 
 		// Wolfi package and base images
@@ -171,6 +170,16 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			wait,
 			addBrowserExtensionReleaseSteps)
 
+	case runtype.VsceReleaseBranch:
+		// If this is a vs code extension release branch, run the vscode-extension tests and release
+		ops = BazelOpsSet(buildOptions,
+			CoreTestOperationsOptions{
+				IsMainBranch: buildOptions.Branch == "main",
+			},
+			addVsceTests,
+			wait,
+			addVsceReleaseSteps)
+
 	case runtype.BextNightly, runtype.BextManualNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
@@ -181,6 +190,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			recordBrowserExtensionIntegrationTests,
 			wait,
 			addBrowserExtensionE2ESteps)
+
+	case runtype.VsceNightly:
+		ops = BazelOpsSet(buildOptions,
+			CoreTestOperationsOptions{
+				IsMainBranch: buildOptions.Branch == "main",
+			},
+			addVsceTests)
 
 	case runtype.WolfiBaseRebuild:
 		// If this is a Wolfi base image rebuild, rebuild all Wolfi base images
@@ -201,7 +217,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Add final artifacts
 		publishOps := operations.NewNamedSet("Publish images")
-		publishOps.Append(bazelPushImagesNoTest(c.Version))
+		publishOps.Append(bazelPushImagesNoTest(c))
 
 		for _, dockerImage := range legacyDockerImages {
 			publishOps.Append(publishFinalDockerImage(c, dockerImage))
@@ -257,14 +273,28 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			bazelPublishExecutorDockerMirror(c),
 			bazelPublishExecutorBinary(c),
 		)
-
+	case runtype.PromoteRelease:
+		ops = operations.NewSet(
+			releasePromoteImages(c),
+			wait,
+			releaseTestOperation(c),
+			wait,
+			releaseFinalizeOperation(c),
+		)
 	default:
 		// Executor VM image
-		alwaysRebuild := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
+		alwaysRebuild := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease) || c.Diff.Has(changed.ExecutorVMImage)
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
 
-		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
+		if c.RunType.Is(
+			runtype.MainDryRun,
+			runtype.MainBranch,
+			runtype.ReleaseBranch,
+			runtype.TaggedRelease,
+			runtype.InternalRelease,
+			runtype.CloudEphemeral,
+		) {
 			imageBuildOps.Append(bazelBuildExecutorVM(c, alwaysRebuild))
 			if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
 				imageBuildOps.Append(bazelBuildExecutorDockerMirror(c))
@@ -274,28 +304,26 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Core tests
 		ops.Merge(CoreTestOperations(buildOptions, changed.All, CoreTestOperationsOptions{
-			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease),
+			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
-			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
+			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun, runtype.CloudEphemeral),
 			IsMainBranch:              true,
 		}))
 
-		// Security scanning - sonarcloud & semgrep scan
-		// Sonarcloud scan will soon be phased out after semgrep scan is fully enabled
+		// Security scanning - semgrep scan
 		securityOps := operations.NewNamedSet("Security Scanning")
 		securityOps.Append(semgrepScan())
-		securityOps.Append(sonarcloudScan())
 		ops.Merge(securityOps)
 
 		// Publish candidate images to dev registry
 		publishOpsDev := operations.NewNamedSet("Publish candidate images")
-		publishOpsDev.Append(bazelPushImagesCandidates(c.Version))
+		publishOpsDev.Append(bazelPushImagesCandidates(c))
 		ops.Merge(publishOpsDev)
 
 		// End-to-end tests
 		ops.Merge(operations.NewNamedSet("End-to-end tests",
-			executorsE2E(c.candidateImageTag()),
+			executorsE2E(c),
 			// testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
 		))
 
@@ -314,7 +342,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Add final artifacts
 		publishOps := operations.NewNamedSet("Publish images")
 		// Executor VM image
-		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
+		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease, runtype.InternalRelease) {
 			publishOps.Append(bazelPublishExecutorVM(c, alwaysRebuild))
 			publishOps.Append(bazelPublishExecutorBinary(c))
 			if c.RunType.Is(runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
@@ -323,8 +351,19 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 		// Final Bazel images
-		publishOps.Append(bazelPushImagesFinal(c.Version))
+		publishOps.Append(bazelPushImagesFinal(c))
 		ops.Merge(publishOps)
+
+		if c.RunType.Is(runtype.InternalRelease) {
+			releaseOps := operations.NewNamedSet("Release")
+			releaseOps.Append(
+				wait,
+				releaseTestOperation(c),
+				wait,
+				releaseFinalizeOperation(c),
+			)
+			ops.Merge(releaseOps)
+		}
 	}
 
 	// Construct pipeline

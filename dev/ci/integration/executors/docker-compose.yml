@@ -65,6 +65,8 @@ services:
       - GID=${EXECUTOR_GID}
       # Use the dind container to run docker commands within the executor
       - DOCKER_HOST=${DOCKER_HOST}
+      # We need to be able to change the registry
+      - REGISTRY=${REGISTRY}
     volumes:
       # Mount docker socket
       - '/var/run/docker.sock:/var/run/docker.sock'

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { Duration } from 'date-fns'
+import type { Duration } from 'date-fns'
 
 import type { InsightStep } from '../../../../pages/insights/creation/search-insight'
 

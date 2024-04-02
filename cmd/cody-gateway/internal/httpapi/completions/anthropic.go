@@ -22,18 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const anthropicAPIURL = "https://api.anthropic.com/v1/complete"
-
-const (
-	logPromptPrefixLength = 250
-)
-
-// PromptRecorder implementations should save select completions prompts for
-// a short amount of time for security review.
-type PromptRecorder interface {
-	Record(ctx context.Context, prompt string) error
-}
-
 func NewAnthropicHandler(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
@@ -57,9 +45,9 @@ func NewAnthropicHandler(
 		rateLimitNotifier,
 		httpClient,
 		string(conftypes.CompletionsProviderNameAnthropic),
-		func(_ codygateway.Feature) string { return anthropicAPIURL },
 		config.AllowedModels,
-		&AnthropicHandlerMethods{config: config, anthropicTokenizer: anthropicTokenizer, promptRecorder: promptRecorder},
+		&AnthropicHandlerMethods{config: config, anthropicTokenizer: anthropicTokenizer},
+		promptRecorder,
 
 		// Anthropic primarily uses concurrent requests to rate-limit spikes
 		// in requests, so set a default retry-after that is likely to be
@@ -69,7 +57,6 @@ func NewAnthropicHandler(
 		// user.
 		2, // seconds
 		autoFlushStreamingResponses,
-		config.DetectedPromptPatterns,
 	), nil
 }
 
@@ -135,27 +122,32 @@ type AnthropicHandlerMethods struct {
 	config             config.AnthropicConfig
 }
 
-func (a *AnthropicHandlerMethods) validateRequest(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicRequest) (int, *flaggingResult, error) {
-	if ar.MaxTokensToSample > int32(a.config.MaxTokensToSample) {
-		return http.StatusBadRequest, nil, errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", a.config.MaxTokensToSample, ar.MaxTokensToSample)
-	}
-
-	if result, err := isFlaggedAnthropicRequest(a.anthropicTokenizer, ar, a.config); err != nil {
-		logger.Error("error checking anthropic request - treating as non-flagged",
-			log.Error(err))
-	} else if result.IsFlagged() {
-		// Record flagged prompts in hotpath - they usually take a long time on the backend side, so this isn't going to make things meaningfully worse
-		if err := a.promptRecorder.Record(ctx, ar.Prompt); err != nil {
-			logger.Warn("failed to record flagged prompt", log.Error(err))
-		}
-		if a.config.RequestBlockingEnabled && result.shouldBlock {
-			return http.StatusBadRequest, result, requestBlockedError(ctx)
-		}
-		return 0, result, nil
-	}
-
-	return 0, nil, nil
+func (a *AnthropicHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) string {
+	return "https://api.anthropic.com/v1/complete"
 }
+
+func (a *AnthropicHandlerMethods) validateRequest(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicRequest) error {
+	maxTokensToSample := a.config.FlaggingConfig.MaxTokensToSample
+	if ar.MaxTokensToSample > int32(maxTokensToSample) {
+		return errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokensToSample)
+	}
+	return nil
+}
+
+func (a *AnthropicHandlerMethods) shouldFlagRequest(ctx context.Context, logger log.Logger, ar anthropicRequest) (*flaggingResult, error) {
+	result, err := isFlaggedRequest(a.anthropicTokenizer,
+		flaggingRequest{
+			FlattenedPrompt: ar.Prompt,
+			MaxTokens:       int(ar.MaxTokensToSample),
+		},
+		makeFlaggingConfig(a.config.FlaggingConfig),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func (a *AnthropicHandlerMethods) transformBody(body *anthropicRequest, identifier string) {
 	// Overwrite the metadata field, we don't want to allow users to specify it:
 	body.Metadata = &anthropicRequestMetadata{
@@ -163,12 +155,14 @@ func (a *AnthropicHandlerMethods) transformBody(body *anthropicRequest, identifi
 		UserID: identifier,
 	}
 }
+
 func (a *AnthropicHandlerMethods) getRequestMetadata(body anthropicRequest) (model string, additionalMetadata map[string]any) {
 	return body.Model, map[string]any{
 		"stream":               body.Stream,
 		"max_tokens_to_sample": body.MaxTokensToSample,
 	}
 }
+
 func (a *AnthropicHandlerMethods) transformRequest(r *http.Request) {
 	// Mimic headers set by the official Anthropic client:
 	// https://sourcegraph.com/github.com/anthropics/anthropic-sdk-typescript@493075d70f50f1568a276ed0cb177e297f5fef9f/-/blob/src/index.ts
@@ -179,6 +173,7 @@ func (a *AnthropicHandlerMethods) transformRequest(r *http.Request) {
 	r.Header.Set("X-API-Key", a.config.AccessToken)
 	r.Header.Set("anthropic-version", "2023-01-01")
 }
+
 func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody anthropicRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
 	var err error
 	// First, extract prompt usage details from the request.
@@ -240,27 +235,4 @@ func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 		completionUsage.tokens = len(tokens)
 	}
 	return promptUsage, completionUsage
-}
-
-func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, cfg config.AnthropicConfig) (*flaggingResult, error) {
-	// Only usage of chat models us currently flagged, so if the request
-	// is using another model, we skip other checks.
-	if ar.Model != "claude-2" && ar.Model != "claude-2.0" && ar.Model != "claude-2.1" && ar.Model != "claude-v1" {
-		return nil, nil
-	}
-
-	return isFlaggedRequest(tk,
-		flaggingRequest{
-			FlattenedPrompt: ar.Prompt,
-			MaxTokens:       int(ar.MaxTokensToSample),
-		},
-		flaggingConfig{
-			AllowedPromptPatterns:          cfg.AllowedPromptPatterns,
-			BlockedPromptPatterns:          cfg.BlockedPromptPatterns,
-			PromptTokenFlaggingLimit:       cfg.PromptTokenFlaggingLimit,
-			PromptTokenBlockingLimit:       cfg.PromptTokenBlockingLimit,
-			MaxTokensToSampleFlaggingLimit: cfg.MaxTokensToSampleFlaggingLimit,
-			ResponseTokenBlockingLimit:     cfg.ResponseTokenBlockingLimit,
-		},
-	)
 }
