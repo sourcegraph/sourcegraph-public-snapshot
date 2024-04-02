@@ -87,19 +87,17 @@ test:
 
         IMAGE="${REGISTRY}/migrator:{{tag}}"
 
-        echo "pulling migrator image ${IMAGE}"
-
         # Pull the image so that we can inspect it
+        echo "pulling migrator image ${IMAGE}"
         docker pull "${IMAGE}"
 
         echo "checking migrator image for {{version}} schema description files"
-
-        # now we check that the schem description files exist
+        # now we check that the schema description files exist
         # we need to trim the result from docker since it has '\r' hence the use of tr
         count=$(docker run -t --rm --entrypoint /bin/sh "${IMAGE}" -c "ls -al /schema-descriptions/{{version}}-*.json | wc -l" | tr -d '[:space:]')
 
         if [[ "$count" -ne 3 ]]; then
-          echo "migrator:{{tag}} does not contain the correct amount of schema description files for this release- expected 3 got ${count}"
+          echo "migrator:{{tag}} does not contain the correct amount of schema description files for this release - expected 3 got ${count}"
           exit 1
         fi
 
