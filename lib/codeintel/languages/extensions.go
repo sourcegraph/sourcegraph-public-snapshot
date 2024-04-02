@@ -63,7 +63,6 @@ var overrideAmbiguousExtensionsMap = map[string]string{
 }
 
 var unsupportedByEnryExtensionsMap = map[string]string{
-
 	// Pkl Configuration Language (https://pkl-lang.org/)
 	".pkl": "Pkl",
 }
