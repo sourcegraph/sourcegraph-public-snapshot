@@ -96,6 +96,7 @@ BUILD_DEPS = [
     ":node_modules/hotkeys-js",
     ":node_modules/prismjs",
     ":node_modules/sass",
+    ":node_modules/signale",
     ":node_modules/svelte",
     ":node_modules/ts-key-enum",
     ":node_modules/vite",
@@ -147,11 +148,19 @@ TESTS = glob([
 ])
 
 TEST_BUILD_DEPS = [
+    ":generate-graphql-types",
     ":node_modules/vitest",
-    ":node_modules/signale",
     ":node_modules/@testing-library/svelte",
     ":node_modules/@testing-library/user-event",
-]
+] + glob(
+    [
+        "src/testing/*",
+    ],
+    [
+        # Already inluded in TESTS
+        "src/testing/graphql-mocking.test.ts",
+    ],
+)
 
 vitest_test(
     name = "unit_tests",
