@@ -2,9 +2,15 @@ package openidconnect
 
 import (
 	"net/http"
+	"strings"
+	"sync"
+
+	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
+	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -21,6 +27,12 @@ type SessionData struct {
 	AccessToken string
 	TokenType   string
 }
+
+var (
+	samsClient     *sams.ClientV1
+	samsClientOnce sync.Once
+	samsClientErr  error
+)
 
 // SignOut clears OpenID Connect-related data from the session. If possible, it revokes the token
 // from the OP. If there is an end-session endpoint, it returns that for the caller to present to
@@ -39,20 +51,61 @@ func SignOut(w http.ResponseWriter, r *http.Request, sessionKey string, getProvi
 	if err := session.SetData(w, r, sessionKey, nil); err != nil {
 		return "", errors.WithMessage(err, "clearing OpenID Connect session data")
 	}
-	if data != nil {
-		p := getProvider(data.ID.ID)
-		if p == nil {
-			return "", errors.Errorf("unable to revoke token or end session for OpenID Connect because no provider %q exists", data.ID)
-		}
+	if data == nil {
+		return "", nil
+	}
 
-		endSessionEndpoint = p.oidc.EndSessionEndpoint
+	p := getProvider(data.ID.ID)
+	if p == nil {
+		return "", errors.Errorf("unable to revoke token or end session for OpenID Connect because no provider %q exists", data.ID)
+	}
 
-		if p.oidc.RevocationEndpoint != "" {
-			if err := revokeToken(r.Context(), p, data.AccessToken, data.TokenType); err != nil {
-				return endSessionEndpoint, errors.WithMessage(err, "revoking OpenID Connect token")
-			}
+	endSessionEndpoint = p.oidc.EndSessionEndpoint
+	if p.oidc.RevocationEndpoint != "" {
+		if err := revokeToken(r.Context(), p, data.AccessToken, data.TokenType); err != nil {
+			return endSessionEndpoint, errors.Wrap(err, "revoking OpenID Connect token")
 		}
 	}
 
+	// If we are in dotcom mode and this is a SAMS provider, we try to revoke the
+	// session on the SAMS instance as well.
+	if !dotcom.SourcegraphDotComMode() || !strings.HasPrefix(p.config.ClientID, "sams_cid_") {
+		return endSessionEndpoint, nil
+	}
+
+	// We only need to do something if the SAMS user session cookie is present.
+	sessionCookie, err := r.Cookie("accounts_session_v2")
+	if err != nil || sessionCookie.Value == "" {
+		return endSessionEndpoint, nil
+	}
+
+	samsClientOnce.Do(func() {
+		samsClient, samsClientErr = sams.NewClientV1(
+			p.config.Issuer,
+			p.config.ClientID,
+			p.config.ClientSecret,
+			[]scopes.Scope{
+				"sams::session::read",
+				"sams::session::write",
+			},
+		)
+	})
+	if samsClientErr != nil {
+		return "", errors.Wrap(samsClientErr, "creating SAMS client")
+	}
+
+	samsSession, err := samsClient.Sessions().GetSessionByID(r.Context(), sessionCookie.Value)
+	if err != nil {
+		return "", errors.Wrap(err, "getting SAMS session")
+	}
+	if samsSession.User == nil {
+		// The session is already invalid on the SAMS instance.
+		return endSessionEndpoint, nil
+	}
+
+	err = samsClient.Sessions().SignOutSession(r.Context(), sessionCookie.Value, samsSession.GetUser().GetId())
+	if err != nil {
+		return "", errors.Wrap(err, "signing out SAMS session")
+	}
 	return endSessionEndpoint, nil
 }
