@@ -191,7 +191,7 @@ func parseExtra(hunk *gitdomain.Hunk, annotation []byte, content []byte) (ok boo
 	default:
 		// If it doesn't look like an entry, it's probably an unhandled git blame
 		// annotation.
-		if len(annotation) != 40 && len(bytes.Split(content, []byte(" "))) != 3 {
+		if len(annotation) != 40 && bytes.Count(content, []byte(" ")) != 3 {
 			err = errors.Newf("unhandled git blame annotation: %s")
 		}
 		ok = false

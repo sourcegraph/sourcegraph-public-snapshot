@@ -434,7 +434,6 @@ func BenchmarkBlameBytes(b *testing.B) {
 	for range b.N {
 		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental2))
 		reader := newBlameHunkReader(rc)
-		defer reader.Close()
 
 		for {
 			_, err := reader.Read()
@@ -444,6 +443,8 @@ func BenchmarkBlameBytes(b *testing.B) {
 				b.Fatalf("blameHunkReader.Read failed: %s", err)
 			}
 		}
+
+		reader.Close()
 	}
 	b.ReportAllocs()
 }
