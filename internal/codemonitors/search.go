@@ -203,7 +203,8 @@ func hookWithID(
 			if err1 := db.CodeMonitors().UpdateTriggerJobWithLogs(
 				ctx,
 				triggerID,
-				database.TriggerJobLogs{Message: err.Error()},
+				// We prepend "WARNING: " to avoid the appearance of "successfully failed" statuses.
+				database.TriggerJobLogs{Message: "WARNING: " + err.Error()},
 			); err1 != nil {
 				logger.Error("Error updating trigger job with log", log.String("log", err.Error()), log.Error(err1))
 			}
