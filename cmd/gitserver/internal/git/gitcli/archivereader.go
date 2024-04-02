@@ -44,7 +44,7 @@ func buildArchiveArgs(format git.ArchiveFormat, treeish string, paths []string) 
 func pathspecLiteral(s string) string { return ":(literal)" + s }
 
 func (g *gitCLIBackend) verifyPaths(ctx context.Context, treeish string, paths []string) error {
-	args := []string{"ls-tree", treeish, "--"}
+	args := []string{"ls-tree", "--name-only", treeish, "--"}
 	args = append(args, paths...)
 	r, err := g.NewCommand(ctx, WithArguments(args...))
 	if err != nil {
@@ -75,17 +75,7 @@ func (g *gitCLIBackend) verifyPaths(ctx context.Context, treeish string, paths [
 	gotPaths := bytes.Split(bytes.TrimSpace(stdout), []byte("\n"))
 	fileSet := collections.NewSet[string]()
 	for _, p := range gotPaths {
-		if len(p) == 0 {
-			continue
-		}
-
-		// Split into path segments by skipping only tab characters, since
-		// files/dirs can start with/contain spaces.
-		pathSegments := bytes.FieldsFunc(p, func(r rune) bool {
-			return r == rune('\t')
-		})
-
-		fileSet.Add(string(pathSegments[len(pathSegments)-1]))
+		fileSet.Add(string(p))
 	}
 
 	pathsSet := collections.NewSet[string]()
