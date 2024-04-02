@@ -215,7 +215,6 @@
         :global(.tabs) {
             height: 100%;
             max-height: 100%;
-            overflow: hidden;
         }
 
         :global(.tabs-header) {
