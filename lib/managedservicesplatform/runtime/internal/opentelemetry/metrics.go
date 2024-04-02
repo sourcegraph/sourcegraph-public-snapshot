@@ -18,7 +18,7 @@ import (
 func maybeEnableMetrics(_ context.Context, logger log.Logger, config Config, res *resource.Resource) (func(), error) {
 	var reader sdkmetric.Reader
 	if config.GCPProjectID != "" {
-		logger.Debug("initializing GCP trace exporter", log.String("projectID", config.GCPProjectID))
+		logger.Info("initializing GCP trace exporter", log.String("projectID", config.GCPProjectID))
 		exporter, err := gcpmetricexporter.New(
 			gcpmetricexporter.WithProjectID(config.GCPProjectID))
 		if err != nil {
@@ -27,7 +27,7 @@ func maybeEnableMetrics(_ context.Context, logger log.Logger, config Config, res
 		reader = sdkmetric.NewPeriodicReader(exporter,
 			sdkmetric.WithInterval(30*time.Second))
 	} else {
-		logger.Debug("initializing Prometheus exporter")
+		logger.Info("initializing Prometheus exporter")
 		var err error
 		reader, err = otelprometheus.New(
 			otelprometheus.WithRegisterer(prometheus.DefaultRegisterer))
@@ -42,7 +42,6 @@ func maybeEnableMetrics(_ context.Context, logger log.Logger, config Config, res
 		sdkmetric.WithResource(res))
 	otel.SetMeterProvider(provider)
 
-	logger.Info("metrics configured")
 	return func() {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()

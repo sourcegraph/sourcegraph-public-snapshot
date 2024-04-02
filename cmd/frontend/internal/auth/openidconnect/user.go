@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -27,7 +28,7 @@ type ExternalAccountData struct {
 // getOrCreateUser gets or creates a user account based on the OpenID Connect token. It returns the
 // authenticated actor if successful; otherwise it returns a friendly error message (safeErrMsg)
 // that is safe to display to users, and a non-nil err with lower-level error details.
-func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, token *oauth2.Token, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *userClaims, usernamePrefix string, hubSpotProps *hubspot.ContactProperties) (newUserCreated bool, _ *actor.Actor, safeErrMsg string, err error) {
+func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, token *oauth2.Token, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *userClaims, usernamePrefix string, userCreateEventProperties telemetry.EventMetadata, hubSpotProps *hubspot.ContactProperties) (newUserCreated bool, _ *actor.Actor, safeErrMsg string, err error) {
 	if userInfo.Email == "" {
 		return false, nil, "Only users with an email address may authenticate to Sourcegraph.", errors.New("no email address in claims")
 	}
@@ -87,9 +88,10 @@ func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, token *oa
 			ClientID:    pi.ClientID,
 			AccountID:   idToken.Subject,
 		},
-		ExternalAccountData:   data,
-		CreateIfNotExist:      p.config.AllowSignup == nil || *p.config.AllowSignup,
-		SingleIdentityPerUser: p.config.SingleIdentityPerUser,
+		UserCreateEventProperties: userCreateEventProperties,
+		ExternalAccountData:       data,
+		CreateIfNotExist:          p.config.AllowSignup == nil || *p.config.AllowSignup,
+		SingleIdentityPerUser:     p.config.SingleIdentityPerUser,
 	})
 	if err != nil {
 		return false, nil, safeErrMsg, err

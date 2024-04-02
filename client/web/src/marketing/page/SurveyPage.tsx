@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 
 import { useParams, useLocation } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { FeedbackText } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -14,7 +15,7 @@ import { SurveyForm } from './SurveyForm'
 
 import styles from './SurveyPage.module.scss'
 
-interface SurveyPageProps {
+interface SurveyPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     /**
      * For Storybook only
@@ -32,7 +33,8 @@ export const SurveyPage: React.FunctionComponent<React.PropsWithChildren<SurveyP
 
     useEffect(() => {
         eventLogger.logViewEvent('Survey')
-    }, [])
+        props.telemetryRecorder.recordEvent('surveyNPS.page', 'view')
+    }, [props.telemetryRecorder])
 
     if (score === 'thanks') {
         return (
@@ -52,7 +54,13 @@ export const SurveyPage: React.FunctionComponent<React.PropsWithChildren<SurveyP
             <PageTitle title="Almost there..." />
             <HeroPage
                 title="Almost there..."
-                cta={<SurveyForm score={getScoreFromString(score)} authenticatedUser={props.authenticatedUser} />}
+                cta={
+                    <SurveyForm
+                        score={getScoreFromString(score)}
+                        authenticatedUser={props.authenticatedUser}
+                        telemetryRecorder={props.telemetryRecorder}
+                    />
+                }
             />
         </div>
     )

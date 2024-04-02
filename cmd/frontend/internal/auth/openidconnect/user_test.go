@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -22,9 +23,10 @@ func TestAllowSignup(t *testing.T) {
 	allow := true
 	disallow := false
 	tests := map[string]struct {
-		allowSignup       *bool
-		usernamePrefix    string
-		shouldAllowSignup bool
+		allowSignup          *bool
+		usernamePrefix       string
+		shouldAllowSignup    bool
+		additionalProperties telemetry.EventMetadata
 	}{
 		"nil": {
 			allowSignup:       nil,
@@ -42,6 +44,11 @@ func TestAllowSignup(t *testing.T) {
 			allowSignup:       &disallow,
 			shouldAllowSignup: false,
 			usernamePrefix:    "sourcegraph-operator-",
+		},
+		"with metadata": {
+			allowSignup:          &allow,
+			shouldAllowSignup:    true,
+			additionalProperties: telemetry.EventMetadata{"foo": 1},
 		},
 	}
 	for name, test := range tests {
@@ -77,6 +84,8 @@ func TestAllowSignup(t *testing.T) {
 				},
 				&userClaims{},
 				test.usernamePrefix,
+				test.additionalProperties,
+
 				&hubspot.ContactProperties{
 					AnonymousUserID: "anonymous-user-id-123",
 					FirstSourceURL:  "https://example.com/",

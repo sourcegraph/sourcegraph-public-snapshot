@@ -2877,24 +2877,34 @@
           "type": "string"
         },
         "fastChatModel": {
-          "description": "The model used for fast chat completions.",
-          "type": "string"
+          "description": "The model used for fast chat completions. \n NOTE: The Anthropic messages API does not support model names like claude-2 or claude-instant-1 where only the major version is specified as they are retired. We recommed using a specific model identifier as specified here https://docs.anthropic.com/claude/docs/models-overview#model-comparison ",
+          "type": "string",
+          "not": {
+            "enum": ["claude-2", "claude-instant-1"]
+          }
         },
         "fastChatModelMaxTokens": {
           "description": "The maximum number of tokens to use as client when talking to fastChatModel. If not set, clients need to set their own limit.",
           "type": "integer"
         },
         "chatModel": {
-          "description": "The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.",
-          "type": "string"
+          "description": "The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.\n NOTE: The Anthropic messages API does not support model names like claude-2 or claude-instant-1 where only the major version is specified as they are retired. We recommed using a specific model identifier as specified here https://docs.anthropic.com/claude/docs/models-overview#model-comparison ",
+          "type": "string",
+          "not": {
+            "enum": ["claude-2", "claude-instant-1"]
+          },
+          "errorMessage": "The substring 'cumber' is not allowed because it is a bad idea and may lead to unexpected issues."
         },
         "chatModelMaxTokens": {
           "description": "The maximum number of tokens to use as client when talking to chatModel. If not set, clients need to set their own limit.",
           "type": "integer"
         },
         "completionModel": {
-          "description": "The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.",
-          "type": "string"
+          "description": "The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.\n NOTE: The Anthropic messages API does not support model names like claude-2 or claude-instant-1 where only the major version is specified as they are retired. We recommed using a specific model identifier as specified here https://docs.anthropic.com/claude/docs/models-overview#model-comparison ",
+          "type": "string",
+          "not": {
+            "enum": ["claude-2", "claude-instant-1"]
+          }
         },
         "completionModelMaxTokens": {
           "description": "The maximum number of tokens to use as client when talking to completionModel. If not set, clients need to set their own limit.",
@@ -2912,7 +2922,7 @@
         },
         "endpoint": {
           "type": "string",
-          "description": "The endpoint under which to reach the provider. Currently only used for provider types \"sourcegraph\", \"openai\" and \"anthropic\". The default values are \"https://cody-gateway.sourcegraph.com\", \"https://api.openai.com/v1/chat/completions\", and \"https://api.anthropic.com/v1/complete\" for Sourcegraph, OpenAI, and Anthropic, respectively."
+          "description": "The endpoint under which to reach the provider. Currently only used for provider types \"sourcegraph\", \"openai\" and \"anthropic\". The default values are \"https://cody-gateway.sourcegraph.com\", \"https://api.openai.com/v1/chat/completions\", and \"https://api.anthropic.com/v1/messages\" for Sourcegraph, OpenAI, and Anthropic, respectively."
         },
         "perUserDailyLimit": {
           "description": "If > 0, limits the number of completions requests allowed for a user in a day. On instances that allow anonymous requests, we enforce the rate limit by IP.",

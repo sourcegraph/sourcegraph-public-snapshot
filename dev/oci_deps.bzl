@@ -161,12 +161,6 @@ def oci_deps():
     )
 
     oci_pull(
-        name = "wolfi_prometheus_gcp_base",
-        digest = "sha256:9866e52d1e26873f3f92b4bdd9f769169620ee02705724f471f7bcdbb4fcf549",
-        image = "index.docker.io/sourcegraph/wolfi-prometheus-gcp-base",
-    )
-
-    oci_pull(
         name = "wolfi_postgresql-12_base",
         digest = "sha256:c85c0b034a7c983e000c46fd11aa175256078f7e9531b41ab2ba70635571db76",
         image = "index.docker.io/sourcegraph/wolfi-postgresql-12-base",

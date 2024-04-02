@@ -128,6 +128,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	allowedModels []string,
 
 	methods upstreamHandlerMethods[ReqT],
+	flaggedPromptRecorder PromptRecorder,
 
 	// defaultRetryAfterSeconds sets the retry-after policy on upstream rate
 	// limit events in case a retry-after is not provided by the upstream
@@ -213,6 +214,18 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			logger.Error("error checking if request should be flagged, treating as non-flagged", log.Error(err))
 		}
 		if flaggingResult != nil && flaggingResult.IsFlagged() {
+			// Record flagged prompts to aid in combating ongoing abuse waves.
+			if actor.FromContext(ctx).IsDotComActor() {
+				prompt := body.BuildPrompt()
+				// We don't record code completions until we get the false-positive count
+				// under control. (It's just noise.)
+				if feature != codygateway.FeatureCodeCompletions {
+					if err := flaggedPromptRecorder.Record(ctx, prompt); err != nil {
+						logger.Warn("failed to record flagged prompt", log.Error(err))
+					}
+				}
+			}
+
 			// Requests that are flagged but not outright blocked, will have some of the
 			// metadata from flaggingResult attached to the request event telemetry. That's
 			// how the data flows into other backend systems for downstream analysis.

@@ -94,8 +94,8 @@ type ContactProperties struct {
 // ContactResponse represents HubSpot user properties returned
 // after a CreateOrUpdate API call
 type ContactResponse struct {
-	VID   int32 `json:"vid"`
-	IsNew bool  `json:"isNew"`
+	VID   uint64 `json:"vid"`
+	IsNew bool   `json:"isNew"`
 }
 
 // newAPIValues converts a ContactProperties struct to a HubSpot API-compliant
