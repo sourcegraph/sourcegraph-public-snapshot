@@ -376,6 +376,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                             externalServiceType={props.repoServiceType}
                             actionType={actionType}
                             source="repoHeader"
+                            telemetryRecorder={props.telemetryRecorder}
                         />
                     )}
                 </RepoHeaderContributionPortal>

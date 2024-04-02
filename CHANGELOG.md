@@ -35,6 +35,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Monitors now properly ignores monitors associated with soft-deleted users, which previously would have led to an error on the overview page. [#60405](https://github.com/sourcegraph/sourcegraph/pull/60405)
 - Fixed a bug where clicking "Exclude Repo" on Azure DevOps or Gerrit repositories would not work. [#60509](https://github.com/sourcegraph/sourcegraph/pull/60509)
 - Links in codeintel popovers respect the revision from the URL. [#60545](https://github.com/sourcegraph/sourcegraph/pull/60545)
+- Fixed an issue where repositories with a name ending in `.git` failed to clone. [#60627](https://github.com/sourcegraph/sourcegraph/pull/60627)
+- Fixed an issue where Sourcegraph could lose track of repositories on gitserver, leaving behind unnecessary data and inconsistent clone status in the UI. [#60627](https://github.com/sourcegraph/sourcegraph/pull/60627)
 - The "Commits" button in repository and folder pages links to commits in the current revision instead of in the default branch. [#61408](https://github.com/sourcegraph/sourcegraph/pull/61408)
 - The "Commits" button in repository and folder pages uses Perforce language and links to `/-/changelists` for Perforce depots when the experimental feature `perforceChangelistMapping` is enabled. [#61408](https://github.com/sourcegraph/sourcegraph/pull/61408)
 

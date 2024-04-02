@@ -36,9 +36,18 @@ func releasePromoteImages(c Config) operations.Operation {
 
 // releaseTestOperations runs the script defined in release.yaml that tests the release.
 func releaseTestOperation(c Config) operations.Operation {
+	devRegistry := images.SourcegraphDockerDevRegistry
+	prodRegistry := images.SourcegraphDockerPublishRegistry
+
+	if c.RunType.Is(runtype.InternalRelease) {
+		prodRegistry = images.SourcegraphInternalReleaseRegistry
+	}
+
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep("Release tests",
 			bk.Agent("queue", AspectWorkflows.QueueDefault),
+			bk.Env("DEV_REGISTRY", devRegistry),
+			bk.Env("PROD_REGISTRY", prodRegistry),
 			bk.Env("VERSION", c.Version),
 			bk.AnnotatedCmd(
 				bazelCmd(`run --run_under="cd $$PWD &&" //dev/sg -- release run test --branch $$BUILDKITE_BRANCH --version $$VERSION`),
