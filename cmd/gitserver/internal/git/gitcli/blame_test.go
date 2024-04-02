@@ -430,6 +430,24 @@ func TestBlameHunkReader(t *testing.T) {
 	})
 }
 
+func BenchmarkBlameBytes(b *testing.B) {
+	for range b.N {
+		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental2))
+		reader := newBlameHunkReader(rc)
+		defer reader.Close()
+
+		for {
+			_, err := reader.Read()
+			if errors.Is(err, io.EOF) {
+				break
+			} else if err != nil {
+				b.Fatalf("blameHunkReader.Read failed: %s", err)
+			}
+		}
+	}
+	b.ReportAllocs()
+}
+
 func mustParseTime(layout, value string) time.Time {
 	tm, err := time.Parse(layout, value)
 	if err != nil {
