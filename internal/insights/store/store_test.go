@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"testing"
@@ -13,7 +14,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	edb "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -32,9 +32,7 @@ func TestSeriesPoints(t *testing.T) {
 	clock := timeutil.Now
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 
-	postgres := database.NewDB(logger, dbtest.NewDB(t))
-	permStore := NewInsightPermissionStore(postgres)
-	store := NewWithClock(insightsDB, permStore, clock)
+	store := NewWithClock(insightsDB, clock)
 
 	// Confirm we get no results initially.
 	points, err := store.SeriesPoints(ctx, SeriesPointsOpts{})
@@ -137,9 +135,7 @@ func TestCountData(t *testing.T) {
 	ctx := context.Background()
 	clock := timeutil.Now
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	postgres := database.NewDB(logger, dbtest.NewDB(t))
-	permStore := NewInsightPermissionStore(postgres)
-	store := NewWithClock(insightsDB, permStore, clock)
+	store := NewWithClock(insightsDB, clock)
 
 	timeValue := func(s string) time.Time {
 		v, err := time.Parse(time.RFC3339, s)
@@ -228,9 +224,7 @@ func TestRecordSeriesPoints(t *testing.T) {
 	ctx := context.Background()
 	clock := timeutil.Now
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	postgres := database.NewDB(logger, dbtest.NewDB(t))
-	permStore := NewInsightPermissionStore(postgres)
-	store := NewWithClock(insightsDB, permStore, clock)
+	store := NewWithClock(insightsDB, clock)
 
 	// First test it does not error with no records.
 	if err := store.RecordSeriesPoints(ctx, []RecordSeriesPointArgs{}); err != nil {
@@ -323,9 +317,7 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 	ctx := context.Background()
 	clock := timeutil.Now
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	postgres := database.NewDB(logger, dbtest.NewDB(t))
-	permStore := NewInsightPermissionStore(postgres)
-	store := NewWithClock(insightsDB, permStore, clock)
+	store := NewWithClock(insightsDB, clock)
 
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
@@ -386,9 +378,7 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 	ctx := context.Background()
 	clock := timeutil.Now
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	postgres := database.NewDB(logger, dbtest.NewDB(t))
-	permStore := NewInsightPermissionStore(postgres)
-	store := NewWithClock(insightsDB, permStore, clock)
+	store := NewWithClock(insightsDB, clock)
 
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
@@ -449,10 +439,8 @@ func TestDeleteSnapshots(t *testing.T) {
 	ctx := context.Background()
 	clock := timeutil.Now
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	postgres := database.NewDB(logger, dbtest.NewDB(t))
-	permStore := NewInsightPermissionStore(postgres)
 	insightStore := NewInsightStore(insightsDB)
-	store := NewWithClock(insightsDB, permStore, clock)
+	store := NewWithClock(insightsDB, clock)
 
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
@@ -562,9 +550,7 @@ func TestDelete(t *testing.T) {
 	repoName := "reallygreatrepo"
 	repoId := api.RepoID(5)
 
-	postgres := database.NewDB(logger, dbtest.NewDB(t))
-	permStore := NewInsightPermissionStore(postgres)
-	timeseriesStore := NewWithClock(insightsdb, permStore, clock)
+	timeseriesStore := NewWithClock(insightsdb, clock)
 
 	err := timeseriesStore.RecordSeriesPoints(ctx, []RecordSeriesPointArgs{
 		{
@@ -671,10 +657,8 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 	clock := timeutil.Now
 	insightsdb := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 
-	postgres := database.NewDB(logger, dbtest.NewDB(t))
-	permStore := NewInsightPermissionStore(postgres)
 	insightStore := NewInsightStore(insightsdb)
-	timeseriesStore := NewWithClock(insightsdb, permStore, clock)
+	timeseriesStore := NewWithClock(insightsdb, clock)
 
 	series := types.InsightSeries{
 		SeriesID:           "series1",
@@ -926,10 +910,9 @@ func TestGetOffsetNRecordingTime(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	mainDB := database.NewDB(logger, dbtest.NewDB(t))
 
 	insightStore := NewInsightStore(insightsDB)
-	seriesStore := New(insightsDB, NewInsightPermissionStore(mainDB))
+	seriesStore := New(insightsDB)
 
 	// create a series with id 1 to attach to recording times
 	setupSeries(ctx, insightStore, t)
@@ -988,12 +971,8 @@ func TestGetAllDataForInsightViewId(t *testing.T) {
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 
-	permissionStore := NewMockInsightPermissionStore()
-	// no repo restrictions by default
-	permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn(nil, nil)
-
 	insightStore := NewInsightStore(insightsDB)
-	seriesStore := New(insightsDB, permissionStore)
+	seriesStore := New(insightsDB)
 
 	// insert all view and series metadata
 	view, err := insightStore.CreateView(ctx, types.InsightView{
@@ -1092,10 +1071,25 @@ SELECT recording_time,
 		}
 	})
 	t.Run("respects repo permissions", func(t *testing.T) {
-		permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn([]api.RepoID{1111}, nil)
+		_, err := insightsDB.ExecContext(context.Background(), `
+			INSERT INTO repo(name) VALUES ('github.com/test-123');
+			INSERT INTO user_repo_permissions(repo_id) VALUES ((SELECT id FROM repo WHERE name = 'github.com/test-123'));
+			`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		defer func() {
 			// cleanup
-			permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn(nil, nil)
+			_, err := insightsDB.ExecContext(context.Background(), fmt.Sprintf(`
+			DELETE FROM user_repo_permissions where user_repo_permissions.repo_id = (select repo.id from repo where repo.name = 'github.com/test-123');
+			DELETE FROM repo where name = 'github.com/test-123';
+			`))
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
 		}()
 		got, err := seriesStore.GetAllDataForInsightViewID(ctx, ExportOpts{InsightViewUniqueID: view.UniqueID})
 		if err != nil {
@@ -1105,6 +1099,68 @@ SELECT recording_time,
 			t.Errorf("expected 0 results due to repo permissions, got %d", len(got))
 		}
 	})
+	t.Run("respects a lot of repo permissions", func(t *testing.T) {
+		// On Apple M3 Max this test takes ~1s per 2_000 records. This means ~30s for 60_000 records.
+		// It seems to be the same no matter if we send one big query or thousands of individual ones.
+		// About 90% goes to the INSERTs, and 10% to the DELETE query.
+
+		repoCount := 100_000
+		var repoValues []string
+		for i := 0; i < repoCount; i++ {
+			repoValues = append(repoValues, fmt.Sprintf(`('r-%d')`, i))
+		}
+		// A for loop in the database takes 10.5s @ 100k records
+		// This takes 6s @ 100k records (shortening from 'github.com/permissions-test-%d' to 'r-%d' saved another 1.5s)
+		repoQuery := fmt.Sprintf(
+			`INSERT INTO repo(name) VALUES %s;`,
+			strings.Join(repoValues, ","),
+		)
+
+		_, err := insightsDB.ExecContext(context.Background(), repoQuery)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// This query takes about 1.1s. As the INSERT above is the major contributor to the runtime of this test
+		// I didn't try to optimize this one further.
+		permissionsQuery := `
+do
+$$
+declare
+    f record;
+begin
+    for f in select id from repo
+    loop
+	INSERT INTO user_repo_permissions(repo_id) VALUES (f.id);
+    end loop;
+end;
+$$;
+`
+		_, err = insightsDB.ExecContext(context.Background(), permissionsQuery)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		defer func() {
+			// cleanup
+			// With DELETE statements (even with "where true"): 4.8s @ 100k records
+			// With TRUNCATE: 0.00442s @ 100k records
+			_, err := insightsDB.ExecContext(context.Background(), `
+			TRUNCATE TABLE user_repo_permissions, repo CASCADE;
+			`)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
+		got, err := seriesStore.GetAllDataForInsightViewID(ctx, ExportOpts{InsightViewUniqueID: view.UniqueID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 0 {
+			t.Errorf("expected 0 results due to repo permissions, got %d", len(got))
+		}
+	})
+
 	t.Run("respects include repo filter", func(t *testing.T) {
 		// insert more series point data
 		_, err = insightsDB.ExecContext(context.Background(), `

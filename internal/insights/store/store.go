@@ -41,8 +41,7 @@ var _ Interface = &Store{}
 // persistent storage.
 type Store struct {
 	*basestore.Store
-	now       func() time.Time
-	permStore InsightPermissionStore
+	now func() time.Time
 }
 
 func (s *Store) Transact(ctx context.Context) (*Store, error) {
@@ -51,21 +50,20 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 		return nil, err
 	}
 	return &Store{
-		Store:     txBase,
-		now:       s.now,
-		permStore: s.permStore,
+		Store: txBase,
+		now:   s.now,
 	}, nil
 }
 
 // New returns a new Store backed by the given Postgres db.
-func New(db edb.InsightsDB, permStore InsightPermissionStore) *Store {
-	return NewWithClock(db, permStore, timeutil.Now)
+func New(db edb.InsightsDB) *Store {
+	return NewWithClock(db, timeutil.Now)
 }
 
 // NewWithClock returns a new Store backed by the given db and
 // clock for timestamps.
-func NewWithClock(db edb.InsightsDB, permStore InsightPermissionStore, clock func() time.Time) *Store {
-	return &Store{Store: basestore.NewWithHandle(db.Handle()), now: clock, permStore: permStore}
+func NewWithClock(db edb.InsightsDB, clock func() time.Time) *Store {
+	return &Store{Store: basestore.NewWithHandle(db.Handle()), now: clock}
 }
 
 var _ basestore.ShareableStore = &Store{}
@@ -74,14 +72,14 @@ var _ basestore.ShareableStore = &Store{}
 // underlying basestore.Store.
 // Needed to implement the basestore.Store interface
 func (s *Store) With(other basestore.ShareableStore) *Store {
-	return &Store{Store: s.Store.With(other), now: s.now, permStore: s.permStore}
+	return &Store{Store: s.Store.With(other), now: s.now}
 }
 
 // WithOther creates a new Store with the given basestore.Shareable store as the
 // underlying basestore.Store.
 // Needed to implement the basestore.Store interface
 func (s *Store) WithOther(other basestore.ShareableStore) Interface {
-	return &Store{Store: s.Store.With(other), now: s.now, permStore: s.permStore}
+	return &Store{Store: s.Store.With(other), now: s.now}
 }
 
 // SeriesPoint describes a single insights' series data point.
@@ -146,16 +144,14 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 	//
 	// Since Code Insights is in a different database, we can't trivially join the repo table directly, so this approach is preferred.
 
-	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
-	if err != nil {
-		return []SeriesPoint{}, err
-	}
+	// todo: update this code and the comment above to the new denylist approach
+	denylist := make([]api.RepoID, 0)
 	opts.Excluded = append(opts.Excluded, denylist...)
 
 	q := seriesPointsQuery(fullVectorSeriesAggregation, opts)
 	pointsMap := make(map[string]*SeriesPoint)
 	captureValues := make(map[string]struct{})
-	err = s.query(ctx, q, func(sc scanner) error {
+	err := s.query(ctx, q, func(sc scanner) error {
 		var point SeriesPoint
 		err := sc.Scan(
 			&point.SeriesID,
@@ -191,14 +187,8 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 }
 
 func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (points []SeriesPoint, err error) {
-	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
-	if err != nil {
-		return nil, err
-	}
+	// todo: update this code and the comment above to the new denylist approach
 	denyBitmap := roaring.New()
-	for _, id := range denylist {
-		denyBitmap.Add(uint32(id))
-	}
 
 	type loadStruct struct {
 		Time    time.Time
@@ -897,21 +887,11 @@ type ExportOpts struct {
 }
 
 func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts) (_ []SeriesPointForExport, err error) {
+	// todo bahrmichael: adjust/move this comment
 	// 🚨 SECURITY: this function will only be called if the insight with the given insightViewId is visible given
 	// this user context. This is similar to how `SeriesPoints` works.
 	// We enforce repo permissions here as we store repository data at this level.
-	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "GetUnauthorizedRepoIDs")
-	}
-	excludedRepoIDs := make([]*sqlf.Query, 0)
-	for _, repoID := range denylist {
-		excludedRepoIDs = append(excludedRepoIDs, sqlf.Sprintf("%d", repoID))
-	}
 	var preds []*sqlf.Query
-	if len(excludedRepoIDs) > 0 {
-		preds = append(preds, sqlf.Sprintf("sp.repo_id not in (%s)", sqlf.Join(excludedRepoIDs, ",")))
-	}
 	if len(opts.IncludeRepoRegex) > 0 {
 		includePreds := []*sqlf.Query{}
 		for _, regex := range opts.IncludeRepoRegex {
@@ -987,6 +967,7 @@ from %s isrt
     join insight_view iv ON ivs.insight_view_id = iv.id
     left outer join %s sp on sp.series_id = i.series_id and sp.time = isrt.recording_time
     left outer join repo_names rn on sp.repo_name_id = rn.id
-	where iv.unique_id = %s and %s
+    left outer join user_repo_permissions urp on sp.repo_name_id = urp.repo_id
+	where urp.id IS NULL and iv.unique_id = %s and %s
     order by iv.title, isrt.recording_time, ivs.label, sp.capture;
 `

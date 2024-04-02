@@ -93,7 +93,7 @@ func getSchemaAtRev(t testing.TB, name, rev string) *schemas.Schema {
 // NewInsightsDB returns a connection to a clean, new temporary testing database with
 // the same schema as Sourcegraph's CodeInsights production Postgres database.
 func NewInsightsDB(logger log.Logger, t testing.TB) *sql.DB {
-	return newDB(logger, t, "insights", schemas.CodeInsights)
+	return newDB(logger, t, "insights", schemas.CodeInsights, schemas.Frontend)
 }
 
 // NewRawDB returns a connection to a clean, new temporary testing database.
