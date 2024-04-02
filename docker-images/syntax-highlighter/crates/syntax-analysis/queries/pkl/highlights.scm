@@ -52,7 +52,6 @@
 (objectSpread ("..." @identifier.operator) (variableExpr))
 
 (classProperty (identifier) @property)
-(classProperty (identifier) @property)
 (objectProperty (identifier) @property)
 
 (parameterList (typedIdentifier (identifier) @variable.parameter))
