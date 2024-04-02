@@ -87,8 +87,6 @@
 (blockComment) @comment
 (docComment) @comment
 
-
-
 ; Operators
 
 "??" @operator
