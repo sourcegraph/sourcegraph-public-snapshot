@@ -14,13 +14,14 @@
 </script>
 
 <div class="last-commit">
-    <div class="user-info">
+    <div class="avatar">
         <Avatar avatar={user} />
-        <div class="display-name">
-            <small>
-                {user.name}
-            </small>
-        </div>
+    </div>
+
+    <div class="display-name">
+        <small>
+            {user.name}
+        </small>
     </div>
 
     <div class="commit-message">
@@ -44,31 +45,32 @@
     }
 
     .commit-message {
-        margin-right: 0.5rem;
+        align-items: center;
         color: var(--text-muted);
+        margin-right: 0.5rem;
+        max-width: 100px;
         overflow: hidden;
-        white-space: nowrap;
         text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .display-name {
-        margin-left: 0.5rem;
+        margin-right: 0.5rem;
     }
 
     .last-commit {
+        align-items: center;
         display: flex;
         flex-flow: row nowrap;
-        max-width: 350px;
-        align-items: center;
-        white-space: nowrap;
         justify-content: space-between;
         margin-right: 0.5rem;
+        white-space: nowrap;
     }
 
-    .user-info {
+    .avatar {
+        align-items: center;
         display: flex;
         flex-flow: row nowrap;
-        align-items: center;
-        margin-right: 0.5rem;
+        margin-right: 0.25rem;
     }
 </style>
