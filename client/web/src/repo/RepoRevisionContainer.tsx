@@ -214,7 +214,7 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
                     />
                 ),
             }
-        }, [resolvedRevision, revision, repo, repoName])
+        }, [resolvedRevision, revision, repo, repoName, props.platformContext.telemetryRecorder])
     )
 
     const isPackage = useMemo(
