@@ -171,5 +171,3 @@
 "typealias" @keyword
 "unknown" @type.builtin
 "when" @keyword
-
-
