@@ -72,6 +72,36 @@ test:
           echo "❌ Tag '{{version}}' already exists"
           exit 1
         fi
+    - name: "check:migrator-schemas"
+      cmd: |
+        set -eu
+
+        REGISTRY="${PROD_REGISTRY:-''}"
+
+        # the reason this is not in the requirements check of the release yaml is because those checks also
+        # apply when running the release tooling locally, and the testing steps are supposed to run in CI
+        if [ ${REGISTRY} == "" ]; then
+          echo "PROD_REGISTRY is not set - unable to check migrator image"
+          exit 1
+        fi
+
+        IMAGE="${REGISTRY}/migrator:{{tag}}"
+
+        echo "pulling migrator image ${IMAGE}"
+
+        # Pull the image so that we can inspect it
+        docker pull "${IMAGE}"
+
+        echo "checking migrator image for {{version}} schema description files"
+
+        # now we check that the schem description files exist
+        # we need to trim the result from docker since it has '\r' hence the use of tr
+        count=$(docker run -t --rm --entrypoint /bin/sh "${IMAGE}" -c "ls -al /schema-descriptions/{{version}}-*.json | wc -l" | tr -d '[:space:]')
+
+        if [[ "$count" -ne 3 ]]; then
+          echo "migrator:{{tag}} does not contain the correct amount of schema description files for this release- expected 3 got ${count}"
+          exit 1
+        fi
 
 promoteToPublic:
   create:
