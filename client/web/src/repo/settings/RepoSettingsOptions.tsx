@@ -3,7 +3,6 @@ import { type FC, useCallback, useEffect, useState } from 'react'
 import { noop } from 'lodash'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, Container, ErrorAlert, H3, LoadingSpinner, renderError, Text } from '@sourcegraph/wildcard'
 

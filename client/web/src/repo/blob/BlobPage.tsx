@@ -392,6 +392,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                         source="repoHeader"
                         renderMode={renderMode}
                         isPackage={isPackage}
+                        telemetryRecorder={props.telemetryRecorder}
                     />
                 )}
             </RepoHeaderContributionPortal>
@@ -465,6 +466,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                     revision={revision}
                     filePath={filePath}
                     enableOwnershipPanel={enableOwnershipPanel}
+                    telemetryRecorder={props.telemetryRecorder}
                 />
             )}
             {isErrorLike(blameHunks) && <ErrorAlert error={blameHunks} />}
