@@ -3,6 +3,7 @@ import { type FC, useCallback, useEffect, useState } from 'react'
 import { noop } from 'lodash'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, Container, ErrorAlert, H3, LoadingSpinner, renderError, Text } from '@sourcegraph/wildcard'
 
@@ -24,14 +25,15 @@ import { RedirectionAlert } from './components/RedirectionAlert'
 
 import styles from './RepoSettingsOptions.module.scss'
 
-interface Props {
+interface Props extends TelemetryV2Props {
     repo: SettingsAreaRepositoryFields
 }
 
-export const RepoSettingsOptions: FC<Props> = ({ repo }) => {
+export const RepoSettingsOptions: FC<Props> = ({ repo, telemetryRecorder }) => {
     useEffect(() => {
         EVENT_LOGGER.logViewEvent('RepoSettings')
-    })
+        telemetryRecorder.recordEvent('repo.settings', 'view')
+    }, [telemetryRecorder])
 
     const { data, error, loading } = useQuery<SettingsAreaRepositoryResult, SettingsAreaRepositoryVariables>(
         FETCH_SETTINGS_AREA_REPOSITORY_GQL,

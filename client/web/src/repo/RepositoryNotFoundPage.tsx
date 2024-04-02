@@ -3,13 +3,14 @@ import * as React from 'react'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Code, Link, Text } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../components/HeroPage'
 
 import styles from './RepositoryNotFoundPage.module.scss'
 
-interface Props {
+interface Props extends TelemetryV2Props {
     /** The name of the repository. */
     repo: string
 
@@ -23,6 +24,15 @@ interface Props {
  */
 export const RepositoryNotFoundPage: React.FunctionComponent<Props> = ({ repo, viewerCanAdminister }) => {
     React.useEffect(() => EVENT_LOGGER.logViewEvent('RepositoryError'), [])
+export const RepositoryNotFoundPage: React.FunctionComponent<Props> = ({
+    repo,
+    viewerCanAdminister,
+    telemetryRecorder,
+}) => {
+    React.useEffect(() => {
+        EVENT_LOGGER.logViewEvent('RepositoryError')
+        telemetryRecorder.recordEvent('repo.error.notFound', 'view')
+    }, [telemetryRecorder])
 
     return (
         <HeroPage

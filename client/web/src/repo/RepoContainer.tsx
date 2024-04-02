@@ -395,6 +395,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                 repoName={repoName}
                 viewerCanAdminister={viewerCanAdminister}
                 repoFetchError={repoOrError as ErrorLike}
+                telemetryRecorder={props.platformContext.telemetryRecorder}
             />
         )
     }

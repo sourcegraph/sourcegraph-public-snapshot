@@ -12,6 +12,7 @@ import {
 } from '@sourcegraph/shared/src/backend/errors'
 import { RepoQuestionIcon } from '@sourcegraph/shared/src/components/icons'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Code, ErrorMessage, Link, Text } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../components/HeroPage'
@@ -19,7 +20,7 @@ import { HeroPage } from '../components/HeroPage'
 import { DirectImportRepoAlert } from './DirectImportRepoAlert'
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
 
-interface RepoContainerErrorProps {
+interface RepoContainerErrorProps extends TelemetryV2Props {
     /** The repo fetch error. */
     repoFetchError: ErrorLike
 
@@ -31,13 +32,20 @@ interface RepoContainerErrorProps {
 }
 
 export const RepoContainerError: React.FunctionComponent<React.PropsWithChildren<RepoContainerErrorProps>> = props => {
-    const { repoFetchError, repoName, viewerCanAdminister } = props
+    const { repoFetchError, repoName, viewerCanAdminister, telemetryRecorder } = props
 
     if (isRepoNotFoundErrorLike(repoFetchError)) {
-        return <RepositoryNotFoundPage repo={repoName} viewerCanAdminister={viewerCanAdminister} />
+        return (
+            <RepositoryNotFoundPage
+                repo={repoName}
+                viewerCanAdminister={viewerCanAdminister}
+                telemetryRecorder={telemetryRecorder}
+            />
+        )
     }
 
     if (isRepoDeniedErrorLike(repoFetchError)) {
+        telemetryRecorder.recordEvent('repo.error.repoDenied', 'view')
         return (
             <HeroPage
                 icon={AlertIcon}
@@ -48,6 +56,7 @@ export const RepoContainerError: React.FunctionComponent<React.PropsWithChildren
     }
 
     if (isCloneInProgressErrorLike(repoFetchError)) {
+        telemetryRecorder.recordEvent('repo.error.cloneInProgress', 'view')
         return (
             <HeroPage
                 icon={SourceRepositoryIcon}
@@ -70,6 +79,7 @@ export const RepoContainerError: React.FunctionComponent<React.PropsWithChildren
     }
 
     if (isRevisionNotFoundErrorLike(repoFetchError)) {
+        telemetryRecorder.recordEvent('repo.error.revisionNotFound', 'view')
         return (
             <HeroPage
                 icon={RepoQuestionIcon}
@@ -87,5 +97,6 @@ export const RepoContainerError: React.FunctionComponent<React.PropsWithChildren
         )
     }
 
+    telemetryRecorder.recordEvent('repo.error.other', 'view')
     return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={repoFetchError} />} />
 }

@@ -62,11 +62,15 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     },
     {
         path: '/-/stats/contributors',
-        render: context => <RepositoryStatsArea {...context} />,
+        render: context => (
+            <RepositoryStatsArea {...context} telemetryRecorder={context.platformContext.telemetryRecorder} />
+        ),
     },
     {
         path: '/-/metadata',
         condition: ({ authenticatedUser }) => canWriteRepoMetadata(authenticatedUser),
-        render: context => <RepositoryMetadataPage {...context} />,
+        render: context => (
+            <RepositoryMetadataPage {...context} telemetryRecorder={context.platformContext.telemetryRecorder} />
+        ),
     },
 ]

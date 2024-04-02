@@ -147,7 +147,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
         props.telemetryService.logViewEvent('Blob', { repoName, filePath })
-        props.telemetryRecorder.recordEvent('blob', 'view')
+        props.telemetryRecorder.recordEvent('repo.blob', 'view')
     }, [repoName, commitID, filePath, renderMode, props.telemetryService, props.telemetryRecorder])
 
     useBreadcrumb(
