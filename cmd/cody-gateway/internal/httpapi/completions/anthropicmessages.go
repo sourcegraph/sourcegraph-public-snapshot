@@ -157,7 +157,7 @@ type anthropicMessagesResponseUsage struct {
 }
 
 type AnthropicMessagesHandlerMethods struct {
-	tokenizer *tokenizer.Tokenizer
+	tokenizer tokenizer.Tokenizer
 	config    config.AnthropicConfig
 }
 

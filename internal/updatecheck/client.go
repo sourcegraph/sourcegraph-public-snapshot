@@ -879,7 +879,7 @@ func Start(logger log.Logger, db database.DB) {
 	}
 	started = true
 
-	const delay = 1 * time.Minute
+	const delay = 5 * time.Minute
 	scopedLog := logger.Scoped("updatecheck")
 	for {
 		check(scopedLog, db)
