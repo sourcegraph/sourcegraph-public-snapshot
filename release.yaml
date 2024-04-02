@@ -51,12 +51,27 @@ internal:
       - name: "Register on release registry"
         cmd: |
           echo "pretending to call release registry api"
+      - name: "notifications"
+        cmd: |
+          set -eu
+
+          # Post an annotation.
+          cat << EOF | buildkite-agent annotate --style info
+          Internal release is ready for promotion under the branch [\`{{git.branch}}\`](https://github.com/sourcegraph/sourcegraph/tree/$branch).
+          EOF
 
 test:
   steps:
     - name: "placeholder"
       cmd: |
         echo "-- pretending to test release ..."
+    - name: "check tag does not exist"
+      cmd: |
+        tags=$(git ls-remote --tags origin | sort -t '/' -k 3 | cut -f 2 | awk -F '/' '{gsub(/\^\{\}$/, "", $3); print $3}' | uniq)
+        if echo "${tags}" | grep -q "^{{version}}$"; then
+          echo "❌ Tag '{{version}}' already exists"
+          exit 1
+        fi
 
 promoteToPublic:
   create:
@@ -93,7 +108,20 @@ promoteToPublic:
       - name: "Promote on release registry"
         cmd: |
           echo "pretending to call release registry api"
+      - name: "git:tag"
+        cmd: |
+          set -eu
 
+          # we need to first fetch the branch because the repo in CI is in a detached state
+          git fetch origin '+refs/heads/{{git.branch}}:refs/heads/{{git.branch}}'
+          git checkout {{git.branch}}
+          git tag {{version}}
+          git push origin {{git.branch}} --tags
+
+          # Annotate build
+          cat << EOF | buildkite-agent annotate --style info
+          Promoted release is **publicly available** through a git tag at [\`{{version}}\`](https://github.com/sourcegraph/sourcegraph/tree/{{version}}).
+          EOF
       # tag is usually in the format `5.3.2`
       # while version is usually the tag prepended with a v, `v5.3.2`
       - name: "Slack notification (#announce-engineering)"
