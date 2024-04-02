@@ -47,11 +47,13 @@ go_library(
 
 go_test(
     name = "httpapi_test",
-    srcs = [
-        "maintenance_test.go",
-    ],
+    srcs = ["maintenance_test.go"],
     embed = [":httpapi"],
     deps = [
+        "//cmd/cody-gateway/shared/config",
+        "//internal/redispool",
+        "//internal/sams",
+        "//lib/errors",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
