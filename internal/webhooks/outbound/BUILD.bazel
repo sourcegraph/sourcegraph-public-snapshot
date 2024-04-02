@@ -14,8 +14,8 @@ go_library(
         "//internal/database/basestore",
         "//internal/encryption",
         "//internal/encryption/keyring",
+        "//internal/hostmatcher",
         "//lib/errors",
-        "@io_gitea_code_gitea//modules/hostmatcher",
     ],
 )
 
@@ -28,7 +28,7 @@ go_test(
         "//internal/database/dbmocks",
         "//internal/types",
         "//lib/errors",
-        "@com_github_derision_test_go_mockgen//testutil/assert",
+        "@com_github_derision_test_go_mockgen_v2//testutil/assert",
         "@com_github_stretchr_testify//assert",
     ],
 )

@@ -14,6 +14,7 @@ import { parse as parseJSONC } from 'jsonc-parser'
 
 import { modify } from '@sourcegraph/common'
 import { gql, useLazyQuery } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Tabs,
@@ -170,6 +171,8 @@ export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
                         displayNameField={displayName}
                         configurationField={configuration}
                         externalServiceOptions={codeHostExternalServices.github}
+                        // TODO (dadlerj) replace with real telemetryRecorder
+                        telemetryRecorder={noOpTelemetryRecorder}
                     />
                 </TabPanel>
                 <>

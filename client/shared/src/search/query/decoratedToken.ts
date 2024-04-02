@@ -114,7 +114,7 @@ interface MetaFilterSeparator extends BaseMetaToken {
 /**
  * A token that is labeled and interpreted as repository revision syntax in Sourcegraph. Note: there
  * are syntactic differences from pure Git ref syntax.
- * See https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions.
+ * See https://sourcegraph.com/docs/code_search/reference/queries#repository-revisions.
  */
 export interface MetaRevision extends BaseMetaToken {
     type: 'metaRevision'

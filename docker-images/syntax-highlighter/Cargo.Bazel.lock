@@ -1,5 +1,5 @@
 {
-  "checksum": "98ae077c1070b8536f3312447aab51ecb51b454dd723fb009d8651aa36b00fcc",
+  "checksum": "9c772110d8ce590de8f49343993eef401797f37975d0e49a40c8f6582f183be8",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -10422,14 +10422,14 @@
       },
       "license": "Apache-2.0"
     },
-    "scip-treesitter-cli 0.1.0": {
-      "name": "scip-treesitter-cli",
+    "scip-syntax 0.1.0": {
+      "name": "scip-syntax",
       "version": "0.1.0",
       "repository": null,
       "targets": [
         {
           "Library": {
-            "crate_name": "scip_treesitter_cli",
+            "crate_name": "scip_syntax",
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
@@ -10437,7 +10437,7 @@
           }
         }
       ],
-      "library_target_name": "scip_treesitter_cli",
+      "library_target_name": "scip_syntax",
       "common_attrs": {
         "compile_data_glob": [
           "**"
@@ -11533,10 +11533,6 @@
               "target": "regex"
             },
             {
-              "id": "rocket 0.5.0-rc.3",
-              "target": "rocket"
-            },
-            {
               "id": "rustc-hash 1.1.0",
               "target": "rustc_hash"
             },
@@ -11722,14 +11718,28 @@
       "name": "syntect_server",
       "version": "1.0.1",
       "repository": null,
-      "targets": [],
-      "library_target_name": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "syntect_server",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "syntect_server",
       "common_attrs": {
         "compile_data_glob": [
           "**"
         ],
         "deps": {
           "common": [
+            {
+              "id": "anyhow 1.0.75",
+              "target": "anyhow"
+            },
             {
               "id": "base64 0.13.1",
               "target": "base64"
@@ -11781,6 +11791,10 @@
             {
               "id": "syntect 4.7.0",
               "target": "syntect"
+            },
+            {
+              "id": "tree-sitter-highlight 0.20.1",
+              "target": "tree_sitter_highlight"
             }
           ],
           "selects": {}
@@ -17071,7 +17085,7 @@
   },
   "binary_crates": [],
   "workspace_members": {
-    "scip-treesitter-cli 0.1.0": "docker-images/syntax-highlighter/crates/scip-treesitter-cli",
+    "scip-syntax 0.1.0": "docker-images/syntax-highlighter/crates/scip-syntax",
     "syntax-analysis 0.1.0": "docker-images/syntax-highlighter/crates/syntax-analysis",
     "syntect_server 1.0.1": "docker-images/syntax-highlighter",
     "tree-sitter-all-languages 0.1.0": "docker-images/syntax-highlighter/crates/tree-sitter-all-languages"

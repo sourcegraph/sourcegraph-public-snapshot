@@ -93,7 +93,7 @@ func TestOrganization(t *testing.T) {
 		}
 	})
 
-	// Docs: https://docs.sourcegraph.com/user/organizations
+	// Docs: https://sourcegraph.com/docs/user/organizations
 	t.Run("auth.userOrgMap", func(t *testing.T) {
 		// Create a test user (gqltest-org-user-1) without settings "auth.userOrgMap",
 		// the user should not be added to the organization (gqltest-org) automatically.

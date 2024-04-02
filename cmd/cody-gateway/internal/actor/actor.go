@@ -36,6 +36,9 @@ type Actor struct {
 	// For example, for product subscriptions it is based on whether the subscription is
 	// archived, if access is enabled, and if any rate limits are set.
 	AccessEnabled bool `json:"accessEnabled"`
+	// EndpointAccess is a map that grants access to a specific endpoint prefix
+	// in case not all access is enabled.
+	EndpointAccess map[string]bool `json:"endpointAccess"`
 	// RateLimits holds the rate limits for Cody Gateway features for this actor.
 	RateLimits map[codygateway.Feature]RateLimit `json:"rateLimits"`
 	// LastUpdated indicates when this actor's state was last updated.

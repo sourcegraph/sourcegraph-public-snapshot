@@ -1717,6 +1717,10 @@ type Query {
         Query the user by verified email address.
         """
         email: String
+        """
+        Query the user by ID. Clients should prefer using GraphQL IDs. This is primarily intended for debugging.
+        """
+        databaseID: Int
     ): User
     """
     List all users.
@@ -3347,7 +3351,7 @@ type ExternalService implements Node {
 
     Only site admins may access this field.
 
-    DEPRECATED: Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice
+    DEPRECATED: Webhook logs linked directly to an external service will be removed. See https://sourcegraph.com/docs/admin/config/webhooks/incoming#deprecation-notice
     """
     webhookLogs(
         """
@@ -3376,7 +3380,7 @@ type ExternalService implements Node {
         until: DateTime
     ): WebhookLogConnection!
         @deprecated(
-            reason: "Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice"
+            reason: "Webhook logs linked directly to an external service will be removed. See https://sourcegraph.com/docs/admin/config/webhooks/incoming#deprecation-notice"
         )
 
     """
@@ -6063,7 +6067,7 @@ type GitBlob implements TreeEntry & File2 {
     """
     Blame the blob.
     """
-    blame(startLine: Int!, endLine: Int!, ignoreWhitespace: Boolean = false): [Hunk!]!
+    blame(startLine: Int, endLine: Int, ignoreWhitespace: Boolean = false): [Hunk!]!
     """
     Highlight the blob contents.
     """
@@ -6380,7 +6384,6 @@ enum CodySubscriptionStatus {
     UNPAID
     CANCELED
     TRIALING
-    PENDING
     OTHER
 }
 
@@ -6639,6 +6642,11 @@ type User implements Node & SettingsSubject & Namespace {
     """
     codySubscription: CodySubscription
     """
+    The rate limit status for the user stored in Cody Gateway.
+    On dotcom only the user and site admins can access this field.
+    """
+    codyGatewayRateLimitStatus: [CodyGatewayRateLimitStatus!]
+    """
     DEPRECATED
     Whether the user has enrolled for Cody Pro.
     """
@@ -6659,6 +6667,10 @@ type User implements Node & SettingsSubject & Namespace {
     The limit of Cody code completions for the current billing period.
     """
     codyCurrentPeriodCodeLimit: Int!
+    """
+    Evaluates a feature flag for the user. Returns null if the feature flag does not exist.
+    """
+    evaluateFeatureFlag(flagName: String!): Boolean
 }
 
 """
@@ -6840,6 +6852,11 @@ type ExternalAccount implements Node {
     may query this field.
     """
     publicAccountData: PublicExternalAccountData
+    """
+    TEMPORARY: to debug #inc-284-plg-users-paying-for-and-being-billed-for-pro-without-being-upgrade.
+    Cody Subscription associated with the external account.
+    """
+    codySubscription: CodySubscription
 }
 
 """
@@ -7437,8 +7454,8 @@ type Site implements SettingsSubject {
     Note: This is primarily used for displaying recently-fired alerts in the web app. If your intent
     is to monitor Sourcegraph, it is better to configure alerting or query Prometheus directly in
     order to ensure that if the frontend goes down you still receive alerts:
-    Configure alerting: https://docs.sourcegraph.com/admin/observability/alerting
-    Query Prometheus directly: https://docs.sourcegraph.com/admin/observability/alerting_custom_consumption
+    Configure alerting: https://sourcegraph.com/docs/admin/observability/alerting
+    Query Prometheus directly: https://sourcegraph.com/docs/admin/observability/alerting_custom_consumption
     """
     monitoringStatistics(
         """
@@ -8596,7 +8613,7 @@ type MonitoringStatistics {
 }
 
 """
-A high-level monitoring alert, for details see https://docs.sourcegraph.com/admin/observability/metrics#high-level-alerting-metrics
+A high-level monitoring alert, for details see https://sourcegraph.com/docs/admin/observability/metrics#high-level-alerting-metrics
 """
 type MonitoringAlert {
     """
@@ -8719,9 +8736,10 @@ type ProductSubscriptionStatus {
     """
     noLicenseWarningUserCount: Int
     """
-    The product license associated with this subscription, if any.
+    The product license associated with this subscription.
+    If no license key is applied, a free plan is assumed.
     """
-    license: ProductLicenseInfo
+    license: ProductLicenseInfo!
 }
 
 """
@@ -8734,6 +8752,10 @@ type ProductLicenseInfo {
     no license).
     """
     productNameWithBrand: String!
+    """
+    True if the license is for a free plan.
+    """
+    isFreePlan: Boolean!
     """
     Tags indicating the product plan and features activated by this license.
     """
@@ -10465,6 +10487,11 @@ enum PermissionNamespace {
     This represents the Cody namespace.
     """
     CODY
+
+    """
+    ❗ Product subscriptions are only available in Sourcegraph.com
+    """
+    PRODUCT_SUBSCRIPTIONS
 }
 
 """

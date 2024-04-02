@@ -162,7 +162,7 @@ func AlertForInvalidRevision(revision string) *Alert {
 	revision = strings.TrimSuffix(revision, "^0")
 	return &Alert{
 		Title:       "Invalid revision syntax",
-		Description: fmt.Sprintf("We don't know how to interpret the revision (%s) you specified. Learn more about the revision syntax in our documentation: https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions.", revision),
+		Description: fmt.Sprintf("We don't know how to interpret the revision (%s) you specified. Learn more about the revision syntax in our documentation: https://sourcegraph.com/docs/code-search/queries#repository-revisions.", revision),
 	}
 }
 
@@ -170,7 +170,7 @@ func AlertForUnownedResult() *Alert {
 	return &Alert{
 		Kind:        "unowned-results",
 		Title:       "Some results have no owners",
-		Description: "For some results, no ownership data was found, or no rule applied to the result. [Learn more about configuring code ownership](https://docs.sourcegraph.com/own).",
+		Description: "For some results, no ownership data was found, or no rule applied to the result. [Learn more about configuring code ownership](https://sourcegraph.com/docs/own).",
 		// Explicitly set a low priority, so other alerts take precedence.
 		Priority: 0,
 	}

@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import type { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, H2, H5, Modal, Text, useSearchParameters } from '@sourcegraph/wildcard'
 
@@ -19,17 +20,24 @@ import { VSCodeInstructions } from './instructions/VsCode'
 import styles from './CodyOnboarding.module.scss'
 
 export interface IEditor {
+    id: number // a unique number identifier for telemetry
     icon: string
     name: string
     publisher: string
     releaseStage: string
     docs?: string
-    instructions?: React.FC<{ onBack?: () => void; onClose: () => void; showStep?: number }>
+    instructions?: React.FC<{
+        onBack?: () => void
+        onClose: () => void
+        showStep?: number
+        telemetryRecorder: TelemetryRecorder
+    }>
 }
 
 export const editorGroups: IEditor[][] = [
     [
         {
+            id: 1,
             icon: 'VsCode',
             name: 'VS Code',
             publisher: 'Microsoft',
@@ -38,6 +46,7 @@ export const editorGroups: IEditor[][] = [
             instructions: VSCodeInstructions,
         },
         {
+            id: 2,
             icon: 'IntelliJ',
             name: 'IntelliJ IDEA',
             publisher: 'JetBrains',
@@ -46,6 +55,7 @@ export const editorGroups: IEditor[][] = [
             instructions: JetBrainsInstructions,
         },
         {
+            id: 3,
             icon: 'PhpStorm',
             name: 'PhpStorm ',
             publisher: 'JetBrains',
@@ -54,6 +64,7 @@ export const editorGroups: IEditor[][] = [
             instructions: JetBrainsInstructions,
         },
         {
+            id: 4,
             icon: 'PyCharm',
             name: 'PyCharm',
             publisher: 'JetBrains',
@@ -64,6 +75,7 @@ export const editorGroups: IEditor[][] = [
     ],
     [
         {
+            id: 5,
             icon: 'WebStorm',
             name: 'WebStorm',
             publisher: 'JetBrains',
@@ -72,6 +84,7 @@ export const editorGroups: IEditor[][] = [
             instructions: JetBrainsInstructions,
         },
         {
+            id: 6,
             icon: 'RubyMine',
             name: 'RubyMine',
             publisher: 'JetBrains',
@@ -80,6 +93,7 @@ export const editorGroups: IEditor[][] = [
             instructions: JetBrainsInstructions,
         },
         {
+            id: 7,
             icon: 'GoLand',
             name: 'GoLand',
             publisher: 'JetBrains',
@@ -88,6 +102,7 @@ export const editorGroups: IEditor[][] = [
             instructions: JetBrainsInstructions,
         },
         {
+            id: 8,
             icon: 'AndroidStudio',
             name: 'Android Studio',
             publisher: 'Google',
@@ -98,18 +113,13 @@ export const editorGroups: IEditor[][] = [
     ],
     [
         {
+            id: 9,
             icon: 'NeoVim',
             name: 'Neovim',
             publisher: 'Neovim Team',
             releaseStage: 'Experimental',
             docs: 'https://sourcegraph.com/docs/cody/clients/install-neovim',
             instructions: NeoVimInstructions,
-        },
-        {
-            icon: 'Emacs',
-            name: 'Emacs',
-            publisher: 'GNU',
-            releaseStage: 'Coming Soon',
         },
     ],
 ]
@@ -124,11 +134,11 @@ function formatUseCase(action: { work: boolean; personal: boolean }): string {
     return useCases.length === 0 ? 'none' : useCases.join(',')
 }
 
-export function CodyOnboarding({
-    authenticatedUser,
-}: {
+interface CodyOnboardingProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
-}): JSX.Element | null {
+}
+
+export function CodyOnboarding({ authenticatedUser, telemetryRecorder }: CodyOnboardingProps): JSX.Element | null {
     const [showEditorStep, setShowEditorStep] = useState(false)
     const [completed = false, setOnboardingCompleted] = useTemporarySetting('cody.onboarding.completed', false)
     // steps start from 0
@@ -168,7 +178,7 @@ export function CodyOnboarding({
             className={styles.modal}
             containerClassName={styles.root}
         >
-            {step === 0 && <WelcomeStep onNext={onNext} pro={enrollPro} />}
+            {step === 0 && <WelcomeStep onNext={onNext} pro={enrollPro} telemetryRecorder={telemetryRecorder} />}
             {step === 1 && (
                 <PurposeStep
                     authenticatedUser={authenticatedUser}
@@ -178,6 +188,7 @@ export function CodyOnboarding({
                         setShowEditorStep(true)
                     }}
                     pro={enrollPro}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
             {showEditorStep && (
@@ -186,13 +197,22 @@ export function CodyOnboarding({
                         setShowEditorStep(false)
                     }}
                     pro={enrollPro}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
         </Modal>
     )
 }
 
-function WelcomeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX.Element {
+function WelcomeStep({
+    onNext,
+    pro,
+    telemetryRecorder,
+}: {
+    onNext: () => void
+    pro: boolean
+    telemetryRecorder: TelemetryRecorder
+}): JSX.Element {
     const [show, setShow] = useState(false)
     const isLightTheme = useIsLightTheme()
     useEffect(() => {
@@ -201,7 +221,8 @@ function WelcomeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
             { tier: pro ? 'pro' : 'free' },
             { tier: pro ? 'pro' : 'free' }
         )
-    }, [pro])
+        telemetryRecorder.recordEvent('cody.onboarding.welcome', 'view', { metadata: { tier: pro ? 1 : 0 } })
+    }, [pro, telemetryRecorder])
 
     useEffect(() => {
         // theme is not ready on first render, it defaults to system theme.
@@ -250,10 +271,12 @@ function PurposeStep({
     onNext,
     pro,
     authenticatedUser,
+    telemetryRecorder,
 }: {
     onNext: () => void
     pro: boolean
     authenticatedUser: AuthenticatedUser
+    telemetryRecorder: TelemetryRecorder
 }): JSX.Element {
     useEffect(() => {
         eventLogger.log(
@@ -261,7 +284,8 @@ function PurposeStep({
             { tier: pro ? 'pro' : 'free' },
             { tier: pro ? 'pro' : 'free' }
         )
-    }, [pro])
+        telemetryRecorder.recordEvent('cody.onboarding.purpose', 'view', { metadata: { tier: pro ? 1 : 0 } })
+    }, [pro, telemetryRecorder])
 
     const primaryEmail = authenticatedUser.emails.find(email => email.isPrimary)?.email
 
@@ -274,6 +298,9 @@ function PurposeStep({
             personal: personalInput.checked,
         })
         eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_SELECTED, { useCase }, { useCase })
+        telemetryRecorder.recordEvent('cody.onboarding.purpose', 'select', {
+            metadata: { workUseCase: workInput.checked ? 1 : 0, personalUseCase: personalInput.checked ? 1 : 0 },
+        })
     }
 
     return (
@@ -290,6 +317,9 @@ function PurposeStep({
                     onFormSubmitted={() => {
                         onNext()
                     }}
+                    onFormLoadError={() => {
+                        onNext()
+                    }}
                     userId={authenticatedUser.id}
                     userEmail={primaryEmail}
                     masterFormName="qualificationSurvey"
@@ -300,14 +330,23 @@ function PurposeStep({
     )
 }
 
-function EditorStep({ onCompleted, pro }: { onCompleted: () => void; pro: boolean }): JSX.Element {
+function EditorStep({
+    onCompleted,
+    pro,
+    telemetryRecorder,
+}: {
+    onCompleted: () => void
+    pro: boolean
+    telemetryRecorder: TelemetryRecorder
+}): JSX.Element {
     useEffect(() => {
         eventLogger.log(
             EventName.CODY_ONBOARDING_CHOOSE_EDITOR_VIEWED,
             { tier: pro ? 'pro' : 'free' },
             { tier: pro ? 'pro' : 'free' }
         )
-    }, [pro])
+        telemetryRecorder.recordEvent('cody.onboarding.chooseEditor', 'view', { metadata: { tier: pro ? 1 : 0 } })
+    }, [pro, telemetryRecorder])
 
     const [editor, setEditor] = useState<null | IEditor>(null)
 
@@ -316,7 +355,7 @@ function EditorStep({ onCompleted, pro }: { onCompleted: () => void; pro: boolea
     if (editor?.instructions) {
         const Instructions = editor.instructions
 
-        return <Instructions onBack={onBack} onClose={onCompleted} />
+        return <Instructions onBack={onBack} onClose={onCompleted} telemetryRecorder={telemetryRecorder} />
     }
 
     return (
@@ -357,6 +396,9 @@ function EditorStep({ onCompleted, pro }: { onCompleted: () => void; pro: boolea
                                             editor,
                                         }
                                     )
+                                    telemetryRecorder.recordEvent('cody.onboarding.chooseEditor', 'select', {
+                                        metadata: { tier: pro ? 1 : 0, editor: editor.id },
+                                    })
                                 }}
                                 onClick={() => {
                                     eventLogger.log(
@@ -370,6 +412,9 @@ function EditorStep({ onCompleted, pro }: { onCompleted: () => void; pro: boolea
                                             editor,
                                         }
                                     )
+                                    telemetryRecorder.recordEvent('cody.onboarding.chooseEditor', 'select', {
+                                        metadata: { tier: pro ? 1 : 0, editor: editor.id },
+                                    })
                                     setEditor(editor)
                                 }}
                             >
@@ -411,6 +456,9 @@ function EditorStep({ onCompleted, pro }: { onCompleted: () => void; pro: boolea
                             { tier: pro ? 'pro' : 'free' },
                             { tier: pro ? 'pro' : 'free' }
                         )
+                        telemetryRecorder.recordEvent('cody.onboarding.chooseEditor', 'skip', {
+                            metadata: { tier: pro ? 1 : 0 },
+                        })
                     }}
                 >
                     Skip for now

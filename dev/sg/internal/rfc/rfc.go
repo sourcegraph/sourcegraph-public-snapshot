@@ -367,6 +367,7 @@ func List(ctx context.Context, driveSpec DriveSpec, out *std.Output) error {
 }
 
 func Search(ctx context.Context, query string, driveSpec DriveSpec, out *std.Output) error {
+	driveSpec.OrderBy = "" // fullText queries are always ordered by relevance and fail if an order is specified
 	return queryRFCs(ctx, fmt.Sprintf("(name contains '%[1]s' or fullText contains '%[1]s')", query), driveSpec, rfcTitlesPrinter(out), out)
 }
 

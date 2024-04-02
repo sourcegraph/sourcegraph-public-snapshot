@@ -12,26 +12,26 @@
 
     export let data: PageData
 
-    const { value: readme, set: setReadme, pending: readmePending } = createPromiseStore<RepoPage_Readme | null>()
-    $: setReadme(data.readme)
+    const readme = createPromiseStore<RepoPage_Readme | null>()
+    $: readme.set(data.readme)
 </script>
 
 <h3 class="header">
     <div class="sidebar-button" class:hidden={$sidebarOpen}>
         <SidebarToggleButton />
     </div>
-    {#if $readme}
+    {#if $readme.value}
         <Icon svgPath={mdiFileDocumentOutline} />
         &nbsp;
-        {$readme.name}
-    {:else if !$readmePending}
+        {$readme.value.name}
+    {:else if !$readme.pending}
         Description
     {/if}
 </h3>
 <div class="content">
-    {#if $readme}
-        <Readme file={$readme} />
-    {:else if !$readmePending}
+    {#if $readme.value}
+        <Readme file={$readme.value} />
+    {:else if !$readme.pending}
         {data.resolvedRevision.repo.description}
     {/if}
 </div>

@@ -21,6 +21,6 @@ func (e UpgradeError) Error() string {
 		e.Service,
 		e.Previous,
 		e.Latest,
-		"https://docs.sourcegraph.com/admin/updates#update-policy",
+		"https://sourcegraph.com/docs/admin/updates#update-policy",
 	)
 }

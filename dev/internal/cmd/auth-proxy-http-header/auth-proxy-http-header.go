@@ -45,7 +45,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf(`https://docs.sourcegraph.com/admin/auth#http-authentication-proxies
+	fmt.Printf(`https://sourcegraph.com/docs/admin/auth#http-authentication-proxies
 
   "auth.providers": [
     {

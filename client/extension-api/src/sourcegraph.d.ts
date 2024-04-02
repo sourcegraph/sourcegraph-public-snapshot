@@ -7,8 +7,6 @@
  * - Links to live traces, log output, and performance data for a line of code
  * - Git blame
  * - Usage examples for functions
- *
- * Check out the [extension authoring documentation](https://docs.sourcegraph.com/extensions/authoring) to get started.
  */
 declare module 'sourcegraph' {
     export interface Unsubscribable {
@@ -319,7 +317,7 @@ declare module 'sourcegraph' {
          * The text contents of the text document.
          *
          * When using the [Sourcegraph browser
-         * extension](https://docs.sourcegraph.com/integration/browser_extension), the value is
+         * extension](https://sourcegraph.com/docs/integration/browser_extension), the value is
          * `undefined` because determining the text contents (in general) is not possible without
          * additional access to the code host API. In the future, this limitation may be removed.
          */
@@ -849,7 +847,7 @@ declare module 'sourcegraph' {
          * A version context is a set of repositories and revisions on a Sourcegraph instance.
          * When set, extensions use it to scope search queries, code navigation actions, etc.
          *
-         * See more information at http://docs.sourcegraph.com/user/search#version-contexts.
+         * See more information at http://sourcegraph.com/docs/user/search
          *
          * @deprecated
          */
@@ -868,7 +866,7 @@ declare module 'sourcegraph' {
          * A search context is a set of repositories and revisions on a Sourcegraph instance.
          * When set, extensions use it to scope search queries, code navigation actions, etc.
          *
-         * See more information at https://docs.sourcegraph.com/code_search/explanations/features#search-contexts.
+         * See more information at https://sourcegraph.com/docs/code-search/features#search-contexts
          */
         export const searchContext: string | undefined
 
@@ -1189,7 +1187,7 @@ declare module 'sourcegraph' {
          *
          * The provider can be executed with the `executeLocationProvider` builtin command, passing the {@link id}
          * as the first argument. For more information, see
-         * https://docs.sourcegraph.com/extensions/authoring/builtin_commands#executeLocationProvider.
+         * https://sourcegraph.com/docs/extensions/authoring/builtin_commands#executeLocationProvider.
          *
          * @param id An identifier for this location provider that distinguishes it from other location providers.
          * @param selector A selector that defines the documents this provider is applicable to.
@@ -1268,7 +1266,7 @@ declare module 'sourcegraph' {
 
     export namespace graphQL {
         /**
-         * Executes a [Sourcegraph GraphQL API](https://docs.sourcegraph.com/api/graphql) query or mutation on the associated Sourcegraph instance and returns a promise for the result.
+         * Executes a [Sourcegraph GraphQL API](https://sourcegraph.com/docs/api/graphql) query or mutation on the associated Sourcegraph instance and returns a promise for the result.
          *
          * @template TResult The GraphQL result type
          * @template TVariables The type of the variables object

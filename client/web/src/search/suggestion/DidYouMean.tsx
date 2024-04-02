@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react'
 
 import { mdiArrowRight } from '@mdi/js'
+import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { ALL_LANGUAGES } from '@sourcegraph/common'
@@ -126,6 +127,7 @@ interface DidYouMeanProps
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         TelemetryProps {
     query: string
+    className?: string
 }
 
 export const DidYouMean: React.FunctionComponent<React.PropsWithChildren<DidYouMeanProps>> = ({
@@ -133,6 +135,7 @@ export const DidYouMean: React.FunctionComponent<React.PropsWithChildren<DidYouM
     query,
     patternType,
     caseSensitive,
+    className,
     selectedSearchContextSpec,
 }) => {
     const suggestions = useMemo(() => getQuerySuggestions(query, patternType), [query, patternType])
@@ -145,7 +148,7 @@ export const DidYouMean: React.FunctionComponent<React.PropsWithChildren<DidYouM
 
     if (suggestions.length > 0) {
         return (
-            <div className={styles.root}>
+            <div className={classNames(className, styles.root)}>
                 <ul className={styles.container}>
                     {suggestions.map(suggestion => {
                         const builtURLQuery = buildSearchURLQuery(

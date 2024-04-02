@@ -17,6 +17,7 @@ go_library(
         "//internal/actor",
         "//internal/conf/deploy",
         "//internal/env",
+        "//internal/hostmatcher",
         "//internal/instrumentation",
         "//internal/lazyregexp",
         "//internal/metrics",
@@ -33,7 +34,6 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_puerkitobio_rehttp//:rehttp",
         "@com_github_sourcegraph_log//:log",
-        "@io_gitea_code_gitea//modules/hostmatcher",
         "@io_opentelemetry_go_otel//attribute",
     ],
 )

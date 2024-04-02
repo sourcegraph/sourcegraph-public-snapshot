@@ -1,29 +1,34 @@
-import { getContext } from 'svelte'
+import { getContext, setContext } from 'svelte'
 import { readable, writable, type Readable, type Writable } from 'svelte/store'
 
 import type { Settings, TemporarySettingsStorage } from '$lib/shared'
 
 import type { AuthenticatedUser, FeatureFlag } from '../routes/layout.gql'
 
-import type { GraphQLClient } from './graphql'
+export { themeSetting, theme, isLightTheme } from './theme'
 
-export { isLightTheme } from './theme'
+// Only exported to be used for mocking tests
+// TODO (fkling): Find a better way to initialize mocked contexts and stores
+export const KEY = '__sourcegraph__'
 
 export interface SourcegraphContext {
     settings: Readable<Settings | null>
     user: Readable<AuthenticatedUser | null>
     temporarySettingsStorage: Readable<TemporarySettingsStorage>
     featureFlags: Readable<FeatureFlag[]>
-    client: Readable<GraphQLClient>
 }
 
-export const KEY = '__sourcegraph__'
+export function setAppContext(context: SourcegraphContext): void {
+    setContext<SourcegraphContext>(KEY, context)
+}
 
 export function getStores(): SourcegraphContext {
-    const { settings, user, temporarySettingsStorage, featureFlags, client } = getContext<SourcegraphContext>(KEY)
-    return { settings, user, temporarySettingsStorage, featureFlags, client }
+    return getContext<SourcegraphContext>(KEY)
 }
 
+/**
+ * This store returns the currently logged in user.
+ */
 export const user = {
     subscribe(subscriber: (user: AuthenticatedUser | null) => void) {
         const { user } = getStores()
@@ -31,17 +36,13 @@ export const user = {
     },
 }
 
+/**
+ * This store returns the user's settings.
+ */
 export const settings = {
     subscribe(subscriber: (settings: Settings | null) => void) {
         const { settings } = getStores()
         return settings.subscribe(subscriber)
-    },
-}
-
-export const graphqlClient = {
-    subscribe(subscriber: (client: GraphQLClient) => void) {
-        const { client } = getStores()
-        return client.subscribe(subscriber)
     },
 }
 

@@ -1,5 +1,5 @@
 import { castArray } from 'lodash'
-import { from, type Observable, of } from 'rxjs'
+import { from, of, lastValueFrom } from 'rxjs'
 import { defaultIfEmpty, map } from 'rxjs/operators'
 
 import {
@@ -18,9 +18,7 @@ import type { CodeIntelExtensionHostAPI, FlatExtensionHostAPI, ScipParameters } 
 import { proxySubscribable } from '../api/extension/api/common'
 import { toPosition } from '../api/extension/api/types'
 import { getModeFromPath } from '../languages'
-import type { PlatformContext } from '../platform/context'
-import { isSettingsValid, type Settings, type SettingsCascade } from '../settings/settings'
-import { parseRepoURI } from '../util/url'
+import { parseRepoGitURI } from '../util/url'
 
 import type { DocumentSelector, TextDocument, DocumentHighlight } from './legacy-extensions/api'
 import * as sourcegraph from './legacy-extensions/api'
@@ -42,7 +40,7 @@ export interface CodeIntelAPI {
         scipParameters?: ScipParameters
     ): Promise<clientType.Location[]>
     getImplementations(parameters: TextDocumentPositionParameters): Promise<clientType.Location[]>
-    getHover(textParameters: TextDocumentPositionParameters): Promise<HoverMerged | null | undefined>
+    getHover(textParameters: TextDocumentPositionParameters): Promise<HoverMerged | null>
     getDocumentHighlights(textParameters: TextDocumentPositionParameters): Promise<DocumentHighlight[]>
 }
 
@@ -51,45 +49,21 @@ export function createCodeIntelAPI(context: sourcegraph.CodeIntelContext): CodeI
     return new DefaultCodeIntelAPI()
 }
 
-export let codeIntelAPI: null | CodeIntelAPI = null
-export async function getOrCreateCodeIntelAPI(context: PlatformContext): Promise<CodeIntelAPI> {
-    if (codeIntelAPI !== null) {
-        return codeIntelAPI
-    }
-
-    return new Promise<CodeIntelAPI>((resolve, reject) => {
-        context.settings.subscribe(settingsCascade => {
-            try {
-                if (!isSettingsValid(settingsCascade)) {
-                    throw new Error('Settings are not valid')
-                }
-                codeIntelAPI = createCodeIntelAPI({
-                    requestGraphQL: context.requestGraphQL,
-                    telemetryService: context.telemetryService,
-                    settings: newSettingsGetter(settingsCascade),
-                })
-                resolve(codeIntelAPI)
-            } catch (error) {
-                reject(error)
-            }
-        })
-    })
-}
-
 class DefaultCodeIntelAPI implements CodeIntelAPI {
     private locationResult(
         locations: sourcegraph.ProviderResult<sourcegraph.Definition>
     ): Promise<clientType.Location[]> {
-        return locations
-            .pipe(
-                defaultIfEmpty(),
+        return lastValueFrom(
+            locations.pipe(
+                defaultIfEmpty(undefined),
                 map(result =>
                     castArray(result)
                         .filter(isDefined)
                         .map(location => ({ ...location, uri: location.uri.toString() }))
                 )
-            )
-            .toPromise()
+            ),
+            { defaultValue: [] }
+        )
     }
 
     public hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Promise<boolean> {
@@ -128,26 +102,26 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
             request.providers.implementations.provideLocations(request.document, request.position)
         )
     }
-    public getHover(textParameters: TextDocumentPositionParameters): Promise<HoverMerged | null | undefined> {
+    public getHover(textParameters: TextDocumentPositionParameters): Promise<HoverMerged | null> {
         const request = requestFor(textParameters)
-        return (
+        return lastValueFrom(
             request.providers.hover
                 .provideHover(request.document, request.position)
                 // We intentionally don't use `defaultIfEmpty()` here because
                 // that makes the popover load with an empty docstring.
-                .pipe(map(result => fromHoverMerged([result])))
-                .toPromise()
+                .pipe(map(result => fromHoverMerged([result]))),
+            { defaultValue: null }
         )
     }
     public getDocumentHighlights(textParameters: TextDocumentPositionParameters): Promise<DocumentHighlight[]> {
         const request = requestFor(textParameters)
-        return request.providers.documentHighlights
-            .provideDocumentHighlights(request.document, request.position)
-            .pipe(
-                defaultIfEmpty(),
+        return lastValueFrom(
+            request.providers.documentHighlights.provideDocumentHighlights(request.document, request.position).pipe(
+                defaultIfEmpty(undefined),
                 map(result => result || [])
-            )
-            .toPromise()
+            ),
+            { defaultValue: [] }
+        )
     }
 }
 
@@ -169,7 +143,7 @@ function requestFor(textParameters: TextDocumentPositionParameters): LanguageReq
 function toTextDocument(textDocument: TextDocumentIdentifier): sourcegraph.TextDocument {
     return {
         uri: textDocument.uri,
-        languageId: getModeFromPath(parseRepoURI(textDocument.uri).filePath || ''),
+        languageId: getModeFromPath(parseRepoGitURI(textDocument.uri).filePath || ''),
         text: undefined,
     }
 }
@@ -214,11 +188,6 @@ function selectorForSpec(languageSpec: LanguageSpec): DocumentSelector {
     ]
 }
 
-function newSettingsGetter(settingsCascade: SettingsCascade<Settings>): sourcegraph.SettingsGetter {
-    return <T>(setting: string): T | undefined =>
-        settingsCascade.final && (settingsCascade.final[setting] as T | undefined)
-}
-
 // Replaces codeintel functions from the "old" extension/webworker extension API
 // with new implementations of code that lives in this repository. The old
 // implementation invoked codeintel functions via webworkers, and the codeintel
@@ -242,13 +211,8 @@ export function injectNewCodeintel(
 }
 
 export function newCodeIntelExtensionHostAPI(codeintel: CodeIntelAPI): CodeIntelExtensionHostAPI {
-    function thenMaybeLoadingResult<T>(promise: Observable<T>): Observable<MaybeLoadingResult<T>> {
-        return promise.pipe(
-            map(result => {
-                const maybeLoadingResult: MaybeLoadingResult<T> = { isLoading: false, result }
-                return maybeLoadingResult
-            })
-        )
+    function thenMaybeLoadingResult<T>(result: T): MaybeLoadingResult<T> {
+        return { isLoading: false, result }
     }
 
     return {
@@ -257,22 +221,22 @@ export function newCodeIntelExtensionHostAPI(codeintel: CodeIntelAPI): CodeIntel
         },
         getLocations(id, parameters) {
             if (!id.startsWith('implementations_')) {
-                return proxySubscribable(thenMaybeLoadingResult(of([])))
+                return proxySubscribable(of({ isLoading: false, result: [] }))
             }
-            return proxySubscribable(thenMaybeLoadingResult(from(codeintel.getImplementations(parameters))))
+            return proxySubscribable(from(codeintel.getImplementations(parameters).then(thenMaybeLoadingResult)))
         },
         getDefinition(parameters) {
-            return proxySubscribable(thenMaybeLoadingResult(from(codeintel.getDefinition(parameters))))
+            return proxySubscribable(from(codeintel.getDefinition(parameters).then(thenMaybeLoadingResult)))
         },
         getReferences(parameters, context, scipParameters) {
             return proxySubscribable(
-                thenMaybeLoadingResult(from(codeintel.getReferences(parameters, context, scipParameters)))
+                from(codeintel.getReferences(parameters, context, scipParameters).then(thenMaybeLoadingResult))
             )
         },
         getDocumentHighlights: (textParameters: TextDocumentPositionParameters) =>
             proxySubscribable(from(codeintel.getDocumentHighlights(textParameters))),
         getHover: (textParameters: TextDocumentPositionParameters) =>
-            proxySubscribable(thenMaybeLoadingResult(from(codeintel.getHover(textParameters)))),
+            proxySubscribable(from(codeintel.getHover(textParameters).then(thenMaybeLoadingResult))),
     }
 }
 

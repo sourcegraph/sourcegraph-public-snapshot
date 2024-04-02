@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useRef, useState } from 'react'
+import { type FC, useCallback, useMemo, useRef, useState } from 'react'
 
 import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiOpenInNew, mdiThumbDown, mdiThumbUp } from '@mdi/js'
 import classNames from 'classnames'
@@ -23,6 +23,7 @@ import {
     PopoverContent,
     PopoverTrigger,
     Position,
+    ProductStatusBadge,
     Text,
     useSessionStorage,
 } from '@sourcegraph/wildcard'
@@ -219,6 +220,9 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
         textPrefix: '[Source: keyword search] ',
     })
 
+    const feedbackPromptInitialValue =
+        props.isSourcegraphDotCom && query !== undefined ? '<Feedback here>\n\nQuery: ' + query : undefined
+
     return (
         <aside
             role="region"
@@ -240,6 +244,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                             : null
                     }
                     onClose={() => setFeedbackModalOpen(false)}
+                    initialValue={feedbackPromptInitialValue}
                 />
             ) : null}
             {refFromCodySearch && codySearchInput.input && codySearchInput.translatedQuery === props.query ? (
@@ -312,7 +317,10 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                                 targetPadding={KEYWORD_SEARCH_POPOVER_PADDING}
                             >
                                 <div>
-                                    <H3>About keyword search</H3>
+                                    <H3 className="d-flex align-items-center">
+                                        About keyword search
+                                        <ProductStatusBadge status="beta" className="ml-2" />
+                                    </H3>
                                     <Text>
                                         The new search behavior ANDs terms together instead of searching literally by
                                         default. To search literally, wrap the query in quotes.

@@ -28,9 +28,33 @@ export const GlobalCodeMonitoringArea: React.FunctionComponent<React.PropsWithCh
     <div className="w-100">
         <Page>
             <Routes>
-                <Route path="" element={<CodeMonitoringPage {...outerProps} />} />
-                <Route path="new" element={<CreateCodeMonitorPage {...outerProps} />} />
-                <Route path=":id" element={<ManageCodeMonitorPage {...outerProps} />} />
+                <Route
+                    path=""
+                    element={
+                        <CodeMonitoringPage
+                            {...outerProps}
+                            telemetryRecorder={outerProps.platformContext.telemetryRecorder}
+                        />
+                    }
+                />
+                <Route
+                    path="new"
+                    element={
+                        <CreateCodeMonitorPage
+                            {...outerProps}
+                            telemetryRecorder={outerProps.platformContext.telemetryRecorder}
+                        />
+                    }
+                />
+                <Route
+                    path=":id"
+                    element={
+                        <ManageCodeMonitorPage
+                            {...outerProps}
+                            telemetryRecorder={outerProps.platformContext.telemetryRecorder}
+                        />
+                    }
+                />
             </Routes>
         </Page>
     </div>

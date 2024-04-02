@@ -28,7 +28,7 @@ var _ runtime.Service[Config] = (*Service)(nil)
 func (Service) Name() string    { return "pings" }
 func (Service) Version() string { return version.Version() }
 
-func (Service) Initialize(ctx context.Context, logger log.Logger, contract runtime.Contract, config Config) (background.CombinedRoutine, error) {
+func (Service) Initialize(ctx context.Context, logger log.Logger, contract runtime.Contract, config Config) (background.Routine, error) {
 	pubsubClient, err := pubsub.NewTopicClient(config.PubSub.ProjectID, config.PubSub.TopicID)
 	if err != nil {
 		return nil, errors.Errorf("create Pub/Sub client: %v", err)
@@ -48,7 +48,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 			pubsubClient: pubsubClient,
 		})
 
-	return background.CombinedRoutine{
+	return background.LIFOStopRoutine{
 		httpserver.NewFromAddr(
 			fmt.Sprintf(":%d", contract.Port),
 			&http.Server{

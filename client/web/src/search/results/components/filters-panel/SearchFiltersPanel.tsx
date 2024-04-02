@@ -1,11 +1,11 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import create from 'zustand'
 
 import { NewSearchFilters, useUrlFilters } from '@sourcegraph/branded'
 import { DeleteIcon } from '@sourcegraph/branded/src/search-ui/results/filters/components/Icons'
-import { Filter } from '@sourcegraph/shared/src/search/stream'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { Filter } from '@sourcegraph/shared/src/search/stream'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Button, Icon, Modal, Panel, useWindowSize } from '@sourcegraph/wildcard'
 
 import styles from './SearchFiltersPanel.module.scss'
@@ -24,6 +24,7 @@ export interface SearchFiltersPanelProps extends TelemetryProps {
     query: string
     filters: Filter[] | undefined
     withCountAllFilter: boolean
+    isFilterLoadingComplete: boolean
     className?: string
     onQueryChange: (nextQuery: string, updatedSearchURLQuery?: string) => void
 }
@@ -37,7 +38,8 @@ export interface SearchFiltersPanelProps extends TelemetryProps {
  * as it is, use consumer agnostic NewSearchFilters component instead.
  */
 export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
-    const { query, filters, withCountAllFilter, className, onQueryChange, telemetryService } = props
+    const { query, filters, withCountAllFilter, isFilterLoadingComplete, className, onQueryChange, telemetryService } =
+        props
 
     const { isOpen, setFiltersPanel } = useSearchFiltersStore()
     const uiMode = useSearchFiltersPanelUIMode()
@@ -45,8 +47,8 @@ export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
     if (uiMode === SearchFiltersPanelUIMode.Sidebar) {
         return (
             <Panel
-                defaultSize={250}
-                minSize={200}
+                defaultSize={300}
+                minSize={240}
                 position="left"
                 storageKey="filter-sidebar"
                 ariaLabel="Filters sidebar"
@@ -56,6 +58,7 @@ export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
                     query={query}
                     filters={filters}
                     withCountAllFilter={withCountAllFilter}
+                    isFilterLoadingComplete={isFilterLoadingComplete}
                     onQueryChange={onQueryChange}
                     telemetryService={telemetryService}
                 />
@@ -74,6 +77,7 @@ export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
                 query={query}
                 filters={filters}
                 withCountAllFilter={withCountAllFilter}
+                isFilterLoadingComplete={isFilterLoadingComplete}
                 onQueryChange={onQueryChange}
                 telemetryService={telemetryService}
             >

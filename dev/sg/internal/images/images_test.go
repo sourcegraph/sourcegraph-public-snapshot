@@ -130,11 +130,26 @@ func TestParseRawImgString(t *testing.T) {
 				digest:   "sha256:775a22b491a9956b725c12d72841adbcd9852964f171a942118f9aa8839e47d7",
 			},
 		},
+		{
+			"base",
+			// sometimes yaml image values are quoted
+			`"us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal/cadvisor:5.3.666@sha256:775a22b491a9956b725c12d72841adbcd9852964f171a942118f9aa8839e47d7"`,
+			&Repository{
+				registry: "us-central1-docker.pkg.dev",
+				org:      "sourcegraph-ci/rfc795-internal",
+				name:     "cadvisor",
+				tag:      "5.3.666",
+				digest:   "sha256:775a22b491a9956b725c12d72841adbcd9852964f171a942118f9aa8839e47d7",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := ParseRepository(tt.rawImg); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("parseImgString() got = %v, want %v", got, tt.want)
+			got, err := ParseRepository(tt.rawImg)
+			if err != nil {
+				t.Errorf("ParseRepository() error = %v", err)
+			} else if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ParseRepository() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

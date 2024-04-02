@@ -8,6 +8,7 @@ import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
 import { basename } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import type { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
+import { useSettings } from '@sourcegraph/shared/src/settings/settings'
 import {
     Card,
     CardHeader,
@@ -154,6 +155,8 @@ export interface FilePanelProps {
 }
 
 export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, className }) => {
+    const settings = useSettings()
+    const preferAbsoluteTimestamps = Boolean(settings?.['history.preferAbsoluteTimestamps'])
     const hasHistoryEntries = historyEntries && historyEntries.length > 0
     const fileHistoryByPath = useMemo(() => {
         const fileHistoryByPath: Record<string, TreeHistoryFields['history']['nodes'][number]['commit']> = {}
@@ -173,7 +176,14 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                     {hasHistoryEntries && (
                         <>
                             <th>Last commit message</th>
-                            <th className={styles.commitDateColumn}>Last commit date</th>
+                            <th
+                                className={classNames(
+                                    styles.commitDateColumn,
+                                    preferAbsoluteTimestamps && styles.absolute
+                                )}
+                            >
+                                Last commit date
+                            </th>
                         </>
                     )}
                 </CardHeader>
@@ -225,7 +235,11 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                                     </span>
                                 </td>
                                 <td className={classNames(styles.commitDate, 'text-muted')}>
-                                    <Timestamp noAbout={true} date={getCommitDate(fileHistoryByPath[entry.path])} />
+                                    <Timestamp
+                                        noAbout={true}
+                                        preferAbsolute={preferAbsoluteTimestamps}
+                                        date={getCommitDate(fileHistoryByPath[entry.path])}
+                                    />
                                 </td>
                             </>
                         )}

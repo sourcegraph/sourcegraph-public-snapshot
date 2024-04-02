@@ -10,10 +10,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func FromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) http.EventMatch {
+// FromMatchOptions controls the behaviour of FromMatch.
+type FromMatchOptions struct {
+	// MaxContentLineLength will truncate lines in ChunkMatch.Content if they
+	// are greater than MaxContentLineLength. If truncation happens
+	// ChunkMatch.ContentTruncated is set to true.
+	//
+	// If MaxContentLineLength <= 0 the feature is disabled.
+	MaxContentLineLength int
+
+	// ChunkMatches is true if you want to create ChunkMatches instead of
+	// LineMatches.
+	ChunkMatches bool
+}
+
+func FromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo, opts FromMatchOptions) http.EventMatch {
 	switch v := match.(type) {
 	case *result.FileMatch:
-		return fromFileMatch(v, repoCache, enableChunkMatches)
+		return fromFileMatch(v, repoCache, opts)
 	case *result.RepoMatch:
 		return fromRepository(v, repoCache)
 	case *result.CommitMatch:
@@ -25,11 +39,11 @@ func FromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo,
 	}
 }
 
-func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) http.EventMatch {
+func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo, opts FromMatchOptions) http.EventMatch {
 	if len(fm.Symbols) > 0 {
 		return fromSymbolMatch(fm, repoCache)
 	} else if fm.ChunkMatches.MatchCount() > 0 {
-		return fromContentMatch(fm, repoCache, enableChunkMatches)
+		return fromContentMatch(fm, repoCache, opts)
 	}
 	return fromPathMatch(fm, repoCache)
 }
@@ -61,19 +75,21 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 	return pathEvent
 }
 
-func fromChunkMatches(cms result.ChunkMatches) []http.ChunkMatch {
+func fromChunkMatches(cms result.ChunkMatches, opts FromMatchOptions) []http.ChunkMatch {
 	res := make([]http.ChunkMatch, 0, len(cms))
 	for _, cm := range cms {
-		res = append(res, fromChunkMatch(cm))
+		res = append(res, fromChunkMatch(cm, opts))
 	}
 	return res
 }
 
-func fromChunkMatch(cm result.ChunkMatch) http.ChunkMatch {
+func fromChunkMatch(cm result.ChunkMatch, opts FromMatchOptions) http.ChunkMatch {
+	content, truncated := truncateLines(cm.Content, opts.MaxContentLineLength)
 	return http.ChunkMatch{
-		Content:      cm.Content,
-		ContentStart: fromLocation(cm.ContentStart),
-		Ranges:       fromRanges(cm.Ranges),
+		Content:          content,
+		ContentStart:     fromLocation(cm.ContentStart),
+		Ranges:           fromRanges(cm.Ranges),
+		ContentTruncated: truncated,
 	}
 }
 
@@ -96,15 +112,15 @@ func fromRanges(rs result.Ranges) []http.Range {
 	return res
 }
 
-func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) *http.EventContentMatch {
+func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo, opts FromMatchOptions) *http.EventContentMatch {
 
 	var (
 		eventLineMatches  []http.EventLineMatch
 		eventChunkMatches []http.ChunkMatch
 	)
 
-	if enableChunkMatches {
-		eventChunkMatches = fromChunkMatches(fm.ChunkMatches)
+	if opts.ChunkMatches {
+		eventChunkMatches = fromChunkMatches(fm.ChunkMatches, opts)
 	} else {
 		lineMatches := fm.ChunkMatches.AsLineMatches()
 		eventLineMatches = make([]http.EventLineMatch, 0, len(lineMatches))

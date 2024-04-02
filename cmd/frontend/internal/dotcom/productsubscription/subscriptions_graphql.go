@@ -68,7 +68,7 @@ func productSubscriptionByDBID(ctx context.Context, logger log.Logger, db databa
 		return nil, err
 	}
 	// 🚨 SECURITY: Only site admins and the subscription account's user may view a product subscription.
-	grantReason, err := serviceAccountOrOwnerOrSiteAdmin(ctx, db, &v.UserID, false)
+	grantReason, err := hasRBACPermsOrOwnerOrSiteAdmin(ctx, db, &v.UserID, false)
 	if err != nil {
 		return nil, err
 	}
@@ -156,6 +156,23 @@ func (r *productSubscription) CodyGatewayAccess() graphqlbackend.CodyGatewayAcce
 	return codyGatewayAccessResolver{sub: r}
 }
 
+func NewErrActiveLicenseRequired() error {
+	return &ErrActiveLicenseRequired{error: errors.New("an active license is required")}
+}
+
+type ErrActiveLicenseRequired struct {
+	// Embed error to please GraphQL-go.
+	error
+}
+
+func (e ErrActiveLicenseRequired) Error() string {
+	return e.error.Error()
+}
+
+func (e ErrActiveLicenseRequired) Extensions() map[string]any {
+	return map[string]any{"code": "ErrActiveLicenseRequired"}
+}
+
 func (r *productSubscription) CurrentSourcegraphAccessToken(ctx context.Context) (*string, error) {
 	activeLicense, err := r.computeActiveLicense(ctx)
 	if err != nil {
@@ -163,7 +180,7 @@ func (r *productSubscription) CurrentSourcegraphAccessToken(ctx context.Context)
 	}
 
 	if activeLicense == nil {
-		return nil, errors.New("an active license is required")
+		return nil, NewErrActiveLicenseRequired()
 	}
 
 	if !activeLicense.AccessTokenEnabled {
@@ -246,7 +263,7 @@ func (r ProductSubscriptionLicensingResolver) CreateProductSubscription(ctx cont
 
 func (r ProductSubscriptionLicensingResolver) UpdateProductSubscription(ctx context.Context, args *graphqlbackend.UpdateProductSubscriptionArgs) (*graphqlbackend.EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins or the service accounts may update product subscriptions.
-	_, err := serviceAccountOrSiteAdmin(ctx, r.DB, true)
+	_, err := hasRBACPermsOrSiteAdmin(ctx, r.DB, true)
 	if err != nil {
 		return nil, err
 	}
@@ -301,7 +318,7 @@ func (r ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.C
 
 	// 🚨 SECURITY: Users may only list their own product subscriptions. Site admins may list
 	// licenses for all users, or for any other user.
-	grantReason, err := serviceAccountOrOwnerOrSiteAdmin(ctx, r.DB, accountUserID, false)
+	grantReason, err := hasRBACPermsOrOwnerOrSiteAdmin(ctx, r.DB, accountUserID, false)
 	if err != nil {
 		return nil, err
 	}

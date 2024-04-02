@@ -2,7 +2,6 @@
 package auth
 
 import (
-	"math/rand"
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
@@ -60,30 +59,6 @@ func composeMiddleware(middlewares ...*Middleware) *Middleware {
 // username formatting rules.
 func NormalizeUsername(name string) (string, error) {
 	return userpasswd.NormalizeUsername(name)
-}
-
-var mockAddRandomSuffix func(string) (string, error)
-
-// AddRandomSuffix appends a random 5-character lowercase alphabetical suffix (like "-lbwwt")
-// to the username to avoid collisions. If the username already ends with a dash, it is not
-// added again.
-func AddRandomSuffix(username string) (string, error) {
-	if mockAddRandomSuffix != nil {
-		return mockAddRandomSuffix(username)
-	}
-
-	b := make([]byte, 5)
-	_, err := rand.Read(b)
-	if err != nil {
-		return "", err
-	}
-	for i, c := range b {
-		b[i] = "abcdefghijklmnopqrstuvwxyz"[c%26]
-	}
-	if len(username) == 0 || username[len(username)-1] == '-' {
-		return username + string(b), nil
-	}
-	return username + "-" + string(b), nil
 }
 
 // Equivalent to `^\w(?:\w|[-.](?=\w))*-?$` which we have in the DB constraint, but without a lookahead

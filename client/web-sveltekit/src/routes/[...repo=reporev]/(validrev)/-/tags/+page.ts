@@ -1,24 +1,27 @@
-import type { PageLoad } from './$types'
-import { GitTagsQuery } from './page.gql'
+import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
+import { parseRepoRevision } from '$lib/shared'
 
-export const load: PageLoad = async ({ parent }) => {
-    const { resolvedRevision, graphqlClient } = await parent()
+import type { PageLoad } from './$types'
+import { TagsPage_TagsQuery } from './page.gql'
+
+export const load: PageLoad = ({ params }) => {
+    const client = getGraphQLClient()
+    const { repoName } = parseRepoRevision(params.repo)
 
     return {
-        tags: graphqlClient
-            .query({
-                query: GitTagsQuery,
-                variables: {
-                    repo: resolvedRevision.repo.id,
-                    first: 20,
-                    withBehindAhead: false,
-                },
+        tags: client
+            .query(TagsPage_TagsQuery, {
+                repoName,
+                first: 20,
+                withBehindAhead: false,
             })
-            .then(result => {
-                if (result.data.node?.__typename !== 'Repository') {
-                    throw new Error('Expected Repository')
-                }
-                return result.data.node.gitRefs
-            }),
+            .then(
+                mapOrThrow(result => {
+                    if (!result.data?.repository) {
+                        throw new Error('Unable to load repository data.')
+                    }
+                    return result.data.repository.gitRefs
+                })
+            ),
     }
 }

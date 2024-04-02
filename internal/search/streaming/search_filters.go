@@ -189,6 +189,9 @@ func (s *SearchFilters) Update(event SearchEvent) {
 	}
 
 	addTypeFilter := func(value, label string, count int32) {
+		if count == 0 {
+			return
+		}
 		s.filters.Add(value, label, count, FilterKindType)
 		s.filters.MarkImportant(value)
 	}
@@ -254,7 +257,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 func (s *SearchFilters) Compute() []*Filter {
 	s.Dirty = false
 	return s.filters.Compute(computeOpts{
-		MaxRepos: 40,
-		MaxOther: 40,
+		MaxRepos: 1000,
+		MaxOther: 1000,
 	})
 }

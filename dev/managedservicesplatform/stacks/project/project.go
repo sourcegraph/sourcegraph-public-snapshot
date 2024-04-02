@@ -36,6 +36,8 @@ var gcpServices = []string{
 	"cloudprofiler.googleapis.com",
 	"cloudscheduler.googleapis.com",
 	"sqladmin.googleapis.com",
+	"clouddeploy.googleapis.com",
+	"bigqueryconnection.googleapis.com",
 }
 
 const (
@@ -127,6 +129,12 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				for k, v := range input {
 					labels[sanitizeName(k)] = pointers.Ptr(v)
 				}
+
+				// For security purposes enable audit logging for production projects (external and internal)
+				if vars.Category.IsProduction() {
+					labels["collect-security-audit-logs"] = pointers.Ptr("true")
+				}
+
 				return &labels
 			}(vars.Labels),
 

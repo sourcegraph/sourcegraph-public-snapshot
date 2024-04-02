@@ -183,10 +183,6 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.soft_delete_orphan_repo_by_external_service_repos()\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    -- When an external service is soft or hard-deleted,\n    -- performs a clean up to soft-delete orphan repositories.\n    UPDATE\n        repo\n    SET\n        name = soft_deleted_repository_name(name),\n        deleted_at = transaction_timestamp()\n    WHERE\n      deleted_at IS NULL\n      AND NOT EXISTS (\n        SELECT FROM external_service_repos WHERE repo_id = repo.id\n      );\nEND;\n$function$\n"
     },
     {
-      "Name": "soft_delete_user_reference_on_external_service",
-      "Definition": "CREATE OR REPLACE FUNCTION public.soft_delete_user_reference_on_external_service()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    -- If a user is soft-deleted, delete every row that references that user\n    IF (OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL) THEN\n        UPDATE external_services\n        SET deleted_at = NOW()\n        WHERE namespace_user_id = OLD.id;\n    END IF;\n\n    RETURN OLD;\nEND;\n$function$\n"
-    },
-    {
       "Name": "soft_deleted_repository_name",
       "Definition": "CREATE OR REPLACE FUNCTION public.soft_deleted_repository_name(name text)\n RETURNS text\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    IF name LIKE 'DELETED-%' THEN\n        RETURN name;\n    ELSE\n        RETURN 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || name;\n    END IF;\nEND;\n$function$\n"
     },
@@ -1235,6 +1231,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "syntactic_scip_indexing_jobs_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "teams_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
@@ -1700,6 +1705,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE deleted_at IS NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "access_tokens_lookup_double_hash",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX access_tokens_lookup_double_hash ON access_tokens USING hash (digest(value_sha256, 'sha256'::text)) WHERE deleted_at IS NULL",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -6886,6 +6901,19 @@
           "Name": "log_contents",
           "Index": 10,
           "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "logs",
+          "Index": 20,
+          "TypeName": "json[]",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -12639,36 +12667,10 @@
           "Comment": ""
         },
         {
-          "Name": "org_id",
-          "Index": 5,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "repo_id",
           "Index": 2,
           "TypeName": "integer",
           "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "user_id",
-          "Index": 4,
-          "TypeName": "integer",
-          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -12708,26 +12710,6 @@
           "IndexDefinition": "CREATE INDEX external_service_repos_idx ON external_service_repos USING btree (external_service_id, repo_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
-        },
-        {
-          "Name": "external_service_repos_org_id_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX external_service_repos_org_id_idx ON external_service_repos USING btree (org_id) WHERE org_id IS NOT NULL",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "external_service_user_repos_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX external_service_user_repos_idx ON external_service_repos USING btree (user_id, repo_id) WHERE user_id IS NOT NULL",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -12739,25 +12721,11 @@
           "ConstraintDefinition": "FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE"
         },
         {
-          "Name": "external_service_repos_org_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "orgs",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE"
-        },
-        {
           "Name": "external_service_repos_repo_id_fkey",
           "ConstraintType": "f",
           "RefTableName": "repo",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE"
-        },
-        {
-          "Name": "external_service_repos_user_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "users",
-          "IsDeferrable": true,
-          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE"
         }
       ],
       "Triggers": []
@@ -13237,32 +13205,6 @@
           "Comment": ""
         },
         {
-          "Name": "namespace_org_id",
-          "Index": 14,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "namespace_user_id",
-          "Index": 10,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "next_sync_at",
           "Index": 9,
           "TypeName": "timestamp with time zone",
@@ -13327,26 +13269,6 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "external_services_unique_kind_org_id",
-          "IsPrimaryKey": false,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX external_services_unique_kind_org_id ON external_services USING btree (kind, namespace_org_id) WHERE deleted_at IS NULL AND namespace_user_id IS NULL AND namespace_org_id IS NOT NULL",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "external_services_unique_kind_user_id",
-          "IsPrimaryKey": false,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX external_services_unique_kind_user_id ON external_services USING btree (kind, namespace_user_id) WHERE deleted_at IS NULL AND namespace_org_id IS NULL AND namespace_user_id IS NOT NULL",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
           "Name": "kind_cloud_default",
           "IsPrimaryKey": false,
           "IsUnique": true,
@@ -13363,26 +13285,6 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX external_services_has_webhooks_idx ON external_services USING btree (has_webhooks)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "external_services_namespace_org_id_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX external_services_namespace_org_id_idx ON external_services USING btree (namespace_org_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "external_services_namespace_user_id_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX external_services_namespace_user_id_idx ON external_services USING btree (namespace_user_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -13415,27 +13317,6 @@
           "RefTableName": "users",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (last_updater_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE"
-        },
-        {
-          "Name": "external_services_max_1_namespace",
-          "ConstraintType": "c",
-          "RefTableName": "",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "CHECK (namespace_user_id IS NULL AND namespace_org_id IS NULL OR (namespace_user_id IS NULL) \u003c\u003e (namespace_org_id IS NULL))"
-        },
-        {
-          "Name": "external_services_namepspace_user_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "users",
-          "IsDeferrable": true,
-          "ConstraintDefinition": "FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE"
-        },
-        {
-          "Name": "external_services_namespace_org_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "orgs",
-          "IsDeferrable": true,
-          "ConstraintDefinition": "FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE"
         }
       ],
       "Triggers": []
@@ -13579,13 +13460,6 @@
         }
       ],
       "Constraints": [
-        {
-          "Name": "feature_flag_overrides_flag_name_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "feature_flags",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (flag_name) REFERENCES feature_flags(flag_name) ON UPDATE CASCADE ON DELETE CASCADE"
-        },
         {
           "Name": "feature_flag_overrides_has_org_or_user_id",
           "ConstraintType": "c",
@@ -15677,6 +15551,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "Whether or not this configuration policy affects data retention rules."
+        },
+        {
+          "Name": "syntactic_indexing_enabled",
+          "Index": 17,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
         },
         {
           "Name": "type",
@@ -26411,6 +26298,354 @@
       "Triggers": []
     },
     {
+      "Name": "syntactic_scip_indexing_jobs",
+      "Comment": "Stores metadata about a code intel syntactic index job.",
+      "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 16,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "commit",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A 40-char revhash. Note that this commit may not be resolvable in the future."
+        },
+        {
+          "Name": "commit_last_checked_at",
+          "Index": 13,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "enqueuer_user_id",
+          "Index": 18,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "ID of the user who scheduled this index. Records with a non-NULL user ID are prioritised over the rest"
+        },
+        {
+          "Name": "execution_logs",
+          "Index": 12,
+          "TypeName": "json[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "An array of [log entries](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/internal/workerutil/store.go#L48:6) (encoded as JSON) from the most recent execution."
+        },
+        {
+          "Name": "failure_message",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "finished_at",
+          "Index": 7,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('syntactic_scip_indexing_jobs_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "last_heartbeat_at",
+          "Index": 15,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_failures",
+          "Index": 11,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_resets",
+          "Index": 10,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "process_after",
+          "Index": 9,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "queued_at",
+          "Index": 3,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repository_id",
+          "Index": 8,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "should_reindex",
+          "Index": 17,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "started_at",
+          "Index": 6,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "state",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "'queued'::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "worker_hostname",
+          "Index": 14,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "syntactic_scip_indexing_jobs_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX syntactic_scip_indexing_jobs_pkey ON syntactic_scip_indexing_jobs USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "syntactic_scip_indexing_jobs_dequeue_order_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX syntactic_scip_indexing_jobs_dequeue_order_idx ON syntactic_scip_indexing_jobs USING btree ((enqueuer_user_id \u003e 0) DESC, queued_at DESC, id) WHERE state = 'queued'::text OR state = 'errored'::text",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "syntactic_scip_indexing_jobs_queued_at_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX syntactic_scip_indexing_jobs_queued_at_id ON syntactic_scip_indexing_jobs USING btree (queued_at DESC, id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "syntactic_scip_indexing_jobs_repository_id_commit",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX syntactic_scip_indexing_jobs_repository_id_commit ON syntactic_scip_indexing_jobs USING btree (repository_id, commit)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "syntactic_scip_indexing_jobs_state",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX syntactic_scip_indexing_jobs_state ON syntactic_scip_indexing_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "syntactic_scip_indexing_jobs_commit_valid_chars",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (commit ~ '^[a-f0-9]{40}$'::text)"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "syntactic_scip_last_index_scan",
+      "Comment": "Tracks the last time repository was checked for syntactic indexing job scheduling.",
+      "Columns": [
+        {
+          "Name": "last_index_scan_at",
+          "Index": 2,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The last time uploads of this repository were considered for syntactic indexing job scheduling."
+        },
+        {
+          "Name": "repository_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "syntactic_scip_last_index_scan_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX syntactic_scip_last_index_scan_pkey ON syntactic_scip_last_index_scan USING btree (repository_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (repository_id)"
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
       "Name": "team_members",
       "Comment": "",
       "Columns": [
@@ -28276,19 +28511,6 @@
           "Comment": ""
         },
         {
-          "Name": "searchable",
-          "Index": 19,
-          "TypeName": "boolean",
-          "IsNullable": false,
-          "Default": "true",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "site_admin",
           "Index": 12,
           "TypeName": "boolean",
@@ -28414,10 +28636,6 @@
         {
           "Name": "trig_invalidate_session_on_password_change",
           "Definition": "CREATE TRIGGER trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE FUNCTION invalidate_session_for_userid_on_password_change()"
-        },
-        {
-          "Name": "trig_soft_delete_user_reference_on_external_service",
-          "Definition": "CREATE TRIGGER trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE FUNCTION soft_delete_user_reference_on_external_service()"
         }
       ]
     },
@@ -29609,6 +29827,10 @@
     {
       "Name": "site_config",
       "Definition": " SELECT global_state.site_id,\n    global_state.initialized\n   FROM global_state;"
+    },
+    {
+      "Name": "syntactic_scip_indexing_jobs_with_repository_name",
+      "Definition": " SELECT u.id,\n    u.commit,\n    u.queued_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.process_after,\n    u.num_resets,\n    u.num_failures,\n    u.execution_logs,\n    u.should_reindex,\n    u.enqueuer_user_id,\n    r.name AS repository_name\n   FROM (syntactic_scip_indexing_jobs u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);"
     },
     {
       "Name": "tracking_changeset_specs_and_changesets",

@@ -347,6 +347,17 @@ const openingParen = scanToken(/\(/, (_input, range): OpeningParen => ({ type: '
 
 const closingParen = scanToken(/\)/, (_input, range): ClosingParen => ({ type: 'closingParen', range }))
 
+const scanBalancedParens: Scanner<Pattern> = (input, start) => {
+    const scanner = scanToken(/\(\s*\)/, (value, range): Literal => ({ type: 'literal', value, quoted: false, range }))
+    const result = scanner(input, start)
+    if (result.type === 'success') {
+        // Hack: hard code '()' as this is how the backend interprets parenthesis without content. This only affects
+        // the tooltip.
+        return createPattern('()', result.term.range, PatternKind.Literal, result.term.quoted, result.term.quotes)
+    }
+    return result
+}
+
 /**
  * Returns a {@link Scanner} that succeeds if `scanTerm` succeeds,
  * followed by `scanNext`.
@@ -529,7 +540,7 @@ const scanKeyword = (query: string): ScanResult<Token[]> => {
         toPatternResult(quoted('"'), PatternKind.Literal),
         toPatternResult(quoted("'"), PatternKind.Literal),
         toPatternResult(quoted('/'), PatternKind.Regexp),
-        toPatternResult(scanBalancedLiteral, PatternKind.Literal),
+        scanBalancedParens,
     ]
 
     const scan = zeroOrMore(

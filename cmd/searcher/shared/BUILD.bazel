@@ -16,7 +16,6 @@ go_library(
         "//internal/debugserver",
         "//internal/env",
         "//internal/gitserver",
-        "//internal/gitserver/gitdomain",
         "//internal/goroutine",
         "//internal/grpc",
         "//internal/grpc/defaults",

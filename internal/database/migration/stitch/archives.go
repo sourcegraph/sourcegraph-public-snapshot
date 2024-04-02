@@ -172,7 +172,7 @@ func (s *LocalMigrationsReader) load(path string) error {
 		}
 		s.m[s.currentVersion] = contents
 	} else {
-		fmt.Printf("WARNING: a tarball for %s already exists, constant is out of date\n.", s.currentVersion)
+		fmt.Printf("WARNING: a tarball for %s already exists, constant is out of date\n", s.currentVersion)
 	}
 
 	return nil

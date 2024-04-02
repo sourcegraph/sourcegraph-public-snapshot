@@ -18,12 +18,11 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -35,10 +34,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-// BeforeCreateExternalService (if set) is invoked as a hook prior to creating a
-// new external service in the database.
-var BeforeCreateExternalService func(context.Context, ExternalServiceStore, *types.ExternalService) error
 
 type ExternalServiceStore interface {
 	// Count counts all external services that satisfy the options (ignoring limit and offset).
@@ -451,7 +446,7 @@ func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnec
 		parseRepo = baseURL.Parse
 	}
 
-	if !envvar.SourcegraphDotComMode() && c.MakeReposPublicOnDotCom {
+	if !dotcom.SourcegraphDotComMode() && c.MakeReposPublicOnDotCom {
 		return errors.Errorf(`"makeReposPublicOnDotCom" can only be set when running on Sourcegraph.com`)
 	}
 
@@ -571,7 +566,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	// 🚨 SECURITY: For all code host connections on Sourcegraph.com,
 	// we always want to disable repository permissions to prevent
 	// permission syncing from trying to sync permissions from public code.
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		rawConfig, err = disablePermsSyncingForExternalService(rawConfig)
 		if err != nil {
 			return err
@@ -582,13 +577,6 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 	es.CreatedAt = timeutil.Now()
 	es.UpdatedAt = es.CreatedAt
-
-	// Prior to saving the record, run a validation hook.
-	if BeforeCreateExternalService != nil {
-		if err = BeforeCreateExternalService(ctx, NewDBWith(e.logger, e.Store).ExternalServices(), es); err != nil {
-			return err
-		}
-	}
 
 	// Ensure the calculated fields in the external service are up to date.
 	e.recalculateFields(es, string(normalized))
@@ -679,7 +667,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		// 🚨 SECURITY: For all code host connections on Sourcegraph.com,
 		// we always want to disable repository permissions to prevent
 		// permission syncing from trying to sync permissions from public code.
-		if envvar.SourcegraphDotComMode() {
+		if dotcom.SourcegraphDotComMode() {
 			rawConfig, err = disablePermsSyncingForExternalService(rawConfig)
 			if err != nil {
 				return err
@@ -937,7 +925,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		// 🚨 SECURITY: For all code host connections on Sourcegraph.com,
 		// we always want to disable repository permissions to prevent
 		// permission syncing from trying to sync permissions from public code.
-		if envvar.SourcegraphDotComMode() {
+		if dotcom.SourcegraphDotComMode() {
 			unredactedConfig, err = disablePermsSyncingForExternalService(unredactedConfig)
 			if err != nil {
 				return err
@@ -962,7 +950,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	}
 
 	if update.Config != nil {
-		unrestricted := calcUnrestricted(string(normalized), envvar.SourcegraphDotComMode(), globals.PermissionsUserMapping().Enabled)
+		unrestricted := calcUnrestricted(string(normalized), dotcom.SourcegraphDotComMode(), conf.PermissionsUserMapping().Enabled)
 
 		updates = append(updates,
 			sqlf.Sprintf(
@@ -1711,7 +1699,9 @@ WHERE EXISTS(
 // on an external service.
 //
 // isDotComMode and permissionsUserMappingEnabled can be passed via
-// envvar.SourcegraphDotComMode() and globals.PermissionsUserMapping().Enabled
+//
+//	dotcom.SourcegraphDotComMode() and globals.PermissionsUserMapping().Enabled
+//
 // respectively.
 func calcUnrestricted(config string, isDotComMode bool, permissionsUserMappingEnabled bool) bool {
 	if isDotComMode {
@@ -1747,7 +1737,7 @@ func calcUnrestricted(config string, isDotComMode bool, permissionsUserMappingEn
 // calculated depending on the external service configuration, namely
 // `Unrestricted` and `HasWebhooks`.
 func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) {
-	es.Unrestricted = calcUnrestricted(rawConfig, envvar.SourcegraphDotComMode(), globals.PermissionsUserMapping().Enabled)
+	es.Unrestricted = calcUnrestricted(rawConfig, dotcom.SourcegraphDotComMode(), conf.PermissionsUserMapping().Enabled)
 
 	hasWebhooks := false
 	cfg, err := extsvc.ParseConfig(es.Kind, rawConfig)

@@ -374,8 +374,7 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
             )}
 
             <Text className={classNames(validationError && 'text-muted', styles.exhaustiveSearchText)}>
-                Search jobs exhaustively return all matches of a query. Results can be downloaded as JSON Lines text
-                file.
+                Search jobs exhaustively returns all matches of a query. Results can be downloaded in JSON Lines format.
             </Text>
 
             {error && <ErrorAlert error={error} className="mt-3" />}

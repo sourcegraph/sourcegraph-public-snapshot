@@ -118,7 +118,7 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 		Checks: []*dependency{
 			{
 				Name:  "go",
-				Check: checkGoVersion,
+				Check: checkAction(check.Go),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					if err := forceASDFPluginAdd(ctx, "golang", "https://github.com/kennyp/asdf-golang.git"); err != nil {
 						return err
@@ -128,7 +128,7 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 			},
 			{
 				Name:  "python",
-				Check: checkPythonVersion,
+				Check: checkAction(check.Python),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					if err := forceASDFPluginAdd(ctx, "python", ""); err != nil {
 						return err
@@ -139,7 +139,7 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 			{
 				Name:        "pnpm",
 				Description: "Run `asdf plugin add pnpm && asdf install pnpm`",
-				Check:       checkPnpmVersion,
+				Check:       checkAction(check.PNPM),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					if err := forceASDFPluginAdd(ctx, "pnpm", ""); err != nil {
 						return err
@@ -149,7 +149,7 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 			},
 			{
 				Name:  "node",
-				Check: checkNodeVersion,
+				Check: checkAction(check.Node),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					if err := forceASDFPluginAdd(ctx, "nodejs", "https://github.com/asdf-vm/asdf-nodejs.git"); err != nil {
 						return err
@@ -159,7 +159,7 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 			},
 			{
 				Name:  "rust",
-				Check: checkRustVersion,
+				Check: checkAction(check.Rust),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					if err := forceASDFPluginAdd(ctx, "rust", "https://github.com/asdf-community/asdf-rust.git"); err != nil {
 						return err
@@ -173,10 +173,10 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
 					// If any of these fail with ErrNotInPath, we may need to regenerate
 					// all our asdf shims.
-					for _, c := range []check.CheckAction[CheckArgs]{
-						checkGoVersion, checkPnpmVersion, checkNodeVersion, checkRustVersion, checkPythonVersion,
+					for _, c := range []check.CheckFunc{
+						check.Go, check.PNPM, check.Node, check.Rust, check.Python,
 					} {
-						if err := c(ctx, out, args); err != nil {
+						if err := c(ctx); err != nil {
 							return errors.Wrap(err, "we may need to regenerate asdf shims")
 						}
 					}

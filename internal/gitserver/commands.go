@@ -20,8 +20,6 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/golang/groupcache/lru"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -34,13 +32,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -403,7 +398,7 @@ func (c *clientImplementor) DiffPath(ctx context.Context, repo api.RepoName, sou
 	if hasAccess, err := authz.FilterActorPath(ctx, c.subRepoPermsChecker, a, repo, path); err != nil {
 		return nil, err
 	} else if !hasAccess {
-		return nil, os.ErrNotExist
+		return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
 	}
 	args := []string{"diff", sourceCommit, targetCommit, "--", path}
 	reader, err := c.gitCommand(repo, args...).StdoutReader(ctx)
@@ -438,12 +433,6 @@ func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, 
 		},
 	})
 	defer endObservation(1, observation.Args{})
-
-	// Ensure commits exist to provide a better error message
-	_, err = c.ResolveRevisions(ctx, repo, []protocol.RevisionSpecifier{{RevSpec: string(commitA)}, {RevSpec: string(commitB)}})
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to lookup revisions for git diff on %s between %s and %s", repo, commitA, commitB)
-	}
 
 	command := c.gitCommand(repo, "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
 	out, err := command.Output(ctx)
@@ -808,17 +797,15 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 
 	req := &proto.BlameRequest{
 		RepoName:         string(repo),
+		Commit:           string(opt.NewestCommit),
 		Path:             path,
 		IgnoreWhitespace: opt.IgnoreWhitespace,
 	}
-	if opt.NewestCommit != "" {
-		req.Commit = pointers.Ptr(string(opt.NewestCommit))
-	}
-	if opt.StartLine != 0 {
-		req.StartLine = pointers.Ptr(uint32(opt.StartLine))
-	}
-	if opt.EndLine != 0 {
-		req.EndLine = pointers.Ptr(uint32(opt.EndLine))
+	if opt.Range != nil {
+		req.Range = &proto.BlameRange{
+			StartLine: uint32(opt.Range.StartLine),
+			EndLine:   uint32(opt.Range.EndLine),
+		}
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -833,18 +820,40 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 	// ie. permission denied errors or invalid git command.
 	firstHunkResp, err := cli.Recv()
 	if err != nil {
-		cancel()
-		endObservation(1, observation.Args{})
+		s, ok := status.FromError(err)
+		if ok {
+			if s.Code() == codes.PermissionDenied {
+				cancel()
+				endObservation(1, observation.Args{})
+				return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
+			}
 
-		if s, ok := status.FromError(err); ok && s.Code() == codes.PermissionDenied {
-			return nil, os.ErrNotExist
+			if s.Code() == codes.NotFound {
+				for _, d := range s.Details() {
+					switch d.(type) {
+					case *proto.FileNotFoundPayload:
+						cancel()
+						endObservation(1, observation.Args{})
+						return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
+					}
+				}
+			}
 		}
 
-		return nil, err
+		if err != io.EOF {
+			cancel()
+			endObservation(1, observation.Args{})
+			return nil, err
+		}
 	}
 
+	var hunk *proto.BlameHunk
+	if firstHunkResp != nil {
+		hunk = firstHunkResp.GetHunk()
+	}
 	return &grpcBlameHunkReader{
-		firstHunk:      firstHunkResp.GetHunk(),
+		firstHunk:      hunk,
+		firstHunkErr:   err,
 		c:              cli,
 		cancel:         cancel,
 		endObservation: func() { endObservation(1, observation.Args{}) },
@@ -853,6 +862,7 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 
 type grpcBlameHunkReader struct {
 	firstHunk      *proto.BlameHunk
+	firstHunkErr   error
 	firstHunkRead  bool
 	c              proto.GitserverService_BlameClient
 	cancel         context.CancelFunc
@@ -862,6 +872,9 @@ type grpcBlameHunkReader struct {
 func (r *grpcBlameHunkReader) Read() (_ *gitdomain.Hunk, err error) {
 	if !r.firstHunkRead {
 		r.firstHunkRead = true
+		if r.firstHunkErr != nil {
+			return nil, r.firstHunkErr
+		}
 		return gitdomain.HunkFromBlameProto(r.firstHunk), nil
 	}
 	p, err := r.c.Recv()
@@ -883,11 +896,6 @@ type ResolveRevisionOptions struct {
 	NoEnsureRevision bool // do not try to fetch from remote if revision doesn't exist locally
 }
 
-var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_resolve_revision_total",
-	Help: "The number of times we call internal/vcs/git/ResolveRevision",
-}, []string{"ensure_revision"})
-
 // ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
 // used.
 //
@@ -897,12 +905,6 @@ var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 // * Empty repository: gitdomain.RevisionNotFoundError
 // * Other unexpected errors.
 func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (_ api.CommitID, err error) {
-	labelEnsureRevisionValue := "true"
-	if opt.NoEnsureRevision {
-		labelEnsureRevisionValue = "false"
-	}
-	resolveRevisionCounter.WithLabelValues(labelEnsureRevisionValue).Inc()
-
 	ctx, _, endObservation := c.operations.resolveRevision.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
@@ -913,58 +915,24 @@ func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoNa
 	})
 	defer endObservation(1, observation.Args{})
 
-	if err := checkSpecArgSafety(spec); err != nil {
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
 		return "", err
 	}
-	if spec == "" {
-		spec = "HEAD"
+
+	req := &proto.ResolveRevisionRequest{
+		RepoName: string(repo),
+		RevSpec:  []byte(spec),
 	}
-	if spec != "HEAD" {
-		// "git rev-parse HEAD^0" is slower than "git rev-parse HEAD"
-		// since it checks that the resolved git object exists. We can
-		// assume it exists for HEAD, but for other commits we should
-		// check.
-		spec = spec + "^0"
+	if !opt.NoEnsureRevision {
+		req.EnsureRevision = pointers.Ptr(true)
 	}
-
-	cmd := c.gitCommand(repo, "rev-parse", spec)
-	cmd.SetEnsureRevision(spec)
-
-	// We don't ever need to ensure that HEAD is in git-server.
-	// HEAD is always there once a repo is cloned
-	// (except empty repos, but we don't need to ensure revision on those).
-	if opt.NoEnsureRevision || spec == "HEAD" {
-		cmd.SetEnsureRevision("")
-	}
-
-	return runRevParse(ctx, cmd, spec)
-}
-
-// runRevParse sends the git rev-parse command to gitserver. It interprets
-// missing revision responses and converts them into RevisionNotFoundError.
-func runRevParse(ctx context.Context, cmd GitCommand, spec string) (api.CommitID, error) {
-	stdout, stderr, err := cmd.DividedOutput(ctx)
+	res, err := client.ResolveRevision(ctx, req)
 	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
-			return "", err
-		}
-		if bytes.Contains(stderr, []byte("unknown revision")) {
-			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
-		}
-		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args(), stderr))
+		return "", err
 	}
-	commit := api.CommitID(bytes.TrimSpace(stdout))
-	if !gitdomain.IsAbsoluteRevision(string(commit)) {
-		if commit == "HEAD" {
-			// We don't verify the existence of HEAD (see above comments), but
-			// if HEAD doesn't point to anything git just returns `HEAD` as the
-			// output of rev-parse. An example where this occurs is an empty
-			// repository.
-			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
-		}
-		return "", &gitdomain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo()}
-	}
-	return commit, nil
+
+	return api.CommitID(res.GetCommitSha()), nil
 }
 
 // LsFiles returns the output of `git ls-files`.
@@ -1339,7 +1307,7 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 				cancel()
 				err = firstRespErr
 				endObservation(1, observation.Args{})
-				return nil, os.ErrNotExist
+				return nil, &os.PathError{Op: "open", Path: req.GetPath(), Err: os.ErrNotExist}
 			}
 			if s.Code() == codes.NotFound {
 				for _, d := range s.Details() {
@@ -1348,10 +1316,16 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 						cancel()
 						err = firstRespErr
 						endObservation(1, observation.Args{})
-						return nil, os.ErrNotExist
+						return nil, &os.PathError{Op: "open", Path: req.GetPath(), Err: os.ErrNotExist}
 					}
 				}
 			}
+		}
+		if errors.HasType(firstRespErr, &gitdomain.RevisionNotFoundError{}) {
+			cancel()
+			err = firstRespErr
+			endObservation(1, observation.Args{})
+			return nil, err
 		}
 	}
 
@@ -1437,68 +1411,10 @@ type CommitsOptions struct {
 
 	Follow bool // follow the history of the path beyond renames (works only for a single path)
 
-	// When true we opt out of attempting to fetch missing revisions
-	NoEnsureRevision bool
-
 	// When true return the names of the files changed in the commit
 	NameOnly bool
 }
 
-var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
-
-// getCommit returns the commit with the given id.
-func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id api.CommitID) (_ *gitdomain.Commit, err error) {
-	if honey.Enabled() && recordGetCommitQueries {
-		defer func() {
-			ev := honey.NewEvent("getCommit")
-			ev.SetSampleRate(10) // 1 in 10
-			ev.AddField("repo", repo)
-			ev.AddField("commit", id)
-			ev.AddField("actor", actor.FromContext(ctx).UIDString())
-
-			q, _ := ctx.Value(trace.GraphQLQueryKey).(string)
-			ev.AddField("query", q)
-
-			if err != nil {
-				ev.AddField("error", err.Error())
-			}
-
-			_ = ev.Send()
-		}()
-	}
-
-	if err := checkSpecArgSafety(string(id)); err != nil {
-		return nil, err
-	}
-
-	commitOptions := CommitsOptions{
-		Range:            string(id),
-		N:                1,
-		NoEnsureRevision: true,
-	}
-	commitOptions = addNameOnly(commitOptions, c.subRepoPermsChecker)
-
-	commits, err := c.commitLog(ctx, repo, commitOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(commits) == 0 {
-		return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(id)}
-	}
-	if len(commits) != 1 {
-		return nil, errors.Errorf("git log: expected 1 commit, got %d", len(commits))
-	}
-
-	return commits[0], nil
-}
-
-// GetCommit returns the commit with the given commit ID, or RevisionNotFoundError if no such commit
-// exists.
-//
-// The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
-// needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
-// the repository or if the commit must be fetched from the remote.
 func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID) (_ *gitdomain.Commit, err error) {
 	ctx, _, endObservation := c.operations.getCommit.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
@@ -1509,7 +1425,20 @@ func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id
 	})
 	defer endObservation(1, observation.Args{})
 
-	return c.getCommit(ctx, repo, id)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := client.GetCommit(ctx, &proto.GetCommitRequest{
+		RepoName: string(repo),
+		Commit:   string(id),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return gitdomain.CommitFromProto(res.GetCommit()), nil
 }
 
 // Commits returns all commits matching the options.
@@ -1527,7 +1456,21 @@ func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt 
 	if err := checkSpecArgSafety(opt.Range); err != nil {
 		return nil, err
 	}
-	return c.commitLog(ctx, repo, opt)
+
+	wrappedCommits, err := c.getWrappedCommits(ctx, repo, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	filtered, err := filterCommits(ctx, c.subRepoPermsChecker, wrappedCommits, repo)
+	if err != nil {
+		return nil, errors.Wrap(err, "filtering commits")
+	}
+
+	if needMoreCommits(filtered, wrappedCommits, opt, c.subRepoPermsChecker) {
+		return c.getMoreCommits(ctx, repo, opt, filtered)
+	}
+	return filtered, err
 }
 
 func filterCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, commits []*wrappedCommit, repoName api.RepoName) ([]*gitdomain.Commit, error) {
@@ -1690,7 +1633,7 @@ func (c *clientImplementor) HasCommitAfter(ctx context.Context, repo api.RepoNam
 }
 
 func (c *clientImplementor) hasCommitAfterWithFiltering(ctx context.Context, repo api.RepoName, date, revspec string) (bool, error) {
-	if commits, err := c.Commits(ctx, repo, CommitsOptions{After: date, Range: revspec, NoEnsureRevision: true}); err != nil {
+	if commits, err := c.Commits(ctx, repo, CommitsOptions{After: date, Range: revspec}); err != nil {
 		return false, err
 	} else if len(commits) > 0 {
 		return true, nil
@@ -1702,26 +1645,6 @@ func isBadObjectErr(output, obj string) bool {
 	return output == "fatal: bad object "+obj
 }
 
-// commitLog returns a list of commits.
-//
-// The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
-func (c *clientImplementor) commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error) {
-	wrappedCommits, err := c.getWrappedCommits(ctx, repo, opt)
-	if err != nil {
-		return nil, err
-	}
-
-	filtered, err := filterCommits(ctx, c.subRepoPermsChecker, wrappedCommits, repo)
-	if err != nil {
-		return nil, errors.Wrap(err, "filtering commits")
-	}
-
-	if needMoreCommits(filtered, wrappedCommits, opt, c.subRepoPermsChecker) {
-		return c.getMoreCommits(ctx, repo, opt, filtered)
-	}
-	return filtered, err
-}
-
 func (c *clientImplementor) getWrappedCommits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*wrappedCommit, error) {
 	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt)
 	if err != nil {
@@ -1729,9 +1652,6 @@ func (c *clientImplementor) getWrappedCommits(ctx context.Context, repo api.Repo
 	}
 
 	cmd := c.gitCommand(repo, args...)
-	if !opt.NoEnsureRevision {
-		cmd.SetEnsureRevision(opt.Range)
-	}
 	wrappedCommits, err := runCommitLog(ctx, cmd, opt)
 	if err != nil {
 		return nil, err
@@ -1766,7 +1686,7 @@ func (c *clientImplementor) getMoreCommits(ctx context.Context, repo api.RepoNam
 	const maxIterations = 5
 
 	totalCommits := make([]*gitdomain.Commit, 0, opt.N)
-	for i := 0; i < maxIterations; i++ {
+	for range maxIterations {
 		if uint(len(totalCommits)) == opt.N {
 			break
 		}
@@ -2212,13 +2132,29 @@ const (
 	ArchiveFormatTar ArchiveFormat = "tar"
 )
 
-// ArchiveReader streams back the file contents of an archived git repo.
-func (c *clientImplementor) ArchiveReader(
-	ctx context.Context,
-	repo api.RepoName,
-	options ArchiveOptions,
-) (_ io.ReadCloser, err error) {
-	// TODO: this does not capture the lifetime of the request because we return a reader
+func ArchiveFormatFromProto(pf proto.ArchiveFormat) ArchiveFormat {
+	switch pf {
+	case proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP:
+		return ArchiveFormatZip
+	case proto.ArchiveFormat_ARCHIVE_FORMAT_TAR:
+		return ArchiveFormatTar
+	default:
+		return ""
+	}
+}
+
+func (f ArchiveFormat) ToProto() proto.ArchiveFormat {
+	switch f {
+	case ArchiveFormatZip:
+		return proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP
+	case ArchiveFormatTar:
+		return proto.ArchiveFormat_ARCHIVE_FORMAT_TAR
+	default:
+		return proto.ArchiveFormat_ARCHIVE_FORMAT_UNSPECIFIED
+	}
+}
+
+func (c *clientImplementor) ArchiveReader(ctx context.Context, repo api.RepoName, options ArchiveOptions) (_ io.ReadCloser, err error) {
 	ctx, _, endObservation := c.operations.archiveReader.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: append(
@@ -2226,101 +2162,85 @@ func (c *clientImplementor) ArchiveReader(
 			options.Attrs()...,
 		),
 	})
-	defer endObservation(1, observation.Args{})
-
-	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		if enabled, err := authz.SubRepoEnabledForRepo(ctx, c.subRepoPermsChecker, repo); err != nil {
-			return nil, errors.Wrap(err, "sub-repo permissions check:")
-		} else if enabled {
-			return nil, errors.New("archiveReader invoked for a repo with sub-repo permissions")
-		}
-	}
-
-	if ClientMocks.Archive != nil {
-		return ClientMocks.Archive(ctx, repo, options)
-	}
-
-	// Check that ctx is not expired.
-	if err := ctx.Err(); err != nil {
-		deadlineExceededCounter.Inc()
-		return nil, err
-	}
 
 	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
+		endObservation(1, observation.Args{})
 		return nil, err
 	}
 
-	req := options.ToProto(string(repo)) // HACK: ArchiveOptions doesn't have a repository here, so we have to add it ourselves.
+	req := options.ToProto(string(repo))
 
 	ctx, cancel := context.WithCancel(ctx)
-
-	stream, err := client.Archive(ctx, req)
+	cli, err := client.Archive(ctx, req)
 	if err != nil {
 		cancel()
+		endObservation(1, observation.Args{})
 		return nil, err
 	}
 
-	// first message from the gRPC stream needs to be read to check for errors before continuing
-	// to read the rest of the stream. If the first message is an error, we cancel the stream
-	// and return the error.
-	//
-	// This is necessary to provide parity between the REST and gRPC implementations of
-	// ArchiveReader. Users of cli.ArchiveReader may assume error handling occurs immediately,
-	// as is the case with the HTTP implementation where errors are returned as soon as the
-	// function returns. gRPC is asynchronous, so we have to start consuming messages from
-	// the stream to see any errors from the server. Reading the first message ensures we
-	// handle any errors synchronously, similar to the HTTP implementation.
-
-	firstMessage, firstError := stream.Recv()
-	if firstError != nil {
-		// Hack: The ArchiveReader.Read() implementation handles surfacing the
-		// any "revision not found" errors returned from the invoked git binary.
-		//
-		// In order to maintainparity with the HTTP API, we return this error in the ArchiveReader.Read() method
-		// instead of returning it immediately.
-
-		// We return early only if this isn't a revision not found error.
-
-		err := firstError
-
-		var cse *CommandStatusError
-		if !errors.As(err, &cse) || !isRevisionNotFound(cse.Stderr) {
+	// We start by reading the first message to early-exit on potential errors,
+	// ie. revision not found errors or invalid git command.
+	firstMessage, firstErr := cli.Recv()
+	if firstErr != nil {
+		if s, ok := status.FromError(firstErr); ok {
+			if s.Code() == codes.NotFound {
+				for _, d := range s.Details() {
+					switch d.(type) {
+					case *proto.FileNotFoundPayload:
+						cancel()
+						err = firstErr
+						endObservation(1, observation.Args{})
+						// We don't have a specific path here, so we return ErrNotExist instead of PathError.
+						return nil, os.ErrNotExist
+					}
+				}
+			}
+		}
+		if errors.HasType(firstErr, &gitdomain.RevisionNotFoundError{}) {
 			cancel()
+			err = firstErr
+			endObservation(1, observation.Args{})
 			return nil, err
 		}
 	}
 
-	firstMessageRead := false
-
-	// Create a reader to read from the gRPC stream.
+	firstRespRead := false
 	r := streamio.NewReader(func() ([]byte, error) {
-		// Check if we've read the first message yet. If not, read it and return.
-		if !firstMessageRead {
-			firstMessageRead = true
-
-			if firstError != nil {
-				return nil, firstError
+		if !firstRespRead {
+			firstRespRead = true
+			if firstErr != nil {
+				return nil, firstErr
 			}
-
 			return firstMessage.GetData(), nil
 		}
 
-		// Receive the next message from the stream.
-		msg, err := stream.Recv()
+		m, err := cli.Recv()
 		if err != nil {
 			return nil, err
 		}
-
-		// Return the data from the received message.
-		return msg.GetData(), nil
+		return m.GetData(), nil
 	})
 
 	return &archiveReader{
-		base: &readCloseWrapper{Reader: r, closeFn: cancel},
-		repo: repo,
-		spec: options.Treeish,
+		Reader: r,
+		cancel: cancel,
+		onClose: func() {
+			endObservation(1, observation.Args{})
+		},
 	}, nil
+}
+
+type archiveReader struct {
+	io.Reader
+	cancel  context.CancelFunc
+	onClose func()
+}
+
+func (br *archiveReader) Close() error {
+	br.cancel()
+	br.onClose()
+	return nil
 }
 
 func addNameOnly(opt CommitsOptions, checker authz.SubRepoPermissionChecker) CommitsOptions {

@@ -1,5 +1,4 @@
 export enum FilterKind {
-    Type = 'type',
     SymbolKind = 'symbol type',
     Language = 'lang',
     Author = 'author',
@@ -8,11 +7,21 @@ export enum FilterKind {
     File = 'file',
     Utility = 'utility',
 
-    // Synthetic filter, lives only on the client
+    // Synthetic filters, lives only on the client
     Count = 'count',
+    Type = 'type',
 }
 
-export enum SearchTypeLabel {
+export const DYNAMIC_FILTER_KINDS = [
+    FilterKind.SymbolKind,
+    FilterKind.Language,
+    FilterKind.Author,
+    FilterKind.Repository,
+    FilterKind.CommitDate,
+    FilterKind.File,
+]
+
+export enum SearchTypeFilter {
     Code = 'Code',
     Repositories = 'Repositories',
     Paths = 'Paths',
@@ -21,23 +30,23 @@ export enum SearchTypeLabel {
     Diffs = 'Diffs',
 }
 
-export const SEARCH_TYPES_TO_FILTER_TYPES: Record<`${SearchTypeLabel}`, `${FilterKind}`[]> = {
-    [SearchTypeLabel.Code]: [
+export const SEARCH_TYPES_TO_FILTER_TYPES: Record<`${SearchTypeFilter}`, `${FilterKind}`[]> = {
+    [SearchTypeFilter.Code]: [
         FilterKind.Language,
         FilterKind.Repository,
         FilterKind.File,
         FilterKind.Utility,
         FilterKind.Count,
     ],
-    [SearchTypeLabel.Repositories]: [FilterKind.Repository, FilterKind.Utility, FilterKind.Count],
-    [SearchTypeLabel.Paths]: [
+    [SearchTypeFilter.Repositories]: [FilterKind.Utility, FilterKind.Count],
+    [SearchTypeFilter.Paths]: [
         FilterKind.Language,
         FilterKind.Repository,
         FilterKind.File,
         FilterKind.Utility,
         FilterKind.Count,
     ],
-    [SearchTypeLabel.Symbols]: [
+    [SearchTypeFilter.Symbols]: [
         FilterKind.SymbolKind,
         FilterKind.Language,
         FilterKind.Repository,
@@ -45,14 +54,14 @@ export const SEARCH_TYPES_TO_FILTER_TYPES: Record<`${SearchTypeLabel}`, `${Filte
         FilterKind.Utility,
         FilterKind.Count,
     ],
-    [SearchTypeLabel.Commits]: [
+    [SearchTypeFilter.Commits]: [
         FilterKind.Author,
         FilterKind.Repository,
         FilterKind.CommitDate,
         FilterKind.Utility,
         FilterKind.Count,
     ],
-    [SearchTypeLabel.Diffs]: [
+    [SearchTypeFilter.Diffs]: [
         FilterKind.Author,
         FilterKind.Repository,
         FilterKind.CommitDate,

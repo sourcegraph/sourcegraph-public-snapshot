@@ -87,7 +87,7 @@ const config: Meta<typeof GlobalNavbar> = {
 export default config
 
 export const Default: StoryFn<GlobalNavbarProps> = props => {
-    window.context.licenseInfo = { currentPlan: 'business-0', features: { codeSearch: true, cody: true } }
+    window.context.licenseInfo = { features: { codeSearch: true, cody: true } }
     return (
         <Grid columnCount={1}>
             <div>
@@ -116,7 +116,7 @@ export const Default: StoryFn<GlobalNavbarProps> = props => {
 }
 
 export const CodyOnlyLicense: StoryFn<GlobalNavbarProps> = props => {
-    window.context.licenseInfo = { currentPlan: 'business-0', features: { codeSearch: false, cody: true } }
+    window.context.licenseInfo = { features: { codeSearch: false, cody: true } }
     return (
         <Grid columnCount={1}>
             <div>
@@ -145,7 +145,7 @@ export const CodyOnlyLicense: StoryFn<GlobalNavbarProps> = props => {
 }
 
 export const CodeSearchOnlyLicense: StoryFn<GlobalNavbarProps> = props => {
-    window.context.licenseInfo = { currentPlan: 'business-0', features: { codeSearch: true, cody: false } }
+    window.context.licenseInfo = { features: { codeSearch: true, cody: false } }
     return (
         <Grid columnCount={1}>
             <div>

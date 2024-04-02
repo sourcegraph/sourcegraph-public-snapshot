@@ -36,10 +36,6 @@ const tokenLength = 4 + 64
 
 var (
 	defaultUpdateInterval = 15 * time.Minute
-	// defaultRefreshInterval is used for updates, which is also called when a
-	// user's rate limit is hit, so we don't want to update every time. We use
-	// a shorter interval than the default in this case.
-	defaultRefreshInterval = 5 * time.Minute
 )
 
 type Source struct {
@@ -48,17 +44,19 @@ type Source struct {
 	dotcom            graphql.Client
 	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
 	usageStore        limiter.RedisStore
+	coolDownInterval  time.Duration
 }
 
 var _ actor.SourceUpdater = &Source{}
 
-func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, concurrencyConfig codygateway.ActorConcurrencyLimitConfig, usageStore limiter.RedisStore) *Source {
+func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, concurrencyConfig codygateway.ActorConcurrencyLimitConfig, usageStore limiter.RedisStore, coolDownInterval time.Duration) *Source {
 	return &Source{
 		log:               logger.Scoped("dotcomuser"),
 		cache:             cache,
 		dotcom:            dotComClient,
 		concurrencyConfig: concurrencyConfig,
 		usageStore:        usageStore,
+		coolDownInterval:  coolDownInterval,
 	}
 }
 
@@ -69,9 +67,10 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 }
 
 func (s *Source) Update(ctx context.Context, act *actor.Actor) error {
-	if act.LastUpdated != nil && time.Since(*act.LastUpdated) < defaultRefreshInterval {
+	if act.LastUpdated != nil && time.Since(*act.LastUpdated) < s.coolDownInterval {
+		s.log.Debug("actor recently updated, skipping update", log.Duration("secondsSinceUpdate", time.Since(*act.LastUpdated)))
 		return actor.ErrActorRecentlyUpdated{
-			RetryAt: act.LastUpdated.Add(defaultRefreshInterval),
+			RetryAt: act.LastUpdated.Add(s.coolDownInterval),
 		}
 	}
 
@@ -97,8 +96,20 @@ func (s *Source) fetchAndCache(ctx context.Context, token string, oldAct *actor.
 	if data, err := json.Marshal(act); err != nil {
 		s.log.Error("failed to marshal actor", log.Error(err))
 	} else {
+		// Now that we know the Actor ID, try to load the cached actor data if needed.
+		if oldAct == nil {
+			var cachedActor actor.Actor
+			if previousActorData, hit := s.cache.Get(act.ID); hit {
+				if err := json.Unmarshal(previousActorData, &cachedActor); err != nil {
+					trace.Logger(ctx, s.log).Error("failed to unmarshal old actor", log.Error(err))
+				} else {
+					oldAct = &cachedActor
+				}
+			}
+		}
+
 		// As part of fetching the actor data, we may also want to reset their usage data.
-		// (e.g. if they recent upgraded/downgraded from Cody Pro.)
+		// e.g. the usage limits have changed from the data we just loaded vs. oldAct.
 		if err = s.maybeResetUsageData(*act, oldAct); err != nil {
 			return nil, errors.Wrap(err, "resetting usage data")
 		}

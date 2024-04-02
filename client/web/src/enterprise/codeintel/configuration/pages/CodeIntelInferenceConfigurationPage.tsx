@@ -1,5 +1,6 @@
-import { type FunctionComponent, useState } from 'react'
+import { type FunctionComponent, useState, useEffect } from 'react'
 
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorAlert, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
@@ -11,7 +12,7 @@ import { useInferenceScript } from '../hooks/useInferenceScript'
 
 import styles from './CodeIntelInferenceConfigurationPage.module.scss'
 
-export interface CodeIntelInferenceConfigurationPageProps extends TelemetryProps {
+export interface CodeIntelInferenceConfigurationPageProps extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -22,6 +23,10 @@ export const CodeIntelInferenceConfigurationPage: FunctionComponent<CodeIntelInf
     const { inferenceScript, loadingScript, fetchError } = useInferenceScript()
     const [previewScript, setPreviewScript] = useState<string | null>(null)
     const inferencePreview = previewScript !== null ? previewScript : inferenceScript
+
+    useEffect(() => {
+        props.telemetryRecorder.recordEvent('admin.codeIntel.inferenceConfiguration', 'view')
+    }, [props.telemetryRecorder])
 
     return (
         <>

@@ -48,29 +48,20 @@ go_library(
         "//internal/requestinteraction",
         "//internal/service",
         "//internal/trace",
+        "//internal/vcs",
         "//internal/wrexec",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
         "@org_golang_google_grpc//:go_default_library",
-        "@org_golang_x_sync//semaphore",
     ],
 )
 
 go_test(
     name = "shared_test",
     timeout = "short",
-    srcs = [
-        "config_test.go",
-        "shared_test.go",
-    ],
+    srcs = ["config_test.go"],
     embed = [":shared"],
     # This test loads coursier as a side effect, so we ensure the
     # path is sandboxed properly.
     env = {"COURSIER_CACHE_DIR": "/tmp"},
-    deps = [
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_sourcegraph_log//:log",
-        "@com_github_sourcegraph_log//logtest",
-        "@org_golang_google_grpc//:go_default_library",
-    ],
 )

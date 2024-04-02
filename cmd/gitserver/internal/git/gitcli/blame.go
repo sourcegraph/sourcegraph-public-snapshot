@@ -2,12 +2,12 @@ package gitcli
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
@@ -16,46 +16,41 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (g *gitCLIBackend) Blame(ctx context.Context, path string, opt git.BlameOptions) (git.BlameHunkReader, error) {
-	if err := checkSpecArgSafety(string(opt.NewestCommit)); err != nil {
+func (g *gitCLIBackend) Blame(ctx context.Context, startCommit api.CommitID, path string, opt git.BlameOptions) (git.BlameHunkReader, error) {
+	if err := checkSpecArgSafety(string(startCommit)); err != nil {
 		return nil, err
 	}
 
-	cmd, cancel, err := g.gitCommand(ctx, buildBlameArgs(path, opt)...)
+	// Verify that the blob exists.
+	_, err := g.getBlobOID(ctx, startCommit, path)
 	if err != nil {
-		cancel()
 		return nil, err
 	}
 
-	r, err := g.runGitCommand(ctx, cmd)
+	r, err := g.NewCommand(ctx, WithArguments(buildBlameArgs(startCommit, path, opt)...))
 	if err != nil {
-		cancel()
 		return nil, err
 	}
 
-	return newBlameHunkReader(r, cancel), nil
+	return newBlameHunkReader(r), nil
 }
 
-func buildBlameArgs(path string, opt git.BlameOptions) []string {
+func buildBlameArgs(startCommit api.CommitID, path string, opt git.BlameOptions) []string {
 	args := []string{"blame", "--porcelain", "--incremental"}
 	if opt.IgnoreWhitespace {
 		args = append(args, "-w")
 	}
-	if opt.StartLine != 0 || opt.EndLine != 0 {
-		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
+	if opt.Range != nil {
+		args = append(args, fmt.Sprintf("-L%d,%d", opt.Range.StartLine, opt.Range.EndLine))
 	}
-	if opt.NewestCommit != "" {
-		args = append(args, string(opt.NewestCommit))
-	}
-	args = append(args, "--", filepath.ToSlash(path))
+	args = append(args, string(startCommit), "--", filepath.ToSlash(path))
 	return args
 }
 
 // blameHunkReader enables to read hunks from an io.Reader.
 type blameHunkReader struct {
-	rc      io.ReadCloser
-	sc      *bufio.Scanner
-	onClose func()
+	rc io.ReadCloser
+	sc *bufio.Scanner
 
 	cur *gitdomain.Hunk
 
@@ -66,12 +61,11 @@ type blameHunkReader struct {
 	commits map[api.CommitID]*gitdomain.Hunk
 }
 
-func newBlameHunkReader(rc io.ReadCloser, onClose func()) git.BlameHunkReader {
+func newBlameHunkReader(rc io.ReadCloser) git.BlameHunkReader {
 	return &blameHunkReader{
 		rc:      rc,
 		sc:      bufio.NewScanner(rc),
 		commits: make(map[api.CommitID]*gitdomain.Hunk),
-		onClose: onClose,
 	}
 }
 
@@ -102,7 +96,7 @@ func (br *blameHunkReader) Read() (_ *gitdomain.Hunk, err error) {
 		}
 
 		// Read line from git blame, in porcelain format
-		line := br.sc.Text()
+		line := br.sc.Bytes()
 		annotation, fields := splitLine(line)
 
 		// On the first read, we have no hunk and the first thing we read is an entry.
@@ -143,24 +137,22 @@ func (br *blameHunkReader) Read() (_ *gitdomain.Hunk, err error) {
 }
 
 func (br *blameHunkReader) Close() error {
-	err := br.rc.Close()
-	br.onClose()
-	return err
+	return br.rc.Close()
 }
 
 // parseEntry turns a `67b7b725a7ff913da520b997d71c840230351e30 10 20 1` line from
 // git blame into a hunk.
-func parseEntry(rev string, content string) (*gitdomain.Hunk, error) {
-	fields := strings.Split(content, " ")
+func parseEntry(rev []byte, content []byte) (*gitdomain.Hunk, error) {
+	fields := bytes.Split(content, []byte(" "))
 	if len(fields) != 3 {
 		return nil, errors.Errorf("Expected at least 4 parts to hunkHeader, but got: '%s %s'", rev, content)
 	}
 
-	resultLine, err := strconv.Atoi(fields[1])
+	resultLine, err := strconv.Atoi(string(fields[1]))
 	if err != nil {
 		return nil, err
 	}
-	numLines, _ := strconv.Atoi(fields[2])
+	numLines, err := strconv.Atoi(string(fields[2]))
 	if err != nil {
 		return nil, err
 	}
@@ -174,32 +166,32 @@ func parseEntry(rev string, content string) (*gitdomain.Hunk, error) {
 
 // parseExtra updates a hunk with data parsed from the other annotations such as `author ...`,
 // `summary ...`.
-func parseExtra(hunk *gitdomain.Hunk, annotation string, content string) (ok bool, err error) {
+func parseExtra(hunk *gitdomain.Hunk, annotation []byte, content []byte) (ok bool, err error) {
 	ok = true
-	switch annotation {
+	switch string(annotation) {
 	case "author":
-		hunk.Author.Name = content
+		hunk.Author.Name = string(content)
 	case "author-mail":
 		if len(content) >= 2 && content[0] == '<' && content[len(content)-1] == '>' {
-			hunk.Author.Email = content[1 : len(content)-1]
+			hunk.Author.Email = string(content[1 : len(content)-1])
 		}
 	case "author-time":
 		var t int64
-		t, err = strconv.ParseInt(content, 10, 64)
+		t, err = strconv.ParseInt(string(content), 10, 64)
 		hunk.Author.Date = time.Unix(t, 0).UTC()
 	case "author-tz":
 		// do nothing
 	case "committer", "committer-mail", "committer-tz", "committer-time":
 	case "summary":
-		hunk.Message = content
+		hunk.Message = string(content)
 	case "filename":
-		hunk.Filename = content
+		hunk.Filename = string(content)
 	case "previous":
 	case "boundary":
 	default:
 		// If it doesn't look like an entry, it's probably an unhandled git blame
 		// annotation.
-		if len(annotation) != 40 && len(strings.Split(content, " ")) != 3 {
+		if len(annotation) != 40 && bytes.Count(content, []byte(" ")) != 3 {
 			err = errors.Newf("unhandled git blame annotation: %s")
 		}
 		ok = false
@@ -209,10 +201,11 @@ func parseExtra(hunk *gitdomain.Hunk, annotation string, content string) (ok boo
 
 // splitLine splits a scanned line and returns the annotation along
 // with the content, if any.
-func splitLine(line string) (annotation string, content string) {
-	annotation, content, found := strings.Cut(line, " ")
+func splitLine(line []byte) (annotation []byte, content []byte) {
+	annotation, content, found := bytes.Cut(line, []byte(" "))
 	if found {
 		return annotation, content
 	}
-	return line, ""
+
+	return line, nil
 }

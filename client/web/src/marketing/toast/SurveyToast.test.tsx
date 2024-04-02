@@ -10,6 +10,7 @@ import {
     InMemoryMockSettingsBackend,
     TemporarySettingsStorage,
 } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { type RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
@@ -51,7 +52,7 @@ describe('SurveyToast', () => {
         return renderWithBrandedContext(
             <MockedTestProvider mocks={[submitSurveyMock]}>
                 <TemporarySettingsContext.Provider value={settingsStorage}>
-                    <SurveyToast authenticatedUser={mockAuthenticatedUser} />
+                    <SurveyToast authenticatedUser={mockAuthenticatedUser} telemetryRecorder={noOpTelemetryRecorder} />
                 </TemporarySettingsContext.Provider>
             </MockedTestProvider>
         )

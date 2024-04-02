@@ -31,7 +31,7 @@ var Ubuntu = []category{
 			},
 			{
 				Name:  "git",
-				Check: checkAction(check.Combine(check.InPath("git"), checkGitVersion(">= 2.42.0"))),
+				Check: checkAction(check.Git),
 				Fix:   aptGetInstall("git", "sudo add-apt-repository -y ppa:git-core/ppa"),
 			}, {
 				Name:  "pcre",
@@ -78,7 +78,7 @@ var Ubuntu = []category{
 				// Bazelisk is a wrapper for Bazel written in Go. It automatically picks a good version of Bazel given your current working directory
 				// Bazelisk replaces the bazel binary in your path
 				Name:  "bazelisk",
-				Check: checkAction(check.Combine(check.InPath("bazel"), check.CommandOutputContains("bazel version", "Bazelisk version"))),
+				Check: checkAction(check.Bazelisk),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					if err := check.InPath("bazel")(ctx); err == nil {
 						cio.WriteAlertf("There already exists a bazel binary in your path and it is not managed by Bazlisk. Please remove it as Bazelisk replaces the bazel binary")
@@ -95,7 +95,7 @@ var Ubuntu = []category{
 			{
 				Name: "asdf",
 				// TODO add the if Keegan check
-				Check: checkAction(check.CommandOutputContains("asdf", "version")),
+				Check: checkAction(check.ASDF),
 				Fix: func(ctx context.Context, cio check.IO, _ CheckArgs) error {
 					if err := usershell.Run(ctx, "git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.9.0").StreamLines(cio.Verbose); err != nil {
 						return err
@@ -168,7 +168,7 @@ var Ubuntu = []category{
 		Checks: []*dependency{
 			{
 				Name:  "Install Postgres",
-				Check: checkAction(check.Combine(check.InPath("psql"))),
+				Check: checkAction(check.InPath("psql")),
 				Fix:   aptGetInstall("postgresql postgresql-contrib"),
 			},
 			{
@@ -183,7 +183,7 @@ var Ubuntu = []category{
 					if err := checkSourcegraphDatabase(ctx, out, args); err == nil {
 						return nil
 					}
-					return checkPostgresConnection(ctx)
+					return check.PostgresConnection(ctx)
 				},
 				Description: `Sourcegraph requires the PostgreSQL database to be running.
 
@@ -232,7 +232,7 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 				Name: "Start Redis",
 				Description: `Sourcegraph requires the Redis database to be running.
 We recommend installing it with Homebrew and starting it as a system service.`,
-				Check: checkAction(check.Retry(checkRedisConnection, 5, 500*time.Millisecond)),
+				Check: checkAction(check.Redis),
 				Fix:   cmdFix("sudo systemctl enable --now redis-server.service"),
 			},
 		},
@@ -257,7 +257,7 @@ trust the certificate created by Caddy, the proxy we use locally.
 
 WARNING: if you just fixed (automatically or manually) this step, you must restart sg setup for the check to pass.`,
 				Enabled: disableInCI(), // Can't seem to get this working
-				Check:   checkAction(checkCaddyTrusted),
+				Check:   checkAction(check.Caddy),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					return root.Run(usershell.Command(ctx, `./dev/caddy.sh trust`)).StreamLines(cio.Verbose)
 				},

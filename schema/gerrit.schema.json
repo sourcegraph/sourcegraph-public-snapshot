@@ -58,7 +58,7 @@
     },
     "authorization": {
       "title": "GerritAuthorization",
-      "description": "If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type \"gerrit\" with the same `url` field as specified in this `GerritConnection`.",
+      "description": "If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://sourcegraph.com/docs/admin/config/site_config#auth-providers) `auth.providers` field, of type \"gerrit\" with the same `url` field as specified in this `GerritConnection`.",
       "type": "object",
       "properties": {
         "identityProvider": {

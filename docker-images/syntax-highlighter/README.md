@@ -4,7 +4,7 @@ Crates:
 
 - The main `syntect_server` executable
 - `crates/tree-sitter-all-languages/`: All the grammars and parsers live here to make shipping parsers with the same tree-sitter version (and associated build tooling) very easy. All new grammars and parsers should be added here.
-- `crates/scip-treesitter-cli/`: Command line tool that produces a SCIP index file from the analysis performed by other `scip-*` crates in this project
+- `crates/scip-syntax/`: Command line tool that produces a SCIP index file from the analysis performed by other `scip-*` crates in this project
 - `crates/syntax-analysis/`: local navigation calculation (and some other utilities) live here.
 
 # scip-ctags
@@ -46,6 +46,18 @@ By default on startup, `syntect_server` will list all file types it supports. Th
    To update snapshots, run `cargo insta review`.
 2. Use `cargo run --bin syntect_server` to run the server locally.
 3. You can change the `SRC_SYNTECT_SERVER` option in your `sg.config.yaml` to point to whatever port you're running on (usually 8000) and test against that without building the docker image.
+
+### Testing syntect -> SCIP grammar mappings
+
+<!-- NOTE(id: only-flag) -->
+
+You can run a subset of tests for `syntect_scip` using the `ONLY` environment variable.
+Example:
+
+```bash
+cd crates/syntax-analysis
+ONLY=.java cargo test test_all_files -- --nocapture
+```
 
 ## Building docker image
 

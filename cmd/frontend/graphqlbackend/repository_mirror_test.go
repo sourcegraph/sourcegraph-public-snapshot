@@ -187,17 +187,11 @@ type fakeGitserverClient struct {
 	gitserver.Client
 }
 
-func (f *fakeGitserverClient) RepoCloneProgress(_ context.Context, repoName ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
-	results := map[api.RepoName]*protocol.RepoCloneProgress{}
-	for _, n := range repoName {
-		results[n] = &protocol.RepoCloneProgress{
-			CloneInProgress: true,
-			CloneProgress:   fmt.Sprintf("cloning fake %s...", n),
-			Cloned:          false,
-		}
-	}
-	return &protocol.RepoCloneProgressResponse{
-		Results: results,
+func (f *fakeGitserverClient) RepoCloneProgress(_ context.Context, repoName api.RepoName) (*protocol.RepoCloneProgress, error) {
+	return &protocol.RepoCloneProgress{
+		CloneInProgress: true,
+		CloneProgress:   fmt.Sprintf("cloning fake %s...", repoName),
+		Cloned:          false,
 	}, nil
 }
 

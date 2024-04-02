@@ -11,10 +11,10 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -61,7 +61,7 @@ func New(logger log.Logger, db database.DB, gitserverClient gitserver.Client) Se
 			Gitserver:                   gitserverClient,
 		},
 		settingsService:       settings.NewService(db),
-		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		sourcegraphDotComMode: dotcom.SourcegraphDotComMode(),
 	}
 }
 
@@ -70,7 +70,7 @@ func Mocked(runtimeClients job.RuntimeClients) SearchClient {
 	return &searchClient{
 		runtimeClients:        runtimeClients,
 		settingsService:       settings.Mock(&schema.Settings{}),
-		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		sourcegraphDotComMode: dotcom.SourcegraphDotComMode(),
 	}
 }
 
@@ -89,7 +89,7 @@ func (s *searchClient) Plan(
 	protocol search.Protocol,
 	contextLines *int32,
 ) (_ *search.Inputs, err error) {
-	tr, ctx := trace.New(ctx, "NewSearchInputs", attribute.String("query", searchQuery))
+	tr, ctx := trace.New(ctx, "Plan", attribute.String("query", searchQuery))
 	defer tr.EndWithErr(&err)
 
 	searchType, err := detectSearchType(version, patternType)
@@ -124,7 +124,7 @@ func (s *searchClient) Plan(
 	}
 
 	if searchType == query.SearchTypeKeyword {
-		plan = query.MapPlan(plan, query.ExperimentalPhraseBoost(s.runtimeClients.Logger, searchQuery))
+		plan = query.MapPlan(plan, query.ExperimentalPhraseBoost)
 		tr.AddEvent("applied phrase boost")
 	}
 
@@ -316,7 +316,6 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 	return &search.Features{
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
 		Debug:                   flagSet.GetBoolOr("search-debug", false),
-		PhraseBoost:             flagSet.GetBoolOr("search-boost-phrase", false),
 	}
 }
 

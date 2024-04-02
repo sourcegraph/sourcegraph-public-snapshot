@@ -118,7 +118,5 @@ export function useFeatureFlag(
 }
 
 export function useKeywordSearch(): boolean {
-    const [flagEnabled] = useFeatureFlag('search-keyword')
-    const settingEnabled = !!useExperimentalFeatures(features => features.keywordSearch)
-    return flagEnabled || settingEnabled
+    return useExperimentalFeatures<boolean | undefined>(features => features.keywordSearch) !== false
 }

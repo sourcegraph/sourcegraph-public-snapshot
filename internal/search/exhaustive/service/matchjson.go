@@ -37,7 +37,10 @@ func (m MatchJSONWriter) Flush() error {
 }
 
 func (m MatchJSONWriter) Write(match result.Match) error {
-	eventMatch := search.FromMatch(match, nil, true) // chunk matches enabled
+	eventMatch := search.FromMatch(match, nil, search.FromMatchOptions{
+		ChunkMatches:         true,
+		MaxContentLineLength: -1, // do not truncate content
+	})
 
 	return m.w.Append(eventMatch)
 }

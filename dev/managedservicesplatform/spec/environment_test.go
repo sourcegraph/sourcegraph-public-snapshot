@@ -2,9 +2,11 @@ package spec
 
 import (
 	"testing"
+	"time"
 
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -158,6 +160,50 @@ func TestEnvironmentInstancesResourcesSpecValdiate(t *testing.T) {
 				assert.NotEmpty(t, errs)
 				tc.wantErrors.Equal(t, errorMessages(errs))
 			}
+		})
+	}
+}
+
+func TestEnvironmentJobScheduleSpecFindMaxCronInterval(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		spec EnvironmentJobScheduleSpec
+
+		wantInterval time.Duration
+		wantError    autogold.Value
+	}{
+		{
+			name: "typical interval",
+			spec: EnvironmentJobScheduleSpec{
+				Cron: "0 * * * *",
+			},
+			wantInterval: time.Hour,
+		},
+		{
+			name: "small interval",
+			spec: EnvironmentJobScheduleSpec{
+				Cron: "* * * * *",
+			},
+			wantInterval: time.Minute,
+		},
+		{
+			name: "monthly interval forbidden",
+			spec: EnvironmentJobScheduleSpec{
+				Cron: "0 0 1 * *", // once per month
+			},
+			wantError: autogold.Expect("the longest interval must be <28 days, got 744h0m0s"),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			tc := tc
+			interval, err := tc.spec.FindMaxCronInterval()
+			if tc.wantError != nil {
+				assert.Error(t, err)
+				tc.wantError.Equal(t, err.Error())
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tc.wantInterval, *interval)
 		})
 	}
 }

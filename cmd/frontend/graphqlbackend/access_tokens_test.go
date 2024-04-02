@@ -14,13 +14,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -101,6 +101,14 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 	t.Run("authenticated as user, expiration required not sent", func(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		db := dbmocks.NewMockDB()
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					AllowNoExpiration: pointers.Ptr(false),
+				},
+			},
+		})
+		defer conf.Mock(nil)
 		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Scopes: []string{"user:all"}, Note: "n"})
 		if err == nil {
 			t.Error("err == nil")
@@ -132,7 +140,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		db.AccessTokensFunc.SetDefaultReturn(accessTokens)
 		db.UsersFunc.SetDefaultReturn(users)
-		conf.Get().AuthAccessTokens = &schema.AuthAccessTokens{Allow: string(conf.AccessTokensAll), AllowNoExpiration: true}
+		conf.Get().AuthAccessTokens = &schema.AuthAccessTokens{Allow: string(conf.AccessTokensAll), AllowNoExpiration: pointers.Ptr(true)}
 		defer func() { conf.Get().AuthAccessTokens = nil }()
 		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Scopes: []string{"user:all"}, Note: "n"})
 		if err != nil {
@@ -150,7 +158,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				AuthAccessTokens: &schema.AuthAccessTokens{
-					AllowNoExpiration:     false,
+					AllowNoExpiration:     pointers.Ptr(false),
 					DefaultExpirationDays: pointers.Ptr(2),
 					ExpirationOptionDays:  []int{1, 2, 3},
 				},
@@ -352,9 +360,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx,
@@ -375,9 +381,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		conf.Get().AuthAccessTokens = &schema.AuthAccessTokens{Allow: string(conf.AccessTokensAdmin)}
 		defer func() { conf.Get().AuthAccessTokens = nil }()
 
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx,

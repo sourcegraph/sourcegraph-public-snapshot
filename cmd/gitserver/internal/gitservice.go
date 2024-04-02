@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
@@ -72,11 +71,11 @@ func flowrateWriter(logger log.Logger, w io.Writer) io.Writer {
 }
 
 func (s *Server) gitServiceHandler() *gitservice.Handler {
-	logger := s.Logger.Scoped("gitServiceHandler")
+	logger := s.logger.Scoped("gitServiceHandler")
 
 	return &gitservice.Handler{
 		Dir: func(d string) string {
-			return string(gitserverfs.RepoDirFromName(s.ReposDir, api.RepoName(d)))
+			return string(s.fs.RepoDir(api.RepoName(d)))
 		},
 
 		ErrorHook: func(err error, stderr string) {

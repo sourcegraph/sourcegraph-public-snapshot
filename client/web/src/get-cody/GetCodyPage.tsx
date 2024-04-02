@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Badge, H2, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { ExternalsAuth } from '../auth/components/ExternalsAuth'
@@ -28,7 +29,7 @@ interface WaitListButtonProps {
 
 interface GetCodyPageProps {
     authenticatedUser: AuthenticatedUser | null
-    context: Pick<SourcegraphContext, 'authProviders'>
+    context: Pick<SourcegraphContext, 'externalURL'>
 }
 
 const SOURCEGRAPH_MAC_SILICON = 'https://sourcegraph.com/.api/app/latest?arch=aarch64&target=darwin'
@@ -36,9 +37,6 @@ const SOURCEGRAPH_MAC_SILICON = 'https://sourcegraph.com/.api/app/latest?arch=aa
 const SOURCEGRAPH_MAC_INTEL = 'https://sourcegraph.com/.api/app/latest?arch=x86_64&target=darwin'
 
 const SOURCEGRAPH_LINUX = 'https://sourcegraph.com/.api/app/latest?arch=x86_64&target=linux'
-
-const onClickCTAButton = (type: string): void =>
-    eventLogger.log(EventName.AUTH_INITIATED, { type, source: 'get-started' })
 
 const logEvent = (eventName: string, type?: string, source?: string): void =>
     eventLogger.log(eventName, { type, source })
@@ -55,6 +53,8 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
     useEffect(() => {
         if (authenticatedUser) {
             navigate(`/cody/manage${search || ''}`)
+        } else {
+            window.location.href = '/cody'
         }
     }, [authenticatedUser, navigate, search])
 
@@ -103,13 +103,16 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                             <div className={styles.authButtonsWrap}>
                                 <div className={styles.externalAuthWrapper}>
                                     <ExternalsAuth
+                                        page="get-cody-page"
                                         context={context}
                                         githubLabel="GitHub"
                                         gitlabLabel="Gitlab"
                                         googleLabel="Google"
                                         withCenteredText={true}
-                                        onClick={onClickCTAButton}
+                                        onClick={() => {}}
                                         ctaClassName={styles.authButton}
+                                        telemetryRecorder={noOpTelemetryRecorder}
+                                        telemetryService={eventLogger}
                                     />
                                 </div>
                             </div>

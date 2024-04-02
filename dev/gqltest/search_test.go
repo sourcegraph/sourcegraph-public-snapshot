@@ -526,6 +526,10 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:  "boolean query with unindexed search",
 				query: "index:no func OR NOT default",
 			},
+			{
+				name:  "lang filters with unindexed search",
+				query: "index:no func OR NOT default lang:Go",
+			},
 			// Failing test: https://github.com/sourcegraph/sourcegraph/issues/48109
 			// {
 			//	name:  "fork:only",
@@ -1587,7 +1591,7 @@ func testSearchContextsCRUD(t *testing.T, client *gqltestutil.Client) {
 func testListingSearchContexts(t *testing.T, client *gqltestutil.Client) {
 	numSearchContexts := 10
 	searchContextIDs := make([]string, 0, numSearchContexts)
-	for i := 0; i < numSearchContexts; i++ {
+	for i := range numSearchContexts {
 		scID, err := client.CreateSearchContext(
 			gqltestutil.CreateSearchContextInput{Name: fmt.Sprintf("SearchContext%d", i), Public: true},
 			[]gqltestutil.SearchContextRepositoryRevisionsInput{},
@@ -1596,7 +1600,7 @@ func testListingSearchContexts(t *testing.T, client *gqltestutil.Client) {
 		searchContextIDs = append(searchContextIDs, scID)
 	}
 	defer func() {
-		for i := 0; i < numSearchContexts; i++ {
+		for i := range numSearchContexts {
 			err := client.DeleteSearchContext(searchContextIDs[i])
 			require.NoError(t, err)
 		}

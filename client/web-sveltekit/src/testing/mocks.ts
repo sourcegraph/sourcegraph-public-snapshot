@@ -61,7 +61,6 @@ const mockedSourcgraphContext: {
     [key in SourcegraphContextKey]: MockedSourcegraphContextValue<SourcegraphContext[key]> | typeof unmocked
 } = {
     user: writable(null),
-    client: unmocked,
     settings: writable({}),
     featureFlags: writable([]),
     temporarySettingsStorage: unmocked,

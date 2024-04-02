@@ -35,7 +35,7 @@ func getConfiguredIdentityProvider() IdentityProvider {
 // NewHandler creates and returns a new SCIM 2.0 handler.
 func NewHandler(ctx context.Context, db database.DB, observationCtx *observation.Context) http.Handler {
 	config := scim.ServiceProviderConfig{
-		DocumentationURI: optional.NewString("docs.sourcegraph.com/admin/scim"),
+		DocumentationURI: optional.NewString("sourcegraph.com/docs/admin/scim"),
 		MaxResults:       100,
 		SupportFiltering: true,
 		SupportPatch:     true,
@@ -45,7 +45,7 @@ func NewHandler(ctx context.Context, db database.DB, observationCtx *observation
 				Name:             "OAuth Bearer Token",
 				Description:      "Authentication scheme using the Bearer Token standard – use the key 'scim.authToken' in the site config to set the token.",
 				SpecURI:          optional.NewString("https://tools.ietf.org/html/rfc6750"),
-				DocumentationURI: optional.NewString("docs.sourcegraph.com/admin/scim"),
+				DocumentationURI: optional.NewString("sourcegraph.com/docs/admin/scim"),
 				Primary:          true,
 			},
 		},

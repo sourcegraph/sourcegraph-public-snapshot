@@ -243,6 +243,9 @@
             <svelte:fragment let:entry let:toggle let:expanded>
                 <slot {entry} {toggle} {expanded} />
             </svelte:fragment>
+            <svelte:fragment slot="error" let:error>
+                <slot name="error" {error} />
+            </svelte:fragment>
         </TreeNode>
     {/each}
 </ul>

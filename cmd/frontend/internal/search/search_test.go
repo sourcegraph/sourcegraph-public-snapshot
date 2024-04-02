@@ -38,7 +38,7 @@ func TestServeStream_empty(t *testing.T) {
 
 	ts := httptest.NewServer(gzipMiddleware(&streamHandler{
 		logger:              logtest.Scoped(t),
-		flushTickerInternal: 1 * time.Millisecond,
+		flushTickerInterval: 1 * time.Millisecond,
 		pingTickerInterval:  1 * time.Millisecond,
 		searchClient:        mock,
 	}))
@@ -134,7 +134,7 @@ func TestServeStream_chunkMatches(t *testing.T) {
 	ts := httptest.NewServer(gzipMiddleware(&streamHandler{
 		logger:              logtest.Scoped(t),
 		db:                  db,
-		flushTickerInternal: 1 * time.Millisecond,
+		flushTickerInterval: 1 * time.Millisecond,
 		pingTickerInterval:  1 * time.Millisecond,
 		searchClient:        mock,
 	}))
@@ -178,7 +178,7 @@ func TestDisplayLimit(t *testing.T) {
 			displayLimit:        1,
 			wantDisplayLimitHit: true,
 			wantMatchCount:      2,
-			wantMessage:         "We only display 1 result even if your search returned more results. To see all results and configure the display limit, use our CLI.",
+			wantMessage:         "We only display 1 result even if your search returned more results. To see all results, use our CLI.",
 		},
 		{
 			queryString:         "foo count:2",
@@ -252,7 +252,7 @@ func TestDisplayLimit(t *testing.T) {
 			ts := httptest.NewServer(gzipMiddleware(&streamHandler{
 				logger:              logtest.Scoped(t),
 				db:                  db,
-				flushTickerInternal: 1 * time.Millisecond,
+				flushTickerInterval: 1 * time.Millisecond,
 				pingTickerInterval:  1 * time.Millisecond,
 				searchClient:        mock,
 			}))

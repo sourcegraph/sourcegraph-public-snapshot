@@ -95,24 +95,10 @@ func TestLicenseMiddleware(t *testing.T) {
 		testFunc func(t *testing.T, rr *httptest.ResponseRecorder)
 	}{
 		{
-			name:    "starter license should not have access",
-			license: licensingInfo("starter"),
-			testFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
-				assert.Equal(t, rr.Result().StatusCode, http.StatusForbidden)
-			},
-		},
-		{
 			name:    "plan:free-1 should not have access",
 			license: licensingInfo("plan:free-1"),
 			testFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
 				assert.Equal(t, rr.Result().StatusCode, http.StatusForbidden, "not allowed for free plan")
-			},
-		},
-		{
-			name:    "plan:business-0 should have access",
-			license: licensingInfo("plan:business-0"),
-			testFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
-				assert.Equal(t, rr.Result().StatusCode, http.StatusOK, "allowed for business-0 plan")
 			},
 		},
 		{
@@ -156,7 +142,7 @@ func TestHandler(t *testing.T) {
 	}{
 		{
 			name:    "auth should fail first",
-			license: licensingInfo("starter"),
+			license: licensingInfo("plan:free-1"),
 			config:  &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ScimAuthToken: "testtoken"}},
 			token:   "Bearer idontmatch",
 			testFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
@@ -165,7 +151,7 @@ func TestHandler(t *testing.T) {
 		},
 		{
 			name:    "license check should fail after auth passes",
-			license: licensingInfo("starter"),
+			license: licensingInfo("plan:free-1"),
 			config:  &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ScimAuthToken: "testtoken"}},
 			token:   "Bearer testtoken",
 			testFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {

@@ -52,7 +52,11 @@ func (r *Repository) Tag() string {
 }
 
 func ParseRepository(rawImg string) (*Repository, error) {
-	ref, err := reference.ParseNormalizedNamed(strings.TrimSpace(rawImg))
+	// First remove all trailing and leading spaces
+	sanitizedImg := strings.TrimSpace(rawImg)
+	// Sometimes the rawImg from yaml can contain quotes, so we remove those as well
+	sanitizedImg = strings.Trim(sanitizedImg, `"`)
+	ref, err := reference.ParseNormalizedNamed(sanitizedImg)
 	if err != nil {
 		return nil, err
 	}

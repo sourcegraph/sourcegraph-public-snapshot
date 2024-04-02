@@ -9,11 +9,17 @@ import { SearchPageContent, getShouldShowAddCodeHostWidget } from '../../storm/p
 
 export interface SearchPageProps {
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean
 }
 
-export const SearchPage: FC<SearchPageProps> = props => {
-    const shouldShowAddCodeHostWidget = useShouldShowAddCodeHostWidget(props.authenticatedUser)
-    return <SearchPageContent shouldShowAddCodeHostWidget={shouldShowAddCodeHostWidget} />
+export const SearchPage: FC<SearchPageProps> = ({ authenticatedUser, isSourcegraphDotCom }) => {
+    const shouldShowAddCodeHostWidget = useShouldShowAddCodeHostWidget(authenticatedUser)
+    return (
+        <SearchPageContent
+            shouldShowAddCodeHostWidget={shouldShowAddCodeHostWidget}
+            isSourcegraphDotCom={isSourcegraphDotCom}
+        />
+    )
 }
 
 const EXTERNAL_SERVICES_TOTAL_COUNT = gql`

@@ -1,5 +1,7 @@
 import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import { WebStory } from '../../../../components/WebStory'
 import { BatchSpecSource, BatchSpecState } from '../../../../graphql-operations'
 import { mockBatchChange, mockFullBatchSpec } from '../batch-spec.mock'
@@ -28,7 +30,7 @@ export const Executing: StoryFn = args => (
                     state: args.state,
                 })}
             >
-                <ReadOnlyBatchSpecForm {...props} />
+                <ReadOnlyBatchSpecForm {...props} telemetryRecorder={noOpTelemetryRecorder} />
             </BatchSpecContextProvider>
         )}
     </WebStory>
@@ -54,7 +56,7 @@ export const ExecutionFinished: StoryFn = args => (
                     state: args.state,
                 })}
             >
-                <ReadOnlyBatchSpecForm {...props} />
+                <ReadOnlyBatchSpecForm {...props} telemetryRecorder={noOpTelemetryRecorder} />
             </BatchSpecContextProvider>
         )}
     </WebStory>
@@ -87,7 +89,7 @@ export const LocallyExecutedSpec: StoryFn = () => (
                 batchChange={mockBatchChange()}
                 batchSpec={mockFullBatchSpec({ source: BatchSpecSource.LOCAL })}
             >
-                <ReadOnlyBatchSpecForm {...props} />
+                <ReadOnlyBatchSpecForm {...props} telemetryRecorder={noOpTelemetryRecorder} />
             </BatchSpecContextProvider>
         )}
     </WebStory>

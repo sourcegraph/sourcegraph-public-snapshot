@@ -68,7 +68,7 @@ func DatabaseConnectionsMonitoring(app string, owner monitoring.ObservableOwner)
 				Owner:    owner,
 				NextSteps: `
 					- Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-					- Scale up Postgres memory/cpus - [see our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+					- Scale up Postgres memory/cpus - [see our scaling guide](https://sourcegraph.com/docs/admin/config/postgres-conf)
 					- If using GCP Cloud SQL, check for high lock waits or CPU usage in query insights
 				`,
 			},

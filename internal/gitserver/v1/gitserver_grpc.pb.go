@@ -19,7 +19,6 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	GitserverService_BatchLog_FullMethodName                    = "/gitserver.v1.GitserverService/BatchLog"
 	GitserverService_CreateCommitFromPatchBinary_FullMethodName = "/gitserver.v1.GitserverService/CreateCommitFromPatchBinary"
 	GitserverService_DiskInfo_FullMethodName                    = "/gitserver.v1.GitserverService/DiskInfo"
 	GitserverService_Exec_FullMethodName                        = "/gitserver.v1.GitserverService/Exec"
@@ -28,7 +27,6 @@ const (
 	GitserverService_ListGitolite_FullMethodName                = "/gitserver.v1.GitserverService/ListGitolite"
 	GitserverService_Search_FullMethodName                      = "/gitserver.v1.GitserverService/Search"
 	GitserverService_Archive_FullMethodName                     = "/gitserver.v1.GitserverService/Archive"
-	GitserverService_P4Exec_FullMethodName                      = "/gitserver.v1.GitserverService/P4Exec"
 	GitserverService_RepoClone_FullMethodName                   = "/gitserver.v1.GitserverService/RepoClone"
 	GitserverService_RepoCloneProgress_FullMethodName           = "/gitserver.v1.GitserverService/RepoCloneProgress"
 	GitserverService_RepoDelete_FullMethodName                  = "/gitserver.v1.GitserverService/RepoDelete"
@@ -45,14 +43,14 @@ const (
 	GitserverService_Blame_FullMethodName                       = "/gitserver.v1.GitserverService/Blame"
 	GitserverService_DefaultBranch_FullMethodName               = "/gitserver.v1.GitserverService/DefaultBranch"
 	GitserverService_ReadFile_FullMethodName                    = "/gitserver.v1.GitserverService/ReadFile"
+	GitserverService_GetCommit_FullMethodName                   = "/gitserver.v1.GitserverService/GetCommit"
+	GitserverService_ResolveRevision_FullMethodName             = "/gitserver.v1.GitserverService/ResolveRevision"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GitserverServiceClient interface {
-	// Deprecated: Do not use.
-	BatchLog(ctx context.Context, in *BatchLogRequest, opts ...grpc.CallOption) (*BatchLogResponse, error)
 	CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (GitserverService_CreateCommitFromPatchBinaryClient, error)
 	DiskInfo(ctx context.Context, in *DiskInfoRequest, opts ...grpc.CallOption) (*DiskInfoResponse, error)
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
@@ -60,9 +58,20 @@ type GitserverServiceClient interface {
 	IsRepoCloneable(ctx context.Context, in *IsRepoCloneableRequest, opts ...grpc.CallOption) (*IsRepoCloneableResponse, error)
 	ListGitolite(ctx context.Context, in *ListGitoliteRequest, opts ...grpc.CallOption) (*ListGitoliteResponse, error)
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error)
+	// Archive creates an archive for the given treeish in the given format.
+	// If paths are specified, only those paths are included in the archive.
+	//
+	// If subrepo permissions are enabled for the repo, no archive will be created
+	// for non-internal actors and an unimplemented error will be returned. We can
+	// currently not filter parts of the archive, so this would be considered leaking
+	// information.
+	//
+	// If the given treeish does not exist, an error with a RevisionNotFoundPayload
+	// is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error)
-	// Deprecated: Do not use.
-	P4Exec(ctx context.Context, in *P4ExecRequest, opts ...grpc.CallOption) (GitserverService_P4ExecClient, error)
 	RepoClone(ctx context.Context, in *RepoCloneRequest, opts ...grpc.CallOption) (*RepoCloneResponse, error)
 	RepoCloneProgress(ctx context.Context, in *RepoCloneProgressRequest, opts ...grpc.CallOption) (*RepoCloneProgressResponse, error)
 	RepoDelete(ctx context.Context, in *RepoDeleteRequest, opts ...grpc.CallOption) (*RepoDeleteResponse, error)
@@ -107,6 +116,35 @@ type GitserverServiceClient interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (GitserverService_ReadFileClient, error)
+	// GetCommit gets a commit from the repo ODB.
+	// The endpoint will verify that the user is allowed to view the given commit.
+	//
+	// If subrepo permissions are enabled for the repo. If access is denied, an error
+	// with a RevisionNotFoundPayload is returned, to not leak existence of the commit.
+	//
+	// If the commit is not found, an error with a RevisionNotFoundPayload is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	GetCommit(ctx context.Context, in *GetCommitRequest, opts ...grpc.CallOption) (*GetCommitResponse, error)
+	// ResolveRevision resolves a given revspec-ish to a commit SHA.
+	// If passed a commit sha, the endpoint will also verify that the commit exists.
+	//
+	// If the revision cannot be resolved an error with RevisionNotFoundPayload is
+	// returned.
+	//
+	// Under the hood, this endpoint currently uses git rev-parse to resolve the revspec,
+	// but we forbid certain revspecs (like HEAD) to avoid leaking existence files,
+	// and to avoid running very expensive rev-parse operations.
+	// Assume only the following are supported:
+	// - Symbolic refs
+	// - All refs under refs/, including tags
+	// - Commit hashes
+	// - Abbreviated commit hashes
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	ResolveRevision(ctx context.Context, in *ResolveRevisionRequest, opts ...grpc.CallOption) (*ResolveRevisionResponse, error)
 }
 
 type gitserverServiceClient struct {
@@ -115,16 +153,6 @@ type gitserverServiceClient struct {
 
 func NewGitserverServiceClient(cc grpc.ClientConnInterface) GitserverServiceClient {
 	return &gitserverServiceClient{cc}
-}
-
-// Deprecated: Do not use.
-func (c *gitserverServiceClient) BatchLog(ctx context.Context, in *BatchLogRequest, opts ...grpc.CallOption) (*BatchLogResponse, error) {
-	out := new(BatchLogResponse)
-	err := c.cc.Invoke(ctx, GitserverService_BatchLog_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *gitserverServiceClient) CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (GitserverService_CreateCommitFromPatchBinaryClient, error) {
@@ -293,39 +321,6 @@ func (x *gitserverServiceArchiveClient) Recv() (*ArchiveResponse, error) {
 	return m, nil
 }
 
-// Deprecated: Do not use.
-func (c *gitserverServiceClient) P4Exec(ctx context.Context, in *P4ExecRequest, opts ...grpc.CallOption) (GitserverService_P4ExecClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[4], GitserverService_P4Exec_FullMethodName, opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &gitserverServiceP4ExecClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type GitserverService_P4ExecClient interface {
-	Recv() (*P4ExecResponse, error)
-	grpc.ClientStream
-}
-
-type gitserverServiceP4ExecClient struct {
-	grpc.ClientStream
-}
-
-func (x *gitserverServiceP4ExecClient) Recv() (*P4ExecResponse, error) {
-	m := new(P4ExecResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func (c *gitserverServiceClient) RepoClone(ctx context.Context, in *RepoCloneRequest, opts ...grpc.CallOption) (*RepoCloneResponse, error) {
 	out := new(RepoCloneResponse)
 	err := c.cc.Invoke(ctx, GitserverService_RepoClone_FullMethodName, in, out, opts...)
@@ -444,7 +439,7 @@ func (c *gitserverServiceClient) MergeBase(ctx context.Context, in *MergeBaseReq
 }
 
 func (c *gitserverServiceClient) Blame(ctx context.Context, in *BlameRequest, opts ...grpc.CallOption) (GitserverService_BlameClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[5], GitserverService_Blame_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[4], GitserverService_Blame_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -485,7 +480,7 @@ func (c *gitserverServiceClient) DefaultBranch(ctx context.Context, in *DefaultB
 }
 
 func (c *gitserverServiceClient) ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (GitserverService_ReadFileClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[6], GitserverService_ReadFile_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[5], GitserverService_ReadFile_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -516,12 +511,28 @@ func (x *gitserverServiceReadFileClient) Recv() (*ReadFileResponse, error) {
 	return m, nil
 }
 
+func (c *gitserverServiceClient) GetCommit(ctx context.Context, in *GetCommitRequest, opts ...grpc.CallOption) (*GetCommitResponse, error) {
+	out := new(GetCommitResponse)
+	err := c.cc.Invoke(ctx, GitserverService_GetCommit_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gitserverServiceClient) ResolveRevision(ctx context.Context, in *ResolveRevisionRequest, opts ...grpc.CallOption) (*ResolveRevisionResponse, error) {
+	out := new(ResolveRevisionResponse)
+	err := c.cc.Invoke(ctx, GitserverService_ResolveRevision_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
 type GitserverServiceServer interface {
-	// Deprecated: Do not use.
-	BatchLog(context.Context, *BatchLogRequest) (*BatchLogResponse, error)
 	CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error
 	DiskInfo(context.Context, *DiskInfoRequest) (*DiskInfoResponse, error)
 	Exec(*ExecRequest, GitserverService_ExecServer) error
@@ -529,9 +540,20 @@ type GitserverServiceServer interface {
 	IsRepoCloneable(context.Context, *IsRepoCloneableRequest) (*IsRepoCloneableResponse, error)
 	ListGitolite(context.Context, *ListGitoliteRequest) (*ListGitoliteResponse, error)
 	Search(*SearchRequest, GitserverService_SearchServer) error
+	// Archive creates an archive for the given treeish in the given format.
+	// If paths are specified, only those paths are included in the archive.
+	//
+	// If subrepo permissions are enabled for the repo, no archive will be created
+	// for non-internal actors and an unimplemented error will be returned. We can
+	// currently not filter parts of the archive, so this would be considered leaking
+	// information.
+	//
+	// If the given treeish does not exist, an error with a RevisionNotFoundPayload
+	// is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
 	Archive(*ArchiveRequest, GitserverService_ArchiveServer) error
-	// Deprecated: Do not use.
-	P4Exec(*P4ExecRequest, GitserverService_P4ExecServer) error
 	RepoClone(context.Context, *RepoCloneRequest) (*RepoCloneResponse, error)
 	RepoCloneProgress(context.Context, *RepoCloneProgressRequest) (*RepoCloneProgressResponse, error)
 	RepoDelete(context.Context, *RepoDeleteRequest) (*RepoDeleteResponse, error)
@@ -576,6 +598,35 @@ type GitserverServiceServer interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	ReadFile(*ReadFileRequest, GitserverService_ReadFileServer) error
+	// GetCommit gets a commit from the repo ODB.
+	// The endpoint will verify that the user is allowed to view the given commit.
+	//
+	// If subrepo permissions are enabled for the repo. If access is denied, an error
+	// with a RevisionNotFoundPayload is returned, to not leak existence of the commit.
+	//
+	// If the commit is not found, an error with a RevisionNotFoundPayload is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	GetCommit(context.Context, *GetCommitRequest) (*GetCommitResponse, error)
+	// ResolveRevision resolves a given revspec-ish to a commit SHA.
+	// If passed a commit sha, the endpoint will also verify that the commit exists.
+	//
+	// If the revision cannot be resolved an error with RevisionNotFoundPayload is
+	// returned.
+	//
+	// Under the hood, this endpoint currently uses git rev-parse to resolve the revspec,
+	// but we forbid certain revspecs (like HEAD) to avoid leaking existence files,
+	// and to avoid running very expensive rev-parse operations.
+	// Assume only the following are supported:
+	// - Symbolic refs
+	// - All refs under refs/, including tags
+	// - Commit hashes
+	// - Abbreviated commit hashes
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	ResolveRevision(context.Context, *ResolveRevisionRequest) (*ResolveRevisionResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -583,9 +634,6 @@ type GitserverServiceServer interface {
 type UnimplementedGitserverServiceServer struct {
 }
 
-func (UnimplementedGitserverServiceServer) BatchLog(context.Context, *BatchLogRequest) (*BatchLogResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method BatchLog not implemented")
-}
 func (UnimplementedGitserverServiceServer) CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error {
 	return status.Errorf(codes.Unimplemented, "method CreateCommitFromPatchBinary not implemented")
 }
@@ -609,9 +657,6 @@ func (UnimplementedGitserverServiceServer) Search(*SearchRequest, GitserverServi
 }
 func (UnimplementedGitserverServiceServer) Archive(*ArchiveRequest, GitserverService_ArchiveServer) error {
 	return status.Errorf(codes.Unimplemented, "method Archive not implemented")
-}
-func (UnimplementedGitserverServiceServer) P4Exec(*P4ExecRequest, GitserverService_P4ExecServer) error {
-	return status.Errorf(codes.Unimplemented, "method P4Exec not implemented")
 }
 func (UnimplementedGitserverServiceServer) RepoClone(context.Context, *RepoCloneRequest) (*RepoCloneResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RepoClone not implemented")
@@ -661,6 +706,12 @@ func (UnimplementedGitserverServiceServer) DefaultBranch(context.Context, *Defau
 func (UnimplementedGitserverServiceServer) ReadFile(*ReadFileRequest, GitserverService_ReadFileServer) error {
 	return status.Errorf(codes.Unimplemented, "method ReadFile not implemented")
 }
+func (UnimplementedGitserverServiceServer) GetCommit(context.Context, *GetCommitRequest) (*GetCommitResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCommit not implemented")
+}
+func (UnimplementedGitserverServiceServer) ResolveRevision(context.Context, *ResolveRevisionRequest) (*ResolveRevisionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResolveRevision not implemented")
+}
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
 // UnsafeGitserverServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -672,24 +723,6 @@ type UnsafeGitserverServiceServer interface {
 
 func RegisterGitserverServiceServer(s grpc.ServiceRegistrar, srv GitserverServiceServer) {
 	s.RegisterService(&GitserverService_ServiceDesc, srv)
-}
-
-func _GitserverService_BatchLog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BatchLogRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GitserverServiceServer).BatchLog(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: GitserverService_BatchLog_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GitserverServiceServer).BatchLog(ctx, req.(*BatchLogRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _GitserverService_CreateCommitFromPatchBinary_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -850,27 +883,6 @@ type gitserverServiceArchiveServer struct {
 }
 
 func (x *gitserverServiceArchiveServer) Send(m *ArchiveResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func _GitserverService_P4Exec_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(P4ExecRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(GitserverServiceServer).P4Exec(m, &gitserverServiceP4ExecServer{stream})
-}
-
-type GitserverService_P4ExecServer interface {
-	Send(*P4ExecResponse) error
-	grpc.ServerStream
-}
-
-type gitserverServiceP4ExecServer struct {
-	grpc.ServerStream
-}
-
-func (x *gitserverServiceP4ExecServer) Send(m *P4ExecResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -1168,6 +1180,42 @@ func (x *gitserverServiceReadFileServer) Send(m *ReadFileResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _GitserverService_GetCommit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCommitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).GetCommit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_GetCommit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).GetCommit(ctx, req.(*GetCommitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GitserverService_ResolveRevision_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResolveRevisionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).ResolveRevision(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_ResolveRevision_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).ResolveRevision(ctx, req.(*ResolveRevisionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1175,10 +1223,6 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "gitserver.v1.GitserverService",
 	HandlerType: (*GitserverServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "BatchLog",
-			Handler:    _GitserverService_BatchLog_Handler,
-		},
 		{
 			MethodName: "DiskInfo",
 			Handler:    _GitserverService_DiskInfo_Handler,
@@ -1251,6 +1295,14 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "DefaultBranch",
 			Handler:    _GitserverService_DefaultBranch_Handler,
 		},
+		{
+			MethodName: "GetCommit",
+			Handler:    _GitserverService_GetCommit_Handler,
+		},
+		{
+			MethodName: "ResolveRevision",
+			Handler:    _GitserverService_ResolveRevision_Handler,
+		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
@@ -1271,11 +1323,6 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Archive",
 			Handler:       _GitserverService_Archive_Handler,
-			ServerStreams: true,
-		},
-		{
-			StreamName:    "P4Exec",
-			Handler:       _GitserverService_P4Exec_Handler,
 			ServerStreams: true,
 		},
 		{

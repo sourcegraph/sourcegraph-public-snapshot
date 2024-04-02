@@ -55,7 +55,7 @@ func TestGeneratedSearchJob(t *testing.T) {
 	mockJob := mockjob.NewMockJob()
 	setMockJobResultSize := func(n int) {
 		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
-			for i := 0; i < n; i++ {
+			for i := range n {
 				select {
 				case <-ctx.Done():
 					return nil, ctx.Err()
@@ -89,7 +89,7 @@ func TestGeneratedSearchJob(t *testing.T) {
 
 	autogold.Expect(autogold.Raw("")).Equal(t, autogold.Raw(test(0)))
 	autogold.Expect(autogold.Raw("1 result")).Equal(t, autogold.Raw(test(1)))
-	autogold.Expect(autogold.Raw("2000+ results")).Equal(t, autogold.Raw(test(limits.DefaultMaxSearchResultsStreaming)))
+	autogold.Expect(autogold.Raw("10000+ results")).Equal(t, autogold.Raw(test(limits.DefaultMaxSearchResultsStreaming)))
 }
 
 func TestNewSmartSearchJob_ResultCount(t *testing.T) {
@@ -99,7 +99,7 @@ func TestNewSmartSearchJob_ResultCount(t *testing.T) {
 	// generated query, which always panics.
 	mockJob := mockjob.NewMockJob()
 	mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
-		for i := 0; i < RESULT_THRESHOLD; i++ {
+		for i := range RESULT_THRESHOLD {
 			s.Send(streaming.SearchEvent{
 				Results: []result.Match{&result.FileMatch{
 					File: result.File{Path: strconv.Itoa(i)},

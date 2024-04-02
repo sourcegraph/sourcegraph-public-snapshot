@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"fmt"
 	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"net/http"
 	"os"
@@ -13,13 +14,13 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/graph-gophers/graphql-go"
 	sglog "github.com/sourcegraph/log"
+	"golang.org/x/oauth2/clientcredentials"
 	"google.golang.org/grpc"
 
 	zoektProto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache"
@@ -30,10 +31,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	confProto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/sams"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -168,7 +172,7 @@ func NewHandler(
 	m.Path("/completions/stream").Methods("POST").Handler(handlers.NewChatCompletionsStreamHandler())
 	m.Path("/completions/code").Methods("POST").Handler(handlers.NewCodeCompletionsHandler())
 
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		m.Path("/license/check").Methods("POST").Name("dotcom.license.check").Handler(handlers.NewDotcomLicenseCheckHandler())
 
 		updatecheckHandler, err := updatecheck.ForwardHandler()
@@ -179,6 +183,36 @@ func NewHandler(
 			Methods(http.MethodGet, http.MethodPost).
 			Name("updatecheck").
 			Handler(updatecheckHandler)
+
+		// Register additional endpoints specific to DOTCOM.
+		dotcomConf := conf.Get().Dotcom
+		if dotcomConf == nil {
+			logger.Error("dotcom configuration is missing, refusing to register /ssc/ APIs")
+		} else {
+			samsClient := sams.NewClient(
+				dotcomConf.SamsServer,
+				clientcredentials.Config{
+					ClientID:     dotcomConf.SamsClientID,
+					ClientSecret: dotcomConf.SamsClientSecret,
+					TokenURL:     fmt.Sprintf("%s/oauth/token", dotcomConf.SamsServer),
+					Scopes:       []string{"openid", "profile", "email"},
+				},
+			)
+
+			samsAuthenticator := sams.Authenticator{
+				Logger:     logger.Scoped("sams.Authenticator"),
+				SAMSClient: samsClient,
+			}
+
+			// API endpoint for ssc to trigger cody's rate limit refresh for a user
+			// TODO(sourcegraph#59625) remove this as part of adding SAMSActor source
+			m.Path("/ssc/users/{samsAccountID}/cody/limits/refresh").Methods("POST").Handler(
+				samsAuthenticator.RequireScopes(
+					[]sams.Scope{sams.ScopeDotcom},
+					newSSCRefreshCodyRateLimitHandler(logger, db),
+				),
+			)
+		}
 	}
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
@@ -188,6 +222,7 @@ func NewHandler(
 	// add above repo paths.
 	repo := m.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/shield").Methods("GET").Handler(jsonHandler(serveRepoShield()))
+	repo.Path("/refresh").Methods("POST").Handler(jsonHandler(serveRepoRefresh(db)))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
@@ -228,14 +263,14 @@ func RegisterInternalServices(
 		WriteErrBody: true,
 	})
 
-	// zoekt-indexserver endpoints
-	gsClient := gitserver.NewClient("http.zoektindexerserver")
+	gsClient := gitserver.NewClient("http.internalapi")
 
+	// zoekt-indexserver endpoints
 	indexer := &searchIndexerServer{
 		db:              db,
 		logger:          logger.Scoped("searchIndexerServer"),
-		gitserverClient: gsClient,
-		ListIndexable:   backend.NewRepos(logger, db, gsClient).ListIndexable,
+		gitserverClient: gsClient.Scoped("zoektindexerserver"),
+		ListIndexable:   backend.NewRepos(logger, db, gsClient.Scoped("zoektindexerserver")).ListIndexable,
 		RepoStore:       db.Repos(),
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
@@ -245,12 +280,9 @@ func RegisterInternalServices(
 		MinLastChangedDisabled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
 	}
 
-	gitService := &gitServiceHandler{Gitserver: gsClient}
+	gitService := &gitServiceHandler{Gitserver: gsClient.Scoped("gitservice")}
 	m.Path("/git/{RepoName:.*}/info/refs").Methods("GET").Name(gitInfoRefs).Handler(trace.Route(handler(gitService.serveInfoRefs())))
 	m.Path("/git/{RepoName:.*}/git-upload-pack").Methods("GET", "POST").Name(gitUploadPack).Handler(trace.Route(handler(gitService.serveGitUploadPack())))
-
-	// TODO: Can be removed after 5.3 is cut.
-	m.Path("/configuration").Methods("POST").Handler(trace.Route(handler(serveConfiguration)))
 
 	m.Path("/lsif/upload").Methods("POST").Handler(trace.Route(newCodeIntelUploadHandler(false)))
 	m.Path("/scip/upload").Methods("POST").Handler(trace.Route(newCodeIntelUploadHandler(false)))
@@ -341,5 +373,5 @@ var noopHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 
 var lsifDeprecationHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("Sourcegraph v4.5+ no longer accepts LSIF uploads. The Sourcegraph CLI v4.4.2+ will translate LSIF to SCIP prior to uploading. Please check the version of the CLI utility used to upload this artifact."))
+	_, _ = w.Write([]byte("Sourcegraph v4.5+ no longer accepts LSIF uploads. The Sourcegraph CLI v4.4.2+ will translate LSIF to SCIP prior to uploading. Please check the version of the CLI utility used to upload this artifact."))
 })

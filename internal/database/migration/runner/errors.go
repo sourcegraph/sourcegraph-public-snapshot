@@ -94,7 +94,7 @@ func (e *privilegedMigrationError) Error() string {
 		instructions: strings.Join([]string{
 			`The migration runner is currently being run with -unprivileged-only.`,
 			`The indicated migration is marked as privileged and cannot be applied by this invocation of the migration runner.`,
-			`Before re-invoking the migration runner, follow the instructions on https://docs.sourcegraph.com/admin/how-to/privileged_migrations.`,
+			`Before re-invoking the migration runner, follow the instructions on https://sourcegraph.com/docs/admin/how-to/privileged_migrations.`,
 			`Please contact support@sourcegraph.com for further assistance.`,
 		}, " "),
 	}).Error()

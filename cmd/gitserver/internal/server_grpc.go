@@ -2,9 +2,11 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -21,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -32,40 +33,37 @@ import (
 )
 
 type service interface {
-	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse)
+	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchReader io.Reader) protocol.CreateCommitFromPatchResponse
 	LogIfCorrupt(context.Context, api.RepoName, error)
-	Exec(ctx context.Context, req *protocol.ExecRequest, w io.Writer) (execStatus, error)
-	MaybeStartClone(ctx context.Context, repo api.RepoName) (notFound *protocol.NotFoundPayload, cloned bool)
+	MaybeStartClone(ctx context.Context, repo api.RepoName) (cloned bool, status CloneStatus, _ error)
 	IsRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error)
-	RepoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
+	RepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
 	CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error)
 	SearchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error)
-
-	BatchGitLogInstrumentedHandler(ctx context.Context, req *proto.BatchLogRequest) (resp *proto.BatchLogResponse, err error)
-	P4Exec(ctx context.Context, logger log.Logger, req *p4ExecRequest, w io.Writer) execStatus
+	EnsureRevision(ctx context.Context, repo api.RepoName, rev string) (didUpdate bool)
 }
 
 func NewGRPCServer(server *Server) proto.GitserverServiceServer {
 	return &grpcServer{
-		logger:         server.Logger,
-		reposDir:       server.ReposDir,
-		db:             server.DB,
-		hostname:       server.Hostname,
+		logger:         server.logger,
+		db:             server.db,
+		hostname:       server.hostname,
 		subRepoChecker: authz.DefaultSubRepoPermsChecker,
-		locker:         server.Locker,
-		getBackendFunc: server.GetBackendFunc,
+		locker:         server.locker,
+		getBackendFunc: server.getBackendFunc,
 		svc:            server,
+		fs:             server.fs,
 	}
 }
 
 type grpcServer struct {
 	logger         log.Logger
-	reposDir       string
 	db             database.DB
 	hostname       string
 	subRepoChecker authz.SubRepoPermissionChecker
 	locker         RepositoryLocker
 	getBackendFunc Backender
+	fs             gitserverfs.FS
 
 	svc service
 
@@ -74,83 +72,91 @@ type grpcServer struct {
 
 var _ proto.GitserverServiceServer = &grpcServer{}
 
-func (gs *grpcServer) BatchLog(ctx context.Context, req *proto.BatchLogRequest) (*proto.BatchLogResponse, error) {
-	// Validate request parameters
-	if len(req.GetRepoCommits()) == 0 { //nolint:staticcheck
-		return &proto.BatchLogResponse{}, nil
-	}
-	if !strings.HasPrefix(req.GetFormat(), "--format=") { //nolint:staticcheck
-		return nil, status.Error(codes.InvalidArgument, "format parameter expected to be of the form `--format=<git log format>`")
-	}
-
-	// Handle unexpected error conditions
-	resp, err := gs.svc.BatchGitLogInstrumentedHandler(ctx, req)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	return resp, nil
-}
-
 func (gs *grpcServer) CreateCommitFromPatchBinary(s proto.GitserverService_CreateCommitFromPatchBinaryServer) error {
-	var (
-		metadata *proto.CreateCommitFromPatchBinaryRequest_Metadata
-		patch    []byte
-	)
-	receivedMetadata := false
+	var metadata *proto.CreateCommitFromPatchBinaryRequest_Metadata
 
-	for {
+	firstMsg, err := s.Recv()
+	if err != nil {
+		return err
+	}
+
+	switch firstMsg.Payload.(type) {
+	case *proto.CreateCommitFromPatchBinaryRequest_Metadata_:
+		metadata = firstMsg.GetMetadata()
+	default:
+		return status.New(codes.InvalidArgument, "must send metadata event first").Err()
+	}
+
+	patchReader := streamio.NewReader(func() ([]byte, error) {
 		msg, err := s.Recv()
-		if errors.Is(err, io.EOF) {
-			break
-		}
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		switch msg.Payload.(type) {
-		case *proto.CreateCommitFromPatchBinaryRequest_Metadata_:
-			if receivedMetadata {
-				return status.Errorf(codes.InvalidArgument, "received metadata more than once")
-			}
-			metadata = msg.GetMetadata()
-			receivedMetadata = true
-
 		case *proto.CreateCommitFromPatchBinaryRequest_Patch_:
-			m := msg.GetPatch()
-			patch = append(patch, m.GetData()...)
-
-		case nil:
-			continue
-
+			return msg.GetPatch().GetData(), nil
 		default:
-			return status.Errorf(codes.InvalidArgument, "got malformed message %T", msg.Payload)
+			return nil, status.New(codes.InvalidArgument, "must only send patch events after metadata").Err()
 		}
-	}
+	})
 
 	var r protocol.CreateCommitFromPatchRequest
-	r.FromProto(metadata, patch)
-	_, resp := gs.svc.CreateCommitFromPatch(s.Context(), r)
-	res, err := resp.ToProto()
-	if err != nil {
-		return err.ToStatus().Err()
+	r.FromProto(metadata)
+	resp := gs.svc.CreateCommitFromPatch(s.Context(), r, patchReader)
+	res, patchErr := resp.ToProto()
+	if patchErr != nil {
+		return patchErr.ToStatus().Err()
 	}
 
 	return s.SendAndClose(res)
 }
 
 func (gs *grpcServer) DiskInfo(_ context.Context, _ *proto.DiskInfoRequest) (*proto.DiskInfoResponse, error) {
-	return getDiskInfo(gs.reposDir)
+	usage, err := gs.fs.DiskUsage()
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.DiskInfoResponse{
+		TotalSpace:  usage.Size(),
+		FreeSpace:   usage.Free(),
+		PercentUsed: usage.PercentUsed(),
+	}, nil
 }
 
 func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_ExecServer) error {
-	internalReq := protocol.ExecRequest{
-		Repo:      api.RepoName(req.GetRepo()),
-		Args:      byteSlicesToStrings(req.GetArgs()),
-		NoTimeout: req.GetNoTimeout(),
+	ctx := ss.Context()
 
-		// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string
-		EnsureRevision: string(req.GetEnsureRevision()),
+	// Log which actor is accessing the repo.
+	args := byteSlicesToStrings(req.GetArgs())
+	logAttrs := []log.Field{}
+	if len(args) > 0 {
+		logAttrs = append(logAttrs,
+			log.String("cmd", args[0]),
+			log.Strings("args", args[1:]),
+		)
+	}
+
+	accesslog.Record(ctx, req.GetRepo(), logAttrs...)
+
+	if req.GetRepo() == "" {
+		return status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepo())
+	repoDir := gs.fs.RepoDir(repoName)
+	backend := gs.getBackendFunc(repoDir, repoName)
+
+	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+		return err
+	}
+
+	if req.GetNoTimeout() {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, 24*time.Hour)
+		defer cancel()
+
 	}
 
 	w := streamio.NewWriter(func(p []byte) error {
@@ -159,53 +165,168 @@ func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 		})
 	})
 
-	// Log which actor is accessing the repo.
-	args := byteSlicesToStrings(req.GetArgs())
-	cmd := ""
-	if len(args) > 0 {
-		cmd = args[0]
-		args = args[1:]
+	// Special-case `git rev-parse HEAD` requests. These are invoked by search queries for every repo in scope.
+	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
+	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
+	if len(args) == 2 && args[0] == "rev-parse" && args[1] == "HEAD" {
+		if resolved, err := gitcli.QuickRevParseHead(repoDir); err == nil && gitdomain.IsAbsoluteRevision(resolved) {
+			_, _ = w.Write([]byte(resolved))
+			return nil
+		}
 	}
 
-	accesslog.Record(ss.Context(), req.GetRepo(),
-		log.String("cmd", cmd),
-		log.Strings("args", args),
-	)
+	// Special-case `git symbolic-ref HEAD` requests. These are invoked by resolvers determining the default branch of a repo.
+	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
+	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
+	if len(args) == 2 && args[0] == "symbolic-ref" && args[1] == "HEAD" {
+		if resolved, err := gitcli.QuickSymbolicRefHead(repoDir); err == nil {
+			_, _ = w.Write([]byte(resolved))
+			return nil
+		}
+	}
 
-	return gs.doExec(ss.Context(), &internalReq, w)
+	stdout, err := backend.Exec(ctx, args...)
+	if err != nil {
+		if errors.Is(err, gitcli.ErrBadGitCommand) {
+			return status.New(codes.InvalidArgument, "invalid command").Err()
+		}
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return status.FromContextError(ctxErr).Err()
+		}
+
+		return err
+	}
+	defer stdout.Close()
+
+	_, err = io.Copy(w, stdout)
+	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return status.FromContextError(ctxErr).Err()
+		}
+
+		commandFailedErr := &gitcli.CommandFailedError{}
+		if errors.As(err, &commandFailedErr) {
+			gRPCStatus := codes.Unknown
+			if strings.Contains(commandFailedErr.Error(), "signal: killed") {
+				gRPCStatus = codes.Aborted
+			}
+
+			var errString string
+			if commandFailedErr.Unwrap() != nil {
+				errString = commandFailedErr.Unwrap().Error()
+			}
+			s, err := status.New(gRPCStatus, errString).WithDetails(&proto.ExecStatusPayload{
+				StatusCode: int32(commandFailedErr.ExitStatus),
+				Stderr:     string(commandFailedErr.Stderr),
+			})
+			if err != nil {
+				gs.logger.Error("failed to marshal status", log.Error(err))
+				return err
+			}
+			return s.Err()
+		}
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		return err
+	}
+
+	return nil
 }
 
 func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {
-	// Log which which actor is accessing the repo.
-	accesslog.Record(ss.Context(), req.GetRepo(),
-		log.String("treeish", req.GetTreeish()),
-		log.String("format", req.GetFormat()),
-		log.Strings("path", req.GetPathspecs()),
-	)
+	ctx := ss.Context()
+
+	if req.GetRepo() == "" {
+		return status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	if req.GetTreeish() == "" {
+		return status.New(codes.InvalidArgument, "treeish must be specified").Err()
+	}
+
+	var format git.ArchiveFormat
+	switch req.GetFormat() {
+	case proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP:
+		format = git.ArchiveFormatZip
+	case proto.ArchiveFormat_ARCHIVE_FORMAT_TAR:
+		format = git.ArchiveFormatTar
+	default:
+		return status.Error(codes.InvalidArgument, fmt.Sprintf("unknown archive format %q", req.GetFormat()))
+	}
 
 	if err := git.CheckSpecArgSafety(req.GetTreeish()); err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if req.GetRepo() == "" || req.GetFormat() == "" {
-		return status.Error(codes.InvalidArgument, "empty repo or format")
+	accesslog.Record(ctx, req.GetRepo(),
+		log.String("treeish", req.GetTreeish()),
+		log.String("format", string(format)),
+		log.Strings("path", req.GetPaths()),
+	)
+
+	repoName := api.RepoName(req.GetRepo())
+	repoDir := gs.fs.RepoDir(repoName)
+
+	if err := gs.maybeStartClone(ss.Context(), repoName); err != nil {
+		return err
 	}
 
-	execReq := &protocol.ExecRequest{
-		Repo: api.RepoName(req.GetRepo()),
-		Args: []string{
-			"archive",
-			"--worktree-attributes",
-			"--format=" + req.GetFormat(),
-		},
+	if !actor.FromContext(ctx).IsInternal() {
+		if enabled, err := gs.subRepoChecker.EnabledForRepo(ctx, repoName); err != nil {
+			return errors.Wrap(err, "sub-repo permissions check")
+		} else if enabled {
+			s := status.New(codes.Unimplemented, "archiveReader invoked for a repo with sub-repo permissions")
+			return s.Err()
+		}
 	}
 
-	if req.GetFormat() == string(gitserver.ArchiveFormatZip) {
-		execReq.Args = append(execReq.Args, "-0")
-	}
+	// This is a long time, but this never blocks a user request for this
+	// long. Even repos that are not that large can take a long time, for
+	// example a search over all repos in an organization may have several
+	// large repos. All of those repos will be competing for IO => we need
+	// a larger timeout.
+	ctx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
+	defer cancel()
 
-	execReq.Args = append(execReq.Args, req.GetTreeish(), "--")
-	execReq.Args = append(execReq.Args, req.GetPathspecs()...)
+	backend := gs.getBackendFunc(repoDir, repoName)
+
+	r, err := backend.ArchiveReader(ctx, format, req.GetTreeish(), req.GetPaths())
+	if err != nil {
+		if os.IsNotExist(err) {
+			var path string
+			var pathError *os.PathError
+			if errors.As(err, &pathError) {
+				path = pathError.Path
+			}
+			s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
+				Repo: string(repoName),
+				// TODO: I'm not sure this should be allowed, a treeish is not necessarily
+				// a commit.
+				Commit: string(req.GetTreeish()),
+				Path:   path,
+			})
+			if err != nil {
+				return err
+			}
+			return s.Err()
+		}
+
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepo(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return err
+			}
+			return s.Err()
+		}
+
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		// TODO: Better error checking.
+		return err
+	}
+	defer r.Close()
 
 	w := streamio.NewWriter(func(p []byte) error {
 		return ss.Send(&proto.ArchiveResponse{
@@ -213,75 +334,13 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		})
 	})
 
-	// This is a long time, but this never blocks a user request for this
-	// long. Even repos that are not that large can take a long time, for
-	// example a search over all repos in an organization may have several
-	// large repos. All of those repos will be competing for IO => we need
-	// a larger timeout.
-	ctx, cancel := context.WithTimeout(ss.Context(), conf.GitLongCommandTimeout())
-	defer cancel()
-
-	return gs.doExec(ctx, execReq, w)
-}
-
-// doExec executes the given git command and streams the output to the given writer.
-//
-// Note: This function wraps the underlying exec implementation and returns grpc specific error handling.
-func (gs *grpcServer) doExec(ctx context.Context, req *protocol.ExecRequest, w io.Writer) error {
-	execStatus, err := gs.svc.Exec(ctx, req, w)
-	if err != nil {
-		if v := (&NotFoundError{}); errors.As(err, &v) {
-			s, err := status.New(codes.NotFound, "repo not found").WithDetails(&proto.RepoNotFoundPayload{
-				Repo:            string(req.Repo),
-				CloneInProgress: v.Payload.CloneInProgress,
-				CloneProgress:   v.Payload.CloneProgress,
-			})
-			if err != nil {
-				gs.logger.Error("failed to marshal status", log.Error(err))
-				return err
-			}
-			return s.Err()
-		} else if errors.Is(err, gitcli.ErrBadGitCommand) {
-			return status.New(codes.InvalidArgument, "invalid command").Err()
-		} else if ctxErr := ctx.Err(); ctxErr != nil {
-			return status.FromContextError(ctxErr).Err()
-		}
-
-		return err
-	}
-
-	if execStatus.ExitStatus != 0 || execStatus.Err != nil {
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			return status.FromContextError(ctxErr).Err()
-		}
-
-		gRPCStatus := codes.Unknown
-		if execStatus.Err != nil && strings.Contains(execStatus.Err.Error(), "signal: killed") {
-			gRPCStatus = codes.Aborted
-		}
-
-		var errString string
-		if execStatus.Err != nil {
-			errString = execStatus.Err.Error()
-		}
-		s, err := status.New(gRPCStatus, errString).WithDetails(&proto.ExecStatusPayload{
-			StatusCode: int32(execStatus.ExitStatus),
-			Stderr:     execStatus.Stderr,
-		})
-		if err != nil {
-			gs.logger.Error("failed to marshal status", log.Error(err))
-			return err
-		}
-		return s.Err()
-	}
-
-	return nil
-
+	_, err = io.Copy(w, r)
+	return err
 }
 
 func (gs *grpcServer) GetObject(ctx context.Context, req *proto.GetObjectRequest) (*proto.GetObjectResponse, error) {
 	repoName := api.RepoName(req.GetRepo())
-	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
+	repoDir := gs.fs.RepoDir(repoName)
 
 	// Log which actor is accessing the repo.
 	accesslog.Record(ctx, string(repoName), log.String("objectname", req.GetObjectName()))
@@ -332,18 +391,8 @@ func (gs *grpcServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 
 	repoName := api.RepoName(req.GetRepo())
 
-	// Ensure that the repo is cloned and if not start a background clone, then
-	// return a well-known NotFound payload error.
-	if notFoundPayload, cloned := gs.svc.MaybeStartClone(ss.Context(), repoName); !cloned {
-		s, err := status.New(codes.NotFound, "repo not cloned").WithDetails(&proto.RepoNotFoundPayload{
-			CloneInProgress: notFoundPayload.CloneInProgress,
-			CloneProgress:   notFoundPayload.CloneProgress,
-			Repo:            req.GetRepo(),
-		})
-		if err != nil {
-			return err
-		}
-		return s.Err()
+	if err := gs.maybeStartClone(ss.Context(), repoName); err != nil {
+		return err
 	}
 
 	onMatch := func(match *protocol.CommitMatch) error {
@@ -367,11 +416,14 @@ func (gs *grpcServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 	})
 }
 
-func (gs *grpcServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest) (*proto.RepoCloneResponse, error) {
-	repo := protocol.NormalizeRepo(api.RepoName(in.GetRepo()))
+func (gs *grpcServer) RepoClone(ctx context.Context, req *proto.RepoCloneRequest) (*proto.RepoCloneResponse, error) {
+	if req.GetRepo() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
 
-	if _, err := gs.svc.CloneRepo(ctx, repo, CloneOptions{Block: false}); err != nil {
+	repoName := api.RepoName(req.GetRepo())
 
+	if _, err := gs.svc.CloneRepo(ctx, repoName, CloneOptions{Block: false}); err != nil {
 		return &proto.RepoCloneResponse{Error: err.Error()}, nil
 	}
 
@@ -379,42 +431,48 @@ func (gs *grpcServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest)
 }
 
 func (gs *grpcServer) RepoCloneProgress(_ context.Context, req *proto.RepoCloneProgressRequest) (*proto.RepoCloneProgressResponse, error) {
-	repositories := req.GetRepos()
+	if req.GetRepoName() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
 
-	resp := protocol.RepoCloneProgressResponse{
-		Results: make(map[api.RepoName]*protocol.RepoCloneProgress, len(repositories)),
+	repoName := api.RepoName(req.GetRepoName())
+
+	progress, err := repoCloneProgress(gs.fs, gs.locker, repoName)
+	if err != nil {
+		return nil, err
 	}
-	for _, repo := range repositories {
-		repoName := api.RepoName(repo)
-		result := repoCloneProgress(gs.reposDir, gs.locker, repoName)
-		resp.Results[repoName] = result
-	}
-	return resp.ToProto(), nil
+
+	return progress.ToProto(), nil
 }
 
 func (gs *grpcServer) RepoDelete(ctx context.Context, req *proto.RepoDeleteRequest) (*proto.RepoDeleteResponse, error) {
-	repo := req.GetRepo()
-
-	if err := deleteRepo(ctx, gs.logger, gs.db, gs.hostname, gs.reposDir, api.RepoName(repo)); err != nil {
-		gs.logger.Error("failed to delete repository", log.String("repo", repo), log.Error(err))
-		return &proto.RepoDeleteResponse{}, status.Errorf(codes.Internal, "failed to delete repository %s: %s", repo, err)
+	if req.GetRepo() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
 	}
-	gs.logger.Info("deleted repository", log.String("repo", repo))
+
+	repoName := api.RepoName(req.GetRepo())
+
+	if err := deleteRepo(ctx, gs.db, gs.hostname, gs.fs, repoName); err != nil {
+		gs.logger.Error("failed to delete repository", log.String("repo", string(repoName)), log.Error(err))
+		return &proto.RepoDeleteResponse{}, status.Errorf(codes.Internal, "failed to delete repository %s: %s", repoName, err)
+	}
+	gs.logger.Info("deleted repository", log.String("repo", string(repoName)))
 	return &proto.RepoDeleteResponse{}, nil
 }
 
-func (gs *grpcServer) RepoUpdate(_ context.Context, req *proto.RepoUpdateRequest) (*proto.RepoUpdateResponse, error) {
+func (gs *grpcServer) RepoUpdate(ctx context.Context, req *proto.RepoUpdateRequest) (*proto.RepoUpdateResponse, error) {
 	var in protocol.RepoUpdateRequest
 	in.FromProto(req)
-	grpcResp := gs.svc.RepoUpdate(&in)
 
-	return grpcResp.ToProto(), nil
+	resp := gs.svc.RepoUpdate(ctx, &in)
+
+	return resp.ToProto(), nil
 }
 
 func (gs *grpcServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoCloneableRequest) (*proto.IsRepoCloneableResponse, error) {
 	repo := api.RepoName(req.GetRepo())
 
-	if req.Repo == "" {
+	if repo == "" {
 		return nil, status.Error(codes.InvalidArgument, "no Repo given")
 	}
 
@@ -427,17 +485,18 @@ func (gs *grpcServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoClon
 }
 
 func (gs *grpcServer) IsPerforcePathCloneable(ctx context.Context, req *proto.IsPerforcePathCloneableRequest) (*proto.IsPerforcePathCloneableResponse, error) {
-	if req.DepotPath == "" {
+	if req.GetDepotPath() == "" {
 		return nil, status.Error(codes.InvalidArgument, "no DepotPath given")
 	}
 
-	p4home, err := gitserverfs.MakeP4HomeDir(gs.reposDir)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
 	conn := req.GetConnectionDetails()
-	err = perforce.IsDepotPathCloneable(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.DepotPath)
+	err := perforce.IsDepotPathCloneable(ctx, gs.fs, perforce.IsDepotPathCloneableArguments{
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+
+		DepotPath: req.GetDepotPath(),
+	})
 	if err != nil {
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
@@ -446,13 +505,12 @@ func (gs *grpcServer) IsPerforcePathCloneable(ctx context.Context, req *proto.Is
 }
 
 func (gs *grpcServer) CheckPerforceCredentials(ctx context.Context, req *proto.CheckPerforceCredentialsRequest) (*proto.CheckPerforceCredentialsResponse, error) {
-	p4home, err := gitserverfs.MakeP4HomeDir(gs.reposDir)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
 	conn := req.GetConnectionDetails()
-	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err := perforce.P4TestWithTrust(ctx, gs.fs, perforce.P4TestWithTrustArguments{
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -465,13 +523,12 @@ func (gs *grpcServer) CheckPerforceCredentials(ctx context.Context, req *proto.C
 }
 
 func (gs *grpcServer) PerforceUsers(ctx context.Context, req *proto.PerforceUsersRequest) (*proto.PerforceUsersResponse, error) {
-	p4home, err := gitserverfs.MakeP4HomeDir(gs.reposDir)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
 	conn := req.GetConnectionDetails()
-	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err := perforce.P4TestWithTrust(ctx, gs.fs, perforce.P4TestWithTrustArguments{
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -487,7 +544,11 @@ func (gs *grpcServer) PerforceUsers(ctx context.Context, req *proto.PerforceUser
 		log.String("p4port", conn.GetP4Port()),
 	)
 
-	users, err := perforce.P4Users(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	users, err := perforce.P4Users(ctx, gs.fs, perforce.P4UsersArguments{
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+	})
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -504,13 +565,12 @@ func (gs *grpcServer) PerforceUsers(ctx context.Context, req *proto.PerforceUser
 }
 
 func (gs *grpcServer) PerforceProtectsForUser(ctx context.Context, req *proto.PerforceProtectsForUserRequest) (*proto.PerforceProtectsForUserResponse, error) {
-	p4home, err := gitserverfs.MakeP4HomeDir(gs.reposDir)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
 	conn := req.GetConnectionDetails()
-	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err := perforce.P4TestWithTrust(ctx, gs.fs, perforce.P4TestWithTrustArguments{
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -526,7 +586,14 @@ func (gs *grpcServer) PerforceProtectsForUser(ctx context.Context, req *proto.Pe
 		log.String("p4port", conn.GetP4Port()),
 	)
 
-	protects, err := perforce.P4ProtectsForUser(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetUsername())
+	args := perforce.P4ProtectsForUserArguments{
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+
+		Username: req.GetUsername(),
+	}
+	protects, err := perforce.P4ProtectsForUser(ctx, gs.fs, args)
 	if err != nil {
 		return nil, err
 	}
@@ -542,13 +609,12 @@ func (gs *grpcServer) PerforceProtectsForUser(ctx context.Context, req *proto.Pe
 }
 
 func (gs *grpcServer) PerforceProtectsForDepot(ctx context.Context, req *proto.PerforceProtectsForDepotRequest) (*proto.PerforceProtectsForDepotResponse, error) {
-	p4home, err := gitserverfs.MakeP4HomeDir(gs.reposDir)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
 	conn := req.GetConnectionDetails()
-	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err := perforce.P4TestWithTrust(ctx, gs.fs, perforce.P4TestWithTrustArguments{
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -564,7 +630,12 @@ func (gs *grpcServer) PerforceProtectsForDepot(ctx context.Context, req *proto.P
 		log.String("p4port", conn.GetP4Port()),
 	)
 
-	protects, err := perforce.P4ProtectsForDepot(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetDepot())
+	protects, err := perforce.P4ProtectsForDepot(ctx, gs.fs, perforce.P4ProtectsForDepotArguments{
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+		Depot:    req.GetDepot(),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -580,13 +651,12 @@ func (gs *grpcServer) PerforceProtectsForDepot(ctx context.Context, req *proto.P
 }
 
 func (gs *grpcServer) PerforceGroupMembers(ctx context.Context, req *proto.PerforceGroupMembersRequest) (*proto.PerforceGroupMembersResponse, error) {
-	p4home, err := gitserverfs.MakeP4HomeDir(gs.reposDir)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
 	conn := req.GetConnectionDetails()
-	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err := perforce.P4TestWithTrust(ctx, gs.fs, perforce.P4TestWithTrustArguments{
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -602,7 +672,15 @@ func (gs *grpcServer) PerforceGroupMembers(ctx context.Context, req *proto.Perfo
 		log.String("p4port", conn.GetP4Port()),
 	)
 
-	members, err := perforce.P4GroupMembers(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetGroup())
+	args := perforce.P4GroupMembersArguments{
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+
+		Group: req.GetGroup(),
+	}
+
+	members, err := perforce.P4GroupMembers(ctx, gs.fs, args)
 	if err != nil {
 		return nil, err
 	}
@@ -613,13 +691,12 @@ func (gs *grpcServer) PerforceGroupMembers(ctx context.Context, req *proto.Perfo
 }
 
 func (gs *grpcServer) IsPerforceSuperUser(ctx context.Context, req *proto.IsPerforceSuperUserRequest) (*proto.IsPerforceSuperUserResponse, error) {
-	p4home, err := gitserverfs.MakeP4HomeDir(gs.reposDir)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
 	conn := req.GetConnectionDetails()
-	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err := perforce.P4TestWithTrust(ctx, gs.fs, perforce.P4TestWithTrustArguments{
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -628,7 +705,11 @@ func (gs *grpcServer) IsPerforceSuperUser(ctx context.Context, req *proto.IsPerf
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	err = perforce.P4UserIsSuperUser(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err = perforce.P4UserIsSuperUser(ctx, gs.fs, perforce.P4UserIsSuperUserArguments{
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -645,13 +726,12 @@ func (gs *grpcServer) IsPerforceSuperUser(ctx context.Context, req *proto.IsPerf
 }
 
 func (gs *grpcServer) PerforceGetChangelist(ctx context.Context, req *proto.PerforceGetChangelistRequest) (*proto.PerforceGetChangelistResponse, error) {
-	p4home, err := gitserverfs.MakeP4HomeDir(gs.reposDir)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
 	conn := req.GetConnectionDetails()
-	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err := perforce.P4TestWithTrust(ctx, gs.fs, perforce.P4TestWithTrustArguments{
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -667,7 +747,13 @@ func (gs *grpcServer) PerforceGetChangelist(ctx context.Context, req *proto.Perf
 		log.String("p4port", conn.GetP4Port()),
 	)
 
-	changelist, err := perforce.GetChangelistByID(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetChangelistId())
+	changelist, err := perforce.GetChangelistByID(ctx, gs.fs, perforce.GetChangeListByIDArguments{
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+
+		ChangelistID: req.GetChangelistId(),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -706,29 +792,28 @@ func (gs *grpcServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
+	repoDir := gs.fs.RepoDir(repoName)
 
-	// Ensure that the repo is cloned and if not start a background clone, then
-	// return a well-known NotFound payload error.
-	if notFoundPayload, cloned := gs.svc.MaybeStartClone(ctx, repoName); !cloned {
-		s, err := status.New(codes.NotFound, "repo not cloned").WithDetails(&proto.RepoNotFoundPayload{
-			CloneInProgress: notFoundPayload.CloneInProgress,
-			CloneProgress:   notFoundPayload.CloneProgress,
-			Repo:            req.GetRepoName(),
-		})
-		if err != nil {
-			return nil, err
-		}
-		return nil, s.Err()
+	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+		return nil, err
 	}
-
-	// TODO: This should be included in requests where we do ensure the revision exists.
-	// gs.server.ensureRevision(ctx, repoName, "THE REVISION", repoDir)
 
 	backend := gs.getBackendFunc(repoDir, repoName)
 
 	sha, err := backend.MergeBase(ctx, string(req.GetBase()), string(req.GetHead()))
 	if err != nil {
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
 		// TODO: Better error checking.
 		return nil, err
@@ -736,6 +821,74 @@ func (gs *grpcServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 
 	return &proto.MergeBaseResponse{
 		MergeBaseCommitSha: string(sha),
+	}, nil
+}
+
+func (gs *grpcServer) GetCommit(ctx context.Context, req *proto.GetCommitRequest) (*proto.GetCommitResponse, error) {
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.String("commit", req.GetCommit()),
+	)
+
+	if req.GetRepoName() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	if req.GetCommit() == "" {
+		return nil, status.New(codes.InvalidArgument, "commit must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gs.fs.RepoDir(repoName)
+
+	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+		return nil, err
+	}
+
+	subRepoPermsEnabled, err := authz.SubRepoEnabledForRepo(ctx, gs.subRepoChecker, repoName)
+	if err != nil {
+		return nil, err
+	}
+
+	backend := gs.getBackendFunc(repoDir, repoName)
+
+	commit, err := backend.GetCommit(ctx, api.CommitID(req.GetCommit()), subRepoPermsEnabled)
+	if err != nil {
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		// TODO: Better error checking.
+		return nil, err
+	}
+
+	hasAccess, err := hasAccessToCommit(ctx, repoName, commit.ModifiedFiles, gs.subRepoChecker)
+	if err != nil {
+		return nil, err
+	}
+
+	if !hasAccess {
+		s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+			Repo: req.GetRepoName(),
+			Spec: req.GetCommit(),
+		})
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.Err()
+	}
+
+	return &proto.GetCommitResponse{
+		Commit: commit.ToProto(),
 	}, nil
 }
 
@@ -753,25 +906,19 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 		return status.New(codes.InvalidArgument, "repo must be specified").Err()
 	}
 
+	if req.GetCommit() == "" {
+		return status.New(codes.InvalidArgument, "commit must be specified").Err()
+	}
+
 	if len(req.GetPath()) == 0 {
 		return status.New(codes.InvalidArgument, "path must be specified").Err()
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
+	repoDir := gs.fs.RepoDir(repoName)
 
-	// Ensure that the repo is cloned and if not start a background clone, then
-	// return a well-known NotFound payload error.
-	if notFoundPayload, cloned := gs.svc.MaybeStartClone(ctx, repoName); !cloned {
-		s, err := status.New(codes.NotFound, "repo not cloned").WithDetails(&proto.RepoNotFoundPayload{
-			CloneInProgress: notFoundPayload.CloneInProgress,
-			CloneProgress:   notFoundPayload.CloneProgress,
-			Repo:            req.GetRepoName(),
-		})
-		if err != nil {
-			return err
-		}
-		return s.Err()
+	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+		return err
 	}
 
 	// First, verify that the actor has access to the given path.
@@ -782,11 +929,10 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 	if !hasAccess {
 		up := &proto.UnauthorizedPayload{
 			RepoName: req.GetRepoName(),
+			Commit:   pointers.Ptr(req.GetCommit()),
 			Path:     pointers.Ptr(req.GetPath()),
 		}
-		if c := req.GetCommit(); c != "" {
-			up.Commit = &c
-		}
+
 		s, marshalErr := status.New(codes.PermissionDenied, "no access to path").WithDetails(up)
 		if marshalErr != nil {
 			gs.logger.Error("failed to marshal error", log.Error(marshalErr))
@@ -797,13 +943,41 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 
 	backend := gs.getBackendFunc(repoDir, repoName)
 
-	r, err := backend.Blame(ctx, req.GetPath(), git.BlameOptions{
-		NewestCommit:     api.CommitID(req.GetCommit()),
+	opts := git.BlameOptions{
 		IgnoreWhitespace: req.GetIgnoreWhitespace(),
-		StartLine:        int(req.GetStartLine()),
-		EndLine:          int(req.GetEndLine()),
-	})
+	}
+
+	if r := req.GetRange(); r != nil {
+		opts.Range = &git.BlameRange{
+			StartLine: int(r.GetStartLine()),
+			EndLine:   int(r.GetEndLine()),
+		}
+	}
+
+	r, err := backend.Blame(ctx, api.CommitID(req.GetCommit()), req.GetPath(), opts)
 	if err != nil {
+		if os.IsNotExist(err) {
+			s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
+				Repo:   req.GetRepoName(),
+				Commit: req.GetCommit(),
+				Path:   req.GetPath(),
+			})
+			if err != nil {
+				return err
+			}
+			return s.Err()
+		}
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return err
+			}
+			return s.Err()
+		}
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
 		// TODO: Better error checking.
 		return err
@@ -840,20 +1014,10 @@ func (gs *grpcServer) DefaultBranch(ctx context.Context, req *proto.DefaultBranc
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
+	repoDir := gs.fs.RepoDir(repoName)
 
-	// Ensure that the repo is cloned and if not start a background clone, then
-	// return a well-known NotFound payload error.
-	if notFoundPayload, cloned := gs.svc.MaybeStartClone(ctx, repoName); !cloned {
-		s, err := status.New(codes.NotFound, "repo not cloned").WithDetails(&proto.RepoNotFoundPayload{
-			CloneInProgress: notFoundPayload.CloneInProgress,
-			CloneProgress:   notFoundPayload.CloneProgress,
-			Repo:            req.GetRepoName(),
-		})
-		if err != nil {
-			return nil, err
-		}
-		return nil, s.Err()
+	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+		return nil, err
 	}
 
 	backend := gs.getBackendFunc(repoDir, repoName)
@@ -911,20 +1075,10 @@ func (gs *grpcServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverSer
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
+	repoDir := gs.fs.RepoDir(repoName)
 
-	// Ensure that the repo is cloned and if not start a background clone, then
-	// return a well-known NotFound payload error.
-	if notFoundPayload, cloned := gs.svc.MaybeStartClone(ctx, repoName); !cloned {
-		s, err := status.New(codes.NotFound, "repo not cloned").WithDetails(&proto.RepoNotFoundPayload{
-			CloneInProgress: notFoundPayload.CloneInProgress,
-			CloneProgress:   notFoundPayload.CloneProgress,
-			Repo:            req.GetRepoName(),
-		})
-		if err != nil {
-			return err
-		}
-		return s.Err()
+	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+		return err
 	}
 
 	// First, verify that the actor has access to the given path.
@@ -986,4 +1140,110 @@ func (gs *grpcServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverSer
 
 	_, err = io.Copy(w, r)
 	return err
+}
+
+func (gs *grpcServer) ResolveRevision(ctx context.Context, req *proto.ResolveRevisionRequest) (*proto.ResolveRevisionResponse, error) {
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.String("revspec", string(req.GetRevSpec())),
+	)
+
+	if req.GetRepoName() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gs.fs.RepoDir(repoName)
+
+	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+		return nil, err
+	}
+
+	revspec := string(req.GetRevSpec())
+
+	backend := gs.getBackendFunc(repoDir, repoName)
+
+	// First, try to resolve the revspec.
+	sha, err := backend.ResolveRevision(ctx, revspec)
+	if err != nil {
+		// If that fails to resolve the revspec, try to ensure the revision exists,
+		// if requested by the caller.
+		if req.GetEnsureRevision() && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			// We ensured the revision exists, so try to resolve it again.
+			if gs.svc.EnsureRevision(ctx, repoName, revspec) {
+				sha, err = backend.ResolveRevision(ctx, revspec)
+			}
+		}
+	}
+
+	if err != nil {
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		// TODO: Better error checking.
+		return nil, err
+	}
+
+	return &proto.ResolveRevisionResponse{
+		CommitSha: string(sha),
+	}, nil
+}
+
+func (gs *grpcServer) maybeStartClone(ctx context.Context, repo api.RepoName) error {
+	cloned, state, err := gs.svc.MaybeStartClone(ctx, repo)
+	if err != nil {
+		return status.New(codes.Internal, "failed to check if repo is cloned").Err()
+	}
+
+	if cloned {
+		return nil
+	}
+
+	return newRepoNotFoundError(repo, state.CloneInProgress, state.CloneProgress)
+}
+
+func hasAccessToCommit(ctx context.Context, repoName api.RepoName, files []string, checker authz.SubRepoPermissionChecker) (bool, error) {
+	if len(files) == 0 {
+		return true, nil // If commit has no files, assume user has access to view the commit.
+	}
+
+	if enabled, err := authz.SubRepoEnabledForRepo(ctx, checker, repoName); err != nil {
+		return false, err
+	} else if !enabled {
+		return true, nil
+	}
+
+	a := actor.FromContext(ctx)
+	for _, fileName := range files {
+		if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repoName, fileName); err != nil {
+			return false, err
+		} else if hasAccess {
+			// if the user has access to one file modified in the commit, they have access to view the commit
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func newRepoNotFoundError(repo api.RepoName, cloneInProgress bool, cloneProgress string) error {
+	s, err := status.New(codes.NotFound, "repo not found").WithDetails(&proto.RepoNotFoundPayload{
+		CloneInProgress: cloneInProgress,
+		CloneProgress:   cloneProgress,
+		Repo:            string(repo),
+	})
+	if err != nil {
+		return err
+	}
+	return s.Err()
 }

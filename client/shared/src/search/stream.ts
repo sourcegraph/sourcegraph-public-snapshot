@@ -15,7 +15,6 @@ import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import type { SearchPatternType, SymbolKind } from '../graphql-operations'
 
 import { SearchMode } from './searchQueryState'
-import { hacksGobQueriesToRegex } from './searchSimple'
 
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
 // The version is set based on the release tag of the instance.
@@ -101,6 +100,13 @@ export interface ChunkMatch {
     content: string
     contentStart: Location
     ranges: Range[]
+
+    /**
+     * Indicates that content has been truncated.
+     *
+     * This can only be true when maxLineLength search option is non-zero.
+     */
+    contentTruncated?: boolean
 }
 
 export interface SymbolMatch {
@@ -196,6 +202,8 @@ export interface TeamMatch extends BaseOwnerMatch {
  * Should be replaced when a new ones come in.
  */
 export interface Progress {
+    // No more progress to be tracked
+    done?: boolean
     /**
      * The number of repositories matching the repo: filter. Is set once they
      * are resolved.
@@ -488,10 +496,27 @@ export interface StreamSearchOptions {
     featureOverrides?: string[]
     searchMode?: SearchMode
     sourcegraphURL?: string
-    displayLimit?: number
     chunkMatches?: boolean
     enableRepositoryMetadata?: boolean
     zoektSearchOptions?: string
+
+    /**
+     * Limits the number of matches sent down. Note: this is different to the
+     * count: in the query. The search will continue once we hit displayLimit
+     * and updated filters and statistics will continue to stream down.
+     *
+     * If unset all results are streamed down.
+     */
+    displayLimit?: number
+
+    /**
+     * Truncates content strings such that no line is longer than
+     * maxLineLength. This is used to prevent sending large previews down to
+     * the browser which can cause high CPU and network usage.
+     *
+     * If unset full Content strings are sent.
+     */
+    maxLineLen?: number
 }
 
 function initiateSearchStream(
@@ -505,6 +530,7 @@ function initiateSearchStream(
         featureOverrides,
         searchMode = SearchMode.Precise,
         displayLimit = 1500,
+        maxLineLen,
         sourcegraphURL = '',
         chunkMatches = false,
     }: StreamSearchOptions,
@@ -512,24 +538,7 @@ function initiateSearchStream(
 ): Observable<SearchEvent> {
     return new Observable<SearchEvent>(observer => {
         const subscriptions = new Subscription()
-
-        // HACK(keegan) forgive me for this hack, but this is for rapid
-        // prototyping of a new query language. We should fast follow on
-        // something more robust once we get some internal validation. This
-        // feature flag is purely so we can demonstrate it more easily.
-        //
-        // If you still see this code after February 2024 delete it (or me).
-        let queryParam = `${query} ${caseSensitive ? 'case:yes' : ''}`
-        if (featureOverrides?.includes('search-simple')) {
-            const queryRegex = hacksGobQueriesToRegex(queryParam)
-            // eslint-disable-next-line no-console
-            console.log('query rewritten due to search-simple feature flag being set', {
-                old: queryParam,
-                new: queryRegex,
-            })
-            queryParam = queryRegex
-        }
-
+        const queryParam = `${query} ${caseSensitive ? 'case:yes' : ''}`
         const parameters = [
             ['q', queryParam],
             ['v', version],
@@ -540,6 +549,9 @@ function initiateSearchStream(
         ]
         if (trace) {
             parameters.push(['trace', trace])
+        }
+        if (maxLineLen) {
+            parameters.push(['max-line-len', maxLineLen.toString()])
         }
         for (const value of featureOverrides || []) {
             parameters.push(['feat', value])

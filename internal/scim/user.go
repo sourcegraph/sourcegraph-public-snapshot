@@ -11,6 +11,7 @@ import (
 	scimerrors "github.com/elimity-com/scim/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -232,14 +233,14 @@ func getUniqueUsername(ctx context.Context, tx database.UserStore, requestedUser
 	normalizedUsername, err := auth.NormalizeUsername(requestedUsername)
 	if err != nil {
 		// Empty username after normalization. Generate a random one, it's the best we can do.
-		normalizedUsername, err = auth.AddRandomSuffix("")
+		normalizedUsername, err = userpasswd.AddRandomSuffix("")
 		if err != nil {
 			return "", scimerrors.ScimErrorBadParams([]string{"invalid username"})
 		}
 	}
 	_, err = tx.GetByUsername(ctx, normalizedUsername)
 	if err == nil { // Username exists, try to add random suffix
-		normalizedUsername, err = auth.AddRandomSuffix(normalizedUsername)
+		normalizedUsername, err = userpasswd.AddRandomSuffix(normalizedUsername)
 		if err != nil {
 			return "", scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not normalize username").Error()}
 		}

@@ -2,11 +2,13 @@ import React, { useCallback, useState } from 'react'
 
 import { mdiPencil, mdiTrashCan } from '@mdi/js'
 import { parseISO } from 'date-fns'
+import type { GraphQLError } from 'graphql'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { logger } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { CodyGatewayRateLimitSource } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     H3,
     ProductStatusBadge,
@@ -53,11 +55,11 @@ import { numberFormatter, prettyInterval } from './utils'
 
 import styles from './CodyServicesSection.module.scss'
 
-interface Props {
+interface Props extends TelemetryV2Props {
     productSubscriptionUUID: string
     productSubscriptionID: Scalars['ID']
     currentSourcegraphAccessToken: string | null
-    accessTokenError?: Error
+    accessTokenError?: GraphQLError
     viewerCanAdminister: boolean
     refetchSubscription: () => Promise<any>
     codyGatewayAccess: CodyGatewayAccessFields
@@ -71,6 +73,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
     accessTokenError,
     refetchSubscription,
     codyGatewayAccess,
+    telemetryRecorder,
 }) => {
     const [updateCodyGatewayConfig, { loading: updateCodyGatewayConfigLoading, error: updateCodyGatewayConfigError }] =
         useMutation<UpdateCodyGatewayConfigResult, UpdateCodyGatewayConfigVariables>(UPDATE_CODY_GATEWAY_CONFIG)
@@ -86,6 +89,10 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
             return
         }
         try {
+            telemetryRecorder.recordEvent(
+                'admin.productSubscription.codyAccess',
+                codyServicesStateChange ? 'enable' : 'disable'
+            )
             await updateCodyGatewayConfig({
                 variables: {
                     productSubscriptionID,
@@ -99,7 +106,13 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
             // Reset the intent to change state.
             setCodyServicesStateChange(undefined)
         }
-    }, [productSubscriptionID, refetchSubscription, updateCodyGatewayConfig, codyServicesStateChange])
+    }, [
+        productSubscriptionID,
+        refetchSubscription,
+        updateCodyGatewayConfig,
+        codyServicesStateChange,
+        telemetryRecorder,
+    ])
 
     return (
         <>
@@ -216,7 +229,18 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                         className="mb-2"
                     />
                 )}
-                {accessTokenError && <ErrorAlert error={accessTokenError} className="mb-0" />}
+                {(accessTokenError?.extensions?.code === 'ErrActiveLicenseRequired' && (
+                    <Alert variant="info" className="mb-0">
+                        {viewerCanAdminister && <>Create a license key to generate an access token automatically.</>}
+                        {!viewerCanAdminister && (
+                            <>
+                                Once an active subscription has been purchased, an access token will be automatically
+                                generated.
+                            </>
+                        )}
+                    </Alert>
+                )) ||
+                    (accessTokenError && <ErrorAlert error={accessTokenError} className="mb-0" />)}
             </Container>
 
             {typeof codyServicesStateChange === 'boolean' && (

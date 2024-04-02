@@ -2,15 +2,19 @@ package azureopenai
 
 import (
 	"context"
+	"crypto/tls"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"golang.org/x/net/http2"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -52,13 +56,17 @@ func GetAPIClient(endpoint, accessToken string) (CompletionsClient, error) {
 	apiClient.mu.RUnlock()
 	apiClient.mu.Lock()
 	defer apiClient.mu.Unlock()
+
+	// API Versions and docs https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#completions
+	clientOpts := &azopenai.ClientOptions{
+		ClientOptions: azcore.ClientOptions{
+			Transport: apiVersionClient("2023-05-15"),
+		},
+	}
 	var err error
 	if accessToken != "" {
-		credential, credErr := azopenai.NewKeyCredential(accessToken)
-		if credErr != nil {
-			return nil, credErr
-		}
-		apiClient.client, err = azopenai.NewClientWithKeyCredential(endpoint, credential, nil)
+		credential := azcore.NewKeyCredential(accessToken)
+		apiClient.client, err = azopenai.NewClientWithKeyCredential(endpoint, credential, clientOpts)
 	} else {
 		var opts *azidentity.DefaultAzureCredentialOptions
 		opts, err = getCredentialOptions()
@@ -70,7 +78,8 @@ func GetAPIClient(endpoint, accessToken string) (CompletionsClient, error) {
 			return nil, credErr
 		}
 		apiClient.endpoint = endpoint
-		apiClient.client, err = azopenai.NewClient(endpoint, credential, nil)
+
+		apiClient.client, err = azopenai.NewClient(endpoint, credential, clientOpts)
 	}
 	return apiClient.client, err
 
@@ -114,6 +123,7 @@ type azureCompletionClient struct {
 func (c *azureCompletionClient) Complete(
 	ctx context.Context,
 	feature types.CompletionsFeature,
+	_ types.CompletionsVersion,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
 
@@ -172,6 +182,7 @@ func completeChat(
 func (c *azureCompletionClient) Stream(
 	ctx context.Context,
 	feature types.CompletionsFeature,
+	_ types.CompletionsVersion,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
@@ -296,21 +307,17 @@ func hasValidFirstCompletionsChoice(choices []azopenai.Choice) bool {
 		choices[0].Text != nil
 }
 
-func getChatMessages(messages []types.Message) []azopenai.ChatMessage {
-	azureMessages := make([]azopenai.ChatMessage, len(messages))
+func getChatMessages(messages []types.Message) []azopenai.ChatRequestMessageClassification {
+	azureMessages := make([]azopenai.ChatRequestMessageClassification, len(messages))
 	for i, m := range messages {
-		var role azopenai.ChatRole
 		message := m.Text
 		switch m.Speaker {
 		case types.HUMAN_MESSAGE_SPEAKER:
-			role = azopenai.ChatRoleUser
-		case types.ASISSTANT_MESSAGE_SPEAKER:
-			role = azopenai.ChatRoleAssistant
+			azureMessages[i] = &azopenai.ChatRequestUserMessage{Content: azopenai.NewChatRequestUserMessageContent(message)}
+		case types.ASSISTANT_MESSAGE_SPEAKER:
+			azureMessages[i] = &azopenai.ChatRequestAssistantMessage{Content: &message}
 		}
-		azureMessages[i] = azopenai.ChatMessage{
-			Content: &message,
-			Role:    &role,
-		}
+
 	}
 	return azureMessages
 }
@@ -323,13 +330,13 @@ func getChatOptions(requestParams types.CompletionRequestParameters) azopenai.Ch
 		requestParams.TopP = 0
 	}
 	return azopenai.ChatCompletionsOptions{
-		Messages:    getChatMessages(requestParams.Messages),
-		Temperature: &requestParams.Temperature,
-		TopP:        &requestParams.TopP,
-		N:           intToInt32Ptr(1),
-		Stop:        requestParams.StopSequences,
-		MaxTokens:   intToInt32Ptr(requestParams.MaxTokensToSample),
-		Deployment:  requestParams.Model,
+		Messages:       getChatMessages(requestParams.Messages),
+		Temperature:    &requestParams.Temperature,
+		TopP:           &requestParams.TopP,
+		N:              intToInt32Ptr(1),
+		Stop:           requestParams.StopSequences,
+		MaxTokens:      intToInt32Ptr(requestParams.MaxTokensToSample),
+		DeploymentName: &requestParams.Model,
 	}
 }
 
@@ -345,13 +352,13 @@ func getCompletionsOptions(requestParams types.CompletionRequestParameters) (azo
 		return azopenai.CompletionsOptions{}, err
 	}
 	return azopenai.CompletionsOptions{
-		Prompt:      []string{prompt},
-		Temperature: &requestParams.Temperature,
-		TopP:        &requestParams.TopP,
-		N:           intToInt32Ptr(1),
-		Stop:        requestParams.StopSequences,
-		MaxTokens:   intToInt32Ptr(requestParams.MaxTokensToSample),
-		Deployment:  requestParams.Model,
+		Prompt:         []string{prompt},
+		Temperature:    &requestParams.Temperature,
+		TopP:           &requestParams.TopP,
+		N:              intToInt32Ptr(1),
+		Stop:           requestParams.StopSequences,
+		MaxTokens:      intToInt32Ptr(requestParams.MaxTokensToSample),
+		DeploymentName: &requestParams.Model,
 	}, nil
 }
 
@@ -379,4 +386,50 @@ func toStatusCodeError(err error) error {
 		}
 	}
 	return err
+}
+
+type apiVersionRoundTripper struct {
+	rt         http.RoundTripper
+	apiVersion string
+}
+
+func (rt *apiVersionRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	newReq := req.Clone(req.Context())
+	values := newReq.URL.Query()
+	values.Set("api-version", rt.apiVersion)
+	newReq.URL.RawQuery = values.Encode()
+	return rt.rt.RoundTrip(newReq)
+}
+
+func apiVersionClient(apiVersion string) *http.Client {
+	dialer := &net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}
+	azureClientDefaultTransport := &http.Transport{
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext:           dialer.DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   10,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		TLSClientConfig: &tls.Config{
+			MinVersion:    tls.VersionTLS12,
+			Renegotiation: tls.RenegotiateFreelyAsClient,
+		},
+	}
+
+	if http2Transport, err := http2.ConfigureTransports(azureClientDefaultTransport); err == nil {
+		http2Transport.ReadIdleTimeout = 10 * time.Second
+		http2Transport.PingTimeout = 5 * time.Second
+	}
+
+	return &http.Client{
+		Transport: &apiVersionRoundTripper{
+			rt:         azureClientDefaultTransport,
+			apiVersion: apiVersion,
+		},
+	}
 }

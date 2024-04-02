@@ -1,4 +1,4 @@
-query ResolveRepoRevison($repoName: String!, $revision: String!) {
+query ResolveRepoRevision($repoName: String!, $revision: String!) {
     repositoryRedirect(name: $repoName) {
         __typename
         ... on Repository {

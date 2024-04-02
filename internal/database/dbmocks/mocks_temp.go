@@ -6497,6 +6497,9 @@ type MockCodeMonitorStore struct {
 	// UpdateSlackWebhookActionFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateSlackWebhookAction.
 	UpdateSlackWebhookActionFunc *CodeMonitorStoreUpdateSlackWebhookActionFunc
+	// UpdateTriggerJobWithLogsFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateTriggerJobWithLogs.
+	UpdateTriggerJobWithLogsFunc *CodeMonitorStoreUpdateTriggerJobWithLogsFunc
 	// UpdateTriggerJobWithResultsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// UpdateTriggerJobWithResults.
@@ -6525,7 +6528,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		CountMonitorsFunc: &CodeMonitorStoreCountMonitorsFunc{
-			defaultHook: func(context.Context, *int32) (r0 int32, r1 error) {
+			defaultHook: func(context.Context, database.ListMonitorsOpts) (r0 int32, r1 error) {
 				return
 			},
 		},
@@ -6764,6 +6767,11 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 				return
 			},
 		},
+		UpdateTriggerJobWithLogsFunc: &CodeMonitorStoreUpdateTriggerJobWithLogsFunc{
+			defaultHook: func(context.Context, int32, database.TriggerJobLogs) (r0 error) {
+				return
+			},
+		},
 		UpdateTriggerJobWithResultsFunc: &CodeMonitorStoreUpdateTriggerJobWithResultsFunc{
 			defaultHook: func(context.Context, int32, string, []*result.CommitMatch) (r0 error) {
 				return
@@ -6797,7 +6805,7 @@ func NewStrictMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		CountMonitorsFunc: &CodeMonitorStoreCountMonitorsFunc{
-			defaultHook: func(context.Context, *int32) (int32, error) {
+			defaultHook: func(context.Context, database.ListMonitorsOpts) (int32, error) {
 				panic("unexpected invocation of MockCodeMonitorStore.CountMonitors")
 			},
 		},
@@ -7036,6 +7044,11 @@ func NewStrictMockCodeMonitorStore() *MockCodeMonitorStore {
 				panic("unexpected invocation of MockCodeMonitorStore.UpdateSlackWebhookAction")
 			},
 		},
+		UpdateTriggerJobWithLogsFunc: &CodeMonitorStoreUpdateTriggerJobWithLogsFunc{
+			defaultHook: func(context.Context, int32, database.TriggerJobLogs) error {
+				panic("unexpected invocation of MockCodeMonitorStore.UpdateTriggerJobWithLogs")
+			},
+		},
 		UpdateTriggerJobWithResultsFunc: &CodeMonitorStoreUpdateTriggerJobWithResultsFunc{
 			defaultHook: func(context.Context, int32, string, []*result.CommitMatch) error {
 				panic("unexpected invocation of MockCodeMonitorStore.UpdateTriggerJobWithResults")
@@ -7208,6 +7221,9 @@ func NewMockCodeMonitorStoreFrom(i database.CodeMonitorStore) *MockCodeMonitorSt
 		},
 		UpdateSlackWebhookActionFunc: &CodeMonitorStoreUpdateSlackWebhookActionFunc{
 			defaultHook: i.UpdateSlackWebhookAction,
+		},
+		UpdateTriggerJobWithLogsFunc: &CodeMonitorStoreUpdateTriggerJobWithLogsFunc{
+			defaultHook: i.UpdateTriggerJobWithLogs,
 		},
 		UpdateTriggerJobWithResultsFunc: &CodeMonitorStoreUpdateTriggerJobWithResultsFunc{
 			defaultHook: i.UpdateTriggerJobWithResults,
@@ -7435,15 +7451,15 @@ func (c CodeMonitorStoreCountActionJobsFuncCall) Results() []interface{} {
 // CountMonitors method of the parent MockCodeMonitorStore instance is
 // invoked.
 type CodeMonitorStoreCountMonitorsFunc struct {
-	defaultHook func(context.Context, *int32) (int32, error)
-	hooks       []func(context.Context, *int32) (int32, error)
+	defaultHook func(context.Context, database.ListMonitorsOpts) (int32, error)
+	hooks       []func(context.Context, database.ListMonitorsOpts) (int32, error)
 	history     []CodeMonitorStoreCountMonitorsFuncCall
 	mutex       sync.Mutex
 }
 
 // CountMonitors delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) CountMonitors(v0 context.Context, v1 *int32) (int32, error) {
+func (m *MockCodeMonitorStore) CountMonitors(v0 context.Context, v1 database.ListMonitorsOpts) (int32, error) {
 	r0, r1 := m.CountMonitorsFunc.nextHook()(v0, v1)
 	m.CountMonitorsFunc.appendCall(CodeMonitorStoreCountMonitorsFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -7452,7 +7468,7 @@ func (m *MockCodeMonitorStore) CountMonitors(v0 context.Context, v1 *int32) (int
 // SetDefaultHook sets function that is called when the CountMonitors method
 // of the parent MockCodeMonitorStore instance is invoked and the hook queue
 // is empty.
-func (f *CodeMonitorStoreCountMonitorsFunc) SetDefaultHook(hook func(context.Context, *int32) (int32, error)) {
+func (f *CodeMonitorStoreCountMonitorsFunc) SetDefaultHook(hook func(context.Context, database.ListMonitorsOpts) (int32, error)) {
 	f.defaultHook = hook
 }
 
@@ -7460,7 +7476,7 @@ func (f *CodeMonitorStoreCountMonitorsFunc) SetDefaultHook(hook func(context.Con
 // CountMonitors method of the parent MockCodeMonitorStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *CodeMonitorStoreCountMonitorsFunc) PushHook(hook func(context.Context, *int32) (int32, error)) {
+func (f *CodeMonitorStoreCountMonitorsFunc) PushHook(hook func(context.Context, database.ListMonitorsOpts) (int32, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -7469,19 +7485,19 @@ func (f *CodeMonitorStoreCountMonitorsFunc) PushHook(hook func(context.Context, 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *CodeMonitorStoreCountMonitorsFunc) SetDefaultReturn(r0 int32, r1 error) {
-	f.SetDefaultHook(func(context.Context, *int32) (int32, error) {
+	f.SetDefaultHook(func(context.Context, database.ListMonitorsOpts) (int32, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *CodeMonitorStoreCountMonitorsFunc) PushReturn(r0 int32, r1 error) {
-	f.PushHook(func(context.Context, *int32) (int32, error) {
+	f.PushHook(func(context.Context, database.ListMonitorsOpts) (int32, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeMonitorStoreCountMonitorsFunc) nextHook() func(context.Context, *int32) (int32, error) {
+func (f *CodeMonitorStoreCountMonitorsFunc) nextHook() func(context.Context, database.ListMonitorsOpts) (int32, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -7520,7 +7536,7 @@ type CodeMonitorStoreCountMonitorsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *int32
+	Arg1 database.ListMonitorsOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int32
@@ -12772,6 +12788,118 @@ func (c CodeMonitorStoreUpdateSlackWebhookActionFuncCall) Args() []interface{} {
 // invocation.
 func (c CodeMonitorStoreUpdateSlackWebhookActionFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreUpdateTriggerJobWithLogsFunc describes the behavior when
+// the UpdateTriggerJobWithLogs method of the parent MockCodeMonitorStore
+// instance is invoked.
+type CodeMonitorStoreUpdateTriggerJobWithLogsFunc struct {
+	defaultHook func(context.Context, int32, database.TriggerJobLogs) error
+	hooks       []func(context.Context, int32, database.TriggerJobLogs) error
+	history     []CodeMonitorStoreUpdateTriggerJobWithLogsFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateTriggerJobWithLogs delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) UpdateTriggerJobWithLogs(v0 context.Context, v1 int32, v2 database.TriggerJobLogs) error {
+	r0 := m.UpdateTriggerJobWithLogsFunc.nextHook()(v0, v1, v2)
+	m.UpdateTriggerJobWithLogsFunc.appendCall(CodeMonitorStoreUpdateTriggerJobWithLogsFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// UpdateTriggerJobWithLogs method of the parent MockCodeMonitorStore
+// instance is invoked and the hook queue is empty.
+func (f *CodeMonitorStoreUpdateTriggerJobWithLogsFunc) SetDefaultHook(hook func(context.Context, int32, database.TriggerJobLogs) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateTriggerJobWithLogs method of the parent MockCodeMonitorStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *CodeMonitorStoreUpdateTriggerJobWithLogsFunc) PushHook(hook func(context.Context, int32, database.TriggerJobLogs) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeMonitorStoreUpdateTriggerJobWithLogsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, database.TriggerJobLogs) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeMonitorStoreUpdateTriggerJobWithLogsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, database.TriggerJobLogs) error {
+		return r0
+	})
+}
+
+func (f *CodeMonitorStoreUpdateTriggerJobWithLogsFunc) nextHook() func(context.Context, int32, database.TriggerJobLogs) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreUpdateTriggerJobWithLogsFunc) appendCall(r0 CodeMonitorStoreUpdateTriggerJobWithLogsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreUpdateTriggerJobWithLogsFuncCall objects describing the
+// invocations of this function.
+func (f *CodeMonitorStoreUpdateTriggerJobWithLogsFunc) History() []CodeMonitorStoreUpdateTriggerJobWithLogsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreUpdateTriggerJobWithLogsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreUpdateTriggerJobWithLogsFuncCall is an object that
+// describes an invocation of method UpdateTriggerJobWithLogs on an instance
+// of MockCodeMonitorStore.
+type CodeMonitorStoreUpdateTriggerJobWithLogsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 database.TriggerJobLogs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreUpdateTriggerJobWithLogsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreUpdateTriggerJobWithLogsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // CodeMonitorStoreUpdateTriggerJobWithResultsFunc describes the behavior
@@ -22706,9 +22834,9 @@ type MockEventLogStore struct {
 	// function object controlling the behavior of the method
 	// AggregatedCodeIntelInvestigationEvents.
 	AggregatedCodeIntelInvestigationEventsFunc *EventLogStoreAggregatedCodeIntelInvestigationEventsFunc
-	// AggregatedCodyEventsFunc is an instance of a mock function object
-	// controlling the behavior of the method AggregatedCodyEvents.
-	AggregatedCodyEventsFunc *EventLogStoreAggregatedCodyEventsFunc
+	// AggregatedCodyUsageFunc is an instance of a mock function object
+	// controlling the behavior of the method AggregatedCodyUsage.
+	AggregatedCodyUsageFunc *EventLogStoreAggregatedCodyUsageFunc
 	// AggregatedRepoMetadataEventsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// AggregatedRepoMetadataEvents.
@@ -22852,8 +22980,8 @@ func NewMockEventLogStore() *MockEventLogStore {
 				return
 			},
 		},
-		AggregatedCodyEventsFunc: &EventLogStoreAggregatedCodyEventsFunc{
-			defaultHook: func(context.Context, time.Time) (r0 []types.CodyAggregatedEvent, r1 error) {
+		AggregatedCodyUsageFunc: &EventLogStoreAggregatedCodyUsageFunc{
+			defaultHook: func(context.Context, time.Time) (r0 *types.CodyAggregatedUsage, r1 error) {
 				return
 			},
 		},
@@ -23059,9 +23187,9 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 				panic("unexpected invocation of MockEventLogStore.AggregatedCodeIntelInvestigationEvents")
 			},
 		},
-		AggregatedCodyEventsFunc: &EventLogStoreAggregatedCodyEventsFunc{
-			defaultHook: func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error) {
-				panic("unexpected invocation of MockEventLogStore.AggregatedCodyEvents")
+		AggregatedCodyUsageFunc: &EventLogStoreAggregatedCodyUsageFunc{
+			defaultHook: func(context.Context, time.Time) (*types.CodyAggregatedUsage, error) {
+				panic("unexpected invocation of MockEventLogStore.AggregatedCodyUsage")
 			},
 		},
 		AggregatedRepoMetadataEventsFunc: &EventLogStoreAggregatedRepoMetadataEventsFunc{
@@ -23263,8 +23391,8 @@ func NewMockEventLogStoreFrom(i database.EventLogStore) *MockEventLogStore {
 		AggregatedCodeIntelInvestigationEventsFunc: &EventLogStoreAggregatedCodeIntelInvestigationEventsFunc{
 			defaultHook: i.AggregatedCodeIntelInvestigationEvents,
 		},
-		AggregatedCodyEventsFunc: &EventLogStoreAggregatedCodyEventsFunc{
-			defaultHook: i.AggregatedCodyEvents,
+		AggregatedCodyUsageFunc: &EventLogStoreAggregatedCodyUsageFunc{
+			defaultHook: i.AggregatedCodyUsage,
 		},
 		AggregatedRepoMetadataEventsFunc: &EventLogStoreAggregatedRepoMetadataEventsFunc{
 			defaultHook: i.AggregatedRepoMetadataEvents,
@@ -23600,37 +23728,37 @@ func (c EventLogStoreAggregatedCodeIntelInvestigationEventsFuncCall) Results() [
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// EventLogStoreAggregatedCodyEventsFunc describes the behavior when the
-// AggregatedCodyEvents method of the parent MockEventLogStore instance is
+// EventLogStoreAggregatedCodyUsageFunc describes the behavior when the
+// AggregatedCodyUsage method of the parent MockEventLogStore instance is
 // invoked.
-type EventLogStoreAggregatedCodyEventsFunc struct {
-	defaultHook func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error)
-	hooks       []func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error)
-	history     []EventLogStoreAggregatedCodyEventsFuncCall
+type EventLogStoreAggregatedCodyUsageFunc struct {
+	defaultHook func(context.Context, time.Time) (*types.CodyAggregatedUsage, error)
+	hooks       []func(context.Context, time.Time) (*types.CodyAggregatedUsage, error)
+	history     []EventLogStoreAggregatedCodyUsageFuncCall
 	mutex       sync.Mutex
 }
 
-// AggregatedCodyEvents delegates to the next hook function in the queue and
+// AggregatedCodyUsage delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockEventLogStore) AggregatedCodyEvents(v0 context.Context, v1 time.Time) ([]types.CodyAggregatedEvent, error) {
-	r0, r1 := m.AggregatedCodyEventsFunc.nextHook()(v0, v1)
-	m.AggregatedCodyEventsFunc.appendCall(EventLogStoreAggregatedCodyEventsFuncCall{v0, v1, r0, r1})
+func (m *MockEventLogStore) AggregatedCodyUsage(v0 context.Context, v1 time.Time) (*types.CodyAggregatedUsage, error) {
+	r0, r1 := m.AggregatedCodyUsageFunc.nextHook()(v0, v1)
+	m.AggregatedCodyUsageFunc.appendCall(EventLogStoreAggregatedCodyUsageFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the AggregatedCodyEvents
+// SetDefaultHook sets function that is called when the AggregatedCodyUsage
 // method of the parent MockEventLogStore instance is invoked and the hook
 // queue is empty.
-func (f *EventLogStoreAggregatedCodyEventsFunc) SetDefaultHook(hook func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error)) {
+func (f *EventLogStoreAggregatedCodyUsageFunc) SetDefaultHook(hook func(context.Context, time.Time) (*types.CodyAggregatedUsage, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// AggregatedCodyEvents method of the parent MockEventLogStore instance
+// AggregatedCodyUsage method of the parent MockEventLogStore instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *EventLogStoreAggregatedCodyEventsFunc) PushHook(hook func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error)) {
+func (f *EventLogStoreAggregatedCodyUsageFunc) PushHook(hook func(context.Context, time.Time) (*types.CodyAggregatedUsage, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -23638,20 +23766,20 @@ func (f *EventLogStoreAggregatedCodyEventsFunc) PushHook(hook func(context.Conte
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *EventLogStoreAggregatedCodyEventsFunc) SetDefaultReturn(r0 []types.CodyAggregatedEvent, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error) {
+func (f *EventLogStoreAggregatedCodyUsageFunc) SetDefaultReturn(r0 *types.CodyAggregatedUsage, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Time) (*types.CodyAggregatedUsage, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *EventLogStoreAggregatedCodyEventsFunc) PushReturn(r0 []types.CodyAggregatedEvent, r1 error) {
-	f.PushHook(func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error) {
+func (f *EventLogStoreAggregatedCodyUsageFunc) PushReturn(r0 *types.CodyAggregatedUsage, r1 error) {
+	f.PushHook(func(context.Context, time.Time) (*types.CodyAggregatedUsage, error) {
 		return r0, r1
 	})
 }
 
-func (f *EventLogStoreAggregatedCodyEventsFunc) nextHook() func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error) {
+func (f *EventLogStoreAggregatedCodyUsageFunc) nextHook() func(context.Context, time.Time) (*types.CodyAggregatedUsage, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -23664,27 +23792,27 @@ func (f *EventLogStoreAggregatedCodyEventsFunc) nextHook() func(context.Context,
 	return hook
 }
 
-func (f *EventLogStoreAggregatedCodyEventsFunc) appendCall(r0 EventLogStoreAggregatedCodyEventsFuncCall) {
+func (f *EventLogStoreAggregatedCodyUsageFunc) appendCall(r0 EventLogStoreAggregatedCodyUsageFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of EventLogStoreAggregatedCodyEventsFuncCall
+// History returns a sequence of EventLogStoreAggregatedCodyUsageFuncCall
 // objects describing the invocations of this function.
-func (f *EventLogStoreAggregatedCodyEventsFunc) History() []EventLogStoreAggregatedCodyEventsFuncCall {
+func (f *EventLogStoreAggregatedCodyUsageFunc) History() []EventLogStoreAggregatedCodyUsageFuncCall {
 	f.mutex.Lock()
-	history := make([]EventLogStoreAggregatedCodyEventsFuncCall, len(f.history))
+	history := make([]EventLogStoreAggregatedCodyUsageFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// EventLogStoreAggregatedCodyEventsFuncCall is an object that describes an
-// invocation of method AggregatedCodyEvents on an instance of
+// EventLogStoreAggregatedCodyUsageFuncCall is an object that describes an
+// invocation of method AggregatedCodyUsage on an instance of
 // MockEventLogStore.
-type EventLogStoreAggregatedCodyEventsFuncCall struct {
+type EventLogStoreAggregatedCodyUsageFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -23693,7 +23821,7 @@ type EventLogStoreAggregatedCodyEventsFuncCall struct {
 	Arg1 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.CodyAggregatedEvent
+	Result0 *types.CodyAggregatedUsage
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -23701,13 +23829,13 @@ type EventLogStoreAggregatedCodyEventsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c EventLogStoreAggregatedCodyEventsFuncCall) Args() []interface{} {
+func (c EventLogStoreAggregatedCodyUsageFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c EventLogStoreAggregatedCodyEventsFuncCall) Results() []interface{} {
+func (c EventLogStoreAggregatedCodyUsageFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

@@ -1,4 +1,4 @@
-import { FC, ReactNode, useMemo, useState } from 'react'
+import { type FC, type ReactNode, useMemo, useRef, useState } from 'react'
 
 import { mdiClose, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
@@ -11,7 +11,8 @@ import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { Button, Icon, H2, H4, Input, LanguageIcon, Code, Tooltip } from '@sourcegraph/wildcard'
 
 import { codeHostIcon } from '../../../../components'
-import { URLQueryFilter } from '../../hooks'
+import { SyntaxHighlightedSearchQuery } from '../../../../components/SyntaxHighlightedSearchQuery'
+import type { URLQueryFilter } from '../../hooks'
 import { DynamicFilterBadge } from '../DynamicFilterBadge'
 
 import styles from './SearchDynamicFilter.module.scss'
@@ -48,6 +49,8 @@ interface SearchDynamicFilterProps {
      * @param nextQuery
      */
     onSelectedFilterChange: (filterKind: Filter['kind'], filters: URLQueryFilter[]) => void
+
+    onAddFilterToQuery: (newFilter: string) => void
 }
 
 /**
@@ -61,7 +64,10 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
     selectedFilters,
     renderItem,
     onSelectedFilterChange,
+    onAddFilterToQuery,
 }) => {
+    const inputRef = useRef<HTMLInputElement>(null)
+
     const [searchTerm, setSearchTerm] = useState<string>('')
     const [showMoreFilters, setShowMoreFilters] = useState<boolean>(false)
 
@@ -93,6 +99,10 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
         }
     }
 
+    const handleZeroStateButtonClick = (): void => {
+        inputRef.current?.focus()
+    }
+
     if (mergedFilters.length === 0) {
         return null
     }
@@ -102,6 +112,12 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
     const filtersToShow = showMoreFilters
         ? filteredFilters.slice(0, MAX_FILTERS_NUMBER)
         : filteredFilters.slice(0, DEFAULT_FILTERS_NUMBER)
+
+    // HACK(camdencheek): we limit the number of filters of each type to 1000, so if we get
+    // exactly 1000 filters, assume that we hit that limit. Ideally, we wouldn't hard-code this
+    // and the backend would tell us whether we hit that limit.
+    const limitHit = filters?.some(filter => !filter.exhaustive) || filters?.length === 1000
+    const suggestedQueryFilter = filterForSearchTerm(searchTerm, filterKind)
 
     return (
         <div className={styles.root}>
@@ -113,6 +129,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
 
             {mergedFilters.length > DEFAULT_FILTERS_NUMBER && (
                 <Input
+                    ref={inputRef}
                     value={searchTerm}
                     placeholder={`Filter ${filterKind}`}
                     onChange={event => setSearchTerm(event.target.value)}
@@ -132,7 +149,31 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
 
                 {filtersToShow.length === 0 && (
                     <small className={styles.description}>
-                        There are no {filterKind}s to show, try to use different search value
+                        <div className={styles.descriptionHeader}>No matches in search results.</div>
+                        {limitHit && suggestedQueryFilter ? (
+                            <>
+                                Try adding{' '}
+                                <Button
+                                    onClick={() => onAddFilterToQuery(suggestedQueryFilter)}
+                                    className={styles.zeroStateQueryButton}
+                                >
+                                    <SyntaxHighlightedSearchQuery query={suggestedQueryFilter} />
+                                </Button>{' '}
+                                to your original search query to narrow results to that repo.
+                            </>
+                        ) : (
+                            <>
+                                Try expanding your search using the{' '}
+                                <Button
+                                    variant="link"
+                                    onClick={handleZeroStateButtonClick}
+                                    className={styles.zeroStateSearchButton}
+                                >
+                                    search bar
+                                </Button>{' '}
+                                above.
+                            </>
+                        )}
                     </small>
                 )}
             </ul>
@@ -172,11 +213,33 @@ const DynamicFilterItem: FC<DynamicFilterItemProps> = props => {
                 onClick={() => onClick(filter, selected)}
             >
                 <span className={styles.itemText}>{renderItem ? renderItem(filter, selected) : filter.label}</span>
-                <DynamicFilterBadge exhaustive={filter.exhaustive} count={filter.count} />
+                {/* NOTE: filter.count should _only_ be zero for the synthetic count filter. */}
+                {filter.count > 0 && <DynamicFilterBadge exhaustive={filter.exhaustive} count={filter.count} />}
                 {selected && <Icon svgPath={mdiClose} aria-hidden={true} className="ml-1 flex-shrink-0" />}
             </Button>
         </li>
     )
+}
+
+function filterForSearchTerm(input: string, filterKind: Filter['kind']): string | null {
+    switch (filterKind) {
+        case 'repo': {
+            return `repo:${maybeQuoteString(input)}`
+        }
+        case 'author': {
+            return `author:${maybeQuoteString(input)}`
+        }
+        default: {
+            return null
+        }
+    }
+}
+
+function maybeQuoteString(input: string): string {
+    if (input.match(/\s/)) {
+        return `"${input.replaceAll('"', '\\"')}"`
+    }
+    return input
 }
 
 function filtersEqual(a: URLQueryFilter, b: URLQueryFilter): boolean {
@@ -194,7 +257,7 @@ export const repoFilter = (filter: Filter): ReactNode => {
     const { svgPath } = codeHostIcon(filter.label)
 
     return (
-        <Tooltip content={filter.label}>
+        <Tooltip content={filter.label} placement="right">
             <span>
                 <Icon aria-hidden={true} svgPath={svgPath ?? mdiSourceRepository} /> {displayRepoName(filter.label)}
             </span>

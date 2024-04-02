@@ -85,7 +85,7 @@ export const CodyUpsellPage: FC = () => {
                         Cody is a coding AI assistant that uses AI and a deep understanding of your organisation’s
                         codebases to help you write and understand code faster.
                     </Text>
-                    <ButtonLink href={contactSalesLink} variant="primary" className="py-2 px-5">
+                    <ButtonLink to={contactSalesLink} variant="primary" className="py-2 px-5">
                         Contact sales
                     </ButtonLink>
                     <div className={styles.ideContainer}>

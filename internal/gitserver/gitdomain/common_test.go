@@ -1,10 +1,54 @@
 package gitdomain
 
 import (
+	"math/rand"
+	"reflect"
 	"testing"
+	"testing/quick"
+	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
+
+func TestMessage(t *testing.T) {
+	t.Run("Subject", func(t *testing.T) {
+		tests := map[Message]string{
+			"hello":                 "hello",
+			"hello\n":               "hello",
+			"hello\n\n":             "hello",
+			"hello\nworld":          "hello",
+			"hello\n\nworld":        "hello",
+			"hello\n\nworld\nfoo":   "hello",
+			"hello\n\nworld\nfoo\n": "hello",
+		}
+		for input, want := range tests {
+			got := input.Subject()
+			if got != want {
+				t.Errorf("got %q, want %q", got, want)
+			}
+		}
+	})
+	t.Run("Body", func(t *testing.T) {
+		tests := map[Message]string{
+			"hello":                 "",
+			"hello\n":               "",
+			"hello\n\n":             "",
+			"hello\nworld":          "world",
+			"hello\n\nworld":        "world",
+			"hello\n\nworld\nfoo":   "world\nfoo",
+			"hello\n\nworld\nfoo\n": "world\nfoo",
+		}
+		for input, want := range tests {
+			got := input.Body()
+			if got != want {
+				t.Errorf("got %q, want %q", got, want)
+			}
+		}
+	})
+}
 
 func TestValidateBranchName(t *testing.T) {
 	for _, tc := range []struct {
@@ -110,19 +154,75 @@ func TestIsAbsoluteRevision(t *testing.T) {
 	}
 }
 
-// TODO: Fails because a time.Time is embedded in the Hunk type.
-// func TestRoundTripBlameHunk(t *testing.T) {
-// 	diff := ""
+func TestRoundTripBlameHunk(t *testing.T) {
+	diff := ""
 
-// 	err := quick.Check(func(original *Hunk) bool {
-// 		converted := HunkFromBlameProto(original.ToProto())
-// 		if diff = cmp.Diff(original, converted); diff != "" {
-// 			return false
-// 		}
+	err := quick.Check(func(startLine, endLine, startByte, endByte uint32, commitID api.CommitID, message, filename string, authorName, authorEmail string, authorDate fuzzTime) bool {
+		original := &Hunk{
+			StartLine: startLine,
+			EndLine:   endLine,
+			StartByte: startByte,
+			EndByte:   endByte,
+			CommitID:  commitID,
+			Message:   message,
+			Filename:  filename,
+			Author: Signature{
+				Name:  authorName,
+				Email: authorEmail,
+				Date:  time.Time(authorDate),
+			},
+		}
+		converted := HunkFromBlameProto(original.ToProto())
+		if diff = cmp.Diff(original, converted); diff != "" {
+			return false
+		}
 
-// 		return true
-// 	}, nil)
-// 	if err != nil {
-// 		t.Fatalf("unexpected diff (-want +got):\n%s", diff)
-// 	}
-// }
+		return true
+	}, nil)
+	if err != nil {
+		t.Fatalf("unexpected diff (-want +got):\n%s", diff)
+	}
+}
+
+func TestRoundTripCommit(t *testing.T) {
+	diff := ""
+
+	err := quick.Check(func(id api.CommitID, message Message, parents []api.CommitID, authorName, authorEmail, committerName, committerEmail string, authorDate, committerDate fuzzTime) bool {
+		original := &Commit{
+			ID:      id,
+			Message: message,
+			Parents: parents,
+			Author: Signature{
+				Name:  authorName,
+				Email: authorEmail,
+				Date:  time.Time(authorDate),
+			},
+			Committer: &Signature{
+				Name:  committerName,
+				Email: committerEmail,
+				Date:  time.Time(committerDate),
+			},
+		}
+		converted := CommitFromProto(original.ToProto())
+		if diff = cmp.Diff(original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}, nil)
+	if err != nil {
+		t.Fatalf("unexpected diff (-want +got):\n%s", diff)
+	}
+}
+
+type fuzzTime time.Time
+
+func (fuzzTime) Generate(rand *rand.Rand, _ int) reflect.Value {
+	// The maximum representable year in RFC 3339 is 9999, so we'll use that as our upper bound.
+	maxDate := time.Date(9999, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	ts := time.Unix(rand.Int63n(maxDate.Unix()), rand.Int63n(int64(time.Second)))
+	return reflect.ValueOf(fuzzTime(ts))
+}
+
+var _ quick.Generator = fuzzTime{}

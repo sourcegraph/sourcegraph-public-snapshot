@@ -5,13 +5,12 @@ import type { Observable } from 'rxjs'
 
 import { limitHit, useUrlFilters } from '@sourcegraph/branded'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, type StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import type { SearchAggregationProps, SearchStreamingProps } from '..'
@@ -40,8 +39,7 @@ export interface StreamingSearchResultsProps
         CodeInsightsProps,
         SearchAggregationProps,
         CodeMonitoringProps,
-        OwnConfigProps,
-        ExtensionsControllerProps {
+        OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -56,7 +54,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         searchAggregationEnabled,
         codeMonitoringEnabled,
         platformContext,
-        extensionsController,
     } = props
 
     const location = useLocation()
@@ -93,6 +90,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             featureOverrides: formatUrlOverrideFeatureFlags(featureOverrides),
             searchMode,
             chunkMatches: true,
+            // 5kb is a conservative upperbound on a reasonable line to show
+            // to a user. In practice we can likely go much lower.
+            maxLineLen: 5 * 1024,
             zoektSearchOptions: searchOptions,
         }),
         [patternType, caseSensitive, trace, featureOverrides, searchMode, searchOptions]
@@ -270,7 +270,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             settingsCascade={props.settingsCascade}
             telemetryService={telemetryService}
             platformContext={platformContext}
-            extensionsController={extensionsController}
         />
     )
 }

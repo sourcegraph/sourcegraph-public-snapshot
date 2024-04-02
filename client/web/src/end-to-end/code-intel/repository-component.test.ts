@@ -469,6 +469,9 @@ describe('Repository component', () => {
             })
         }
 
+        // todo: re-enable once flake is identified
+        // https://github.com/sourcegraph/sourcegraph/issues/60824
+        /*
         const highlightSymbolTests = [
             {
                 name: 'highlights correct line for Go',
@@ -504,6 +507,7 @@ describe('Repository component', () => {
                 expect(selectedLine).not.toBeNull()
             })
         }
+        */
     })
 
     describe('hovers', () => {

@@ -12,7 +12,7 @@ services=(
   scip-ctags
   searcher
   symbols
-  syntax_highlighter
+  syntect_server
   worker
 )
 

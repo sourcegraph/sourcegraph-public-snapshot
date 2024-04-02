@@ -54,7 +54,6 @@ Do the [branch cut](https://handbook.sourcegraph.com/departments/engineering/dev
 - [ ] Manually review the pull requests created in the previous step and merge.
 - [ ] Wait for CI of the commit on `main` to pass.
 - [ ] Request Admin permissions of `sourcegraph/sourcegraph` repository through [Entitle](https://app.entitle.io/request?targetType=resource&duration=1800&justification=Temporarily%20disable%20the%20%22Require%20linear%20history%22%20rule%20for%20release%20branches%20to%20create%20a%20new%20release%20branch.&integrationId=032680b6-f13d-42aa-9837-38097b45f0fe&resourceId=cd16ad0f-0e7e-4f20-8a8c-b3c57751dafd&roleId=5151f2f3-40a3-4697-99a2-b5e756e43f5b&grantMethodId=5151f2f3-40a3-4697-99a2-b5e756e43f5b) in order to disable the [**Require linear history** protection rule for release branches](https://github.com/sourcegraph/sourcegraph/settings/branch_protection_rules/34536616#:~:text=Require%20linear%20history).
-- [ ] Enable the [`release-protector` GitHub Action](https://github.com/sourcegraph/sourcegraph/blob/main/.github/workflows/release-protector.yml) in the `sourcegraph/sourcegraph` repository.
 
 - [ ] Create the `$MAJOR.$MINOR` branch off the CHANGELOG commit in the previous step:
 

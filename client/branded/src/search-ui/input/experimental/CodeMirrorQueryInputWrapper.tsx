@@ -327,7 +327,7 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                     {!mode && children}
                 </div>
                 <div
-                    className={styles.suggestions}
+                    className={classNames(styles.suggestions, showSuggestions && styles.open)}
                     // eslint-disable-next-line react/forbid-dom-props
                     style={{ paddingTop: height }}
                 >

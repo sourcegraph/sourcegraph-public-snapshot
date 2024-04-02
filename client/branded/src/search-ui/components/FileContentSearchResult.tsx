@@ -23,6 +23,7 @@ import {
     getRevision,
 } from '@sourcegraph/shared/src/search/stream'
 import { useSettings, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Icon } from '@sourcegraph/wildcard'
 
@@ -124,6 +125,13 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             return
         }
         setHasBeenVisible(true)
+
+        // This file contains some large lines, avoid stressing
+        // syntax-highlighter and the browser.
+        if (result.chunkMatches?.some(chunk => chunk.contentTruncated)) {
+            return
+        }
+
         const subscription = fetchHighlightedFileLineRanges(
             {
                 repoName: result.repository,
@@ -131,7 +139,8 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                 filePath: result.path,
                 disableTimeout: false,
                 format: HighlightResponseFormat.HTML_HIGHLIGHT,
-                ranges: unhighlightedGroups,
+                // Explicitly narrow the object otherwise we'll send a bunch of extra data in the request.
+                ranges: unhighlightedGroups.map(({ startLine, endLine }) => ({ startLine, endLine })),
             },
             false
         )
@@ -193,6 +202,8 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                     className={resultStyles.copyButton}
                     filePath={result.path}
                     telemetryService={telemetryService}
+                    // TODO (dadlerj): update to use a real telemetry recorder
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             </span>
         </>

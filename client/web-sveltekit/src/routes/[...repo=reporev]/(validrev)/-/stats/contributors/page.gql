@@ -25,8 +25,8 @@ fragment ContributorConnection on RepositoryContributorConnection {
     totalCount
 }
 
-query PagedRepositoryContributors(
-    $repo: ID!
+query ContributorsPage_ContributorsQuery(
+    $repoName: String!
     $first: Int
     $last: Int
     $after: String
@@ -35,21 +35,18 @@ query PagedRepositoryContributors(
     $afterDate: String
     $path: String
 ) {
-    node(id: $repo) {
-        __typename
-        ... on Repository {
-            id
-            contributors(
-                first: $first
-                last: $last
-                before: $before
-                after: $after
-                revisionRange: $revisionRange
-                afterDate: $afterDate
-                path: $path
-            ) {
-                ...ContributorConnection
-            }
+    repository(name: $repoName) {
+        id
+        contributors(
+            first: $first
+            last: $last
+            before: $before
+            after: $after
+            revisionRange: $revisionRange
+            afterDate: $afterDate
+            path: $path
+        ) {
+            ...ContributorConnection
         }
     }
 }

@@ -34,3 +34,14 @@ type IO struct {
 // ActionFunc is the interface used to implement check Fixes. All output should be written
 // to cio, and all input should only be read from cio (i.e. FixActions can be interactive)
 type FixAction[Args any] func(ctx context.Context, cio IO, args Args) error
+
+func CombineFix[CheckArgs any](fixes ...FixAction[CheckArgs]) FixAction[CheckArgs] {
+	return func(ctx context.Context, cio IO, args CheckArgs) error {
+		for _, fix := range fixes {
+			if err := fix(ctx, cio, args); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}

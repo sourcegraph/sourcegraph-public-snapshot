@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -45,6 +46,7 @@ var bzlgenTargets = map[string]bzlgenTarget{
 
 var bazelCommand = &cli.Command{
 	Name:            "bazel",
+	Aliases:         []string{"bz"},
 	SkipFlagParsing: true,
 	HideHelpCommand: true,
 	Usage:           "Proxies the bazel CLI with custom commands for local dev convenience",
@@ -74,6 +76,9 @@ Available categories:
 	- all: catch-all for all of the above
 
 If no categories are referenced, then 'builds' is assumed as the default.`,
+			BashComplete: completions.CompleteArgs(func() (options []string) {
+				return append(maps.Keys(bzlgenTargets), "all")
+			}),
 			Before: func(ctx *cli.Context) error {
 				for _, arg := range ctx.Args().Slice() {
 					if _, ok := bzlgenTargets[arg]; !ok && arg != "all" {
@@ -94,7 +99,7 @@ If no categories are referenced, then 'builds' is assumed as the default.`,
 					categories = []bzlgenTarget{bzlgenTargets["builds"]}
 					categoryNames = []string{"builds"}
 				} else {
-					for i := 0; i < ctx.NArg(); i++ {
+					for i := range ctx.NArg() {
 						categories = append(categories, bzlgenTargets[ctx.Args().Get(i)])
 						categoryNames = append(categoryNames, ctx.Args().Get(i))
 					}

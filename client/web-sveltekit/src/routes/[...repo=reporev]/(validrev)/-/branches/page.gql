@@ -1,5 +1,5 @@
-query GitBranchesOverviewQuery($repo: ID!, $first: Int!, $withBehindAhead: Boolean!, $revspec: String = "") {
-    node(id: $repo) {
+query BranchesPage_OverviewQuery($repoName: String!, $first: Int!, $withBehindAhead: Boolean!, $revspec: String = "") {
+    repository(name: $repoName) {
         id
         ...GitBranchesOverview
     }

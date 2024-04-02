@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/ci"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/background"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/release"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -84,7 +85,7 @@ const sgBugReportTemplate = "https://github.com/sourcegraph/sourcegraph/issues/n
 // sg is the main sg CLI application.
 var sg = &cli.App{
 	Usage:       "The Sourcegraph developer tool!",
-	Description: "Learn more: https://docs.sourcegraph.com/dev/background-information/sg",
+	Description: "Learn more: https://sourcegraph.com/docs/dev/background-information/sg",
 	Version:     BuildCommit,
 	Compiled:    time.Now(),
 	Flags: []cli.Flag{
@@ -275,6 +276,7 @@ var sg = &cli.App{
 		contextCommand,
 		deployCommand,
 		wolfiCommand,
+		backportCommand,
 
 		// Dev environment
 		secretCommand,
@@ -298,7 +300,7 @@ var sg = &cli.App{
 		funkyLogoCommand,
 		helpCommand,
 		installCommand,
-		releaseCommand,
+		release.Command,
 		updateCommand,
 		versionCommand,
 	},

@@ -159,7 +159,7 @@ func Frontend() *monitoring.Dashboard {
 							NextSteps: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 								- Investigate potential sources of latency by selecting Explore and modifying the 'sum by(le)' section to include additional labels: for example, 'sum by(le, job)' or 'sum by (le, instance)'.
-								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
+								- Trace a request to see what the slowest part is: https://sourcegraph.com/docs/admin/observability/tracing
 							`,
 						},
 					},
@@ -1058,7 +1058,7 @@ func Frontend() *monitoring.Dashboard {
 
 							Increases in response time can point to too much load on the database to keep up with the incoming requests.
 
-							See this documentation page for more details on webhook requests: (https://docs.sourcegraph.com/admin/config/webhooks/incoming)`,
+							See this documentation page for more details on webhook requests: (https://sourcegraph.com/docs/admin/config/webhooks/incoming)`,
 						},
 					},
 				},

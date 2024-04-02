@@ -4,121 +4,82 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestGetObject(t *testing.T) {
-	sampleSHA := "a03384f3a47acae11478ba7b4a6f331564938d4f"
-	sampleOID, err := decodeOID(sampleSHA)
-	if err != nil {
-		t.Fatal(err)
-	}
-	repoName := api.RepoName("github.com/sourcegraph/sourcegraph")
+func TestGitCLIBackend_GetObject(t *testing.T) {
+	ctx := context.Background()
 
-	tests := []struct {
-		name string
+	// Prepare repo state:
+	backend := BackendWithRepoCommands(t,
+		"echo line1 > f",
+		"git add f",
+		"git commit -m foo --author='Foo Author <foo@sourcegraph.com>'",
+		`git tag -m "Test base tag" testbase`,
+	)
 
-		revParse      revParseFunc
-		getObjectType getObjectTypeFunc
+	// Commit by ref.
+	obj, err := backend.GetObject(ctx, "master")
+	require.NoError(t, err)
+	require.Equal(t, mustDecodeOID(t, "3580f4105887559aa530eb2b1744f7cad676578a"), obj.ID)
+	require.Equal(t, gitdomain.ObjectTypeCommit, obj.Type)
 
-		repo       api.RepoName
-		objectName string
-		wantObject *gitdomain.GitObject
-		wantError  error
-	}{
-		{
-			name: "Happy path",
-			revParse: func(ctx context.Context, rcf *wrexec.RecordingCommandFactory, repo api.RepoName, dir common.GitDir, rev string) (string, error) {
-				return sampleSHA, nil
-			},
-			getObjectType: func(ctx context.Context, rcf *wrexec.RecordingCommandFactory, repo api.RepoName, dir common.GitDir, objectID string) (gitdomain.ObjectType, error) {
-				return gitdomain.ObjectTypeCommit, nil
-			},
-			repo:       repoName,
-			objectName: "abc",
-			wantObject: &gitdomain.GitObject{ID: sampleOID, Type: gitdomain.ObjectTypeCommit},
-			wantError:  nil,
-		},
-		{
-			name: "Revparse repo doesn't exist",
-			revParse: func(ctx context.Context, rcf *wrexec.RecordingCommandFactory, repo api.RepoName, dir common.GitDir, rev string) (string, error) {
-				return "", &gitdomain.RepoNotExistError{}
-			},
-			getObjectType: func(ctx context.Context, rcf *wrexec.RecordingCommandFactory, repo api.RepoName, dir common.GitDir, objectID string) (gitdomain.ObjectType, error) {
-				return gitdomain.ObjectTypeCommit, nil
-			},
-			repo:       repoName,
-			objectName: "abc",
-			wantObject: nil,
-			wantError:  &gitdomain.RepoNotExistError{},
-		},
-		{
-			name: "Unknown revision",
-			revParse: func(ctx context.Context, rcf *wrexec.RecordingCommandFactory, repo api.RepoName, dir common.GitDir, rev string) (string, error) {
-				return "unknown revision: foo", errors.New("unknown revision")
-			},
-			getObjectType: func(ctx context.Context, rcf *wrexec.RecordingCommandFactory, repo api.RepoName, dir common.GitDir, objectID string) (gitdomain.ObjectType, error) {
-				return gitdomain.ObjectTypeCommit, nil
-			},
-			repo:       repoName,
-			objectName: "abc",
-			wantObject: nil,
-			wantError: &gitdomain.RevisionNotFoundError{
-				Repo: repoName,
-				Spec: "abc",
-			},
-		},
-		{
-			name: "HEAD treated as revision not found",
-			revParse: func(ctx context.Context, rcf *wrexec.RecordingCommandFactory, repo api.RepoName, dir common.GitDir, rev string) (string, error) {
-				return "HEAD", nil
-			},
-			getObjectType: func(ctx context.Context, rcf *wrexec.RecordingCommandFactory, repo api.RepoName, dir common.GitDir, objectID string) (gitdomain.ObjectType, error) {
-				return gitdomain.ObjectTypeCommit, nil
-			},
-			repo:       repoName,
-			objectName: "abc",
-			wantObject: nil,
-			wantError: &gitdomain.RevisionNotFoundError{
-				Repo: repoName,
-				Spec: "abc",
-			},
-		},
-		{
-			name: "Bad commit",
-			revParse: func(ctx context.Context, rcf *wrexec.RecordingCommandFactory, repo api.RepoName, dir common.GitDir, rev string) (string, error) {
-				return "not_valid_commit", nil
-			},
-			getObjectType: func(ctx context.Context, rcf *wrexec.RecordingCommandFactory, repo api.RepoName, dir common.GitDir, objectID string) (gitdomain.ObjectType, error) {
-				return gitdomain.ObjectTypeCommit, nil
-			},
-			repo:       repoName,
-			objectName: "abc",
-			wantObject: nil,
-			wantError: &gitdomain.BadCommitError{
-				Repo:   repoName,
-				Spec:   "abc",
-				Commit: api.CommitID("not_valid_commit"),
-			},
-		},
-	}
+	// Tag.
+	obj, err = backend.GetObject(ctx, "testbase")
+	require.NoError(t, err)
+	require.Equal(t, mustDecodeOID(t, "548fa239e1ac249b9ccfaad00f0fba56461442d8"), obj.ID)
+	require.Equal(t, gitdomain.ObjectTypeTag, obj.Type)
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-			obj, err := getObject(ctx, wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(t.TempDir()), tc.getObjectType, tc.revParse, tc.repo, tc.objectName)
-			if diff := cmp.Diff(tc.wantObject, obj); diff != "" {
-				t.Errorf("Object does not match: %v", diff)
-			}
-			if diff := cmp.Diff(tc.wantError, err); diff != "" {
-				t.Errorf("Error does not match: %v", diff)
-			}
-		})
-	}
+	// Tree.
+	obj, err = backend.GetObject(ctx, "88e98d1e8b909b8935c06d5a6cea5eb835c433eb")
+	require.NoError(t, err)
+	require.Equal(t, mustDecodeOID(t, "88e98d1e8b909b8935c06d5a6cea5eb835c433eb"), obj.ID)
+	require.Equal(t, gitdomain.ObjectTypeTree, obj.Type)
+
+	// Tree.
+	obj, err = backend.GetObject(ctx, "master^{tree}")
+	require.NoError(t, err)
+	require.Equal(t, mustDecodeOID(t, "88e98d1e8b909b8935c06d5a6cea5eb835c433eb"), obj.ID)
+	require.Equal(t, gitdomain.ObjectTypeTree, obj.Type)
+
+	// Blob.
+	obj, err = backend.GetObject(ctx, "a29bdeb434d874c9b1d8969c40c42161b03fafdc")
+	require.NoError(t, err)
+	require.Equal(t, mustDecodeOID(t, "a29bdeb434d874c9b1d8969c40c42161b03fafdc"), obj.ID)
+	require.Equal(t, gitdomain.ObjectTypeBlob, obj.Type)
+
+	// Unknown revision.
+	_, err = backend.GetObject(ctx, "master2")
+	require.Error(t, err)
+	require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+
+	// Unknown commit.
+	_, err = backend.GetObject(ctx, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+	require.Error(t, err)
+	require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+
+	// Invalid commit sha (invalid hex format).
+	_, err = backend.GetObject(ctx, "notacommitsha")
+	require.Error(t, err)
+	require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+
+	t.Run("HEAD in empty repo", func(t *testing.T) {
+		backend := BackendWithRepoCommands(t)
+
+		_, err := backend.GetObject(ctx, "HEAD")
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+}
+
+func mustDecodeOID(t *testing.T, s string) gitdomain.OID {
+	t.Helper()
+
+	oid, err := decodeOID(api.CommitID(s))
+	require.NoError(t, err)
+	return oid
 }

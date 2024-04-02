@@ -30,10 +30,10 @@ export const SearchQueryChecks: FC<SearchQueryChecksProps> = ({ checks }) => (
             expression boolean operators can still be used)
         </CheckListItem>
         <CheckListItem
-            errorMessage="shouldn't contain patternType:literal or patternType:structural"
+            errorMessage="shouldn't contain 'keyword', 'literal', or 'structural' patterntype"
             valid={checks?.isValidPatternType}
         >
-            Does not contain <Code>patternType:literal</Code> or <Code>patternType:structural</Code>
+            Does not contain a <Code>patternType:keyword</Code>, <Code>literal</Code>, or <Code>structural</Code>{' '}
         </CheckListItem>
         <CheckListItem errorMessage="shouldn't contain repo filter" valid={checks?.isNotRepo}>
             Does not contain <Code>repo:</Code> filter

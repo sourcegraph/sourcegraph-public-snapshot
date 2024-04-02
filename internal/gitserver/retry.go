@@ -22,12 +22,6 @@ type automaticRetryClient struct {
 
 // Non-idempotent methods.
 
-func (r *automaticRetryClient) P4Exec(ctx context.Context, in *proto.P4ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_P4ExecClient, error) {
-	// Not every usage of P4Exec is safe to retry.
-	// Also, currently unused.
-	return r.base.P4Exec(ctx, in, opts...)
-}
-
 func (r *automaticRetryClient) RepoDelete(ctx context.Context, in *proto.RepoDeleteRequest, opts ...grpc.CallOption) (*proto.RepoDeleteResponse, error) {
 	// RepoDelete isn't idempotent.
 	return r.base.RepoDelete(ctx, in, opts...)
@@ -49,11 +43,6 @@ func (r *automaticRetryClient) Exec(ctx context.Context, in *proto.ExecRequest, 
 	// - 2. not used in Exec directly, but instead only via a specific RPC (like CreateCommitFromPatchBinary) where the caller is responsible for retrying.
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.Exec(ctx, in, opts...)
-}
-
-func (r *automaticRetryClient) BatchLog(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error) {
-	opts = append(defaults.RetryPolicy, opts...)
-	return r.base.BatchLog(ctx, in, opts...)
 }
 
 func (r *automaticRetryClient) DiskInfo(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
@@ -159,6 +148,16 @@ func (r *automaticRetryClient) DefaultBranch(ctx context.Context, in *proto.Defa
 func (r *automaticRetryClient) ReadFile(ctx context.Context, in *proto.ReadFileRequest, opts ...grpc.CallOption) (proto.GitserverService_ReadFileClient, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.ReadFile(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) GetCommit(ctx context.Context, in *proto.GetCommitRequest, opts ...grpc.CallOption) (*proto.GetCommitResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.GetCommit(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) ResolveRevision(ctx context.Context, in *proto.ResolveRevisionRequest, opts ...grpc.CallOption) (*proto.ResolveRevisionResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.ResolveRevision(ctx, in, opts...)
 }
 
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

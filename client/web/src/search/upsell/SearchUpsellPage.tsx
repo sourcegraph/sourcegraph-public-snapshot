@@ -5,6 +5,8 @@ import { mdiOpenInNew } from '@mdi/js'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { H2, Text, ButtonLink, Link, Icon } from '@sourcegraph/wildcard'
 
+import { BatchChangesLogo } from './BatchChangesLogo'
+import { CodeNavLogo } from './CodeNavLogo'
 import { CodeSearchIcon } from './CodeSearchIcon'
 import { FeatureImage } from './Feature'
 import { IntegrationsIcon } from './IntegrationsIcon'
@@ -41,17 +43,33 @@ export const SearchUpsellPage: FC = () => {
         <div className={styles.container}>
             <section className={styles.hero}>
                 <CodeSearchIcon isLightTheme={isLightTheme} />
-                <H2 className={styles.heroHeader}>Grok your entire codebase</H2>
-                <Text className={styles.heroDescription}>
-                    Code Search, along with complementary tools, helps devs find, fix, and onboard to new code quickly.
-                </Text>
 
-                <div>
-                    <ButtonLink href={contactSalesLink} variant="primary" className="py-2 px-3 rounded mr-5">
+                <section className={styles.heroHeaderContainer}>
+                    <H2 className={styles.heroHeader}>Grok your entire codebase</H2>
+                    <Text className={styles.heroDescription}>
+                        Code Search, along with complementary tools, helps devs find, fix, and onboard to new code
+                        quickly.
+                    </Text>
+                </section>
+
+                <div className={styles.heroCtaContainer}>
+                    <ButtonLink
+                        to={contactSalesLink}
+                        variant="primary"
+                        className="py-2 px-3 rounded mr-4"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
                         Talk to a product expert
                     </ButtonLink>
 
-                    <ButtonLink href={findOutMoreLink} variant="secondary" className="py-2 px-3 rounded">
+                    <ButtonLink
+                        to={findOutMoreLink}
+                        variant="secondary"
+                        className="py-2 px-3 rounded"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
                         Find out more
                     </ButtonLink>
                 </div>
@@ -66,7 +84,7 @@ export const SearchUpsellPage: FC = () => {
                             Find and fix code in any code host, language, or repository
                         </Text>
                     </div>
-                    <FeatureImage className={styles.featuresImage} />
+                    <FeatureImage className={styles.featuresImage} isLightTheme={isLightTheme} />
                 </section>
                 <section className={styles.featuresGrid}>
                     {searchFeatures.map(({ title, description }, index) => (
@@ -92,38 +110,60 @@ export const SearchUpsellPage: FC = () => {
 
             <section className={styles.otherIntegrations}>
                 <div className={styles.otherIntegrationsGrid}>
+                    <CodeNavLogo className={styles.otherIntegrationsLogo} />
                     <Text className={styles.otherIntegrationsTitle}>Understand your code and its dependencies</Text>
                     <Text className={styles.otherIntegrationsDescription}>
                         Complete code reviews, get up to speed on unfamiliar code, and determine the impact of code
                         changes with the confidence of compiler-accurate code navigation.
                     </Text>
-                    <Link to="/help/code_navigation/explanations/introduction_to_code_navigation">
-                        Find out more about Code Navigation →
+                    <Link
+                        to="/help/code_navigation/explanations/introduction_to_code_navigation"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        Find out more about Code Navigation{' '}
+                        <Icon
+                            className={styles.otherIntegrationsLinkIcon}
+                            svgPath={mdiOpenInNew}
+                            inline={true}
+                            aria-label="Learn about Code Navigation"
+                        />
                     </Link>
                 </div>
 
                 <section className={styles.otherIntegrationsGrid}>
+                    <BatchChangesLogo className={styles.otherIntegrationsLogo} />
                     <Text className={styles.otherIntegrationsTitle}>Automate large-scale code changes</Text>
                     <Text className={styles.otherIntegrationsDescription}>
                         Find all occurrences of code to change with Code Search and programmatically make those changes
                         by creating a declarative specification file.
                     </Text>
-                    <Link to="https://sourcegraph.com/case-studies/indeed-accelerates-development-velocity">
-                        Read how Indeed uses Batch Changes to accelerate deployment →
+                    <Link
+                        to="https://sourcegraph.com/case-studies/indeed-accelerates-development-velocity"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        Read how Indeed uses Batch Changes to accelerate deployment{' '}
+                        <Icon
+                            className={styles.otherIntegrationsLinkIcon}
+                            svgPath={mdiOpenInNew}
+                            inline={true}
+                            aria-label="Learn about Batch Changes"
+                        />
                     </Link>
                 </section>
             </section>
 
             <section className={styles.footer}>
                 <Text className={styles.footerText}>Code Search also works great with...</Text>
-                <Link to="/help/code_monitoring">
+                <Link to="/help/code_monitoring" target="_blank" rel="noreferrer">
                     Code Monitoring{' '}
                     <Icon svgPath={mdiOpenInNew} inline={false} aria-label="Learn more about Code Monitoring" />
                 </Link>
-                <Link to="/help/code_insights">
+                <Link to="/help/code_insights" target="_blank" rel="noreferrer">
                     Insights <Icon svgPath={mdiOpenInNew} inline={false} aria-label="Learn more about Code Insights" />
                 </Link>
-                <Link to="/help/notebooks">
+                <Link to="/help/notebooks" target="_blank" rel="noreferrer">
                     Notebooks <Icon svgPath={mdiOpenInNew} inline={false} aria-label="Learn more about Notebooks" />
                 </Link>
             </section>

@@ -5,6 +5,7 @@
         "value": "sancerre",
         "negated": false,
         "labels": [
+          "HeuristicHoisted",
           "Literal",
           "Standard"
         ],
@@ -23,6 +24,7 @@
         "value": "pouilly-fume",
         "negated": false,
         "labels": [
+          "HeuristicHoisted",
           "Regexp"
         ],
         "range": {

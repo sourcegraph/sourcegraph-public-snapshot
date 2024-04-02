@@ -47,7 +47,7 @@ export const fetchFileRangeMatches = async (args: {
     format?: HighlightResponseFormat
     ranges: HighlightLineRange[]
 }): Promise<string[][]> => {
-    const data = await query<HighlightedFileResult, HighlightedFileVariables>(HIGHLIGHTED_FILE_QUERY, {
+    const result = await query<HighlightedFileResult, HighlightedFileVariables>(HIGHLIGHTED_FILE_QUERY, {
         repoName: args.result.repository,
         commitID: args.result.commit ?? '',
         filePath: args.result.path,
@@ -56,11 +56,11 @@ export const fetchFileRangeMatches = async (args: {
         disableTimeout: true,
     })
 
-    if (!data?.repository?.commit?.blob?.highlight) {
+    if (!result.data?.repository?.commit?.blob?.highlight) {
         throw new Error('Unable to highlight file range')
     }
 
-    const file = data.repository.commit.blob
+    const file = result.data.repository.commit.blob
     if (file?.isDirectory) {
         return []
     }

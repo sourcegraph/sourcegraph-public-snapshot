@@ -11,11 +11,11 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -43,7 +43,7 @@ func (s *Server) SearchWithObservability(ctx context.Context, tr trace.Trace, ar
 		if honey.Enabled() || traceLogs {
 			act := actor.FromContext(ctx)
 			ev := honey.NewEvent("gitserver-search")
-			ev.SetSampleRate(honeySampleRate("", act))
+			ev.SetSampleRate(gitcli.HoneySampleRate("", act))
 			ev.AddField("repo", args.Repo)
 			ev.AddField("revisions", args.Revisions)
 			ev.AddField("include_diff", args.IncludeDiff)
@@ -63,7 +63,7 @@ func (s *Server) SearchWithObservability(ctx context.Context, tr trace.Trace, ar
 				_ = ev.Send()
 			}
 			if traceLogs {
-				s.Logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+				s.logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 			}
 		}
 	}()
@@ -83,7 +83,6 @@ func (s *Server) SearchWithObservability(ctx context.Context, tr trace.Trace, ar
 // search handles the core logic of the search. It is passed a matchesBuf so it doesn't need to
 // concern itself with event types, and all instrumentation is handled in the calling function.
 func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
-	args.Repo = protocol.NormalizeRepo(args.Repo)
 	if args.Limit == 0 {
 		args.Limit = math.MaxInt32
 	}
@@ -115,13 +114,13 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 		}
 
 		sentCount.Add(int64(matchCount(match)))
-		onMatch(match)
+		_ = onMatch(match)
 	}
 
 	searcher := &search.CommitSearcher{
-		Logger:               s.Logger,
+		Logger:               s.logger,
 		RepoName:             args.Repo,
-		RepoDir:              gitserverfs.RepoDirFromName(s.ReposDir, args.Repo).Path(),
+		RepoDir:              string(s.fs.RepoDir(args.Repo)),
 		Revisions:            args.Revisions,
 		Query:                mt,
 		IncludeDiff:          args.IncludeDiff,

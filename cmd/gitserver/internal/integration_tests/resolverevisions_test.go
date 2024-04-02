@@ -8,6 +8,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
@@ -16,6 +19,7 @@ import (
 	common "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -23,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
@@ -33,7 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 )
 
-func TestClient_ResolveRevisions(t *testing.T) {
+func TestClient_ResolveRevision(t *testing.T) {
 	root := t.TempDir()
 	remote := createSimpleGitRepo(t, root)
 	// These hashes should be stable since we set the timestamps
@@ -42,54 +45,72 @@ func TestClient_ResolveRevisions(t *testing.T) {
 	hash2 := "c5151eceb40d5e625716589b745248e1a6c6228d"
 
 	tests := []struct {
-		input []protocol.RevisionSpecifier
-		want  []string
+		input string
+		want  api.CommitID
 		err   error
 	}{{
-		input: []protocol.RevisionSpecifier{{}},
-		want:  []string{hash2},
+		input: "",
+		want:  api.CommitID(hash2),
 	}, {
-		input: []protocol.RevisionSpecifier{{RevSpec: "HEAD"}},
-		want:  []string{hash2},
+		input: "HEAD",
+		want:  api.CommitID(hash2),
 	}, {
-		input: []protocol.RevisionSpecifier{{RevSpec: "HEAD~1"}},
-		want:  []string{hash1},
+		input: "HEAD~1",
+		want:  api.CommitID(hash1),
 	}, {
-		input: []protocol.RevisionSpecifier{{RevSpec: "test-ref"}},
-		want:  []string{hash1},
+		input: "test-ref",
+		want:  api.CommitID(hash1),
 	}, {
-		input: []protocol.RevisionSpecifier{{RevSpec: "test-nested-ref"}},
-		want:  []string{hash1},
+		input: "test-nested-ref",
+		want:  api.CommitID(hash1),
 	}, {
-		input: []protocol.RevisionSpecifier{{RevSpec: "test-fake-ref"}},
-		err:   &gitdomain.RevisionNotFoundError{Repo: api.RepoName(remote), Spec: "test-fake-ref"},
+		input: "test-fake-ref",
+		err:   &gitdomain.RevisionNotFoundError{Repo: api.RepoName(remote), Spec: "test-fake-ref^0"},
 	}}
 
 	logger := logtest.Scoped(t)
 	db := newMockDB()
 	ctx := context.Background()
 
-	s := server.Server{
-		Logger:   logger,
-		ReposDir: filepath.Join(root, "repos"),
+	fs := gitserverfs.New(&observation.TestContext, filepath.Join(root, "repos"))
+	require.NoError(t, fs.Initialize())
+	getRemoteURLFunc := func(_ context.Context, name api.RepoName) (string, error) { //nolint:unparam
+		return remote, nil
+	}
+
+	s := server.NewServer(&server.ServerOpts{
+		Logger: logger,
+		FS:     fs,
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 		},
-		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
-			return remote, nil
-		},
+		GetRemoteURLFunc: getRemoteURLFunc,
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory()), nil
+			getRemoteURLSource := func(ctx context.Context, name api.RepoName) (vcssyncer.RemoteURLSource, error) {
+				return vcssyncer.RemoteURLSourceFunc(func(ctx context.Context) (*vcs.URL, error) {
+					raw, err := getRemoteURLFunc(ctx, name)
+					if err != nil {
+						return nil, errors.Wrapf(err, "failed to get remote URL for %s", name)
+					}
+
+					u, err := vcs.ParseURL(raw)
+					if err != nil {
+						return nil, errors.Wrapf(err, "failed to parse remote URL %q", raw)
+					}
+					return u, nil
+				}), nil
+			}
+			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), getRemoteURLSource), nil
 		},
 		DB:                      db,
 		Perforce:                perforce.NewService(ctx, observation.TestContextTB(t), logger, db, list.New()),
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		Locker:                  server.NewRepositoryLocker(),
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(100, 10)),
-	}
+	})
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
-	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(&s))
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
 
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 	srv := httptest.NewServer(handler)
@@ -104,10 +125,10 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
-			_, err := cli.RequestRepoUpdate(ctx, api.RepoName(remote), 0)
+			_, err := cli.RequestRepoUpdate(ctx, api.RepoName(remote))
 			require.NoError(t, err)
 
-			got, err := cli.ResolveRevisions(ctx, api.RepoName(remote), test.input)
+			got, err := cli.ResolveRevision(ctx, api.RepoName(remote), test.input, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 			if test.err != nil {
 				require.Equal(t, test.err, err)
 				return

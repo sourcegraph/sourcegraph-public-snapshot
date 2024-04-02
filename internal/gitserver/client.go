@@ -11,8 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/status"
 
@@ -29,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -38,8 +35,6 @@ import (
 const git = "git"
 
 var ClientMocks, emptyClientMocks struct {
-	GetObject               func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
-	Archive                 func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
 	LocalGitserver          bool
 	LocalGitCommandReposDir string
 }
@@ -226,16 +221,29 @@ type HunkReader interface {
 type BlameOptions struct {
 	NewestCommit     api.CommitID `json:",omitempty" url:",omitempty"`
 	IgnoreWhitespace bool         `json:",omitempty" url:",omitempty"`
-	StartLine        int          `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
-	EndLine          int          `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
+	Range            *BlameRange  `json:",omitempty" url:",omitempty"`
 }
 
 func (o *BlameOptions) Attrs() []attribute.KeyValue {
-	return []attribute.KeyValue{
+	kvs := []attribute.KeyValue{
 		attribute.String("newestCommit", string(o.NewestCommit)),
+		attribute.Bool("ignoreWhitespace", o.IgnoreWhitespace),
+	}
+	if o.Range != nil {
+		kvs = append(kvs, o.Range.Attrs()...)
+	}
+	return kvs
+}
+
+type BlameRange struct {
+	StartLine int `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
+	EndLine   int `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
+}
+
+func (o *BlameRange) Attrs() []attribute.KeyValue {
+	return []attribute.KeyValue{
 		attribute.Int("startLine", o.StartLine),
 		attribute.Int("endLine", o.EndLine),
-		attribute.Bool("ignoreWhitespace", o.IgnoreWhitespace),
 	}
 }
 
@@ -245,6 +253,42 @@ type CommitLog struct {
 	Timestamp    time.Time
 	SHA          string
 	ChangedFiles []string
+}
+
+// ArchiveOptions contains options for the Archive func.
+type ArchiveOptions struct {
+	Treeish string        // the tree or commit to produce an archive for
+	Format  ArchiveFormat // format of the resulting archive (usually "tar" or "zip")
+	Paths   []string      // if nonempty, only include these paths.
+}
+
+func (a *ArchiveOptions) Attrs() []attribute.KeyValue {
+	pathAttrs := make([]string, len(a.Paths))
+	for i, path := range a.Paths {
+		pathAttrs[i] = string(path)
+	}
+	return []attribute.KeyValue{
+		attribute.String("treeish", a.Treeish),
+		attribute.String("format", string(a.Format)),
+		attribute.StringSlice("paths", pathAttrs),
+	}
+}
+
+func (o *ArchiveOptions) FromProto(x *proto.ArchiveRequest) {
+	*o = ArchiveOptions{
+		Treeish: x.GetTreeish(),
+		Format:  ArchiveFormatFromProto(x.GetFormat()),
+		Paths:   x.GetPaths(),
+	}
+}
+
+func (o *ArchiveOptions) ToProto(repo string) *proto.ArchiveRequest {
+	return &proto.ArchiveRequest{
+		Repo:    repo,
+		Treeish: o.Treeish,
+		Format:  o.Format.ToProto(),
+		Paths:   o.Paths,
+	}
 }
 
 type Client interface {
@@ -303,7 +347,7 @@ type Client interface {
 	// Remove removes the repository clone from gitserver.
 	Remove(context.Context, api.RepoName) error
 
-	RepoCloneProgress(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
+	RepoCloneProgress(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error)
 
 	// ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
 	// used.
@@ -315,16 +359,12 @@ type Client interface {
 	// * Other unexpected errors.
 	ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error)
 
-	// ResolveRevisions expands a set of RevisionSpecifiers into an equivalent set of commit hashes.
-	ResolveRevisions(_ context.Context, repo api.RepoName, _ []protocol.RevisionSpecifier) ([]string, error)
-
 	// RequestRepoUpdate is the new protocol endpoint for synchronous requests
 	// with more detailed responses. Do not use this if you are not repo-updater.
 	//
 	// Repo updates are not guaranteed to occur. If a repo has been updated
-	// recently (within the Since duration specified in the request), the
-	// update won't happen.
-	RequestRepoUpdate(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
+	// recently, the update won't happen.
+	RequestRepoUpdate(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
 
 	// RequestRepoClone is an asynchronous request to clone a repository.
 	RequestRepoClone(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error)
@@ -350,10 +390,13 @@ type Client interface {
 	// If you just need to check a file's existence, use Stat, not a file reader.
 	//
 	// If the file doesn't exist, the returned error will pass the os.IsNotExist()
-	// check.
+	// check. Subrepo permissions are respected by this method and if no access
+	// is granted, the error will also pass the os.IsNotExist() check.
 	//
 	// If the path points to a submodule, a reader for an empty file is returned
 	// (ie. io.EOF is returned immediately).
+	//
+	// If the specified commit does not exist, a RevisionNotFoundError is returned.
 	NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error)
 
 	// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
@@ -539,80 +582,6 @@ func (c *clientImplementor) ClientForRepo(ctx context.Context, repo api.RepoName
 	return c.clientSource.ClientForRepo(ctx, repo)
 }
 
-// ArchiveOptions contains options for the Archive func.
-type ArchiveOptions struct {
-	Treeish   string               // the tree or commit to produce an archive for
-	Format    ArchiveFormat        // format of the resulting archive (usually "tar" or "zip")
-	Pathspecs []gitdomain.Pathspec // if nonempty, only include these pathspecs.
-}
-
-func (a *ArchiveOptions) Attrs() []attribute.KeyValue {
-	specs := make([]string, len(a.Pathspecs))
-	for i, pathspec := range a.Pathspecs {
-		specs[i] = string(pathspec)
-	}
-	return []attribute.KeyValue{
-		attribute.String("treeish", a.Treeish),
-		attribute.String("format", string(a.Format)),
-		attribute.StringSlice("pathspecs", specs),
-	}
-}
-
-func (o *ArchiveOptions) FromProto(x *proto.ArchiveRequest) {
-	protoPathSpecs := x.GetPathspecs()
-	pathSpecs := make([]gitdomain.Pathspec, 0, len(protoPathSpecs))
-
-	for _, path := range protoPathSpecs {
-		pathSpecs = append(pathSpecs, gitdomain.Pathspec(path))
-	}
-
-	*o = ArchiveOptions{
-		Treeish:   x.GetTreeish(),
-		Format:    ArchiveFormat(x.GetFormat()),
-		Pathspecs: pathSpecs,
-	}
-}
-
-func (o *ArchiveOptions) ToProto(repo string) *proto.ArchiveRequest {
-	protoPathSpecs := make([]string, 0, len(o.Pathspecs))
-
-	for _, path := range o.Pathspecs {
-		protoPathSpecs = append(protoPathSpecs, string(path))
-	}
-
-	return &proto.ArchiveRequest{
-		Repo:      repo,
-		Treeish:   o.Treeish,
-		Format:    string(o.Format),
-		Pathspecs: protoPathSpecs,
-	}
-}
-
-// archiveReader wraps the StdoutReader yielded by gitserver's
-// RemoteGitCommand.StdoutReader with one that knows how to report a repository-not-found
-// error more carefully.
-type archiveReader struct {
-	base io.ReadCloser
-	repo api.RepoName
-	spec string
-}
-
-// Read checks the known output behavior of the StdoutReader.
-func (a *archiveReader) Read(p []byte) (int, error) {
-	n, err := a.base.Read(p)
-	if err != nil {
-		// handle the special case where git archive failed because of an invalid spec
-		if isRevisionNotFound(err.Error()) {
-			return 0, &gitdomain.RevisionNotFoundError{Repo: a.repo, Spec: a.spec}
-		}
-	}
-	return n, err
-}
-
-func (a *archiveReader) Close() error {
-	return a.base.Close()
-}
-
 func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	ctx, _, endObservation := c.execOp.With(ctx, &err, observation.Args{
@@ -632,26 +601,20 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		}
 	}()
 
-	repoName := protocol.NormalizeRepo(c.repo)
-
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
-		deadlineExceededCounter.Inc()
 		return nil, err
 	}
 
-	client, err := c.execer.ClientForRepo(ctx, repoName)
+	client, err := c.execer.ClientForRepo(ctx, c.repo)
 	if err != nil {
 		return nil, err
 	}
 
 	req := &proto.ExecRequest{
-		Repo:      string(repoName),
+		Repo:      string(c.repo),
 		Args:      stringsToByteSlices(c.args[1:]),
 		NoTimeout: c.noTimeout,
-
-		// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string.
-		EnsureRevision: []byte(c.EnsureRevision()),
 	}
 
 	stream, err := client.Exec(ctx, req)
@@ -679,12 +642,6 @@ func (r *readCloseWrapper) Close() error {
 	return nil
 }
 
-func isRevisionNotFound(err string) bool {
-	// error message is lowercased in to handle case insensitive error messages
-	loweredErr := strings.ToLower(err)
-	return strings.Contains(loweredErr, "not a valid object")
-}
-
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (_ bool, err error) {
 	ctx, _, endObservation := c.operations.search.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
@@ -697,9 +654,7 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 	})
 	defer endObservation(1, observation.Args{})
 
-	repoName := protocol.NormalizeRepo(args.Repo)
-
-	client, err := c.ClientForRepo(ctx, repoName)
+	client, err := c.ClientForRepo(ctx, args.Repo)
 	if err != nil {
 		return false, err
 	}
@@ -730,11 +685,6 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 	}
 }
 
-var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "src_gitserver_client_deadline_exceeded",
-	Help: "Times that Client.sendExec() returned context.DeadlineExceeded",
-})
-
 func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitCommand {
 	if ClientMocks.LocalGitserver {
 		cmd := NewLocalGitCommand(repo, arg...)
@@ -752,19 +702,17 @@ func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 	}
 }
 
-func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since time.Duration) (_ *protocol.RepoUpdateResponse, err error) {
+func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.RepoName) (_ *protocol.RepoUpdateResponse, err error) {
 	ctx, _, endObservation := c.operations.requestRepoUpdate.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
 			repo.Attr(),
-			attribute.Stringer("since", since),
 		},
 	})
 	defer endObservation(1, observation.Args{})
 
 	req := &protocol.RepoUpdateRequest{
-		Repo:  repo,
-		Since: since,
+		Repo: repo,
 	}
 
 	client, err := c.ClientForRepo(ctx, repo)
@@ -885,60 +833,29 @@ func (e *RepoNotCloneableErr) Error() string {
 	return fmt.Sprintf("%s (name=%q notfound=%v) because %s", msg, e.repo, e.notFound, e.reason)
 }
 
-func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (_ *protocol.RepoCloneProgressResponse, err error) {
+func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repo api.RepoName) (_ *protocol.RepoCloneProgress, err error) {
 	ctx, _, endObservation := c.operations.repoCloneProgress.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
-			attribute.Int("repos", len(repos)),
+			repo.Attr(),
 		},
 	})
 	defer endObservation(1, observation.Args{})
 
-	numPossibleShards := len(c.clientSource.Addresses())
-
-	shards := make(map[proto.GitserverServiceClient]*proto.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
-	for _, r := range repos {
-		client, err := c.ClientForRepo(ctx, r)
-		if err != nil {
-			return nil, err
-		}
-
-		shard := shards[client]
-		if shard == nil {
-			shard = new(proto.RepoCloneProgressRequest)
-			shards[client] = shard
-		}
-
-		shard.Repos = append(shard.Repos, string(r))
-	}
-
-	p := pool.NewWithResults[*proto.RepoCloneProgressResponse]().WithContext(ctx)
-
-	for client, req := range shards {
-		client := client
-		req := req
-		p.Go(func(ctx context.Context) (*proto.RepoCloneProgressResponse, error) {
-			return client.RepoCloneProgress(ctx, req)
-		})
-	}
-
-	res, err := p.Wait()
+	client, err := c.ClientForRepo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
 
-	result := &protocol.RepoCloneProgressResponse{
-		Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
-	}
-	for _, r := range res {
-		for repo, info := range r.Results {
-			var rp protocol.RepoCloneProgress
-			rp.FromProto(info)
-			result.Results[api.RepoName(repo)] = &rp
-		}
+	res, err := client.RepoCloneProgress(ctx, &proto.RepoCloneProgressRequest{RepoName: string(repo)})
+	if err != nil {
+		return nil, err
 	}
 
-	return result, nil
+	var rcp protocol.RepoCloneProgress
+	rcp.FromProto(res)
+
+	return &rcp, nil
 }
 
 func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) (err error) {
@@ -950,11 +867,7 @@ func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) (err 
 	})
 	defer endObservation(1, observation.Args{})
 
-	// In case the repo has already been deleted from the database we need to pass
-	// the old name in order to land on the correct gitserver instance
-	undeletedName := api.UndeletedRepoName(repo)
-
-	client, err := c.ClientForRepo(ctx, undeletedName)
+	client, err := c.ClientForRepo(ctx, repo)
 	if err != nil {
 		return err
 	}
@@ -1270,10 +1183,6 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 	})
 	defer endObservation(1, observation.Args{})
 
-	if ClientMocks.GetObject != nil {
-		return ClientMocks.GetObject(repo, objectName)
-	}
-
 	req := protocol.GetObjectRequest{
 		Repo:       repo,
 		ObjectName: objectName,
@@ -1292,78 +1201,6 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 	res.FromProto(grpcResp)
 
 	return &res.Object, nil
-}
-
-var ambiguousArgPattern = lazyregexp.New(`ambiguous argument '([^']+)'`)
-
-func (c *clientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoName, revs []protocol.RevisionSpecifier) (_ []string, err error) {
-	ctx, _, endObservation := c.operations.resolveRevisions.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.Int("revs", len(revs)),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	args := append([]string{"rev-parse"}, revsToGitArgs(revs)...)
-
-	cmd := c.gitCommand(repo, args...)
-	stdout, stderr, err := cmd.DividedOutput(ctx)
-	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
-			return nil, err
-		}
-		if match := ambiguousArgPattern.FindSubmatch(stderr); match != nil {
-			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(match[1])}
-		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args(), stderr))
-	}
-
-	return strings.Fields(string(stdout)), nil
-}
-
-func revsToGitArgs(revSpecs []protocol.RevisionSpecifier) []string {
-	args := make([]string, 0, len(revSpecs))
-	for _, r := range revSpecs {
-		if r.RevSpec != "" {
-			args = append(args, r.RevSpec)
-		} else {
-			args = append(args, "HEAD")
-		}
-	}
-
-	// If revSpecs is empty, git treats it as equivalent to HEAD
-	if len(revSpecs) == 0 {
-		args = append(args, "HEAD")
-	}
-	return args
-}
-
-// readResponseBody will attempt to read the body of the HTTP response and return it as a
-// string. However, in the unlikely scenario that it fails to read the body, it will encode and
-// return the error message as a string.
-//
-// This allows us to use this function directly without yet another if err != nil check. As a
-// result, this function should **only** be used when we're attempting to return the body's content
-// as part of an error. In such scenarios we don't need to return the potential error from reading
-// the body, but can get away with returning that error as a string itself.
-//
-// This is an unusual pattern of not returning an error. Be careful of replicating this in other
-// parts of the code.
-func readResponseBody(body io.Reader) string {
-	content, err := io.ReadAll(body)
-	if err != nil {
-		return fmt.Sprintf("failed to read response body, error: %v", err)
-	}
-
-	// strings.TrimSpace is needed to remove trailing \n characters that is added by the
-	// server. We use http.Error in the server which in turn uses fmt.Fprintln to format
-	// the error message. And in translation that newline gets escaped into a \n
-	// character.  For what the error message would look in the UI without
-	// strings.TrimSpace, see attached screenshots in this pull request:
-	// https://github.com/sourcegraph/sourcegraph/pull/39358.
-	return strings.TrimSpace(string(content))
 }
 
 func stringsToByteSlices(in []string) [][]byte {

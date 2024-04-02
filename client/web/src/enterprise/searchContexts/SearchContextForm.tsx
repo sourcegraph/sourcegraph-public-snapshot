@@ -111,7 +111,7 @@ const LOADING = 'loading' as const
 export interface SearchContextFormProps
     extends TelemetryProps,
         Pick<SearchContextProps, 'deleteSearchContext'>,
-        PlatformContextProps<'requestGraphQL'> {
+        PlatformContextProps<'requestGraphQL' | 'telemetryRecorder'> {
     searchContext?: SearchContextFields
     query?: string
     authenticatedUser: AuthenticatedUser
@@ -472,6 +472,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                                 onChange={onRepositoriesConfigChange}
                                 validateRepositories={validateRepositories}
                                 repositories={searchContext?.repositories}
+                                telemetryRecorder={platformContext.telemetryRecorder}
                             />
                         </div>
                     </div>

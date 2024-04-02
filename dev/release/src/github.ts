@@ -1,4 +1,4 @@
-import { existsSync, mkdtemp as original_mkdtemp, readFileSync } from 'fs'
+import { existsSync, mkdtemp as original_mkdtemp, readFileSync, copyFileSync } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { promisify } from 'util'
@@ -570,6 +570,19 @@ async function createBranchWithChanges(
     // Set up repository
     const { workdir } = await cloneRepo(octokit, owner, repo, { revision: baseRevision })
 
+    // Bazel depends on configuration in the sourcegraph repo. So to run it in
+    // our temporary clone we need to copy those files over.
+    if (owner === 'sourcegraph' && repo === 'sourcegraph') {
+        // All the try-import files from .bazelrc
+        for (const name of ['.aspect/bazelrc/user.bazelrc', 'user.bazelrc', '.bazelrc-nix']) {
+            const src = `${localSourcegraphRepo}/${name}`
+            const dest = `${workdir}/${name}`
+            if (existsSync(src)) {
+                copyFileSync(src, dest)
+            }
+        }
+    }
+
     // Apply edits
     for (const edit of edits) {
         switch (typeof edit) {
@@ -668,7 +681,7 @@ export async function createLatestRelease(
         return ''
     }
 
-    const updateURL = 'https://docs.sourcegraph.com/admin/updates'
+    const updateURL = 'https://sourcegraph.com/docs/admin/updates'
     const releasePostURL = `https://sourcegraph.com/blog/release/${release.major}.${release.minor}` // CI:URL_OK
 
     const request: Octokit.RequestOptions & Octokit.ReposCreateReleaseParams = {
