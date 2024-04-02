@@ -15,11 +15,12 @@
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
     import { Alert } from '$lib/wildcard'
+    import type { LastCommitFragment } from '$testing/graphql-type-mocks'
 
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
     import { createFileTreeStore } from './fileTreeStore'
-    import type { GitHistory_HistoryConnection } from './layout.gql'
+    import { type GitHistory_HistoryConnection } from './layout.gql'
 
     interface Capture {
         selectedTab: number | null
@@ -67,18 +68,21 @@
     let historyPanel: HistoryPanel
     let rootElement: HTMLElement | null = null
     let commitHistory: GitHistory_HistoryConnection | null
+    let lastCommit: LastCommitFragment | null
 
     $: ({ revision = '', parentPath, repoName, resolvedRevision } = data)
     $: fileTreeStore.set({ repoName, revision: resolvedRevision.commitID, path: parentPath })
     $: commitHistoryQuery = data.commitHistory
-    $: latestCommit = commitHistory?.nodes[0]
+    $: lastCommitQuery = data.lastCommit
     $: if (!!commitHistoryQuery) {
         // Reset commit history when the query observable changes. Without
         // this we are showing the commit history of the previously selected
         // file/folder until the new commit history is loaded.
         commitHistory = null
     }
+
     $: commitHistory = $commitHistoryQuery?.data?.repository?.commit?.ancestors ?? null
+    $: lastCommit = $lastCommitQuery?.data?.repository?.lastCommit?.ancestors?.nodes[0] ?? null
 
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
     $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
@@ -149,8 +153,8 @@
                     {/key}
                 </TabPanel>
             </Tabs>
-            {#if latestCommit}
-                <LastCommit {latestCommit} />
+            {#if lastCommit}
+                <LastCommit {lastCommit} />
             {:else}
                 <LoadingSpinner inline />
             {/if}

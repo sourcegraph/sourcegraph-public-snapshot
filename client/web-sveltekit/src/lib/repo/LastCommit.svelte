@@ -5,15 +5,15 @@
 
     import type { LastCommitFragment } from './LastCommit.gql'
 
-    export let latestCommit: LastCommitFragment
+    export let lastCommit: LastCommitFragment
 
-    $: user = latestCommit.author.person
-    $: canonicalURL = latestCommit.canonicalURL
-    $: commitMessage = latestCommit.subject
-    $: commitDate = formatDistanceToNow(latestCommit.author.date, { addSuffix: true })
+    $: user = lastCommit.author.person
+    $: canonicalURL = lastCommit.canonicalURL
+    $: commitMessage = lastCommit.subject
+    $: commitDate = formatDistanceToNow(lastCommit.author.date, { addSuffix: true })
 </script>
 
-<div class="latest-commit">
+<div class="last-commit">
     <div class="user-info">
         <Avatar avatar={user} />
         <div class="display-name">
@@ -55,7 +55,7 @@
         margin-left: 0.5rem;
     }
 
-    .latest-commit {
+    .last-commit {
         display: flex;
         flex-flow: row nowrap;
         max-width: 350px;
