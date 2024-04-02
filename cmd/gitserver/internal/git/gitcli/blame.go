@@ -8,7 +8,6 @@ import (
 	"io"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
