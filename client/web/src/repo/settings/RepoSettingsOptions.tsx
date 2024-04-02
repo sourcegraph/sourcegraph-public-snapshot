@@ -25,15 +25,15 @@ import { RedirectionAlert } from './components/RedirectionAlert'
 
 import styles from './RepoSettingsOptions.module.scss'
 
-interface Props extends TelemetryV2Props {
+interface Props {
     repo: SettingsAreaRepositoryFields
 }
 
-export const RepoSettingsOptions: FC<Props> = ({ repo, telemetryRecorder }) => {
+export const RepoSettingsOptions: FC<Props> = ({ repo }) => {
     useEffect(() => {
         EVENT_LOGGER.logViewEvent('RepoSettings')
-        telemetryRecorder.recordEvent('repo.settings', 'view')
-    }, [telemetryRecorder])
+        // No need to use v2 telemetry here. This event is duplicative with 'repo.settings.mirror', 'view'
+    }, [])
 
     const { data, error, loading } = useQuery<SettingsAreaRepositoryResult, SettingsAreaRepositoryVariables>(
         FETCH_SETTINGS_AREA_REPOSITORY_GQL,

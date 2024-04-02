@@ -491,6 +491,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                         source="repoHeader"
                         key="go-to-code-host"
                         externalLinks={externalLinks}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
                     />
                 )}
             </RepoHeaderContributionPortal>

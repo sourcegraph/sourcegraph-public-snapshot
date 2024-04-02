@@ -325,7 +325,7 @@ export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = ({
         <>
             <PageTitle title="Mirror settings" />
             <PageHeader path={[{ text: 'Mirroring and cloning' }]} headingElement="h2" className="mb-3" />
-            <RepoSettingsOptions repo={repo} telemetryRecorder={telemetryRecorder} />
+            <RepoSettingsOptions repo={repo} />
             <Container className="repo-settings-mirror-page">
                 {error && <ErrorAlert error={error} />}
 

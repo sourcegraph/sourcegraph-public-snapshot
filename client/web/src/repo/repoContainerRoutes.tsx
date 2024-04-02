@@ -42,7 +42,9 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     },
     {
         path: '/-/branches/*',
-        render: context => <RepositoryBranchesArea {...context} />,
+        render: context => (
+            <RepositoryBranchesArea {...context} telemetryRecorder={context.platformContext.telemetryRecorder} />
+        ),
     },
     {
         path: '/-/tags',
@@ -56,7 +58,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
         path: compareSpecPath,
         render: context => (
             <RepoRevisionWrapper>
-                <RepositoryCompareArea {...context} />
+                <RepositoryCompareArea {...context} telemetryRecorder={context.platformContext.telemetryRecorder} />
             </RepoRevisionWrapper>
         ),
     },
