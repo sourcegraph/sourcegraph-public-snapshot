@@ -170,22 +170,6 @@ vitest_test(
     with_vitest_config = False,
 )
 
-# Input for graphql-codegen
-filegroup(
-    name = "graphql_sources",
-    srcs = glob(
-        [
-            "src/**/*.gql",
-            "src/**/*.ts",
-        ],
-        [
-            "src/lib/graphql-*.ts",
-            "src/testing/graphql-type-mocks.ts",
-            "src/**/*.gql.ts",
-        ],
-    ),
-)
-
 # Create binary that executes graphql-codegen
 ts_binary(
     name = "graphql_codegen_bin",
@@ -205,14 +189,32 @@ ts_binary(
     entry_point = "dev/generate-graphql.ts",
 )
 
+# Generate types from graphql files
+GRAPHQL_FILES = glob(
+    [
+        "src/**/*.gql",
+    ],
+)
+
+# Files that possibly contain gql`...` tags
+OTHER_GRAPHQL_INPUT_FILES = glob(
+    [
+        "src/**/*.ts",
+    ],
+    [
+        "src/lib/graphql-*.ts",
+        "src/testing/graphql-type-mocks.ts",
+        "src/**/*.gql.ts",
+    ],
+)
+
 # Run graphql-codegen
 js_run_binary(
     name = "generate-graphql-types",
-    srcs = [
-        ":graphql_sources",
+    srcs = GRAPHQL_FILES + OTHER_GRAPHQL_INPUT_FILES + [
         "//cmd/frontend/graphqlbackend:graphql_schema",
     ],
-    outs = glob(["src/**/*.gql.ts"]) + [
+    outs = [src + ".ts" for src in GRAPHQL_FILES] + [
         "src/lib/graphql-operations.ts",
         "src/lib/graphql-types.ts",
         "src/testing/graphql-type-mocks.ts",
