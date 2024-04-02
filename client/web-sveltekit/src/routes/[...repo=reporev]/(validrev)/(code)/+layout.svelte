@@ -81,6 +81,13 @@
         commitHistory = null
     }
 
+    $: if (!!lastCommitQuery) {
+        // Reset commit history when the query observable changes. Without
+        // this we are showing the commit history of the previously selected
+        // file/folder until the new commit history is loaded.
+        lastCommit = null
+    }
+
     $: commitHistory = $commitHistoryQuery?.data?.repository?.commit?.ancestors ?? null
     $: lastCommit = $lastCommitQuery?.data?.repository?.lastCommit?.ancestors?.nodes[0] ?? null
 

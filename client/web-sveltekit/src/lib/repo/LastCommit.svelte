@@ -48,7 +48,7 @@
         align-items: center;
         color: var(--text-muted);
         margin-right: 0.5rem;
-        max-width: 100px;
+        max-width: 200px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
