@@ -3,7 +3,6 @@ package codycontext
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"sync"
@@ -80,20 +79,10 @@ func (f *repoFilter) GetFilter(repos []types.RepoIDName, logger log.Logger) ([]t
 	return f.getFilter(repos, logger)
 }
 
-func (f *repoFilter) getFilter(repos []types.RepoIDName, logger log.Logger) ([]types.RepoIDName, FileChunkFilterFunc) {
-	filters := make(map[api.RepoName]filterFunc, len(repos))
-	filterableRepos := make([]types.RepoIDName, 0, len(repos))
-	fmt.Println("FILTERS: ", filters)
-	fmt.Println("FILTERABLE REPOS: ", filterableRepos)
-	c := conf.Get()
-	fmt.Printf("CODY CONTEXT FILTERS: %+v\n", c.CodyContextFilters)
-	return repos, func(fcc []FileChunkContext) []FileChunkContext { return fcc }
-}
-
 // getFilter returns the list of repos that can be filtered
 // their .cody/ignore files (or don't have one). If an error
 // occurs that repo will be excluded.
-func (f *repoFilter) getFilter2(repos []types.RepoIDName, logger log.Logger) ([]types.RepoIDName, FileChunkFilterFunc) {
+func (f *repoFilter) getFilter(repos []types.RepoIDName, logger log.Logger) ([]types.RepoIDName, FileChunkFilterFunc) {
 	filters := make(map[api.RepoName]filterFunc, len(repos))
 	filterableRepos := make([]types.RepoIDName, 0, len(repos))
 	// use the internal actor to ensure access to repo and ignore files
