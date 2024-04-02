@@ -190,9 +190,9 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	if err != nil {
 		return errors.Wrap(err, "httpapi.NewHandler")
 	}
-
-	// Diagnostic layers
+	// Diagnostic and Maintenance layers, exposing additional APIs and endpoints.
 	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, cfg.DiagnosticsSecret, sources)
+	handler = httpapi.NewMaintenanceHandler(obctx.Logger, handler, cfg, redisCache)
 
 	// Collect request client for downstream handlers. Outside of dev, we always set up
 	// Cloudflare in from of Cody Gateway. This comes first.
