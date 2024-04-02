@@ -10,6 +10,19 @@ query GitHistoryQuery($repoName: String!, $revspec: String!, $first: Int, $after
     }
 }
 
+query LastCommitQuery($repoName: String!, $revspec: String!, $filePath: String!) {
+    repository(name: $repoName) {
+        lastCommit: commit(rev: $revspec) {
+            id
+            ancestors(first:1, path: $filePath) {
+                nodes {
+                    ...LastCommitFragment
+                }
+            }
+        }
+    }
+}
+
 fragment GitHistory_HistoryConnection on GitCommitConnection {
     ...HistoryPanel_HistoryConnection
     pageInfo {

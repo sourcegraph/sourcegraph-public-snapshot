@@ -3,22 +3,24 @@
 
     import { afterNavigate, disableScrollHandling, goto } from '$app/navigation'
     import { page } from '$app/stores'
+    import { isErrorLike } from '$lib/common'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import { fetchSidebarFileTree } from '$lib/repo/api/tree'
     import HistoryPanel, { type Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
+    import LastCommit from '$lib/repo/LastCommit.svelte'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
     import { scrollAll } from '$lib/stores'
+    import TabPanel from '$lib/TabPanel.svelte'
+    import Tabs from '$lib/Tabs.svelte'
+    import { Alert } from '$lib/wildcard'
+    import type { LastCommitFragment } from '$testing/graphql-type-mocks'
 
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
-    import type { GitHistory_HistoryConnection } from './layout.gql'
-    import Tabs from '$lib/Tabs.svelte'
-    import TabPanel from '$lib/TabPanel.svelte'
     import { createFileTreeStore } from './fileTreeStore'
-    import { isErrorLike } from '$lib/common'
-    import { Alert } from '$lib/wildcard'
-    import { fetchSidebarFileTree } from '$lib/repo/api/tree'
+    import { type GitHistory_HistoryConnection } from './layout.gql'
 
     interface Capture {
         selectedTab: number | null
@@ -66,17 +68,28 @@
     let historyPanel: HistoryPanel
     let rootElement: HTMLElement | null = null
     let commitHistory: GitHistory_HistoryConnection | null
+    let lastCommit: LastCommitFragment | null
 
     $: ({ revision = '', parentPath, repoName, resolvedRevision } = data)
     $: fileTreeStore.set({ repoName, revision: resolvedRevision.commitID, path: parentPath })
     $: commitHistoryQuery = data.commitHistory
+    $: lastCommitQuery = data.lastCommit
     $: if (!!commitHistoryQuery) {
         // Reset commit history when the query observable changes. Without
         // this we are showing the commit history of the previously selected
         // file/folder until the new commit history is loaded.
         commitHistory = null
     }
+
+    $: if (!!lastCommitQuery) {
+        // Reset commit history when the query observable changes. Without
+        // this we are showing the commit history of the previously selected
+        // file/folder until the new commit history is loaded.
+        lastCommit = null
+    }
+
     $: commitHistory = $commitHistoryQuery?.data?.repository?.commit?.ancestors ?? null
+    $: lastCommit = $lastCommitQuery?.data?.repository?.lastCommit?.ancestors?.nodes[0] ?? null
 
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
     $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
@@ -147,6 +160,11 @@
                     {/key}
                 </TabPanel>
             </Tabs>
+            {#if lastCommit}
+                <LastCommit {lastCommit} />
+            {:else}
+                <LoadingSpinner inline />
+            {/if}
         </div>
     </div>
 </section>
@@ -196,11 +214,14 @@
         border-top: 1px solid var(--border-color);
         max-height: 50vh;
         overflow: hidden;
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: space-between;
+        padding-right: 0.5rem;
 
         :global(.tabs) {
             height: 100%;
             max-height: 100%;
-            overflow: hidden;
         }
 
         :global(.tabs-header) {
