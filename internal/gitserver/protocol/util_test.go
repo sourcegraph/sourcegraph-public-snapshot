@@ -11,7 +11,11 @@ func TestNormalizeRepo(t *testing.T) {
 		"foobar":                "foobar",
 		"FooBar":                "FooBar",
 		"foo/bar":               "foo/bar",
-		"github.com/FooBar.git": "github.com/FooBar.git",
+		"github.com/FooBar.git": "github.com/foobar.git",
+
+		// Case insensitivity:
+		"gitHub.Com/FooBar":   "github.com/foobar",
+		"myServer.Com/FooBar": "myserver.com/FooBar",
 
 		// trying to escape gitserver root
 		"/etc/passwd":                       "etc/passwd",

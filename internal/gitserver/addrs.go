@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -182,7 +183,11 @@ func (g *GitserverAddresses) AddrForRepo(ctx context.Context, repoName api.RepoN
 		return pinnedAddr
 	}
 
-	return addrForKey(name, g.Addresses)
+	// We use the normalize function here, because that's what we did previously.
+	// Ideally, this would not be required, but it would reshuffle GitHub.com repos
+	// with uppercase characters in the name. So until we have a better migration
+	// strategy, we keep this old behavior in.
+	return addrForKey(string(protocol.NormalizeRepo(api.RepoName(name))), g.Addresses)
 }
 
 // addrForKey returns the gitserver address to use for the given string key,
