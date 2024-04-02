@@ -78,7 +78,13 @@ func (g *gitCLIBackend) verifyPaths(ctx context.Context, treeish string, paths [
 		if len(p) == 0 {
 			continue
 		}
-		pathSegments := bytes.Fields(p)
+
+		// Split into path segments by skipping only tab characters, since
+		// files/dirs can start with/contain spaces.
+		pathSegments := bytes.FieldsFunc(p, func(r rune) bool {
+			return r == rune('\t')
+		})
+
 		fileSet.Add(string(pathSegments[len(pathSegments)-1]))
 	}
 
