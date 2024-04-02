@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -44,27 +45,6 @@ func buildArchiveArgs(format git.ArchiveFormat, treeish string, paths []string) 
 // See: https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-literal
 func pathspecLiteral(s string) string { return ":(literal)" + s }
 
-// scanNullLines is a split function for a [Scanner] that returns each null-terminated
-// line of text, stripped of any trailing end-of-line marker. The returned line may
-// be empty. The end-of-line marker is a null character.
-// The last non-empty line of input will be returned even if it has no
-// null character.
-func scanNullLines(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	if atEOF && len(data) == 0 {
-		return 0, nil, nil
-	}
-	if i := bytes.IndexByte(data, '\000'); i >= 0 {
-		// We have a full null-terminated line.
-		return i + 1, data[0:i], nil
-	}
-	// If we're at EOF, we have a final, non-terminated line. Return it.
-	if atEOF {
-		return len(data), data, nil
-	}
-	// Request more data.
-	return 0, nil, nil
-}
-
 func (g *gitCLIBackend) verifyPaths(ctx context.Context, treeish string, paths []string) error {
 	args := []string{"ls-tree", "-z", "--name-only", treeish, "--"}
 	args = append(args, paths...)
@@ -75,7 +55,7 @@ func (g *gitCLIBackend) verifyPaths(ctx context.Context, treeish string, paths [
 	defer r.Close()
 
 	scanner := bufio.NewScanner(r)
-	scanner.Split(scanNullLines)
+	scanner.Split(byteutils.ScanNullLines)
 	fileSet := make(collections.Set[string], len(paths))
 	for scanner.Scan() {
 		fileSet.Add(scanner.Text())
@@ -92,6 +72,10 @@ func (g *gitCLIBackend) verifyPaths(ctx context.Context, treeish string, paths [
 
 		return err
 	}
+
+	// Check if the resulting objects match the requested
+	// paths. If not, one or more of the requested
+	// file paths don't exist.
 
 	if len(paths) == 0 {
 		return nil
