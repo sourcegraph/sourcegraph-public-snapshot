@@ -98,6 +98,11 @@ func (c *samsClient) IntrospectToken(ctx context.Context, token string) (*TokenI
 }
 
 func NewClient(samsServer string, clientCredentialsConfig clientcredentials.Config) Client {
+	// Provide a default value for the required TokenURL field, in case the caller forgot to set it.
+	if clientCredentialsConfig.TokenURL == "" {
+		clientCredentialsConfig.TokenURL = fmt.Sprintf("%s/oauth/token", samsServer)
+	}
+
 	return &samsClient{
 		server:                  samsServer,
 		clientCredentialsConfig: clientCredentialsConfig,
