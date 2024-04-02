@@ -24,7 +24,7 @@ func (a *Authenticator) RequireScopes(requiredScopes []Scope, next http.Handler)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger := trace.Logger(r.Context(), a.Logger)
 		token, err := authbearer.ExtractBearer(r.Header)
-		if err != nil {
+		if err != nil || token == "" {
 			logger.Error("error extracting bearer token", log.Error(err))
 			const unauthorized = http.StatusUnauthorized
 			http.Error(w, http.StatusText(unauthorized), unauthorized)
@@ -32,7 +32,7 @@ func (a *Authenticator) RequireScopes(requiredScopes []Scope, next http.Handler)
 		}
 
 		introspectionResponse, err := a.SAMSClient.IntrospectToken(r.Context(), token)
-		if err != nil {
+		if err != nil || introspectionResponse == nil {
 			logger.Error("error introspecting token", log.Error(err))
 			const ise = http.StatusInternalServerError
 			http.Error(w, http.StatusText(ise), ise)

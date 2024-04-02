@@ -140,7 +140,7 @@ type SAMSClientConfig struct {
 }
 
 func (scc SAMSClientConfig) Valid() bool {
-	return scc.URL == "" || scc.ClientID == "" || scc.ClientSecret == ""
+	return !(scc.URL == "" || scc.ClientID == "" || scc.ClientSecret == "")
 }
 
 func (c *Config) Load() {

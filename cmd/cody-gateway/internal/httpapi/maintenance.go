@@ -19,10 +19,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/sams"
 )
 
+const samsScopeFlaggedPromptRead = "cody_gateway::flaggedprompts::read"
+
 // NewMaintenanceHandler registers maintenance-related endpoints. These are APIs for
 // other services to call in order to inspect or update Cody Gateway internals.
 //
-// The registered endpoints require a SAMS authorization token, and Cody Gateway scopes.
+// The registered endpoints require a SAMS authentication token, and Cody Gateway scopes.
 func NewMaintenanceHandler(
 	baseLogger log.Logger, next http.Handler, config *config.Config, redisKV redispool.KeyValue) http.Handler {
 	// Do nothing if no SAMS configuration is provided.
@@ -44,12 +46,21 @@ func NewMaintenanceHandler(
 			Scopes: []string{"openid", "profile", "email"},
 		})
 
+	return newMaintenanceHandler(logger, next, redisKV, samsClient)
+}
+
+// Implements NewMaintenanceHandler, but allowing for the SAMS client to be provided to
+// make testing easier.
+func newMaintenanceHandler(
+	logger log.Logger, next http.Handler, redisKV redispool.KeyValue,
+	samsClient sams.Client) http.Handler {
 	samsAuther := sams.Authenticator{
 		Logger:     logger,
 		SAMSClient: samsClient,
 	}
-	mHandlers := maintenanceHandlers{
+	mHandlers := &maintenanceHandlers{
 		logger: logger,
+		redis:  redisKV,
 	}
 
 	// Create an HTTP router specific to these endpoints, to make registration easier.
@@ -70,14 +81,8 @@ func NewMaintenanceHandler(
 	}
 
 	// Register the specific API endpoints.
-	const (
-		GET                    = http.MethodGet
-		scopeFlaggedPromptRead = "cody_gateway::flaggedprompts::read"
-	)
-	registerMaintenanceHandler(GET, "/flagged-requests", mHandlers.ListFlaggedPrompts, scopeFlaggedPromptRead)
-	registerMaintenanceHandler(GET, "/flagged-requests/{flaggedPromptKey}", mHandlers.GetFlaggedPrompt, scopeFlaggedPromptRead)
-
-	http.NewServeMux()
+	registerMaintenanceHandler(http.MethodGet, "/flagged-requests", mHandlers.ListFlaggedPrompts, samsScopeFlaggedPromptRead)
+	registerMaintenanceHandler(http.MethodGet, "/flagged-requests/{flaggedPromptKey}", mHandlers.GetFlaggedPrompt, samsScopeFlaggedPromptRead)
 
 	// Return the http.Handler. Yes, this is a horrible design wart, since we are using an
 	// "HTTP middleware" pattern, but not actually registering middleware. To address this,
@@ -170,10 +175,15 @@ func (mh *maintenanceHandlers) GetFlaggedPrompt(w http.ResponseWriter, r *http.R
 	}
 	mh.logger.Info("getting flagged prompts", log.String("key", flaggedPromptKey))
 
+	if !strings.HasPrefix(flaggedPromptKey, "prompt:") {
+		http.Error(w, "Invalid prompt key", http.StatusBadRequest)
+		return
+	}
+
 	// Lookup the flagged prompt. It's possible the prompt was TTL'd and no longer exists.
 	promptValue := mh.redis.Get(flaggedPromptKey)
 	if promptValue.IsNil() {
-		http.Error(w, "Not Found", http.StatusNotFound)
+		http.Error(w, "Prompt not found", http.StatusNotFound)
 		return
 	}
 
