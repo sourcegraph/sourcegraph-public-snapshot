@@ -37,7 +37,7 @@ func TestGetAllTokenUsageData(t *testing.T) {
 	cache.SetInt("LLMUsage:model1:feature1:stream:input", 10)
 	cache.SetInt("LLMUsage:model1:feature1:stream:output", 20)
 
-	usageSummary, err := manager.GetAllTokenUsageData()
+	usageSummary, err := manager.RetrieveAndResetTokenUsageData()
 
 	if err != nil {
 		t.Error(err)

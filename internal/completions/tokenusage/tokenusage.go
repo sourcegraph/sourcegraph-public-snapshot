@@ -71,8 +71,20 @@ func (m *Manager) RetrieveAndResetTokenUsageData() (map[string]interface{}, erro
 		return nil, err
 	}
 
+	// Grouping token usage data under a 'models' key
+	modelsData := make([]map[string]interface{}, 0)
+	for model, tokens := range tokenUsageData {
+		modelData := map[string]interface{}{
+			"description": model, // Assuming 'model' contains the description
+			"tokens":      tokens,
+		}
+		modelsData = append(modelsData, modelData)
+	}
+
 	result := map[string]interface{}{
-		"llm_usage": tokenUsageData,
+		"llm_usage": map[string]interface{}{
+			"models": modelsData,
+		},
 	}
 	return result, nil
 }
