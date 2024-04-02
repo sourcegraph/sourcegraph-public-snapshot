@@ -3,7 +3,6 @@ package openidconnect
 import (
 	"net/http"
 	"strings"
-	"sync"
 
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
@@ -27,12 +26,6 @@ type SessionData struct {
 	AccessToken string
 	TokenType   string
 }
-
-var (
-	samsClient     *sams.ClientV1
-	samsClientOnce sync.Once
-	samsClientErr  error
-)
 
 // SignOut clears OpenID Connect-related data from the session. If possible, it revokes the token
 // from the OP. If there is an end-session endpoint, it returns that for the caller to present to
@@ -79,19 +72,17 @@ func SignOut(w http.ResponseWriter, r *http.Request, sessionKey string, getProvi
 		return endSessionEndpoint, nil
 	}
 
-	samsClientOnce.Do(func() {
-		samsClient, samsClientErr = sams.NewClientV1(
-			p.config.Issuer,
-			p.config.ClientID,
-			p.config.ClientSecret,
-			[]scopes.Scope{
-				"sams::session::read",
-				"sams::session::write",
-			},
-		)
-	})
-	if samsClientErr != nil {
-		return "", errors.Wrap(samsClientErr, "creating SAMS client")
+	samsClient, err := sams.NewClientV1(
+		p.config.Issuer,
+		p.config.ClientID,
+		p.config.ClientSecret,
+		[]scopes.Scope{
+			"sams::session::read",
+			"sams::session::write",
+		},
+	)
+	if err != nil {
+		return "", errors.Wrap(err, "creating SAMS client")
 	}
 
 	samsSession, err := samsClient.Sessions().GetSessionByID(r.Context(), sessionCookie.Value)
