@@ -54,7 +54,7 @@ func TestGetAllTokenUsageData(t *testing.T) {
 	}
 
 	// Prepare expected results for easier comparison
-	expected := map[string]int64{
+	expected := map[string]float64{
 		"LLMUsage:model1:feature1:stream:input":  10,
 		"LLMUsage:model1:feature1:stream:output": 20,
 	}
@@ -65,14 +65,14 @@ func TestGetAllTokenUsageData(t *testing.T) {
 			t.Errorf("Expected description to be a string")
 			continue
 		}
-		tokens, ok := model["tokens"].(int64)
+		tokens, ok := model["tokens"].(float64)
 		if !ok {
-			t.Errorf("Expected tokens to be an int64")
+			t.Errorf("Expected tokens to be an float64")
 			continue
 		}
 
 		if expectedTokens, exists := expected[description]; !exists || expectedTokens != tokens {
-			t.Errorf("Expected %d tokens for %s, got %d", expectedTokens, description, tokens)
+			t.Errorf("Expected %f tokens for %s, got %f", expectedTokens, description, tokens)
 		}
 	}
 }
