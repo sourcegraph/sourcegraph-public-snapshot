@@ -5,10 +5,10 @@ load("@npm//client/web-sveltekit:vite/package_json.bzl", vite_bin = "bin")
 load("@npm//client/web-sveltekit:vitest/package_json.bzl", vitest_bin = "bin")
 load("@npm//client/web-sveltekit:svelte-check/package_json.bzl", svelte_check = "bin")
 load("@npm//client/web-sveltekit:@sveltejs/kit/package_json.bzl", sveltekit = "bin")
-load("@aspect_rules_ts//ts:defs.bzl", "ts_project", "ts_config")
-load("@aspect_rules_js//js:defs.bzl", "js_run_binary", "js_binary")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config", "ts_project")
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_run_binary")
 load("@aspect_rules_swc//swc:defs.bzl", "swc")
-load("//dev:defs.bzl", "vitest_test", "ts_binary")
+load("//dev:defs.bzl", "ts_binary", "vitest_test")
 
 # gazelle:ignore
 
@@ -164,26 +164,25 @@ vitest_test(
 # Input for graphql-codegen
 filegroup(
     name = "graphql_sources",
-    srcs = glob([
-        "src/**/*.gql",
-        "src/**/*.ts",
-    ],
-    [
-        "src/lib/graphql-*.ts",
-        "src/testing/graphql-type-mocks.ts",
-        "src/**/*.gql.ts",
-    ]),
+    srcs = glob(
+        [
+            "src/**/*.gql",
+            "src/**/*.ts",
+        ],
+        [
+            "src/lib/graphql-*.ts",
+            "src/testing/graphql-type-mocks.ts",
+            "src/**/*.gql.ts",
+        ],
+    ),
 )
 
 # Create binary that executes graphql-codegen
 ts_binary(
     name = "graphql_codegen_bin",
-    entry_point = "dev/generate-graphql.ts",
     data = [
-        "dev/vite-graphql-codegen.ts",
         "dev/graphql-type-mocks.cjs",
-        ":node_modules/graphql",
-        ":node_modules/signale",
+        "dev/vite-graphql-codegen.ts",
         ":node_modules/@graphql-codegen/cli",
         ":node_modules/@graphql-codegen/near-operation-file-preset",
         ":node_modules/@graphql-codegen/typed-document-node",
@@ -191,13 +190,15 @@ ts_binary(
         ":node_modules/@graphql-codegen/typescript-operations",
         ":node_modules/@graphql-tools/utils",
         ":node_modules/@graphql-typed-document-node/core",
+        ":node_modules/graphql",
+        ":node_modules/signale",
     ],
+    entry_point = "dev/generate-graphql.ts",
 )
 
 # Run graphql-codegen
 js_run_binary(
     name = "generate-graphql-types",
-    tool = ":graphql_codegen_bin",
     srcs = [
         ":graphql_sources",
         "//cmd/frontend/graphqlbackend:graphql_schema",
@@ -208,12 +209,12 @@ js_run_binary(
         "src/testing/graphql-type-mocks.ts",
     ],
     chdir = package_name(),
+    tool = ":graphql_codegen_bin",
 )
 
 # Generate SvelteKit specific types
 sveltekit.svelte_kit(
     name = "sveltekit-sync",
-    chdir = package_name(),
     srcs = SRCS + [
         ":node_modules/@sveltejs/adapter-static",
         ":node_modules/@sveltejs/vite-plugin-svelte",
@@ -224,14 +225,20 @@ sveltekit.svelte_kit(
     args = [
         "sync",
     ],
+    chdir = package_name(),
     out_dirs = [
         ".svelte-kit",
-    ]
+    ],
 )
 
 # Runs svelte-check on production source files
 svelte_check.svelte_check_test(
     name = "svelte-check",
+    timeout = "short",
+    args = [
+        "--tsconfig",
+        "tsconfig.json",
+    ],
     chdir = package_name(),
     data = SRCS + BUILD_DEPS + CONFIGS + [
         ":sveltekit-sync",
@@ -239,11 +246,6 @@ svelte_check.svelte_check_test(
         ":node_modules/@graphql-typed-document-node/core",
         "//:node_modules/@types/uuid",
         # Needed to properly extend vite's UserConfig type
-        ":node_modules/vitest"
+        ":node_modules/vitest",
     ],
-    args = [
-        "--tsconfig",
-        "tsconfig.json",
-    ],
-    timeout = "short",
 )
