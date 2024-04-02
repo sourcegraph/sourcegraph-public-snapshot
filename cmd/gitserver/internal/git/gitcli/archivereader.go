@@ -1,6 +1,7 @@
 package gitcli
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"io"
@@ -52,7 +53,12 @@ func (g *gitCLIBackend) verifyPaths(ctx context.Context, treeish string, paths [
 	}
 	defer r.Close()
 
-	stdout, err := io.ReadAll(r)
+	scanner := bufio.NewScanner(r)
+	fileSet := make(collections.Set[string], len(paths))
+	for scanner.Scan() {
+		fileSet.Add(scanner.Text())
+	}
+	err = scanner.Err()
 	if err != nil {
 		// If exit code is 128 and `not a tree object` is part of stderr, most likely we
 		// are referencing a commit that does not exist.
@@ -69,19 +75,9 @@ func (g *gitCLIBackend) verifyPaths(ctx context.Context, treeish string, paths [
 		return nil
 	}
 
-	// Check if the resulting objects match the requested
-	// paths. If not, one or more of the requested
-	// file paths don't exist.
-	gotPaths := bytes.Split(bytes.TrimSpace(stdout), []byte("\n"))
-	fileSet := collections.NewSet[string]()
-	for _, p := range gotPaths {
-		fileSet.Add(string(p))
-	}
+	pathsSet := make(collections.Set[string], len(paths))
+	pathsSet.Add(paths...)
 
-	pathsSet := collections.NewSet[string]()
-	for _, path := range paths {
-		pathsSet.Add(path)
-	}
 	diff := pathsSet.Difference(fileSet)
 
 	if len(diff) != 0 {
