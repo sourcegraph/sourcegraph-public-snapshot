@@ -138,13 +138,15 @@ func ParseRepositoryRevisions(repoAndOptionalRev string) (ParsedRepoFilter, erro
 	return ParsedRepoFilter{Repo: repo, RepoRegex: repoRegex, Revs: revs}, nil
 }
 
+const revAtTimePrefix = "rat="
+
 // ParseRevisionSpecifier is the inverse of RevisionSpecifier.String().
 func ParseRevisionSpecifier(spec string) (RevisionSpecifier, error) {
 	if strings.HasPrefix(spec, "*!") {
 		return RevisionSpecifier{ExcludeRefGlob: spec[2:]}, nil
 	} else if strings.HasPrefix(spec, "*") {
 		return RevisionSpecifier{RefGlob: spec[1:]}, nil
-	} else if strings.HasPrefix(spec, "aat=") {
+	} else if strings.HasPrefix(spec, revAtTimePrefix) {
 		aat, err := ParseRevAtTime(spec[4:])
 		if err != nil {
 			return RevisionSpecifier{}, err
@@ -165,7 +167,7 @@ func (a *RevAtTime) String() string {
 	// the repo filters in a way that's easily parsed. A user should never see
 	// this string.
 	b, _ := json.Marshal(a)
-	return "aat=" + base64.URLEncoding.EncodeToString(b)
+	return revAtTimePrefix + base64.URLEncoding.EncodeToString(b)
 }
 
 func ParseRevAtTime(input string) (RevAtTime, error) {
