@@ -226,6 +226,7 @@ message BlameHunk {
   BlameAuthor author = 6;
   string message = 7;
   string filename = 8;
+  string previous_commit = 9;
 }
 
 message BlameAuthor {

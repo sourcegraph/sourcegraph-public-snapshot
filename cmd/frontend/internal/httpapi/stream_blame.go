@@ -91,7 +91,6 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 			tr.AddEvent("write", attrs...)
 		}
 
-		parentsCache := map[api.CommitID][]api.CommitID{}
 		authorCache := map[string]*BlameHunkUserResponse{}
 
 		for {
@@ -106,17 +105,8 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 			}
 
 			var parents []api.CommitID
-			if p, ok := parentsCache[h.CommitID]; ok {
-				parents = p
-			} else {
-				c, err := gitserverClient.GetCommit(ctx, repo.Name, h.CommitID)
-				if err != nil {
-					tr.SetError(err)
-					http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
-					return
-				}
-				parents = c.Parents
-				parentsCache[h.CommitID] = c.Parents
+			if len(h.Previous) != 0 {
+				parents = append(parents, h.Previous)
 			}
 
 			blameResponse := BlameHunkResponse{
