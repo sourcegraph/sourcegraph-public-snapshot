@@ -13,17 +13,17 @@ import (
 
 func ScheduleStoreTokenUsage(ctx context.Context, db database.DB) {
 	for {
-		err := StoreTokenUsage(ctx, db)
+		err := storeTokenUsageinDb(ctx, db)
 		if err != nil {
 			fmt.Printf("Error storing token usage: %v\n", err)
 		}
 
 		// Wait for 1 minute before the next execution
-		time.Sleep(time.Minute)
+		time.Sleep(5 * time.Minute)
 	}
 }
 
-func StoreTokenUsage(ctx context.Context, db database.DB) error {
+func storeTokenUsageinDb(ctx context.Context, db database.DB) error {
 	recorder := telemetryrecorder.New(db)
 	tokenManager := tokenusage.NewManager()
 	tokenUsageData, err := tokenManager.FetchTokenUsageDataForAnalysis()
@@ -36,7 +36,10 @@ func StoreTokenUsage(ctx context.Context, db database.DB) error {
 		convertedTokenUsageData[castedKey] = value
 	}
 
-	if err := recorder.Record(ctx, "llmTokenCounter", "modelUsage", &telemetry.EventParameters{
+	// This extra variable helps demarcate that this was NOT the final fetch and sync before the redis was reset
+	convertedTokenUsageData["FinalFetchAndSync"] = 0.0
+
+	if err := recorder.Record(ctx, "cody.llmTokenCounter", "record", &telemetry.EventParameters{
 		Metadata: convertedTokenUsageData,
 	}); err != nil {
 		return err
