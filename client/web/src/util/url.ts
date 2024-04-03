@@ -29,6 +29,15 @@ export function replaceRevisionInURL(href: string, newRevision: string): string 
     return `${url.pathname}${url.search}${url.hash}`
 }
 
+export function getURLToFileCommit(href: string, filename: string, revision: string): string {
+    const parsed = parseBrowserRepoURL(href)
+    parsed.revision = revision
+    parsed.filePath = '/-/blob/' + filename
+
+    const url = new URL(href, window.location.href)
+    return `/${parsed.repoName}@${parsed.revision}${parsed.filePath}${url.search}${url.hash}`
+}
+
 /**
  * Parses the properties of a blob URL.
  */
