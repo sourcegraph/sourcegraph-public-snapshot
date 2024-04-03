@@ -37,6 +37,9 @@ func (r1 RevisionSpecifier) String() string {
 	if r1.RefGlob != "" {
 		return "*" + r1.RefGlob
 	}
+	if r1.RevAtTime != nil {
+		return r1.RevAtTime.String()
+	}
 	return r1.RevSpec
 }
 
