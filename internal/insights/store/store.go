@@ -923,13 +923,9 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts)
 			preds = append(preds, sqlf.Sprintf("rn.name !~ %s", regex))
 		}
 	}
-	// todo bahrmichael: do we still need this if we always insert an authz query?
+
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("true"))
-	}
-
-	if len(preds) > 65_000 {
-		return nil, errors.Wrap(err, "no no no!")
 	}
 
 	tx, err := s.Transact(ctx)
