@@ -34,16 +34,16 @@ func (t *tiktokenTokenizer) Tokenize(text string) ([]int, error) {
 func NewTokenizer(model string) (Tokenizer, error) {
 	switch {
 	case strings.Contains(model, AnthropicModel):
-		return NewAnthropicClaudeTokenizer(model)
+		return newAnthropicClaudeTokenizer(model)
 	case strings.Contains(model, AzureModel), strings.Contains(model, OpenAIModel):
 		// Returning a tiktokenTokenizer for models related to "azure" or "openai"
-		return NewOpenAITokenizer(model)
+		return newOpenAITokenizer(model)
 	default:
 		return nil, errors.New("tokenizer not found for this model")
 	}
 }
 
-func NewOpenAITokenizer(model string) (*tiktokenTokenizer, error) {
+func newOpenAITokenizer(model string) (*tiktokenTokenizer, error) {
 	// Remove "azure" or "openai" prefix from the model string
 	model = strings.NewReplacer(AzureModel+"/", "", OpenAIModel+"/", "").Replace(model)
 

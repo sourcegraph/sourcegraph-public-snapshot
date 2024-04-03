@@ -26,7 +26,7 @@ type claudeEncodingFile struct {
 
 // NewAnthropicClaudeTokenizer is a tokenizer that emulates Anthropic's
 // tokenization for Claude.
-func NewAnthropicClaudeTokenizer(model string) (Tokenizer, error) {
+func newAnthropicClaudeTokenizer(model string) (Tokenizer, error) {
 	var claudeEncodingFile claudeEncodingFile
 	err := json.Unmarshal([]byte(claudeJSON), &claudeEncodingFile)
 	if err != nil {
