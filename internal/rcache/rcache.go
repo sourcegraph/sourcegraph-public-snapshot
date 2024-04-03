@@ -131,10 +131,10 @@ func (r *Cache) GetInt64(key string) (int64, bool, error) {
 	return value, true, nil
 }
 
-// IncrbyInt64 increments the integer value of a key by the given amount.
+// IncrByInt64 increments the integer value of a key by the given amount.
 // It returns the new value after the increment.
-func (r *Cache) IncrbyInt64(key string, value int64) (int64, error) {
-	newValue, err := kv().IncrbyInt64(r.rkeyPrefix()+key, value)
+func (r *Cache) IncrByInt64(key string, value int64) (int64, error) {
+	newValue, err := kv().IncrByInt64(r.rkeyPrefix()+key, value)
 	if err != nil {
 		return newValue, errors.Newf("failed to execute redis command", "cmd", "INCRBY", "error", err)
 	}
@@ -151,10 +151,10 @@ func (r *Cache) IncrbyInt64(key string, value int64) (int64, error) {
 	return newValue, nil
 }
 
-// DecrbyInt64 increments the decrements value of a key by the given amount.
+// DecrByInt64 increments the decrements value of a key by the given amount.
 // It returns the new value after the increment.
-func (r *Cache) DecrbyInt64(key string, value int64) (int64, error) {
-	newValue, err := kv().DecrbyInt64(r.rkeyPrefix()+key, value)
+func (r *Cache) DecrByInt64(key string, value int64) (int64, error) {
+	newValue, err := kv().DecrByInt64(r.rkeyPrefix()+key, value)
 	if err != nil {
 		return newValue, errors.Newf("failed to execute redis command", "cmd", "DECRBY", "error", err)
 	}

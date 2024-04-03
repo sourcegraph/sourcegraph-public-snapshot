@@ -59,7 +59,7 @@ func (m *Manager) UpdateAnthropicModelUsage(inputTokens, outputTokens int, model
 }
 
 func (m *Manager) updateTokenCounts(key string, tokenCount int64) error {
-	if _, err := m.Cache.IncrbyInt64(key, tokenCount); err != nil {
+	if _, err := m.Cache.IncrByInt64(key, tokenCount); err != nil {
 		return errors.Newf("failed to increment token count for key %s: %w", key, err)
 	}
 	return nil
@@ -124,7 +124,7 @@ func (m *Manager) getModelNameAndValue(key string, decrement bool) (string, int6
 	}
 
 	if decrement {
-		if _, err := m.Cache.DecrbyInt64(modelName, value); err != nil {
+		if _, err := m.Cache.DecrByInt64(modelName, value); err != nil {
 			return "", 0, err
 		}
 	}

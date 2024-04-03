@@ -25,8 +25,8 @@ type KeyValue interface {
 	SetNx(key string, value any) (bool, error)
 	Incr(key string) (int, error)
 	Incrby(key string, value int) (int, error)
-	IncrbyInt64(key string, value int64) (int64, error)
-	DecrbyInt64(key string, value int64) (int64, error)
+	IncrByInt64(key string, value int64) (int64, error)
+	DecrByInt64(key string, value int64) (int64, error)
 	Del(key string) error
 
 	TTL(key string) (int, error)
@@ -186,11 +186,11 @@ func (r *redisKeyValue) Incrby(key string, value int) (int, error) {
 	return r.do("INCRBY", r.prefix+key, value).Int()
 }
 
-func (r *redisKeyValue) IncrbyInt64(key string, value int64) (int64, error) {
+func (r *redisKeyValue) IncrByInt64(key string, value int64) (int64, error) {
 	return r.do("INCRBY", r.prefix+key, value).Int64()
 }
 
-func (r *redisKeyValue) DecrbyInt64(key string, value int64) (int64, error) {
+func (r *redisKeyValue) DecrByInt64(key string, value int64) (int64, error) {
 	return r.do("DECRBY", r.prefix+key, value).Int64()
 }
 
