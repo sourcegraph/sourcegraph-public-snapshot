@@ -1180,7 +1180,21 @@ SELECT recording_time,
 			autogold.Expect(capture).Equal(t, sp.Capture)
 		}
 	})
-	t.Run("respects repo permissions", func(t *testing.T) {
+
+	t.Run("respects repo permissions (deny none)", func(t *testing.T) {
+
+		permissionStore.GetUnauthorizedRepoIDsQueryFunc.SetDefaultReturn(sqlf.Sprintf("SELECT * FROM repo WHERE false"), nil)
+
+		got, err := seriesStore.GetAllDataForInsightViewID(ctx, ExportOpts{InsightViewUniqueID: view.UniqueID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 2 {
+			t.Errorf("expected 2 results due to repo permissions, got %d", len(got))
+		}
+	})
+
+	t.Run("respects repo permissions (deny all)", func(t *testing.T) {
 
 		permissionStore.GetUnauthorizedRepoIDsQueryFunc.SetDefaultReturn(sqlf.Sprintf("SELECT * FROM repo WHERE name = 'github.com/test-123'"), nil)
 
