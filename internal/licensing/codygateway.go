@@ -17,7 +17,7 @@ type CodyGatewayRateLimit struct {
 }
 
 // NewCodyGatewayChatRateLimit applies default Cody Gateway access based on the plan.
-func NewCodyGatewayChatRateLimit(plan Plan, userCount *int, licenseTags []string) CodyGatewayRateLimit {
+func NewCodyGatewayChatRateLimit(plan Plan, userCount *int) CodyGatewayRateLimit {
 	uc := 0
 	if userCount != nil {
 		uc = *userCount
