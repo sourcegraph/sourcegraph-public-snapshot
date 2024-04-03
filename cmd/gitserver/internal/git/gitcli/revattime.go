@@ -20,12 +20,13 @@ import (
 var globalRevAtTimeCache, _ = lru.New[revAtTimeCacheKey, api.CommitID](8192)
 
 type revAtTimeCacheKey struct {
-	spec string
-	t    time.Time
+	repoName api.RepoName
+	spec     string
+	t        time.Time
 }
 
 func (g *gitCLIBackend) RevAtTime(ctx context.Context, spec string, t time.Time) (api.CommitID, error) {
-	key := revAtTimeCacheKey{spec, t}
+	key := revAtTimeCacheKey{g.repoName, spec, t}
 	if entry, ok := g.revAtTimeCache.Get(key); ok {
 		return entry, nil
 	}
