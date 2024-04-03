@@ -41,7 +41,7 @@ brews:
       name: homebrew-src-cli
     # Folder inside the repository to put the formula.
     # Default is the root folder.
-    folder: Formula
+    directory: Formula
     # We need to set this so that goreleaser doesn't think the binary is called
     # `src-cli`
     install: |
