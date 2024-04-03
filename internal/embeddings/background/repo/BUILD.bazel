@@ -39,13 +39,10 @@ go_test(
     deps = [
         "//internal/api",
         "//internal/codeintel/policies/shared",
-        "//internal/conf",
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/dotcom",
         "//internal/types",
-        "//lib/pointers",
-        "//schema",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
