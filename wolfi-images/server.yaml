@@ -21,6 +21,7 @@ contents:
     - pcre
     - posix-libc-utils # Adds locale, used by server postgres init scripts
     - postgresql-12
+    - postgresql-12-client
     - postgresql-12-contrib
     - prometheus-postgres-exporter
     - prometheus-alertmanager
