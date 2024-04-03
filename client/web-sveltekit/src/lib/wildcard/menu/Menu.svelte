@@ -4,9 +4,7 @@
 
     interface DropdownMenuContext {
         item: DropdownMenu['elements']['item']
-        trigger: DropdownMenu['elements']['trigger']
         separator: DropdownMenu['elements']['separator']
-        open: DropdownMenu['states']['open']
         builders: DropdownMenu['builders']
     }
 
@@ -34,7 +32,7 @@
     } = createDropdownMenu({
         open,
     })
-    setContext({ item, trigger, separator, builders, $open })
+    setContext({ item, separator, builders })
 </script>
 
 <button {...$trigger} use:trigger class={triggerButtonClass} {...$$restProps}>
