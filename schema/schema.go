@@ -1159,13 +1159,19 @@ type GerritConnection struct {
 	//
 	// Supports excluding by name ({"name": "owner/name"})
 	Exclude []*ExcludedGerritProject `json:"exclude,omitempty"`
+	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this Gerrit instance.
+	//
+	// If "http", Sourcegraph will access Gerrit repositories using Git URLs of the form http(s)://gerrit.example.com/a/myteam/myproject.git (using https: if the Gerrit instance uses HTTPS).
+	//
+	// If "ssh", Sourcegraph will access Gerrit repositories using Git URLs of the form git@gerrit.example.com:myteam/myproject.git. The exact hostname and port will be fetched from /ssh_info. See the documentation for how to provide SSH private keys and known_hosts: https://sourcegraph.com/docs/admin/repo/auth.
+	GitURLType string `json:"gitURLType,omitempty"`
 	// Password description: The password associated with the Gerrit username used for authentication.
 	Password string `json:"password"`
 	// Projects description: An array of project strings specifying which Gerrit projects to mirror on Sourcegraph. If empty, all projects will be mirrored.
 	Projects []string `json:"projects,omitempty"`
 	// Url description: URL of a Gerrit instance, such as https://gerrit.example.com.
 	Url string `json:"url"`
-	// Username description: A username for authentication withe the Gerrit code host.
+	// Username description: A username for authentication with the Gerrit code host.
 	Username string `json:"username"`
 }
 

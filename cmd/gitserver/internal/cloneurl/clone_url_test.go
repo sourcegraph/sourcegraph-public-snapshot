@@ -262,14 +262,40 @@ func TestGerritCloneURL(t *testing.T) {
 	}
 
 	project := &gerrit.Project{
-		ID: "test-project",
+		ID:            "test-project",
+		HTTPURLToRepo: "https://gerrit.com/a/test-project",
+		SSHURLToRepo:  "ssh://gerrit-ssh.com:29418/a/test-project",
 	}
 
-	got := gerritCloneURL(logtest.Scoped(t), project, &cfg)
-	want := "https://admin:pa$$word@gerrit.com/a/test-project"
-	if got != want {
-		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
-	}
+	t.Run("HTTP", func(t *testing.T) {
+		got := gerritCloneURL(logtest.Scoped(t), project, &cfg)
+		want := "https://admin:pa$$word@gerrit.com/a/test-project"
+		if got != want {
+			t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
+		}
+	})
+	t.Run("Legacy HTTP", func(t *testing.T) {
+		project := &gerrit.Project{
+			ID: "test-project",
+			// Those values are not yet populated. This will only happen on the
+			// next sync after we introduced them. This function should still work.
+			HTTPURLToRepo: "",
+			SSHURLToRepo:  "",
+		}
+		got := gerritCloneURL(logtest.Scoped(t), project, &cfg)
+		want := "https://admin:pa$$word@gerrit.com/a/test-project"
+		if got != want {
+			t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
+		}
+	})
+	t.Run("SSH", func(t *testing.T) {
+		cfg.GitURLType = "ssh"
+		got := gerritCloneURL(logtest.Scoped(t), project, &cfg)
+		want := "ssh://gerrit-ssh.com:29418/a/test-project"
+		if got != want {
+			t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
+		}
+	})
 }
 
 func TestPerforceCloneURL(t *testing.T) {
