@@ -60,7 +60,7 @@ func NewServer(addr string, logger log.Logger, c config.Config) *Server {
 	// Register routes the the server will be responding too
 	r := mux.NewRouter()
 	r.Path("/buildkite").HandlerFunc(server.handleEvent).Methods(http.MethodPost)
-	r.Path("/healthz").HandlerFunc(server.handleHealthz).Methods(http.MethodGet)
+	r.Path("/-/healthz").HandlerFunc(server.handleHealthz).Methods(http.MethodGet)
 
 	debug := r.PathPrefix("/-/debug").Subrouter()
 	debug.Path("/{buildNumber}").HandlerFunc(server.handleGetBuild).Methods(http.MethodGet)
