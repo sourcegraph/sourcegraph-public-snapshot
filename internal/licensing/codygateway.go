@@ -33,10 +33,10 @@ func NewCodyGatewayChatRateLimit(plan Plan, userCount *int, licenseTags []string
 		"anthropic/claude-instant-v1",
 		"anthropic/claude-instant-1",
 		"anthropic/claude-instant-1.2",
-	}
-	// Switch on GPT models by default if the customer license has the GPT tag.
-	if slices.Contains(licenseTags, GPTLLMAccessTag) {
-		models = append(models, "openai/gpt-4", "openai/gpt-3.5-turbo")
+
+		"openai/gpt-3.5-turbo",
+		"openai/gpt-4",
+		"openai/gpt-4-turbo-preview",
 	}
 	switch plan {
 	// TODO: This is just an example for now.
