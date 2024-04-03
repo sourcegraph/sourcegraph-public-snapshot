@@ -39,7 +39,6 @@ go_library(
         "//internal/src-cli",
         "//internal/version",
         "//lib/errors",
-        "//lib/pointers",
         "//schema",
         "@com_github_getsentry_sentry_go//:sentry-go",
         "@com_github_grafana_regexp//:regexp",
