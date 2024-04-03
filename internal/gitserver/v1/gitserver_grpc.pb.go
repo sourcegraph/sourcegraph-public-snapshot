@@ -45,7 +45,7 @@ const (
 	GitserverService_ReadFile_FullMethodName                    = "/gitserver.v1.GitserverService/ReadFile"
 	GitserverService_GetCommit_FullMethodName                   = "/gitserver.v1.GitserverService/GetCommit"
 	GitserverService_ResolveRevision_FullMethodName             = "/gitserver.v1.GitserverService/ResolveRevision"
-	GitserverService_AncestorAtTime_FullMethodName              = "/gitserver.v1.GitserverService/AncestorAtTime"
+	GitserverService_RevAtTime_FullMethodName                   = "/gitserver.v1.GitserverService/RevAtTime"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -150,7 +150,7 @@ type GitserverServiceClient interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ResolveRevision(ctx context.Context, in *ResolveRevisionRequest, opts ...grpc.CallOption) (*ResolveRevisionResponse, error)
-	AncestorAtTime(ctx context.Context, in *AncestorAtTimeRequest, opts ...grpc.CallOption) (*AncestorAtTimeResponse, error)
+	RevAtTime(ctx context.Context, in *RevAtTimeRequest, opts ...grpc.CallOption) (*RevAtTimeResponse, error)
 }
 
 type gitserverServiceClient struct {
@@ -535,9 +535,9 @@ func (c *gitserverServiceClient) ResolveRevision(ctx context.Context, in *Resolv
 	return out, nil
 }
 
-func (c *gitserverServiceClient) AncestorAtTime(ctx context.Context, in *AncestorAtTimeRequest, opts ...grpc.CallOption) (*AncestorAtTimeResponse, error) {
-	out := new(AncestorAtTimeResponse)
-	err := c.cc.Invoke(ctx, GitserverService_AncestorAtTime_FullMethodName, in, out, opts...)
+func (c *gitserverServiceClient) RevAtTime(ctx context.Context, in *RevAtTimeRequest, opts ...grpc.CallOption) (*RevAtTimeResponse, error) {
+	out := new(RevAtTimeResponse)
+	err := c.cc.Invoke(ctx, GitserverService_RevAtTime_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -646,7 +646,7 @@ type GitserverServiceServer interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ResolveRevision(context.Context, *ResolveRevisionRequest) (*ResolveRevisionResponse, error)
-	AncestorAtTime(context.Context, *AncestorAtTimeRequest) (*AncestorAtTimeResponse, error)
+	RevAtTime(context.Context, *RevAtTimeRequest) (*RevAtTimeResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -732,8 +732,8 @@ func (UnimplementedGitserverServiceServer) GetCommit(context.Context, *GetCommit
 func (UnimplementedGitserverServiceServer) ResolveRevision(context.Context, *ResolveRevisionRequest) (*ResolveRevisionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResolveRevision not implemented")
 }
-func (UnimplementedGitserverServiceServer) AncestorAtTime(context.Context, *AncestorAtTimeRequest) (*AncestorAtTimeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AncestorAtTime not implemented")
+func (UnimplementedGitserverServiceServer) RevAtTime(context.Context, *RevAtTimeRequest) (*RevAtTimeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RevAtTime not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -1239,20 +1239,20 @@ func _GitserverService_ResolveRevision_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GitserverService_AncestorAtTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AncestorAtTimeRequest)
+func _GitserverService_RevAtTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevAtTimeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GitserverServiceServer).AncestorAtTime(ctx, in)
+		return srv.(GitserverServiceServer).RevAtTime(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: GitserverService_AncestorAtTime_FullMethodName,
+		FullMethod: GitserverService_RevAtTime_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GitserverServiceServer).AncestorAtTime(ctx, req.(*AncestorAtTimeRequest))
+		return srv.(GitserverServiceServer).RevAtTime(ctx, req.(*RevAtTimeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1345,8 +1345,8 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _GitserverService_ResolveRevision_Handler,
 		},
 		{
-			MethodName: "AncestorAtTime",
-			Handler:    _GitserverService_AncestorAtTime_Handler,
+			MethodName: "RevAtTime",
+			Handler:    _GitserverService_RevAtTime_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

@@ -61,13 +61,13 @@ type GitBackend interface {
 	// If the revspec can not be resolved to a commit, a RevisionNotFoundError is returned.
 	ResolveRevision(ctx context.Context, revspec string) (api.CommitID, error)
 
-	// AncestorAtTime returns the OID of the nearest ancestor of `spec` that
+	// RevAtTime returns the OID of the nearest ancestor of `spec` that
 	// has a commit time before the given time. In the case where multiple
 	// commits are separated from the target by the same number of generations,
 	// the commit with the more recent commit date is chosen.
 	//
 	// The intent is to return the state of a branch at a given time.
-	AncestorAtTime(ctx context.Context, revspec string, time time.Time) (api.CommitID, error)
+	RevAtTime(ctx context.Context, revspec string, time time.Time) (api.CommitID, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will

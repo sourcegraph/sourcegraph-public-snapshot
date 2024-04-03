@@ -52,7 +52,7 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"has.contributor":  func() Predicate { return &FileHasContributorPredicate{} },
 	},
 	FieldRev: {
-		"ancestor.at": func() Predicate { return &RevAncestorPredicate{} },
+		"at.time": func() Predicate { return &RevAtTimePredicate{} },
 	},
 }
 
@@ -619,33 +619,33 @@ func (f *FileHasContributorPredicate) Unmarshal(params string, negated bool) err
 func (f FileHasContributorPredicate) Field() string { return FieldFile }
 func (f FileHasContributorPredicate) Name() string  { return "has.contributor" }
 
-type RevAncestorPredicate struct {
-	AncestorAtTime
+type RevAtTimePredicate struct {
+	RevAtTime
 }
 
-func (f *RevAncestorPredicate) Unmarshal(params string, negated bool) error {
+func (f *RevAtTimePredicate) Unmarshal(params string, negated bool) error {
 	elems := strings.Split(params, ",")
 	if len(elems) == 1 {
 		t, err := ParseGitDate(elems[0], time.Now)
 		if err != nil {
 			return err
 		}
-		f.RevSpec = "HEAD"
 		f.Timestamp = t
+		f.RevSpec = "HEAD"
 		return nil
 	} else if len(elems) == 2 {
-		t, err := ParseGitDate(elems[1], time.Now)
+		t, err := ParseGitDate(elems[0], time.Now)
 		if err != nil {
 			return err
 		}
-		f.RevSpec = elems[0]
 		f.Timestamp = t
+		f.RevSpec = elems[1]
 		return nil
 	} else {
-		return errors.New("unexpected number of arguments to rev:ancestor.at()")
+		return errors.New("unexpected number of arguments to rev:at.time()")
 	}
 }
 
-func (f RevAncestorPredicate) Field() string { return FieldRev }
+func (f RevAtTimePredicate) Field() string { return FieldRev }
 
-func (f RevAncestorPredicate) Name() string { return "ancestor.at" }
+func (f RevAtTimePredicate) Name() string { return "at.time" }

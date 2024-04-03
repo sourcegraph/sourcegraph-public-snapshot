@@ -25,9 +25,9 @@ type RevisionSpecifier struct {
 	// documentation for "--exclude" in git-log.
 	ExcludeRefGlob string
 
-	// AncestorAtTime targets the most recent ancestor of the given rev
+	// RevAtTime targets the most recent ancestor of the given rev
 	// that has a commit timestamp before the given timestamp.
-	AncestorAtTime *AncestorAtTime
+	RevAtTime *RevAtTime
 }
 
 func (r1 RevisionSpecifier) String() string {
@@ -145,21 +145,21 @@ func ParseRevisionSpecifier(spec string) (RevisionSpecifier, error) {
 	} else if strings.HasPrefix(spec, "*") {
 		return RevisionSpecifier{RefGlob: spec[1:]}, nil
 	} else if strings.HasPrefix(spec, "aat=") {
-		aat, err := ParseAncestorAtTime(spec[4:])
+		aat, err := ParseRevAtTime(spec[4:])
 		if err != nil {
 			return RevisionSpecifier{}, err
 		}
-		return RevisionSpecifier{AncestorAtTime: &aat}, nil
+		return RevisionSpecifier{RevAtTime: &aat}, nil
 	}
 	return RevisionSpecifier{RevSpec: spec}, nil
 }
 
-type AncestorAtTime struct {
+type RevAtTime struct {
 	RevSpec   string
 	Timestamp time.Time
 }
 
-func (a *AncestorAtTime) String() string {
+func (a *RevAtTime) String() string {
 	// HACK: this is not intended to be user-friendly string encoding. It's
 	// meant to be usable by ConcatRevFilters to add the `rev:ancestor.at()` to
 	// the repo filters in a way that's easily parsed. A user should never see
@@ -168,12 +168,12 @@ func (a *AncestorAtTime) String() string {
 	return "aat=" + base64.URLEncoding.EncodeToString(b)
 }
 
-func ParseAncestorAtTime(input string) (AncestorAtTime, error) {
+func ParseRevAtTime(input string) (RevAtTime, error) {
 	b, err := base64.URLEncoding.DecodeString(input)
 	if err != nil {
-		return AncestorAtTime{}, err
+		return RevAtTime{}, err
 	}
-	var res AncestorAtTime
+	var res RevAtTime
 	err = json.Unmarshal(b, &res)
 	return res, err
 }

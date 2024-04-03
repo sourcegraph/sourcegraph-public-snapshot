@@ -261,7 +261,7 @@ func (b *observableBackend) ResolveRevision(ctx context.Context, revspec string)
 	return b.backend.ResolveRevision(ctx, revspec)
 }
 
-func (b *observableBackend) AncestorAtTime(ctx context.Context, revspec string, t time.Time) (_ api.CommitID, err error) {
+func (b *observableBackend) RevAtTime(ctx context.Context, revspec string, t time.Time) (_ api.CommitID, err error) {
 	ctx, _, endObservation := b.operations.revAtTime.With(ctx, &err, observation.Args{
 		Attrs: []attribute.KeyValue{
 			attribute.String("revspec", revspec),
@@ -269,10 +269,10 @@ func (b *observableBackend) AncestorAtTime(ctx context.Context, revspec string, 
 	})
 	defer endObservation(1, observation.Args{})
 
-	concurrentOps.WithLabelValues("AncestorAtTime").Inc()
-	defer concurrentOps.WithLabelValues("AncestorAtTime").Dec()
+	concurrentOps.WithLabelValues("RevAtTime").Inc()
+	defer concurrentOps.WithLabelValues("RevAtTime").Dec()
 
-	return b.backend.AncestorAtTime(ctx, revspec, t)
+	return b.backend.RevAtTime(ctx, revspec, t)
 }
 
 type observableReadCloser struct {

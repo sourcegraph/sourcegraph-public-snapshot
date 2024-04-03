@@ -936,8 +936,8 @@ func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoNa
 	return api.CommitID(res.GetCommitSha()), nil
 }
 
-func (c *clientImplementor) AncestorAtTime(ctx context.Context, repo api.RepoName, spec string, date time.Time) (_ api.CommitID, ok bool, err error) {
-	ctx, _, endObservation := c.operations.ancestorAtTime.With(ctx, &err, observation.Args{
+func (c *clientImplementor) RevAtTime(ctx context.Context, repo api.RepoName, spec string, date time.Time) (_ api.CommitID, ok bool, err error) {
+	ctx, _, endObservation := c.operations.revAtTime.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
 			repo.Attr(),
@@ -951,12 +951,12 @@ func (c *clientImplementor) AncestorAtTime(ctx context.Context, repo api.RepoNam
 		return "", false, err
 	}
 
-	req := &proto.AncestorAtTimeRequest{
+	req := &proto.RevAtTimeRequest{
 		RepoName: string(repo),
 		RevSpec:  []byte(spec),
 		Time:     timestamppb.New(date),
 	}
-	res, err := client.AncestorAtTime(ctx, req)
+	res, err := client.RevAtTime(ctx, req)
 	if err != nil {
 		return "", false, err
 	}

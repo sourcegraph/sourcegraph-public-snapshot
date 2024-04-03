@@ -28,9 +28,9 @@ type MockClient struct {
 	// AddrForRepoFunc is an instance of a mock function object controlling
 	// the behavior of the method AddrForRepo.
 	AddrForRepoFunc *ClientAddrForRepoFunc
-	// AncestorAtTimeFunc is an instance of a mock function object
-	// controlling the behavior of the method AncestorAtTime.
-	AncestorAtTimeFunc *ClientAncestorAtTimeFunc
+	// RevAtTimeFunc is an instance of a mock function object
+	// controlling the behavior of the method RevAtTime.
+	RevAtTimeFunc *ClientRevAtTimeFunc
 	// ArchiveReaderFunc is an instance of a mock function object
 	// controlling the behavior of the method ArchiveReader.
 	ArchiveReaderFunc *ClientArchiveReaderFunc
@@ -189,7 +189,7 @@ func NewMockClient() *MockClient {
 				return
 			},
 		},
-		AncestorAtTimeFunc: &ClientAncestorAtTimeFunc{
+		RevAtTimeFunc: &ClientRevAtTimeFunc{
 			defaultHook: func(context.Context, api.RepoName, string, time.Time) (r0 api.CommitID, r1 bool, r2 error) {
 				return
 			},
@@ -451,9 +451,9 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.AddrForRepo")
 			},
 		},
-		AncestorAtTimeFunc: &ClientAncestorAtTimeFunc{
+		RevAtTimeFunc: &ClientRevAtTimeFunc{
 			defaultHook: func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error) {
-				panic("unexpected invocation of MockClient.AncestorAtTime")
+				panic("unexpected invocation of MockClient.RevAtTime")
 			},
 		},
 		ArchiveReaderFunc: &ClientArchiveReaderFunc{
@@ -711,8 +711,8 @@ func NewMockClientFrom(i Client) *MockClient {
 		AddrForRepoFunc: &ClientAddrForRepoFunc{
 			defaultHook: i.AddrForRepo,
 		},
-		AncestorAtTimeFunc: &ClientAncestorAtTimeFunc{
-			defaultHook: i.AncestorAtTime,
+		RevAtTimeFunc: &ClientRevAtTimeFunc{
+			defaultHook: i.RevAtTime,
 		},
 		ArchiveReaderFunc: &ClientArchiveReaderFunc{
 			defaultHook: i.ArchiveReader,
@@ -968,35 +968,35 @@ func (c ClientAddrForRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// ClientAncestorAtTimeFunc describes the behavior when the AncestorAtTime
+// ClientRevAtTimeFunc describes the behavior when the RevAtTime
 // method of the parent MockClient instance is invoked.
-type ClientAncestorAtTimeFunc struct {
+type ClientRevAtTimeFunc struct {
 	defaultHook func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error)
 	hooks       []func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error)
-	history     []ClientAncestorAtTimeFuncCall
+	history     []ClientRevAtTimeFuncCall
 	mutex       sync.Mutex
 }
 
-// AncestorAtTime delegates to the next hook function in the queue and
+// RevAtTime delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockClient) AncestorAtTime(v0 context.Context, v1 api.RepoName, v2 string, v3 time.Time) (api.CommitID, bool, error) {
-	r0, r1, r2 := m.AncestorAtTimeFunc.nextHook()(v0, v1, v2, v3)
-	m.AncestorAtTimeFunc.appendCall(ClientAncestorAtTimeFuncCall{v0, v1, v2, v3, r0, r1, r2})
+func (m *MockClient) RevAtTime(v0 context.Context, v1 api.RepoName, v2 string, v3 time.Time) (api.CommitID, bool, error) {
+	r0, r1, r2 := m.RevAtTimeFunc.nextHook()(v0, v1, v2, v3)
+	m.RevAtTimeFunc.appendCall(ClientRevAtTimeFuncCall{v0, v1, v2, v3, r0, r1, r2})
 	return r0, r1, r2
 }
 
-// SetDefaultHook sets function that is called when the AncestorAtTime
+// SetDefaultHook sets function that is called when the RevAtTime
 // method of the parent MockClient instance is invoked and the hook queue is
 // empty.
-func (f *ClientAncestorAtTimeFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error)) {
+func (f *ClientRevAtTimeFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// AncestorAtTime method of the parent MockClient instance invokes the hook
+// RevAtTime method of the parent MockClient instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientAncestorAtTimeFunc) PushHook(hook func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error)) {
+func (f *ClientRevAtTimeFunc) PushHook(hook func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1004,20 +1004,20 @@ func (f *ClientAncestorAtTimeFunc) PushHook(hook func(context.Context, api.RepoN
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientAncestorAtTimeFunc) SetDefaultReturn(r0 api.CommitID, r1 bool, r2 error) {
+func (f *ClientRevAtTimeFunc) SetDefaultReturn(r0 api.CommitID, r1 bool, r2 error) {
 	f.SetDefaultHook(func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientAncestorAtTimeFunc) PushReturn(r0 api.CommitID, r1 bool, r2 error) {
+func (f *ClientRevAtTimeFunc) PushReturn(r0 api.CommitID, r1 bool, r2 error) {
 	f.PushHook(func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *ClientAncestorAtTimeFunc) nextHook() func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error) {
+func (f *ClientRevAtTimeFunc) nextHook() func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1030,26 +1030,26 @@ func (f *ClientAncestorAtTimeFunc) nextHook() func(context.Context, api.RepoName
 	return hook
 }
 
-func (f *ClientAncestorAtTimeFunc) appendCall(r0 ClientAncestorAtTimeFuncCall) {
+func (f *ClientRevAtTimeFunc) appendCall(r0 ClientRevAtTimeFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of ClientAncestorAtTimeFuncCall objects
+// History returns a sequence of ClientRevAtTimeFuncCall objects
 // describing the invocations of this function.
-func (f *ClientAncestorAtTimeFunc) History() []ClientAncestorAtTimeFuncCall {
+func (f *ClientRevAtTimeFunc) History() []ClientRevAtTimeFuncCall {
 	f.mutex.Lock()
-	history := make([]ClientAncestorAtTimeFuncCall, len(f.history))
+	history := make([]ClientRevAtTimeFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// ClientAncestorAtTimeFuncCall is an object that describes an invocation of
-// method AncestorAtTime on an instance of MockClient.
-type ClientAncestorAtTimeFuncCall struct {
+// ClientRevAtTimeFuncCall is an object that describes an invocation of
+// method RevAtTime on an instance of MockClient.
+type ClientRevAtTimeFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1075,13 +1075,13 @@ type ClientAncestorAtTimeFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c ClientAncestorAtTimeFuncCall) Args() []interface{} {
+func (c ClientRevAtTimeFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c ClientAncestorAtTimeFuncCall) Results() []interface{} {
+func (c ClientRevAtTimeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 

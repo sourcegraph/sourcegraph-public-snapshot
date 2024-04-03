@@ -528,8 +528,8 @@ func (r *Resolver) normalizeRepoRefs(
 			globs = append(globs, gitdomain.RefGlob{Include: rev.RefGlob})
 		case rev.ExcludeRefGlob != "":
 			globs = append(globs, gitdomain.RefGlob{Exclude: rev.ExcludeRefGlob})
-		case rev.AncestorAtTime != nil:
-			commitOID, ok, err := r.gitserver.AncestorAtTime(ctx, repo.Name, rev.AncestorAtTime.RevSpec, rev.AncestorAtTime.Timestamp)
+		case rev.RevAtTime != nil:
+			commitOID, ok, err := r.gitserver.RevAtTime(ctx, repo.Name, rev.RevAtTime.RevSpec, rev.RevAtTime.Timestamp)
 			if err != nil {
 				if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
 					return nil, err

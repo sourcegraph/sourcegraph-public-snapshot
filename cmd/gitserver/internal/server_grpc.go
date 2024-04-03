@@ -1200,7 +1200,7 @@ func (gs *grpcServer) ResolveRevision(ctx context.Context, req *proto.ResolveRev
 	}, nil
 }
 
-func (gs *grpcServer) AncestorAtTime(ctx context.Context, req *proto.AncestorAtTimeRequest) (*proto.AncestorAtTimeResponse, error) {
+func (gs *grpcServer) RevAtTime(ctx context.Context, req *proto.RevAtTimeRequest) (*proto.RevAtTimeResponse, error) {
 	accesslog.Record(
 		ctx,
 		req.GetRepoName(),
@@ -1243,12 +1243,12 @@ func (gs *grpcServer) AncestorAtTime(ctx context.Context, req *proto.AncestorAtT
 	}
 
 	// Then, check the log for the first commit before the timestamp
-	commitID, err := backend.AncestorAtTime(ctx, string(sha), req.GetTime().AsTime())
+	commitID, err := backend.RevAtTime(ctx, string(sha), req.GetTime().AsTime())
 	if err != nil {
 		return nil, status.New(codes.Internal, err.Error()).Err()
 	}
 
-	return &proto.AncestorAtTimeResponse{
+	return &proto.RevAtTimeResponse{
 		CommitSha: string(commitID),
 	}, nil
 }

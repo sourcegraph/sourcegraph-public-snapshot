@@ -152,7 +152,7 @@ service GitserverService {
   rpc ResolveRevision(ResolveRevisionRequest) returns (ResolveRevisionResponse) {
     option idempotency_level = IDEMPOTENT;
   }
-  rpc AncestorAtTime(AncestorAtTimeRequest) returns (AncestorAtTimeResponse) {
+  rpc RevAtTime(RevAtTimeRequest) returns (RevAtTimeResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -177,13 +177,13 @@ message ResolveRevisionResponse {
   string commit_sha = 1;
 }
 
-message AncestorAtTimeRequest {
+message RevAtTimeRequest {
   string repo_name = 1;
   bytes rev_spec = 2;
   google.protobuf.Timestamp time = 3;
 }
 
-message AncestorAtTimeResponse {
+message RevAtTimeResponse {
   // commit is the commit SHA of the resolved revision.
   string commit_sha = 1;
 }

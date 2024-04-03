@@ -578,7 +578,7 @@ func ConcatRevFilters(b Basic) Basic {
 			revision = value
 		}
 	})
-	VisitTypedPredicate(toNodes(b.Parameters), func(pred *RevAncestorPredicate) {
+	VisitTypedPredicate(toNodes(b.Parameters), func(pred *RevAtTimePredicate) {
 		revision = pred.String()
 	})
 	if revision == "" {

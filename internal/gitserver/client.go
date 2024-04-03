@@ -359,13 +359,13 @@ type Client interface {
 	// * Other unexpected errors.
 	ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error)
 
-	// AncestorAtTime returns the OID of the nearest ancestor of `spec` that
+	// RevAtTime returns the OID of the nearest ancestor of `spec` that
 	// has a commit time before the given time. In the case where multiple
 	// commits are separated from the target by the same number of generations,
 	// the commit with the more recent commit date is chosen.
 	//
 	// The intent is to return the state of a branch at a given time.
-	AncestorAtTime(ctx context.Context, repo api.RepoName, spec string, t time.Time) (api.CommitID, bool, error)
+	RevAtTime(ctx context.Context, repo api.RepoName, spec string, t time.Time) (api.CommitID, bool, error)
 
 	// RequestRepoUpdate is the new protocol endpoint for synchronous requests
 	// with more detailed responses. Do not use this if you are not repo-updater.
