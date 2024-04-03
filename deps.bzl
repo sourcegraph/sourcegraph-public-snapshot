@@ -5299,6 +5299,9 @@ def go_dependencies():
     )
     go_repository(
         name = "com_github_sourcegraph_sourcegraph_accounts_sdk_go",
+        build_directives = [
+            "gazelle:resolve go github.com/sourcegraph/sourcegraph/lib/errors @//lib/errors",
+        ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/sourcegraph-accounts-sdk-go",
         sum = "h1:p8AHEbZbqP3/LN/AT9W+Scn0tpp46X1A9qFhBHv1RRI=",
