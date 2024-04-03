@@ -112,7 +112,7 @@ func (b *Build) IsFinished() bool {
 func (b *Build) IsReleaseBuild() bool {
 	// Release builds have two environment variables which distinguishes between internal / public releases
 	for _, key := range []string{"RELEASE_PUBLIC", "RELEASE_INTERNAL"} {
-		if _, ok := b.Env[key]; ok {
+		if v, ok := b.Env[key]; ok && v == "true" {
 			return true
 		}
 	}
