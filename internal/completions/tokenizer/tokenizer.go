@@ -9,6 +9,13 @@ import (
 	"github.com/pkoukk/tiktoken-go"
 )
 
+// Define constants for model types
+const (
+	AnthropicModel = "anthropic"
+	AzureModel     = "azure"
+	OpenAIModel    = "openai"
+)
+
 // Tokenizer is an interface that all tokenizer implementations must satisfy.
 type Tokenizer interface {
 	Tokenize(text string) ([]int, error)
@@ -26,9 +33,9 @@ func (t *tiktokenTokenizer) Tokenize(text string) ([]int, error) {
 // NewTokenizer returns a Tokenizer instance based on the provided model.
 func NewTokenizer(model string) (Tokenizer, error) {
 	switch {
-	case strings.Contains(model, "anthropic"):
+	case strings.Contains(model, AnthropicModel):
 		return NewAnthropicClaudeTokenizer(model)
-	case strings.Contains(model, "azure"), strings.Contains(model, "openai"):
+	case strings.Contains(model, AzureModel), strings.Contains(model, OpenAIModel):
 		// Returning a tiktokenTokenizer for models related to "azure" or "openai"
 		return NewOpenAITokenizer(model)
 	default:
@@ -38,7 +45,7 @@ func NewTokenizer(model string) (Tokenizer, error) {
 
 func NewOpenAITokenizer(model string) (*tiktokenTokenizer, error) {
 	// Remove "azure" or "openai" prefix from the model string
-	model = strings.NewReplacer("azure/", "", "openai/", "").Replace(model)
+	model = strings.NewReplacer(AzureModel+"/", "", OpenAIModel+"/", "").Replace(model)
 
 	tkm, err := tiktoken.EncodingForModel(model)
 	if err != nil {
