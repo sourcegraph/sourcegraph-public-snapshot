@@ -26,6 +26,15 @@ import (
 )
 
 func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ result.Symbols, err error) {
+	s.metrics.searchRunning.Inc()
+	defer func(start time.Time) {
+		s.metrics.searchRunning.Dec()
+		if err != nil {
+			s.metrics.searchFailed.Inc()
+		}
+		s.metrics.searchDuration.Observe(time.Since(start).Seconds())
+	}(time.Now())
+
 	repo := string(args.Repo)
 	commitHash := string(args.CommitID)
 
