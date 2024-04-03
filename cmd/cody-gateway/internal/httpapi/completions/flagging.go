@@ -141,3 +141,9 @@ func requestBlockedError(ctx context.Context) error {
 	traceID := trace.FromContext(ctx).SpanContext().TraceID().String()
 	return errors.Errorf("request blocked - if you think this is a mistake, please contact support@sourcegraph.com and reference this ID: %s", traceID)
 }
+
+// PromptRecorder implementations should save select completions prompts for
+// a short amount of time for security review.
+type PromptRecorder interface {
+	Record(ctx context.Context, prompt string) error
+}

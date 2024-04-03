@@ -44,8 +44,7 @@ func TestIsFlaggedAnthropicMessagesRequest(t *testing.T) {
 	callShouldFlagRequest := func(t *testing.T, ar anthropicMessagesRequest, flaggingConfig config.FlaggingConfig) (*flaggingResult, error) {
 		t.Helper()
 		anthropicUpstream := &AnthropicMessagesHandlerMethods{
-			tokenizer:      tk,
-			promptRecorder: &mockPromptRecorder{},
+			tokenizer: tk,
 			config: config.AnthropicConfig{
 				FlaggingConfig: flaggingConfig,
 			},

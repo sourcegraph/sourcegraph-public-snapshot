@@ -112,7 +112,7 @@ func DisallowVolumeExpansion() Option {
 	}
 }
 
-// WithVolumeBindingMode sets the given VolumeBindingMode on the StorageClasss.
+// WithVolumeBindingMode sets the given VolumeBindingMode on the StorageClass.
 func WithVolumeBindingMode(volumeBindingMode storagev1.VolumeBindingMode) Option {
 	return func(storageClass *storagev1.StorageClass) error {
 		storageClass.VolumeBindingMode = &volumeBindingMode
