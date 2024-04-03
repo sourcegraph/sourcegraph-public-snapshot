@@ -3,6 +3,7 @@ package tokenusage_test
 import (
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
@@ -12,7 +13,7 @@ func TestTokenizeAndCalculateUsage(t *testing.T) {
 	mockCache := rcache.NewWithTTL("LLMUsage", 1800)
 	manager := tokenusage.NewManager()
 
-	err := manager.TokenizeAndCalculateUsage("input text", "output text", "anthropic", "feature1")
+	err := manager.TokenizeAndCalculateUsage("input text", "output text", tokenizer.AnthropicModel, "feature1")
 	if err != nil {
 		t.Fatalf("TokenizeAndCalculateUsage returned an error: %v", err)
 	}

@@ -16,6 +16,8 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"golang.org/x/net/http2"
 
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
@@ -228,7 +230,7 @@ func streamAutocomplete(
 		// stream is done
 		if errors.Is(err, io.EOF) {
 			tokenManager := tokenusage.NewManager()
-			err = tokenManager.TokenizeAndCalculateUsage(inputText(requestParams.Messages), content, "azure/"+requestParams.Model, "code_completions")
+			err = tokenManager.TokenizeAndCalculateUsage(inputText(requestParams.Messages), content, tokenizer.AzureModel+"/"+requestParams.Model, "code_completions")
 			if err != nil {
 				logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 			}
@@ -280,7 +282,7 @@ func streamChat(
 		// stream is done
 		if errors.Is(err, io.EOF) {
 			tokenManager := tokenusage.NewManager()
-			err = tokenManager.TokenizeAndCalculateUsage(inputText(requestParams.Messages), content, "azure/"+requestParams.Model, "chat_completions")
+			err = tokenManager.TokenizeAndCalculateUsage(inputText(requestParams.Messages), content, tokenizer.AzureModel+"/"+requestParams.Model, "chat_completions")
 			if err != nil {
 				logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 			}

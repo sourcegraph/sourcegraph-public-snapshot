@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -66,7 +67,7 @@ func (c *openAIChatCompletionStreamClient) Complete(
 		// Empty response.
 		return &types.CompletionResponse{}, nil
 	}
-	err = c.tokenManager.TokenizeAndCalculateUsage(inputText(requestParams.Messages), response.Choices[0].Text, "openai/"+requestParams.Model, string(feature))
+	err = c.tokenManager.TokenizeAndCalculateUsage(inputText(requestParams.Messages), response.Choices[0].Text, tokenizer.OpenAIModel+"/"+requestParams.Model, string(feature))
 	if err != nil {
 		logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 	}
@@ -138,7 +139,7 @@ func (c *openAIChatCompletionStreamClient) Stream(
 	if dec.Err() != nil {
 		return dec.Err()
 	}
-	err = c.tokenManager.TokenizeAndCalculateUsage(inputText(requestParams.Messages), content, "openai/"+requestParams.Model, string(feature))
+	err = c.tokenManager.TokenizeAndCalculateUsage(inputText(requestParams.Messages), content, tokenizer.OpenAIModel+"/"+requestParams.Model, string(feature))
 	if err != nil {
 		logger.Warn("Failed to count tokens with the token manager %w", log.Error(err))
 	}

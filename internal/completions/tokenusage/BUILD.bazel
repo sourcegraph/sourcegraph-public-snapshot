@@ -32,6 +32,7 @@ go_test(
     ],
     deps = [
         ":tokenusage",
+        "//internal/completions/tokenizer",
         "//internal/rcache",
     ],
 )
