@@ -32,7 +32,8 @@ func StoreTokenUsage(ctx context.Context, db database.DB) error {
 	}
 	convertedTokenUsageData := make(telemetry.EventMetadata)
 	for key, value := range tokenUsageData {
-		convertedTokenUsageData[key] = value
+		castedKey := telemetry.ConstString(key) // Cast the key to telemetry.ConstString
+		convertedTokenUsageData[castedKey] = value
 	}
 
 	if err := recorder.Record(ctx, "llmTokenCounter", "modelUsage", &telemetry.EventParameters{

@@ -72,7 +72,7 @@ func (m *Manager) RetrieveAndResetTokenUsageData() (map[string]interface{}, erro
 	}
 
 	// Grouping token usage data under a 'models' key
-	modelsData := make([]map[string]interface{}, 0)
+	modelsData := make([]map[string]interface{}, 0, len(tokenUsageData))
 	for model, tokens := range tokenUsageData {
 		modelData := map[string]interface{}{
 			"description": model, // Assuming 'model' contains the description
