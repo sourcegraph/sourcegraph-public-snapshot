@@ -33,6 +33,7 @@
         repositoryMatches = repositoryMatches.map(([start, end]) => [start - delta, end - delta])
     }
     $: descriptionMatches = result.descriptionMatches?.map(simplifyLineRange) ?? []
+    $: rev = result.branches?.[0]
 </script>
 
 <SearchResult>
@@ -40,9 +41,10 @@
     <div slot="title">
         <!-- #key is needed here to recreate the link because use:highlightRanges changes the DOM -->
         {#key repositoryMatches}
-            <a href={repoAtRevisionURL} use:highlightRanges={{ ranges: repositoryMatches }}
-                >{displayRepoName(result.repository)}</a
-            >
+            <a href={repoAtRevisionURL} use:highlightRanges={{ ranges: repositoryMatches }}>
+                {displayRepoName(result.repository)}
+                <small>@ {rev ? `${rev}` : ''}</small>
+            </a>
         {/key}
         {#if result.fork}
             <span class="info">

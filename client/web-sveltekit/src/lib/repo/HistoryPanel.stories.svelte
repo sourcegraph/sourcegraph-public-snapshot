@@ -7,10 +7,8 @@
         parameters: {
             sveltekit_experimental: {
                 stores: {
-                    page: {
-
-                    },
-                }
+                    page: {},
+                },
             },
         },
     }
