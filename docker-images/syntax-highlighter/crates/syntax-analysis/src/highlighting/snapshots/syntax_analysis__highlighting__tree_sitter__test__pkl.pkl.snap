@@ -189,11 +189,11 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   notANumber = NaN
 //^^^^^^^^^^ Identifier
 //           ^ IdentifierOperator
-//             ^^^ IdentifierBuiltinType
+//             ^^^ IdentifierBuiltin
   positiveInfinity = Infinity
 //^^^^^^^^^^^^^^^^ Identifier
 //                 ^ IdentifierOperator
-//                   ^^^^^^^^ IdentifierBuiltinType
+//                   ^^^^^^^^ IdentifierBuiltin
   
   // Booleans
 //^^^^^^^^^^^ Comment
@@ -600,3 +600,24 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //    ^ PunctuationDelimiter
 //     ^^^^^^ IdentifierFunction
 //            ^^^^^^ StringLiteral
+  
+  
+  // dynamic object with object body parameters
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  birds = new Dynamic {
+//^^^^^ Identifier
+//      ^ IdentifierOperator
+//        ^^^ Keyword
+//            ^^^^^^^ IdentifierType
+    default { _ ->
+//  ^^^^^^^ Identifier
+//            ^ IdentifierParameter
+//              ^^ IdentifierOperator
+      species = "Bird"
+//    ^^^^^^^ Identifier
+//            ^ IdentifierOperator
+//              ^^^^^^ StringLiteral
+    }
+    ["Falcon"] {}
+//   ^^^^^^^^ StringLiteral
+  }

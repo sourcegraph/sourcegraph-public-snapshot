@@ -185,3 +185,11 @@ res = woodPigeon
     .toMap()
     .remove("name")
 
+
+// dynamic object with object body parameters
+birds = new Dynamic {
+  default { _ ->
+    species = "Bird"
+  }
+  ["Falcon"] {}
+}

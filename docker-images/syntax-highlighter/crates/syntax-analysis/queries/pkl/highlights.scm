@@ -23,11 +23,11 @@
 
 (annotation ("@" @identifier.attribute) (qualifiedIdentifier (identifier) @identifier.attribute))
 
-((identifier) @type.builtin
- (#eq? @type.builtin "Infinity"))
+((identifier) @constant.builtin
+ (#eq? @constant.builtin "Infinity"))
 
-((identifier) @type.builtin
- (#eq? @type.builtin "NaN"))
+((identifier) @constant.builtin
+ (#eq? @constant.builtin "NaN"))
 
 
 ((identifier) @type
