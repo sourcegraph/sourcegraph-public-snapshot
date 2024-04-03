@@ -41,7 +41,9 @@ var _ Interface = &Store{}
 // persistent storage.
 type Store struct {
 	*basestore.Store
-	now func() time.Time
+
+	now       func() time.Time
+	permStore InsightPermissionStore
 }
 
 func (s *Store) Transact(ctx context.Context) (*Store, error) {
@@ -50,20 +52,21 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 		return nil, err
 	}
 	return &Store{
-		Store: txBase,
-		now:   s.now,
+		Store:     txBase,
+		now:       s.now,
+		permStore: s.permStore,
 	}, nil
 }
 
 // New returns a new Store backed by the given Postgres db.
-func New(db edb.InsightsDB) *Store {
-	return NewWithClock(db, timeutil.Now)
+func New(db edb.InsightsDB, permStore InsightPermissionStore) *Store {
+	return NewWithClock(db, permStore, timeutil.Now)
 }
 
 // NewWithClock returns a new Store backed by the given db and
 // clock for timestamps.
-func NewWithClock(db edb.InsightsDB, clock func() time.Time) *Store {
-	return &Store{Store: basestore.NewWithHandle(db.Handle()), now: clock}
+func NewWithClock(db edb.InsightsDB, permStore InsightPermissionStore, clock func() time.Time) *Store {
+	return &Store{Store: basestore.NewWithHandle(db.Handle()), now: clock, permStore: permStore}
 }
 
 var _ basestore.ShareableStore = &Store{}
@@ -72,14 +75,14 @@ var _ basestore.ShareableStore = &Store{}
 // underlying basestore.Store.
 // Needed to implement the basestore.Store interface
 func (s *Store) With(other basestore.ShareableStore) *Store {
-	return &Store{Store: s.Store.With(other), now: s.now}
+	return &Store{Store: s.Store.With(other), now: s.now, permStore: s.permStore}
 }
 
 // WithOther creates a new Store with the given basestore.Shareable store as the
 // underlying basestore.Store.
 // Needed to implement the basestore.Store interface
 func (s *Store) WithOther(other basestore.ShareableStore) Interface {
-	return &Store{Store: s.Store.With(other), now: s.now}
+	return &Store{Store: s.Store.With(other), now: s.now, permStore: s.permStore}
 }
 
 // SeriesPoint describes a single insights' series data point.
@@ -887,11 +890,18 @@ type ExportOpts struct {
 }
 
 func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts) (_ []SeriesPointForExport, err error) {
-	// todo bahrmichael: adjust/move this comment
 	// 🚨 SECURITY: this function will only be called if the insight with the given insightViewId is visible given
 	// this user context. This is similar to how `SeriesPoints` works.
 	// We enforce repo permissions here as we store repository data at this level.
+	authzQuery, err := s.permStore.GetUnauthorizedRepoIDsQuery(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	var preds []*sqlf.Query
+
+	preds = append(preds, sqlf.Sprintf("NOT EXISTS (%s)", authzQuery))
+
 	if len(opts.IncludeRepoRegex) > 0 {
 		includePreds := []*sqlf.Query{}
 		for _, regex := range opts.IncludeRepoRegex {
@@ -913,8 +923,13 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts)
 			preds = append(preds, sqlf.Sprintf("rn.name !~ %s", regex))
 		}
 	}
+	// todo bahrmichael: do we still need this if we always insert an authz query?
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("true"))
+	}
+
+	if len(preds) > 65_000 {
+		return nil, errors.Wrap(err, "no no no!")
 	}
 
 	tx, err := s.Transact(ctx)
@@ -947,12 +962,12 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts)
 
 	formattedPreds := sqlf.Join(preds, "AND")
 	// start with the oldest archived points and add them to the results
-	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, quote(recordingTimesTableArchive), quote(recordingTableArchive), opts.InsightViewUniqueID, formattedPreds), exportScanner); err != nil {
+	if err := tx.query(ctx, quote(exportCodeInsightsDataSql, quote(recordingTimesTableArchive), quote(recordingTableArchive), opts.InsightViewUniqueID, formattedPreds), exportScanner); err != nil {
 		return nil, errors.Wrap(err, "fetching archived code insights data")
 	}
 	// then add live points
 	// we join both series points tables
-	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, quote(recordingTimesTable), quote("(select * from series_points union all select * from series_points_snapshots)"), opts.InsightViewUniqueID, formattedPreds), exportScanner); err != nil {
+	if err := tx.query(ctx, quote(exportCodeInsightsDataSql, quote(recordingTimesTable), quote("(select * from series_points union all select * from series_points_snapshots)"), opts.InsightViewUniqueID, formattedPreds), exportScanner); err != nil {
 		return nil, errors.Wrap(err, "fetching code insights data")
 	}
 
@@ -967,7 +982,6 @@ from %s isrt
     join insight_view iv ON ivs.insight_view_id = iv.id
     left outer join %s sp on sp.series_id = i.series_id and sp.time = isrt.recording_time
     left outer join repo_names rn on sp.repo_name_id = rn.id
-    left outer join user_repo_permissions urp on sp.repo_name_id = urp.repo_id
-	where urp.id IS NULL and iv.unique_id = %s and %s
+	where iv.unique_id = %s and %s
     order by iv.title, isrt.recording_time, ivs.label, sp.capture;
 `

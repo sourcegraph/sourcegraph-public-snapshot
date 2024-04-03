@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	edb "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -2643,8 +2644,10 @@ func TestHardDeleteSeries(t *testing.T) {
 	clock := timeutil.Now
 	insightsdb := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 
+	postgres := database.NewDB(logger, dbtest.NewDB(t))
+	permStore := NewInsightPermissionStore(postgres)
 	insightStore := NewInsightStore(insightsdb)
-	timeseriesStore := NewWithClock(insightsdb, clock)
+	timeseriesStore := NewWithClock(insightsdb, permStore, clock)
 
 	series := types.InsightSeries{
 		SeriesID:           "series1",

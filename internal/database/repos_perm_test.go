@@ -284,7 +284,7 @@ VALUES (NULL, %s);
 	return alice, unrestrictedRepo
 }
 
-func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
+func TestRepoStore_userCanSeeUnrestrictedRepo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}

@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	edb "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -128,7 +129,9 @@ func TestCompareLoadMethods(t *testing.T) {
 			ctx := context.Background()
 			clock := timeutil.Now
 			insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-			store := NewWithClock(insightsDB, clock)
+			postgres := database.NewDB(logger, dbtest.NewDB(t))
+			permStore := NewInsightPermissionStore(postgres)
+			store := NewWithClock(insightsDB, permStore, clock)
 
 			seriesID := initializeData(ctx, store, tc.repos, tc.times, tc.capture)
 
@@ -206,7 +209,9 @@ func BenchmarkLoadTimes(b *testing.B) {
 		ctx := context.Background()
 		clock := timeutil.Now
 		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, b), logger)
-		store := NewWithClock(insightsDB, clock)
+		postgres := database.NewDB(logger, dbtest.NewDB(b))
+		permStore := NewInsightPermissionStore(postgres)
+		store := NewWithClock(insightsDB, permStore, clock)
 
 		seriesID := initializeData(ctx, store, bm.repos, bm.times, bm.capture)
 
