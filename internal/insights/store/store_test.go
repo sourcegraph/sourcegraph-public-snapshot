@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"sort"
 	"strings"
 	"testing"
@@ -1005,23 +1006,48 @@ func TestRepoPermissionsBulk(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	series := setupSeries(ctx, insightStore, t)
+	if series.SeriesID != "series1" {
+		t.Fatal("series setup is incorrect, series id should be series1")
+	}
+
+	err = insightStore.AttachSeriesToView(ctx, series, view, types.InsightViewSeriesMetadata{
+		Label:  "label",
+		Stroke: "blue",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	recordingTimes := types.InsightSeriesRecordingTimes{InsightSeriesID: series.ID}
+	newTime := time.Now().Truncate(time.Hour)
+	for i := 1; i <= 2; i++ {
+		newTime = newTime.Add(time.Hour).UTC()
+		recordingTimes.RecordingTimes = append(recordingTimes.RecordingTimes, types.RecordingTime{
+			Snapshot: false, Timestamp: newTime,
+		})
+	}
+	if err := seriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{recordingTimes}); err != nil {
+		t.Fatal(err)
+	}
+
 	t.Run("respects a lot of repo permissions", func(t *testing.T) {
 
-		permissionStore.GetUnauthorizedRepoIDsQueryFunc.SetDefaultReturn(sqlf.Sprintf("SELECT * FROM repo WHERE true"), nil)
+		authz.SetProviders(false, nil)
+		defer func() {
+			authz.SetProviders(true, nil)
+		}()
 
-		// On Apple M3 Max this test takes ~1s per 2_000 records. This means ~30s for 60_000 records.
-		// It seems to be the same no matter if we send one big query or thousands of individual ones.
-		// About 90% goes to the INSERTs, and 10% to the DELETE query.
-
-		repoCount := 100_000
+		// The query broke PostgreSQL at 65k-ish predicates, so we have to use at least 66k records.
+		repoCount := 66_000
 		var repoValues []string
 		for i := 0; i < repoCount; i++ {
-			repoValues = append(repoValues, fmt.Sprintf(`('r-%d')`, i))
+			repoValues = append(repoValues, fmt.Sprintf(`('r-%d', true)`, i))
 		}
 		// This bulk INSERT takes 6s @ 100k records (shortening from 'github.com/permissions-test-%d' to 'r-%d' saved another 1.5s)
 		// A for loop in the database would take 10.5s @ 100k records
 		repoQuery := fmt.Sprintf(
-			`INSERT INTO repo(name) VALUES %s;`,
+			`INSERT INTO repo(name, private) VALUES %s;`,
 			strings.Join(repoValues, ","),
 		)
 
@@ -1078,8 +1104,6 @@ func TestGetAllDataForInsightViewId(t *testing.T) {
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 
 	permissionStore := NewMockInsightPermissionStore()
-	// no repo restrictions by default
-	permissionStore.GetUnauthorizedRepoIDsQueryFunc.SetDefaultReturn(sqlf.Sprintf("SELECT * FROM repo WHERE false"), nil)
 
 	insightStore := NewInsightStore(insightsDB)
 	seriesStore := New(insightsDB, permissionStore)
@@ -1180,9 +1204,46 @@ SELECT recording_time,
 			autogold.Expect(capture).Equal(t, sp.Capture)
 		}
 	})
-	t.Run("respects repo permissions", func(t *testing.T) {
+	//t.Run("respects repo permissions (without deny)", func(t *testing.T) {
+	//
+	//	authz.SetProviders(false, nil)
+	//	defer func() {
+	//		authz.SetProviders(true, nil)
+	//	}()
+	//
+	//	_, err := insightsDB.ExecContext(context.Background(), `
+	//		INSERT INTO repo(name, private) VALUES ('github.com/test-123', true);
+	//		`)
+	//	if err != nil {
+	//		t.Fatal(err)
+	//	}
+	//	defer func() {
+	//		// cleanup
+	//		_, err := insightsDB.ExecContext(context.Background(), fmt.Sprintf(`
+	//		DELETE FROM repo where name = 'github.com/test-123';
+	//		`))
+	//
+	//		if err != nil {
+	//			t.Fatal(err)
+	//		}
+	//
+	//	}()
+	//
+	//	got, err := seriesStore.GetAllDataForInsightViewID(ctx, ExportOpts{InsightViewUniqueID: view.UniqueID})
+	//	if err != nil {
+	//		t.Fatal(err)
+	//	}
+	//	if len(got) != 2 {
+	//		t.Errorf("expected 2 results due to no repo permissions, got %d", len(got))
+	//	}
+	//})
 
-		permissionStore.GetUnauthorizedRepoIDsQueryFunc.SetDefaultReturn(sqlf.Sprintf("SELECT * FROM repo WHERE name = 'github.com/test-123'"), nil)
+	t.Run("respects repo permissions (with deny)", func(t *testing.T) {
+
+		authz.SetProviders(false, nil)
+		defer func() {
+			authz.SetProviders(true, nil)
+		}()
 
 		_, err := insightsDB.ExecContext(context.Background(), `
 			INSERT INTO repo(name) VALUES ('github.com/test-123');
@@ -1191,7 +1252,6 @@ SELECT recording_time,
 		if err != nil {
 			t.Fatal(err)
 		}
-
 		defer func() {
 			// cleanup
 			_, err := insightsDB.ExecContext(context.Background(), fmt.Sprintf(`
@@ -1204,6 +1264,7 @@ SELECT recording_time,
 			}
 
 		}()
+
 		got, err := seriesStore.GetAllDataForInsightViewID(ctx, ExportOpts{InsightViewUniqueID: view.UniqueID})
 		if err != nil {
 			t.Fatal(err)

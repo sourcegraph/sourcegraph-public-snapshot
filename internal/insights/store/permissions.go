@@ -29,18 +29,7 @@ func NewInsightPermissionStore(db database.DB) *InsightPermStore {
 
 type InsightPermissionStore interface {
 	GetUnauthorizedRepoIDs(ctx context.Context) (results []api.RepoID, err error)
-	GetUnauthorizedRepoIDsQuery(ctx context.Context) (q *sqlf.Query, err error)
 	GetUserPermissions(ctx context.Context) (userIDs []int, orgIDs []int, err error)
-}
-
-func (i *InsightPermStore) GetUnauthorizedRepoIDsQuery(ctx context.Context) (q *sqlf.Query, err error) {
-	db := database.NewDBWith(i.logger, i.Store)
-	conds, err := database.AuthzQueryConds(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-
-	return sqlf.Join([]*sqlf.Query{sqlf.Sprintf(fetchUnauthorizedReposSql), conds}, " "), nil
 }
 
 // GetUnauthorizedRepoIDs returns a list of repo IDs that the current user does *not* have access to. The primary
@@ -50,13 +39,14 @@ func (i *InsightPermStore) GetUnauthorizedRepoIDsQuery(ctx context.Context) (q *
 func (i *InsightPermStore) GetUnauthorizedRepoIDs(ctx context.Context) (results []api.RepoID, err error) {
 	db := database.NewDBWith(i.logger, i.Store)
 	store := db.Repos()
-
-	query, err := i.GetUnauthorizedRepoIDsQuery(ctx)
+	conds, err := database.AuthzQueryConds(ctx, db)
 	if err != nil {
 		return []api.RepoID{}, err
 	}
 
-	rows, err := store.Query(ctx, query)
+	q := sqlf.Join([]*sqlf.Query{sqlf.Sprintf(fetchUnauthorizedReposSql), conds}, " ")
+
+	rows, err := store.Query(ctx, q)
 	if err != nil {
 		return []api.RepoID{}, err
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/sourcegraph/log"
 	"strconv"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	edb "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -41,7 +43,7 @@ var _ Interface = &Store{}
 // persistent storage.
 type Store struct {
 	*basestore.Store
-
+	logger    log.Logger
 	now       func() time.Time
 	permStore InsightPermissionStore
 }
@@ -893,14 +895,14 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts)
 	// 🚨 SECURITY: this function will only be called if the insight with the given insightViewId is visible given
 	// this user context. This is similar to how `SeriesPoints` works.
 	// We enforce repo permissions here as we store repository data at this level.
-	authzQuery, err := s.permStore.GetUnauthorizedRepoIDsQuery(ctx)
+	db := database.NewDBWith(s.logger, s.Store)
+	authzQueryConds, err := database.AuthzQueryConds(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
 	var preds []*sqlf.Query
-
-	preds = append(preds, sqlf.Sprintf("NOT EXISTS (%s)", authzQuery))
+	preds = append(preds, authzQueryConds)
 
 	if len(opts.IncludeRepoRegex) > 0 {
 		includePreds := []*sqlf.Query{}
@@ -967,7 +969,8 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts)
 	}
 	// then add live points
 	// we join both series points tables
-	if err := tx.query(ctx, quote(exportCodeInsightsDataSql, quote(recordingTimesTable), quote("(select * from series_points union all select * from series_points_snapshots)"), opts.InsightViewUniqueID, formattedPreds), exportScanner); err != nil {
+	query := quote(exportCodeInsightsDataSql, quote(recordingTimesTable), quote("(select * from series_points union all select * from series_points_snapshots)"), opts.InsightViewUniqueID, formattedPreds)
+	if err := tx.query(ctx, query, exportScanner); err != nil {
 		return nil, errors.Wrap(err, "fetching code insights data")
 	}
 
@@ -982,6 +985,7 @@ from %s isrt
     join insight_view iv ON ivs.insight_view_id = iv.id
     left outer join %s sp on sp.series_id = i.series_id and sp.time = isrt.recording_time
     left outer join repo_names rn on sp.repo_name_id = rn.id
+    left outer join repo on sp.repo_id = repo.id
 	where iv.unique_id = %s and %s
     order by iv.title, isrt.recording_time, ivs.label, sp.capture;
 `
