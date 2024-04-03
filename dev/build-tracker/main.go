@@ -284,9 +284,11 @@ type Service struct{}
 func (s Service) Initialize(ctx context.Context, logger log.Logger, contract runtime.Contract, config config.Config) (background.Routine, error) {
 	logger.Info("config loaded from environment", log.Object("config", log.String("SlackChannel", config.SlackChannel), log.Bool("Production", config.Production)))
 
+	server := NewServer(fmt.Sprintf(":%d", contract.Port), logger, config)
+
 	return background.CombinedRoutine{
-		NewServer(fmt.Sprintf(":%d", contract.Port), logger, config),
-		deleteOldBuilds(logger, nil, CleanUpInterval, BuildExpiryWindow),
+		server,
+		deleteOldBuilds(logger, server.store, CleanUpInterval, BuildExpiryWindow),
 	}, nil
 }
 
