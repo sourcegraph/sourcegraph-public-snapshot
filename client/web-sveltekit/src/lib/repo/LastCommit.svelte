@@ -15,7 +15,7 @@
 
 <div class="last-commit">
     <div class="avatar">
-        <Avatar avatar={user} />
+        <Avatar avatar={user} --avatar-size="1rem" />
     </div>
 
     <div class="display-name">

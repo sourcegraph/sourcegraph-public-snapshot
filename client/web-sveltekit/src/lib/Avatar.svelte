@@ -72,6 +72,6 @@
     span {
         z-index: 1;
         color: var(--white);
-        font-size: 0.5rem;
+        font-size: calc(var(--avatar-size) * 0.5);
     }
 </style>
