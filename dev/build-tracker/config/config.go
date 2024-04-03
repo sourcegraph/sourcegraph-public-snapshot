@@ -19,6 +19,6 @@ func (c *Config) Load(env *runtime.Env) {
 	c.Production = env.GetBool("BUILDTRACKER_PRODUCTION", "false", "")
 
 	if c.Production {
-		c.DebugPassword = env.Get("BUIDLTRACKER_DEBUG_PASSWORD", "", "")
+		c.DebugPassword = env.Get("BUILDTRACKER_DEBUG_PASSWORD", "", "")
 	}
 }
