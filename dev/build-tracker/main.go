@@ -230,11 +230,16 @@ func (s *Server) processEvent(event *build.Event) {
 }
 
 func determineBuildStatusNotification(logger log.Logger, b *build.Build) *notify.BuildNotification {
+	author := b.GetCommitAuthor()
+	isRelease := b.IsReleaseBuild()
+	// With a release build the person who made the last commit isn't the creator of the build
+	if isRelease {
+		author = b.GetBuildAuthor()
+	}
 	info := notify.BuildNotification{
 		BuildNumber:        b.GetNumber(),
 		ConsecutiveFailure: b.ConsecutiveFailure,
-		PipelineName:       b.Pipeline.GetName(),
-		AuthorEmail:        b.GetAuthorEmail(),
+		AuthorName:         author.Name,
 		Message:            b.GetMessage(),
 		Commit:             b.GetCommit(),
 		BuildStatus:        "",
@@ -243,6 +248,7 @@ func determineBuildStatusNotification(logger log.Logger, b *build.Build) *notify
 		Failed:             []notify.JobLine{},
 		Passed:             []notify.JobLine{},
 		TotalSteps:         len(b.Steps),
+		IsRelease:          isRelease,
 	}
 
 	// You may notice we do not check if the build is Failed and exit early, this is because of the following scenario

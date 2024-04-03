@@ -40,7 +40,7 @@ tasks:
             only_on_change: true
             branches:
               - '^main$'
-        - deliverable: 'attr(tags, "msp-deliverable", //cmd/...)'
+        - deliverable: 'attr(tags, "msp-deliverable", //...)'
           condition:
             branches:
               - '^main$'
