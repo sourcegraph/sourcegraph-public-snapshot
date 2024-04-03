@@ -1,8 +1,6 @@
 module github.com/sourcegraph/sourcegraph
 
-go 1.22.0
-
-toolchain go1.22.1
+go 1.22.1
 
 // Permanent replace directives
 // ============================
