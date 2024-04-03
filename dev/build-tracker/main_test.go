@@ -277,7 +277,7 @@ func TestToBuildNotification(t *testing.T) {
 				URL:    &url,
 				Commit: &commit,
 				Env: map[string]interface{}{
-					"RELEASE_INTERNAL": true,
+					"RELEASE_INTERNAL": "true",
 				},
 			},
 			Pipeline: &build.Pipeline{buildkite.Pipeline{
@@ -296,7 +296,7 @@ func TestToBuildNotification(t *testing.T) {
 
 		// Check when the release is PUBLIC
 		delete(b.Env, "RELEASE_INTERNAL")
-		b.Env["RELEASE_PUBLIC"] = true
+		b.Env["RELEASE_PUBLIC"] = "true"
 		notification = determineBuildStatusNotification(logtest.NoOp(t), b)
 		if notification.AuthorName != "Release William Bezuidenhout" {
 			t.Errorf("got %s, wanted %s for Author Name in Notification when build is an internal release build", notification.AuthorName, "Release William Bezuidenhout")
