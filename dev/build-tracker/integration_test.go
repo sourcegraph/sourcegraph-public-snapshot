@@ -60,7 +60,7 @@ func TestLargeAmountOfFailures(t *testing.T) {
 		BuildNumber:        num,
 		ConsecutiveFailure: 0,
 		PipelineName:       pipelineID,
-		AuthorName:         "william.bezuidenhout@sourcegraph.com",
+		AuthorEmail:        "william.bezuidenhout@sourcegraph.com",
 		Message:            msg,
 		Commit:             commit,
 		BuildURL:           url,

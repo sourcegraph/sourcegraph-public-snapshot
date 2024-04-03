@@ -35,7 +35,7 @@ type BuildNotification struct {
 	BuildNumber        int
 	ConsecutiveFailure int
 	PipelineName       string
-	AuthorName         string
+	AuthorEmail        string
 	Message            string
 	Commit             string
 	BuildURL           string
@@ -44,8 +44,6 @@ type BuildNotification struct {
 	Failed             []JobLine
 	Passed             []JobLine
 	TotalSteps         int
-
-	IsRelease bool
 }
 
 type JobLine interface {
@@ -158,19 +156,12 @@ func (c *Client) sendUpdatedMessage(info *BuildNotification, previous *SlackNoti
 	return NewSlackNotification(id, channel, info, previous.AuthorMention), nil
 }
 
-func (c *Client) determineAuthor(logger log.Logger, info *BuildNotification) string {
-	var (
-		author   string
-		teammate *team.Teammate
-		err      error
-	)
+func (c *Client) sendNewMessage(info *BuildNotification) (*SlackNotification, error) {
+	logger := c.logger.With(log.Int("buildNumber", info.BuildNumber), log.String("channel", c.channel))
+	logger.Debug("creating slack json")
 
-	if info.IsRelease {
-		teammate, err = c.GetTeammateForName(info.AuthorName)
-	} else {
-		teammate, err = c.GetTeammateForCommit(info.Commit)
-	}
-
+	author := ""
+	teammate, err := c.GetTeammateForCommit(info.Commit)
 	if err != nil {
 		c.logger.Error("failed to find teammate", log.Error(err))
 		// the error has some guidance on how to fix it so that teammate resolver can figure out who you are from the commit!
@@ -188,21 +179,13 @@ func (c *Client) determineAuthor(logger log.Logger, info *BuildNotification) str
 		author = SlackMention(teammate)
 	}
 
-	return author
-}
-
-func (c *Client) sendNewMessage(info *BuildNotification) (*SlackNotification, error) {
-	logger := c.logger.With(log.Int("buildNumber", info.BuildNumber), log.String("channel", c.channel))
-	logger.Debug("creating slack json")
-
-	author := c.determineAuthor(logger, info)
 	blocks := c.createMessageBlocks(info, author)
 	// Slack responds with the message timestamp and a channel, which you have to use when you want to update the message.
 	var id, channel string
 
 	logger.Debug("sending new notification")
 	msgOptBlocks := slack.MsgOptionBlocks(blocks...)
-	channel, id, err := c.slack.PostMessage(c.channel, msgOptBlocks)
+	channel, id, err = c.slack.PostMessage(c.channel, msgOptBlocks)
 	if err != nil {
 		logger.Error("failed to post message", log.Error(err))
 		return nil, err
@@ -251,14 +234,6 @@ func createStepsSection(status string, items []JobLine, showLimit int) string {
 
 func (c *Client) GetTeammateForCommit(commit string) (*team.Teammate, error) {
 	result, err := c.team.ResolveByCommitAuthor(context.Background(), "sourcegraph", "sourcegraph", commit)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
-func (c *Client) GetTeammateForName(name string) (*team.Teammate, error) {
-	result, err := c.team.ResolveByName(context.Background(), name)
 	if err != nil {
 		return nil, err
 	}

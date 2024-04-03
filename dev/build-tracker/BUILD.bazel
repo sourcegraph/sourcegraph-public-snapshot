@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:msp_delivery.bzl", "msp_delivery")
 
 go_library(
     name = "build-tracker_lib",
@@ -95,10 +96,9 @@ oci_push(
     repository = image_repository("build-tracker"),
 )
 
-# automatic deployment not enabled for initial testing
-# msp_delivery(
-#     name = "msp_deploy",
-#     gcp_project = "build-tracker-prod-59bf",
-#     msp_service_id = "build-tracker",
-#     repository = "us.gcr.io/sourcegraph-dev/build-tracker",
-# )
+msp_delivery(
+    name = "msp_deploy",
+    gcp_project = "build-tracker-prod-59bf",
+    msp_service_id = "build-tracker",
+    repository = "us.gcr.io/sourcegraph-dev/build-tracker",
+)

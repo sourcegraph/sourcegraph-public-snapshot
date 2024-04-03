@@ -38,11 +38,6 @@ type Step struct {
 	Jobs []*Job `json:"jobs"`
 }
 
-type Author struct {
-	Name  string
-	Email string
-}
-
 // Implement the notify.JobLine interface
 var _ notify.JobLine = &Step{}
 
@@ -109,37 +104,20 @@ func (b *Build) IsFinished() bool {
 	}
 }
 
-func (b *Build) IsReleaseBuild() bool {
-	// Release builds have two environment variables which distinguishes between internal / public releases
-	for _, key := range []string{"RELEASE_PUBLIC", "RELEASE_INTERNAL"} {
-		if v, ok := b.Env[key]; ok && v == "true" {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (b *Build) GetBuildAuthor() Author {
-	var author Author
-	if b.Creator == nil {
-		return author
-	}
-
-	author.Name = b.Creator.Name
-	author.Email = b.Creator.Email
-	return author
-}
-
-func (b *Build) GetCommitAuthor() Author {
-	var author Author
+func (b *Build) GetAuthorName() string {
 	if b.Author == nil {
-		return author
+		return ""
 	}
 
-	author.Name = b.Author.Name
-	author.Email = b.Author.Email
-	return author
+	return b.Author.Name
+}
+
+func (b *Build) GetAuthorEmail() string {
+	if b.Author == nil {
+		return ""
+	}
+
+	return b.Author.Email
 }
 
 func (b *Build) GetWebURL() string {
