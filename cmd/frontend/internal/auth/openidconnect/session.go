@@ -72,6 +72,10 @@ func SignOut(w http.ResponseWriter, r *http.Request, sessionKey string, getProvi
 		return endSessionEndpoint, nil
 	}
 
+	// NOTE: It is absolutely true that it is not ideal to have to create a new SAMS
+	// client upon every sign-out, but since logic here is a low-frequent and
+	// dotcom-specific operation, we can live with it, to avoid cascading
+	// refactorings that doesn't really do any useful in enterprise environment.
 	samsClient, err := sams.NewClientV1(
 		p.config.Issuer,
 		p.config.ClientID,
@@ -90,7 +94,7 @@ func SignOut(w http.ResponseWriter, r *http.Request, sessionKey string, getProvi
 		return "", errors.Wrap(err, "getting SAMS session")
 	}
 	if samsSession.User == nil {
-		// The session is already invalid on the SAMS instance.
+		// The session is already invalidated on the SAMS instance.
 		return endSessionEndpoint, nil
 	}
 
