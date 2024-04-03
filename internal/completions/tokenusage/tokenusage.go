@@ -13,6 +13,11 @@ type Manager struct {
 	Cache *rcache.Cache
 }
 
+type ModelData struct {
+	Description string  `json:"description"`
+	Tokens      float64 `json:"tokens"`
+}
+
 func NewManager() *Manager {
 	return &Manager{
 		Cache: rcache.New("LLMUsage"),
@@ -72,11 +77,11 @@ func (m *Manager) RetrieveAndResetTokenUsageData() (map[string]interface{}, erro
 	}
 
 	// Grouping token usage data under a 'models' key
-	modelsData := make([]map[string]interface{}, 0, len(tokenUsageData))
+	modelsData := make([]ModelData, 0, len(tokenUsageData))
 	for model, tokens := range tokenUsageData {
-		modelData := map[string]interface{}{
-			"description": model, // Assuming 'model' contains the description
-			"tokens":      tokens,
+		modelData := ModelData{
+			Description: model, // Assuming 'model' contains the description
+			Tokens:      tokens,
 		}
 		modelsData = append(modelsData, modelData)
 	}
