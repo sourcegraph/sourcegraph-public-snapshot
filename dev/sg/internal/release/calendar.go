@@ -36,6 +36,7 @@ type CalendarConfig struct {
 }
 
 func generateCalendarEvents(cctx *cli.Context) error {
+	// config path: dev/release/calendar.jsonc
 	configPath := cctx.String("config")
 	if configPath == "" {
 		return errors.New("config path is required")
