@@ -1,8 +1,6 @@
 package bg
 
 import (
-	//nolint:logging // TODO move all logging to sourcegraph/log
-
 	"context"
 	"fmt"
 	"time"
@@ -15,7 +13,6 @@ import (
 
 func ScheduleStoreTokenUsage(ctx context.Context, db database.DB) {
 	for {
-		// Execute StoreTokenUsage
 		err := StoreTokenUsage(ctx, db)
 		if err != nil {
 			fmt.Printf("Error storing token usage: %v\n", err)
