@@ -61,7 +61,7 @@ func Symbols() *monitoring.Dashboard {
 						{
 							Name:        "rockskip_in_flight_search_requests",
 							Description: "number of in-flight search requests",
-							Query:       `src_rockskip_service_in_flight_search_requests`,
+							Query:       `sum(src_rockskip_service_in_flight_search_requests)`,
 							Panel:       monitoring.Panel().Min(0).With(monitoring.PanelOptions.NoLegend()),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							NoAlert:     true,
@@ -73,7 +73,7 @@ func Symbols() *monitoring.Dashboard {
 						{
 							Name:        "rockskip_search_request_errors",
 							Description: "search request errors every 5m",
-							Query:       `increase(src_rockskip_service_search_request_errors[5m])`,
+							Query:       `sum(increase(src_rockskip_service_search_request_errors[5m]))`,
 							Panel:       monitoring.Panel().Min(0).With(monitoring.PanelOptions.NoLegend()),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							NoAlert:     true,
@@ -103,7 +103,7 @@ func Symbols() *monitoring.Dashboard {
 						{
 							Name:        "rockskip_in_flight_index_jobs",
 							Description: "number of in-flight index jobs",
-							Query:       `src_rockskip_service_in_flight_index_jobs`,
+							Query:       `sum(src_rockskip_service_in_flight_index_jobs)`,
 							Panel:       monitoring.Panel().Min(0).With(monitoring.PanelOptions.NoLegend()),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							NoAlert:     true,
@@ -114,7 +114,7 @@ func Symbols() *monitoring.Dashboard {
 						{
 							Name:        "rockskip_index_job_errors",
 							Description: "index job errors every 5m",
-							Query:       `increase(src_rockskip_service_index_job_errors[5m])`,
+							Query:       `sum(increase(src_rockskip_service_index_job_errors[5m]))`,
 							Panel:       monitoring.Panel().Min(0).With(monitoring.PanelOptions.NoLegend()),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							NoAlert:     true,
@@ -129,8 +129,8 @@ func Symbols() *monitoring.Dashboard {
 						{
 							Name:        "rockskip_number_of_repos_indexed",
 							Description: "number of repositories indexed by Rockskip",
-							Query:       `src_rockskip_service_repos_indexed`,
-							Panel:       monitoring.Panel().Min(0).With(monitoring.PanelOptions.NoLegend()),
+							Query:       `max(src_rockskip_service_repos_indexed)`, // "max" is used as hack to show only one value instead one per instance
+							Panel:       monitoring.Panel().With(monitoring.PanelOptions.NoLegend()),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							NoAlert:     true,
 							Interpretation: `

@@ -21353,7 +21353,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100501` o
 Query:
 
 ```
-src_rockskip_service_in_flight_search_requests
+sum(src_rockskip_service_in_flight_search_requests)
 ```
 </details>
 
@@ -21379,7 +21379,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100502` o
 Query:
 
 ```
-increase(src_rockskip_service_search_request_errors[5m])
+sum(increase(src_rockskip_service_search_request_errors[5m]))
 ```
 </details>
 
@@ -21430,7 +21430,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100511` o
 Query:
 
 ```
-src_rockskip_service_in_flight_index_jobs
+sum(src_rockskip_service_in_flight_index_jobs)
 ```
 </details>
 
@@ -21457,7 +21457,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100512` o
 Query:
 
 ```
-increase(src_rockskip_service_index_job_errors[5m])
+sum(increase(src_rockskip_service_index_job_errors[5m]))
 ```
 </details>
 
@@ -21484,7 +21484,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100520` o
 Query:
 
 ```
-src_rockskip_service_repos_indexed
+max(src_rockskip_service_repos_indexed)
 ```
 </details>
 
