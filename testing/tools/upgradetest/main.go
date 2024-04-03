@@ -18,6 +18,7 @@ import (
 // This type is used to assign the stamp version from VERSION
 type stampVersionKey struct{}
 type postReleaseKey struct{}
+type registryKey struct{}
 
 // Register upgrade commands -- see README.md for more details.
 func main() {
@@ -40,6 +41,12 @@ func main() {
 						Name:    "post-release-version",
 						Aliases: []string{"pv"},
 						Usage:   "Select an already released version as the target version for the test suite.",
+					},
+					&cli.StringFlag{
+						Name:        "registry",
+						DefaultText: "sourcegraph/",
+						Usage:       "Registry host and path, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value:       "",
 					},
 					&cli.IntFlag{
 						Name:    "max-routines",
@@ -66,6 +73,7 @@ func main() {
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
 					ctx = context.WithValue(ctx, postReleaseKey{}, cCtx.String("post-release-version"))
+					ctx = context.WithValue(ctx, registryKey{}, cCtx.String("registry"))
 
 					// check docker is running
 					if err := run.Cmd(ctx, "docker", "ps").Run().Wait(); err != nil {
@@ -83,7 +91,7 @@ func main() {
 					var targetMigratorImage string
 					switch {
 					case ctx.Value(postReleaseKey{}) != "":
-						targetMigratorImage = fmt.Sprintf("sourcegraph/migrator:%s", ctx.Value(postReleaseKey{}))
+						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(registryKey{}), ctx.Value(postReleaseKey{}))
 					case ctx.Value(stampVersionKey{}) != "":
 						targetMigratorImage = fmt.Sprintf("migrator:candidate stamped as %s", ctx.Value(stampVersionKey{}))
 					default:
@@ -188,6 +196,12 @@ func main() {
 						Aliases: []string{"pv"},
 						Usage:   "Select an already released version as the target version for the test suite.",
 					},
+					&cli.StringFlag{
+						Name:        "registry",
+						DefaultText: "sourcegraph/",
+						Usage:       "Registry host and path, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value:       "",
+					},
 					&cli.IntFlag{
 						Name:    "max-routines",
 						Aliases: []string{"mr"}, Usage: "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
@@ -219,7 +233,7 @@ func main() {
 					var targetMigratorImage string
 					switch {
 					case ctx.Value(postReleaseKey{}) != "":
-						targetMigratorImage = fmt.Sprintf("sourcegraph/migrator:%s", ctx.Value(postReleaseKey{}))
+						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(registryKey{}), ctx.Value(postReleaseKey{}))
 					case ctx.Value(stampVersionKey{}) != "":
 						targetMigratorImage = fmt.Sprintf("migrator:candidate stamped as %s", ctx.Value(stampVersionKey{}))
 					default:
@@ -280,6 +294,12 @@ func main() {
 						Name:    "post-release-version",
 						Aliases: []string{"pv"},
 						Usage:   "Select an already released version as the target version for the test suite.",
+					},
+					&cli.StringFlag{
+						Name:        "registry",
+						DefaultText: "sourcegraph/",
+						Usage:       "Registry host and path, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value:       "",
 					},
 					&cli.IntFlag{
 						Name:    "max-routines",
@@ -371,6 +391,12 @@ func main() {
 						Name:    "post-release-version",
 						Aliases: []string{"pv"},
 						Usage:   "Select an already released version as the target version for the test suite.",
+					},
+					&cli.StringFlag{
+						Name:        "registry",
+						DefaultText: "sourcegraph/",
+						Usage:       "Registry host and path, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value:       "",
 					},
 					&cli.IntFlag{
 						Name:    "max-routines",

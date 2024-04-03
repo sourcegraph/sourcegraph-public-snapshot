@@ -28,9 +28,9 @@ func standardUpgradeTest(ctx context.Context, initVersion, targetVersion, latest
 	// Use the latest stable migrator for a pre release test, and the target version migrator if testing a released version
 	var migratorImage string
 	if postRelease != "" {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", postRelease)
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(registryKey{}), postRelease)
 	} else {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", latestStableVersion.String())
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(registryKey{}), latestStableVersion.String())
 	}
 
 	// ensure env correctly initialized
@@ -42,7 +42,7 @@ func standardUpgradeTest(ctx context.Context, initVersion, targetVersion, latest
 	test.AddLog("-- ⚙️  performing standard upgrade")
 
 	if postRelease != "" {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", postRelease)
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(registryKey{}), postRelease)
 	} else {
 		migratorImage = "migrator:candidate"
 	}
@@ -58,7 +58,7 @@ func standardUpgradeTest(ctx context.Context, initVersion, targetVersion, latest
 	// Start frontend with candidate
 	var cleanFrontend func()
 	if postRelease != "" {
-		cleanFrontend, err = startFrontend(ctx, test, "sourcegraph/frontend", postRelease, networkName, false, dbs)
+		cleanFrontend, err = startFrontend(ctx, test, fmt.Sprintf("%sfrontend", ctx.Value(registryKey{})), postRelease, networkName, false, dbs)
 	} else {
 		cleanFrontend, err = startFrontend(ctx, test, "frontend", "candidate", networkName, false, dbs)
 	}
@@ -72,7 +72,7 @@ func standardUpgradeTest(ctx context.Context, initVersion, targetVersion, latest
 	test.AddLog("-- ⚙️  post upgrade validation")
 	// Validate the upgrade
 	if postRelease != "" {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", postRelease)
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(registryKey{}), postRelease)
 	} else {
 		migratorImage = "migrator:candidate"
 	}
@@ -101,9 +101,9 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, targetVersion, la
 	// Use the latest stable migrator for a pre release test, and the target version migrator if testing a released version
 	var migratorImage string
 	if postRelease != "" {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", postRelease)
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(registryKey{}), postRelease)
 	} else {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", latestStableVersion.String())
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(registryKey{}), latestStableVersion.String())
 	}
 
 	// ensure env correctly initialized
@@ -124,7 +124,7 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, targetVersion, la
 	}
 	test.AddLog(fmt.Sprintf("-- ⚙️  performing multiversion upgrade (--from %s --to %s)", initVersion.String(), toVersion))
 	if postRelease != "" {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", postRelease)
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(registryKey{}), postRelease)
 	} else {
 		migratorImage = "migrator:candidate"
 	}
@@ -192,9 +192,9 @@ func autoUpgradeTest(ctx context.Context, initVersion, targetVersion, latestStab
 	// Use the latest stable migrator for a pre release test, and the target version migrator if testing a released version
 	var migratorImage string
 	if postRelease != "" {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", postRelease)
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(registryKey{}), postRelease)
 	} else {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", latestStableVersion.String())
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(registryKey{}), latestStableVersion.String())
 	}
 
 	// ensure env correctly initialized
@@ -224,7 +224,7 @@ func autoUpgradeTest(ctx context.Context, initVersion, targetVersion, latestStab
 	test.AddLog("-- ⚙️  post upgrade validation")
 	// Validate the upgrade
 	if postRelease != "" {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", postRelease)
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(registryKey{}), postRelease)
 	} else {
 		migratorImage = "migrator:candidate"
 	}

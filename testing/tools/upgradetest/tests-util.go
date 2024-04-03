@@ -257,7 +257,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 			"--name", db.ContainerName,
 			"--network", networkName,
 			"-p", "5432",
-			fmt.Sprintf("sourcegraph/%s:%s", db.Image, initVersion),
+			fmt.Sprintf("%s%s:%s", ctx.Value(registryKey{}), db.Image, initVersion),
 		).Run().Wait()
 		if err != nil {
 			test.AddError(errors.Newf("🚨 failed to create test databases: %s", err))
@@ -313,7 +313,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 
 	// Initialize the databases by running migrator with the `up` command.
 	test.LogLines = append(test.LogLines, "-- 🏗️  initializing database schemas with migrator")
-	out, err = run.Cmd(ctx, dockerMigratorBaseString(test, "up", fmt.Sprintf("sourcegraph/migrator:%s", initVersion), networkName, dbs)...).Run().String()
+	out, err = run.Cmd(ctx, dockerMigratorBaseString(test, "up", fmt.Sprintf("%smigrator:%s", ctx.Value(registryKey{}), initVersion), networkName, dbs)...).Run().String()
 	if err != nil {
 		test.AddError(errors.Newf("🚨 failed to initialize database: %w", err))
 	}
@@ -346,7 +346,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 
 	//start frontend and poll db until initial version is set by frontend
 	var cleanFrontend func()
-	cleanFrontend, err = startFrontend(ctx, test, "sourcegraph/frontend", initVersion.String(), networkName, false, dbs)
+	cleanFrontend, err = startFrontend(ctx, test, fmt.Sprintf("%sfrontend", ctx.Value(registryKey{})), initVersion.String(), networkName, false, dbs)
 	if err != nil {
 		test.AddError(errors.Newf("🚨 failed to start frontend: %w", err))
 	}
