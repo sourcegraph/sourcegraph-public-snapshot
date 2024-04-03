@@ -566,7 +566,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.22
 	github.com/pandatix/go-cvss v0.5.2
-	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
+	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/profile v1.7.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
