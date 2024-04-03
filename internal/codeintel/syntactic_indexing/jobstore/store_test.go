@@ -1,4 +1,4 @@
-package shared
+package jobstore
 
 import (
 	"context"
@@ -28,8 +28,9 @@ func TestIndexingWorkerStore(t *testing.T) {
 	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(observationContext.Logger, sqlDB)
 
-	store, err := NewStore(observationContext, sqlDB)
+	jobStore, err := NewStoreWithDB(observationContext, sqlDB)
 	require.NoError(t, err, "unexpected error creating dbworker stores")
+	store := jobStore.DBWorkerStore()
 
 	ctx := context.Background()
 
