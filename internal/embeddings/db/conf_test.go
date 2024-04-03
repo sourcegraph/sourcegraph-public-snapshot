@@ -47,6 +47,7 @@ func TestNewDBFromConfFunc(t *testing.T) {
 		getDB := NewDBFromConfFunc(logtest.Scoped(t), nil)
 		got, err := getDB()
 		require.NoError(t, err)
+		// this will be nil because embeddings are always disabled
 		require.Nil(t, got)
 	})
 }
