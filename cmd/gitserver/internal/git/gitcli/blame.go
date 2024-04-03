@@ -187,7 +187,7 @@ func parseExtra(hunk *gitdomain.Hunk, annotation []byte, content []byte) (ok boo
 	case "filename":
 		hunk.Filename = string(content)
 	case "previous":
-		hunk.Previous = api.CommitID(content)
+		hunk.PreviousCommitID = api.CommitID(content)
 	case "boundary":
 	default:
 		// If it doesn't look like an entry, it's probably an unhandled git blame

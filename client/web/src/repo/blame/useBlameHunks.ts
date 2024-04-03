@@ -31,6 +31,7 @@ export interface BlameHunk {
     endLine: number
     message: string
     rev: string
+    previousFilename: string
     author: {
         date: string
         person: {
@@ -141,6 +142,7 @@ const fetchBlameViaStreaming = memoizeObservable(
                                     endLine: rawHunk.endLine,
                                     message: rawHunk.message,
                                     rev: rawHunk.commitID,
+                                    previousFilename: rawHunk.filename,
                                     author: {
                                         date: rawHunk.author.Date,
                                         person: {

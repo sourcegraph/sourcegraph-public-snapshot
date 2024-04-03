@@ -105,8 +105,8 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 			}
 
 			var parents []api.CommitID
-			if len(h.Previous) != 0 {
-				parents = append(parents, h.Previous)
+			if len(h.PreviousCommitID) != 0 {
+				parents = append(parents, h.PreviousCommitID)
 			}
 
 			blameResponse := BlameHunkResponse{
