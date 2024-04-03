@@ -3,11 +3,15 @@ import { join } from 'path'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { defineConfig, mergeConfig, type UserConfig } from 'vite'
 import inspect from 'vite-plugin-inspect'
+import type { UserConfig as VitestUserConfig } from 'vitest'
 
 import graphqlCodegen from './dev/vite-graphql-codegen'
 
 export default defineConfig(({ mode }) => {
-    let config: UserConfig = {
+    // Using & VitestUserConfig shouldn't be necessary but without it `svelte-check` complains when run
+    // in bazel. It's not clear what needs to be done to make it work without it, just like it does
+    // locally.
+    let config: UserConfig & VitestUserConfig = {
         plugins: [
             sveltekit(),
             // Generates typescript types for gql-tags and .gql files
