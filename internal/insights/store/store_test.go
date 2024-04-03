@@ -1009,10 +1009,6 @@ func TestRepoPermissionsBulk(t *testing.T) {
 
 		permissionStore.GetUnauthorizedRepoIDsQueryFunc.SetDefaultReturn(sqlf.Sprintf("SELECT * FROM repo WHERE true"), nil)
 
-		// On Apple M3 Max this test takes ~1s per 2_000 records. This means ~30s for 60_000 records.
-		// It seems to be the same no matter if we send one big query or thousands of individual ones.
-		// About 90% goes to the INSERTs, and 10% to the DELETE query.
-
 		repoCount := 100_000
 		var repoValues []string
 		for i := 0; i < repoCount; i++ {
