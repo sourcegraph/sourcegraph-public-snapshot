@@ -60,7 +60,7 @@ func TestLargeAmountOfFailures(t *testing.T) {
 		BuildNumber:        num,
 		ConsecutiveFailure: 0,
 		PipelineName:       pipelineID,
-		AuthorName:         "william.bezuidenhout@sourcegraph.com",
+		AuthorEmail:        "william.bezuidenhout@sourcegraph.com",
 		Message:            msg,
 		Commit:             commit,
 		BuildURL:           url,
@@ -433,8 +433,7 @@ func TestServerNotify(t *testing.T) {
 	conf := config.Config{
 		BuildkiteToken: os.Getenv("BUILDKITE_WEBHOOK_TOKEN"),
 		SlackToken:     os.Getenv("SLACK_TOKEN"),
-		// GithubToken:    os.Getenv("GITHUB_TOKEN"),
-		SlackChannel: os.Getenv("SLACK_CHANNEL"),
+		SlackChannel:   os.Getenv("SLACK_CHANNEL"),
 	}
 
 	server := NewServer(":8080", logger, conf)
