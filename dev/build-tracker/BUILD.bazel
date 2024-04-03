@@ -96,10 +96,9 @@ oci_push(
     repository = image_repository("build-tracker"),
 )
 
-# automatic deployment not enabled for initial testing
-# msp_delivery(
-#     name = "msp_deploy",
-#     gcp_project = "build-tracker-prod-59bf",
-#     msp_service_id = "build-tracker",
-#     repository = "us.gcr.io/sourcegraph-dev/build-tracker",
-# )
+msp_delivery(
+    name = "msp_deploy",
+    gcp_project = "build-tracker-prod-59bf",
+    msp_service_id = "build-tracker",
+    repository = "us.gcr.io/sourcegraph-dev/build-tracker",
+)
