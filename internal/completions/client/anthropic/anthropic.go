@@ -142,11 +142,7 @@ func (a *anthropicClient) Stream(
 		}
 
 	}
-	if dec.Err() != nil {
-		return dec.Err()
-	}
-
-	return nil
+	return dec.Err()
 }
 
 func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, stream bool) (*http.Response, error) {
