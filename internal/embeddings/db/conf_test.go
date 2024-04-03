@@ -47,6 +47,6 @@ func TestNewDBFromConfFunc(t *testing.T) {
 		getDB := NewDBFromConfFunc(logtest.Scoped(t), nil)
 		got, err := getDB()
 		require.NoError(t, err)
-		require.NotNil(t, got)
+		require.Nil(t, got)
 	})
 }

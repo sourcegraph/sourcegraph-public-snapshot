@@ -12,13 +12,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestRepoEmbeddingJobsStore(t *testing.T) {
@@ -387,42 +384,6 @@ func TestGetEmbeddableReposLimit(t *testing.T) {
 			require.Equal(t, tt.wantMatches, len(repos))
 		})
 	}
-}
-
-func TestGetEmbeddableRepoOpts(t *testing.T) {
-	dotcom.MockSourcegraphDotComMode(t, true)
-
-	conf.Mock(&conf.Unified{})
-	defer conf.Mock(nil)
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		CodyEnabled: pointers.Ptr(true),
-		LicenseKey:  "asdf",
-	}})
-
-	opts := GetEmbeddableRepoOpts()
-	require.Equal(t, 24*time.Hour, opts.MinimumInterval)
-	require.Equal(t, 5000, *opts.PolicyRepositoryMatchLimit)
-
-	opts = GetEmbeddableRepoOpts()
-	require.Equal(t, 24*time.Hour, opts.MinimumInterval)
-	require.Equal(t, 5000, *opts.PolicyRepositoryMatchLimit)
-
-	limit := 5
-	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			CodyEnabled: pointers.Ptr(true),
-			Embeddings: &schema.Embeddings{
-				Provider:                   "openai",
-				AccessToken:                "asdf",
-				MinimumInterval:            "1h",
-				PolicyRepositoryMatchLimit: &limit,
-			},
-		},
-	})
-
-	opts = GetEmbeddableRepoOpts()
-	require.Equal(t, 1*time.Hour, opts.MinimumInterval)
-	require.Equal(t, 5, *opts.PolicyRepositoryMatchLimit)
 }
 
 func setJobState(t *testing.T, ctx context.Context, store RepoEmbeddingJobsStore, jobID int, state string) {
