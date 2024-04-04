@@ -421,6 +421,3 @@ ALTER TABLE ONLY codeintel_scip_document_lookup
 
 ALTER TABLE ONLY codeintel_scip_symbols
     ADD CONSTRAINT codeintel_scip_symbols_document_lookup_id_fk FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE;
-
-REVOKE USAGE ON SCHEMA public FROM PUBLIC;
-GRANT ALL ON SCHEMA public TO PUBLIC;
