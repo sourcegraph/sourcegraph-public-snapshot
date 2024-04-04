@@ -2029,15 +2029,23 @@ func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName, opt
 		req.ContainsSha = pointers.Ptr(string(opt.Contains))
 	}
 
-	resp, err := client.ListRefs(ctx, req)
+	cc, err := client.ListRefs(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
-	refs := make([]gitdomain.Ref, 0, len(resp.GetRefs()))
-
-	for _, ref := range resp.GetRefs() {
-		refs = append(refs, gitdomain.RefFromProto(ref))
+	refs := make([]gitdomain.Ref, 0)
+	for {
+		resp, err := cc.Recv()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, err
+		}
+		for _, ref := range resp.GetRefs() {
+			refs = append(refs, gitdomain.RefFromProto(ref))
+		}
 	}
 
 	return refs, nil

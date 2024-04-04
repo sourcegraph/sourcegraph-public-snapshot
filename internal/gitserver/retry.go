@@ -150,7 +150,7 @@ func (r *automaticRetryClient) ReadFile(ctx context.Context, in *proto.ReadFileR
 	return r.base.ReadFile(ctx, in, opts...)
 }
 
-func (r *automaticRetryClient) ListRefs(ctx context.Context, in *proto.ListRefsRequest, opts ...grpc.CallOption) (*proto.ListRefsResponse, error) {
+func (r *automaticRetryClient) ListRefs(ctx context.Context, in *proto.ListRefsRequest, opts ...grpc.CallOption) (proto.GitserverService_ListRefsClient, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.ListRefs(ctx, in, opts...)
 }
