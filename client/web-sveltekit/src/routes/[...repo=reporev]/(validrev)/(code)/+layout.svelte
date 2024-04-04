@@ -1,7 +1,5 @@
 <script lang="ts">
-    import { tick } from 'svelte'
-
-    import { afterNavigate, disableScrollHandling, goto } from '$app/navigation'
+    import { goto } from '$app/navigation'
     import { page } from '$app/stores'
     import { isErrorLike } from '$lib/common'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
@@ -24,7 +22,6 @@
     interface Capture {
         selectedTab: number | null
         historyPanel: HistoryCapture
-        scrollTop: number
     }
 
     export let data: LayoutData
@@ -34,18 +31,10 @@
             return {
                 selectedTab,
                 historyPanel: historyPanel?.capture(),
-                // This works because this specific page is fully scrollable
-                scrollTop: window.scrollY,
             }
         },
         async restore(data) {
             selectedTab = data.selectedTab
-            // Wait until DOM was updated
-            await tick()
-            // `restore` is called before `afterNavigate`, which resets the scroll position
-            // Restore the scroll position after the componentent was updated
-            window.scrollTo(0, data.scrollTop)
-
             // Restore history panel state if it is open
             if (data.historyPanel) {
                 historyPanel?.restore(data.historyPanel)
@@ -65,7 +54,6 @@
     const fileTreeStore = createFileTreeStore({ fetchFileTreeData: fetchSidebarFileTree })
     let selectedTab: number | null = null
     let historyPanel: HistoryPanel
-    let rootElement: HTMLElement | null = null
     let commitHistory: GitHistory_HistoryConnection | null
     let lastCommit: LastCommitFragment | null
 
@@ -92,31 +80,9 @@
 
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
     $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
-
-    afterNavigate(() => {
-        // When navigating to a new page we want to ensure two things:
-        // - The file sidebar doesn't move. It feels bad when you clicked on a file entry
-        //   and the click target moves away because the page is scrolled all the way to the top.
-        // - The beginning of the content should be visible (e.g. the top of the file or the
-        //   top of the file table).
-        // In other words, we want to scroll to the top but not all the way
-
-        // Prevents SvelteKit from resetting the scroll position to the very top of the page
-        disableScrollHandling()
-
-        if (rootElement) {
-            // Because the whole page is scrollable we can get the current scroll position from
-            // the window object
-            const top = rootElement.offsetTop
-            if (window.scrollY > top) {
-                // Reset scroll to top of the content
-                window.scrollTo(0, top)
-            }
-        }
-    })
 </script>
 
-<section bind:this={rootElement}>
+<section>
     <div class="sidebar" class:open={$sidebarOpen} style:min-width={sidebarWidth} style:max-width={sidebarWidth}>
         <h3>
             <SidebarToggleButton />&nbsp; Files
@@ -138,7 +104,9 @@
         <Separator currentPosition={sidebarSize} />
     {/if}
     <div class="main">
-        <slot />
+        <div class="slot">
+            <slot />
+        </div>
         <div class="bottom-panel" class:open={selectedTab !== null}>
             <Tabs selected={selectedTab} toggable on:select={selectTab}>
                 <TabPanel title="History">
@@ -188,6 +156,10 @@
         display: flex;
         flex-direction: column;
         min-width: 0;
+        .slot {
+            flex: 1;
+            min-height: 0;
+        }
     }
 
     h3 {
@@ -206,6 +178,7 @@
         overflow: hidden;
         display: flex;
         flex-flow: row nowrap;
+        flex-shrink: 0;
         justify-content: space-between;
         padding-right: 0.5rem;
 

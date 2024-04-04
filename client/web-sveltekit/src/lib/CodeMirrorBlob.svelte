@@ -28,6 +28,11 @@
         languages: string[]
     }
 
+    export interface Capture {
+        scrollTop: number
+        scrollLeft: number
+    }
+
     const extensionsCompartment = new Compartment()
 
     const defaultTheme = EditorView.theme({
@@ -153,6 +158,19 @@
 
     let editor: EditorView
     let container: HTMLDivElement | null = null
+
+    export function capture(): Capture {
+        return {
+            scrollTop: editor.scrollDOM.scrollTop,
+            scrollLeft: editor.scrollDOM.scrollLeft,
+        }
+    }
+
+    export function restore(data: Capture) {
+        console.log({ data, scrollDOM: editor.scrollDOM })
+        editor.scrollDOM.scrollTop = data.scrollTop
+        editor.scrollDOM.scrollLeft = data.scrollLeft
+    }
 
     const lineNumbers = selectableLineNumbers({
         onSelection(range) {

@@ -3,10 +3,11 @@
 <script lang="ts">
     import { mdiCodeBracesBox, mdiFileCodeOutline, mdiMapSearch } from '@mdi/js'
     import { from } from 'rxjs'
+    import { tick } from 'svelte'
 
     import { goto } from '$app/navigation'
     import { page } from '$app/stores'
-    import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
+    import CodeMirrorBlob, { type Capture as BlobCapture } from '$lib/CodeMirrorBlob.svelte'
     import { isErrorLike, SourcegraphURL, type LineOrPositionOrRange } from '$lib/common'
     import { toGraphQLResult } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
@@ -19,7 +20,7 @@
     import { Alert } from '$lib/wildcard'
     import markdownStyles from '$lib/wildcard/Markdown.module.scss'
 
-    import type { PageData } from './$types'
+    import type { PageData, Snapshot } from './$types'
     import FormatAction from './FormatAction.svelte'
     import WrapLinesAction, { lineWrap } from './WrapLinesAction.svelte'
 
@@ -27,6 +28,24 @@
 
     const combinedBlobData = createBlobDataHandler()
     let selectedPosition: LineOrPositionOrRange | null = null
+
+    interface Capture {
+        codemirror?: BlobCapture
+    }
+
+    let codeMirrorBlob: CodeMirrorBlob | undefined
+    export const snapshot: Snapshot<Capture> = {
+        capture(): Capture {
+            return {
+                codemirror: codeMirrorBlob?.capture(),
+            }
+        },
+        restore(data: Capture) {
+            if (codeMirrorBlob && data.codemirror) {
+                codeMirrorBlob.restore(data.codemirror)
+            }
+        },
+    }
 
     $: ({
         revision,
@@ -48,6 +67,7 @@
             return from(graphQLClient.query(options.request, options.variables).then(toGraphQLResult))
         },
     })
+
     $: if (!blobPending) {
         // Update selected position as soon as blob is loaded
         selectedPosition = SourcegraphURL.from($page.url).lineRange
@@ -58,83 +78,91 @@
     <title>{filePath} - {data.displayRepoName} - Sourcegraph</title>
 </svelte:head>
 
-<FileHeader>
-    <Icon slot="icon" svgPath={data.compare ? mdiCodeBracesBox : mdiFileCodeOutline} />
-    <svelte:fragment slot="actions">
-        {#if data.compare}
-            <span>{data.compare.revisionToCompare}</span>
-        {:else}
-            {#if !formatted || showRaw}
-                <WrapLinesAction />
-            {/if}
-            {#if formatted}
-                <FormatAction />
-            {/if}
-            <Permalink {commitID} />
-        {/if}
-    </svelte:fragment>
-</FileHeader>
-
-<div class="content" class:loading={blobPending} class:compare={!!data.compare} class:fileNotFound>
-    {#if !$combinedBlobData.highlightsPending && $combinedBlobData.highlightsError}
-        <Alert variant="danger">
-            Unable to load syntax highlighting: {$combinedBlobData.highlightsError.message}
-        </Alert>
-    {/if}
-    {#if data.compare}
-        {#await data.compare.diff}
-            <LoadingSpinner />
-        {:then fileDiff}
-            {#if fileDiff}
-                <FileDiff {fileDiff} />
+<div class="root">
+    <FileHeader>
+        <Icon slot="icon" svgPath={data.compare ? mdiCodeBracesBox : mdiFileCodeOutline} />
+        <svelte:fragment slot="actions">
+            {#if data.compare}
+                <span>{data.compare.revisionToCompare}</span>
             {:else}
-                Unable to load iff
+                {#if !formatted || showRaw}
+                    <WrapLinesAction />
+                {/if}
+                {#if formatted}
+                    <FormatAction />
+                {/if}
+                <Permalink {commitID} />
             {/if}
-        {/await}
-    {:else if blob}
-        {#if blob.richHTML && !showRaw}
-            <div class="rich-scroller">
-                <div class={`rich-content ${markdownStyles.markdown}`}>
-                    {@html blob.richHTML}
-                </div>
-            </div>
-        {:else}
-            <CodeMirrorBlob
-                blobInfo={{
-                    ...blob,
-                    revision: revision ?? '',
-                    commitID,
-                    repoName: repoName,
-                    filePath,
-                }}
-                {highlights}
-                wrapLines={$lineWrap}
-                selectedLines={selectedPosition?.line ? selectedPosition : null}
-                on:selectline={({ detail: range }) => {
-                    goto(
-                        SourcegraphURL.from($page.url.searchParams)
-                            .setLineRange(range ? { line: range.line, endLine: range.endLine } : null)
-                            .deleteSearchParameter('popover').search
-                    )
-                }}
-                {codeIntelAPI}
-            />
-        {/if}
-    {:else if !blobPending}
-        {#if fileLoadingError}
+        </svelte:fragment>
+    </FileHeader>
+
+    <div class="content" class:loading={blobPending} class:compare={!!data.compare} class:fileNotFound>
+        {#if !$combinedBlobData.highlightsPending && $combinedBlobData.highlightsError}
             <Alert variant="danger">
-                Unable to load file data: {fileLoadingError.message}
+                Unable to load syntax highlighting: {$combinedBlobData.highlightsError.message}
             </Alert>
-        {:else if fileNotFound}
-            <div class="circle">
-                <Icon svgPath={mdiMapSearch} size={80} />
-            </div>
-            <h2>File not found</h2>
         {/if}
-    {/if}
+        {#if data.compare}
+            {#await data.compare.diff}
+                <LoadingSpinner />
+            {:then fileDiff}
+                {#if fileDiff}
+                    <FileDiff {fileDiff} />
+                {:else}
+                    Unable to load diff
+                {/if}
+            {/await}
+        {:else if blob}
+            {#if blob.richHTML && !showRaw}
+                <div class="rich-scroller">
+                    <div class={`rich-content ${markdownStyles.markdown}`}>
+                        {@html blob.richHTML}
+                    </div>
+                </div>
+            {:else}
+                <CodeMirrorBlob
+                    bind:this={codeMirrorBlob}
+                    blobInfo={{
+                        ...blob,
+                        revision: revision ?? '',
+                        commitID,
+                        repoName: repoName,
+                        filePath,
+                    }}
+                    {highlights}
+                    wrapLines={$lineWrap}
+                    selectedLines={selectedPosition?.line ? selectedPosition : null}
+                    on:selectline={({ detail: range }) => {
+                        goto(
+                            SourcegraphURL.from($page.url.searchParams)
+                                .setLineRange(range ? { line: range.line, endLine: range.endLine } : null)
+                                .deleteSearchParameter('popover').search
+                        )
+                    }}
+                    {codeIntelAPI}
+                />
+            {/if}
+        {:else if !blobPending}
+            {#if fileLoadingError}
+                <Alert variant="danger">
+                    Unable to load file data: {fileLoadingError.message}
+                </Alert>
+            {:else if fileNotFound}
+                <div class="circle">
+                    <Icon svgPath={mdiMapSearch} size={80} />
+                </div>
+                <h2>File not found</h2>
+            {/if}
+        {/if}
+    </div>
 </div>
 
 <style lang="scss">
+    .root {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
     .content {
         display: flex;
         flex-direction: column;
@@ -160,6 +188,7 @@
         &-scroller {
             padding: 2rem;
             overflow: auto;
+            min-height: 0;
         }
         &-content {
             max-width: 50rem;
