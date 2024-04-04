@@ -41,9 +41,8 @@
     <div slot="title">
         <!-- #key is needed here to recreate the link because use:highlightRanges changes the DOM -->
         {#key repositoryMatches}
-            <a href={repoAtRevisionURL} use:highlightRanges={{ ranges: repositoryMatches }}>
-                {displayRepoName(result.repository)}
-                <small>@ {rev ? `${rev}` : ''}</small>
+            <a class="repo-link" href={repoAtRevisionURL} use:highlightRanges={{ ranges: repositoryMatches }}>
+                {displayRepoName(result.repository)} <small class="rev"> @ {rev ? `${rev}` : ''}</small>
             </a>
         {/key}
         {#if result.fork}
@@ -104,6 +103,14 @@
 
         code {
             color: var(--search-filter-keyword-color);
+        }
+    }
+
+    .repo-link {
+        color: var(--text-body);
+
+        .rev {
+            color: var(--text-muted);
         }
     }
 

@@ -18,6 +18,7 @@
     $: fileURL = getFileMatchUrl(result)
     $: repoName = displayRepoName(result.repository)
     $: [fileBase, fileName] = splitPath(result.path)
+    $: rev = result.branches?.[0]
 
     $: matches =
         result.type !== 'symbol' && result.pathMatches
@@ -25,13 +26,18 @@
             : []
 </script>
 
-<a href={repoAtRevisionURL}>{repoName}</a>
-<span aria-hidden={true}>&nbsp;›&nbsp;</span>
+<a class="repo-link" href={repoAtRevisionURL}>
+    {repoName}
+    {#if rev}
+        <span class="rev-tag">@ <small class="rev">{rev}</small></span>
+    {/if}
+</a>
+<span class="interpunct" aria-hidden={true}>⋅</span>
 <!-- #key is needed here to recreate the link because use:highlightNode changes the DOM -->
 <span class="root">
     {#key result}
         <a href={fileURL} use:highlightRanges={{ ranges: matches }}>
-            {#if fileBase}{fileBase}/{/if}<strong>{fileName}</strong>
+            {#if fileBase}{fileBase}/{/if}<span class="file-name">{fileName}</span>
         </a>
     {/key}
     <CopyPathButton path={result.path} />
@@ -42,5 +48,31 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        font-family: var(--code-font-family);
+        font-size: var(--code-font-size);
+        a {
+            color: var(--text-body);
+        }
+    }
+
+    .interpunct {
+        margin: 0 0.5rem;
+        color: var(--text-disabled);
+    }
+
+    .repo-link {
+        color: var(--text-body);
+    }
+
+    .file-name {
+        font-weight: 600;
+    }
+
+    .rev {
+        &-tag {
+            color: var(--text-muted);
+        }
+        background-color: var(--color-bg-2);
+        padding: 0.25rem;
     }
 </style>
