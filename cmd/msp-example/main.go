@@ -7,5 +7,5 @@ import (
 )
 
 func main() {
-	runtime.Start[example.Config](example.Service{})
+	runtime.Start(example.Service{})
 }
