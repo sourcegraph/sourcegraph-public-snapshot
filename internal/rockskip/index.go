@@ -4,12 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/amit7itz/goset"
 	pg "github.com/lib/pq"
 	"k8s.io/utils/lru"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -17,8 +19,16 @@ import (
 )
 
 func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err error) {
+	s.metrics.indexRunning.Inc()
 	threadStatus := s.status.NewThreadStatus(fmt.Sprintf("indexing %s@%s", repo, givenCommit))
-	defer threadStatus.End()
+	defer func(start time.Time) {
+		threadStatus.End()
+		s.metrics.indexRunning.Dec()
+		if err != nil {
+			s.metrics.indexFailed.Inc()
+		}
+		s.metrics.indexDuration.Observe(time.Since(start).Seconds())
+	}(time.Now())
 
 	tasklog := threadStatus.Tasklog
 
