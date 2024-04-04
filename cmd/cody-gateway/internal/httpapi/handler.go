@@ -176,8 +176,8 @@ func NewHandler(
 		registerSimpleGETEndpoint("v1.embeddings.models", "/embeddings/models", embeddings.NewListHandler())
 
 		factoryMap := embeddings.ModelFactoryMap{
-			embeddings.ModelNameOpenAIAda:         embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
-			embeddings.ModelNameSourcegraphTriton: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.TritonURL),
+			embeddings.ModelNameOpenAIAda:            embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
+			embeddings.ModelNameSourcegraphSTMultiQA: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.SMEGAURL),
 		}
 		embeddingsHandler := embeddings.NewHandler(
 			logger,
@@ -198,7 +198,7 @@ func NewHandler(
 
 		if config.Sourcegraph.UnlimitedEmbeddings {
 			// Register an endpoint for Triton embeddings that does not implement rate limiting.
-			unlimitedHandler := embeddings.NewUnlimitedHandler(logger, eventLogger, factoryMap, []string{string(embeddings.ModelNameSourcegraphTriton)})
+			unlimitedHandler := embeddings.NewUnlimitedHandler(logger, eventLogger, factoryMap, []string{string(embeddings.ModelNameSourcegraphSTMultiQA)})
 			registerStandardEndpoint(
 				"v1.embeddings-unlimited",
 				"/embeddings-unlimited",
