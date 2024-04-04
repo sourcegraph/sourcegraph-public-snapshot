@@ -910,13 +910,13 @@ func Start(logger log.Logger, db database.DB) {
 	}
 	started = true
 
-	const delay = 5 * time.Minute
+	const delay = 30 * time.Minute
 	scopedLog := logger.Scoped("updatecheck")
 	for {
 		check(scopedLog, db)
 
 		// Randomize sleep to prevent thundering herds.
-		randomDelay := time.Duration(rand.Intn(10)) * time.Second
+		randomDelay := time.Duration(rand.Intn(600)) * time.Second
 		time.Sleep(delay + randomDelay)
 	}
 }
