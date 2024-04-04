@@ -41,7 +41,10 @@ import (
 
 // Contract loads standardized MSP-provisioned (Managed Services Platform)
 // configuration. Most configuration is sourced from environment variables -
-// refer to each "sub-contract"'s docstrings for more details.
+// refer to each "sub-contract"'s docstrings for more details. All environment
+// variables referenced as part of the MSP contract, including whether they
+// are required or not and their defaults, are reported when running a service
+// using the MSP runtime with the '-help' flag.
 //
 // The "sub-contract" types (e.g. Contract.PostgreSQL's type being the private
 // postgreSQLContract) are intentionally unavailable to callers, despite being
@@ -95,7 +98,8 @@ type ServiceMetadataProvider interface {
 	// Version should indicate the stamped version of the running service
 	// program. It is implementation-dependent - the value gets included in
 	// logs, traces, error reports, and so on, so choose any format that is
-	// operationally useful.
+	// operationally useful. It is also reported when running a service using
+	// the MSP runtime with the '-help' flag.
 	Version() string
 }
 
