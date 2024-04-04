@@ -40,7 +40,20 @@ import (
 )
 
 // Contract loads standardized MSP-provisioned (Managed Services Platform)
-// configuration.
+// configuration. Most configuration is sourced from environment variables -
+// refer to each "sub-contract"'s docstrings for more details.
+//
+// The "sub-contract" types (e.g. Contract.PostgreSQL's type being the private
+// postgreSQLContract) are intentionally unavailable to callers, despite being
+// exported on Contract. This is intentional: callers should not be passing
+// around the sub-contract types directly, as they are implementation details.
+// Instead, prefer to create your own parameterizations or create useful types
+// (for example, open a PostgreSQL connection), and pass that around instead.
+// Even though these types are not exported, their respective exported methods
+// and properties are.
+//
+// For help with the Contract type, and the contract package in general, please
+// refer to the package docs or reach out to #discuss-core-services directly.
 type Contract struct {
 	// MSP indicates if we are running in a live Managed Services Platform
 	// environment. In local development, this should generally be false.
