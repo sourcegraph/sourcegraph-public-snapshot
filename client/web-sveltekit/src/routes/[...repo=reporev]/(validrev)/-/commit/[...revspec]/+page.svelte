@@ -1,14 +1,15 @@
 <script lang="ts">
+    import { get } from 'svelte/store'
+
+    import { navigating } from '$app/stores'
     import Commit from '$lib/Commit.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-
-    import type { PageData, Snapshot } from './$types'
     import FileDiff from '$lib/repo/FileDiff.svelte'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
-    import { get } from 'svelte/store'
-    import { navigating } from '$app/stores'
-    import type { CommitPage_DiffConnection } from './page.gql'
     import { Alert } from '$lib/wildcard'
+
+    import type { PageData, Snapshot } from './$types'
+    import type { CommitPage_DiffConnection } from './page.gql'
 
     interface Capture {
         scroll: ScrollerCapture
@@ -96,6 +97,7 @@
 <style lang="scss">
     section {
         overflow: auto;
+        height: 100%;
     }
 
     .header {

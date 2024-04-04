@@ -1,15 +1,15 @@
 <script lang="ts">
     import { goto } from '$app/navigation'
     import { page } from '$app/stores'
+    import Avatar from '$lib/Avatar.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Paginator from '$lib/Paginator.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
-    import Avatar from '$lib/Avatar.svelte'
     import { createPromiseStore } from '$lib/utils'
     import { Alert, Button, ButtonGroup } from '$lib/wildcard'
-    import type { ContributorConnection } from './page.gql'
 
     import type { PageData } from './$types'
+    import type { ContributorConnection } from './page.gql'
 
     export let data: PageData
 
@@ -122,8 +122,9 @@
 
 <style lang="scss">
     section {
+        height: 100%;
         overflow: auto;
-        margin-top: 2rem;
+        padding-top: 2rem;
     }
 
     div.root {

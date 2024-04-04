@@ -40,14 +40,15 @@
 </section>
 
 <style lang="scss">
+    section {
+        height: 100%;
+        overflow: auto;
+        padding-top: 2rem;
+    }
+
     table {
         width: 100%;
         border-spacing: 0;
-    }
-
-    section {
-        overflow: auto;
-        margin-top: 2rem;
     }
 
     div {

@@ -36,7 +36,8 @@
 
     section {
         overflow: auto;
-        margin-top: 2rem;
+        height: 100%;
+        padding-top: 2rem;
     }
 
     div {

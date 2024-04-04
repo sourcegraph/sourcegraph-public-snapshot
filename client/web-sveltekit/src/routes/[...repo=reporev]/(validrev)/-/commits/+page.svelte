@@ -1,12 +1,13 @@
 <script lang="ts">
-    import Commit from '$lib/Commit.svelte'
+    import { get } from 'svelte/store'
 
-    import type { PageData, Snapshot } from './$types'
+    import { navigating } from '$app/stores'
+    import Commit from '$lib/Commit.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
-    import { get } from 'svelte/store'
-    import { navigating } from '$app/stores'
     import { Alert } from '$lib/wildcard'
+
+    import type { PageData, Snapshot } from './$types'
     import type { CommitsPage_GitCommitConnection } from './page.gql'
 
     export let data: PageData
@@ -80,9 +81,8 @@
 
 <style lang="scss">
     section {
-        flex: 1;
-        min-height: 0;
         overflow: hidden;
+        height: 100%;
     }
 
     ul,
