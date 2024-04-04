@@ -18,7 +18,7 @@
    "Sources": {
     "extsvc:gerrit:0": {
      "ID": "extsvc:gerrit:0",
-     "CloneURL": "https://gerrit.sgdev.org/a/a/gabe/repo"
+     "CloneURL": "ssh://gerrit-ssh.sgdev.org:29418/a/gabe/repo"
     }
    },
    "Metadata": {
@@ -52,7 +52,7 @@
    "Sources": {
     "extsvc:gerrit:0": {
      "ID": "extsvc:gerrit:0",
-     "CloneURL": "https://gerrit.sgdev.org/a/batch-changes-test-repo"
+     "CloneURL": "ssh://gerrit-ssh.sgdev.org:29418/batch-changes-test-repo"
     }
    },
    "Metadata": {
@@ -86,7 +86,7 @@
    "Sources": {
     "extsvc:gerrit:0": {
      "ID": "extsvc:gerrit:0",
-     "CloneURL": "https://gerrit.sgdev.org/a/beatrix"
+     "CloneURL": "ssh://gerrit-ssh.sgdev.org:29418/beatrix"
     }
    },
    "Metadata": {
@@ -120,7 +120,7 @@
    "Sources": {
     "extsvc:gerrit:0": {
      "ID": "extsvc:gerrit:0",
-     "CloneURL": "https://gerrit.sgdev.org/a/cbart-test"
+     "CloneURL": "ssh://gerrit-ssh.sgdev.org:29418/cbart-test"
     }
    },
    "Metadata": {
@@ -154,7 +154,7 @@
    "Sources": {
     "extsvc:gerrit:0": {
      "ID": "extsvc:gerrit:0",
-     "CloneURL": "https://gerrit.sgdev.org/a/gabe"
+     "CloneURL": "ssh://gerrit-ssh.sgdev.org:29418/gabe"
     }
    },
    "Metadata": {
@@ -188,7 +188,7 @@
    "Sources": {
     "extsvc:gerrit:0": {
      "ID": "extsvc:gerrit:0",
-     "CloneURL": "https://gerrit.sgdev.org/a/gabe/test"
+     "CloneURL": "ssh://gerrit-ssh.sgdev.org:29418/gabe/test"
     }
    },
    "Metadata": {
@@ -222,7 +222,7 @@
    "Sources": {
     "extsvc:gerrit:0": {
      "ID": "extsvc:gerrit:0",
-     "CloneURL": "https://gerrit.sgdev.org/a/idan-temp"
+     "CloneURL": "ssh://gerrit-ssh.sgdev.org:29418/idan-temp"
     }
    },
    "Metadata": {
@@ -256,7 +256,7 @@
    "Sources": {
     "extsvc:gerrit:0": {
      "ID": "extsvc:gerrit:0",
-     "CloneURL": "https://gerrit.sgdev.org/a/k8s-gerrit"
+     "CloneURL": "ssh://gerrit-ssh.sgdev.org:29418/k8s-gerrit"
     }
    },
    "Metadata": {
@@ -290,7 +290,7 @@
    "Sources": {
     "extsvc:gerrit:0": {
      "ID": "extsvc:gerrit:0",
-     "CloneURL": "https://gerrit.sgdev.org/a/sourcegraph"
+     "CloneURL": "ssh://gerrit-ssh.sgdev.org:29418/sourcegraph"
     }
    },
    "Metadata": {
@@ -324,7 +324,7 @@
    "Sources": {
     "extsvc:gerrit:0": {
      "ID": "extsvc:gerrit:0",
-     "CloneURL": "https://gerrit.sgdev.org/a/sourcegraph/create"
+     "CloneURL": "ssh://gerrit-ssh.sgdev.org:29418/sourcegraph/create"
     }
    },
    "Metadata": {
@@ -358,7 +358,7 @@
    "Sources": {
     "extsvc:gerrit:0": {
      "ID": "extsvc:gerrit:0",
-     "CloneURL": "https://gerrit.sgdev.org/a/src-cli"
+     "CloneURL": "ssh://gerrit-ssh.sgdev.org:29418/src-cli"
     }
    },
    "Metadata": {
