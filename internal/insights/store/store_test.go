@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -987,67 +988,70 @@ func BenchmarkFilterSeriesPoints(b *testing.B) {
 
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
 
-	// Best case: Early return because of an empty denylist
-	b.Run("early return because of empty denylist", func(b *testing.B) {
-		denyList := make([]api.RepoID, 0)
-		var points []SeriesPointForExport
+	for _, size := range []int{100, 1_000, 100_000} {
+		b.Run(strconv.Itoa(size), func(b *testing.B) {
 
-		for i := 0; i < b.N; i++ {
-			points = append(points, SeriesPointForExport{RepoId: optionalRepoID(api.RepoID(i))})
-		}
+			// Best case: Early return because of an empty denylist
+			b.Run("early return because of empty denylist", func(b *testing.B) {
+				denyList := make([]api.RepoID, 0)
+				var points []SeriesPointForExport
 
-		b.ResetTimer()
+				for i := 0; i < size; i++ {
+					points = append(points, SeriesPointForExport{RepoId: optionalRepoID(api.RepoID(i))})
+				}
 
-		want := points
+				b.ResetTimer()
 
-		got := FilterSeriesPoints(denyList, points)
+				want := points
 
-		if diff := cmp.Diff(want, got); diff != "" {
-			b.Errorf("mismatch (-want +got):\n%s", diff)
-		}
-	})
+				got := FilterSeriesPoints(denyList, points)
 
-	// Second-best case: No assignments because everything is filtered out
-	b.Run("filter out all repos", func(b *testing.B) {
-		var denyList []api.RepoID
-		var points []SeriesPointForExport
+				if diff := cmp.Diff(want, got); diff != "" {
+					b.Errorf("mismatch (-want +got):\n%s", diff)
+				}
+			})
 
-		for i := 0; i < b.N; i++ {
-			denyList = append(denyList, api.RepoID(i))
-			points = append(points, SeriesPointForExport{RepoId: optionalRepoID(api.RepoID(i))})
-		}
+			// Second-best case: No assignments because everything is filtered out
+			b.Run("filter out all repos", func(b *testing.B) {
+				var denyList []api.RepoID
+				var points []SeriesPointForExport
 
-		b.ResetTimer()
+				for i := 0; i < size; i++ {
+					denyList = append(denyList, api.RepoID(i))
+					points = append(points, SeriesPointForExport{RepoId: optionalRepoID(api.RepoID(i))})
+				}
 
-		want := make([]SeriesPointForExport, 0)
+				want := make([]SeriesPointForExport, 0)
+				b.ResetTimer()
 
-		got := FilterSeriesPoints(denyList, points)
+				got := FilterSeriesPoints(denyList, points)
 
-		if diff := cmp.Diff(want, got); diff != "" {
-			b.Errorf("mismatch (-want +got):\n%s", diff)
-		}
-	})
+				if diff := cmp.Diff(want, got); diff != "" {
+					b.Errorf("mismatch (-want +got):\n%s", diff)
+				}
+			})
 
-	// Worst case: Everything is checked, but all values are re-assigned
-	b.Run("filter out no repos", func(b *testing.B) {
-		var denyList []api.RepoID
-		var points []SeriesPointForExport
+			// Worst case: Everything is checked, but all values are re-assigned
+			b.Run("filter out no repos", func(b *testing.B) {
+				var denyList []api.RepoID
+				var points []SeriesPointForExport
 
-		for i := 1; i < b.N; i++ {
-			denyList = append(denyList, api.RepoID(-i))
-			points = append(points, SeriesPointForExport{RepoId: optionalRepoID(api.RepoID(i))})
-		}
+				for i := 1; i < size; i++ {
+					denyList = append(denyList, api.RepoID(-i))
+					points = append(points, SeriesPointForExport{RepoId: optionalRepoID(api.RepoID(i))})
+				}
 
-		b.ResetTimer()
+				want := points
+				b.ResetTimer()
 
-		want := points
+				got := FilterSeriesPoints(denyList, points)
 
-		got := FilterSeriesPoints(denyList, points)
-
-		if diff := cmp.Diff(want, got); diff != "" {
-			b.Errorf("mismatch (-want +got):\n%s", diff)
-		}
-	})
+				if diff := cmp.Diff(want, got); diff != "" {
+					b.Errorf("mismatch (-want +got):\n%s", diff)
+				}
+			})
+		})
+	}
 
 }
 

@@ -972,30 +972,39 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts)
 		return nil, errors.Wrap(err, "fetching code insights data")
 	}
 
+	// 🚨 SECURITY: The function below filters out repositories that a user should not have access to.
+	// This operation was previously done via the SQL predicates, but to enable customers with more than
+	// 65535 repositories we need to run this filter in the application layer.
 	results = FilterSeriesPoints(denylist, results)
 
 	return results, nil
 }
 
-func FilterSeriesPoints(denyList []api.RepoID, array []SeriesPointForExport) []SeriesPointForExport {
+func FilterSeriesPoints(denyList []api.RepoID, points []SeriesPointForExport) []SeriesPointForExport {
 	// If there is nothing to filter, then return early. This skips the assignment in the later for-loop.
 	if len(denyList) == 0 {
-		return array
+		return points
 	}
 	// We turn the denyList into a map to ensure O(n) time complexity
-	denyMap := make(map[int32]bool)
+	denyMap := make(map[api.RepoID]struct{})
 	for _, repoID := range denyList {
-		denyMap[int32(repoID)] = true
+		denyMap[repoID] = struct{}{}
 	}
 	// Based on https://stackoverflow.com/a/59051095
 	n := 0
-	for _, x := range array {
-		if x.RepoId == nil || !denyMap[int32(*x.RepoId)] {
-			array[n] = x
+	for _, x := range points {
+		// If there is no RepoId on a point, then we can't filter by repo permissions and default to allowing access.
+		if x.RepoId == nil || !isDenied(*x.RepoId, denyMap) {
+			points[n] = x
 			n++
 		}
 	}
-	return array[:n]
+	return points[:n]
+}
+
+func isDenied(id api.RepoID, denyMap map[api.RepoID]struct{}) bool {
+	_, ok := denyMap[id]
+	return ok
 }
 
 const exportCodeInsightsDataSql = `
