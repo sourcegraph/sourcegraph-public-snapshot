@@ -16,7 +16,9 @@ import (
 type diagnosticsContract struct {
 	// DiagnosticsSecret can be used to authenticate diagnostics requests.
 	//
-	// 🚨 SECURITY: Do NOT use to authenticate sensitive data access.
+	// 🚨 SECURITY: Do NOT use to authenticate sensitive data access. This should
+	// only be used for governing access to diagnostic information (and should
+	// still be treated with great care like any other application secrets).
 	DiagnosticsSecret *string
 
 	OpenTelemetry opentelemetry.Config
@@ -127,7 +129,9 @@ func (c diagnosticsContract) RegisterDiagnosticsHandlers(r HandlerRegisterer, st
 // next. It is used for debug endpoints that require some degree of simple
 // authentication as a safeguard.
 //
-// 🚨 SECURITY: Do NOT use this to authenticate sensitive data access.
+// 🚨 SECURITY: Do NOT use this to authenticate sensitive data access. This should
+// only be used for governing access to diagnostic information (and should
+// still be treated with great care like any other application secrets).
 func (c diagnosticsContract) DiagnosticsAuthMiddleware(next http.Handler) http.Handler {
 	hasDiagnosticsSecret := func(w http.ResponseWriter, r *http.Request) (yes bool) {
 		if c.DiagnosticsSecret == nil {
