@@ -145,7 +145,7 @@ func extractBearer(h http.Header) (string, error) {
 			return "", errors.New("token type missing in Authorization header")
 		}
 		if strings.ToLower(typ[0]) != "bearer" {
-			return "", errors.Newf("invalid token type %s", typ[0])
+			return "", errors.Newf("invalid token scheme %s", typ[0])
 		}
 
 		token = typ[1]
