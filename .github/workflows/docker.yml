@@ -19,7 +19,7 @@ jobs:
 
       # We need buildx to be able to build a multi-architecture image.
       - name: Set up Docker buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
 
       # We also need QEMU, since this is running on an AMD64 host and we want to
       # build ARM64 images.
