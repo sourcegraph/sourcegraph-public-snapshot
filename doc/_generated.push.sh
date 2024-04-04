@@ -49,7 +49,16 @@ find docs/admin/observability -name "*.md" -print0 | xargs --null --no-run-if-em
 find docs/cli -name "*.md" -print0 | xargs --null --no-run-if-empty rm
 
 git add .
-git diff
+
+# git diff --exit-code returns non-zero if there is an actual diff. So if there is none, it means that there is
+# nothing to deliver and we can safely stop here.
+if git diff --exit-code; then
+    echo "No changes detected on the generated docs, exiting gracefully without delivering a PR on the docs."
+    echo "This most likely happened because an input changed, such as the tools but the actual output, i.e."
+    echo "the generated docs, didn't change."
+    exit 0
+fi
+
 git commit -m "🤖 sync'ing generated docs"
 
 git push origin "$_branch"
