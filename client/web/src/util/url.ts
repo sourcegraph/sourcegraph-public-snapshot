@@ -29,6 +29,9 @@ export function replaceRevisionInURL(href: string, newRevision: string): string 
     return `${url.pathname}${url.search}${url.hash}`
 }
 
+/**
+ * Returns a URL to a file at a specific commit.
+ */
 export function getURLToFileCommit(href: string, filename: string, revision: string): string {
     const parsed = parseBrowserRepoURL(href)
     parsed.revision = revision
