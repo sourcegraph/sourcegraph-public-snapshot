@@ -164,7 +164,6 @@ func (r *Cache) DecrByInt64(key string, value int64) (int64, error) {
 		err = kv().Expire(r.rkeyPrefix()+key, r.ttlSeconds)
 		if err != nil {
 			return newValue, errors.Newf("failed to execute redis command", "cmd", "DECRBY", "error", err)
-			// Decide whether to return this error or not based on your error handling policy.
 		}
 	}
 
