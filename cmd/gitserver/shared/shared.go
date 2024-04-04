@@ -99,7 +99,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			return git.NewObservableBackend(gitcli.NewBackend(logger, recordingCommandFactory, dir, repoName))
 		},
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
-			return getRemoteURLFunc(ctx, logger, db, repo)
+			return getRemoteURLFunc(ctx, db, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (vcssyncer.VCSSyncer, error) {
 			return vcssyncer.NewVCSSyncer(ctx, &vcssyncer.NewVCSSyncerOpts{
@@ -113,7 +113,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 				FS:                      fs,
 				GetRemoteURLSource: func(ctx context.Context, repo api.RepoName) (vcssyncer.RemoteURLSource, error) {
 					return vcssyncer.RemoteURLSourceFunc(func(ctx context.Context) (*vcs.URL, error) {
-						rawURL, err := getRemoteURLFunc(ctx, logger, db, repo)
+						rawURL, err := getRemoteURLFunc(ctx, db, repo)
 						if err != nil {
 							return nil, errors.Wrapf(err, "getting remote URL for %q", repo)
 
@@ -276,7 +276,6 @@ func getDB(observationCtx *observation.Context) (*sql.DB, error) {
 // cloning successfully.
 func getRemoteURLFunc(
 	ctx context.Context,
-	logger log.Logger,
 	db database.DB,
 	repo api.RepoName,
 ) (string, error) {
@@ -293,7 +292,7 @@ func getRemoteURLFunc(
 			return "", err
 		}
 
-		return cloneurl.ForEncryptableConfig(ctx, logger.Scoped("repos.CloneURL"), db, svc.Kind, svc.Config, r)
+		return cloneurl.ForEncryptableConfig(ctx, db, svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
 }
