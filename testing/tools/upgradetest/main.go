@@ -14,14 +14,15 @@ import (
 	"github.com/sourcegraph/run"
 )
 
-// These commands are meant to be executed with a VERSION env var with a hypothetical stamped release version
-// This type is used to assign the stamp version from VERSION
 type stampVersionKey struct{}
 type postReleaseKey struct{}
-type registryKey struct{}
+type targetRegistryKey struct{}
+type fromRegistryKey struct{}
 
 // Register upgrade commands -- see README.md for more details.
 func main() {
+	fmt.Println("👉 Upgrade test ...")
+
 	app := &cli.App{
 		Name:  "upgrade-test",
 		Usage: "Upgrade test is a tool for testing the migrator services creation of upgrade paths and application of upgrade paths.\nWhen run relevant upgrade paths are tested for each version relevant to a given upgrade type, initializing Sourcegraph databases and frontend services for each version, and attempting to generate and apply an upgrade path to your current branches head.",
@@ -43,9 +44,15 @@ func main() {
 						Usage:   "Select an already released version as the target version for the test suite.",
 					},
 					&cli.StringFlag{
-						Name:        "registry",
+						Name:        "target-registry",
 						DefaultText: "sourcegraph/",
-						Usage:       "Registry host and path, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Usage:       "Registry host and path to pull the targeted version from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value:       "",
+					},
+					&cli.StringFlag{
+						Name:        "from-registry",
+						DefaultText: "sourcegraph/",
+						Usage:       "Registry host and path to pull versions we're upgrading from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
 						Value:       "",
 					},
 					&cli.IntFlag{
@@ -73,7 +80,8 @@ func main() {
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
 					ctx = context.WithValue(ctx, postReleaseKey{}, cCtx.String("post-release-version"))
-					ctx = context.WithValue(ctx, registryKey{}, cCtx.String("registry"))
+					ctx = context.WithValue(ctx, targetRegistryKey{}, cCtx.String("target-registry"))
+					ctx = context.WithValue(ctx, fromRegistryKey{}, cCtx.String("from-registry"))
 
 					// check docker is running
 					if err := run.Cmd(ctx, "docker", "ps").Run().Wait(); err != nil {
@@ -82,7 +90,12 @@ func main() {
 					}
 
 					// Get init versions to use for initializing upgrade environments for tests
-					latestMinorVersion, latestStableVersion, targetVersion, stdVersions, mvuVersions, autoVersions, err := handleVersions(cCtx, cCtx.StringSlice("standard-versions"), cCtx.StringSlice("mvu-versions"), cCtx.StringSlice("auto-versions"), cCtx.String("post-release-version"))
+					latestMinorVersion, latestStableVersion, targetVersion, stdVersions, mvuVersions, autoVersions, err := handleVersions(cCtx,
+						cCtx.StringSlice("standard-versions"),
+						cCtx.StringSlice("mvu-versions"),
+						cCtx.StringSlice("auto-versions"),
+						cCtx.String("post-release-version"),
+					)
 					if err != nil {
 						fmt.Println("🚨 Error: failed to get test version ranges: ", err)
 						os.Exit(1)
@@ -91,7 +104,7 @@ func main() {
 					var targetMigratorImage string
 					switch {
 					case ctx.Value(postReleaseKey{}) != "":
-						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(registryKey{}), ctx.Value(postReleaseKey{}))
+						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), ctx.Value(postReleaseKey{}))
 					case ctx.Value(stampVersionKey{}) != "":
 						targetMigratorImage = fmt.Sprintf("migrator:candidate stamped as %s", ctx.Value(stampVersionKey{}))
 					default:
@@ -197,10 +210,14 @@ func main() {
 						Usage:   "Select an already released version as the target version for the test suite.",
 					},
 					&cli.StringFlag{
-						Name:        "registry",
-						DefaultText: "sourcegraph/",
-						Usage:       "Registry host and path, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
-						Value:       "",
+						Name:  "target-registry",
+						Usage: "Registry host and path to pull the targeted version from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value: "sourcegraph/",
+					},
+					&cli.StringFlag{
+						Name:  "from-registry",
+						Usage: "Registry host and path to pull versions we're upgrading from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value: "sourcegraph/",
 					},
 					&cli.IntFlag{
 						Name:    "max-routines",
@@ -216,6 +233,8 @@ func main() {
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
 					ctx = context.WithValue(ctx, postReleaseKey{}, cCtx.String("post-release-version"))
+					ctx = context.WithValue(ctx, targetRegistryKey{}, cCtx.String("target-registry"))
+					ctx = context.WithValue(ctx, fromRegistryKey{}, cCtx.String("from-registry"))
 
 					// check docker is running
 					if err := run.Cmd(ctx, "docker", "ps").Run().Wait(); err != nil {
@@ -233,7 +252,7 @@ func main() {
 					var targetMigratorImage string
 					switch {
 					case ctx.Value(postReleaseKey{}) != "":
-						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(registryKey{}), ctx.Value(postReleaseKey{}))
+						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), ctx.Value(postReleaseKey{}))
 					case ctx.Value(stampVersionKey{}) != "":
 						targetMigratorImage = fmt.Sprintf("migrator:candidate stamped as %s", ctx.Value(stampVersionKey{}))
 					default:
@@ -296,9 +315,15 @@ func main() {
 						Usage:   "Select an already released version as the target version for the test suite.",
 					},
 					&cli.StringFlag{
-						Name:        "registry",
+						Name:        "target-registry",
 						DefaultText: "sourcegraph/",
-						Usage:       "Registry host and path, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Usage:       "Registry host and path to pull the targeted version from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value:       "",
+					},
+					&cli.StringFlag{
+						Name:        "from-registry",
+						DefaultText: "sourcegraph/",
+						Usage:       "Registry host and path to pull versions we're upgrading from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
 						Value:       "",
 					},
 					&cli.IntFlag{
@@ -316,6 +341,7 @@ func main() {
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
 					ctx = context.WithValue(ctx, postReleaseKey{}, cCtx.String("post-release-version"))
+					ctx = context.WithValue(ctx, targetRegistryKey{}, cCtx.String("registry"))
 
 					// check docker is running
 					if err := run.Cmd(ctx, "docker", "ps").Run().Wait(); err != nil {
@@ -333,7 +359,7 @@ func main() {
 					var targetMigratorImage string
 					switch {
 					case ctx.Value(postReleaseKey{}) != "":
-						targetMigratorImage = fmt.Sprintf("sourcegraph/migrator:%s", ctx.Value(postReleaseKey{}))
+						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), ctx.Value(postReleaseKey{}))
 					case ctx.Value(stampVersionKey{}) != "":
 						targetMigratorImage = fmt.Sprintf("migrator:candidate stamped as %s", ctx.Value(stampVersionKey{}))
 					default:
@@ -413,6 +439,7 @@ func main() {
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
 					ctx = context.WithValue(ctx, postReleaseKey{}, cCtx.String("post-release-version"))
+					ctx = context.WithValue(ctx, targetRegistryKey{}, cCtx.String("registry"))
 
 					// check docker is running
 					if err := run.Cmd(ctx, "docker", "ps").Run().Wait(); err != nil {
@@ -430,7 +457,7 @@ func main() {
 					var targetMigratorImage string
 					switch {
 					case ctx.Value(postReleaseKey{}) != "":
-						targetMigratorImage = fmt.Sprintf("sourcegraph/migrator:%s", ctx.Value(postReleaseKey{}))
+						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), ctx.Value(postReleaseKey{}))
 					case ctx.Value(stampVersionKey{}) != "":
 						targetMigratorImage = fmt.Sprintf("migrator:candidate stamped as %s", ctx.Value(stampVersionKey{}))
 					default:
