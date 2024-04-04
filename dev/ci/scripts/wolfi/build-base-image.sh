@@ -48,12 +48,12 @@ tag=${2-latest}
 # On branches, if we modify a package then we'd like that modified version to be included in any base images built.
 # This is a bit hacky, but we do this by modifying the base image configs and passing the branch-specific repo to apko.
 add_custom_repo_cmd=()
+modified_packages=()
 if [[ "$IS_MAIN" != "true" && "$branch_repo_exists" == "true" ]]; then
   add_custom_repo_cmd=("--repository-append" "@branch https://packages.sgdev.org/$BRANCH_PATH" "--keyring-append" "https://packages.sgdev.org/sourcegraph-melange-dev.rsa.pub")
   echo "Adding custom repo command: ${add_custom_repo_cmd[*]}"
 
   # Read the branch-specific package repo and extract the names of packages that have been modified
-  modified_packages=()
   while IFS= read -r line; do
     modified_packages+=("$line")
   done < <(gsutil ls gs://package-repository/"$BRANCH_PATH"/x86_64/\*.apk | sed -E 's/.*\/x86_64\/([a-zA-Z0-9_-]+)-[0-9]+\..*/\1/')
