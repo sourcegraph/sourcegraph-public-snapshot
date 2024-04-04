@@ -199,7 +199,7 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 	intervalSeconds := int32(math.MaxInt32)
 
 	// Apply self-serve limits if available
-	cfg := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	cfg := conf.Get().SiteConfig().Embeddings
 	if cfg != nil {
 		user, err := db.Users().GetByID(ctx, userID)
 		if err != nil {
