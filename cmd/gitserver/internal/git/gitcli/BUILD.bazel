@@ -26,6 +26,7 @@ go_library(
         "//cmd/gitserver/internal/git",
         "//internal/actor",
         "//internal/api",
+        "//internal/byteutils",
         "//internal/collections",
         "//internal/conf",
         "//internal/gitserver/gitdomain",

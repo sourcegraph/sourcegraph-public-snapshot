@@ -13,7 +13,7 @@ import type { Optional } from 'utility-types'
 import type { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
-import { asError, type ErrorLike, isErrorLike, basename } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike, basename, SourcegraphURL } from '@sourcegraph/common'
 import {
     createActiveSpan,
     reactManualTracer,
@@ -21,15 +21,14 @@ import {
     useCurrentSpan,
 } from '@sourcegraph/observability-client'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { type ModeSpec, parseQueryAndHash, type RepoFile } from '@sourcegraph/shared/src/util/url'
+import { type ModeSpec, type RepoFile } from '@sourcegraph/shared/src/util/url'
 import {
     Alert,
     Button,
@@ -100,7 +99,6 @@ interface BlobPageProps
         PlatformContextProps,
         TelemetryProps,
         TelemetryV2Props,
-        ExtensionsControllerProps,
         HoverThresholdProps,
         BreadcrumbSetters,
         SearchStreamingProps,
@@ -118,7 +116,7 @@ interface BlobPageProps
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     className?: string
-    context: Pick<SourcegraphContext, 'authProviders'>
+    context: Pick<SourcegraphContext, 'externalURL'>
 }
 
 /**
@@ -145,10 +143,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
     const [enableOwnershipPanels] = useFeatureFlag('enable-ownership-panels', true)
     const enableOwnershipPanel = enableOwnershipPanels && props.ownEnabled
 
-    const lineOrRange = useMemo(
-        () => parseQueryAndHash(location.search, location.hash),
-        [location.search, location.hash]
-    )
+    const { lineRange: lineOrRange, viewState } = useMemo(() => SourcegraphURL.from(location), [location])
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
@@ -381,6 +376,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                             externalServiceType={props.repoServiceType}
                             actionType={actionType}
                             source="repoHeader"
+                            telemetryRecorder={props.telemetryRecorder}
                         />
                     )}
                 </RepoHeaderContributionPortal>
@@ -412,6 +408,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                             actionType={actionType}
                             source="repoHeader"
                             renderMode={renderMode}
+                            telemetryRecorder={props.telemetryRecorder}
                         />
                     )}
                 </RepoHeaderContributionPortal>
@@ -608,9 +605,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                         className={classNames(styles.blob, styles.border)}
                         blobInfo={{ ...blobInfoOrError, commitID }}
                         wrapCode={wrapCode}
-                        platformContext={props.platformContext}
-                        extensionsController={props.extensionsController}
-                        settingsCascade={props.settingsCascade}
                         onHoverShown={props.onHoverShown}
                         telemetryService={props.telemetryService}
                         telemetryRecorder={props.telemetryRecorder}
@@ -623,7 +617,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                     />
                 </TraceSpanProvider>
             )}
-            {parseQueryAndHash(location.search, location.hash).viewState &&
+            {viewState &&
                 createPortal(
                     <Panel
                         className={styles.panel}

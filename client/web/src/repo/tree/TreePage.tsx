@@ -18,18 +18,17 @@ import classNames from 'classnames'
 import { Navigate } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
-import { asError, encodeURIPathComponent, type ErrorLike, isErrorLike, logger, basename } from '@sourcegraph/common'
+import { asError, encodeURIPathComponent, type ErrorLike, isErrorLike, basename } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
+import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import {
     Badge,
     Button,
@@ -57,6 +56,7 @@ import type { OwnConfigProps } from '../../own/OwnConfigProps'
 import { TryCodyWidget } from '../components/TryCodyWidget/TryCodyWidget'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
+import { RepoCommitsButton } from '../utils'
 
 import { TreePageContent } from './TreePageContent'
 import { treeHistoryFragment } from './TreePagePanels'
@@ -81,7 +81,6 @@ const FILE_COMMITS_QUERY = gql`
 `
 export interface Props
     extends SettingsCascadeProps<Settings>,
-        ExtensionsControllerProps,
         PlatformContextProps,
         TelemetryProps,
         CodeIntelligenceProps,
@@ -98,7 +97,7 @@ export interface Props
     isSourcegraphDotCom: boolean
     className?: string
     authenticatedUser: AuthenticatedUser | null
-    context: Pick<SourcegraphContext, 'authProviders'>
+    context: Pick<SourcegraphContext, 'externalURL'>
 }
 
 export const treePageRepositoryFragment = gql`
@@ -197,46 +196,7 @@ export const TreePage: FC<Props> = ({
     })
     const treeWithHistory = fileCommitData?.repository?.commit?.tree?.entries
 
-    const showCodeInsights =
-        !isErrorLike(settingsCascade.final) &&
-        !!settingsCascade.final?.experimentalFeatures?.codeInsights &&
-        settingsCascade.final['insights.displayLocation.directory'] === true
-
     const showOwnership = ownEnabled && !isSourcegraphDotCom
-
-    // Add DirectoryViewer
-    const uri = toURIWithPath({ repoName, commitID, filePath })
-
-    const { extensionsController } = props
-    useEffect(() => {
-        if (!showCodeInsights || extensionsController === null) {
-            return
-        }
-
-        const viewerIdPromise = extensionsController.extHostAPI
-            .then(extensionHostAPI =>
-                extensionHostAPI.addViewerIfNotExists({
-                    type: 'DirectoryViewer',
-                    isActive: true,
-                    resource: uri,
-                })
-            )
-            .catch(error => {
-                logger.error('Error adding viewer to extension host:', error)
-                return null
-            })
-
-        return () => {
-            Promise.all([extensionsController.extHostAPI, viewerIdPromise])
-                .then(([extensionHostAPI, viewerId]) => {
-                    if (viewerId) {
-                        return extensionHostAPI.removeViewer(viewerId)
-                    }
-                    return
-                })
-                .catch(error => logger.error('Error removing viewer from extension host:', error))
-        }
-    }, [uri, showCodeInsights, extensionsController])
 
     const getPageTitle = (): string => {
         const repoString = displayRepoName(repoName)
@@ -273,18 +233,14 @@ export const TreePage: FC<Props> = ({
             </div>
             <div className={styles.menu}>
                 <ButtonGroup>
-                    <Tooltip content="Git commits">
-                        <Button
-                            className="flex-shrink-0"
-                            to={`/${encodeURIPathComponent(repoName)}/-/commits`}
-                            variant="secondary"
-                            outline={true}
-                            as={Link}
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiSourceCommit} />{' '}
-                            <span className={styles.text}>Commits</span>
-                        </Button>
-                    </Tooltip>
+                    <RepoCommitsButton
+                        repoName={repo?.name || ''}
+                        repoType={repo?.sourceType || ''}
+                        revision={revision}
+                        filePath={filePath}
+                        svgPath={mdiSourceCommit}
+                        className={styles.text}
+                    />
                     {!isPackage && (
                         <Tooltip content="Git branches">
                             <Button

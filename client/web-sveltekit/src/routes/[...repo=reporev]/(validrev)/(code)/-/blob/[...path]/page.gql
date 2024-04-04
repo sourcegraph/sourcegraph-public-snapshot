@@ -34,7 +34,13 @@ fragment BlobPage_Blob on GitBlob {
     languages
 }
 
-query BlobSyntaxHighlightQuery($repoName: String!, $revspec: String!, $path: String!, $disableTimeout: Boolean!, $format: HighlightResponseFormat = JSON_SCIP) {
+query BlobSyntaxHighlightQuery(
+    $repoName: String!
+    $revspec: String!
+    $path: String!
+    $disableTimeout: Boolean!
+    $format: HighlightResponseFormat = JSON_SCIP
+) {
     repository(name: $repoName) {
         id
         commit(rev: $revspec) {

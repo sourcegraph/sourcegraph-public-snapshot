@@ -9,12 +9,7 @@
 <script lang="ts">
     import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
-    import {
-        addLineRangeQueryParameter,
-        formatSearchParameters,
-        pluralize,
-        toPositionOrRangeQueryParameter,
-    } from '$lib/common'
+    import { pluralize, SourcegraphURL } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
@@ -25,6 +20,7 @@
     import { settings } from '$lib/stores'
 
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
+    import PreviewButton from './PreviewButton.svelte'
     import RepoStars from './RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
     import { getSearchResultsContext } from './searchResultsContext'
@@ -60,16 +56,8 @@
         }, 0)
     }
 
-    function getMatchURL(startLine: number, endLine: number): string {
-        const searchParams = formatSearchParameters(
-            addLineRangeQueryParameter(
-                // We don't want to preserve the 'q' query parameter.
-                // We might have to adjust this if we want to preserve other query parameters.
-                new URLSearchParams(),
-                toPositionOrRangeQueryParameter({ range: { start: { line: startLine }, end: { line: endLine } } })
-            )
-        )
-        return `${fileURL}?${searchParams}`
+    function getMatchURL(line: number, endLine: number): string {
+        return SourcegraphURL.from(fileURL).setLineRange({ line, endLine }).toString()
     }
 
     let visible = false
@@ -97,6 +85,7 @@
         {#if result.repoStars}
             <RepoStars repoStars={result.repoStars} />
         {/if}
+        <PreviewButton {result} />
     </svelte:fragment>
 
     <div bind:this={root} use:observeIntersection on:intersecting={event => (visible = event.detail)} class="matches">
@@ -112,6 +101,7 @@
                             startLine={group.startLine}
                             matches={group.matches}
                             plaintextLines={group.plaintextLines}
+                            --background-color="transparent"
                         />
                     {:then result}
                         <CodeExcerpt
@@ -119,6 +109,7 @@
                             matches={group.matches}
                             plaintextLines={group.plaintextLines}
                             highlightedHTMLRows={result?.[index]?.slice(0, group.plaintextLines.length)}
+                            --background-color="transparent"
                         />
                     {/await}
                 </a>
@@ -154,6 +145,10 @@
             position: sticky;
             bottom: 0;
         }
+
+        &:hover {
+            background-color: var(--subtle-bg-2);
+        }
     }
 
     .code {
@@ -161,6 +156,10 @@
 
         &:last-child {
             border-bottom: none;
+        }
+
+        &:hover {
+            background-color: var(--subtle-bg-2);
         }
 
         a {

@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 
-set -eu -o pipefail
+set -exu -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
+echo "~~~ :aspect: :stethoscope: Agent Health check"
+/etc/aspect/workflows/bin/agent_health_check
+
 # Update hashes for all base images
-bazel \
-  --bazelrc=.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
-  run //dev/sg -- wolfi update-hashes
+aspectRC="/tmp/aspect-generated.bazelrc"
+rosetta bazelrc > "$aspectRC"
+bazel --bazelrc="$aspectRC" run //dev/sg -- wolfi update-hashes
 # Print diff
 git diff dev/oci_deps.bzl
 
@@ -28,8 +29,8 @@ Built from Buildkite run [#${BUILDKITE_BUILD_NUMBER}](https://buildkite.com/sour
 
 # Commit changes to dev/oci-deps.bzl
 # Delete branch if it exists; catch status code if not
-git branch -D "${BRANCH_NAME}" || :
-git checkout -b "${BRANCH_NAME}"
+git branch -D "${BRANCH_NAME}" || true
+git switch -c "${BRANCH_NAME}"
 git add dev/oci_deps.bzl
 git commit -m "Auto-update Wolfi base image hashes at ${TIMESTAMP}"
 git push --force -u origin "${BRANCH_NAME}"

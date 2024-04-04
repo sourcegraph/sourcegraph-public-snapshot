@@ -18,6 +18,7 @@ import {
     concat,
     BehaviorSubject,
     fromEvent,
+    lastValueFrom,
 } from 'rxjs'
 import {
     catchError,
@@ -55,7 +56,6 @@ import {
     registerHighlightContributions,
     isExternalLink,
     type LineOrPositionOrRange,
-    lprToSelectionsZeroIndexed,
 } from '@sourcegraph/common'
 import type { WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
@@ -81,9 +81,8 @@ import {
     type RepoSpec,
     type ResolvedRevisionSpec,
     type RevisionSpec,
-    toRootURI,
-    toURIWithPath,
     type ViewStateSpec,
+    makeRepoGitURI,
 } from '@sourcegraph/shared/src/util/url'
 
 import { background } from '../../../browser-extension/web-extension-api/runtime'
@@ -113,6 +112,7 @@ import { NotAuthenticatedError, RepoURLParseError } from './errors'
 import { initializeExtensions } from './extensions'
 import { SignInButton } from './SignInButton'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
+import { lprToSelectionsZeroIndexed } from './util/selections'
 import {
     type ViewOnSourcegraphButtonClassProps,
     ViewOnSourcegraphButton,
@@ -472,7 +472,6 @@ function initCodeIntelligence({
                         telemetryService={telemetryService}
                         hoverRef={this.nextOverlayElement}
                         extensionsController={extensionsController}
-                        platformContext={platformContext}
                         location={H.createLocation(window.location)}
                         useBrandedLogo={true}
                     />
@@ -643,10 +642,12 @@ const isSafeToContinueCodeIntel = async ({
 
         rawRepoName = context.rawRepoName
 
-        const isRepoCloned = await resolvePrivateRepo({
-            rawRepoName,
-            requestGraphQL,
-        }).toPromise()
+        const isRepoCloned = await lastValueFrom(
+            resolvePrivateRepo({
+                rawRepoName,
+                requestGraphQL,
+            })
+        )
 
         return isRepoCloned
     } catch (error) {
@@ -1030,9 +1031,14 @@ export async function handleCodeHost({
                 } = codeViewEvent
 
                 const initializeModelAndViewerForFileInfo = async (
-                    fileInfo: FileInfoWithContent & FileInfoWithRepoName
+                    fileInfo: FileInfoWithContent
                 ): Promise<CodeEditorWithPartialModel> => {
-                    const uri = toURIWithPath(fileInfo)
+                    const uri = makeRepoGitURI({
+                        repoName: fileInfo.repoName,
+                        commitID: fileInfo.commitID,
+                        revision: fileInfo.revision,
+                        filePath: fileInfo.filePath,
+                    })
 
                     // Model
                     const languageId = getModeFromPath(fileInfo.filePath)
@@ -1050,7 +1056,11 @@ export async function handleCodeHost({
 
                     const extensionHostAPI = await extensionsController.extHostAPI
 
-                    const rootURI = toRootURI(fileInfo)
+                    const rootURI = makeRepoGitURI({
+                        repoName: fileInfo.repoName,
+                        commitID: fileInfo.commitID,
+                        revision: fileInfo.revision,
+                    })
                     const [, viewerId] = await Promise.all([
                         // Only add the model if it doesn't exist
                         // (there may be several code views on the page pointing to the same model)

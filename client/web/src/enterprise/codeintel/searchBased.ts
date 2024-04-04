@@ -2,7 +2,7 @@ import { extname } from 'path'
 
 import escapeRegExp from 'lodash/escapeRegExp'
 
-import { appendLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
+import { SourcegraphURL } from '@sourcegraph/common'
 import type { Range } from '@sourcegraph/extension-api-types'
 
 import { raceWithDelayOffset } from '../../codeintel/promise'
@@ -62,7 +62,7 @@ export function referencesQuery({
 
 function languageFilter(languages: string[], path: string): string[] {
     if (languages.length > 0) {
-        return ['(', languages.map(language => `lang:${language}`).join(' OR '), ')']
+        return ['(', languages.map(language => `lang:"${language}"`).join(' OR '), ')']
     }
     const extension = extname(path).slice(1)
     if (extension === '') {
@@ -365,12 +365,12 @@ function lineMatchesToResults(
     { lineNumber, offsetAndLengths }: LineMatch
 ): Result[] {
     return offsetAndLengths.map(([offset, length]) => {
-        const url = appendLineRangeQueryParameter(
-            fileUrl,
-            toPositionOrRangeQueryParameter({
-                position: { line: lineNumber + 1, character: offset + 1 },
+        const url = SourcegraphURL.from(fileUrl)
+            .setLineRange({
+                line: lineNumber + 1,
+                character: offset + 1,
             })
-        )
+            .toString()
         return {
             repo,
             rev: revision,

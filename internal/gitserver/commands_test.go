@@ -779,9 +779,7 @@ func TestStat(t *testing.T) {
 	}
 }
 
-var (
-	NonExistentCommitID = api.CommitID(strings.Repeat("a", 40))
-)
+var NonExistentCommitID = api.CommitID(strings.Repeat("a", 40))
 
 func TestLogPartsPerCommitInSync(t *testing.T) {
 	require.Equal(t, partsPerCommit-1, strings.Count(logFormatWithoutRefs, "%x00"))

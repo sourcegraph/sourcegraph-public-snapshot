@@ -218,9 +218,15 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            <GlobalAlerts authenticatedUser={props.authenticatedUser} />
+            <GlobalAlerts
+                authenticatedUser={props.authenticatedUser}
+                telemetryRecorder={props.platformContext.telemetryRecorder}
+            />
             {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
-                <SurveyToast authenticatedUser={props.authenticatedUser} />
+                <SurveyToast
+                    authenticatedUser={props.authenticatedUser}
+                    telemetryRecorder={props.platformContext.telemetryRecorder}
+                />
             )}
             {!isSiteInit && !isSignInOrUp && !isGetCodyPage && !isPostSignUpPage && (
                 <>
@@ -230,7 +236,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                             showSearchBox={showNavigationSearchBox}
                             authenticatedUser={props.authenticatedUser}
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
-                            ownEnabled={props.ownEnabled}
                             notebooksEnabled={props.notebooksEnabled}
                             searchContextsEnabled={props.searchContextsEnabled}
                             codeMonitoringEnabled={props.codeMonitoringEnabled}
@@ -254,11 +259,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
             )}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
             <ApplicationRoutes routes={props.routes} />
-            <GlobalContributions
-                key={3}
-                extensionsController={props.extensionsController}
-                platformContext={props.platformContext}
-            />
+            <GlobalContributions key={3} />
             {fuzzyFinder && (
                 <LazyFuzzyFinder
                     isVisible={isFuzzyFinderVisible}
