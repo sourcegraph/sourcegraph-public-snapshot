@@ -41,6 +41,9 @@ type MockGerritClient struct {
 	// GetGroupFunc is an instance of a mock function object controlling the
 	// behavior of the method GetGroup.
 	GetGroupFunc *GerritClientGetGroupFunc
+	// GetSSHInfoFunc is an instance of a mock function object controlling
+	// the behavior of the method GetSSHInfo.
+	GetSSHInfoFunc *GerritClientGetSSHInfoFunc
 	// GetURLFunc is an instance of a mock function object controlling the
 	// behavior of the method GetURL.
 	GetURLFunc *GerritClientGetURLFunc
@@ -109,6 +112,11 @@ func NewMockGerritClient() *MockGerritClient {
 		},
 		GetGroupFunc: &GerritClientGetGroupFunc{
 			defaultHook: func(context.Context, string) (r0 gerrit.Group, r1 error) {
+				return
+			},
+		},
+		GetSSHInfoFunc: &GerritClientGetSSHInfoFunc{
+			defaultHook: func(context.Context) (r0 string, r1 int, r2 error) {
 				return
 			},
 		},
@@ -204,6 +212,11 @@ func NewStrictMockGerritClient() *MockGerritClient {
 				panic("unexpected invocation of MockGerritClient.GetGroup")
 			},
 		},
+		GetSSHInfoFunc: &GerritClientGetSSHInfoFunc{
+			defaultHook: func(context.Context) (string, int, error) {
+				panic("unexpected invocation of MockGerritClient.GetSSHInfo")
+			},
+		},
 		GetURLFunc: &GerritClientGetURLFunc{
 			defaultHook: func() *url.URL {
 				panic("unexpected invocation of MockGerritClient.GetURL")
@@ -282,6 +295,9 @@ func NewMockGerritClientFrom(i gerrit.Client) *MockGerritClient {
 		},
 		GetGroupFunc: &GerritClientGetGroupFunc{
 			defaultHook: i.GetGroup,
+		},
+		GetSSHInfoFunc: &GerritClientGetSSHInfoFunc{
+			defaultHook: i.GetSSHInfo,
 		},
 		GetURLFunc: &GerritClientGetURLFunc{
 			defaultHook: i.GetURL,
@@ -1060,6 +1076,114 @@ func (c GerritClientGetGroupFuncCall) Args() []interface{} {
 // invocation.
 func (c GerritClientGetGroupFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// GerritClientGetSSHInfoFunc describes the behavior when the GetSSHInfo
+// method of the parent MockGerritClient instance is invoked.
+type GerritClientGetSSHInfoFunc struct {
+	defaultHook func(context.Context) (string, int, error)
+	hooks       []func(context.Context) (string, int, error)
+	history     []GerritClientGetSSHInfoFuncCall
+	mutex       sync.Mutex
+}
+
+// GetSSHInfo delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGerritClient) GetSSHInfo(v0 context.Context) (string, int, error) {
+	r0, r1, r2 := m.GetSSHInfoFunc.nextHook()(v0)
+	m.GetSSHInfoFunc.appendCall(GerritClientGetSSHInfoFuncCall{v0, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetSSHInfo method of
+// the parent MockGerritClient instance is invoked and the hook queue is
+// empty.
+func (f *GerritClientGetSSHInfoFunc) SetDefaultHook(hook func(context.Context) (string, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetSSHInfo method of the parent MockGerritClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GerritClientGetSSHInfoFunc) PushHook(hook func(context.Context) (string, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientGetSSHInfoFunc) SetDefaultReturn(r0 string, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context) (string, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientGetSSHInfoFunc) PushReturn(r0 string, r1 int, r2 error) {
+	f.PushHook(func(context.Context) (string, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *GerritClientGetSSHInfoFunc) nextHook() func(context.Context) (string, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientGetSSHInfoFunc) appendCall(r0 GerritClientGetSSHInfoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GerritClientGetSSHInfoFuncCall objects
+// describing the invocations of this function.
+func (f *GerritClientGetSSHInfoFunc) History() []GerritClientGetSSHInfoFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientGetSSHInfoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientGetSSHInfoFuncCall is an object that describes an invocation
+// of method GetSSHInfo on an instance of MockGerritClient.
+type GerritClientGetSSHInfoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientGetSSHInfoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientGetSSHInfoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // GerritClientGetURLFunc describes the behavior when the GetURL method of
