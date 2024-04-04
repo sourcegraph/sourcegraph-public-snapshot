@@ -41,6 +41,7 @@ Some additional operations!
 |---------------------|---------------------------------------------------------------------------------------------------------------|
 | Project ID          | [`msp-testbed-test-77589aae45d0`](https://console.cloud.google.com/run?project=msp-testbed-test-77589aae45d0) |
 | Category            | **test**                                                                                                      |
+| Deployment Type     | `manual`                                                                                                      |
 | Resources           |                                                                                                               |
 | Slack notifications | [#alerts-msp-testbed-test](https://sourcegraph.slack.com/archives/alerts-msp-testbed-test)                    |
 | Alerts              | [GCP monitoring](https://console.cloud.google.com/monitoring/alerting?project=msp-testbed-test-77589aae45d0)  |

@@ -41,7 +41,13 @@ func TestRender(t *testing.T) {
 				ID:        testServiceEnvironment,
 				ProjectID: testProjectID,
 				Category:  spec.EnvironmentCategoryTest,
+				Deploy: spec.EnvironmentDeploySpec{
+					Type: "rollout",
+				},
 			}},
+			Rollout: &spec.RolloutSpec{
+				Stages: []spec.RolloutStageSpec{{EnvironmentID: testServiceEnvironment}},
+			},
 		},
 	}, {
 		name: "resources",
@@ -70,6 +76,9 @@ func TestRender(t *testing.T) {
 						Tables: []string{"bar", "baz"},
 					},
 				},
+				Deploy: spec.EnvironmentDeploySpec{
+					Type: "subscription",
+				},
 			}},
 		},
 	}, {
@@ -90,6 +99,9 @@ func TestRender(t *testing.T) {
 				ID:        testServiceEnvironment,
 				ProjectID: testProjectID,
 				Category:  spec.EnvironmentCategoryTest,
+				Deploy: spec.EnvironmentDeploySpec{
+					Type: "manual",
+				},
 			}},
 			README: []byte(`This service does X, Y, Z. Refer to [here](sourcegraph.com) for more information.
 

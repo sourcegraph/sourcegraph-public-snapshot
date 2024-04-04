@@ -83,29 +83,47 @@ This service is operated on the %s.`,
 	serviceKind := pointers.Deref(s.Service.Kind, spec.ServiceKindService)
 	serviceDirURL := fmt.Sprintf("https://github.com/sourcegraph/managed-services/blob/main/services/%s", s.Service.ID)
 	serviceConfigURL := fmt.Sprintf("%s/service.yaml", serviceDirURL)
+
+	serviceDetails := [][]string{
+		{"Service ID", fmt.Sprintf("%s (%s)",
+			markdown.Code(s.Service.ID), markdown.Link("specification", serviceConfigURL))},
+		// TODO: See service.Description docstring
+		// {"Description", s.Service.Description},
+		{"Owners", strings.Join(mapTo(s.Service.Owners, markdown.Bold), ", ")},
+		{"Service kind", fmt.Sprintf("Cloud Run %s", string(serviceKind))},
+		{"Environments", strings.Join(mapTo(s.Environments, func(e spec.EnvironmentSpec) string {
+			l, h := markdown.HeadingLinkf(e.ID)
+			environmentHeaders = append(environmentHeaders, environmentHeader{
+				environmentID: e.ID,
+				header:        h,
+				link:          l,
+			})
+			return l
+		}), ", ")},
+		{"Docker image", markdown.Code(s.Build.Image)},
+		{"Source code", markdown.Linkf(
+			fmt.Sprintf("%s - %s", markdown.Code(s.Build.Source.Repo), markdown.Code(s.Build.Source.Dir)),
+			"https://%s/tree/HEAD/%s", s.Build.Source.Repo, path.Clean(s.Build.Source.Dir))},
+	}
+
+	region := "us-central1"
+	if s.Rollout != nil {
+		finalStageEnv := s.Rollout.Stages[len(s.Rollout.Stages)-1].EnvironmentID
+		var finalStageProject string
+		for _, environment := range s.Environments {
+			if environment.ID == finalStageEnv {
+				finalStageProject = environment.ProjectID
+				break
+			}
+		}
+		serviceDetails = append(serviceDetails,
+			[]string{"Rollout Pipeline", markdown.Linkf(fmt.Sprintf("`%s-%s-rollout`", s.Service.ID, region),
+				"https://console.cloud.google.com/deploy/delivery-pipelines/%[1]s/%[2]s-%[1]s-rollout?project=%[3]s", region, s.Service.ID, finalStageProject)})
+	}
+
 	md.Table(
 		[]string{"Property", "Details"},
-		[][]string{
-			{"Service ID", fmt.Sprintf("%s (%s)",
-				markdown.Code(s.Service.ID), markdown.Link("specification", serviceConfigURL))},
-			// TODO: See service.Description docstring
-			// {"Description", s.Service.Description},
-			{"Owners", strings.Join(mapTo(s.Service.Owners, markdown.Bold), ", ")},
-			{"Service kind", fmt.Sprintf("Cloud Run %s", string(serviceKind))},
-			{"Environments", strings.Join(mapTo(s.Environments, func(e spec.EnvironmentSpec) string {
-				l, h := markdown.HeadingLinkf(e.ID)
-				environmentHeaders = append(environmentHeaders, environmentHeader{
-					environmentID: e.ID,
-					header:        h,
-					link:          l,
-				})
-				return l
-			}), ", ")},
-			{"Docker image", markdown.Code(s.Build.Image)},
-			{"Source code", markdown.Linkf(
-				fmt.Sprintf("%s - %s", markdown.Code(s.Build.Source.Repo), markdown.Code(s.Build.Source.Dir)),
-				"https://%s/tree/HEAD/%s", s.Build.Source.Repo, path.Clean(s.Build.Source.Dir))},
-		})
+		serviceDetails)
 
 	if len(s.README) > 0 {
 		md.Commentf("Automatically generated from the service README: %s", fmt.Sprintf("%s/README.md", serviceDirURL))
@@ -147,6 +165,7 @@ This service is operated on the %s.`,
 		overview := [][]string{
 			{"Project ID", markdown.Linkf(markdown.Code(env.ProjectID), cloudRunURL)},
 			{"Category", markdown.Bold(string(env.Category))},
+			{"Deployment Type", fmt.Sprintf("`%s`", env.Deploy.Type)},
 			{"Resources", strings.Join(mapTo(env.Resources.List(), func(k string) string {
 				l, h := markdown.HeadingLinkf("%s %s", env.ID, k)
 				resourceHeadings[k] = h

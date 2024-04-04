@@ -14,14 +14,15 @@ If you need assistance with MSP infrastructure, reach out to the [Core Services]
 
 ## Service overview
 
-|   PROPERTY   |                                                             DETAILS                                                              |
-|--------------|----------------------------------------------------------------------------------------------------------------------------------|
-| Service ID   | `msp-testbed` ([specification](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/service.yaml))     |
-| Owners       |                                                                                                                                  |
-| Service kind | Cloud Run service                                                                                                                |
-| Environments | [test](#test)                                                                                                                    |
-| Docker image | `us.gcr.io/sourcegraph-dev/msp-example`                                                                                          |
-| Source code  | [`github.com/sourcegraph/sourcegraph` - `cmd/msp-example`](https://github.com/sourcegraph/sourcegraph/tree/HEAD/cmd/msp-example) |
+|     PROPERTY     |                                                                                      DETAILS                                                                                      |
+|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Service ID       | `msp-testbed` ([specification](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/service.yaml))                                                      |
+| Owners           |                                                                                                                                                                                   |
+| Service kind     | Cloud Run service                                                                                                                                                                 |
+| Environments     | [test](#test)                                                                                                                                                                     |
+| Docker image     | `us.gcr.io/sourcegraph-dev/msp-example`                                                                                                                                           |
+| Source code      | [`github.com/sourcegraph/sourcegraph` - `cmd/msp-example`](https://github.com/sourcegraph/sourcegraph/tree/HEAD/cmd/msp-example)                                                  |
+| Rollout Pipeline | [`msp-testbed-us-central1-rollout`](https://console.cloud.google.com/deploy/delivery-pipelines/us-central1/msp-testbed-us-central1-rollout?project=msp-testbed-test-77589aae45d0) |
 
 ## Environments
 
@@ -31,6 +32,7 @@ If you need assistance with MSP infrastructure, reach out to the [Core Services]
 |---------------------|---------------------------------------------------------------------------------------------------------------|
 | Project ID          | [`msp-testbed-test-77589aae45d0`](https://console.cloud.google.com/run?project=msp-testbed-test-77589aae45d0) |
 | Category            | **test**                                                                                                      |
+| Deployment Type     | `rollout`                                                                                                     |
 | Resources           |                                                                                                               |
 | Slack notifications | [#alerts-msp-testbed-test](https://sourcegraph.slack.com/archives/alerts-msp-testbed-test)                    |
 | Alerts              | [GCP monitoring](https://console.cloud.google.com/monitoring/alerting?project=msp-testbed-test-77589aae45d0)  |
