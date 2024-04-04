@@ -267,6 +267,70 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 		require.NoError(t, it.Close())
 	})
 
+	t.Run("contains", func(t *testing.T) {
+		it, err := backend.ListRefs(ctx, git.ListRefsOpts{Contains: []api.CommitID{commit}})
+		require.NoError(t, err)
+
+		ref, err := it.Next()
+		require.NoError(t, err)
+
+		// HEAD comes first.
+		assert.Equal(t, &gitdomain.Ref{
+			Name:        "refs/heads/master",
+			ShortName:   "master",
+			CommitID:    commit,
+			RefOID:      commit,
+			IsHead:      true,
+			Type:        gitdomain.RefTypeBranch,
+			CreatedDate: ref.CreatedDate,
+		}, ref)
+
+		ref, err = it.Next()
+		require.NoError(t, err)
+
+		assert.Equal(t, &gitdomain.Ref{
+			Name:      "refs/tags/foo-tag",
+			ShortName: "foo-tag",
+			CommitID:  commit,
+			// note that this is NOT the OID of the commit pointed to by the tag, but the one of the tag itself.
+			RefOID:      "957e5bad2c7c68722287ef5c298bfe9e09eb8b3f",
+			IsHead:      false,
+			Type:        gitdomain.RefTypeTag,
+			CreatedDate: ref.CreatedDate,
+		}, ref)
+
+		ref, err = it.Next()
+		require.NoError(t, err)
+
+		assert.Equal(t, &gitdomain.Ref{
+			Name:        "refs/pull/100/head",
+			ShortName:   "pull/100/head",
+			CommitID:    commit,
+			RefOID:      commit,
+			IsHead:      false,
+			Type:        gitdomain.RefTypeBranch,
+			CreatedDate: ref.CreatedDate,
+		}, ref)
+
+		ref, err = it.Next()
+		require.NoError(t, err)
+
+		assert.Equal(t, &gitdomain.Ref{
+			Name:        "refs/heads/foo",
+			ShortName:   "foo",
+			CommitID:    "53e63d6dd6e61a58369bbc637b0ead2ee58d993c",
+			RefOID:      "53e63d6dd6e61a58369bbc637b0ead2ee58d993c",
+			IsHead:      false,
+			Type:        gitdomain.RefTypeBranch,
+			CreatedDate: ref.CreatedDate,
+		}, ref)
+
+		_, err = it.Next()
+		require.Equal(t, io.EOF, err)
+
+		require.NoError(t, it.Close())
+	})
+
 	// Verify that if the context is canceled, the iterator returns an error.
 	t.Run("context cancelation", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(ctx)
