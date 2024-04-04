@@ -790,9 +790,10 @@ func TestGRPCServer_ResolveRevision(t *testing.T) {
 
 func TestGRPCServer_ListRefs(t *testing.T) {
 	ctx := context.Background()
+	mockSS := gitserver.NewMockGitserverService_ListRefsServer()
 	t.Run("argument validation", func(t *testing.T) {
 		gs := &grpcServer{}
-		_, err := gs.ListRefs(ctx, &v1.ListRefsRequest{RepoName: ""})
+		err := gs.ListRefs(&v1.ListRefsRequest{RepoName: ""}, mockSS)
 		require.ErrorContains(t, err, "repo must be specified")
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
 	})
@@ -800,7 +801,7 @@ func TestGRPCServer_ListRefs(t *testing.T) {
 		svc := NewMockService()
 		svc.MaybeStartCloneFunc.SetDefaultReturn(false, CloneStatus{CloneInProgress: true, CloneProgress: "cloning"}, nil)
 		gs := &grpcServer{svc: svc}
-		_, err := gs.ListRefs(ctx, &v1.ListRefsRequest{RepoName: "therepo"})
+		err := gs.ListRefs(&v1.ListRefsRequest{RepoName: "therepo"}, mockSS)
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})

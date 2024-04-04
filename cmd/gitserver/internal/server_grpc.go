@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/chunk"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -1200,22 +1201,22 @@ func (gs *grpcServer) ResolveRevision(ctx context.Context, req *proto.ResolveRev
 	}, nil
 }
 
-func (gs *grpcServer) ListRefs(ctx context.Context, req *proto.ListRefsRequest) (*proto.ListRefsResponse, error) {
+func (gs *grpcServer) ListRefs(req *proto.ListRefsRequest, ss proto.GitserverService_ListRefsServer) error {
 	accesslog.Record(
-		ctx,
+		ss.Context(),
 		req.GetRepoName(),
 	)
 
 	if req.GetRepoName() == "" {
-		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+		return status.New(codes.InvalidArgument, "repo must be specified").Err()
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
 	repoDir := gs.fs.RepoDir(repoName)
 	backend := gs.getBackendFunc(repoDir, repoName)
 
-	if err := gs.maybeStartClone(ctx, repoName); err != nil {
-		return nil, err
+	if err := gs.maybeStartClone(ss.Context(), repoName); err != nil {
+		return err
 	}
 
 	pointsAtCommit := []api.CommitID{}
@@ -1235,14 +1236,18 @@ func (gs *grpcServer) ListRefs(ctx context.Context, req *proto.ListRefsRequest) 
 		Contains:       contains,
 	}
 
-	it, err := backend.ListRefs(ctx, opt)
+	it, err := backend.ListRefs(ss.Context(), opt)
 	if err != nil {
-		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		gs.svc.LogIfCorrupt(ss.Context(), repoName, err)
 		// TODO: Better error checking.
-		return nil, err
+		return err
 	}
 
-	res := &proto.ListRefsResponse{}
+	sendFunc := func(refs []*proto.GitRef) error {
+		return ss.Send(&proto.ListRefsResponse{Refs: refs})
+	}
+
+	chunker := chunk.New[*proto.GitRef](sendFunc)
 
 	for {
 		ref, err := it.Next()
@@ -1250,12 +1255,27 @@ func (gs *grpcServer) ListRefs(ctx context.Context, req *proto.ListRefsRequest) 
 			if err == io.EOF {
 				break
 			}
-			return nil, err
+			it.Close()
+			return err
 		}
-		res.Refs = append(res.Refs, ref.ToProto())
+		err = chunker.Send(ref.ToProto())
+		if err != nil {
+			it.Close()
+			return errors.Wrap(err, "failed to send ref chunk")
+		}
 	}
 
-	return res, nil
+	err = chunker.Flush()
+	if err != nil {
+		it.Close()
+		return errors.Wrap(err, "failed to flush refs")
+	}
+
+	if err := it.Close(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (gs *grpcServer) maybeStartClone(ctx context.Context, repo api.RepoName) error {
