@@ -60,7 +60,7 @@ func NewServer(addr string, logger log.Logger, c config.Config) *Server {
 	// Register routes the the server will be responding too
 	r := mux.NewRouter()
 	r.Path("/buildkite").HandlerFunc(server.handleEvent).Methods(http.MethodPost)
-	r.Path("/healthz").HandlerFunc(server.handleHealthz).Methods(http.MethodGet)
+	r.Path("/-/healthz").HandlerFunc(server.handleHealthz).Methods(http.MethodGet)
 
 	debug := r.PathPrefix("/-/debug").Subrouter()
 	debug.Path("/{buildNumber}").HandlerFunc(server.handleGetBuild).Methods(http.MethodGet)
@@ -230,11 +230,16 @@ func (s *Server) processEvent(event *build.Event) {
 }
 
 func determineBuildStatusNotification(logger log.Logger, b *build.Build) *notify.BuildNotification {
+	author := b.GetCommitAuthor()
+	isRelease := b.IsReleaseBuild()
+	// With a release build the person who made the last commit isn't the creator of the build
+	if isRelease {
+		author = b.GetBuildAuthor()
+	}
 	info := notify.BuildNotification{
 		BuildNumber:        b.GetNumber(),
 		ConsecutiveFailure: b.ConsecutiveFailure,
-		PipelineName:       b.Pipeline.GetName(),
-		AuthorEmail:        b.GetAuthorEmail(),
+		AuthorName:         author.Name,
 		Message:            b.GetMessage(),
 		Commit:             b.GetCommit(),
 		BuildStatus:        "",
@@ -243,6 +248,7 @@ func determineBuildStatusNotification(logger log.Logger, b *build.Build) *notify
 		Failed:             []notify.JobLine{},
 		Passed:             []notify.JobLine{},
 		TotalSteps:         len(b.Steps),
+		IsRelease:          isRelease,
 	}
 
 	// You may notice we do not check if the build is Failed and exit early, this is because of the following scenario
@@ -284,9 +290,11 @@ type Service struct{}
 func (s Service) Initialize(ctx context.Context, logger log.Logger, contract runtime.Contract, config config.Config) (background.Routine, error) {
 	logger.Info("config loaded from environment", log.Object("config", log.String("SlackChannel", config.SlackChannel), log.Bool("Production", config.Production)))
 
+	server := NewServer(fmt.Sprintf(":%d", contract.Port), logger, config)
+
 	return background.CombinedRoutine{
-		NewServer(fmt.Sprintf(":%d", contract.Port), logger, config),
-		deleteOldBuilds(logger, nil, CleanUpInterval, BuildExpiryWindow),
+		server,
+		deleteOldBuilds(logger, server.store, CleanUpInterval, BuildExpiryWindow),
 	}, nil
 }
 

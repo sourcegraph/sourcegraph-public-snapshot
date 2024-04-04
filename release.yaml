@@ -62,10 +62,7 @@ internal:
 
 test:
   steps:
-    - name: "placeholder"
-      cmd: |
-        echo "-- pretending to test release ..."
-    - name: "check tag does not exist"
+    - name: "check:git tag does not exist"
       cmd: |
         tags=$(git ls-remote --tags origin | sort -t '/' -k 3 | cut -f 2 | awk -F '/' '{gsub(/\^\{\}$/, "", $3); print $3}' | uniq)
         if echo "${tags}" | grep -q "^{{version}}$"; then

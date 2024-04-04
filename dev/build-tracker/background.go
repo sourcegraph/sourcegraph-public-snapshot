@@ -25,5 +25,5 @@ func deleteOldBuilds(logger log.Logger, store *build.Store, every, window time.D
 		logger.Info("deleting old builds", log.Int("oldBuildCount", len(oldBuilds)))
 		store.DelByBuildNumber(oldBuilds...)
 		return nil
-	}), goroutine.WithInterval(every))
+	}), goroutine.WithInterval(every), goroutine.WithName("old-build-purger"))
 }
