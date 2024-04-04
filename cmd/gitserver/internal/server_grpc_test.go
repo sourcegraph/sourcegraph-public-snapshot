@@ -791,6 +791,7 @@ func TestGRPCServer_ResolveRevision(t *testing.T) {
 func TestGRPCServer_ListRefs(t *testing.T) {
 	ctx := context.Background()
 	mockSS := gitserver.NewMockGitserverService_ListRefsServer()
+	mockSS.ContextFunc.SetDefaultReturn(ctx)
 	t.Run("argument validation", func(t *testing.T) {
 		gs := &grpcServer{}
 		err := gs.ListRefs(&v1.ListRefsRequest{RepoName: ""}, mockSS)
@@ -800,7 +801,7 @@ func TestGRPCServer_ListRefs(t *testing.T) {
 	t.Run("checks for uncloned repo", func(t *testing.T) {
 		svc := NewMockService()
 		svc.MaybeStartCloneFunc.SetDefaultReturn(false, CloneStatus{CloneInProgress: true, CloneProgress: "cloning"}, nil)
-		gs := &grpcServer{svc: svc}
+		gs := &grpcServer{svc: svc, fs: gitserverfs.NewMockFS()}
 		err := gs.ListRefs(&v1.ListRefsRequest{RepoName: "therepo"}, mockSS)
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
@@ -819,24 +820,32 @@ func TestGRPCServer_ListRefs(t *testing.T) {
 		b.ListRefsFunc.SetDefaultReturn(it, nil)
 		gs := &grpcServer{
 			svc: svc,
+			fs:  gitserverfs.NewMockFS(),
 			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
 		}
 
 		cli := spawnServer(t, gs)
-		res, err := cli.ListRefs(ctx, &v1.ListRefsRequest{
+		cc, err := cli.ListRefs(ctx, &v1.ListRefsRequest{
 			RepoName: "therepo",
 		})
 		require.NoError(t, err)
-		if diff := cmp.Diff(&proto.ListRefsResponse{
-			Refs: []*v1.GitRef{
-				{
-					RefName:   "refs/heads/master",
-					CreatedAt: timestamppb.New(time.Time{}),
-				},
+		refs := []*v1.GitRef{}
+		for {
+			resp, err := cc.Recv()
+			if err == io.EOF {
+				break
+			}
+			require.NoError(t, err)
+			refs = append(refs, resp.GetRefs()...)
+		}
+		if diff := cmp.Diff([]*v1.GitRef{
+			{
+				RefName:   "refs/heads/master",
+				CreatedAt: timestamppb.New(time.Time{}),
 			},
-		}, res, cmpopts.IgnoreUnexported(proto.ListRefsResponse{}, proto.GitRef{}, timestamppb.Timestamp{})); diff != "" {
+		}, refs, cmpopts.IgnoreUnexported(v1.GitRef{}, timestamppb.Timestamp{})); diff != "" {
 			t.Fatalf("unexpected response (-want +got):\n%s", diff)
 		}
 	})

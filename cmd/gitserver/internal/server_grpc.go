@@ -1213,11 +1213,12 @@ func (gs *grpcServer) ListRefs(req *proto.ListRefsRequest, ss proto.GitserverSer
 
 	repoName := api.RepoName(req.GetRepoName())
 	repoDir := gs.fs.RepoDir(repoName)
-	backend := gs.getBackendFunc(repoDir, repoName)
 
 	if err := gs.maybeStartClone(ss.Context(), repoName); err != nil {
 		return err
 	}
+
+	backend := gs.getBackendFunc(repoDir, repoName)
 
 	pointsAtCommit := []api.CommitID{}
 	for _, c := range req.GetPointsAtCommit() {
@@ -1247,7 +1248,11 @@ func (gs *grpcServer) ListRefs(req *proto.ListRefsRequest, ss proto.GitserverSer
 		return ss.Send(&proto.ListRefsResponse{Refs: refs})
 	}
 
-	chunker := chunk.New[*proto.GitRef](sendFunc)
+	// We use a chunker here to make sure we don't send too large gRPC messages.
+	// For repos with thousands or even millions of refs, sending them all in one
+	// message would be very slow, but sending them all in individual messages
+	// would be slow either, so we chunk them instead.
+	chunker := chunk.New(sendFunc)
 
 	for {
 		ref, err := it.Next()
