@@ -80,12 +80,8 @@
                         {@const commit = contributor.commits.nodes[0]}
                         <tr>
                             <td
-                                ><span>
-                                    <Avatar avatar={contributor.person} --avatar-size="1.5rem" />
-                                </span>&nbsp;
-                                <span>
-                                    {contributor.person.displayName}
-                                </span>
+                                ><span><Avatar avatar={contributor.person} --avatar-size="1.5rem" /></span>&nbsp;
+                                <span>{contributor.person.displayName}</span>
                             </td>
                             <td
                                 ><Timestamp date={new Date(commit.author.date)} strict />:
