@@ -96,7 +96,7 @@ func (br *blameHunkReader) Read() (*gitdomain.Hunk, error) {
 		}
 	}
 
-	// Return the scanner error if ther was one
+	// Return the scanner error if there was one
 	if err := br.sc.Err(); err != nil {
 		return nil, err
 	}
