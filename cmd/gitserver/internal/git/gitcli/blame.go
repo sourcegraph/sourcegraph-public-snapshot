@@ -62,9 +62,7 @@ func newBlameHunkReader(rc io.ReadCloser) git.BlameHunkReader {
 	}
 }
 
-// Read returns the next blame hunk. The returned hunk is only valid
-// until the next call to Read, and needs to be copied if it needs
-// to be stored.
+// Read returns the next blame hunk.
 func (br *blameHunkReader) Read() (*gitdomain.Hunk, error) {
 	// Blame hunks follow a structured output, starting with the
 	// hunk header: <commit hash> <original file start line> <current file start line> <number of lines>

@@ -94,7 +94,6 @@ type BlameRange struct {
 // BlameHunkReader is a reader for git blame hunks.
 type BlameHunkReader interface {
 	// Consume the next hunk. io.EOF is returned at the end of the stream.
-	// The returned hunk is only valid until the next call to Read.
 	Read() (*gitdomain.Hunk, error)
 	Close() error
 }

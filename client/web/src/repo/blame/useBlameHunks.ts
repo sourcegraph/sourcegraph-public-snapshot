@@ -39,13 +39,13 @@ export interface BlameHunk {
             displayName: string
             avatarURL: string | null
             user:
-            | undefined
-            | null
-            | {
-                username: string | null
-                displayName: string | null
-                avatarURL: string | null
-            }
+                | undefined
+                | null
+                | {
+                      username: string | null
+                      displayName: string | null
+                      avatarURL: string | null
+                  }
         }
     }
     commit: {
@@ -158,10 +158,12 @@ const fetchBlameViaStreaming = memoizeObservable(
                                     },
                                     commit: {
                                         url: rawHunk.commit.url,
-                                        previous: rawHunk.commit.previous ? {
-                                            rev: rawHunk.commit.previous.commitID,
-                                            filename: rawHunk.commit.previous.filename,
-                                        } : null,
+                                        previous: rawHunk.commit.previous
+                                            ? {
+                                                  rev: rawHunk.commit.previous.commitID,
+                                                  filename: rawHunk.commit.previous.filename,
+                                              }
+                                            : null,
                                     },
                                 }
                                 assembledHunks.push(addDisplayInfoForHunk(hunk, sourcegraphURL))
@@ -245,15 +247,15 @@ const addDisplayInfoForHunk = (hunk: Omit<BlameHunk, 'displayInfo'>, sourcegraph
     const linkURL = new URL(commit.url, sourcegraphURL).href
     const content = truncate(message, { length: 45 })
 
-        ; (hunk as BlameHunk).displayInfo = {
-            displayName,
-            username,
-            commitDate,
-            dateString,
-            timestampString,
-            linkURL,
-            message: content,
-        }
+    ;(hunk as BlameHunk).displayInfo = {
+        displayName,
+        username,
+        commitDate,
+        dateString,
+        timestampString,
+        linkURL,
+        message: content,
+    }
     return hunk as BlameHunk
 }
 
