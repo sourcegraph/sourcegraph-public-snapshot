@@ -357,6 +357,7 @@ commands:
       go build -gcflags="$GCFLAGS" -o .bin/pings github.com/sourcegraph/sourcegraph/cmd/pings
     checkBinary: .bin/pings
     env:
+      PORT: '6080'
       SRC_LOG_LEVEL: info
       DIAGNOSTICS_SECRET: 'lifeisgood'
       PINGS_PUBSUB_PROJECT_ID: 'telligentsourcegraph'

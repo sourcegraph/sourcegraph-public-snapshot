@@ -74,7 +74,7 @@ func (s Service) Initialize(
 	}))
 	// Test endpoint for making CURL requests to arbitrary targets from this
 	// service, for testing networking. Requires diagnostic auth.
-	h.Handle("/proxy", contract.DiagnosticsAuthMiddleware(
+	h.Handle("/proxy", contract.Diagnostics.DiagnosticsAuthMiddleware(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			host := r.URL.Query().Get("host")
 			if host == "" {
@@ -132,7 +132,7 @@ func (s Service) Initialize(
 			proxy.ServeHTTP(w, proxiedRequest)
 		}),
 	))
-	contract.RegisterDiagnosticsHandlers(h, serviceState{
+	contract.Diagnostics.RegisterDiagnosticsHandlers(h, serviceState{
 		statelessMode: config.StatelessMode,
 		contract:      contract,
 	})
