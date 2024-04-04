@@ -50,11 +50,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 				continue
 			}
 		}
-		resolvers = append(resolvers, &GitRefResolver{
-			name:   ref.Name,
-			repo:   r,
-			target: GitObjectID(ref.CommitID),
-		})
+		resolvers = append(resolvers, NewGitRefResolver(r, ref.Name, GitObjectID(ref.CommitID)))
 	}
 
 	return &gitRefConnectionResolver{

@@ -777,7 +777,7 @@ func (r *RepositoryResolver) getLinker(ctx context.Context) (externallink.Reposi
 
 		defaultBranch := ""
 		if defaultBranchResolver != nil {
-			defaultBranch = defaultBranchResolver.name
+			defaultBranch = defaultBranchResolver.Name()
 		}
 
 		repo, err := r.getRepo(ctx)

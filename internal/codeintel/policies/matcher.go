@@ -152,7 +152,7 @@ func (m *Matcher) matchTaggedCommits(context matcherContext, commit string, ref 
 		policyDuration, _ := m.extractor(policy)
 
 		context.commitMap[commit] = append(context.commitMap[commit], PolicyMatch{
-			Name:           ref.Name,
+			Name:           ref.ShortName,
 			PolicyID:       &policy.ID,
 			PolicyDuration: policyDuration,
 			CommittedAt:    ref.CreatedDate,
@@ -170,7 +170,7 @@ func (m *Matcher) matchBranchHeads(context matcherContext, commit string, ref gi
 	if ref.IsHead && m.includeTipOfDefaultBranch {
 		// Add a match with no associated policy for the tip of the default branch
 		context.commitMap[commit] = append(context.commitMap[commit], PolicyMatch{
-			Name:           ref.Name,
+			Name:           ref.ShortName,
 			PolicyID:       nil,
 			PolicyDuration: nil,
 			CommittedAt:    ref.CreatedDate,
@@ -181,7 +181,7 @@ func (m *Matcher) matchBranchHeads(context matcherContext, commit string, ref gi
 		policyDuration, _ := m.extractor(policy)
 
 		context.commitMap[commit] = append(context.commitMap[commit], PolicyMatch{
-			Name:           ref.Name,
+			Name:           ref.ShortName,
 			PolicyID:       &policy.ID,
 			PolicyDuration: policyDuration,
 			CommittedAt:    ref.CreatedDate,
@@ -189,7 +189,7 @@ func (m *Matcher) matchBranchHeads(context matcherContext, commit string, ref gi
 
 		// Build requests to be made in batch via the matchCommitsOnBranch method
 		if policyDuration, includeIntermediateCommits := m.extractor(policy); includeIntermediateCommits {
-			meta, ok := context.branchRequests[ref.Name]
+			meta, ok := context.branchRequests[ref.ShortName]
 			if !ok {
 				meta.policyDurationByIDs = map[int]*time.Duration{}
 			}
@@ -197,7 +197,7 @@ func (m *Matcher) matchBranchHeads(context matcherContext, commit string, ref gi
 			meta.policyDurationByIDs[policy.ID] = policyDuration
 			meta.isDefaultBranch = meta.isDefaultBranch || ref.IsHead
 			meta.commitID = commit
-			context.branchRequests[ref.Name] = meta
+			context.branchRequests[ref.ShortName] = meta
 		}
 	}
 
@@ -301,7 +301,7 @@ func (m *Matcher) forEachMatchingPolicy(context matcherContext, ref gitdomain.Re
 }
 
 func (m *Matcher) policyMatchesRef(context matcherContext, policy shared.ConfigurationPolicy, ref gitdomain.Ref, now time.Time) bool {
-	if !context.patterns[policy.Pattern].Match(ref.Name) {
+	if !context.patterns[policy.Pattern].Match(ref.ShortName) {
 		// Name doesn't match policy's pattern
 		return false
 	}

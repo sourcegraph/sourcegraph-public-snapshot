@@ -138,7 +138,7 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 	if defaultBranchRef == nil {
 		return []*repositoryTextSearchIndexedRef{}, nil
 	}
-	refNames := []string{defaultBranchRef.name}
+	refNames := []string{defaultBranchRef.Name()}
 
 	refs := make([]*repositoryTextSearchIndexedRef, len(refNames))
 	for i, refName := range refNames {

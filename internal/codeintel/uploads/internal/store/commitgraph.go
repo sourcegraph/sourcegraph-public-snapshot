@@ -642,7 +642,7 @@ func sanitizeCommitInput(
 					}
 				}
 
-				names = append(names, ref.Name)
+				names = append(names, ref.ShortName)
 			}
 			sort.Strings(names)
 

@@ -1994,18 +1994,14 @@ func addNameOnly(opt CommitsOptions, checker authz.SubRepoPermissionChecker) Com
 	return opt
 }
 
-type byteSlices [][]byte
-
-func (p byteSlices) Len() int           { return len(p) }
-func (p byteSlices) Less(i, j int) bool { return bytes.Compare(p[i], p[j]) < 0 }
-func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-
 // ListRefs returns a list of all refs in the repository.
 func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName, opt ListRefsOpts) (_ []gitdomain.Ref, err error) {
 	ctx, _, endObservation := c.operations.listRefs.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
 			repo.Attr(),
+			attribute.Bool("headsOnly", opt.HeadsOnly),
+			attribute.Bool("tagsOnly", opt.TagsOnly),
 		},
 	})
 	defer endObservation(1, observation.Args{})

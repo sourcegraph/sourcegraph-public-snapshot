@@ -76,7 +76,8 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 		for branch, commit := range branchHeads {
 			branchHeadCreateDate := createdAt[commit]
 			refs = append(refs, gitdomain.Ref{
-				Name:        branch,
+				Name:        "refs/heads/" + branch,
+				ShortName:   branch,
 				Type:        gitdomain.RefTypeBranch,
 				IsHead:      branch == defaultBranchName,
 				CreatedDate: branchHeadCreateDate,
@@ -87,7 +88,8 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 		for tag, commit := range tagHeads {
 			tagCreateDate := createdAt[commit]
 			refs = append(refs, gitdomain.Ref{
-				Name:        tag,
+				Name:        "refs/tags/" + tag,
+				ShortName:   tag,
 				Type:        gitdomain.RefTypeTag,
 				CreatedDate: tagCreateDate,
 				CommitID:    api.CommitID(commit),
