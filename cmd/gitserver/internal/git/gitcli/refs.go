@@ -37,20 +37,27 @@ func buildListRefsArgs(opt git.ListRefsOpts) []string {
 		"--format", "%(objecttype)%00%(HEAD)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)",
 	}
 
-	if opt.HeadsOnly {
-		cmdArgs = append(cmdArgs, "refs/heads/")
-	}
-
-	if opt.TagsOnly {
-		cmdArgs = append(cmdArgs, "refs/tags/")
-	}
-
 	for _, c := range opt.PointsAtCommit {
 		cmdArgs = append(cmdArgs, fmt.Sprintf("--points-at=%s", string(c)))
 	}
 
 	for _, c := range opt.Contains {
 		cmdArgs = append(cmdArgs, fmt.Sprintf("--contains=%s", string(c)))
+	}
+
+	addedSeparator := false
+
+	if opt.HeadsOnly {
+		addedSeparator = true
+		cmdArgs = append(cmdArgs, "--")
+		cmdArgs = append(cmdArgs, "refs/heads/")
+	}
+
+	if opt.TagsOnly {
+		if !addedSeparator {
+			cmdArgs = append(cmdArgs, "--")
+		}
+		cmdArgs = append(cmdArgs, "refs/tags/")
 	}
 
 	return cmdArgs

@@ -438,8 +438,8 @@ type GitRef struct {
 	RefOid string `protobuf:"bytes,4,opt,name=ref_oid,json=refOid,proto3" json:"ref_oid,omitempty"`
 	// created_at is the timestamp when the ref was created or modified last.
 	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	// ref_type is the type of the reference. Non-head non-tag references will be of
-	// type unspecified. I.e., refs/pull/123/head.
+	// ref_type is the type of the reference. Non-tag references will be of
+	// type branch. I.e., refs/pull/123/head will be a branch as well.
 	RefType GitRef_RefType `protobuf:"varint,6,opt,name=ref_type,json=refType,proto3,enum=gitserver.v1.GitRef_RefType" json:"ref_type,omitempty"`
 	// is_head is true if the reference is the HEAD reference.
 	IsHead bool `protobuf:"varint,7,opt,name=is_head,json=isHead,proto3" json:"is_head,omitempty"`

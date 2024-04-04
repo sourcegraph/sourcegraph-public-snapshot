@@ -205,8 +205,8 @@ message GitRef {
     REF_TYPE_BRANCH = 1;
     REF_TYPE_TAG = 2;
   }
-  // ref_type is the type of the reference. Non-head non-tag references will be of
-  // type unspecified. I.e., refs/pull/123/head.
+  // ref_type is the type of the reference. Non-tag references will be of
+  // type branch. I.e., refs/pull/123/head will be a branch as well.
   RefType ref_type = 6;
   // is_head is true if the reference is the HEAD reference.
   bool is_head = 7;

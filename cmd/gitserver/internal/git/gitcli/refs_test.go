@@ -29,6 +29,8 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 		"git add foo.txt",
 		"git commit -m bar --author='Bar Author <bar@sourcegraph.com>'",
 		"git checkout master",
+		"mkdir -p .git/refs/pull/100",
+		"echo $(git rev-parse HEAD) > .git/refs/pull/100/head",
 	)
 
 	ctx := context.Background()
@@ -67,6 +69,19 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 			RefOID:      "957e5bad2c7c68722287ef5c298bfe9e09eb8b3f",
 			IsHead:      false,
 			Type:        gitdomain.RefTypeTag,
+			CreatedDate: ref.CreatedDate,
+		}, ref)
+
+		ref, err = it.Next()
+		require.NoError(t, err)
+
+		assert.Equal(t, &gitdomain.Ref{
+			Name:        "refs/pull/100/head",
+			ShortName:   "pull/100/head",
+			CommitID:    commit,
+			RefOID:      commit,
+			IsHead:      false,
+			Type:        gitdomain.RefTypeBranch,
 			CreatedDate: ref.CreatedDate,
 		}, ref)
 
@@ -233,6 +248,19 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 			CreatedDate: ref.CreatedDate,
 		}, ref)
 
+		ref, err = it.Next()
+		require.NoError(t, err)
+
+		assert.Equal(t, &gitdomain.Ref{
+			Name:        "refs/pull/100/head",
+			ShortName:   "pull/100/head",
+			CommitID:    commit,
+			RefOID:      commit,
+			IsHead:      false,
+			Type:        gitdomain.RefTypeBranch,
+			CreatedDate: ref.CreatedDate,
+		}, ref)
+
 		_, err = it.Next()
 		require.Equal(t, io.EOF, err)
 
@@ -324,7 +352,7 @@ func TestBuildListRefsArgs(t *testing.T) {
 	t.Run("heads only", func(t *testing.T) {
 		args := buildListRefsArgs(git.ListRefsOpts{HeadsOnly: true})
 		require.Equal(t,
-			[]string{"for-each-ref", "--sort", "-refname", "--sort", "-creatordate", "--sort", "-HEAD", "--format", "%(objecttype)%00%(HEAD)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)", "refs/heads/"},
+			[]string{"for-each-ref", "--sort", "-refname", "--sort", "-creatordate", "--sort", "-HEAD", "--format", "%(objecttype)%00%(HEAD)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)", "--", "refs/heads/"},
 			args,
 		)
 	})
@@ -332,7 +360,7 @@ func TestBuildListRefsArgs(t *testing.T) {
 	t.Run("tags only", func(t *testing.T) {
 		args := buildListRefsArgs(git.ListRefsOpts{TagsOnly: true})
 		require.Equal(t,
-			[]string{"for-each-ref", "--sort", "-refname", "--sort", "-creatordate", "--sort", "-HEAD", "--format", "%(objecttype)%00%(HEAD)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)", "refs/tags/"},
+			[]string{"for-each-ref", "--sort", "-refname", "--sort", "-creatordate", "--sort", "-HEAD", "--format", "%(objecttype)%00%(HEAD)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)", "--", "refs/tags/"},
 			args,
 		)
 	})
@@ -340,7 +368,7 @@ func TestBuildListRefsArgs(t *testing.T) {
 	t.Run("heads and tags only", func(t *testing.T) {
 		args := buildListRefsArgs(git.ListRefsOpts{HeadsOnly: true, TagsOnly: true})
 		require.Equal(t,
-			[]string{"for-each-ref", "--sort", "-refname", "--sort", "-creatordate", "--sort", "-HEAD", "--format", "%(objecttype)%00%(HEAD)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)", "refs/heads/", "refs/tags/"},
+			[]string{"for-each-ref", "--sort", "-refname", "--sort", "-creatordate", "--sort", "-HEAD", "--format", "%(objecttype)%00%(HEAD)%00%(refname)%00%(refname:short)%00%(objectname)%00%(*objectname)%00%(creatordate:unix)", "--", "refs/heads/", "refs/tags/"},
 			args,
 		)
 	})
