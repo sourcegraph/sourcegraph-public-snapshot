@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount, tick } from 'svelte'
+    import { tick } from 'svelte'
 
     import { afterNavigate, disableScrollHandling, goto } from '$app/navigation'
     import { page } from '$app/stores'
@@ -11,7 +11,6 @@
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
-    import { scrollAll } from '$lib/stores'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
     import { Alert } from '$lib/wildcard'
@@ -93,12 +92,6 @@
 
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
     $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
-
-    onMount(() => {
-        // We want the whole page to be scrollable and hide page and repo navigation
-        scrollAll.set(true)
-        return () => scrollAll.set(false)
-    })
 
     afterNavigate(() => {
         // When navigating to a new page we want to ensure two things:
