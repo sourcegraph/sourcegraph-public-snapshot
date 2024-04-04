@@ -2208,3 +2208,55 @@ func TestClient_ResolveRevision(t *testing.T) {
 		require.True(t, errors.HasType(err, &gitdomain.RepoNotExistError{}))
 	})
 }
+
+func TestClient_ListRefs(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		now := time.Now().UTC()
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				ss := NewMockGitserverService_ListRefsClient()
+				ss.RecvFunc.SetDefaultReturn(nil, io.EOF)
+				ss.RecvFunc.PushReturn(&proto.ListRefsResponse{Refs: []*proto.GitRef{
+					{
+						RefName:      "refs/heads/master",
+						TargetCommit: "deadbeef",
+						CreatedAt:    timestamppb.New(now),
+					},
+				}}, nil)
+				c.ListRefsFunc.SetDefaultReturn(ss, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		refs, err := c.ListRefs(context.Background(), "repo", ListRefsOpts{})
+		require.NoError(t, err)
+		require.Equal(t, []gitdomain.Ref{
+			{
+				Name:        "refs/heads/master",
+				CommitID:    "deadbeef",
+				CreatedDate: now,
+			},
+		}, refs)
+	})
+	t.Run("returns well known error types", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				s, err := status.New(codes.NotFound, "repo cloning").WithDetails(&proto.RepoNotFoundPayload{Repo: "repo", CloneInProgress: true})
+				require.NoError(t, err)
+				c.ListRefsFunc.PushReturn(nil, s.Err())
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		// Should fail with clone error
+		_, err := c.ListRefs(context.Background(), "repo", ListRefsOpts{})
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RepoNotExistError{}))
+	})
+}
