@@ -340,7 +340,8 @@ type repoCommit struct {
 
 type indexRequest struct {
 	repoCommit
-	done chan struct{}
+	dateAddedToQueue time.Time
+	done             chan struct{}
 }
 
 type pathSymbol struct {
