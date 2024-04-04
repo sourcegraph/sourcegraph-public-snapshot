@@ -18,7 +18,7 @@ func ScheduleStoreTokenUsage(ctx context.Context, db database.DB) {
 			fmt.Printf("Error storing token usage: %v\n", err)
 		}
 
-		// Wait for 1 minute before the next execution
+		// Wait for 5 minutes before the next execution
 		time.Sleep(5 * time.Minute)
 	}
 }
