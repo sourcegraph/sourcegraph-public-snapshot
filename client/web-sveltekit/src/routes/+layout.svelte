@@ -3,9 +3,8 @@
 
     import { browser, dev } from '$app/environment'
     import { isErrorLike } from '$lib/common'
-    import { classNames } from '$lib/dom'
     import { TemporarySettingsStorage } from '$lib/shared'
-    import { isLightTheme, setAppContext, scrollAll } from '$lib/stores'
+    import { isLightTheme, setAppContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
 
     import Header from './Header.svelte'
