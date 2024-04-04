@@ -240,7 +240,7 @@ type Hunk struct {
 	StartByte      uint32 // 0-indexed start byte position (inclusive)
 	EndByte        uint32 // 0-indexed end byte position (exclusive)
 	CommitID       api.CommitID
-	PreviousCommit PreviousCommit
+	PreviousCommit *PreviousCommit
 	Author         Signature
 	Message        string
 	Filename       string
@@ -251,18 +251,24 @@ func HunkFromBlameProto(h *proto.BlameHunk) *Hunk {
 		return nil
 	}
 
+	var previousCommit *PreviousCommit
+	protoPreviousCommit := h.GetPreviousCommit()
+	if protoPreviousCommit != nil {
+		previousCommit = &PreviousCommit{
+			CommitID: api.CommitID(protoPreviousCommit.GetCommit()),
+			Filename: protoPreviousCommit.GetFilename(),
+		}
+	}
+
 	return &Hunk{
-		StartLine: h.GetStartLine(),
-		EndLine:   h.GetEndLine(),
-		StartByte: h.GetStartByte(),
-		EndByte:   h.GetEndByte(),
-		CommitID:  api.CommitID(h.GetCommit()),
-		PreviousCommit: PreviousCommit{
-			CommitID: api.CommitID(h.GetPreviousCommit().GetCommit()),
-			Filename: h.GetPreviousCommit().GetFilename(),
-		},
-		Message:  h.GetMessage(),
-		Filename: h.GetFilename(),
+		StartLine:      h.GetStartLine(),
+		EndLine:        h.GetEndLine(),
+		StartByte:      h.GetStartByte(),
+		EndByte:        h.GetEndByte(),
+		CommitID:       api.CommitID(h.GetCommit()),
+		PreviousCommit: previousCommit,
+		Message:        h.GetMessage(),
+		Filename:       h.GetFilename(),
 		Author: Signature{
 			Name:  h.GetAuthor().GetName(),
 			Email: h.GetAuthor().GetEmail(),
@@ -276,18 +282,22 @@ func (h *Hunk) ToProto() *proto.BlameHunk {
 		return nil
 	}
 
-	return &proto.BlameHunk{
-		StartLine: uint32(h.StartLine),
-		EndLine:   uint32(h.EndLine),
-		StartByte: uint32(h.StartByte),
-		EndByte:   uint32(h.EndByte),
-		Commit:    string(h.CommitID),
-		PreviousCommit: &proto.PreviousCommit{
+	var protoPreviousCommit *proto.PreviousCommit
+	if h.PreviousCommit != nil {
+		protoPreviousCommit = &proto.PreviousCommit{
 			Commit:   string(h.PreviousCommit.CommitID),
 			Filename: h.PreviousCommit.Filename,
-		},
-		Message:  h.Message,
-		Filename: h.Filename,
+		}
+	}
+	return &proto.BlameHunk{
+		StartLine:      uint32(h.StartLine),
+		EndLine:        uint32(h.EndLine),
+		StartByte:      uint32(h.StartByte),
+		EndByte:        uint32(h.EndByte),
+		Commit:         string(h.CommitID),
+		PreviousCommit: protoPreviousCommit,
+		Message:        h.Message,
+		Filename:       h.Filename,
 		Author: &proto.BlameAuthor{
 			Name:  h.Author.Name,
 			Email: h.Author.Email,

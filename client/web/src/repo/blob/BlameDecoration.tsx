@@ -219,7 +219,7 @@ export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
                                 />
                             </div>
                         </div>
-                        {blameHunk.commit.previous.rev.length > 0 && (
+                        {blameHunk.commit.previous && (
                             <>
                                 <hr className={classNames(styles.separator, 'm-0')} />
                                 <div className={classNames('px-3', styles.block)}>

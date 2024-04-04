@@ -91,7 +91,9 @@ func (br *blameHunkReader) Read() (*gitdomain.Hunk, error) {
 
 			// If we've finished reading the body we can return the hunk.
 			if done {
-				return br.cur, nil
+				// Copy the hunk before returning
+				h := *br.cur
+				return &h, nil
 			}
 		}
 	}
@@ -160,13 +162,16 @@ func parseBody(hunk *gitdomain.Hunk, annotation []byte, content []byte) (done bo
 		hunk.Author.Date = time.Unix(t, 0).UTC()
 	case "summary":
 		hunk.Message = string(content)
-	case "filename":
-		hunk.Filename = unquotedStringFromBytes(content)
-		return true, nil
 	case "previous":
 		commitID, filename, _ := bytes.Cut(content, []byte(" "))
-		hunk.PreviousCommit.CommitID = api.CommitID(commitID)
-		hunk.PreviousCommit.Filename = unquotedStringFromBytes(filename)
+		hunk.PreviousCommit = &gitdomain.PreviousCommit{
+			CommitID: api.CommitID(commitID),
+			Filename: unquotedStringFromBytes(filename),
+		}
+	case "filename":
+		hunk.Filename = unquotedStringFromBytes(content)
+		// filename designates the end of a hunk body
+		return true, nil
 	}
 	return false, nil
 }

@@ -167,8 +167,8 @@ type BlameHunkResponse struct {
 }
 
 type BlameHunkCommitResponse struct {
-	Previous gitdomain.PreviousCommit `json:"previous"`
-	URL      string                   `json:"url"`
+	Previous *gitdomain.PreviousCommit `json:"previous,omitempty"`
+	URL      string                    `json:"url"`
 }
 
 type BlameHunkUserResponse struct {
