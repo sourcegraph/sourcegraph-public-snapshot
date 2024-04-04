@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -53,7 +54,7 @@ type CodyGatewayDotcomUserResolver struct {
 
 func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.Context, args *graphqlbackend.CodyGatewayUsersByAccessTokenArgs) (graphqlbackend.CodyGatewayUser, error) {
 	// 🚨 SECURITY: Only site admins or the service accounts may check users.
-	grantReason, err := serviceAccountOrSiteAdmin(ctx, r.DB, false)
+	grantReason, err := hasRBACPermsOrSiteAdmin(ctx, r.DB, false)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +229,7 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 	}
 
 	return licensing.CodyGatewayRateLimit{
-		AllowedModels:   []string{"openai/text-embedding-ada-002"},
+		AllowedModels:   []string{"openai/text-embedding-ada-002", "sourcegraph/st-multi-qa-mpnet-base-dot-v1"},
 		Limit:           limit,
 		IntervalSeconds: intervalSeconds,
 	}, nil
@@ -348,6 +349,9 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 
 		if !isProUser {
 			return []string{
+				"anthropic/" + anthropic.Claude3Haiku,
+				"anthropic/" + anthropic.Claude3Sonnet,
+				// Remove after the Claude 3 rollout is complete
 				"anthropic/claude-2.0",
 				"anthropic/claude-instant-v1",
 				"anthropic/claude-instant-1.2",
@@ -356,6 +360,15 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 		}
 
 		return []string{
+			"anthropic/" + anthropic.Claude3Haiku,
+			"anthropic/" + anthropic.Claude3Sonnet,
+			"anthropic/" + anthropic.Claude3Opus,
+			"fireworks/" + fireworks.Mixtral8x7bInstruct,
+			"openai/gpt-3.5-turbo",
+			"openai/gpt-4-1106-preview",
+			"openai/gpt-4-turbo-preview",
+
+			// Remove after the Claude 3 rollout is complete
 			"anthropic/claude-2",
 			"anthropic/claude-2.0",
 			"anthropic/claude-2.1",
@@ -363,18 +376,18 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"anthropic/claude-instant-1.2",
 			"anthropic/claude-instant-v1",
 			"anthropic/claude-instant-1",
-			"openai/gpt-3.5-turbo",
-			"openai/gpt-4-1106-preview",
-			"fireworks/" + fireworks.Mixtral8x7bInstruct,
 		}
 	case types.CompletionsFeatureCode:
 		return []string{
+			"anthropic/" + anthropic.Claude3Haiku,
 			"anthropic/claude-instant-v1",
 			"anthropic/claude-instant-1",
 			"anthropic/claude-instant-1.2-cyan",
 			"anthropic/claude-instant-1.2",
 			"fireworks/starcoder",
 			"fireworks/" + fireworks.Llama213bCode,
+			"fireworks/" + fireworks.StarcoderTwo15b,
+			"fireworks/" + fireworks.StarcoderTwo7b,
 		}
 	default:
 		return []string{}

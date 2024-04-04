@@ -5,12 +5,13 @@ import (
 
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -43,7 +44,7 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 		"chat",
 		func(ctx context.Context, requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
 			// Allow a number of additional models on Dotcom
-			if envvar.SourcegraphDotComMode() {
+			if dotcom.SourcegraphDotComMode() {
 				actor := sgactor.FromContext(ctx)
 				user, err := actor.User(ctx, db.Users())
 				if err != nil {
@@ -74,21 +75,32 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 	// When updating these two lists, make sure you also update `allowedModels` in codygateway_dotcom_user.go.
 	if isProUser {
 		switch model {
-		case "anthropic/claude-2",
+		case
+			"anthropic/" + anthropic.Claude3Haiku,
+			"anthropic/" + anthropic.Claude3Sonnet,
+			"anthropic/" + anthropic.Claude3Opus,
+			"fireworks/" + fireworks.Mixtral8x7bInstruct,
+			"openai/gpt-3.5-turbo",
+			"openai/gpt-4-1106-preview",
+			"openai/gpt-4-turbo-preview",
+
+			// Remove after the Claude 3 rollout is complete
+			"anthropic/claude-2",
 			"anthropic/claude-2.0",
 			"anthropic/claude-2.1",
 			"anthropic/claude-instant-1.2-cyan",
 			"anthropic/claude-instant-1.2",
 			"anthropic/claude-instant-v1",
-			"anthropic/claude-instant-1",
-			"openai/gpt-3.5-turbo",
-			"openai/gpt-4-1106-preview",
-			"fireworks/" + fireworks.Mixtral8x7bInstruct:
+			"anthropic/claude-instant-1":
 			return true
 		}
 	} else {
 		switch model {
-		case "anthropic/claude-2",
+		case
+			"anthropic/" + anthropic.Claude3Haiku,
+			"anthropic/" + anthropic.Claude3Sonnet,
+			// Remove after the Claude 3 rollout is complete
+			"anthropic/claude-2",
 			"anthropic/claude-2.0",
 			"anthropic/claude-instant-v1",
 			"anthropic/claude-instant-1":

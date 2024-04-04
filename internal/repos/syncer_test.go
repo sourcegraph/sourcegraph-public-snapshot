@@ -15,11 +15,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -1151,7 +1151,7 @@ func TestSyncerMultipleServices(t *testing.T) {
 		t.Fatalf("expected %d sync jobs, got %d", len(services), jobCount)
 	}
 
-	for i := 0; i < len(services)*10; i++ {
+	for range len(services) * 10 {
 		diff := <-syncer.Synced
 
 		if len(diff.Added) != 1 {
@@ -1348,15 +1348,10 @@ func TestCloudDefaultExternalServicesDontSync(t *testing.T) {
 }
 
 func TestDotComPrivateReposDontSync(t *testing.T) {
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	ctx, cancel := context.WithCancel(context.Background())
-
-	t.Cleanup(func() {
-		envvar.MockSourcegraphDotComMode(orig)
-		cancel()
-	})
+	defer cancel()
 
 	store := getTestRepoStore(t)
 

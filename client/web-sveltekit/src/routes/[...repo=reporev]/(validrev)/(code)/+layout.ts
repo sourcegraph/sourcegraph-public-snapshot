@@ -8,7 +8,7 @@ import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
-import { GitHistoryQuery } from './layout.gql'
+import { GitHistoryQuery, LastCommitQuery } from './layout.gql'
 
 const HISTORY_COMMITS_PER_PAGE = 20
 
@@ -34,6 +34,11 @@ export const load: LayoutLoad = ({ parent, params }) => {
     return {
         parentPath,
         fileTree,
+        lastCommit: client.query(LastCommitQuery, {
+            repoName: repoName,
+            revspec: revision,
+            filePath: parentPath,
+        }),
         // Fetches the most recent commits for current blob, tree or repo root
         commitHistory: infinityQuery({
             client,

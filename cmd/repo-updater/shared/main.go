@@ -19,7 +19,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/phabricator"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/purge"
@@ -37,21 +36,19 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -88,7 +85,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// bit more to do in this method, though, and the process will be marked ready
 	// further down this function.
 
-	mustRegisterMetrics(log.Scoped("MustRegisterMetrics"), db, envvar.SourcegraphDotComMode())
+	mustRegisterMetrics(log.Scoped("MustRegisterMetrics"), db, dotcom.SourcegraphDotComMode())
 
 	store := repos.NewStore(logger.Scoped("store"), db)
 	{
@@ -123,7 +120,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// No Batch Changes on dotcom, so we don't need to spawn the
 	// background jobs for this feature.
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		syncRegistry := batches.InitBackgroundJobs(ctx, db, keyring.Default().BatchChangesCredentialKey, cf)
 		server.ChangesetSyncRegistry = syncRegistry
 	}
@@ -133,8 +130,8 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	go watchSyncer(ctx, logger, syncer, updateScheduler, server.ChangesetSyncRegistry)
 
 	routines := []goroutine.BackgroundRoutine{
-		makeHTTPServer(logger, server),
-		newUnclonedReposManager(ctx, logger, envvar.SourcegraphDotComMode(), updateScheduler, store),
+		makeGRPCServer(logger, server),
+		newUnclonedReposManager(ctx, logger, dotcom.SourcegraphDotComMode(), updateScheduler, store),
 		phabricator.NewRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker"), store),
 		// Run git fetches scheduler
 		updateScheduler,
@@ -143,7 +140,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	routines = append(routines,
 		syncer.Routines(ctx, store, repos.RunOptions{
 			EnqueueInterval: conf.RepoListUpdateInterval,
-			IsDotCom:        envvar.SourcegraphDotComMode(),
+			IsDotCom:        dotcom.SourcegraphDotComMode(),
 			MinSyncInterval: conf.RepoListUpdateInterval,
 		})...,
 	)
@@ -200,7 +197,7 @@ func getDB(observationCtx *observation.Context) (database.DB, error) {
 	return database.NewDB(observationCtx.Logger, sqlDB), nil
 }
 
-func makeHTTPServer(logger log.Logger, server *repoupdater.Server) goroutine.BackgroundRoutine {
+func makeGRPCServer(logger log.Logger, server *repoupdater.Server) goroutine.BackgroundRoutine {
 	host := ""
 	if env.InsecureDev {
 		host = "127.0.0.1"
@@ -209,30 +206,11 @@ func makeHTTPServer(logger log.Logger, server *repoupdater.Server) goroutine.Bac
 	addr := net.JoinHostPort(host, port)
 	logger.Info("listening", log.String("addr", addr))
 
-	m := repoupdater.NewHandlerMetrics()
-	m.MustRegister(prometheus.DefaultRegisterer)
 	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
 	proto.RegisterRepoUpdaterServiceServer(grpcServer, server)
 	reflection.Register(grpcServer)
-	handler := internalgrpc.MultiplexHandlers(grpcServer, healthServer())
 
-	// NOTE: Internal actor is required to have full visibility of the repo table
-	// 	(i.e. bypass repository authorization).
-	authzBypass := func(f http.Handler) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			r = r.WithContext(actor.WithInternalActor(r.Context()))
-			f.ServeHTTP(w, r)
-		}
-	}
-
-	return httpserver.NewFromAddr(addr, &http.Server{
-		ReadTimeout:  75 * time.Second,
-		WriteTimeout: 10 * time.Minute,
-		Handler: instrumentation.HTTPMiddleware(
-			"",
-			trace.HTTPMiddleware(logger, authzBypass(handler), conf.DefaultClient()),
-		),
-	})
+	return grpcserver.NewFromAddr(logger.Scoped("repo-updater.grpcserver"), addr, grpcServer)
 }
 
 func manualPurgeHandler(db database.DB) http.HandlerFunc {
@@ -404,7 +382,6 @@ func newUnclonedReposManager(ctx context.Context, logger log.Logger, isSourcegra
 // TODO: This might clash with what osscmd.Main does.
 // watchAuthzProviders updates authz providers if config changes.
 func watchAuthzProviders(ctx context.Context, db database.DB) {
-	globals.WatchPermissionsUserMapping()
 	go func() {
 		t := time.NewTicker(providers.RefreshInterval())
 		for range t.C {
@@ -585,12 +562,4 @@ FROM
 		}
 		return count
 	})
-}
-
-func healthServer() http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", trace.WithRouteName("healthz", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-	return mux
 }

@@ -363,9 +363,8 @@ type Client interface {
 	// with more detailed responses. Do not use this if you are not repo-updater.
 	//
 	// Repo updates are not guaranteed to occur. If a repo has been updated
-	// recently (within the Since duration specified in the request), the
-	// update won't happen.
-	RequestRepoUpdate(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
+	// recently, the update won't happen.
+	RequestRepoUpdate(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
 
 	// RequestRepoClone is an asynchronous request to clone a repository.
 	RequestRepoClone(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error)
@@ -602,20 +601,18 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		}
 	}()
 
-	repoName := protocol.NormalizeRepo(c.repo)
-
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 
-	client, err := c.execer.ClientForRepo(ctx, repoName)
+	client, err := c.execer.ClientForRepo(ctx, c.repo)
 	if err != nil {
 		return nil, err
 	}
 
 	req := &proto.ExecRequest{
-		Repo:      string(repoName),
+		Repo:      string(c.repo),
 		Args:      stringsToByteSlices(c.args[1:]),
 		NoTimeout: c.noTimeout,
 	}
@@ -657,9 +654,7 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 	})
 	defer endObservation(1, observation.Args{})
 
-	repoName := protocol.NormalizeRepo(args.Repo)
-
-	client, err := c.ClientForRepo(ctx, repoName)
+	client, err := c.ClientForRepo(ctx, args.Repo)
 	if err != nil {
 		return false, err
 	}
@@ -707,19 +702,17 @@ func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 	}
 }
 
-func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since time.Duration) (_ *protocol.RepoUpdateResponse, err error) {
+func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.RepoName) (_ *protocol.RepoUpdateResponse, err error) {
 	ctx, _, endObservation := c.operations.requestRepoUpdate.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
 			repo.Attr(),
-			attribute.Stringer("since", since),
 		},
 	})
 	defer endObservation(1, observation.Args{})
 
 	req := &protocol.RepoUpdateRequest{
-		Repo:  repo,
-		Since: since,
+		Repo: repo,
 	}
 
 	client, err := c.ClientForRepo(ctx, repo)
@@ -874,11 +867,7 @@ func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) (err 
 	})
 	defer endObservation(1, observation.Args{})
 
-	// In case the repo has already been deleted from the database we need to pass
-	// the old name in order to land on the correct gitserver instance
-	undeletedName := api.UndeletedRepoName(repo)
-
-	client, err := c.ClientForRepo(ctx, undeletedName)
+	client, err := c.ClientForRepo(ctx, repo)
 	if err != nil {
 		return err
 	}

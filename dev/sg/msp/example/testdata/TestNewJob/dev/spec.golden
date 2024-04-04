@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../../schema/service.schema.json
 service:
   kind: job
   id: msp-example

@@ -54,7 +54,6 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/auth",
-        "//cmd/frontend/envvar",
         "//cmd/frontend/external/session",
         "//cmd/frontend/internal/auth/oauth",
         "//internal/actor",

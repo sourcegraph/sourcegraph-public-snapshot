@@ -21,6 +21,15 @@ import (
 const dataVersion = "v2"
 const dataVersionToDelete = "v1"
 
+// StoreType for selecting Redis store types.
+type StoreType int
+
+const (
+	// Define constants for each store type.
+	CacheStore StoreType = iota // Default Redis cache
+	RedisStore                  // Specific Redis store
+)
+
 // DeleteOldCacheData deletes the rcache data in the given Redis instance
 // that's prefixed with dataVersionToDelete
 func DeleteOldCacheData(c redis.Conn) error {
@@ -31,12 +40,22 @@ func DeleteOldCacheData(c redis.Conn) error {
 type Cache struct {
 	keyPrefix  string
 	ttlSeconds int
+	storeType  StoreType // Updated field to use StoreType
 }
 
 // New creates a redis backed Cache
 func New(keyPrefix string) *Cache {
 	return &Cache{
 		keyPrefix: keyPrefix,
+		storeType: CacheStore,
+	}
+}
+
+// New creates a redis backed Cache
+func NewWithRedisStore(keyPrefix string) *Cache {
+	return &Cache{
+		keyPrefix: keyPrefix,
+		storeType: RedisStore,
 	}
 }
 
@@ -46,6 +65,7 @@ func NewWithTTL(keyPrefix string, ttlSeconds int) *Cache {
 	return &Cache{
 		keyPrefix:  keyPrefix,
 		ttlSeconds: ttlSeconds,
+		storeType:  CacheStore,
 	}
 }
 
@@ -53,7 +73,7 @@ func (r *Cache) TTL() time.Duration { return time.Duration(r.ttlSeconds) * time.
 
 // Get implements httpcache.Cache.Get
 func (r *Cache) Get(key string) ([]byte, bool) {
-	b, err := kv().Get(r.rkeyPrefix() + key).Bytes()
+	b, err := r.kv().Get(r.rkeyPrefix() + key).Bytes()
 	if err != nil && err != redis.ErrNil {
 		log15.Warn("failed to execute redis command", "cmd", "GET", "error", err)
 	}
@@ -68,7 +88,7 @@ func (r *Cache) Set(key string, b []byte) {
 	}
 
 	if r.ttlSeconds == 0 {
-		err := kv().Set(r.rkeyPrefix()+key, b)
+		err := r.kv().Set(r.rkeyPrefix()+key, b)
 		if err != nil {
 			log15.Warn("failed to execute redis command", "cmd", "SET", "error", err)
 		}
@@ -82,14 +102,14 @@ func (r *Cache) SetWithTTL(key string, b []byte, ttl int) {
 		log15.Error("rcache: keys must be valid utf8", "key", []byte(key))
 	}
 
-	err := kv().SetEx(r.rkeyPrefix()+key, ttl, b)
+	err := r.kv().SetEx(r.rkeyPrefix()+key, ttl, b)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "SETEX", "error", err)
 	}
 }
 
 func (r *Cache) Increase(key string) {
-	_, err := kv().Incr(r.rkeyPrefix() + key)
+	_, err := r.kv().Incr(r.rkeyPrefix() + key)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "INCR", "error", err)
 		return
@@ -99,7 +119,7 @@ func (r *Cache) Increase(key string) {
 		return
 	}
 
-	err = kv().Expire(r.rkeyPrefix()+key, r.ttlSeconds)
+	err = r.kv().Expire(r.rkeyPrefix()+key, r.ttlSeconds)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "EXPIRE", "error", err)
 		return
@@ -107,7 +127,7 @@ func (r *Cache) Increase(key string) {
 }
 
 func (r *Cache) KeyTTL(key string) (int, bool) {
-	ttl, err := kv().TTL(r.rkeyPrefix() + key)
+	ttl, err := r.kv().TTL(r.rkeyPrefix() + key)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "TTL", "error", err)
 		return -1, false
@@ -117,7 +137,7 @@ func (r *Cache) KeyTTL(key string) (int, bool) {
 
 func (r *Cache) ListAllKeys() []string {
 	pattern := r.rkeyPrefix() + "*"
-	keys, err := kv().Keys(pattern)
+	keys, err := r.kv().Keys(pattern)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "KEYS", "pattern", pattern, "error", err)
 		return nil
@@ -135,12 +155,12 @@ func (r *Cache) FIFOList(key string, maxSize int) *FIFOList {
 // If the key already exists and is a different type, an error is returned.
 // If the hash key does not exist, it is created. If it exists, the value is overwritten.
 func (r *Cache) SetHashItem(key string, hashKey string, hashValue string) error {
-	return kv().HSet(r.rkeyPrefix()+key, hashKey, hashValue)
+	return r.kv().HSet(r.rkeyPrefix()+key, hashKey, hashValue)
 }
 
 // GetHashItem gets a key in a HASH.
 func (r *Cache) GetHashItem(key string, hashKey string) (string, error) {
-	return kv().HGet(r.rkeyPrefix()+key, hashKey).String()
+	return r.kv().HGet(r.rkeyPrefix()+key, hashKey).String()
 }
 
 // DeleteHashItem deletes a key in a HASH.
@@ -149,17 +169,17 @@ func (r *Cache) GetHashItem(key string, hashKey string) (string, error) {
 // If the key exists but the hash key does not, it will return 0.
 // If the key does not exist, it will return 0.
 func (r *Cache) DeleteHashItem(key string, hashKey string) (int, error) {
-	return kv().HDel(r.rkeyPrefix()+key, hashKey).Int()
+	return r.kv().HDel(r.rkeyPrefix()+key, hashKey).Int()
 }
 
 // GetHashAll returns the members of the HASH stored at `key`, in no particular order.
 func (r *Cache) GetHashAll(key string) (map[string]string, error) {
-	return kv().HGetAll(r.rkeyPrefix() + key).StringMap()
+	return r.kv().HGetAll(r.rkeyPrefix() + key).StringMap()
 }
 
 // Delete implements httpcache.Cache.Delete
 func (r *Cache) Delete(key string) {
-	err := kv().Del(r.rkeyPrefix() + key)
+	err := r.kv().Del(r.rkeyPrefix() + key)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "DEL", "error", err)
 	}
@@ -214,6 +234,18 @@ func SetupForTest(t testing.TB) {
 }
 
 var kvMock redispool.KeyValue
+
+func (r *Cache) kv() redispool.KeyValue {
+	if kvMock != nil {
+		return kvMock
+	}
+	switch r.storeType {
+	case RedisStore:
+		return redispool.Store
+	default:
+		return redispool.Cache
+	}
+}
 
 func kv() redispool.KeyValue {
 	if kvMock != nil {

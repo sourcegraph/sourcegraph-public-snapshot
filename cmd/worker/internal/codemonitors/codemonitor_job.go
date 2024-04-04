@@ -3,10 +3,10 @@ package codemonitors
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/codemonitors/background"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -31,7 +31,7 @@ func (j *codeMonitorJob) Routines(_ context.Context, observationCtx *observation
 	// after November 29th 2023.
 	// This is a temporary line to disable the background workers that execute them,
 	// before we simply turn off the feature via a feature gate or similar.
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		return nil, nil
 	}
 

@@ -1,13 +1,14 @@
 import React, { useState, useCallback } from 'react'
 
+import { UTCDate } from '@date-fns/utc'
 import { mdiChatQuestionOutline } from '@mdi/js'
 import classNames from 'classnames'
-import addDays from 'date-fns/addDays'
-import endOfDay from 'date-fns/endOfDay'
+import { addDays, endOfDay } from 'date-fns'
 import { noop } from 'lodash'
 
 import { useMutation } from '@sourcegraph/http-client'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Alert,
     Button,
@@ -61,7 +62,7 @@ import styles from './SiteAdminGenerateProductLicenseForSubscriptionForm.module.
 interface License extends Omit<ProductLicenseFields, 'subscription' | 'info'> {
     info: Omit<ProductLicenseInfoFields, 'productNameWithBrand'> | null
 }
-interface Props {
+interface Props extends TelemetryV2Props {
     subscriptionID: Scalars['ID']
     subscriptionAccount: string
     latestLicense: License | undefined
@@ -94,7 +95,7 @@ const getEmptyFormData = (account: string, latestLicense: License | undefined): 
         salesforceOpportunityID: latestLicense?.info?.salesforceOpportunityID ?? '',
         plan: latestLicense?.info?.tags.find(tag => tag.startsWith('plan:'))?.slice('plan:'.length) ?? '',
         userCount: latestLicense?.info?.userCount ?? 1,
-        expiresAt: endOfDay(Date.now()),
+        expiresAt: endOfDay(new UTCDate(UTCDate.now())),
         trial: latestLicense?.info?.tags.includes(TAG_TRIAL.tagValue) ?? false,
         trueUp: latestLicense?.info?.tags.includes(TAG_TRUEUP.tagValue) ?? false,
         airGapped: latestLicense?.info?.tags.includes(TAG_AIR_GAPPED.tagValue) ?? false,
@@ -152,6 +153,15 @@ const getTagsFromFormData = (formData: FormData): string[] =>
         ])
     )
 
+const getTagsForTelemetry = (formData: FormData): { [key: string]: number } => ({
+    trueUp: formData.trueUp ? 1 : 0,
+    trial: formData.trial ? 1 : 0,
+    airGapped: formData.airGapped ? 1 : 0,
+    batchChanges: formData.batchChanges ? 1 : 0,
+    codeInsights: formData.codeInsights ? 1 : 0,
+    disableTelemetry: formData.disableTelemetry ? 1 : 0,
+})
+
 const HANDBOOK_INFO_URL =
     'https://handbook.sourcegraph.com/ce/license_keys#how-to-create-a-license-key-for-a-new-prospect-or-new-customer'
 
@@ -162,7 +172,7 @@ const HANDBOOK_INFO_URL =
  */
 export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionComponent<
     React.PropsWithChildren<Props>
-> = ({ latestLicense, subscriptionID, subscriptionAccount, onGenerate, onCancel }) => {
+> = ({ latestLicense, subscriptionID, subscriptionAccount, onGenerate, onCancel, telemetryRecorder }) => {
     const labelId = 'generateLicense'
 
     const [hasAcknowledgedInfo, setHasAcknowledgedInfo] = useState(false)
@@ -226,17 +236,38 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
     const setValidDays = useCallback((validDays: number): void => {
         setFormData(formData => ({
             ...formData,
-            expiresAt: addDaysAndRoundToEndOfDay(validDays),
+            expiresAt: addDaysAndRoundToEndOfDayInUTC(validDays),
         }))
     }, [])
     const onExpiresAtChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        event =>
+        event => {
+            // The event.target.valueAsDate property returns a native Javascript Date object.
+            // However, we can't use the endOfDay() date-fns utility with it since by default it
+            // does all calculations using the browser's local timezone, not UTC.
+            //
+            // However, as of date-fns@v3, they introduced a new Date wrapper, UTCDate. When using this wrapper,
+            // all of the date-fns calculations will do them with respect to UTC (which is the desired behavior with
+            // expiration dates).
+
+            // The value field from the date picker input element is in the format
+            // yyyy-mm-dd, so we can use it to directly construct a new UTCDate object
+            // with the appropriate date.
+            //
+            // See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/date#value
+            // for more information.
+            const dateRegex = /\d{4}-\d{2}-\d{2}/
+
+            const date: Date = dateRegex.test(event.target.value)
+                ? new UTCDate(event.target.value)
+                : getEmptyFormData(subscriptionAccount, latestLicense).expiresAt
+
+            const expiresAt = endOfDay(new UTCDate(date))
+
             setFormData(formData => ({
                 ...formData,
-                expiresAt: endOfDay(
-                    event.target.valueAsDate || getEmptyFormData(subscriptionAccount, latestLicense).expiresAt
-                ),
-            })),
+                expiresAt,
+            }))
+        },
         [subscriptionAccount, latestLicense]
     )
 
@@ -266,10 +297,13 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
     const onSubmit = useCallback<React.FormEventHandler>(
         event => {
             event.preventDefault()
+            telemetryRecorder.recordEvent('admin.productSubscription.license', 'generate', {
+                metadata: getTagsForTelemetry(formData),
+            })
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             generateLicense()
         },
-        [generateLicense]
+        [formData, telemetryRecorder, generateLicense]
     )
 
     const tags = useDebounce<string[]>(tagsFromString(formData.tags), 300)
@@ -508,8 +542,8 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                                         description="When this license expires. Sourcegraph will disable beyond this date. Usually the end date of the contract."
                                         label="Expires At"
                                         id="site-admin-create-product-subscription-page__expiresAt"
-                                        min={formatDateForInput(addDaysAndRoundToEndOfDay(1))}
-                                        max={formatDateForInput(addDaysAndRoundToEndOfDay(2000))}
+                                        min={formatDateForInput(addDaysAndRoundToEndOfDayInUTC(1))}
+                                        max={formatDateForInput(addDaysAndRoundToEndOfDayInUTC(2000))}
                                         value={formatDateForInput(formData.expiresAt)}
                                         onChange={onExpiresAtChange}
                                         required={true}
@@ -613,10 +647,13 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
 }
 
 /**
- * Adds 1 day to the current date, then rounds it up to midnight in the client's timezone. This is a
+ * Adds 1 day to the current date, then rounds it up to midnight in UTC. This is a
  * generous interpretation of "valid for N days" to avoid confusion over timezones or "will it
  * expire at the beginning of the day or at the end of the day?"
  */
-const addDaysAndRoundToEndOfDay = (amount: number): Date => endOfDay(addDays(Date.now(), amount))
+const addDaysAndRoundToEndOfDayInUTC = (amount: number): UTCDate => {
+    const now = new UTCDate(UTCDate.now())
+    return endOfDay(addDays(now, amount))
+}
 
 const formatDateForInput = (date: Date): string => date.toISOString().slice(0, 10)

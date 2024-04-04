@@ -12,10 +12,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
+
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -201,12 +205,26 @@ func TestJVMCloneCommand(t *testing.T) {
 
 	coursier.CoursierBinary = coursierScript(t, dir)
 
+	var testGetRemoteURLSource = func(ctx context.Context, name api.RepoName) (RemoteURLSource, error) {
+		return RemoteURLSourceFunc(func(ctx context.Context) (*vcs.URL, error) {
+			u, err := vcs.ParseURL(examplePackageUrl)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to parse example package URL %q", examplePackageUrl)
+			}
+
+			return u, nil
+
+		}), nil
+	}
+
 	depsSvc := dependencies.TestService(database.NewDB(logger, dbtest.NewDB(t)))
 	cacheDir := filepath.Join(dir, "cache")
-	s := NewJVMPackagesSyncer(&schema.JVMPackagesConnection{Maven: schema.Maven{Dependencies: []string{}}}, depsSvc, cacheDir, dir).(*vcsPackagesSyncer)
+	fs := gitserverfs.New(&observation.TestContext, dir)
+	require.NoError(t, fs.Initialize())
+	s := NewJVMPackagesSyncer(&schema.JVMPackagesConnection{Maven: schema.Maven{Dependencies: []string{}}}, depsSvc, testGetRemoteURLSource, cacheDir, fs).(*vcsPackagesSyncer)
 	bareGitDirectory := path.Join(dir, "git")
 
-	s.runCloneCommand(t, examplePackageUrl, bareGitDirectory, []string{exampleVersionedPackage})
+	s.runCloneCommand(t, bareGitDirectory, []string{exampleVersionedPackage})
 	assertCommandOutput(t,
 		exec.Command("git", "tag", "--list"),
 		bareGitDirectory,
@@ -218,7 +236,7 @@ func TestJVMCloneCommand(t *testing.T) {
 		exampleFileContents,
 	)
 
-	s.runCloneCommand(t, examplePackageUrl, bareGitDirectory, []string{exampleVersionedPackage, exampleVersionedPackage2})
+	s.runCloneCommand(t, bareGitDirectory, []string{exampleVersionedPackage, exampleVersionedPackage2})
 	assertCommandOutput(t,
 		exec.Command("git", "tag", "--list"),
 		bareGitDirectory,
@@ -250,7 +268,7 @@ func TestJVMCloneCommand(t *testing.T) {
 		exampleFileContents2,
 	)
 
-	s.runCloneCommand(t, examplePackageUrl, bareGitDirectory, []string{exampleVersionedPackage})
+	s.runCloneCommand(t, bareGitDirectory, []string{exampleVersionedPackage})
 	assertCommandOutput(t,
 		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion, exampleFilePath)),
 		bareGitDirectory,

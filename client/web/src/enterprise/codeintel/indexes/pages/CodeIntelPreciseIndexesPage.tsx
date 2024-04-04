@@ -11,6 +11,7 @@ import { isErrorLike } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -59,7 +60,7 @@ export const INDEXER_LIST = gql`
     }
 `
 
-export interface CodeIntelPreciseIndexesPageProps extends TelemetryProps {
+export interface CodeIntelPreciseIndexesPageProps extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     repo?: { id: string; name: string }
     queryPreciseIndexes?: typeof defaultQueryPreciseIndexes
@@ -125,9 +126,17 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
     useReindexPreciseIndexes = defaultUseReindexPreciseIndexes,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const location = useLocation()
-    useEffect(() => telemetryService.logViewEvent('CodeIntelPreciseIndexesPage'), [telemetryService])
+    useEffect(() => {
+        telemetryService.logViewEvent('CodeIntelPreciseIndexesPage')
+        if (repo) {
+            telemetryRecorder.recordEvent('repo.codeIntel.preciseIndexes', 'view')
+        } else {
+            telemetryRecorder.recordEvent('admin.codeIntel.preciseIndexes', 'view')
+        }
+    }, [telemetryService, telemetryRecorder, repo])
 
     const apolloClient = useApolloClient()
     const { handleDeletePreciseIndex, deleteError } = useDeletePreciseIndex()
@@ -165,7 +174,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
     }, [indexerData?.indexerKeys])
 
     // Poke filtered connection to refresh
-    const refresh = useMemo(() => new Subject<undefined>(), [])
+    const refresh = useMemo(() => new Subject<void>(), [])
     const querySubject = useMemo(() => new Subject<string>(), [])
 
     // State used to control bulk index selection

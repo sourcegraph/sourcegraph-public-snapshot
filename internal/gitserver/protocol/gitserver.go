@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -229,21 +228,17 @@ type ExecRequest struct {
 type RepoUpdateRequest struct {
 	// Repo identifies URL for repo.
 	Repo api.RepoName `json:"repo"`
-	// Since is a debounce interval for queries, used only with request-repo-update.
-	Since time.Duration `json:"since"`
 }
 
 func (r *RepoUpdateRequest) ToProto() *proto.RepoUpdateRequest {
 	return &proto.RepoUpdateRequest{
-		Repo:  string(r.Repo),
-		Since: durationpb.New(r.Since),
+		Repo: string(r.Repo),
 	}
 }
 
 func (r *RepoUpdateRequest) FromProto(p *proto.RepoUpdateRequest) {
 	*r = RepoUpdateRequest{
-		Repo:  api.RepoName(p.GetRepo()),
-		Since: p.GetSince().AsDuration(),
+		Repo: api.RepoName(p.GetRepo()),
 	}
 }
 
@@ -316,13 +311,6 @@ func (r *RepoCloneResponse) FromProto(p *proto.RepoCloneResponse) {
 	*r = RepoCloneResponse{
 		Error: p.GetError(),
 	}
-}
-
-type NotFoundPayload struct {
-	CloneInProgress bool `json:"cloneInProgress"` // If true, exec returned with noop because clone is in progress.
-
-	// CloneProgress is a progress message from the running clone command.
-	CloneProgress string `json:"cloneProgress,omitempty"`
 }
 
 // IsRepoCloneableRequest is a request to determine if a repo is cloneable.
@@ -565,11 +553,11 @@ func (r *CreateCommitFromPatchResponse) FromProto(res *proto.CreateCommitFromPat
 }
 
 // SetError adds the supplied error related details to e.
-func (e *CreateCommitFromPatchResponse) SetError(repo, command, out string, err error) {
+func (e *CreateCommitFromPatchResponse) SetError(repo api.RepoName, command, out string, err error) {
 	if e.Error == nil {
 		e.Error = &CreateCommitFromPatchError{}
 	}
-	e.Error.RepositoryName = repo
+	e.Error.RepositoryName = string(repo)
 	e.Error.Command = command
 	e.Error.CombinedOutput = out
 	e.Error.InternalError = err.Error()

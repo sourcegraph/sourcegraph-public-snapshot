@@ -1000,3 +1000,242 @@ func TestRetryAfter(t *testing.T) {
 		}
 	})
 }
+
+// TestRetryBasedOnStatusCode verifies we take the returned HTTP status code
+// into account with our retry behavior.
+func TestRetryBasedOnStatusCode(t *testing.T) {
+	verifyRetryBehavior := func(t *testing.T, statusCode int, expectedToRetry bool) {
+		// Fake webserver, always returning the same status code.
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(statusCode)
+		}))
+		t.Cleanup(srv.Close)
+
+		req, err := http.NewRequest("GET", srv.URL, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var attempts int
+		policy := NewRetryPolicy(1 /* max retries */, time.Second)
+		wrappedPolicy := func(a rehttp.Attempt) bool {
+			attempts++
+			return policy(a)
+		}
+
+		cli, err := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+			),
+			NewErrorResilientTransportOpt(
+				wrappedPolicy,
+				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+			),
+		).Doer()
+		require.NoError(t, err)
+
+		res, err := cli.Do(req)
+		require.NoError(t, err)
+
+		assert.Equal(t, statusCode, res.StatusCode)
+		if expectedToRetry {
+			assert.Equal(t, 2, attempts, "expected HTTP request to be retried, but was not")
+		} else {
+			assert.Equal(t, 1, attempts, "expected HTTP request to not be retired, but was")
+		}
+	}
+
+	tests := []struct {
+		statusCode    int
+		expectRetries bool
+	}{
+		// Retrying a successfull 200 response doesn't make sense.
+		{http.StatusOK, false},
+
+		// We shouldn't retry 400 requests, because by definition the problem is client-side.
+		{http.StatusBadRequest, false},
+
+		// The server is clear that we need to slow down, so we will retry after a delay.
+		{http.StatusTooManyRequests, true},
+
+		// Internal Server Error is hopefully transient, so retrying may be appropriate.
+		{http.StatusInternalServerError, true},
+
+		// No need to retry the status if the endpoint isn't implemented.
+		{http.StatusNotImplemented, false},
+
+		// Bad Gateway is in the 5xx rate, and can potentially be resolved automatically.
+		// So retrying may be appropriate.
+		{http.StatusBadGateway, true},
+	}
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("StatusCode%d", test.statusCode), func(t *testing.T) {
+			verifyRetryBehavior(t, test.statusCode, test.expectRetries)
+		})
+	}
+}
+
+func TestDoExternalRequestCountMetricsMiddleware(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		observeFuncRan := false
+		observe := func(host, method string, statusCode int) {
+			observeFuncRan = true
+
+			if diff := cmp.Diff("example.com", host); diff != "" {
+				t.Errorf("unexpected host (-want +got):\n%s", diff)
+			}
+
+			if diff := cmp.Diff("POST", method); diff != "" {
+				t.Errorf("unexpected method (-want +got):\n%s", diff)
+			}
+
+			if diff := cmp.Diff(http.StatusOK, statusCode); diff != "" {
+				t.Errorf("unexpected status code (-want +got):\n%s", diff)
+			}
+		}
+		next := newFakeClient(http.StatusOK, nil, nil)
+
+		cli := doExternalRequestCountMetricsMiddleware(next, observe)
+
+		req, _ := http.NewRequest("POST", "http://example.com", nil)
+		_, err := cli.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !observeFuncRan {
+			t.Error("observe() was not called")
+		}
+	})
+
+	t.Run("returns -1 status code if next Doer fails", func(t *testing.T) {
+		observeFuncRan := false
+		observe := func(host, method string, statusCode int) {
+			observeFuncRan = true
+			if diff := cmp.Diff("example.com", host); diff != "" {
+				t.Errorf("unexpected host (-want +got):\n%s", diff)
+			}
+			if diff := cmp.Diff("POST", method); diff != "" {
+				t.Errorf("unexpected method (-want +got):\n%s", diff)
+			}
+			if diff := cmp.Diff(-1, statusCode); diff != "" {
+				t.Errorf("unexpected status code (-want +got):\n%s", diff)
+			}
+		}
+
+		expectedError := errors.New("fake error")
+
+		next := newFakeClient(http.StatusOK, nil, expectedError)
+
+		cli := doExternalRequestCountMetricsMiddleware(next, observe)
+
+		req, _ := http.NewRequest("POST", "http://example.com", nil)
+		_, err := cli.Do(req)
+		if !errors.Is(err, expectedError) {
+			t.Errorf("unexpected error: %s", err)
+		}
+
+		if !observeFuncRan {
+			t.Error("observe() was not called")
+		}
+
+	})
+
+	t.Run("prefers request.Host over request.URL.Host", func(t *testing.T) {
+		observeFuncRan := false
+		wrongHost, rightHost := "example.org", "example.com"
+
+		observe := func(host, method string, statusCode int) {
+			observeFuncRan = true
+			if diff := cmp.Diff(rightHost, host); diff != "" {
+				t.Errorf("unexpected host (-want +got):\n%s", diff)
+			}
+			if diff := cmp.Diff("POST", method); diff != "" {
+				t.Errorf("unexpected method (-want +got):\n%s", diff)
+			}
+			if diff := cmp.Diff(http.StatusOK, statusCode); diff != "" {
+				t.Errorf("unexpected status code (-want +got):\n%s", diff)
+			}
+		}
+
+		next := newFakeClient(http.StatusOK, nil, nil)
+
+		cli := doExternalRequestCountMetricsMiddleware(next, observe)
+
+		req, _ := http.NewRequest("POST", fmt.Sprintf("http://%s", rightHost), nil)
+		req.URL.Host = wrongHost
+		_, err := cli.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !observeFuncRan {
+			t.Error("observe() was not called")
+		}
+	})
+
+	t.Run("falls back to request.URL.Host if request.Host is empty", func(t *testing.T) {
+		observeFuncRan := false
+		rightHost := "example.com"
+
+		observe := func(host, method string, statusCode int) {
+			observeFuncRan = true
+			if diff := cmp.Diff(rightHost, host); diff != "" {
+				t.Errorf("unexpected host (-want +got):\n%s", diff)
+			}
+			if diff := cmp.Diff("POST", method); diff != "" {
+				t.Errorf("unexpected method (-want +got):\n%s", diff)
+			}
+			if diff := cmp.Diff(http.StatusOK, statusCode); diff != "" {
+				t.Errorf("unexpected status code (-want +got):\n%s", diff)
+			}
+		}
+
+		next := newFakeClient(http.StatusOK, nil, nil)
+
+		cli := doExternalRequestCountMetricsMiddleware(next, observe)
+
+		req, _ := http.NewRequest("POST", fmt.Sprintf("http://%s", rightHost), nil)
+		req.Host = ""
+		_, err := cli.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !observeFuncRan {
+			t.Error("observe() was not called")
+		}
+	})
+
+	t.Run("host is unknown if both request.Host and request.URL.Host are empty", func(t *testing.T) {
+		observeFuncRan := false
+
+		observe := func(host, method string, statusCode int) {
+			observeFuncRan = true
+			if diff := cmp.Diff("<unknown>", host); diff != "" {
+				t.Errorf("unexpected host (-want +got):\n%s", diff)
+			}
+			if diff := cmp.Diff("POST", method); diff != "" {
+				t.Errorf("unexpected method (-want +got):\n%s", diff)
+			}
+			if diff := cmp.Diff(http.StatusOK, statusCode); diff != "" {
+				t.Errorf("unexpected status code (-want +got):\n%s", diff)
+			}
+		}
+
+		next := newFakeClient(http.StatusOK, nil, nil)
+
+		cli := doExternalRequestCountMetricsMiddleware(next, observe)
+
+		req, _ := http.NewRequest("POST", "http://", nil)
+		req.Host = ""
+		_, err := cli.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !observeFuncRan {
+			t.Error("observe() was not called")
+		}
+	})
+}

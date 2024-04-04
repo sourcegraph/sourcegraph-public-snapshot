@@ -91,7 +91,7 @@ remote_image_name="us.gcr.io/sourcegraph-dev/wolfi-${name}-base"
 # Tag image and upload to GCP Artifact Registry
 
 # Push to internal dev repo
-echo " * Pushing image to internal dev repo..."
+echo "* Pushing image to internal dev repo..."
 docker tag "${local_image_name}" "${remote_image_name}:${tag}"
 docker push "${remote_image_name}:${tag}"
 docker tag "${local_image_name}" "${remote_image_name}:latest"

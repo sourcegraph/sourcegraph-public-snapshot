@@ -4,16 +4,17 @@
 # Push a new branch to GitHub, and open a PR.
 # Can be run from any base branch, and will create an appropriate PR.
 
-set -eu -o pipefail
+set -exu -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
+echo "~~~ :aspect: :stethoscope: Agent Health check"
+/etc/aspect/workflows/bin/agent_health_check
+
 # Update hashes for all base images
-bazel \
-  --bazelrc=.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
-  run //dev/sg -- wolfi lock
+aspectRC="/tmp/aspect-generated.bazelrc"
+rosetta bazelrc >"$aspectRC"
+bazel --bazelrc="$aspectRC" run //dev/sg -- wolfi lock
 # Print diff
 git diff wolfi-images/*.lock.json
 
@@ -32,8 +33,8 @@ Built from Buildkite run [#${BUILDKITE_BUILD_NUMBER}](https://buildkite.com/sour
 
 # Commit changes to dev/oci-deps.bzl
 # Delete branch if it exists; catch status code if not
-git branch -D "${BRANCH_NAME}" || :
-git checkout -b "${BRANCH_NAME}"
+git branch -D "${BRANCH_NAME}" || true
+git switch -c "${BRANCH_NAME}"
 git add wolfi-images/*.lock.json
 git commit -m "Auto-update package lockfiles for Wolfi base images at ${TIMESTAMP}"
 git push --force -u origin "${BRANCH_NAME}"
