@@ -31,7 +31,7 @@ export interface BlameHunk {
     endLine: number
     message: string
     rev: string
-    previousFilename: string
+    filename: string
     author: {
         date: string
         person: {
@@ -50,9 +50,10 @@ export interface BlameHunk {
     }
     commit: {
         url: string
-        parents: {
-            oid: string
-        }[]
+        previous: {
+            rev: string
+            filename: string
+        }
     }
     displayInfo: BlameHunkDisplayInfo
 }
@@ -70,7 +71,10 @@ interface RawStreamHunk {
         Date: string
     }
     commit: {
-        parents: string[]
+        previous: {
+            commitID: string
+            filename: string
+        }
         url: string
     }
     commitID: string
@@ -142,7 +146,7 @@ const fetchBlameViaStreaming = memoizeObservable(
                                     endLine: rawHunk.endLine,
                                     message: rawHunk.message,
                                     rev: rawHunk.commitID,
-                                    previousFilename: rawHunk.filename,
+                                    filename: rawHunk.filename,
                                     author: {
                                         date: rawHunk.author.Date,
                                         person: {
@@ -154,9 +158,10 @@ const fetchBlameViaStreaming = memoizeObservable(
                                     },
                                     commit: {
                                         url: rawHunk.commit.url,
-                                        parents: rawHunk.commit.parents
-                                            ? rawHunk.commit.parents.map(oid => ({ oid }))
-                                            : [],
+                                        previous: {
+                                            rev: rawHunk.commit.previous.commitID,
+                                            filename: rawHunk.commit.previous.filename,
+                                        },
                                     },
                                 }
                                 assembledHunks.push(addDisplayInfoForHunk(hunk, sourcegraphURL))

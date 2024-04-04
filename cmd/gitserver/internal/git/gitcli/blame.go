@@ -134,6 +134,15 @@ func parseHeader(hunk *gitdomain.Hunk, line []byte) error {
 	return nil
 }
 
+func unquotedStringFromBytes(s []byte) string {
+	str := string(s)
+	unquotedString, err := strconv.Unquote(str)
+	if err != nil {
+		return str
+	}
+	return unquotedString
+}
+
 // parseBody updates a hunk with data parsed from the other annotations such as `author ...`,
 // `summary ...`.
 func parseBody(hunk *gitdomain.Hunk, annotation []byte, content []byte) (done bool, err error) {
@@ -152,11 +161,12 @@ func parseBody(hunk *gitdomain.Hunk, annotation []byte, content []byte) (done bo
 	case "summary":
 		hunk.Message = string(content)
 	case "filename":
-		hunk.Filename = string(content)
+		hunk.Filename = unquotedStringFromBytes(content)
 		return true, nil
 	case "previous":
-		commitID, _, _ := bytes.Cut(content, []byte(" "))
-		hunk.PreviousCommitID = api.CommitID(commitID)
+		commitID, filename, _ := bytes.Cut(content, []byte(" "))
+		hunk.PreviousCommit.CommitID = api.CommitID(commitID)
+		hunk.PreviousCommit.Filename = unquotedStringFromBytes(filename)
 	}
 	return false, nil
 }

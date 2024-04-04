@@ -227,17 +227,23 @@ func (m Message) Body() string {
 	return strings.TrimSpace(message[i:])
 }
 
+// PreviousCommit represents the previous commit a file was changed in.
+type PreviousCommit struct {
+	CommitID api.CommitID `json:"commitID"`
+	Filename string       `json:"filename"`
+}
+
 // A Hunk is a contiguous portion of a file associated with a commit.
 type Hunk struct {
-	StartLine        uint32 // 1-indexed start line number
-	EndLine          uint32 // 1-indexed end line number
-	StartByte        uint32 // 0-indexed start byte position (inclusive)
-	EndByte          uint32 // 0-indexed end byte position (exclusive)
-	CommitID         api.CommitID
-	PreviousCommitID api.CommitID
-	Author           Signature
-	Message          string
-	Filename         string
+	StartLine      uint32 // 1-indexed start line number
+	EndLine        uint32 // 1-indexed end line number
+	StartByte      uint32 // 0-indexed start byte position (inclusive)
+	EndByte        uint32 // 0-indexed end byte position (exclusive)
+	CommitID       api.CommitID
+	PreviousCommit PreviousCommit
+	Author         Signature
+	Message        string
+	Filename       string
 }
 
 func HunkFromBlameProto(h *proto.BlameHunk) *Hunk {
@@ -246,14 +252,17 @@ func HunkFromBlameProto(h *proto.BlameHunk) *Hunk {
 	}
 
 	return &Hunk{
-		StartLine:        h.GetStartLine(),
-		EndLine:          h.GetEndLine(),
-		StartByte:        h.GetStartByte(),
-		EndByte:          h.GetEndByte(),
-		CommitID:         api.CommitID(h.GetCommit()),
-		PreviousCommitID: api.CommitID(h.GetPreviousCommit()),
-		Message:          h.GetMessage(),
-		Filename:         h.GetFilename(),
+		StartLine: h.GetStartLine(),
+		EndLine:   h.GetEndLine(),
+		StartByte: h.GetStartByte(),
+		EndByte:   h.GetEndByte(),
+		CommitID:  api.CommitID(h.GetCommit()),
+		PreviousCommit: PreviousCommit{
+			CommitID: api.CommitID(h.GetPreviousCommit().GetCommit()),
+			Filename: h.GetPreviousCommit().GetFilename(),
+		},
+		Message:  h.GetMessage(),
+		Filename: h.GetFilename(),
 		Author: Signature{
 			Name:  h.GetAuthor().GetName(),
 			Email: h.GetAuthor().GetEmail(),
@@ -268,14 +277,17 @@ func (h *Hunk) ToProto() *proto.BlameHunk {
 	}
 
 	return &proto.BlameHunk{
-		StartLine:      uint32(h.StartLine),
-		EndLine:        uint32(h.EndLine),
-		StartByte:      uint32(h.StartByte),
-		EndByte:        uint32(h.EndByte),
-		Commit:         string(h.CommitID),
-		PreviousCommit: string(h.PreviousCommitID),
-		Message:        h.Message,
-		Filename:       h.Filename,
+		StartLine: uint32(h.StartLine),
+		EndLine:   uint32(h.EndLine),
+		StartByte: uint32(h.StartByte),
+		EndByte:   uint32(h.EndByte),
+		Commit:    string(h.CommitID),
+		PreviousCommit: &proto.PreviousCommit{
+			Commit:   string(h.PreviousCommit.CommitID),
+			Filename: h.PreviousCommit.Filename,
+		},
+		Message:  h.Message,
+		Filename: h.Filename,
 		Author: &proto.BlameAuthor{
 			Name:  h.Author.Name,
 			Email: h.Author.Email,

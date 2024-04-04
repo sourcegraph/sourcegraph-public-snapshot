@@ -104,11 +104,6 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 				return
 			}
 
-			var parents []api.CommitID
-			if len(h.PreviousCommitID) != 0 {
-				parents = append(parents, h.PreviousCommitID)
-			}
-
 			blameResponse := BlameHunkResponse{
 				StartLine: h.StartLine,
 				EndLine:   h.EndLine,
@@ -117,8 +112,8 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 				Message:   h.Message,
 				Filename:  h.Filename,
 				Commit: BlameHunkCommitResponse{
-					Parents: parents,
-					URL:     fmt.Sprintf("%s/-/commit/%s", repo.Name, h.CommitID),
+					Previous: h.PreviousCommit,
+					URL:      fmt.Sprintf("%s/-/commit/%s", repo.Name, h.CommitID),
 				},
 			}
 
@@ -172,8 +167,8 @@ type BlameHunkResponse struct {
 }
 
 type BlameHunkCommitResponse struct {
-	Parents []api.CommitID `json:"parents"`
-	URL     string         `json:"url"`
+	Previous gitdomain.PreviousCommit `json:"previous"`
+	URL      string                   `json:"url"`
 }
 
 type BlameHunkUserResponse struct {
