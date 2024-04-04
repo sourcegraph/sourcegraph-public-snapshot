@@ -126,49 +126,62 @@
     <title>{queryFromURL} - Sourcegraph</title>
 </svelte:head>
 
-<div class="search">
-    <SearchInput {queryState} />
-</div>
+<div class="root">
+    <div class="search">
+        <SearchInput {queryState} />
+    </div>
 
-<div class="search-results">
-    <div style:width={`clamp(14rem, ${$filtersSidebarPosition * 100}%, 35%)`}>
-        <DynamicFiltersSidebar {selectedFilters} streamFilters={$stream.filters} searchQuery={queryFromURL} {state} />
-    </div>
-    <Separator currentPosition={filtersSidebarPosition} />
-    <div class="results">
-        <aside class="actions">
-            <StreamingProgress {state} progress={$stream.progress} on:submit={onResubmitQuery} />
-        </aside>
-        <div class="result-list" bind:this={resultContainer}>
-            <ol>
-                {#each resultsToShow as result, i}
-                    {@const component = getSearchResultComponent(result)}
-                    {#if i === resultsToShow.length - 1}
-                        <li use:observeIntersection on:intersecting={loadMore}>
-                            <svelte:component this={component} {result} />
-                        </li>
-                    {:else}
-                        <li><svelte:component this={component} {result} /></li>
-                    {/if}
-                {/each}
-            </ol>
-            {#if resultsToShow.length === 0 && state !== 'loading'}
-                <div class="no-result">
-                    <Icon svgPath={mdiCloseOctagonOutline} />
-                    <p>No results found</p>
-                </div>
-            {/if}
+    <div class="search-results">
+        <div style:width={`clamp(14rem, ${$filtersSidebarPosition * 100}%, 35%)`}>
+            <DynamicFiltersSidebar
+                {selectedFilters}
+                streamFilters={$stream.filters}
+                searchQuery={queryFromURL}
+                {state}
+            />
         </div>
-    </div>
-    {#if $previewResult}
-        <Separator currentPosition={previewSidebarPosition} />
-        <div style:width={`clamp(10rem, ${100 - $previewSidebarPosition * 100}%, 50%)`}>
-            <PreviewPanel result={$previewResult} />
+        <Separator currentPosition={filtersSidebarPosition} />
+        <div class="results">
+            <aside class="actions">
+                <StreamingProgress {state} progress={$stream.progress} on:submit={onResubmitQuery} />
+            </aside>
+            <div class="result-list" bind:this={resultContainer}>
+                <ol>
+                    {#each resultsToShow as result, i}
+                        {@const component = getSearchResultComponent(result)}
+                        {#if i === resultsToShow.length - 1}
+                            <li use:observeIntersection on:intersecting={loadMore}>
+                                <svelte:component this={component} {result} />
+                            </li>
+                        {:else}
+                            <li><svelte:component this={component} {result} /></li>
+                        {/if}
+                    {/each}
+                </ol>
+                {#if resultsToShow.length === 0 && state !== 'loading'}
+                    <div class="no-result">
+                        <Icon svgPath={mdiCloseOctagonOutline} />
+                        <p>No results found</p>
+                    </div>
+                {/if}
+            </div>
         </div>
-    {/if}
+        {#if $previewResult}
+            <Separator currentPosition={previewSidebarPosition} />
+            <div style:width={`clamp(10rem, ${100 - $previewSidebarPosition * 100}%, 50%)`}>
+                <PreviewPanel result={$previewResult} />
+            </div>
+        {/if}
+    </div>
 </div>
 
 <style lang="scss">
+    .root {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
     .search {
         border-bottom: 1px solid var(--border-color);
         align-self: stretch;

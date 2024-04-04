@@ -30,11 +30,11 @@
 
 <style lang="scss">
     section {
+        height: 100%;
         overflow-y: auto;
         padding: 0 1rem;
         display: flex;
         flex-direction: column;
-        flex: 1;
         align-items: center;
     }
 

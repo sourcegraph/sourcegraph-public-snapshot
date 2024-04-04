@@ -118,9 +118,6 @@
     main {
         isolation: isolate;
         flex: 1;
-        display: flex;
-        flex-direction: column;
-        box-sizing: border-box;
         min-height: 0;
     }
 </style>

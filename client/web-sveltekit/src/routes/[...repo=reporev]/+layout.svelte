@@ -61,53 +61,61 @@
     <title>{data.displayRepoName} - Sourcegraph</title>
 </svelte:head>
 
-<nav aria-label="repository">
-    <h1><a href="/{repoName}"><Icon svgPath={mdiSourceRepository} inline /> {displayRepoName}</a></h1>
-    <!--
+<div class="root">
+    <nav aria-label="repository">
+        <h1><a href="/{repoName}"><Icon svgPath={mdiSourceRepository} inline /> {displayRepoName}</a></h1>
+        <!--
         TODO: Add back revision
         {#if revisionLabel}
             @ <span class="button">{revisionLabel}</span>
         {/if}
         -->
-    <ul use:computeFit on:fit={event => (visibleNavEntries = event.detail.itemCount)}>
-        {#each navEntriesToShow as entry}
-            {@const href = data.repoURL + entry.path}
-            <li>
-                <a {href} aria-current={isActive(href, $page.url) ? 'page' : undefined}>
-                    {#if entry.icon}
-                        <Icon svgPath={entry.icon} inline />
-                    {/if}
-                    <span class="ml-1">{entry.title}</span>
-                </a>
-            </li>
-        {/each}
-    </ul>
-    <DropdownMenu
-        open={menuOpen}
-        triggerButtonClass={getButtonClassName({ variant: 'secondary', outline: true, size: 'sm' })}
-        aria-label="{$menuOpen ? 'Close' : 'Open'} repo navigation"
-    >
-        <svelte:fragment slot="trigger">&hellip;</svelte:fragment>
-        {#each allMenuEntries as entry}
-            {@const href = data.repoURL + entry.path}
-            <MenuLink {href}>
-                <span class="overflow-entry" class:active={isActive(href, $page.url)}>
-                    {#if entry.icon}
-                        <Icon svgPath={entry.icon} inline />
-                    {/if}
-                    <span class="ml-1">{entry.title}</span>
-                </span>
-            </MenuLink>
-        {/each}
-    </DropdownMenu>
-    <RepoSearchInput repoName={data.repoName} />
-</nav>
+        <ul use:computeFit on:fit={event => (visibleNavEntries = event.detail.itemCount)}>
+            {#each navEntriesToShow as entry}
+                {@const href = data.repoURL + entry.path}
+                <li>
+                    <a {href} aria-current={isActive(href, $page.url) ? 'page' : undefined}>
+                        {#if entry.icon}
+                            <Icon svgPath={entry.icon} inline />
+                        {/if}
+                        <span class="ml-1">{entry.title}</span>
+                    </a>
+                </li>
+            {/each}
+        </ul>
+        <DropdownMenu
+            open={menuOpen}
+            triggerButtonClass={getButtonClassName({ variant: 'secondary', outline: true, size: 'sm' })}
+            aria-label="{$menuOpen ? 'Close' : 'Open'} repo navigation"
+        >
+            <svelte:fragment slot="trigger">&hellip;</svelte:fragment>
+            {#each allMenuEntries as entry}
+                {@const href = data.repoURL + entry.path}
+                <MenuLink {href}>
+                    <span class="overflow-entry" class:active={isActive(href, $page.url)}>
+                        {#if entry.icon}
+                            <Icon svgPath={entry.icon} inline />
+                        {/if}
+                        <span class="ml-1">{entry.title}</span>
+                    </span>
+                </MenuLink>
+            {/each}
+        </DropdownMenu>
+        <RepoSearchInput repoName={data.repoName} />
+    </nav>
 
-<div class="content">
-    <slot />
+    <div class="content">
+        <slot />
+    </div>
 </div>
 
 <style lang="scss">
+    .root {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
     nav {
         display: flex;
         align-items: center;
