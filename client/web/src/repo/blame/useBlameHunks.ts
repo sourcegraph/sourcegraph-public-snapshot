@@ -74,7 +74,7 @@ interface RawStreamHunk {
         previous: {
             commitID: string
             filename: string
-        }
+        } | null
         url: string
     }
     commitID: string
