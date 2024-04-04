@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -147,7 +146,6 @@ It can also be used for local development by updating its path and hash in the '
 							}
 						}
 
-						fmt.Printf("Using bazel build process\n")
 						if err = bc.DoBaseImageBuild(); err != nil {
 							return err
 						}
@@ -244,7 +242,6 @@ Lockfiles can be found at wolfi-images/<image>.lock.json
 					if len(args) == 1 {
 						imageName = args[0]
 					}
-					fmt.Printf("args are %v\n", args)
 
 					if checkLock {
 						var imageNames []string
@@ -274,12 +271,9 @@ Lockfiles can be found at wolfi-images/<image>.lock.json
 						RepositoryAppend: repositoryAppend,
 						KeyringAppend:    keyringAppend,
 					}
-					fmt.Printf("Keyring append is %s\n\n", keyringAppend)
 
 					if imageName != "" {
-						fmt.Printf("*** In lock section\n\n")
 						bc, err := wolfi.SetupBaseImageBuild(imageName, wolfi.PackageRepoConfig{}, opts)
-						fmt.Printf("Base image config: %+v\n\n", bc)
 						if err != nil {
 							return err
 						}
