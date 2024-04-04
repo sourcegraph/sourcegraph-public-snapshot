@@ -21490,6 +21490,57 @@ max(src_rockskip_service_repos_indexed)
 
 <br />
 
+#### symbols: p99.9_rockskip_index_queue_age
+
+<p class="subtitle">99.9th percentile index queue delay over 5m</p>
+
+The 99.9th percentile age of index jobs in seconds
+								This 99.9th percentile is useful to catch the long tail of queueing delays.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100521` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query:
+
+```
+histogram_quantile(0.999, sum(rate(src_rockskip_service_index_queue_age_seconds_bucket[5m])) by (le))
+```
+</details>
+
+<br />
+
+#### symbols: p95_rockskip_index_queue_age
+
+<p class="subtitle">95th percentile index queue delay over 5m</p>
+
+The 95th percentile age of index jobs in seconds.
+								A high delay might indicate a resource issue.
+								Consider increasing indexing bandwidth by either increasing the number of queues or the number of symbol services.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100522` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query:
+
+```
+histogram_quantile(0.95, sum(rate(src_rockskip_service_index_queue_age_seconds_bucket[5m])) by (le))
+```
+</details>
+
+<br />
+
 ### Symbols: Symbols GRPC server metrics
 
 #### symbols: symbols_grpc_request_rate_all_methods
