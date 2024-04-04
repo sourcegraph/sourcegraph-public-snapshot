@@ -94,13 +94,13 @@
     <meta name="description" content="Code search" />
 </svelte:head>
 
-{#await data.globalSiteAlerts then globalSiteAlerts}
-    {#if globalSiteAlerts}
-        <GlobalNotification globalAlerts={globalSiteAlerts} />
-    {/if}
-{/await}
-
 <div class="inner-body">
+    {#await data.globalSiteAlerts then globalSiteAlerts}
+        {#if globalSiteAlerts}
+            <GlobalNotification globalAlerts={globalSiteAlerts} />
+        {/if}
+    {/await}
+
     <Header authenticatedUser={$user} {handleOptOut} />
 
     <main>
