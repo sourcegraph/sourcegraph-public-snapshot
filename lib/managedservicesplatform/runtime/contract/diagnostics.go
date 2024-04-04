@@ -50,7 +50,14 @@ func loadDiagnosticsContract(
 		msp:      msp,
 	}
 	if c.DiagnosticsSecret == nil {
-		logger.Warn("DIAGNOSTICS_SECRET not set, diagnostics handlers will not check for secrets")
+		// We don't recommend using this for sensitive data access, so we just
+		// log instead of erroring out entirely.
+		message := "DIAGNOSTICS_SECRET not set, diagnostics handlers will not have any authorization checks"
+		if c.msp {
+			logger.Error(message) // error for visibility in production
+		} else {
+			logger.Warn(message)
+		}
 	}
 	return c
 }
