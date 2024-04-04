@@ -109,8 +109,12 @@ test:
     #     fi
     - name: 'db:migration:coherence_test'
       cmd: |
+        aspectRC="/tmp/aspect-generated.bazelrc"
+        rosetta bazelrc > "$aspectRC"
+        bazelrc=(--bazelrc="$aspectRC" --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
+
         # Hardcoding version, as for now I just want to make sure this works in CI.
-        bazel run //testing/tools/upgradetest:sh_upgradetest -- auto --post-release-version=5.3.9071 --avs 5.3.1,5.3.2, 5.3.0 --target-registry us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal/
+        bazel ${bazelrc[*]} run //testing/tools/upgradetest:sh_upgradetest -- auto --post-release-version=5.3.9071 --avs 5.3.1,5.3.2, 5.3.0 --target-registry us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal/
 
 promoteToPublic:
   create:
