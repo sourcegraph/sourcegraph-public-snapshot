@@ -75,7 +75,7 @@
                 {@const selected = commit.abbreviatedOID === selectedRev}
                 <tr class:selected use:scrollIntoView={selected}>
                     <td>
-                        <Avatar avatar={commit.author.person} --avatar-size="1rem" />&nbsp;
+                        <Avatar avatar={commit.author.person} />&nbsp;
                         {commit.author.person.displayName}
                     </td>
                     <td class="subject">

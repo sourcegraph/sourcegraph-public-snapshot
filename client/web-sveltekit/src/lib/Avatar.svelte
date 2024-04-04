@@ -35,11 +35,20 @@
     <img src={avatarURL} role="presentation" aria-hidden="true" alt="Avatar of {name}" />
 {:else}
     <div>
-        <span>{getInitials(name)}</span>
+        <span>
+            {getInitials(name)}
+        </span>
     </div>
 {/if}
 
 <style lang="scss">
+    span {
+        z-index: 1;
+        color: var(--white);
+        // defaults to var(--icon-inline-size) if --avatar-size is not set
+        font-size: calc(var(--avatar-size, var(--icon-inline-size)) * 0.5);
+    }
+
     img,
     div {
         isolation: isolate;
@@ -67,11 +76,5 @@
         border-radius: 50%;
         background: linear-gradient(to right, var(--logo-purple), var(--logo-blue));
         mask-image: linear-gradient(to bottom, #000000, transparent);
-    }
-
-    span {
-        z-index: 1;
-        color: var(--white);
-        font-size: calc(var(--avatar-size) * 0.5);
     }
 </style>

@@ -15,7 +15,7 @@
 
 <div class="last-commit">
     <div class="avatar">
-        <Avatar avatar={user} --avatar-size="1rem" />
+        <Avatar avatar={user} />
     </div>
 
     <div class="display-name">
@@ -40,6 +40,13 @@
 </div>
 
 <style lang="scss">
+    .avatar {
+        align-items: center;
+        display: flex;
+        flex-flow: row nowrap;
+        margin-right: 0.25rem;
+    }
+
     .commit-date {
         color: var(--text-muted);
     }
@@ -65,12 +72,5 @@
         justify-content: space-between;
         margin-right: 0.5rem;
         white-space: nowrap;
-    }
-
-    .avatar {
-        align-items: center;
-        display: flex;
-        flex-flow: row nowrap;
-        margin-right: 0.25rem;
     }
 </style>
