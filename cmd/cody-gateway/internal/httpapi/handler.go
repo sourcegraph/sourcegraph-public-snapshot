@@ -56,7 +56,7 @@ func NewHandler(
 	rs limiter.RedisStore,
 	httpClient httpcli.Doer,
 	authr *auth.Authenticator,
-	promptRecorder completions.PromptRecorder,
+	flaggedPromptRecorder completions.PromptRecorder,
 	config *Config,
 	dotcomClient graphql.Client,
 ) (http.Handler, error) {
@@ -125,7 +125,7 @@ func NewHandler(
 			config.RateLimitNotifier,
 			httpClient,
 			config.Anthropic,
-			promptRecorder,
+			flaggedPromptRecorder,
 			config.AutoFlushStreamingResponses)
 		if err != nil {
 			return nil, errors.Wrap(err, "init Anthropic handler")
@@ -143,7 +143,7 @@ func NewHandler(
 			config.RateLimitNotifier,
 			httpClient,
 			config.Anthropic,
-			promptRecorder,
+			flaggedPromptRecorder,
 			config.AutoFlushStreamingResponses)
 		if err != nil {
 			return nil, errors.Wrap(err, "init anthropicMessages handler")
@@ -165,6 +165,7 @@ func NewHandler(
 			config.RateLimitNotifier,
 			httpClient,
 			config.OpenAI,
+			flaggedPromptRecorder,
 			config.AutoFlushStreamingResponses)
 		registerStandardEndpoint(
 			"v1.completions.openai",
@@ -216,6 +217,7 @@ func NewHandler(
 			config.RateLimitNotifier,
 			httpClient,
 			config.Fireworks,
+			flaggedPromptRecorder,
 			config.AutoFlushStreamingResponses)
 		registerStandardEndpoint(
 			"v1.completions.fireworks",
@@ -271,10 +273,4 @@ func gaugeHandler(counter metric.Int64UpDownCounter, attrs attribute.Set, handle
 		// Background context when done, since request may be cancelled.
 		counter.Add(context.Background(), -1, metric.WithAttributeSet(attrs))
 	})
-}
-
-type CompletionsConfig struct {
-	logger      log.Logger
-	eventLogger events.Logger
-	rs          limiter.RedisStore
 }

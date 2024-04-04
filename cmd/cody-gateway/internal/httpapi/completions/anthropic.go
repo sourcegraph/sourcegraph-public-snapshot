@@ -22,12 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// PromptRecorder implementations should save select completions prompts for
-// a short amount of time for security review.
-type PromptRecorder interface {
-	Record(ctx context.Context, prompt string) error
-}
-
 func NewAnthropicHandler(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
@@ -52,7 +46,8 @@ func NewAnthropicHandler(
 		httpClient,
 		string(conftypes.CompletionsProviderNameAnthropic),
 		config.AllowedModels,
-		&AnthropicHandlerMethods{config: config, anthropicTokenizer: anthropicTokenizer, promptRecorder: promptRecorder},
+		&AnthropicHandlerMethods{config: config, anthropicTokenizer: anthropicTokenizer},
+		promptRecorder,
 
 		// Anthropic primarily uses concurrent requests to rate-limit spikes
 		// in requests, so set a default retry-after that is likely to be
@@ -149,16 +144,6 @@ func (a *AnthropicHandlerMethods) shouldFlagRequest(ctx context.Context, logger 
 	)
 	if err != nil {
 		return nil, err
-	}
-
-	if result.IsFlagged() {
-		// Record flagged prompts. The prompt recorder's implementation has a short TTL for
-		// this data, but is made available to troubleshoot ongoing abuse waves. This does
-		// incur some additional latency, but so this isn't going to make things meaningfully worse
-		// since flagged abuse requests take longer to process on the LLM-provider side.
-		if err := a.promptRecorder.Record(ctx, ar.BuildPrompt()); err != nil {
-			logger.Warn("failed to record flagged prompt", log.Error(err))
-		}
 	}
 	return result, nil
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/std"
+	gcpdetector "go.opentelemetry.io/contrib/detectors/gcp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/resource"
 
@@ -84,7 +85,9 @@ func Init(ctx context.Context, logger log.Logger, config Config, r log.Resource)
 
 func getOpenTelemetryResource(ctx context.Context, r log.Resource) (*resource.Resource, error) {
 	// Identify your application using resource detection
-	return resource.New(ctx,
+	res, err := resource.New(ctx,
+		// Use the GCP resource detector to detect information about the GCP platform
+		resource.WithDetectors(gcpdetector.NewDetector()),
 		// Use the default detectors
 		resource.WithTelemetrySDK(),
 		// Add our own attributes
@@ -95,4 +98,11 @@ func getOpenTelemetryResource(ctx context.Context, r log.Resource) (*resource.Re
 			semconv.ServiceNamespaceKey.String(r.Namespace),
 		),
 	)
+
+	if errors.Is(err, resource.ErrSchemaURLConflict) {
+		// Ignore the conflict error, the resource is still safe to use
+		// https://github.com/open-telemetry/opentelemetry-go/pull/4876
+		return res, nil
+	}
+	return res, err
 }
