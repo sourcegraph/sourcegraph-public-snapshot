@@ -1384,7 +1384,6 @@ commandsets:
       - blobstore
       - embeddings
       - telemetry-gateway
-    bazelCommands:
       - cody-gateway
     env:
       SOURCEGRAPHDOTCOM_MODE: true
