@@ -166,6 +166,11 @@ func (a *AnthropicMessagesHandlerMethods) getAPIURLByFeature(feature codygateway
 }
 
 func (a *AnthropicMessagesHandlerMethods) validateRequest(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicMessagesRequest) error {
+	if ar.Messages == nil {
+		// https://docs.anthropic.com/claude/reference/messages_post#:~:text=details%20and%20options.-,messages,-array%20of%20objects
+		return errors.New("request body must contain \"messages\" field")
+	}
+
 	maxTokensToSample := a.config.FlaggingConfig.MaxTokensToSample
 	if ar.MaxTokens > int32(maxTokensToSample) {
 		return errors.Errorf("max_tokens exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokens)
