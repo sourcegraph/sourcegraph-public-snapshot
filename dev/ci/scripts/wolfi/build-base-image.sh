@@ -79,11 +79,11 @@ fi
 # If add_custom_repo_cmd isn't empty
 if [ ${#add_custom_repo_cmd[@]} -gt 0 ]; then
   echo " * Updated packages found, regenerating lockfile for base image '$name'..."
-  bazel run //dev/sg -- wolfi lock "${add_custom_repo_cmd[@]}" "${name}"
+  bazel --bazelrc="$aspectRC" run //dev/sg -- wolfi lock "${add_custom_repo_cmd[@]}" "${name}"
 fi
 
 echo " * Building base image '$name' with apko..."
-bazel run //dev/sg -- wolfi image "${name}"
+bazel --bazelrc="$aspectRC" run //dev/sg -- wolfi image "${name}"
 local_image_name="${name}-base:latest"
 remote_image_name="us.gcr.io/sourcegraph-dev/wolfi-${name}-base"
 

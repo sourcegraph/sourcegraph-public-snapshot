@@ -9,8 +9,11 @@ BRANCH="${BUILDKITE_BRANCH:-'default-branch'}"
 MAIN_BRANCH="main"
 IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
 
+aspectRC="/tmp/aspect-generated.bazelrc"
+rosetta bazelrc >"$aspectRC"
+
 exitCode=0
-if bazel run //dev/sg -- wolfi lock --check; then
+if bazel --bazelrc="$aspectRC" run //dev/sg -- wolfi lock --check; then
   echo "sg wolfi lock --check succeeded"
 else
   if [[ "$IS_MAIN" == "true" ]]; then
