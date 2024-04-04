@@ -17,8 +17,8 @@ requirements:
 
   # #bolaji-release-testing
   # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=isv4abynddpox72wwbhaamo76e&i=7zjax5rm5hlilbgrzeb257i62i&h=team-sourcegraph.1password.com
-  - name: 'Slack Webhook URL'
-    env: SLACK_WEBHOOK_URL
+  # - name: 'Slack Webhook URL'
+  #   env: SLACK_WEBHOOK_URL
 
 internal:
   create:
