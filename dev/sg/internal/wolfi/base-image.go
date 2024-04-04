@@ -80,7 +80,7 @@ func resolveImagePath(name string) (string, error) {
 		"blobstore":         "docker-images/blobstore",   // cmd/blobstore is unused
 	}
 	if val, exists := specialCase[name]; exists {
-		fmt.Printf("Special case mapping for image '%s' to '%s'\n", name, val)
+		std.Out.WriteLine(output.Linef(output.EmojiInfo, output.StylePending, "Mapping Bazel build path for image '%s' to '%s", name, val))
 		return val, nil
 	}
 
@@ -139,18 +139,8 @@ func (bc BaseImageConfig) DoBaseImageBuildLegacy() error {
 	std.Out.WriteLine(output.Linef("📦", output.StylePending, "Building base image %s...", bc.ImageName))
 	std.Out.WriteLine(output.Linef("🤖", output.StylePending, "Apko build output:\n"))
 
-	fmt.Printf("*** Work dir is %s\n", bc.ImageConfigDir)
-	wd, _ := os.Getwd()
-	fmt.Printf("*** pwd is %s\n", wd)
-	lscmd := exec.Command("ls", "-al", bc.ImageConfigDir+"/")
-	lscmd.Stdout = os.Stdout
-	lscmd.Stderr = os.Stderr
-	lscmd.Run()
-
 	imageName := legacyDockerImageName(bc.ImageName)
 	imageFileName := imageFileName(bc.ImageName)
-
-	fmt.Printf("\n\nRunning ls in container\n\n")
 
 	cmd := exec.Command(
 		"docker", "run", "--rm",

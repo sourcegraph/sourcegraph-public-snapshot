@@ -44,8 +44,7 @@ if gh pr list --head "${BRANCH_NAME}" --state open | grep -q "${PR_TITLE}"; then
   echo ":github: A pull request already exists - editing it"
   gh pr edit "${BRANCH_NAME}" --body "${PR_BODY}"
 else
-  # If not, create a new PR from the branch main
-  # TODO: Once validated add '--reviewer "${PR_REVIEWER}"'
+  # If not, create a new PR from the branch
   gh pr create --title "${PR_TITLE}" --head "${BRANCH_NAME}" --base "${BUILDKITE_BRANCH}" --body "${PR_BODY}" --label "${PR_LABELS}"
   echo ":github: Created a new pull request from branch '${BRANCH_NAME}' with title '${PR_TITLE}'"
 fi

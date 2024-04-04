@@ -4,7 +4,6 @@ set -euf -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 REPO_DIR=$(pwd)
-echo "Current directory: ${REPO_DIR}"
 
 IMAGE_CONFIG_DIR="wolfi-images"
 GCP_PROJECT="sourcegraph-ci"
@@ -98,7 +97,6 @@ docker push "${remote_image_name}:${tag}"
 docker tag "${local_image_name}" "${remote_image_name}:latest"
 docker push "${remote_image_name}:latest"
 
-# TODO: Update message to reflect that getting this result in main requires further work
 # Show image usage message on branches
 if [[ "$IS_MAIN" != "true" ]]; then
   if [[ -n "$BUILDKITE" ]]; then
@@ -116,5 +114,12 @@ docker pull us.gcr.io/sourcegraph-dev/wolfi-${name}-base:${tag}
 \`\`\`
 
 EOF
+
+    # Add note if any packages were modified
+    if [ ${#modified_packages[@]} -gt 0 ]; then
+      cat <<-EOF >"${REPO_DIR}/annotations/${file}"
+NOTE: Any modified package will <strong>not</strong> be present in the image once merged - <a href="https://sourcegraph.com/docs/dev/how-to/wolfi/add_update_packages#update-an-existing-packaged-dependency">check the docs</a> for more details.
+EOF
+    fi
   fi
 fi

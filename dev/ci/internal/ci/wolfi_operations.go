@@ -134,7 +134,8 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 }
 
 // No-op to ensure all base images are updated before building full images
-// DEPRECATED: Due to switch to Bazel, building base images is an optional convenience
+//
+// Deprecated: Since switching to Bazel, building base images is optional
 func allBaseImagesBuilt(baseImageKeys []string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":octopus: All base images built",
@@ -311,7 +312,9 @@ func addWolfiOps(c Config) (packageOps, baseImageOps, apkoOps *operations.Set) {
 	return packageOps, baseImageOps, apkoOps
 }
 
-// wolfiRebuildAllBaseImages [deprecated] adds operations to rebuild all Wolfi base images and push to registry
+// wolfiRebuildAllBaseImages adds operations to rebuild all Wolfi base images and push to registry
+//
+// Deprecated: Since switching to Bazel, rebuilding all base images is replaced with wolfiBaseImageLockAndCreatePR
 func wolfiRebuildAllBaseImages(c Config) *operations.Set {
 	// List all YAML files in wolfi-images/
 	dir := "wolfi-images"

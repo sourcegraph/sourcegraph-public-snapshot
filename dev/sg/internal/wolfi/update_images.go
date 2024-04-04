@@ -87,7 +87,7 @@ func (bc BaseImageConfig) ApkoLock() error {
 		apkoFlags = append(apkoFlags, "--keyring-append", bc.KeyringAppend)
 	}
 
-	fmt.Printf("Running bazel %v %v\n", apkoArgs, apkoFlags)
+	std.Out.WriteLine(output.Linef(output.EmojiInfo, output.StylePending, " Running bazel %s", strings.Join(append(apkoArgs, apkoFlags...), " ")))
 
 	cmd := exec.Command("bazel", append(apkoArgs, apkoFlags...)...)
 	cmd.Stdout = os.Stdout

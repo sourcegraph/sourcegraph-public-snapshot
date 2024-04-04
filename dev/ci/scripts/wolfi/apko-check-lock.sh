@@ -9,8 +9,6 @@ BRANCH="${BUILDKITE_BRANCH:-'default-branch'}"
 MAIN_BRANCH="main"
 IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
 
-echo "Is-main is $IS_MAIN"
-
 exitCode=0
 if bazel run //dev/sg -- wolfi lock --check; then
   echo "sg wolfi lock --check succeeded"
@@ -24,8 +22,6 @@ else
     exitCode=1
   fi
 fi
-
-echo "Continuing"
 
 # Print user-facing error if files are not locked
 if [[ $exitCode != 0 ]]; then
@@ -43,6 +39,7 @@ Wolfi image configuration and apko lockfiles are not in sync. Fix by running:
 sg wolfi lock
 \`\`\`
 
+Check the <a href="https://sourcegraph.com/docs/dev/how-to/wolfi/add_update_images#modify-an-existing-base-image">Wolfi documentation</a> for more information.
 EOF
   fi
 fi
