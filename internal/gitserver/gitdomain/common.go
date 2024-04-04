@@ -289,17 +289,6 @@ type Signature struct {
 	Date  time.Time `json:"Date"`
 }
 
-// A ContributorCount is a contributor to a repository.
-type ContributorCount struct {
-	Name  string
-	Email string
-	Count int32
-}
-
-func (p *ContributorCount) String() string {
-	return fmt.Sprintf("%d %s <%s>", p.Count, p.Name, p.Email)
-}
-
 type RefType int
 
 const (
@@ -328,6 +317,17 @@ func (t RefType) ToProto() proto.GitRef_RefType {
 	default:
 		return proto.GitRef_REF_TYPE_UNSPECIFIED
 	}
+}
+
+// A ContributorCount is a contributor to a repository.
+type ContributorCount struct {
+	Name  string
+	Email string
+	Count int32
+}
+
+func (p *ContributorCount) String() string {
+	return fmt.Sprintf("%d %s <%s>", p.Count, p.Name, p.Email)
 }
 
 // Ref describes a Git ref.
