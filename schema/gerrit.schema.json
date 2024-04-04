@@ -20,7 +20,7 @@
       "examples": ["https://gerrit.example.com"]
     },
     "username": {
-      "description": "A username for authentication withe the Gerrit code host.",
+      "description": "A username for authentication with the Gerrit code host.",
       "type": "string",
       "minLength": 1
     },
@@ -37,6 +37,12 @@
         ["name", "owner/name"],
         ["docs", "kubernetes/kubernetes", "golang/go", "facebook/react"]
       ]
+    },
+    "gitURLType": {
+      "description": "The type of Git URLs to use for cloning and fetching Git repositories on this Gerrit instance.\n\nIf \"http\", Sourcegraph will access Gerrit repositories using Git URLs of the form http(s)://gerrit.example.com/a/myteam/myproject.git (using https: if the Gerrit instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access Gerrit repositories using Git URLs of the form git@gerrit.example.com:myteam/myproject.git. The exact hostname and port will be fetched from /ssh_info. See the documentation for how to provide SSH private keys and known_hosts: https://sourcegraph.com/docs/admin/repo/auth.",
+      "type": "string",
+      "enum": ["http", "ssh"],
+      "default": "http"
     },
     "exclude": {
       "description": "A list of repositories to never mirror from this Gerrit instance. Takes precedence over \"projects\" configuration.\n\nSupports excluding by name ({\"name\": \"owner/name\"})",

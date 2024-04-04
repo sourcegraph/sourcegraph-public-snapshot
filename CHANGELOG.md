@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Auth providers now support a `noSignIn` option that, when set to true, will hide the auth provider from the sign in page, but still allow users to connect the external account from their Account Security page for permissions syncing. [#60722](https://github.com/sourcegraph/sourcegraph/pull/60722)
 - Added a "Commits" button to the folders in repos that shows commits for the items in that folder. [#60909](https://github.com/sourcegraph/sourcegraph/pull/60909)
 - The frontend Grafana dashboard has a new Prometheus metric that tracks the rate of requests that Sourcegraph issues to external services. [#61348](https://github.com/sourcegraph/sourcegraph/pull/61348)
+- Added support for the `gitURLType` setting for Gerrit, Sourcegraph now supports cloning from Gerrit via SSH. Note: Not on Cloud yet, like for all code hosts. [#61537](https://github.com/sourcegraph/sourcegraph/pull/61537)
 - Support for OpenAI chat models for enterprise customers. [#61539](https://github.com/sourcegraph/sourcegraph/pull/61539)
 
 ### Changed
