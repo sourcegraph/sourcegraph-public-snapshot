@@ -278,7 +278,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		)
 	default:
 		// Executor VM image
-		alwaysRebuild := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease) || c.Diff.Has(changed.ExecutorVMImage)
+		// alwaysRebuild := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease) || c.Diff.Has(changed.ExecutorVMImage)
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
 
@@ -290,10 +290,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			runtype.InternalRelease,
 			runtype.CloudEphemeral,
 		) {
-			imageBuildOps.Append(bazelBuildExecutorVM(c, alwaysRebuild))
-			if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-				imageBuildOps.Append(bazelBuildExecutorDockerMirror(c))
-			}
+			// imageBuildOps.Append(bazelBuildExecutorVM(c, alwaysRebuild))
+			// if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+			// 	imageBuildOps.Append(bazelBuildExecutorDockerMirror(c))
+			// }
 		}
 		ops.Merge(imageBuildOps)
 
