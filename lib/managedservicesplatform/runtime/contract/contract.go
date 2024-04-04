@@ -88,7 +88,14 @@ type Contract struct {
 }
 
 type ServiceMetadataProvider interface {
+	// Name is the service name, typically the all-lowercase, dash-delimited,
+	// machine-friendly 'id' of the service in its corresponding MSP service
+	// specification (e.g. 'telemetry-gateway')
 	Name() string
+	// Version should indicate the stamped version of the running service
+	// program. It is implementation-dependent - the value gets included in
+	// logs, traces, error reports, and so on, so choose any format that is
+	// operationally useful.
 	Version() string
 }
 
