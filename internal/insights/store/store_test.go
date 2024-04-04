@@ -983,6 +983,126 @@ func TestGetOffsetNRecordingTime(t *testing.T) {
 	})
 }
 
+func BenchmarkFilterSeriesPoints(b *testing.B) {
+
+	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
+
+	// Best case: Early return because of an empty denylist
+	b.Run("early return because of empty denylist", func(b *testing.B) {
+		denyList := make([]api.RepoID, 0)
+		var points []SeriesPointForExport
+
+		for i := 0; i < b.N; i++ {
+			points = append(points, SeriesPointForExport{RepoId: optionalRepoID(api.RepoID(i))})
+		}
+
+		b.ResetTimer()
+
+		want := points
+
+		got := FilterSeriesPoints(denyList, points)
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			b.Errorf("mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	// Second-best case: No assignments because everything is filtered out
+	b.Run("filter out all repos", func(b *testing.B) {
+		var denyList []api.RepoID
+		var points []SeriesPointForExport
+
+		for i := 0; i < b.N; i++ {
+			denyList = append(denyList, api.RepoID(i))
+			points = append(points, SeriesPointForExport{RepoId: optionalRepoID(api.RepoID(i))})
+		}
+
+		b.ResetTimer()
+
+		want := make([]SeriesPointForExport, 0)
+
+		got := FilterSeriesPoints(denyList, points)
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			b.Errorf("mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	// Worst case: Everything is checked, but all values are re-assigned
+	b.Run("filter out no repos", func(b *testing.B) {
+		var denyList []api.RepoID
+		var points []SeriesPointForExport
+
+		for i := 1; i < b.N; i++ {
+			denyList = append(denyList, api.RepoID(-i))
+			points = append(points, SeriesPointForExport{RepoId: optionalRepoID(api.RepoID(i))})
+		}
+
+		b.ResetTimer()
+
+		want := points
+
+		got := FilterSeriesPoints(denyList, points)
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			b.Errorf("mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+}
+
+func TestFilterSeriesPoints(t *testing.T) {
+
+	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
+
+	t.Run("removes repos on denylist from points", func(t *testing.T) {
+		denyList := []api.RepoID{123}
+		points := []SeriesPointForExport{
+			{RepoId: optionalRepoID(123)},
+			{RepoId: optionalRepoID(456)},
+		}
+
+		want := []SeriesPointForExport{{RepoId: optionalRepoID(456)}}
+
+		got := FilterSeriesPoints(denyList, points)
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("returns all points on empty denylist", func(t *testing.T) {
+		var denyList []api.RepoID
+		points := []SeriesPointForExport{
+			{RepoId: optionalRepoID(123)},
+			{RepoId: optionalRepoID(456)},
+		}
+
+		want := points
+
+		got := FilterSeriesPoints(denyList, points)
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("allows nil RepoIds", func(t *testing.T) {
+		denyList := []api.RepoID{123}
+		points := []SeriesPointForExport{
+			{RepoId: nil},
+		}
+
+		want := []SeriesPointForExport{{RepoId: nil}}
+
+		got := FilterSeriesPoints(denyList, points)
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("mismatch (-want +got):\n%s", diff)
+		}
+	})
+}
+
 func TestGetAllDataForInsightViewId(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
@@ -990,7 +1110,7 @@ func TestGetAllDataForInsightViewId(t *testing.T) {
 
 	permissionStore := NewMockInsightPermissionStore()
 	// no repo restrictions by default
-	permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn(nil, nil)
+	permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn([]api.RepoID{}, nil)
 
 	insightStore := NewInsightStore(insightsDB)
 	seriesStore := New(insightsDB, permissionStore)
@@ -1095,7 +1215,7 @@ SELECT recording_time,
 		permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn([]api.RepoID{1111}, nil)
 		defer func() {
 			// cleanup
-			permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn(nil, nil)
+			permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn([]api.RepoID{}, nil)
 		}()
 		got, err := seriesStore.GetAllDataForInsightViewID(ctx, ExportOpts{InsightViewUniqueID: view.UniqueID})
 		if err != nil {

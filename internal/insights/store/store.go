@@ -886,6 +886,7 @@ type SeriesPointForExport struct {
 	SeriesQuery      string
 	RecordingTime    time.Time
 	RepoName         *string
+	RepoId           *api.RepoID
 	Value            int
 	Capture          *string
 }
@@ -904,14 +905,8 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetUnauthorizedRepoIDs")
 	}
-	excludedRepoIDs := make([]*sqlf.Query, 0)
-	for _, repoID := range denylist {
-		excludedRepoIDs = append(excludedRepoIDs, sqlf.Sprintf("%d", repoID))
-	}
+
 	var preds []*sqlf.Query
-	if len(excludedRepoIDs) > 0 {
-		preds = append(preds, sqlf.Sprintf("sp.repo_id not in (%s)", sqlf.Join(excludedRepoIDs, ",")))
-	}
 	if len(opts.IncludeRepoRegex) > 0 {
 		includePreds := []*sqlf.Query{}
 		for _, regex := range opts.IncludeRepoRegex {
@@ -952,6 +947,7 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts)
 			&tmp.SeriesQuery,
 			&tmp.RecordingTime,
 			&tmp.RepoName,
+			&tmp.RepoId,
 			&tmp.Value,
 			&tmp.Capture,
 		); err != nil {
@@ -976,11 +972,34 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts)
 		return nil, errors.Wrap(err, "fetching code insights data")
 	}
 
+	results = FilterSeriesPoints(denylist, results)
+
 	return results, nil
 }
 
+func FilterSeriesPoints(denyList []api.RepoID, array []SeriesPointForExport) []SeriesPointForExport {
+	// If there is nothing to filter, then return early. This skips the assignment in the later for-loop.
+	if len(denyList) == 0 {
+		return array
+	}
+	// We turn the denyList into a map to ensure O(n) time complexity
+	denyMap := make(map[int32]bool)
+	for _, repoID := range denyList {
+		denyMap[int32(repoID)] = true
+	}
+	// Based on https://stackoverflow.com/a/59051095
+	n := 0
+	for _, x := range array {
+		if x.RepoId == nil || !denyMap[int32(*x.RepoId)] {
+			array[n] = x
+			n++
+		}
+	}
+	return array[:n]
+}
+
 const exportCodeInsightsDataSql = `
-select iv.title, ivs.label, i.query, isrt.recording_time, rn.name, coalesce(sp.value, 0) as value, sp.capture
+select iv.title, ivs.label, i.query, isrt.recording_time, rn.name, sp.repo_id, coalesce(sp.value, 0) as value, sp.capture
 from %s isrt
     join insight_series i on i.id = isrt.insight_series_id
     join insight_view_series ivs ON i.id = ivs.insight_series_id
