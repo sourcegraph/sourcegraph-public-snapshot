@@ -142,7 +142,7 @@ func (s *Server) handleEvent(w http.ResponseWriter, req *http.Request) {
 	if !ok || len(h) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
-	} else if h[0] != s.config.BuildkiteToken {
+	} else if h[0] != s.config.BuildkiteWebhookToken {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -237,9 +237,10 @@ func (s *Server) triggerMetricsPipeline(b *build.Build) error {
 		Author:  *b.Author,
 		// TODO: do we need to clone b.Env?
 		Env: map[string]string{
-			"BUILDKITE_TRIGGERED_FROM_BUILD_ID":      pointers.DerefZero(b.ID),
-			"BUILDKITE_TRIGGERED_FROM_BUILD_NUMBER":  strconv.Itoa(pointers.DerefZero(b.Number)),
-			"BUILDKITE_TRIGGERED_FROM_PIPELINE_SLUG": pointers.DerefZero(b.Pipeline.Slug),
+			// can't use BUILDKITE_ prefixed keys as they're reserved
+			"DEVX_TRIGGERED_FROM_BUILD_ID":      pointers.DerefZero(b.ID),
+			"DEVX_TRIGGERED_FROM_BUILD_NUMBER":  strconv.Itoa(pointers.DerefZero(b.Number)),
+			"DEVX_TRIGGERED_FROM_PIPELINE_SLUG": pointers.DerefZero(b.Pipeline.Slug),
 		},
 		MetaData:              map[string]string{},
 		PullRequestID:         int64(prNumber),
@@ -247,10 +248,14 @@ func (s *Server) triggerMetricsPipeline(b *build.Build) error {
 		PullRequestRepository: repo,
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "error triggering job")
 	}
 
-	fmt.Printf("%s %+v\n", response.Status, triggered)
+	if response.StatusCode >= 0 && response.StatusCode <= 300 {
+		s.logger.Info("triggered job successfully", log.String("buildUrl", *triggered.WebURL), log.String("buildID", *triggered.ID), log.String("sourceBuildID", *b.ID))
+	} else {
+		s.logger.Warn("unexpected response for triggered job creation", log.Int("statusCode", response.StatusCode))
+	}
 
 	return nil
 }
