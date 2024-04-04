@@ -37,6 +37,8 @@ go_library(
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_russellhaering_gosaml2//uuid",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//:sourcegraph-accounts-sdk-go",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//scopes",
         "@org_golang_x_oauth2//:oauth2",
     ],
 )

@@ -5,12 +5,13 @@ import (
 	"database/sql"
 	"sync"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -26,6 +27,7 @@ const NULL CommitId = 0
 
 type Service struct {
 	logger                  log.Logger
+	metrics                 *metrics
 	db                      *sql.DB
 	git                     GitserverClient
 	fetcher                 fetcher.RepositoryFetcher
@@ -40,6 +42,76 @@ type Service struct {
 	symbolsCacheSize        int
 	pathSymbolsCacheSize    int
 	searchLastIndexedCommit bool
+}
+
+type metrics struct {
+	searchRunning  prometheus.Gauge
+	searchFailed   prometheus.Counter
+	searchDuration prometheus.Histogram
+	indexRunning   prometheus.Gauge
+	indexFailed    prometheus.Counter
+	indexDuration  prometheus.Histogram
+}
+
+func newMetrics(logger log.Logger, db *sql.DB) *metrics {
+	scanCount := func(sql string) (float64, error) {
+		row := db.QueryRowContext(context.Background(), sql)
+		var count int64
+		err := row.Scan(&count)
+		if err != nil {
+			return 0, err
+		}
+		return float64(count), nil
+	}
+
+	ns := "src_rockskip_service"
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace: ns,
+		Name:      "repos_indexed",
+		Help:      "The number of repositories indexed by rockskip",
+	}, func() float64 {
+		count, err := scanCount(`SELECT COUNT(*) FROM rockskip_repos`)
+		if err != nil {
+			logger.Error("failed to get number of index repos", log.Error(err))
+			return 0
+		}
+		return count
+	})
+	return &metrics{
+		searchRunning: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: ns,
+			Name:      "in_flight_search_requests",
+			Help:      "Number of in-flight search requests",
+		}),
+		searchFailed: promauto.NewCounter(prometheus.CounterOpts{
+			Namespace: ns,
+			Name:      "search_request_errors",
+			Help:      "Number of search requests that returned an error",
+		}),
+		searchDuration: promauto.NewHistogram(prometheus.HistogramOpts{
+			Namespace: ns,
+			Name:      "search_request_duration_seconds",
+			Help:      "Search request duration in seconds.",
+			Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 20, 30},
+		}),
+		indexRunning: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: ns,
+			Name:      "in_flight_index_jobs",
+			Help:      "Number of in-flight index jobs",
+		}),
+		indexFailed: promauto.NewCounter(prometheus.CounterOpts{
+			Namespace: ns,
+			Name:      "index_job_errors",
+			Help:      "Number of index jobs that returned an error",
+		}),
+		indexDuration: promauto.NewHistogram(prometheus.HistogramOpts{
+			Namespace: ns,
+			Name:      "index_job_duration_seconds",
+			Help:      "Search request duration in seconds.",
+			Buckets:   prometheus.ExponentialBuckets(0.1, 2, 22),
+		}),
+	}
 }
 
 func NewService(
@@ -64,6 +136,7 @@ func NewService(
 
 	service := &Service{
 		logger:                  logger,
+		metrics:                 newMetrics(logger, db),
 		db:                      db,
 		git:                     git,
 		fetcher:                 fetcher,

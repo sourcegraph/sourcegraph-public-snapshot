@@ -1484,7 +1484,7 @@ Generated query for critical alert: `max((sum by (instance, cmd) (src_gitserver_
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> gitserver: 0.02s+ echo test command duration for 30s
-- <span class="badge badge-critical">critical</span> gitserver: 1s+ echo test command duration
+- <span class="badge badge-critical">critical</span> gitserver: 1s+ echo test command duration for 1m0s
 
 **Next steps**
 
