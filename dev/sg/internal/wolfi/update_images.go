@@ -73,11 +73,23 @@ func (bc BaseImageConfig) UpdateImage(_ *cli.Context) error {
 	return nil
 }
 
+// getBazelArgs appends an additional -bazelrc flag if the BAZELRC environment variable is set
+func getBazelArgs() []string {
+	bazelrc := os.Getenv("BAZELRC")
+
+	if bazelrc != "" {
+		return []string{"--bazelrc", bazelrc}
+	}
+	return []string{}
+}
+
 // ApkoLock calls `apko lock` to generate a lockfile for the given image
 func (bc BaseImageConfig) ApkoLock() error {
 	localImageConfigPath := strings.TrimPrefix(bc.ImageConfigPath, bc.ImageConfigDir+"/")
 
-	apkoArgs := []string{"run", "@rules_apko//apko", "lock", "--", localImageConfigPath}
+	bazelArgs := append(getBazelArgs(), "run")
+
+	apkoArgs := []string{"@rules_apko//apko", "lock", "--", localImageConfigPath}
 
 	apkoFlags := []string{}
 	if bc.RepositoryAppend != "" {
@@ -87,9 +99,11 @@ func (bc BaseImageConfig) ApkoLock() error {
 		apkoFlags = append(apkoFlags, "--keyring-append", bc.KeyringAppend)
 	}
 
-	std.Out.WriteLine(output.Linef(output.EmojiInfo, output.StylePending, " Running bazel %s", strings.Join(append(apkoArgs, apkoFlags...), " ")))
+	commandArgs := append(bazelArgs, append(apkoArgs, apkoFlags...)...)
 
-	cmd := exec.Command("bazel", append(apkoArgs, apkoFlags...)...)
+	std.Out.WriteLine(output.Linef(output.EmojiInfo, output.StylePending, " Running bazel %s", strings.Join(commandArgs, " ")))
+
+	cmd := exec.Command("bazel", commandArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Dir = bc.ImageConfigDir

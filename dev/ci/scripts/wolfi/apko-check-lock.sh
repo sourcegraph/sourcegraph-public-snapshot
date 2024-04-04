@@ -11,6 +11,7 @@ IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
 
 aspectRC="/tmp/aspect-generated.bazelrc"
 rosetta bazelrc >"$aspectRC"
+export BAZELRC="$aspectRC"
 
 exitCode=0
 if bazel --bazelrc="$aspectRC" run //dev/sg -- wolfi lock --check; then

@@ -19,6 +19,10 @@ if [[ "$IS_MAIN" != "true" ]]; then
   BRANCH_PATH="branches/$BRANCH_PATH"
 fi
 
+aspectRC="/tmp/aspect-generated.bazelrc"
+rosetta bazelrc >"$aspectRC"
+export BAZELRC="$aspectRC"
+
 if [ $# -eq 0 ]; then
   echo "No arguments supplied - provide the base image name to build"
   exit 0

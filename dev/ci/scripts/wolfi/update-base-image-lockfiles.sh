@@ -11,9 +11,11 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 echo "~~~ :aspect: :stethoscope: Agent Health check"
 /etc/aspect/workflows/bin/agent_health_check
 
-# Update hashes for all base images
 aspectRC="/tmp/aspect-generated.bazelrc"
 rosetta bazelrc >"$aspectRC"
+export BAZELRC="$aspectRC"
+
+# Update hashes for all base images
 bazel --bazelrc="$aspectRC" run //dev/sg -- wolfi lock
 # Print diff
 git diff wolfi-images/*.lock.json

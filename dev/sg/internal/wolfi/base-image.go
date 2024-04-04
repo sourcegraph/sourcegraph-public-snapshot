@@ -118,11 +118,14 @@ func (bc BaseImageConfig) DoBaseImageBuild() error {
 		return errors.Newf("no Bazel build path found for image '%s'", bc.ImageName)
 	}
 
-	std.Out.WriteLine(output.Linef("📦", output.StylePending, "Building base image %s using `bazel run %s`", bc.ImageName, bc.BazelBuildPath))
+	bazelArgs := append(getBazelArgs(), "run")
+	commandArgs := append(bazelArgs, bc.BazelBuildPath)
+
+	std.Out.WriteLine(output.Linef("📦", output.StylePending, "Building base image %s using `bazel %s`", bc.ImageName, strings.Join(commandArgs, " ")))
 	std.Out.WriteLine(output.Linef("🤖", output.StylePending, "rules_apko build output:\n"))
 
 	cmd := exec.Command(
-		"bazel", "run", bc.BazelBuildPath,
+		"bazel", commandArgs...,
 	)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
