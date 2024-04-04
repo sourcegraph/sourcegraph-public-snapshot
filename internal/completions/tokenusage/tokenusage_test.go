@@ -49,7 +49,7 @@ func TestGetAllTokenUsageData(t *testing.T) {
 		t.Fatalf("Expected llm_usage key to be present and be a map")
 	}
 
-	models, ok := llmUsage["models"].([]map[string]interface{})
+	models, ok := llmUsage["models"].([]tokenusage.ModelData)
 	if !ok || len(models) != 2 {
 		t.Fatalf("Expected models to be a slice of map with 2 items, got %d", len(models))
 	}
@@ -61,19 +61,8 @@ func TestGetAllTokenUsageData(t *testing.T) {
 	}
 
 	for _, model := range models {
-		description, ok := model["description"].(string)
-		if !ok {
-			t.Errorf("Expected description to be a string")
-			continue
-		}
-		tokens, ok := model["tokens"].(float64)
-		if !ok {
-			t.Errorf("Expected tokens to be an float64")
-			continue
-		}
-
-		if expectedTokens, exists := expected[description]; !exists || expectedTokens != tokens {
-			t.Errorf("Expected %f tokens for %s, got %f", expectedTokens, description, tokens)
+		if expectedTokens, exists := expected[model.Description]; !exists || expectedTokens != model.Tokens {
+			t.Errorf("Expected %f tokens for %s, got %f", expectedTokens, model.Description, model.Tokens)
 		}
 	}
 }
