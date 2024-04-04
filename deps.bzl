@@ -3398,13 +3398,6 @@ def go_dependencies():
         version = "v0.4.0",
     )
     go_repository(
-        name = "com_github_jinzhu_copier",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/jinzhu/copier",
-        sum = "h1:w3ciUoD19shMCRargcpm0cm91ytaBhDvuRpz1ODO/U8=",
-        version = "v0.4.0",
-    )
-    go_repository(
         name = "com_github_jinzhu_inflection",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/jinzhu/inflection",
