@@ -341,7 +341,8 @@ func main() {
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
 					ctx = context.WithValue(ctx, postReleaseKey{}, cCtx.String("post-release-version"))
-					ctx = context.WithValue(ctx, targetRegistryKey{}, cCtx.String("registry"))
+					ctx = context.WithValue(ctx, targetRegistryKey{}, cCtx.String("target-registry"))
+					ctx = context.WithValue(ctx, fromRegistryKey{}, cCtx.String("from-registry"))
 
 					// check docker is running
 					if err := run.Cmd(ctx, "docker", "ps").Run().Wait(); err != nil {
@@ -418,10 +419,17 @@ func main() {
 						Aliases: []string{"pv"},
 						Usage:   "Select an already released version as the target version for the test suite.",
 					},
+
 					&cli.StringFlag{
-						Name:        "registry",
+						Name:        "target-registry",
 						DefaultText: "sourcegraph/",
-						Usage:       "Registry host and path, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Usage:       "Registry host and path to pull the targeted version from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value:       "",
+					},
+					&cli.StringFlag{
+						Name:        "from-registry",
+						DefaultText: "sourcegraph/",
+						Usage:       "Registry host and path to pull versions we're upgrading from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
 						Value:       "",
 					},
 					&cli.IntFlag{
@@ -439,7 +447,8 @@ func main() {
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
 					ctx = context.WithValue(ctx, postReleaseKey{}, cCtx.String("post-release-version"))
-					ctx = context.WithValue(ctx, targetRegistryKey{}, cCtx.String("registry"))
+					ctx = context.WithValue(ctx, targetRegistryKey{}, cCtx.String("target-registry"))
+					ctx = context.WithValue(ctx, fromRegistryKey{}, cCtx.String("from-registry"))
 
 					// check docker is running
 					if err := run.Cmd(ctx, "docker", "ps").Run().Wait(); err != nil {
