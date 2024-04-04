@@ -177,7 +177,7 @@ func NewHandler(
 
 		factoryMap := embeddings.ModelFactoryMap{
 			embeddings.ModelNameOpenAIAda:            embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
-			embeddings.ModelNameSourcegraphSTMultiQA: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.SMEGAURL),
+			embeddings.ModelNameSourcegraphSTMultiQA: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.EmbeddingsAPIURL),
 		}
 		embeddingsHandler := embeddings.NewHandler(
 			logger,
