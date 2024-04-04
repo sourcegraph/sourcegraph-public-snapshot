@@ -96,12 +96,14 @@ func (c diagnosticsContract) RegisterDiagnosticsHandlers(r HandlerRegisterer, st
 	diagnosticsLogger := c.internal.logger.Scoped("diagnostics")
 
 	// Only enable Prometheus metrics endpoint if we are not in a MSP environment,
-	// i.e. in local dev.
+	// i.e. in local dev. Prometheus can then be optionally spun up to collect
+	// a locally running service's metrics.
 	if !c.msp {
 		// Prometheus standard endpoint is '/metrics', we use the same for
 		// convenience.
 		r.Handle("/metrics", promhttp.Handler())
-		// Warn because this should only be enabled in dev
+		// Warn because this should only be enabled in dev, in production we
+		// push metrics via OpenTelemetry to GCP instead.
 		diagnosticsLogger.Warn("enabled Prometheus metrics endpoint at '/metrics'")
 	}
 
