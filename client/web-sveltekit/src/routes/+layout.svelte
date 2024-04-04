@@ -109,6 +109,12 @@
 </div>
 
 <style lang="scss">
+    .inner-body {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
     main {
         isolation: isolate;
         flex: 1;
@@ -116,11 +122,5 @@
         flex-direction: column;
         box-sizing: border-box;
         min-height: 0;
-    }
-
-    .inner-body {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
     }
 </style>
