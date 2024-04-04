@@ -94,37 +94,33 @@
     <meta name="description" content="Code search" />
 </svelte:head>
 
-<svelte:body use:classNames={$scrollAll ? '' : 'overflowHidden'} />
-
 {#await data.globalSiteAlerts then globalSiteAlerts}
     {#if globalSiteAlerts}
         <GlobalNotification globalAlerts={globalSiteAlerts} />
     {/if}
 {/await}
 
-<Header authenticatedUser={$user} {handleOptOut} />
+<div class="inner-body">
+    <Header authenticatedUser={$user} {handleOptOut} />
 
-<main>
-    <slot />
-</main>
+    <main>
+        <slot />
+    </main>
+</div>
 
 <style lang="scss">
-    :global(body.overflowHidden) {
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        overflow: hidden;
-
-        main {
-            overflow-y: auto;
-        }
-    }
-
     main {
         isolation: isolate;
         flex: 1;
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
+        min-height: 0;
+    }
+
+    .inner-body {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
     }
 </style>

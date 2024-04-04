@@ -93,8 +93,10 @@
         {/await}
     {:else if blob}
         {#if blob.richHTML && !showRaw}
-            <div class={`rich ${markdownStyles.markdown}`}>
-                {@html blob.richHTML}
+            <div class="rich-scroller">
+                <div class={`rich-content ${markdownStyles.markdown}`}>
+                    {@html blob.richHTML}
+                </div>
             </div>
         {:else}
             <CodeMirrorBlob
@@ -155,9 +157,13 @@
     }
 
     .rich {
-        padding: 1rem;
-        overflow: auto;
-        max-width: 50rem;
+        &-scroller {
+            padding: 2rem;
+            overflow: auto;
+        }
+        &-content {
+            max-width: 50rem;
+        }
     }
 
     .circle {

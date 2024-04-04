@@ -1,6 +1,7 @@
 <script lang="ts" context="module">
-    import { AlertType } from '$lib/graphql-types'
     import { formatDistanceStrict, isAfter } from 'date-fns'
+
+    import { AlertType } from '$lib/graphql-types'
 
     type PossibleAlertVariation = 'info' | 'warning' | 'danger'
 
@@ -33,13 +34,13 @@
 </script>
 
 <script lang="ts">
-    import { settings } from '$lib/stores'
-
-    import { Markdown } from '$lib/wildcard'
-    import DismissibleAlert from './DismissibleAlert.svelte'
-
-    import type { GlobalNotifications } from './GlobalNotifications.gql'
     import { differenceInDays, parseISO } from 'date-fns'
+
+    import { settings } from '$lib/stores'
+    import { Markdown } from '$lib/wildcard'
+
+    import DismissibleAlert from './DismissibleAlert.svelte'
+    import type { GlobalNotifications } from './GlobalNotifications.gql'
 
     export let globalAlerts: GlobalNotifications
 
@@ -116,11 +117,6 @@
 <style lang="scss">
     .root {
         width: 100%;
-        border-top: 1px solid var(--border-color-2);
-
-        &:empty {
-            display: none;
-        }
     }
 
     .proxy-link {

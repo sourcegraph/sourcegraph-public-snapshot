@@ -9,15 +9,16 @@
         mdiSourceRepository,
         mdiTag,
     } from '@mdi/js'
+    import { writable } from 'svelte/store'
+
+    import { getButtonClassName } from '@sourcegraph/wildcard'
 
     import { page } from '$app/stores'
+    import { computeFit } from '$lib/dom'
     import Icon from '$lib/Icon.svelte'
+    import { DropdownMenu, MenuLink } from '$lib/wildcard'
 
     import type { LayoutData } from './$types'
-    import { DropdownMenu, MenuLink } from '$lib/wildcard'
-    import { computeFit } from '$lib/dom'
-    import { writable } from 'svelte/store'
-    import { getButtonClassName } from '@sourcegraph/wildcard'
     import RepoSearchInput from './RepoSearchInput.svelte'
 
     export let data: LayoutData
@@ -101,7 +102,10 @@
     </DropdownMenu>
     <RepoSearchInput repoName={data.repoName} />
 </nav>
-<slot />
+
+<div class="content">
+    <slot />
+</div>
 
 <style lang="scss">
     nav {
@@ -165,5 +169,10 @@
 
     nav {
         color: var(--body-color);
+    }
+
+    .content {
+        flex: 1;
+        min-height: 0;
     }
 </style>

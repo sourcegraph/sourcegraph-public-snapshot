@@ -172,10 +172,8 @@
 <style lang="scss">
     section {
         display: flex;
-        flex: 1;
-        flex-shrink: 0;
         background-color: var(--code-bg);
-        min-height: 100vh;
+        height: 100%;
     }
 
     .sidebar {
@@ -190,7 +188,6 @@
         padding-bottom: 0;
         position: sticky;
         top: 0px;
-        max-height: 100vh;
     }
 
     .main {
