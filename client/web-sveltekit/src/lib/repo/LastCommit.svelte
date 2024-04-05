@@ -19,27 +19,28 @@
     </div>
 
     <div class="display-name">
-        <small>
-            {user.name}
-        </small>
+        <small>{user.name}</small>
     </div>
 
     <div class="commit-message">
         <a href={canonicalURL}>
-            <small>
-                {commitMessage}
-            </small>
+            <small>{commitMessage}</small>
         </a>
     </div>
 
     <div class="commit-date">
-        <small>
-            {commitDate}
-        </small>
+        <small>{commitDate}</small>
     </div>
 </div>
 
 <style lang="scss">
+    .avatar {
+        align-items: center;
+        display: flex;
+        flex-flow: row nowrap;
+        margin-right: 0.25rem;
+    }
+
     .commit-date {
         color: var(--text-muted);
     }
@@ -65,12 +66,6 @@
         justify-content: space-between;
         margin-right: 0.5rem;
         white-space: nowrap;
-    }
-
-    .avatar {
-        align-items: center;
-        display: flex;
-        flex-flow: row nowrap;
-        margin-right: 0.25rem;
+        max-width: 400px;
     }
 </style>
