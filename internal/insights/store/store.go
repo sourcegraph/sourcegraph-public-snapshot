@@ -993,8 +993,9 @@ func FilterSeriesPoints(denyList []api.RepoID, points []SeriesPointForExport) []
 	// Based on https://stackoverflow.com/a/59051095
 	n := 0
 	for _, x := range points {
-		// If there is no RepoId on a point, then we can't filter by repo permissions and default to allowing access.
-		if x.RepoId == nil || !isDenied(*x.RepoId, denyMap) {
+		// 🚨 SECURITY: Points that have no RepoId must only be visible to users who have no excluded repositories.
+		// See https://github.com/sourcegraph/sourcegraph/pull/61580#discussion_r1552271816 for more details.
+		if x.RepoId != nil && !isDenied(*x.RepoId, denyMap) {
 			points[n] = x
 			n++
 		}

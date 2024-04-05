@@ -1091,8 +1091,23 @@ func TestFilterSeriesPoints(t *testing.T) {
 		}
 	})
 
-	t.Run("allows nil RepoIds", func(t *testing.T) {
+	t.Run("disallows records with RepoId=nil if there is at least one entry in the denyList", func(t *testing.T) {
 		denyList := []api.RepoID{123}
+		points := []SeriesPointForExport{
+			{RepoId: nil},
+		}
+
+		want := []SeriesPointForExport{}
+
+		got := FilterSeriesPoints(denyList, points)
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("allows records with RepoId=nil if there are no entries in the denyList", func(t *testing.T) {
+		denyList := []api.RepoID{}
 		points := []SeriesPointForExport{
 			{RepoId: nil},
 		}
