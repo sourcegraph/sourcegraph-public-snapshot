@@ -1,6 +1,7 @@
 <script lang="ts">
     import { mdiChevronDown, mdiInformationOutline, mdiAlert, mdiAlertCircle } from '@mdi/js'
     import { onMount } from 'svelte'
+    import type { Readable } from 'svelte/store'
 
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
@@ -13,8 +14,9 @@
     export let progress: Progress
     export let suggestedItems: Required<Skipped>[]
     export let severity: string
+    export let startTime: Readable<number>
 
-    const SEARCH_JOB_THRESHOLD = 8000
+    const SEARCH_JOB_THRESHOLD = 10000
     const icons: Record<string, string> = {
         info: mdiInformationOutline,
         warning: mdiAlert,
@@ -22,13 +24,13 @@
     }
 
     onMount(() => {
-        let startTime = Date.now()
+        $startTime = Date.now()
         const interval = setInterval(() => {
             const now = Date.now()
-            elapsedDuration = now - startTime
+            elapsedDuration = now - $startTime
             // once search has completed, reset the startTime
             if (done) {
-                startTime = Date.now()
+                $startTime = Date.now()
             }
         }, 1300)
         return () => clearInterval(interval)
