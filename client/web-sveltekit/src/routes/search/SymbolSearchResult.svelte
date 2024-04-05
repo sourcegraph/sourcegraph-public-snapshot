@@ -4,7 +4,6 @@
     import { observeIntersection } from '$lib/intersection-observer'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
     import CodeExcerpt from '$lib/search/CodeExcerpt.svelte'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SymbolKind from '$lib/search/SymbolKind.svelte'
     import type { SymbolMatch } from '$lib/shared'
 
@@ -30,7 +29,6 @@
 </script>
 
 <SearchResult>
-    <CodeHostIcon slot="icon" repository={result.repository} />
     <FileSearchResultHeader slot="title" {result} />
     <svelte:fragment slot="info">
         {#if result.repoStars}

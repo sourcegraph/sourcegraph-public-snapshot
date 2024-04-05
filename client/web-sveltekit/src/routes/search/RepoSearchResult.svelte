@@ -6,11 +6,11 @@
     import { highlightRanges } from '$lib/dom'
     import { featureFlag } from '$lib/featureflags'
     import Icon from '$lib/Icon.svelte'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { limitDescription, getRepositoryBadges, simplifyLineRange } from '$lib/search/results'
-    import { displayRepoName, getRepoMatchUrl, type RepositoryMatch } from '$lib/shared'
+    import type { RepositoryMatch } from '$lib/shared'
     import { Badge } from '$lib/wildcard'
 
+    import RepoRev from './RepoRev.svelte'
     import RepoStars from './RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
     import { getSearchResultsContext } from './searchResultsContext'
@@ -20,31 +20,16 @@
     const enableRepositoryMetadata = featureFlag('repository-metadata')
     const queryState = getSearchResultsContext().queryState
 
-    $: repoAtRevisionURL = getRepoMatchUrl(result)
     $: badges = getRepositoryBadges($queryState, result, $enableRepositoryMetadata)
     $: description = limitDescription(result.description ?? '')
-    $: repoName = displayRepoName(result.repository)
-
     $: repositoryMatches = result.repositoryMatches?.map(simplifyLineRange) ?? []
-    $: if (repoName !== result.repository) {
-        // We only display part of the repository name, therefore we have to
-        // adjust the match ranges for highlighting
-        const delta = result.repository.length - repoName.length
-        repositoryMatches = repositoryMatches.map(([start, end]) => [start - delta, end - delta])
-    }
     $: descriptionMatches = result.descriptionMatches?.map(simplifyLineRange) ?? []
     $: rev = result.branches?.[0]
 </script>
 
 <SearchResult>
-    <CodeHostIcon slot="icon" repository={result.repository} />
     <div slot="title">
-        <!-- #key is needed here to recreate the link because use:highlightRanges changes the DOM -->
-        {#key repositoryMatches}
-            <a class="repo-link" href={repoAtRevisionURL} use:highlightRanges={{ ranges: repositoryMatches }}>
-                {displayRepoName(result.repository)} <small class="rev"> @ {rev ? `${rev}` : ''}</small>
-            </a>
-        {/key}
+        <RepoRev repoName={result.repository} {rev} highlights={repositoryMatches} />
         {#if result.fork}
             <span class="info">
                 <Icon aria-label="Forked repository" svgPath={mdiSourceFork} inline />
@@ -103,14 +88,6 @@
 
         code {
             color: var(--search-filter-keyword-color);
-        }
-    }
-
-    .repo-link {
-        color: var(--text-body);
-
-        .rev {
-            color: var(--text-muted);
         }
     }
 
