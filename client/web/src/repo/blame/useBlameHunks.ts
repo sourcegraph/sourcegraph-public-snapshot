@@ -12,7 +12,7 @@ import { makeRepoGitURI } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
-import type { ExternalServiceKind, FirstCommitDateResult, FirstCommitDateVariables } from '../../graphql-operations'
+import type { ExternalRepoURLsResult, ExternalRepoURLsVariables, ExternalServiceKind } from '../../graphql-operations'
 
 import { useBlameVisibility } from './useBlameVisibility'
 
@@ -61,7 +61,6 @@ export interface BlameHunk {
 export interface BlameHunkData {
     current: BlameHunk[] | undefined
     externalURLs: { url: string; serviceKind: ExternalServiceKind | null }[] | undefined
-    firstCommitDate: Date | undefined
 }
 
 interface RawStreamHunk {
@@ -110,10 +109,8 @@ const fetchBlameViaStreaming = memoizeObservable(
         revision: string
         filePath: string
         sourcegraphURL: string
-    }): Observable<BlameHunkData | ErrorLike> =>
-        new Observable<BlameHunkData | ErrorLike>(subscriber => {
-            let didEmitFirstCommitDate = false
-            let firstCommitDate: Date | undefined
+    }): Observable<BlameHunkData> =>
+        new Observable<BlameHunkData>(subscriber => {
             let externalURLs: BlameHunkData['externalURLs']
 
             const assembledHunks: BlameHunk[] = []
@@ -121,7 +118,6 @@ const fetchBlameViaStreaming = memoizeObservable(
 
             Promise.all([
                 fetchRepositoryData(repoName).then(res => {
-                    firstCommitDate = res.firstCommitDate
                     externalURLs = res.externalURLs
                 }),
                 fetchEventSource(`/.api/blame${repoAndRevisionPath}/stream/${filePath}`, {
@@ -168,10 +164,7 @@ const fetchBlameViaStreaming = memoizeObservable(
                                 }
                                 assembledHunks.push(addDisplayInfoForHunk(hunk, sourcegraphURL))
                             }
-                            if (firstCommitDate !== undefined) {
-                                didEmitFirstCommitDate = true
-                            }
-                            subscriber.next({ current: assembledHunks, externalURLs, firstCommitDate })
+                            subscriber.next({ current: assembledHunks, externalURLs })
                         }
                     },
                     onerror(event) {
@@ -182,11 +175,6 @@ const fetchBlameViaStreaming = memoizeObservable(
                 }),
             ]).then(
                 () => {
-                    // This case can happen when the event source yields before the commit date is resolved
-                    if (!didEmitFirstCommitDate) {
-                        subscriber.next({ current: assembledHunks, externalURLs, firstCommitDate })
-                    }
-
                     subscriber.complete()
                 },
                 error => subscriber.error(error)
@@ -202,15 +190,10 @@ const fetchBlameViaStreaming = memoizeObservable(
 
 async function fetchRepositoryData(repoName: string): Promise<Omit<BlameHunkData, 'current'>> {
     return lastValueFrom(
-        requestGraphQL<FirstCommitDateResult, FirstCommitDateVariables>(
+        requestGraphQL<ExternalRepoURLsResult, ExternalRepoURLsVariables>(
             gql`
-                query FirstCommitDate($repo: String!) {
+                query ExternalRepoURLs($repo: String!) {
                     repository(name: $repo) {
-                        firstEverCommit {
-                            author {
-                                date
-                            }
-                        }
                         externalURLs {
                             url
                             serviceKind
@@ -221,13 +204,9 @@ async function fetchRepositoryData(repoName: string): Promise<Omit<BlameHunkData
             { repo: repoName }
         ).pipe(
             map(dataOrThrowErrors),
-            map(({ repository }) => {
-                const firstCommitDate = repository?.firstEverCommit?.author?.date
-                return {
-                    externalURLs: repository?.externalURLs,
-                    firstCommitDate: firstCommitDate ? new Date(firstCommitDate) : undefined,
-                }
-            })
+            map(({ repository }) => ({
+                externalURLs: repository?.externalURLs,
+            }))
         )
     )
 }
@@ -286,12 +265,12 @@ export const useBlameHunks = (
             () =>
                 shouldFetchBlame
                     ? fetchBlameViaStreaming({ revision, repoName, filePath, sourcegraphURL })
-                    : of({ current: undefined, externalURLs: undefined, firstCommitDate: undefined }),
+                    : of({ current: undefined, externalURLs: undefined }),
             [shouldFetchBlame, revision, repoName, filePath, sourcegraphURL]
         )
     )
 
-    return hunks || { current: undefined, externalURLs: undefined, firstCommitDate: undefined }
+    return hunks || { current: undefined, externalURLs: undefined }
 }
 
 const ONE_MONTH = 30 * 24 * 60 * 60 * 1000
