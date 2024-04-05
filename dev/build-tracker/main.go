@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/log"
@@ -20,15 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/background"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
-
-var (
-	ErrInvalidToken  = errors.New("buildkite token is invalid")
-	ErrInvalidHeader = errors.New("Header of request is invalid")
-	ErrUnwantedEvent = errors.New("Unwanted event received")
-)
-
-var nowFunc = time.Now
 
 // CleanUpInterval determines how often the old build cleaner should run
 var CleanUpInterval = 5 * time.Minute
@@ -148,7 +142,7 @@ func (s *Server) handleEvent(w http.ResponseWriter, req *http.Request) {
 	if !ok || len(h) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
-	} else if h[0] != s.config.BuildkiteToken {
+	} else if h[0] != s.config.BuildkiteWebhookToken {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -215,6 +209,57 @@ func (s *Server) notifyIfFailed(b *build.Build) error {
 	return nil
 }
 
+func (s *Server) triggerMetricsPipeline(b *build.Build) error {
+	if *b.State == "cancelled" {
+		return nil
+	}
+
+	bk, err := buildkite.NewTokenConfig(s.config.BuildkiteToken, false)
+	if err != nil {
+		return err
+	}
+
+	client := buildkite.NewClient(bk.Client())
+
+	var prNumber int
+	var prBase string
+	var repo string
+	if b.PullRequest != nil {
+		prNumber, _ = strconv.Atoi(*b.Pipeline.ID)
+		prBase = *b.PullRequest.Base
+		repo = *b.PullRequest.Repository
+	}
+
+	triggered, response, err := client.Builds.Create("sourcegraph", "devx-build-metrics", &buildkite.CreateBuild{
+		Commit:  *b.Commit,
+		Branch:  *b.Branch,
+		Message: *b.Message,
+		Author:  *b.Author,
+		// TODO: do we need to clone b.Env?
+		Env: map[string]string{
+			// can't use BUILDKITE_ prefixed keys as they're reserved
+			"DEVX_TRIGGERED_FROM_BUILD_ID":      pointers.DerefZero(b.ID),
+			"DEVX_TRIGGERED_FROM_BUILD_NUMBER":  strconv.Itoa(pointers.DerefZero(b.Number)),
+			"DEVX_TRIGGERED_FROM_PIPELINE_SLUG": pointers.DerefZero(b.Pipeline.Slug),
+		},
+		MetaData:              map[string]string{},
+		PullRequestID:         int64(prNumber),
+		PullRequestBaseBranch: prBase,
+		PullRequestRepository: repo,
+	})
+	if err != nil {
+		return errors.Wrap(err, "error triggering job")
+	}
+
+	if response.StatusCode >= 0 && response.StatusCode <= 300 {
+		s.logger.Info("triggered job successfully", log.String("buildUrl", *triggered.WebURL), log.String("buildID", *triggered.ID), log.String("sourceBuildID", *b.ID))
+	} else {
+		s.logger.Warn("unexpected response for triggered job creation", log.Int("statusCode", response.StatusCode))
+	}
+
+	return nil
+}
+
 // processEvent processes a BuildEvent received from Buildkite. If the event is for a `build.finished` event we get the
 // full build which includes all recorded jobs for the build and send a notification.
 // processEvent delegates the decision to actually send a notifcation
@@ -223,8 +268,14 @@ func (s *Server) processEvent(event *build.Event) {
 	s.store.Add(event)
 	b := s.store.GetByBuildNumber(event.GetBuildNumber())
 	if event.IsBuildFinished() {
-		if err := s.notifyIfFailed(b); err != nil {
-			s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
+		if *event.Build.Branch == "main" {
+			if err := s.notifyIfFailed(b); err != nil {
+				s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
+			}
+		}
+
+		if err := s.triggerMetricsPipeline(b); err != nil {
+			s.logger.Error("failed to trigger metrics pipeline for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
 		}
 	}
 }
