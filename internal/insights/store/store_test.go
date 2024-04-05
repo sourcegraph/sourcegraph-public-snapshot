@@ -994,20 +994,16 @@ func BenchmarkFilterSeriesPoints(b *testing.B) {
 			// Best case: Early return because of an empty denylist
 			b.Run("early return because of empty denylist", func(b *testing.B) {
 				denyList := make([]api.RepoID, 0)
-				var points []SeriesPointForExport
 
+				var points []SeriesPointForExport
 				for i := 0; i < size; i++ {
 					points = append(points, SeriesPointForExport{RepoId: optionalRepoID(api.RepoID(i))})
 				}
 
 				b.ResetTimer()
 
-				want := points
-
-				got := FilterSeriesPoints(denyList, points)
-
-				if diff := cmp.Diff(want, got); diff != "" {
-					b.Errorf("mismatch (-want +got):\n%s", diff)
+				for range b.N {
+					_ = FilterSeriesPoints(denyList, points)
 				}
 			})
 
@@ -1021,13 +1017,10 @@ func BenchmarkFilterSeriesPoints(b *testing.B) {
 					points = append(points, SeriesPointForExport{RepoId: optionalRepoID(api.RepoID(i))})
 				}
 
-				want := make([]SeriesPointForExport, 0)
 				b.ResetTimer()
 
-				got := FilterSeriesPoints(denyList, points)
-
-				if diff := cmp.Diff(want, got); diff != "" {
-					b.Errorf("mismatch (-want +got):\n%s", diff)
+				for range b.N {
+					_ = FilterSeriesPoints(denyList, points)
 				}
 			})
 
@@ -1041,13 +1034,11 @@ func BenchmarkFilterSeriesPoints(b *testing.B) {
 					points = append(points, SeriesPointForExport{RepoId: optionalRepoID(api.RepoID(i))})
 				}
 
-				want := points
 				b.ResetTimer()
 
-				got := FilterSeriesPoints(denyList, points)
+				for range b.N {
+					_ = FilterSeriesPoints(denyList, points)
 
-				if diff := cmp.Diff(want, got); diff != "" {
-					b.Errorf("mismatch (-want +got):\n%s", diff)
 				}
 			})
 		})
