@@ -11,12 +11,12 @@ import (
 )
 
 // constString effectively requires strings to be statically defined constants.
-type constString string
+type ConstString string
 
 // EventMetadata is secure, PII-free metadata that can be attached to events.
 // Keys must be const strings, to avoid the accidental addition of sensitive
 // metadata.
-type EventMetadata map[constString]float64
+type EventMetadata map[ConstString]float64
 
 // Bool returns 1 for true and 0 for false, for use in EventMetadata's
 // restricted int64 values.

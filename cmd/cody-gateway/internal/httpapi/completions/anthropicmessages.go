@@ -16,9 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
@@ -36,7 +36,7 @@ func NewAnthropicMessagesHandler(
 	autoFlushStreamingResponses bool,
 ) (http.Handler, error) {
 	// Tokenizer only needs to be initialized once, and can be shared globally.
-	tokenizer, err := tokenizer.NewAnthropicClaudeTokenizer()
+	tokenizer, err := tokenizer.NewTokenizer(tokenizer.AnthropicModel)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,8 @@ func NewAnthropicMessagesHandler(
 		httpClient,
 		string(conftypes.CompletionsProviderNameAnthropic),
 		config.AllowedModels,
-		&AnthropicMessagesHandlerMethods{config: config, tokenizer: tokenizer, promptRecorder: promptRecorder},
+		&AnthropicMessagesHandlerMethods{config: config, tokenizer: tokenizer},
+		promptRecorder,
 
 		// Anthropic primarily uses concurrent requests to rate-limit spikes
 		// in requests, so set a default retry-after that is likely to be
@@ -156,9 +157,8 @@ type anthropicMessagesResponseUsage struct {
 }
 
 type AnthropicMessagesHandlerMethods struct {
-	tokenizer      *tokenizer.Tokenizer
-	promptRecorder PromptRecorder
-	config         config.AnthropicConfig
+	tokenizer tokenizer.Tokenizer
+	config    config.AnthropicConfig
 }
 
 func (a *AnthropicMessagesHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) string {
@@ -166,6 +166,11 @@ func (a *AnthropicMessagesHandlerMethods) getAPIURLByFeature(feature codygateway
 }
 
 func (a *AnthropicMessagesHandlerMethods) validateRequest(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicMessagesRequest) error {
+	if ar.Messages == nil {
+		// https://docs.anthropic.com/claude/reference/messages_post#:~:text=details%20and%20options.-,messages,-array%20of%20objects
+		return errors.New("request body must contain \"messages\" field")
+	}
+
 	maxTokensToSample := a.config.FlaggingConfig.MaxTokensToSample
 	if ar.MaxTokens > int32(maxTokensToSample) {
 		return errors.Errorf("max_tokens exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokens)
@@ -182,16 +187,6 @@ func (a *AnthropicMessagesHandlerMethods) shouldFlagRequest(ctx context.Context,
 		makeFlaggingConfig(a.config.FlaggingConfig))
 	if err != nil {
 		return nil, err
-	}
-
-	if result.IsFlagged() {
-		// Record flagged prompts. The prompt recorder's implementation has a short TTL for
-		// this data, but is made available to troubleshoot ongoing abuse waves. This does
-		// incur some additional latency, but so this isn't going to make things meaningfully worse
-		// since flagged abuse requests take longer to process on the LLM-provider side.
-		if err := a.promptRecorder.Record(ctx, ar.BuildPrompt()); err != nil {
-			logger.Warn("failed to record flagged prompt", log.Error(err))
-		}
 	}
 	return result, nil
 }

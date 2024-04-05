@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import type { Notice } from '@sourcegraph/shared/src/schema/settings.schema'
 import { useSettings } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, type AlertProps, Markdown } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -45,7 +46,7 @@ const NoticeAlert: React.FunctionComponent<React.PropsWithChildren<NoticeAlertPr
     )
 }
 
-interface Props {
+interface Props extends TelemetryV2Props {
     className?: string
 
     /** Apply this class name to each notice (alongside .alert). */
@@ -62,6 +63,7 @@ export const Notices: React.FunctionComponent<React.PropsWithChildren<Props>> = 
     className = '',
     alertClassName,
     location,
+    telemetryRecorder,
 }) => {
     const settings = useSettings()
 
@@ -75,6 +77,7 @@ export const Notices: React.FunctionComponent<React.PropsWithChildren<Props>> = 
         return null
     }
 
+    telemetryRecorder.recordEvent('alert.notices', 'view')
     return (
         <div className={classNames(styles.notices, className)}>
             {notices.map((notice, index) => (
@@ -84,7 +87,7 @@ export const Notices: React.FunctionComponent<React.PropsWithChildren<Props>> = 
     )
 }
 
-interface VerifyEmailNoticesProps {
+interface VerifyEmailNoticesProps extends TelemetryV2Props {
     className?: string
     alertClassName?: string
     authenticatedUser: AuthenticatedUser | null
@@ -97,7 +100,13 @@ export const VerifyEmailNotices: React.FunctionComponent<VerifyEmailNoticesProps
     className,
     alertClassName,
     authenticatedUser,
+    telemetryRecorder,
 }) => {
+    useEffect(() => {
+        if (isEmailVerificationNeededForCody() && authenticatedUser) {
+            telemetryRecorder.recordEvent('alert.verifyEmail', 'view')
+        }
+    }, [telemetryRecorder, authenticatedUser])
     if (isEmailVerificationNeededForCody() && authenticatedUser) {
         return (
             <div className={classNames(styles.notices, className)}>

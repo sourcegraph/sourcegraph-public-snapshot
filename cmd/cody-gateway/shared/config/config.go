@@ -29,6 +29,10 @@ type Config struct {
 		AccessToken                  string
 		InternalMode                 bool
 		ActorRefreshCoolDownInterval time.Duration
+
+		// Prompts that get flagged are stored in Redis for a short-time, for
+		// better understanding the nature of any ongoing spam/abuse waves.
+		FlaggedPromptRecorderTTL time.Duration
 	}
 
 	Anthropic AnthropicConfig
@@ -64,6 +68,9 @@ type Config struct {
 	}
 
 	Sourcegraph SourcegraphConfig
+
+	// SAMSClientConfig for verifying and generating SAMS access tokens.
+	SAMSClientConfig SAMSClientConfig
 }
 
 type OpenTelemetryConfig struct {
@@ -92,8 +99,7 @@ type OpenAIConfig struct {
 }
 
 type SourcegraphConfig struct {
-	TritonURL           string
-	UnlimitedEmbeddings bool
+	TritonURL string
 }
 
 // FlaggingConfig defines common parameters for filtering and flagging requests,
@@ -126,6 +132,16 @@ type FlaggingConfig struct {
 	ResponseTokenBlockingLimit int
 }
 
+type SAMSClientConfig struct {
+	URL          string
+	ClientID     string
+	ClientSecret string
+}
+
+func (scc SAMSClientConfig) Valid() bool {
+	return !(scc.URL == "" || scc.ClientID == "" || scc.ClientSecret == "")
+}
+
 func (c *Config) Load() {
 	c.InsecureDev = env.InsecureDev
 	c.Port = c.GetInt("PORT", "9992", "Port to serve Cody Gateway on, generally injected by Cloud Run.")
@@ -143,6 +159,8 @@ func (c *Config) Load() {
 		c.GetBool("CODY_GATEWAY_DOTCOM_DEV_LICENSES_ONLY", "false", "DEPRECATED, use CODY_GATEWAY_DOTCOM_INTERNAL_MODE")
 	c.Dotcom.ActorRefreshCoolDownInterval = c.GetInterval("CODY_GATEWAY_DOTCOM_ACTOR_COOLDOWN_INTERVAL", "300s",
 		"Cooldown period for refreshing the actor info from dotcom.")
+	c.Dotcom.FlaggedPromptRecorderTTL = c.GetInterval("CODY_GATEWAY_DOTCOM_FLAGGED_PROMPT_RECORDER_TTL", "1h",
+		"Period to retain prompts in Redis.")
 
 	c.Anthropic.AccessToken = c.Get("CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN", "", "The Anthropic access token to be used.")
 	c.Anthropic.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_ANTHROPIC_ALLOWED_MODELS",
@@ -262,8 +280,10 @@ func (c *Config) Load() {
 	c.Attribution.Enabled = c.GetBool("CODY_GATEWAY_ENABLE_ATTRIBUTION_SEARCH", "false", "Whether attribution search endpoint is available.")
 
 	c.Sourcegraph.TritonURL = c.Get("CODY_GATEWAY_SOURCEGRAPH_TRITON_URL", "https://embeddings-triton-direct.sgdev.org/v2/models/ensemble_model/infer", "URL of the Triton server.")
-	c.Sourcegraph.UnlimitedEmbeddings = c.GetBool("CODY_GATEWAY_SOURCEGRAPH_UNLIMITED_EMBEDDINGS", "false", "Enable unlimited embeddings.")
 
+	c.SAMSClientConfig.URL = c.GetOptional("SAMS_URL", "SAMS service endpoint")
+	c.SAMSClientConfig.ClientID = c.GetOptional("SAMS_CLIENT_ID", "SAMS OAuth client ID")
+	c.SAMSClientConfig.ClientSecret = c.GetOptional("SAMS_CLIENT_SECRET", "SAMS OAuth client secret")
 }
 
 // loadFlaggingConfig loads the common set of flagging-related environment variables for

@@ -226,12 +226,18 @@ message BlameHunk {
   BlameAuthor author = 6;
   string message = 7;
   string filename = 8;
+  optional PreviousCommit previous_commit = 9;
 }
 
 message BlameAuthor {
   string name = 1;
   string email = 2;
   google.protobuf.Timestamp date = 3;
+}
+
+message PreviousCommit {
+  string commit = 1;
+  string filename = 2;
 }
 
 message DefaultBranchRequest {

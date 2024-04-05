@@ -30,10 +30,10 @@ export function NeoVimInstructions({
     useEffect(() => {
         if (step === EditorStep.SetupInstructions) {
             eventLogger.log(EventName.CODY_EDITOR_SETUP_VIEWED, { editor: 'NeoVim' })
-            telemetryRecorder.recordEvent('cody.editorSetupViewed', 'view', { metadata: { neoVim: 1 } })
+            telemetryRecorder.recordEvent('cody.editorSetupPage', 'view', { metadata: { neoVim: 1 } })
         } else if (step === EditorStep.CodyFeatures) {
             eventLogger.log(EventName.CODY_EDITOR_FEATURES_VIEWED, { editor: 'NeoVim' })
-            telemetryRecorder.recordEvent('cody.editorFeaturesViewed', 'view', { metadata: { neoVim: 1 } })
+            telemetryRecorder.recordEvent('cody.editorFeaturesPage', 'view', { metadata: { neoVim: 1 } })
         }
     }, [step, telemetryRecorder])
 

@@ -42,6 +42,11 @@ func TestAddrForRepo(t *testing.T) {
 			want: "gitserver-2",
 		},
 		{
+			name: "case sensitive repo",
+			repo: api.RepoName("github.com/sourcegraph/Sourcegraph"),
+			want: "gitserver-2",
+		},
+		{
 			name: "pinned repo", // different server address that the hashing function would normally yield
 			repo: api.RepoName("repo2"),
 			want: "gitserver-1",

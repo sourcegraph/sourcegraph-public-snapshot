@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -59,7 +59,7 @@ type flaggingResult struct {
 // perform basic abuse-detection and filtering. The implementation should err on the side of efficency,
 // as the goal isn't for 100% accuracy. But to catch obvious abuse patterns, and let other backend
 // systems do a more through review async.
-func isFlaggedRequest(tk *tokenizer.Tokenizer, r flaggingRequest, cfg flaggingConfig) (*flaggingResult, error) {
+func isFlaggedRequest(tk tokenizer.Tokenizer, r flaggingRequest, cfg flaggingConfig) (*flaggingResult, error) {
 	var reasons []string
 	prompt := strings.ToLower(r.FlattenedPrompt)
 
@@ -140,4 +140,10 @@ func containsAny(prompt string, patterns []string) (bool, string) {
 func requestBlockedError(ctx context.Context) error {
 	traceID := trace.FromContext(ctx).SpanContext().TraceID().String()
 	return errors.Errorf("request blocked - if you think this is a mistake, please contact support@sourcegraph.com and reference this ID: %s", traceID)
+}
+
+// PromptRecorder implementations should save select completions prompts for
+// a short amount of time for security review.
+type PromptRecorder interface {
+	Record(ctx context.Context, prompt string) error
 }

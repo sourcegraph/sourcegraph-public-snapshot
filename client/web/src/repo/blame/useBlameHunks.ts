@@ -8,7 +8,7 @@ import { catchError, map, throttleTime } from 'rxjs/operators'
 
 import { type ErrorLike, memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
+import { makeRepoGitURI } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
@@ -31,6 +31,7 @@ export interface BlameHunk {
     endLine: number
     message: string
     rev: string
+    filename: string
     author: {
         date: string
         person: {
@@ -49,9 +50,10 @@ export interface BlameHunk {
     }
     commit: {
         url: string
-        parents: {
-            oid: string
-        }[]
+        previous: {
+            rev: string
+            filename: string
+        } | null
     }
     displayInfo: BlameHunkDisplayInfo
 }
@@ -69,7 +71,10 @@ interface RawStreamHunk {
         Date: string
     }
     commit: {
-        parents: string[]
+        previous: {
+            commitID: string
+            filename: string
+        } | null
         url: string
     }
     commitID: string
@@ -141,6 +146,7 @@ const fetchBlameViaStreaming = memoizeObservable(
                                     endLine: rawHunk.endLine,
                                     message: rawHunk.message,
                                     rev: rawHunk.commitID,
+                                    filename: rawHunk.filename,
                                     author: {
                                         date: rawHunk.author.Date,
                                         person: {
@@ -152,9 +158,12 @@ const fetchBlameViaStreaming = memoizeObservable(
                                     },
                                     commit: {
                                         url: rawHunk.commit.url,
-                                        parents: rawHunk.commit.parents
-                                            ? rawHunk.commit.parents.map(oid => ({ oid }))
-                                            : [],
+                                        previous: rawHunk.commit.previous
+                                            ? {
+                                                  rev: rawHunk.commit.previous.commitID,
+                                                  filename: rawHunk.commit.previous.filename,
+                                              }
+                                            : null,
                                     },
                                 }
                                 assembledHunks.push(addDisplayInfoForHunk(hunk, sourcegraphURL))
@@ -188,7 +197,7 @@ const fetchBlameViaStreaming = memoizeObservable(
                 throttleTime(1000, undefined, { leading: true, trailing: true }),
                 catchError(error => of(error))
             ),
-    makeRepoURI
+    makeRepoGitURI
 )
 
 async function fetchRepositoryData(repoName: string): Promise<Omit<BlameHunkData, 'current'>> {
