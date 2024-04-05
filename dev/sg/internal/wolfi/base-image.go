@@ -22,13 +22,20 @@ var localRepoRegex = lazyregexp.New(`(?m)^\s+-\s+.*@local`)
 
 type BaseImageConfig struct {
 	PackageRepoConfig PackageRepoConfig
-	ImageConfigDir    string // Directory containing all image configs
-	ImageName         string // Name of image e.g. gitserver
-	ImageConfigPath   string // Full path e.g. wolfi-images/gitserver.yaml
-	LockfilePath      string // Path to lockfile e.g. wolfi-images/gitserver.lock.json
-	BazelBuildPath    string // Bazel build path for image e.g. //cmd/gitserver:wolfi_base_tarball
-	KeyringAppend     string // Path to additional keys to include in the keyring
-	RepositoryAppend  string // Path to additional repositories to include in the keyring
+	// ImageConfigDir is the directory containing all image configs
+	ImageConfigDir string
+	// ImageName is the name of the image e.g. gitserver
+	ImageName string
+	// ImageConfigPath is the path to the image config e.g. wolfi-images/gitserver.yaml
+	ImageConfigPath string
+	// LockfilePath is the path to the image lockfile e.g. wolfi-images/gitserver.lock.json
+	LockfilePath string
+	// BazelBuildPath is the Bazel build path for the image e.g. //cmd/gitserver:wolfi_base_tarball
+	BazelBuildPath string
+	// KeyringAppend is the path to additional keys to include in the keyring
+	KeyringAppend string
+	// RepositoryAppend is the path to additional repositories to include in the keyring
+	RepositoryAppend string
 }
 
 type BaseImageOpts struct {
