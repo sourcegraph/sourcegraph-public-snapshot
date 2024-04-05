@@ -135,22 +135,6 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 	}, stepKey
 }
 
-// No-op to ensure all base images are updated before building full images
-//
-// Deprecated: Since switching to Bazel, building base images is optional
-func allBaseImagesBuilt(baseImageKeys []string) func(*bk.Pipeline) {
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":octopus: All base images built",
-			bk.Cmd("echo 'All base images built'"),
-			// We want to run on the bazel queue, so we have a pretty minimal agent.
-			bk.Agent("queue", AspectWorkflows.QueueSmall),
-			// Depend on all previous package building steps
-			bk.DependsOn(baseImageKeys...),
-			bk.Key("buildAllBaseImages"),
-		)
-	}
-}
-
 var reStepKeySanitizer = lazyregexp.New(`[^a-zA-Z0-9_-]+`)
 
 // sanitizeStepKey sanitizes BuildKite StepKeys by removing any invalid characters
@@ -312,38 +296,6 @@ func addWolfiOps(c Config) (packageOps, baseImageOps, apkoOps *operations.Set) {
 	}
 
 	return packageOps, baseImageOps, apkoOps
-}
-
-// wolfiRebuildAllBaseImages adds operations to rebuild all Wolfi base images and push to registry
-//
-// Deprecated: Since switching to Bazel, rebuilding all base images is replaced with wolfiBaseImageLockAndCreatePR
-func wolfiRebuildAllBaseImages(c Config) *operations.Set {
-	// List all YAML files in wolfi-images/
-	dir := "wolfi-images"
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		panic(err)
-	}
-
-	var wolfiBaseImages []string
-	for _, f := range files {
-		if filepath.Ext(f.Name()) == ".yaml" {
-			fullPath := filepath.Join(dir, f.Name())
-			wolfiBaseImages = append(wolfiBaseImages, fullPath)
-		}
-	}
-
-	// Rebuild all images
-	var baseImageOps *operations.Set
-	if len(wolfiBaseImages) > 0 {
-		baseImageOps, _ = WolfiBaseImagesOperations(
-			wolfiBaseImages,
-			c.Version,
-			false,
-		)
-	}
-
-	return baseImageOps
 }
 
 // wolfiBaseImageLockAndCreatePR updates base image hashes and creates a PR in GitHub
