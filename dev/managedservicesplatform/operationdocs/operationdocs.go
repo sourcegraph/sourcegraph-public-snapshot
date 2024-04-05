@@ -175,7 +175,7 @@ This service is operated on the %s.`,
 		overview := [][]string{
 			{"Project ID", markdown.Linkf(markdown.Code(env.ProjectID), cloudRunURL)},
 			{"Category", markdown.Bold(string(env.Category))},
-			{"Deployment Type", fmt.Sprintf("`%s`", env.Deploy.Type)},
+			{"Deployment type", fmt.Sprintf("`%s`", env.Deploy.Type)},
 			{"Resources", strings.Join(mapTo(env.Resources.List(), func(k string) string {
 				l, h := markdown.HeadingLinkf("%s %s", env.ID, k)
 				resourceHeadings[k] = h
