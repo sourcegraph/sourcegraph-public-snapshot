@@ -13,7 +13,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 <!-- START CHANGELOG -->
 
-## Unreleased (Monthly Release - April 5th, 2024)
+## Unreleased
+
+## 5.3.9104
 
 ### Added
 
