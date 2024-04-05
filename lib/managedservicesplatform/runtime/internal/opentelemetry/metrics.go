@@ -8,17 +8,22 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func maybeEnableMetrics(_ context.Context, logger log.Logger, config Config, res *resource.Resource) (func(), error) {
+func configureMetrics(_ context.Context, logger log.Logger, config Config, res *resource.Resource) (func(), error) {
 	var reader sdkmetric.Reader
 	if config.GCPProjectID != "" {
-		logger.Info("initializing GCP trace exporter", log.String("projectID", config.GCPProjectID))
+		logger.Info("initializing GCP metric exporter", log.String("projectID", config.GCPProjectID))
+		// We use a push-based exporter with PeriodicReader from the metrics SDK
+		// to publish metrics to GCP.
 		exporter, err := gcpmetricexporter.New(
 			gcpmetricexporter.WithProjectID(config.GCPProjectID))
 		if err != nil {
@@ -28,6 +33,8 @@ func maybeEnableMetrics(_ context.Context, logger log.Logger, config Config, res
 			sdkmetric.WithInterval(30*time.Second))
 	} else {
 		logger.Info("initializing Prometheus exporter")
+		// We use a pull-based exporter instead for Prometheus, where a Prometheus
+		// instance can optionally be configured to pull from this service.
 		var err error
 		reader, err = otelprometheus.New(
 			otelprometheus.WithRegisterer(prometheus.DefaultRegisterer))
@@ -36,9 +43,25 @@ func maybeEnableMetrics(_ context.Context, logger log.Logger, config Config, res
 		}
 	}
 
-	// Create and set global tracer
+	// Initialize instrumentation
+	collectedMetrics, err := meter.Int64Counter("otel.metric.collected.count",
+		metric.WithDescription("Total number of metrics collected, and whether the collection succeeded or failed."))
+	if err != nil {
+		return nil, errors.Wrap(err, "initialize collectedMetrics metric")
+	}
+
+	// Create and set global tracer, wrapping the metric reader in instrumentation
 	provider := sdkmetric.NewMeterProvider(
-		sdkmetric.WithReader(reader),
+		sdkmetric.WithReader(&instrumentedMetricReader{
+			Reader: reader,
+			// NOTE: This does NOT work with the Prometheus exporter, because it
+			// wraps an internal reader, and the top-level Collect does not get
+			// called unless an OpenTelemetry metric exporter is used. If we want
+			// to add an equivalent for Prometheus exporter, we probably need
+			// to wrap the prometheus Gatherer implementation instead, but since
+			// it's mostly intended for local dev, this is fine to not do for now.
+			collectedMetrics: collectedMetrics,
+		}),
 		sdkmetric.WithResource(res))
 	otel.SetMeterProvider(provider)
 
@@ -56,4 +79,31 @@ func maybeEnableMetrics(_ context.Context, logger log.Logger, config Config, res
 		}
 		logger.Info("metrics shut down", log.Duration("elapsed", time.Since(start)))
 	}, nil
+}
+
+// instrumentedMetricReader wraps sdkmetric.Reader in instrumentation because the
+// SDK does not provide metrics out of the box. This effectively measures success
+// and volume of metrics export.
+type instrumentedMetricReader struct {
+	sdkmetric.Reader
+
+	collectedMetrics metric.Int64Counter
+}
+
+var _ sdkmetric.Reader = &instrumentedMetricReader{}
+
+func (r *instrumentedMetricReader) Collect(ctx context.Context, data *metricdata.ResourceMetrics) error {
+	err := r.Reader.Collect(ctx, data) // call underlying first
+
+	if data != nil { // guard out of abundance of caution
+		var count int
+		for _, s := range data.ScopeMetrics {
+			count += len(s.Metrics)
+		}
+		r.collectedMetrics.Add(ctx, int64(count), metric.WithAttributeSet(attribute.NewSet(
+			attribute.Bool("succeeded", err == nil),
+		)))
+	}
+
+	return err
 }

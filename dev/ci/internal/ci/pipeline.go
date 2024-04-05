@@ -144,13 +144,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		securityOps.Append(semgrepScan())
 		ops.Merge(securityOps)
 
-		// Wolfi package and apko lock check
-		packageOps, _, apkoOps := addWolfiOps(c)
-		if apkoOps != nil {
-			ops.Merge(apkoOps)
-		}
+		// Wolfi package and base images
+		packageOps, baseImageOps := addWolfiOps(c)
 		if packageOps != nil {
 			ops.Merge(packageOps)
+		}
+		if baseImageOps != nil {
+			ops.Merge(baseImageOps)
 		}
 
 		if c.Diff.Has(changed.ClientBrowserExtensions) {
@@ -199,9 +199,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addVsceTests)
 
 	case runtype.WolfiBaseRebuild:
-		// If this is a Wolfi base image rebuild, run script to re-lock packages
-		// for all Wolfi base images and open a PR
-		ops.Merge(wolfiBaseImageLockAndCreatePR())
+		// If this is a Wolfi base image rebuild, rebuild all Wolfi base images
+		// and push to registry, then open a PR
+		baseImageOps := wolfiRebuildAllBaseImages(c)
+		if baseImageOps != nil {
+			ops.Merge(baseImageOps)
+			ops.Merge(wolfiGenerateBaseImagePR())
+		}
 
 	// Use CandidateNoTest if you want to build legacy Docker Images
 	case runtype.CandidatesNoTest:
@@ -324,10 +328,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		))
 
 		// Wolfi package and base images
-		packageOps, baseImageOps, apkoOps := addWolfiOps(c)
-		if apkoOps != nil {
-			ops.Merge(apkoOps)
-		}
+		packageOps, baseImageOps := addWolfiOps(c)
 		if packageOps != nil {
 			ops.Merge(packageOps)
 		}
