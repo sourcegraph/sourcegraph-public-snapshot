@@ -24,8 +24,20 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	v := cctx.String("version")
 	branch := cctx.String("branch")
 
-	if branch != "" {
-		execute.Git(cctx.Context, "checkout", "-b", v, fmt.Sprintf("origin/%s", branch))
+	ctx := cctx.Context
+
+	if branch == "" {
+		// get current branch
+		// git rev-parse --abbrev-ref HEAD
+		err := execute.Git(ctx, "rev-parse", "--abbrev-ref", "HEAD")
+		if err != nil {
+			return err
+		}
+		return errors.New("branch is required")
+	}
+
+	if err := execute.Git(ctx, "checkout", "-b", v, fmt.Sprintf("origin/%s", branch)); err != nil {
+		return err
 	}
 	return nil
 }
