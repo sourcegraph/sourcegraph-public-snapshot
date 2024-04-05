@@ -49,6 +49,20 @@
                 </small>
             </div>
         {/if}
+        <!--
+        TODO: @jasonhawkharris - When we implement search jobs,
+        we can change the link so that it points to where a user
+        can actually create a search job. We should also change
+        the text of the link when we do so, "Create a search job"
+        -->
+        {#if severity === 'error' && !Object.hasOwn(mostSevere, 'suggested')}
+            <div class="separator">{CENTER_DOT}</div>
+            <div class="search-job-link">
+                <small>
+                    Use <a href="/help/code-search/types/search-jobs">Search Job</a> for background search.
+                </small>
+            </div>
+        {/if}
     </div>
 </div>
 
@@ -84,5 +98,10 @@
     .suggested-action {
         display: flex;
         flex-flow: row nowrap;
+    }
+    .search-job-link {
+        // we don't want the text of this message to change color
+        // on hover when in an error state, so we set the text color explicitly
+        color: var(--text-body);
     }
 </style>
