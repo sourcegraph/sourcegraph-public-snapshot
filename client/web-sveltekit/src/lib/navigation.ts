@@ -1,19 +1,24 @@
-// SvelteKit is rolled out in two stages:
-// - Routes listed here are enabled by default for everyone on S2 (via the `web-next-rollout` feature flag)
-// - Other routes are only enabled for users with the `web-next` feature flag
-const rolledoutRouteIDs = new RegExp(
-    [
-        // Add route IDs here that should be enabled
-        // Keep in sync with 'cmd/frontend/internal/app/ui/sveltekit.go' and 'client/web/src/sveltekit/util.ts'
-        '^/search',
-    ].join('|')
-)
+import { routeMeta } from '$lib/routeMeta'
 
 /**
- * Returns whether the given route is enabled.
+ * Returns whether the SvelteKit app is enabled for the given route ID.
+ * If not the caller should trigger a page reload to load the React app.
+ * The enabled routes are provided by the server via `window.context`.
+ *
+ * Callers should pass an actual route ID retrived from SvelteKit not an
+ * arbitrary path.
  */
-export function isRouteRolledOut(routeID: string): boolean {
-    return rolledoutRouteIDs.test(routeID)
+export function isRouteEnabled(routeID: string): boolean {
+    if (!routeID) {
+        return false
+    }
+
+    const serverRouteName = routeMeta[routeID]?.serverRouteName
+    if (!serverRouteName) {
+        return false
+    }
+
+    return !!window.context?.svelteKit?.enabledRoutes.includes(serverRouteName)
 }
 
 /**
@@ -24,5 +29,5 @@ export function isRepoRoute(routeID: string | null): boolean {
     if (!routeID) {
         return false
     }
-    return routeID.startsWith('/[...repo=reporev]/')
+    return routeMeta[routeID]?.isRepoRoute ?? false
 }

@@ -16,6 +16,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/githubapp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
@@ -89,6 +90,7 @@ func Router() *mux.Router {
 // The router can be accessed by calling Router().
 func InitRouter(db database.DB) {
 	logger := log.Scoped("router")
+	sk := sveltekit.NewRouteRegistry()
 
 	brandedIndex := func(titles string) http.Handler {
 		return handler(db, serveBrandedPageString(db, titles, nil, index))
@@ -100,6 +102,7 @@ func InitRouter(db database.DB) {
 
 	r := mux.NewRouter()
 	r.StrictSlash(true)
+	r.Use(sk.MiddlewareFunc())
 
 	// Top-level routes.
 	r.Path("/").Methods(http.MethodGet, http.MethodHead).Name(routeHome).Handler(handler(db, serveHome(db)))
@@ -189,6 +192,7 @@ func InitRouter(db database.DB) {
 		}, nil, noIndex)))
 
 	// search
+	sk.Register(
 	r.Path("/search").Methods("GET").Name(routeSearch).
 		Handler(handler(db, serveBasicPage(db, func(_ *Common, r *http.Request) string {
 			shortQuery := limitString(r.URL.Query().Get("q"), 25, true)
@@ -197,7 +201,7 @@ func InitRouter(db database.DB) {
 			}
 			// e.g. "myquery - Sourcegraph"
 			return brandNameSubtitle(shortQuery)
-		}, nil, index)))
+		}, nil, index))), sveltekit.EnableRollout)
 	// streaming search
 	r.Path("/search/stream").Methods("GET").Name("search.stream").Handler(search.StreamHandler(db))
 	// search badge
@@ -242,7 +246,7 @@ func InitRouter(db database.DB) {
 		return brandNameSubtitle(repoShortName(c.Repo.Name))
 	}))
 	repoRevPath := "/" + routevar.Repo + routevar.RepoRevSuffix
-	r.Path(repoRevPath).Methods("GET").Name(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	sk.Register(r.Path(repoRevPath).Methods("GET").Name(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Debug mode: register the __errorTest handler.
 		if env.InsecureDev && r.URL.Path == "/__errorTest" {
 			handler(db, serveErrorTest(db)).ServeHTTP(w, r)
@@ -254,54 +258,56 @@ func InitRouter(db database.DB) {
 			return
 		}
 		serveRepoHandler.ServeHTTP(w, r)
-	}))
+	})), sveltekit.EnableOptIn)
 
-	// tree
 	repoRev := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
-	repoRev.PathPrefix("/commits").Methods("GET").Name("repo-commits").Handler(brandedNoIndex("Commits"))
 	// tree
-	repoRev.Path("/tree{Path:.*}").Methods("GET").
+	sk.Register(repoRev.Path("/tree{Path:.*}").Methods("GET").
 		Name(routeTree).
 		Handler(handler(db, serveTree(db, func(c *Common, r *http.Request) string {
 			// e.g. "src - gorilla/mux - Sourcegraph"
 			dirName := path.Base(mux.Vars(r)["Path"])
 			return brandNameSubtitle(dirName, repoShortName(c.Repo.Name))
-		})))
+		}))), sveltekit.EnableOptIn)
 
 	// blob
-	repoRev.Path("/blob{Path:.*}").Methods("GET").
+	sk.Register(repoRev.Path("/blob{Path:.*}").Methods("GET").
 		Name(routeBlob).
 		Handler(handler(db, serveRepoOrBlob(db, routeBlob, func(c *Common, r *http.Request) string {
 			// e.g. "mux.go - gorilla/mux - Sourcegraph"
 			fileName := path.Base(mux.Vars(r)["Path"])
 			return brandNameSubtitle(fileName, repoShortName(c.Repo.Name))
-		})))
+		}))), sveltekit.EnableOptIn)
 
 	// raw
 	repoRev.Path("/raw{Path:.*}").Methods("GET", "HEAD").Name(routeRaw).Handler(handler(db, serveRaw(logger, db, gitserver.NewClient("http.raw"))))
 
-	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
-
-	repo.PathPrefix("/batch-changes").Methods("GET").Name("repo-batch-changes").Handler(brandedIndex("Batch Changes"))
+	// batch changes - branded
+	repoRev.PathPrefix("/batch-changes").Methods("GET").Name("repo-batch-changes").Handler(brandedIndex("Batch Changes"))
 
 	for _, p := range []struct {
 		pathPrefix, name, title string
+		sveltekitEnabled        sveltekit.Availablity
 	}{
 		{pathPrefix: "/settings", name: "repo-settings", title: "Repository settings"},
 		{pathPrefix: "/code-graph", name: "repo-code-intelligence", title: "Code graph"},
-		{pathPrefix: "/commit", name: "repo-commit", title: "Commit"},
-		{pathPrefix: "/branches", name: "repo-branches", title: "Branches"},
-		{pathPrefix: "/tags", name: "repo-tags", title: "Tags"},
+		{pathPrefix: "/commits", name: "repo-commits", title: "Commits", sveltekitEnabled: sveltekit.EnableOptIn},
+		{pathPrefix: "/commit", name: "repo-commit", title: "Commit", sveltekitEnabled: sveltekit.EnableOptIn},
+		{pathPrefix: "/branches", name: "repo-branches", title: "Branches", sveltekitEnabled: sveltekit.EnableOptIn},
+		{pathPrefix: "/tags", name: "repo-tags", title: "Tags", sveltekitEnabled: sveltekit.EnableOptIn},
 		{pathPrefix: "/compare", name: "repo-compare", title: "Compare"},
-		{pathPrefix: "/stats", name: "repo-stats", title: "Stats"},
+		{pathPrefix: "/stats", name: "repo-stats", title: "Stats", sveltekitEnabled: sveltekit.EnableOptIn},
 		{pathPrefix: "/own", name: "repo-own", title: "Ownership"},
 	} {
-		repo.PathPrefix(p.pathPrefix).Methods("GET").Name(p.name).Handler(brandedNoIndex(p.title))
+		route := repoRev.PathPrefix(p.pathPrefix).Methods("GET").Name(p.name).Handler(brandedNoIndex(p.title))
+		if p.sveltekitEnabled != 0 {
+			sk.Register(route, p.sveltekitEnabled)
+		}
 	}
 
 	// legacy redirects
 	if dotcom.SourcegraphDotComMode() {
-		repo.Path("/info").Methods("GET").Name("page.repo.landing").Handler(handler(db, serveRepoLanding(db)))
+		repoRev.Path("/info").Methods("GET").Name("page.repo.landing").Handler(handler(db, serveRepoLanding(db)))
 		repoRev.Path("/{dummy:def|refs}/" + routevar.Def).Methods("GET").Name("page.def.redirect").Handler(http.HandlerFunc(serveDefRedirectToDefLanding))
 		repoRev.Path("/info/" + routevar.Def).Methods("GET").Name(routeLegacyDefLanding).Handler(handler(db, serveDefLanding))
 		repoRev.Path("/land/" + routevar.Def).Methods("GET").Name("page.def.landing.old").Handler(http.HandlerFunc(serveOldRouteDefLanding))

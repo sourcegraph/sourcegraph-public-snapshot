@@ -1,8 +1,13 @@
 import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
 import { findReadme } from '$lib/repo/tree'
+import type { RouteMeta } from '$lib/routeMeta'
 
 import type { PageLoad } from './$types'
 import { RepoPageReadmeQuery } from './page.gql'
+
+export const _meta: RouteMeta = {
+    serverRouteName: 'repo',
+}
 
 export const load: PageLoad = ({ parent }) => {
     return {

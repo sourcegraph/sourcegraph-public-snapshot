@@ -294,6 +294,12 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether the feedback survey is enabled. */
     disableFeedbackSurvey?: boolean
+
+    /** Metadata related to the SvelteKit app. */
+    svelteKit?: {
+        enabledRoutes: string[]
+        availableRoutes: string[]
+    }
 }
 
 export interface BrandAssets {

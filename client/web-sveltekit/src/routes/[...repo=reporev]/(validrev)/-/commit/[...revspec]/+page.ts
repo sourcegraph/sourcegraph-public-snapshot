@@ -1,12 +1,17 @@
 import { error } from '@sveltejs/kit'
 
 import { getGraphQLClient, infinityQuery } from '$lib/graphql'
+import type { RouteMeta } from '$lib/routeMeta'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
 import { CommitPage_CommitQuery, CommitPage_DiffQuery } from './page.gql'
 
 const PAGE_SIZE = 20
+
+export const _meta: RouteMeta = {
+    serverRouteName: 'repo-commit',
+}
 
 export const load: PageLoad = async ({ params }) => {
     const client = getGraphQLClient()

@@ -2,6 +2,7 @@ import { redirect, error } from '@sveltejs/kit'
 
 import { asError, loadMarkdownSyntaxHighlighting, type ErrorLike } from '$lib/common'
 import { getGraphQLClient, type GraphQLClient } from '$lib/graphql'
+import type { RouteMeta } from '$lib/routeMeta'
 import {
     CloneInProgressError,
     RepoNotFoundError,
@@ -20,6 +21,10 @@ export interface ResolvedRevision {
     repo: ResolvedRepository & NonNullable<{ commit: ResolvedRepository['commit'] }>
     commitID: string
     defaultBranch: string
+}
+
+export const _meta: RouteMeta = {
+    isRepoRoute: true,
 }
 
 export const load: LayoutLoad = async ({ params, url, depends }) => {

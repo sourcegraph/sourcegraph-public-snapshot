@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "sveltekit",
+    srcs = ["sveltekit.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//internal/env",
+        "//internal/featureflag",
+        "//lib/errors",
+        "//ui/assets",
+        "@com_github_gorilla_mux//:mux",
+    ],
+)
