@@ -38,7 +38,7 @@
         {/if}
 
         <!-- completed with suggested items -->
-        {#if done && mostSevere && Object.hasOwn(mostSevere, 'suggested')}
+        {#if done && mostSevere && mostSevere.suggested}
             <div class="separator">{CENTER_DOT}</div>
             <div class="action-badge">
                 <small>
@@ -55,7 +55,7 @@
         can actually create a search job. We should also change
         the text of the link when we do so, "Create a search job"
         -->
-        {#if severity === 'error' && !Object.hasOwn(mostSevere, 'suggested')}
+        {#if severity === 'error' && !mostSevere.suggested}
             <div class="separator">{CENTER_DOT}</div>
             <div class="search-job-link">
                 <small>
