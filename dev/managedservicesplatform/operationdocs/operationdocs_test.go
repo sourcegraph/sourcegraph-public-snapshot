@@ -7,15 +7,18 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 const (
 	// Use a real service and environment to help validate links actually work
 	// in our golden tests (TestRender).
 	// https://handbook.sourcegraph.com/departments/engineering/managed-services/msp-testbed#test
-	testServiceID          = "msp-testbed"
-	testServiceEnvironment = "test"
-	testProjectID          = "msp-testbed-test-77589aae45d0"
+	testServiceID            = "msp-testbed"
+	testServiceEnvironment   = "test"
+	testProjectID            = "msp-testbed-test-77589aae45d0"
+	robertServiceEnvironment = "robert"
+	robertProjectID          = "msp-testbed-robert-7be9"
 )
 
 func TestRender(t *testing.T) {
@@ -29,6 +32,7 @@ func TestRender(t *testing.T) {
 			Service: spec.ServiceSpec{
 				ID:          testServiceID,
 				Description: "Test service for MSP",
+				Name:        pointers.Ptr("MSP Testbed"),
 			},
 			Build: spec.BuildSpec{
 				Image: "us.gcr.io/sourcegraph-dev/msp-example",
@@ -53,7 +57,8 @@ func TestRender(t *testing.T) {
 		name: "resources",
 		spec: spec.Spec{
 			Service: spec.ServiceSpec{
-				ID:          "msp-testbed",
+				ID: "msp-testbed",
+
 				Description: "Test service for MSP",
 			},
 			Build: spec.BuildSpec{
@@ -87,6 +92,7 @@ func TestRender(t *testing.T) {
 			Service: spec.ServiceSpec{
 				ID:          testServiceID,
 				Description: "Test service for MSP",
+				Name:        pointers.Ptr("MSP Testbed"),
 			},
 			Build: spec.BuildSpec{
 				Image: "us.gcr.io/sourcegraph-dev/msp-example",
@@ -108,6 +114,40 @@ func TestRender(t *testing.T) {
 ## Additional operations
 
 Some additional operations!`),
+		},
+	}, {
+		name: "multi env rollout",
+		spec: spec.Spec{
+			Service: spec.ServiceSpec{
+				ID:          testServiceID,
+				Description: "Test service for MSP",
+				Name:        pointers.Ptr("MSP Testbed"),
+			},
+			Build: spec.BuildSpec{
+				Image: "us.gcr.io/sourcegraph-dev/msp-example",
+				Source: spec.BuildSourceSpec{
+					Repo: "github.com/sourcegraph/sourcegraph",
+					Dir:  "cmd/msp-example",
+				},
+			},
+			Environments: []spec.EnvironmentSpec{{
+				ID:        testServiceEnvironment,
+				ProjectID: testProjectID,
+				Category:  spec.EnvironmentCategoryTest,
+				Deploy: spec.EnvironmentDeploySpec{
+					Type: "rollout",
+				},
+			}, {
+				ID:        robertServiceEnvironment,
+				ProjectID: robertProjectID,
+				Category:  spec.EnvironmentCategoryTest,
+				Deploy: spec.EnvironmentDeploySpec{
+					Type: "rollout",
+				},
+			}},
+			Rollout: &spec.RolloutSpec{
+				Stages: []spec.RolloutStageSpec{{EnvironmentID: testServiceEnvironment}, {EnvironmentID: robertServiceEnvironment}},
+			},
 		},
 	}} {
 		t.Run(tc.name, func(t *testing.T) {

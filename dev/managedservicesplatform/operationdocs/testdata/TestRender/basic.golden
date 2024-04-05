@@ -1,10 +1,10 @@
-# msp-testbed infrastructure operations
+# MSP Testbed infrastructure operations
 
 <!--
 Generated from: unknown revision of https://github.com/sourcegraph/managed-services
 -->
 
-This document describes operational guidance for msp-testbed infrastructure.
+This document describes operational guidance for MSP Testbed infrastructure.
 This service is operated on the [Managed Services Platform (MSP)](https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/).
 
 > [!IMPORTANT]
@@ -14,15 +14,23 @@ If you need assistance with MSP infrastructure, reach out to the [Core Services]
 
 ## Service overview
 
-|     PROPERTY     |                                                                                      DETAILS                                                                                      |
-|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Service ID       | `msp-testbed` ([specification](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/service.yaml))                                                      |
-| Owners           |                                                                                                                                                                                   |
-| Service kind     | Cloud Run service                                                                                                                                                                 |
-| Environments     | [test](#test)                                                                                                                                                                     |
-| Docker image     | `us.gcr.io/sourcegraph-dev/msp-example`                                                                                                                                           |
-| Source code      | [`github.com/sourcegraph/sourcegraph` - `cmd/msp-example`](https://github.com/sourcegraph/sourcegraph/tree/HEAD/cmd/msp-example)                                                  |
-| Rollout Pipeline | [`msp-testbed-us-central1-rollout`](https://console.cloud.google.com/deploy/delivery-pipelines/us-central1/msp-testbed-us-central1-rollout?project=msp-testbed-test-77589aae45d0) |
+|   PROPERTY   |                                                             DETAILS                                                              |
+|--------------|----------------------------------------------------------------------------------------------------------------------------------|
+| Service ID   | `msp-testbed` ([specification](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/service.yaml))     |
+| Owners       |                                                                                                                                  |
+| Service kind | Cloud Run service                                                                                                                |
+| Environments | [test](#test)                                                                                                                    |
+| Docker image | `us.gcr.io/sourcegraph-dev/msp-example`                                                                                          |
+| Source code  | [`github.com/sourcegraph/sourcegraph` - `cmd/msp-example`](https://github.com/sourcegraph/sourcegraph/tree/HEAD/cmd/msp-example) |
+
+## Rollout
+
+|     PROPERTY      |                                                                                      DETAILS                                                                                      |
+|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Delivery pipeline | [`msp-testbed-us-central1-rollout`](https://console.cloud.google.com/deploy/delivery-pipelines/us-central1/msp-testbed-us-central1-rollout?project=msp-testbed-test-77589aae45d0) |
+| Stages            | [test](#test)                                                                                                                                                                     |
+
+Changes to MSP Testbed are continuously delivered to the first stage ([test](#test)) of the delivery pipeline.
 
 ## Environments
 
@@ -49,7 +57,7 @@ For Terraform Cloud access, see [test Terraform Cloud](#test-terraform-cloud).
 
 #### test Cloud Run
 
-The msp-testbed test service implementation is deployed on [Google Cloud Run](https://cloud.google.com/run).
+The MSP Testbed test service implementation is deployed on [Google Cloud Run](https://cloud.google.com/run).
 
 |    PROPERTY    |                                                                                                                                                                  DETAILS                                                                                                                                                                   |
 |----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
