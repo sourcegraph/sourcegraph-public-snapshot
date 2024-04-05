@@ -161,7 +161,7 @@ func (c PackageRepoConfig) DoPackageBuild(name string, buildDir string) error {
 	std.Out.Write("")
 
 	std.Out.WriteSuccessf("Successfully built package %s\n", name)
-	std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Use this package in local image builds by adding the package '%s@local' to the base image config\n", name))
+	std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Use this package in local image builds by adding the package '%s@local' to your image's 'wolfi-images/<image>.yaml' config, and running 'sg wolfi image <image>'\n", name))
 
 	return nil
 }
