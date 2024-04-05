@@ -26,13 +26,13 @@ def wolfi_base(name = "wolfi", target = None):
     )
 
     oci_image(
-        name = "wolfi_base_image",
+        name = "base_image",
         base = ":wolfi_base_apko",
         visibility = ["//visibility:public"],
     )
 
     oci_tarball(
-        name = "wolfi_base_tarball",
-        image = ":wolfi_base_image",
+        name = "base_tarball",
+        image = ":base_image",
         repo_tags = ["{}-base:latest".format(target)],
     )

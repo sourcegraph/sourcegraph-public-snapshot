@@ -31,8 +31,8 @@ See the [Add and Update Wolfi Base Images](https://sourcegraph.com/docs/dev/how-
       │          │        │                                            bazel target                        
       └─────┬────┘        │                   OR                      ┌─────────────────────┐              
             │             │                                           │                     │              
-            │             │  bazel build //<image>/:wolfi_base_image  │                     │              
-       sg wolfi lock      ├──────────────────────────────────────────►│  :wolfi_base_image  │              
+            │             │     bazel build //<image>/:base_image     │                     │              
+       sg wolfi lock      ├──────────────────────────────────────────►│     :base_image     │              
        (manual step)      │                                           │                     │              
             │             │                                           │                     │              
        file │             │                                           └──────────┬──────────┘              
@@ -51,7 +51,7 @@ See the [Add and Update Wolfi Base Images](https://sourcegraph.com/docs/dev/how-
                                │     │                                      │                              
                                │     │    name = "image"                    │                              
                                │     │                                      │                              
-                               └─────┼──► base = ":wolfi_base_image"        │                              
+                               └─────┼──► base = ":base_image"              │                              
         Bazel-genenarated            │                                      │                              
         binaries and      ───────────┼──► tars = ":tar_sourcegraph_binary"  │                              
         other resources              │                                      │                              

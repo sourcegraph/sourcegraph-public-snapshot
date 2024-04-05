@@ -83,7 +83,7 @@ pkg_tar(
 # reflecting better real production usage.
 oci_image(
     name = "scip-ctags_image",
-    base = "//wolfi-images/sourcegraph:wolfi_base_image",
+    base = "//wolfi-images/sourcegraph:base_image",
     entrypoint = ["/scip-ctags"],
     tars = [":tar_scip-ctags"],
 )
@@ -109,7 +109,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = ":wolfi_base_image",
+    base = ":base_image",
     entrypoint = [
         "/sbin/tini",
         "--",
