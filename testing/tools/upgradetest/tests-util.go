@@ -531,6 +531,7 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	errChan := make(chan error)
 	go func() {
 		if _, err := run.Cmd(ctx, cmdString...).Run().String(); err != nil {
+			fmt.Println("🚨 failed to start frontend: ", err)
 			errChan <- err
 		}
 	}()
