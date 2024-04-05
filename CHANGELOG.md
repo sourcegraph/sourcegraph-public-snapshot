@@ -42,6 +42,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where Sourcegraph could lose track of repositories on gitserver, leaving behind unnecessary data and inconsistent clone status in the UI. [#60627](https://github.com/sourcegraph/sourcegraph/pull/60627)
 - The "Commits" button in repository and folder pages links to commits in the current revision instead of in the default branch. [#61408](https://github.com/sourcegraph/sourcegraph/pull/61408)
 - The "Commits" button in repository and folder pages uses Perforce language and links to `/-/changelists` for Perforce depots when the experimental feature `perforceChangelistMapping` is enabled. [#61408](https://github.com/sourcegraph/sourcegraph/pull/61408)
+- Selecting "View blame prior to this change" on a file that was moved will now correctly navigate to the old file location at the specified commit. [#61577](https://github.com/sourcegraph/sourcegraph/pull/61577)
+- Git blame performance on large files with a large number of commits has been drastically improved. [#61577](https://github.com/sourcegraph/sourcegraph/pull/61577)
 - Code Insights now properly ignores search API alerts, which previously would have led to a code insight error. [#61431](https://github.com/sourcegraph/sourcegraph/pull/61431)
 
 ## 5.3.3
