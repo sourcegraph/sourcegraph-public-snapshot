@@ -15,6 +15,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased
 
+- Added syntax highlighting for the [PKl](https://pkl-lang.org/) configuration language. [#61478](https://github.com/sourcegraph/sourcegraph/pull/61478)
+
 ## Unreleased (April Patch Release - 22nd April, 2024)
 
 ## 5.3.9104
