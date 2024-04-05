@@ -50,10 +50,9 @@ func main() {
 						Value:       "",
 					},
 					&cli.StringFlag{
-						Name:        "from-registry",
-						DefaultText: "sourcegraph/",
-						Usage:       "Registry host and path to pull versions we're upgrading from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
-						Value:       "",
+						Name:  "from-registry",
+						Usage: "Registry host and path to pull versions we're upgrading from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value: "sourcegraph/",
 					},
 					&cli.IntFlag{
 						Name:    "max-routines",
@@ -327,16 +326,14 @@ func main() {
 						Usage:   "Select an already released version as the target version for the test suite.",
 					},
 					&cli.StringFlag{
-						Name:        "target-registry",
-						DefaultText: "sourcegraph/",
-						Usage:       "Registry host and path to pull the targeted version from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
-						Value:       "",
+						Name:  "target-registry",
+						Usage: "Registry host and path to pull the targeted version from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value: "sourcegraph/",
 					},
 					&cli.StringFlag{
-						Name:        "from-registry",
-						DefaultText: "sourcegraph/",
-						Usage:       "Registry host and path to pull versions we're upgrading from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
-						Value:       "sourcegraph",
+						Name:  "from-registry",
+						Usage: "Registry host and path to pull versions we're upgrading from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value: "sourcegraph/",
 					},
 					&cli.IntFlag{
 						Name:    "max-routines",
@@ -436,16 +433,14 @@ func main() {
 					},
 
 					&cli.StringFlag{
-						Name:        "target-registry",
-						DefaultText: "sourcegraph/",
-						Usage:       "Registry host and path to pull the targeted version from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
-						Value:       "",
+						Name:  "target-registry",
+						Usage: "Registry host and path to pull the targeted version from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value: "sourcegraph/",
 					},
 					&cli.StringFlag{
-						Name:        "from-registry",
-						DefaultText: "sourcegraph/",
-						Usage:       "Registry host and path to pull versions we're upgrading from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
-						Value:       "sourcegraph/",
+						Name:  "from-registry",
+						Usage: "Registry host and path to pull versions we're upgrading from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value: "sourcegraph/",
 					},
 					&cli.IntFlag{
 						Name:    "max-routines",

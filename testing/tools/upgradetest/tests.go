@@ -152,7 +152,7 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, targetVersion, la
 	// Start frontend with candidate unless a post release version is specified
 	var cleanFrontend func()
 	if postRelease != "" {
-		cleanFrontend, err = startFrontend(ctx, test, "sourcegraph/frontend", postRelease, networkName, false, dbs)
+		cleanFrontend, err = startFrontend(ctx, test, fmt.Sprintf("%sfrontend", ctx.Value(targetRegistryKey{})), postRelease, networkName, false, dbs)
 	} else {
 		cleanFrontend, err = startFrontend(ctx, test, "frontend", "candidate", networkName, false, dbs)
 	}
@@ -210,7 +210,7 @@ func autoUpgradeTest(ctx context.Context, initVersion, targetVersion, latestStab
 	// Start frontend with candidate
 	var cleanFrontend func()
 	if postRelease != "" {
-		cleanFrontend, err = startFrontend(ctx, test, "sourcegraph/frontend", postRelease, networkName, true, dbs)
+		cleanFrontend, err = startFrontend(ctx, test, fmt.Sprintf("%sfrontend", ctx.Value(targetRegistryKey{})), postRelease, networkName, true, dbs)
 	} else {
 		cleanFrontend, err = startFrontend(ctx, test, "frontend", "candidate", networkName, true, dbs)
 	}
