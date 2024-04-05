@@ -12,7 +12,7 @@ import { makeRepoGitURI } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
-import type { ExternalServiceKind, FirstCommitDateResult, FirstCommitDateVariables } from '../../graphql-operations'
+import type { ExternalRepoURLsResult, ExternalRepoURLsVariables, ExternalServiceKind } from '../../graphql-operations'
 
 import { useBlameVisibility } from './useBlameVisibility'
 
@@ -190,7 +190,7 @@ const fetchBlameViaStreaming = memoizeObservable(
 
 async function fetchRepositoryData(repoName: string): Promise<Omit<BlameHunkData, 'current'>> {
     return lastValueFrom(
-        requestGraphQL<FirstCommitDateResult, FirstCommitDateVariables>(
+        requestGraphQL<ExternalRepoURLsResult, ExternalRepoURLsVariables>(
             gql`
                 query ExternalRepoURLs($repo: String!) {
                     repository(name: $repo) {
@@ -204,11 +204,9 @@ async function fetchRepositoryData(repoName: string): Promise<Omit<BlameHunkData
             { repo: repoName }
         ).pipe(
             map(dataOrThrowErrors),
-            map(({ repository }) => {
-                return {
-                    externalURLs: repository?.externalURLs,
-                }
-            })
+            map(({ repository }) => ({
+                externalURLs: repository?.externalURLs,
+            }))
         )
     )
 }
