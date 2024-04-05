@@ -280,7 +280,7 @@ func (c *Config) Load() {
 
 	c.Attribution.Enabled = c.GetBool("CODY_GATEWAY_ENABLE_ATTRIBUTION_SEARCH", "false", "Whether attribution search endpoint is available.")
 
-	c.Sourcegraph.EmbeddingsAPIURL = c.Get("CODY_GATEWAY_SOURCEGRAPH_SMEGA_URL", "https://embeddings-triton-direct.sgdev.org/v2/models/ensemble_model/infer", "URL of the Triton server.")
+	c.Sourcegraph.EmbeddingsAPIURL = c.Get("CODY_GATEWAY_SOURCEGRAPH_EMBEDDINGS_API_URL", "https://embeddings.sourcegraph.com/v2/models/st-multi-qa-mpnet-base-dot-v1/infer", "URL of the Triton server.")
 	c.Sourcegraph.UnlimitedEmbeddings = c.GetBool("CODY_GATEWAY_SOURCEGRAPH_UNLIMITED_EMBEDDINGS", "false", "Enable unlimited embeddings.")
 
 	c.SAMSClientConfig.URL = c.GetOptional("SAMS_URL", "SAMS service endpoint")
