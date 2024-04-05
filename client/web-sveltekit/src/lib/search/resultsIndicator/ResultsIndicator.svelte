@@ -20,7 +20,6 @@
         error: mdiAlertCircle,
     }
 
-    $: console.log(state)
     $: elapsedDuration = progress.durationMs
     $: takingTooLong = elapsedDuration >= SEARCH_JOB_THRESHOLD
     $: loading = state === 'loading'
@@ -45,7 +44,7 @@
     </div>
 
     <div class="messages">
-        <ProgressMessage {state} {progress} {elapsedDuration} {severity} />
+        <ProgressMessage {state} {progress} {severity} />
 
         <div class="action-container">
             {#if !done && takingTooLong}

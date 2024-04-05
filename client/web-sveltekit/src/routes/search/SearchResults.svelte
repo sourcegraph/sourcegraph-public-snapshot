@@ -17,7 +17,7 @@
     import { mdiCloseOctagonOutline } from '@mdi/js'
     import type { Observable } from 'rxjs'
     import { tick } from 'svelte'
-    import { derived, writable } from 'svelte/store'
+    import { writable } from 'svelte/store'
 
     import { beforeNavigate, goto } from '$app/navigation'
     import { limitHit } from '$lib/branded'
@@ -62,9 +62,6 @@
     const recentSearches = createRecentSearchesStore()
     const filtersSidebarPosition = getSeparatorPosition('search-results-sidebar', 0.2)
     const previewSidebarPosition = getSeparatorPosition('preview-sidebar', 0.2)
-    const startTime = derived(queryState, () => {
-        return Date.now()
-    })
 
     $: state = $stream.state // 'loading', 'error', 'complete'
     $: results = $stream.results
@@ -140,7 +137,7 @@
     <Separator currentPosition={filtersSidebarPosition} />
     <div class="results">
         <aside class="actions">
-            <StreamingProgress {state} progress={$stream.progress} {startTime} on:submit={onResubmitQuery} />
+            <StreamingProgress {state} progress={$stream.progress} on:submit={onResubmitQuery} />
         </aside>
         <div class="result-list" bind:this={resultContainer}>
             <ol>

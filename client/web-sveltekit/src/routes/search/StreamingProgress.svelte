@@ -7,7 +7,6 @@
         mdiInformationOutline,
         mdiMagnify,
     } from '@mdi/js'
-    import type { Readable } from 'svelte/store'
 
     import { limitHit, sortBySeverity } from '$lib/branded'
     import { renderMarkdown, pluralize } from '$lib/common'
@@ -20,7 +19,6 @@
 
     export let progress: Progress
     export let state: 'complete' | 'error' | 'loading'
-    export let startTime: Readable<number>
 
     const icons: Record<string, string> = {
         info: mdiInformationOutline,
@@ -51,7 +49,7 @@
     <Button variant={isError ? 'danger' : 'secondary'} size="sm" outline>
         <svelte:fragment slot="custom" let:buttonClass>
             <button use:registerTrigger class="{buttonClass} progress-button" on:click={() => toggle()}>
-                <ResultsIndicator {state} {suggestedItems} {progress} {startTime} {severity} />
+                <ResultsIndicator {state} {suggestedItems} {progress} {severity} />
             </button>
         </svelte:fragment>
     </Button>
