@@ -82,15 +82,15 @@
         --resize-handle-bg: var(--border-color);
         --resize-handle-hover-bg: var(--border-color-2);
         --resize-handle-drag-bg: var(--oc-blue-3);
-        --resize-handle-width: 1px;
-        --resize-handle-active-width: 3px;
+        --resize-handle-size: 1px;
+        --resize-handle-active-size: 3px;
     }
 
     .separator {
         // Since drag handler is always rendered within flex
         // PanelGroup component is safe to assume that flex rules
         // can applied here.
-        flex: 0 0 var(--resize-handle-width);
+        flex: 0 0 var(--resize-handle-size);
         display: flex;
         touch-action: none;
         user-select: none;
@@ -108,7 +108,8 @@
             transform: translate(-50%, -50%);
             width: 100%;
             height: 100%;
-            min-width: var(--resize-handle-active-width);
+            min-width: var(--resize-handle-active-size);
+            min-height: var(--resize-handle-active-size);
         }
 
         &[data-resize-handle-state='hover']::before {
