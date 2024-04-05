@@ -117,7 +117,7 @@ This service is operated on the %s.`,
 			}
 		}
 		serviceDetails = append(serviceDetails,
-			[]string{"Rollout Pipeline", markdown.Linkf(fmt.Sprintf("`%s-%s-rollout`", s.Service.ID, region),
+			[]string{"Rollout pipeline", markdown.Linkf(fmt.Sprintf("`%s-%s-rollout`", s.Service.ID, region),
 				"https://console.cloud.google.com/deploy/delivery-pipelines/%[1]s/%[2]s-%[1]s-rollout?project=%[3]s", region, s.Service.ID, finalStageProject)})
 	}
 
