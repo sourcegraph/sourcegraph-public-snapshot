@@ -7528,7 +7528,7 @@ type Site implements SettingsSubject {
     codyGatewayRateLimitStatus: [CodyGatewayRateLimitStatus!]
 
     """
-    TODO
+    Rules defining the repositories that will never be shared by Cody with third-party LLM providers.
     """
     codyContextFilters: CodyContextFilters
 }
