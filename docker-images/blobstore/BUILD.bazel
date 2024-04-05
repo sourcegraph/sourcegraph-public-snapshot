@@ -1,10 +1,9 @@
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
-load("//wolfi-images:defs.bzl", "wolfi_base")
 
 oci_image(
     name = "s3_proxy_image",
-    base = ":base_image",
+    base = "@wolfi_s3proxy_base",
     entrypoint = [
         "/sbin/tini",
         "--",
@@ -67,5 +66,3 @@ oci_push(
     image = ":s3_proxy_image",
     repository = image_repository("blobstore"),
 )
-
-wolfi_base()

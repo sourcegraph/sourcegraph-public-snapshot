@@ -1,7 +1,6 @@
 load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
-load("//wolfi-images:defs.bzl", "wolfi_base")
 
 filegroup(
     name = "cadvisor_entrypoint",
@@ -20,7 +19,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = ":base_image",
+    base = "@wolfi_cadvisor_base",
     entrypoint = ["/usr/bin/entrypoint.sh"],
     tars = [":tar_cadvisor"],
 )
@@ -48,5 +47,3 @@ oci_push(
     image = ":image",
     repository = image_repository("cadvisor"),
 )
-
-wolfi_base()

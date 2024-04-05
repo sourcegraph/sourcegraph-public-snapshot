@@ -1,10 +1,9 @@
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
-load("//wolfi-images:defs.bzl", "wolfi_base")
 
 oci_image(
     name = "qdrant_image",
-    base = ":base_image",
+    base = "@wolfi_qdrant_base",
     entrypoint = [
         "/sbin/tini",
         "--",
@@ -38,5 +37,3 @@ oci_push(
     image = ":qdrant_image",
     repository = image_repository("qdrant"),
 )
-
-wolfi_base()
