@@ -57,7 +57,8 @@ func TestGetConfigurationPolicies(t *testing.T) {
 			(107, NULL, 'policy  7 def', 'GIT_TREE', '', '{gitlab.com/*1}', false, 0, false, true,  false, 0, false, false, false),
 			(108, NULL, 'policy  8 abc', 'GIT_TREE', '', '{gitlab.com/*2}', true , 0, false, false, true,  0, false, false, false),
 			(109, NULL, 'policy  9 def', 'GIT_TREE', '', '{github.com/*}',  false, 0, false, true,  false, 0, false, false, false),
-			(110, NULL, 'policy 10 def', 'GIT_TREE', '', '{github.com/*}',  false, 0, false, false, true,  0, false, true,  false)
+			(110, NULL, 'policy 10 def', 'GIT_TREE', '', '{github.com/*}',  false, 0, false, false, false, 0, false, true,  false),
+			(111, 43,   'policy 11 bcd', 'GIT_TREE', '', null,              false, 0, false, false, true,  0, false, false, true)
 	`
 	if _, err := db.ExecContext(ctx, query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -96,44 +97,51 @@ func TestGetConfigurationPolicies(t *testing.T) {
 		expectedIDs          []int
 	}
 	testCases := []testCase{
-		{forEmbeddings: &False, expectedIDs: []int{101, 102, 103, 104, 105, 106, 107, 108, 109}},     // Any flags; all policies
-		{forEmbeddings: &False, protected: &True, expectedIDs: []int{101, 102, 103}},                 // Only protected
-		{forEmbeddings: &False, protected: &False, expectedIDs: []int{104, 105, 106, 107, 108, 109}}, // Only un-protected
+		{forEmbeddings: &False, expectedIDs: []int{101, 102, 103, 104, 105, 106, 107, 108, 109, 111}}, // Any flags; all policies
+		{forEmbeddings: &False, protected: &True, expectedIDs: []int{101, 102, 103, 111}},             // Only protected
+		{forEmbeddings: &False, protected: &False, expectedIDs: []int{104, 105, 106, 107, 108, 109}},  // Only un-protected
 
-		{forEmbeddings: &False, repositoryID: 41, expectedIDs: []int{104, 105, 106, 107}},                                              // Any flags; matches repo by patterns
-		{forEmbeddings: &False, repositoryID: 42, expectedIDs: []int{101, 102, 104, 105, 109}},                                         // Any flags; matches repo by assignment and pattern
-		{forEmbeddings: &False, repositoryID: 43, expectedIDs: []int{103, 104, 105}},                                                   // Any flags; matches repo by assignment
-		{forEmbeddings: &False, repositoryID: 44, expectedIDs: []int{104, 105}},                                                        // Any flags; no matches by repo
-		{forEmbeddings: &False, forDataRetention: &True, expectedIDs: []int{102, 104, 106, 108}},                                       // For data retention; all policies
-		{forEmbeddings: &False, forDataRetention: &True, repositoryID: 41, expectedIDs: []int{104, 106}},                               // For data retention; matches repo by patterns
-		{forEmbeddings: &False, forDataRetention: &True, repositoryID: 42, expectedIDs: []int{102, 104}},                               // For data retention; matches repo by assignment and pattern
-		{forEmbeddings: &False, forDataRetention: &True, repositoryID: 43, expectedIDs: []int{104}},                                    // For data retention; matches repo by assignment
-		{forEmbeddings: &False, forDataRetention: &True, repositoryID: 44, expectedIDs: []int{104}},                                    // For data retention; no matches by repo
-		{forEmbeddings: &False, forIndexing: &True, expectedIDs: []int{101, 103, 105, 107, 109}},                                       // For indexing; all policies
-		{forEmbeddings: &False, forIndexing: &True, repositoryID: 41, expectedIDs: []int{105, 107}},                                    // For indexing; matches repo by patterns
-		{forEmbeddings: &False, forIndexing: &True, repositoryID: 42, expectedIDs: []int{101, 105, 109}},                               // For indexing; matches repo by assignment and pattern
-		{forEmbeddings: &False, forIndexing: &True, repositoryID: 43, expectedIDs: []int{103, 105}},                                    // For indexing; matches repo by assignment
-		{forEmbeddings: &False, forIndexing: &True, repositoryID: 44, expectedIDs: []int{105}},                                         // For indexing; no matches by repo
-		{forSyntacticIndexing: &True, expectedIDs: []int{102, 104, 105, 106, 108, 110}},    // For syntactic indexing; all policies
-		{forSyntacticIndexing: &True, repositoryID: 41, expectedIDs: []int{104, 105, 106}},      // For syntactic indexing; matches repo by patterns
+		{forEmbeddings: &False, repositoryID: 41, expectedIDs: []int{104, 105, 106, 107}},      // Any flags; matches repo by patterns
+		{forEmbeddings: &False, repositoryID: 42, expectedIDs: []int{101, 102, 104, 105, 109}}, // Any flags; matches repo by assignment and pattern
+		{forEmbeddings: &False, repositoryID: 43, expectedIDs: []int{103, 104, 105, 111}},      // Any flags; matches repo by assignment
+		{forEmbeddings: &False, repositoryID: 44, expectedIDs: []int{104, 105}},                // Any flags; no matches by repo
+
+		{forEmbeddings: &False, forDataRetention: &True, expectedIDs: []int{102, 104, 106, 108}},         // For data retention; all policies
+		{forEmbeddings: &False, forDataRetention: &True, repositoryID: 41, expectedIDs: []int{104, 106}}, // For data retention; matches repo by patterns
+		{forEmbeddings: &False, forDataRetention: &True, repositoryID: 42, expectedIDs: []int{102, 104}}, // For data retention; matches repo by assignment and pattern
+		{forEmbeddings: &False, forDataRetention: &True, repositoryID: 43, expectedIDs: []int{104}},      // For data retention; matches repo by assignment
+		{forEmbeddings: &False, forDataRetention: &True, repositoryID: 44, expectedIDs: []int{104}},      // For data retention; no matches by repo
+
+		{forEmbeddings: &False, forIndexing: &True, expectedIDs: []int{101, 103, 105, 107, 109}},         // For indexing; all policies
+		{forEmbeddings: &False, forIndexing: &True, repositoryID: 41, expectedIDs: []int{105, 107}},      // For indexing; matches repo by patterns
+		{forEmbeddings: &False, forIndexing: &True, repositoryID: 42, expectedIDs: []int{101, 105, 109}}, // For indexing; matches repo by assignment and pattern
+		{forEmbeddings: &False, forIndexing: &True, repositoryID: 43, expectedIDs: []int{103, 105}},      // For indexing; matches repo by assignment
+		{forEmbeddings: &False, forIndexing: &True, repositoryID: 44, expectedIDs: []int{105}},           // For indexing; no matches by repo
+
+		{forSyntacticIndexing: &True, expectedIDs: []int{102, 104, 105, 106, 108, 111}},    // For syntactic indexing; all policies
+		{forSyntacticIndexing: &True, repositoryID: 41, expectedIDs: []int{104, 105, 106}}, // For syntactic indexing; matches repo by patterns
 		{forSyntacticIndexing: &True, repositoryID: 42, expectedIDs: []int{102, 104, 105}}, // For syntactic indexing; matches repo by assignment and pattern
-		{forSyntacticIndexing: &True, repositoryID: 43, expectedIDs: []int{103, 105}},      // For syntactic indexing; matches repo by assignment
-		{forSyntacticIndexing: &True, repositoryID: 44, expectedIDs: []int{105}},           // For syntactic indexing; no matches by repo
-		{forDataRetention: &False, forIndexing: &False, forEmbeddings: &True, expectedIDs: []int{110}},                                 // For embeddings
+		{forSyntacticIndexing: &True, repositoryID: 43, expectedIDs: []int{104, 105, 111}}, // For syntactic indexing; matches repo by assignment
+		{forSyntacticIndexing: &True, repositoryID: 44, expectedIDs: []int{104, 105}},      // For syntactic indexing; no matches by repo
 
-		{term: "bc", expectedIDs: []int{101, 103, 104, 105, 106, 108}}, // Searches by name (multiple substring matches)
-		{term: "abcd", expectedIDs: []int{}},                           // Searches by name (no matches)
+		{forDataRetention: &False, forIndexing: &False, forEmbeddings: &True, expectedIDs: []int{110}}, // For embeddings
+
+		{term: "bc", expectedIDs: []int{101, 103, 104, 105, 106, 108, 111}}, // Searches by name (multiple substring matches)
+		{term: "abcd", expectedIDs: []int{}},                                // Searches by name (no matches)
 	}
 
 	runTest := func(testCase testCase, lo, hi int) (errors int) {
 		name := fmt.Sprintf(
-			"repositoryID=%d term=%q forDataRetention=%v forIndexing=%v forSyntacticIndexing=%v forEmbeddings=%v offset=%d",
+			"repositoryID=%d term=%q forDataRetention=%v forIndexing=%v forSyntacticIndexing=%v forEmbeddings=%v protected=%v offset=%d",
 			testCase.repositoryID,
 			testCase.term,
-			testCase.forDataRetention,
-			testCase.forIndexing,
-			testCase.forSyntacticIndexing,
-			testCase.forEmbeddings,
+			// without formatBoolOption the strings for those bool pointers end up looking like `0xc000010b4f`
+			// which only helps differentiate between empty value and non-empty
+			formatBoolOption(testCase.forDataRetention),
+			formatBoolOption(testCase.forIndexing),
+			formatBoolOption(testCase.forSyntacticIndexing),
+			formatBoolOption(testCase.forEmbeddings),
+			formatBoolOption(testCase.protected),
 			lo,
 		)
 
@@ -152,10 +160,6 @@ func TestGetConfigurationPolicies(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error fetching configuration policies: %s", err)
 			}
-			if totalCount != len(testCase.expectedIDs) {
-				t.Errorf("unexpected total count. want=%d have=%d", len(testCase.expectedIDs), totalCount)
-				errors++
-			}
 			if totalCount != 0 {
 				var ids []int
 				for _, policy := range policies {
@@ -166,6 +170,11 @@ func TestGetConfigurationPolicies(t *testing.T) {
 					errors++
 				}
 			}
+			if totalCount != len(testCase.expectedIDs) {
+				t.Errorf("unexpected total count. want=%d have=%d", len(testCase.expectedIDs), totalCount)
+				errors++
+			}
+
 		})
 
 		return errors
@@ -275,4 +284,15 @@ func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected record")
 	}
+}
+
+func formatBoolOption(opt *bool) string {
+	if opt == nil {
+		return "nil"
+	} else if *opt {
+		return "true"
+	} else {
+		return "false"
+	}
+
 }
