@@ -40,16 +40,21 @@ go_library(
 
 go_test(
     name = "codycontext_test",
-    srcs = ["filter_test.go"],
+    srcs = [
+        "context_test.go",
+        "filter_test.go",
+    ],
     embed = [":codycontext"],
     deps = [
         "//internal/api",
         "//internal/conf",
         "//internal/gitserver",
+        "//internal/search/result",
         "//internal/types",
         "//lib/errors",
         "//lib/pointers",
         "//schema",
+        "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
     ],
