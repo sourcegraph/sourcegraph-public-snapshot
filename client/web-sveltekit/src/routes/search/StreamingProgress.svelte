@@ -119,12 +119,30 @@
                 </Button>
             </form>
         {/if}
+        {#if severity === 'error' || state === 'loading'}
+            <div class="search-job-link">
+                <small>
+                    Search taking too long or timing out? Use <a
+                        href="/help/code-search/types/search-jobs"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Search Job</a
+                    > for background search.
+                </small>
+            </div>
+        {/if}
     </div>
 </Popover>
 
 <style lang="scss">
     .chevron > :global(svg) {
         fill: currentColor !important;
+    }
+
+    .search-job-link {
+        margin: 0rem 1rem 1rem 1rem;
+        font-style: italic;
     }
 
     label {
