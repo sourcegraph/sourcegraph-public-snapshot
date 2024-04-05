@@ -462,6 +462,189 @@ func TestBlameHunkReader(t *testing.T) {
 	})
 }
 
+var testGitBlameMovedFile = `9b3fbcf3fd859a4fa7f97e6056138307c57fb949 39 39 1
+author Petri-Johan Last
+author-mail <petri.last@sourcegraph.com>
+author-time 1712302218
+author-tz +0200
+committer Petri-Johan Last
+committer-mail <petri.last@sourcegraph.com>
+committer-time 1712302218
+committer-tz +0200
+summary Move commit
+previous bae93ddeeba0cc0099c322e2e46f60ad368c6e37 blame_test.go
+filename another_test.go
+9b3fbcf3fd859a4fa7f97e6056138307c57fb949 111 111 1
+previous bae93ddeeba0cc0099c322e2e46f60ad368c6e37 blame_test.go
+filename another_test.go
+9b3fbcf3fd859a4fa7f97e6056138307c57fb949 178 178 2
+previous bae93ddeeba0cc0099c322e2e46f60ad368c6e37 blame_test.go
+filename another_test.go
+9b3fbcf3fd859a4fa7f97e6056138307c57fb949 190 190 1
+previous bae93ddeeba0cc0099c322e2e46f60ad368c6e37 blame_test.go
+filename another_test.go
+bae93ddeeba0cc0099c322e2e46f60ad368c6e37 1 1 38
+author Petri-Johan Last
+author-mail <petri.last@sourcegraph.com>
+author-time 1712302156
+author-tz +0200
+committer Petri-Johan Last
+committer-mail <petri.last@sourcegraph.com>
+committer-time 1712302156
+committer-tz +0200
+summary Initial commit
+boundary
+filename blame_test.go
+bae93ddeeba0cc0099c322e2e46f60ad368c6e37 39 40 71
+filename blame_test.go
+bae93ddeeba0cc0099c322e2e46f60ad368c6e37 110 112 66
+filename blame_test.go
+bae93ddeeba0cc0099c322e2e46f60ad368c6e37 178 180 10
+filename blame_test.go
+bae93ddeeba0cc0099c322e2e46f60ad368c6e37 188 191 303
+filename blame_test.go`
+
+var testGitBlameMovedFileHunks = []*gitdomain.Hunk{
+	{
+		StartLine: 39, EndLine: 40, StartByte: 0, EndByte: 0,
+		CommitID: "9b3fbcf3fd859a4fa7f97e6056138307c57fb949",
+		PreviousCommit: &gitdomain.PreviousCommit{
+			CommitID: "bae93ddeeba0cc0099c322e2e46f60ad368c6e37",
+			Filename: "blame_test.go",
+		},
+		Author: gitdomain.Signature{
+			Name:  "Petri-Johan Last",
+			Email: "petri.last@sourcegraph.com",
+			Date:  time.Unix(1712302218, 0),
+		},
+		Message:  "Move commit",
+		Filename: "another_test.go",
+	},
+	{
+		StartLine: 111, EndLine: 112, StartByte: 0, EndByte: 0,
+		CommitID: "9b3fbcf3fd859a4fa7f97e6056138307c57fb949",
+		PreviousCommit: &gitdomain.PreviousCommit{
+			CommitID: "bae93ddeeba0cc0099c322e2e46f60ad368c6e37",
+			Filename: "blame_test.go",
+		},
+		Author: gitdomain.Signature{
+			Name:  "Petri-Johan Last",
+			Email: "petri.last@sourcegraph.com",
+			Date:  time.Unix(1712302218, 0),
+		},
+		Message:  "Move commit",
+		Filename: "another_test.go",
+	},
+	{
+		StartLine: 178, EndLine: 180, StartByte: 0, EndByte: 0,
+		CommitID: "9b3fbcf3fd859a4fa7f97e6056138307c57fb949",
+		PreviousCommit: &gitdomain.PreviousCommit{
+			CommitID: "bae93ddeeba0cc0099c322e2e46f60ad368c6e37",
+			Filename: "blame_test.go",
+		},
+		Author: gitdomain.Signature{
+			Name:  "Petri-Johan Last",
+			Email: "petri.last@sourcegraph.com",
+			Date:  time.Unix(1712302218, 0),
+		},
+		Message:  "Move commit",
+		Filename: "another_test.go",
+	},
+	{
+		StartLine: 190, EndLine: 191, StartByte: 0, EndByte: 0,
+		CommitID: "9b3fbcf3fd859a4fa7f97e6056138307c57fb949",
+		PreviousCommit: &gitdomain.PreviousCommit{
+			CommitID: "bae93ddeeba0cc0099c322e2e46f60ad368c6e37",
+			Filename: "blame_test.go",
+		},
+		Author: gitdomain.Signature{
+			Name:  "Petri-Johan Last",
+			Email: "petri.last@sourcegraph.com",
+			Date:  time.Unix(1712302218, 0),
+		},
+		Message:  "Move commit",
+		Filename: "another_test.go",
+	},
+	{
+		StartLine: 1, EndLine: 39, StartByte: 0, EndByte: 0,
+		CommitID: "bae93ddeeba0cc0099c322e2e46f60ad368c6e37",
+		Author: gitdomain.Signature{
+			Name:  "Petri-Johan Last",
+			Email: "petri.last@sourcegraph.com",
+			Date:  time.Unix(1712302156, 0),
+		},
+		Message:  "Initial commit",
+		Filename: "blame_test.go",
+	},
+	{
+		StartLine: 40, EndLine: 111, StartByte: 0, EndByte: 0,
+		CommitID: "bae93ddeeba0cc0099c322e2e46f60ad368c6e37",
+		Author: gitdomain.Signature{
+			Name:  "Petri-Johan Last",
+			Email: "petri.last@sourcegraph.com",
+			Date:  time.Unix(1712302156, 0),
+		},
+		Message:  "Initial commit",
+		Filename: "blame_test.go",
+	},
+	{
+		StartLine: 112, EndLine: 178, StartByte: 0, EndByte: 0,
+		CommitID: "bae93ddeeba0cc0099c322e2e46f60ad368c6e37",
+		Author: gitdomain.Signature{
+			Name:  "Petri-Johan Last",
+			Email: "petri.last@sourcegraph.com",
+			Date:  time.Unix(1712302156, 0),
+		},
+		Message:  "Initial commit",
+		Filename: "blame_test.go",
+	},
+	{
+		StartLine: 180, EndLine: 190, StartByte: 0, EndByte: 0,
+		CommitID: "bae93ddeeba0cc0099c322e2e46f60ad368c6e37",
+		Author: gitdomain.Signature{
+			Name:  "Petri-Johan Last",
+			Email: "petri.last@sourcegraph.com",
+			Date:  time.Unix(1712302156, 0),
+		},
+		Message:  "Initial commit",
+		Filename: "blame_test.go",
+	},
+	{
+		StartLine: 191, EndLine: 494, StartByte: 0, EndByte: 0,
+		CommitID: "bae93ddeeba0cc0099c322e2e46f60ad368c6e37",
+		Author: gitdomain.Signature{
+			Name:  "Petri-Johan Last",
+			Email: "petri.last@sourcegraph.com",
+			Date:  time.Unix(1712302156, 0),
+		},
+		Message:  "Initial commit",
+		Filename: "blame_test.go",
+	},
+}
+
+func TestBlameHunkReader_moved_file(t *testing.T) {
+	t.Run("OK matching hunks", func(t *testing.T) {
+		rc := io.NopCloser(strings.NewReader(testGitBlameMovedFile))
+		reader := newBlameHunkReader(rc)
+		defer reader.Close()
+
+		hunks := []*gitdomain.Hunk{}
+		for {
+			hunk, err := reader.Read()
+			if errors.Is(err, io.EOF) {
+				break
+			} else if err != nil {
+				t.Fatalf("blameHunkReader.Read failed: %s", err)
+			}
+			hunks = append(hunks, hunk)
+		}
+
+		if d := cmp.Diff(testGitBlameMovedFileHunks, hunks); d != "" {
+			t.Fatalf("unexpected hunks (-want, +got):\n%s", d)
+		}
+	})
+}
+
 func BenchmarkBlameBytes(b *testing.B) {
 	for range b.N {
 		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental2))

@@ -62,6 +62,17 @@ func newBlameHunkReader(rc io.ReadCloser) git.BlameHunkReader {
 	}
 }
 
+// copyHunk creates a copy of the hunk, including any fields that are
+// references.
+func copyHunk(h *gitdomain.Hunk) *gitdomain.Hunk {
+	dup := *h
+	if h.PreviousCommit != nil {
+		previousCommit := *h.PreviousCommit
+		dup.PreviousCommit = &previousCommit
+	}
+	return &dup
+}
+
 // Read returns the next blame hunk.
 func (br *blameHunkReader) Read() (*gitdomain.Hunk, error) {
 	// Blame hunks follow a structured output, starting with the
@@ -90,8 +101,7 @@ func (br *blameHunkReader) Read() (*gitdomain.Hunk, error) {
 			// If we've finished reading the body we can return the hunk.
 			if done {
 				// Copy the hunk before returning
-				h := *br.cur
-				return &h, nil
+				return copyHunk(br.cur), nil
 			}
 		}
 	}
