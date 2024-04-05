@@ -324,7 +324,7 @@ func main() {
 						Name:        "from-registry",
 						DefaultText: "sourcegraph/",
 						Usage:       "Registry host and path to pull versions we're upgrading from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
-						Value:       "",
+						Value:       "sourcegraph",
 					},
 					&cli.IntFlag{
 						Name:    "max-routines",
@@ -430,7 +430,7 @@ func main() {
 						Name:        "from-registry",
 						DefaultText: "sourcegraph/",
 						Usage:       "Registry host and path to pull versions we're upgrading from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
-						Value:       "",
+						Value:       "sourcegraph/",
 					},
 					&cli.IntFlag{
 						Name:    "max-routines",
