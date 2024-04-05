@@ -56,12 +56,13 @@ func Start[
 
 	ctx := context.Background()
 
-	// logger should only be used within Start
-	logger := log.Scoped("msp.start")
+	// startLogger should only be used within Start - longer-lived processes should
+	// create a separate top-level startLogger for their usage.
+	startLogger := log.Scoped("msp.start")
 
 	env, err := contract.ParseEnv(os.Environ())
 	if err != nil {
-		logger.Fatal("failed to load environment", log.Error(err))
+		startLogger.Fatal("failed to load environment", log.Error(err))
 	}
 
 	// Initialize LoaderT implementation as non-zero *ConfigT
@@ -95,13 +96,13 @@ func Start[
 
 	// Check for environment errors
 	if err := env.Validate(); err != nil {
-		logger.Fatal("environment configuration error encountered", log.Error(err))
+		startLogger.Fatal("environment configuration error encountered", log.Error(err))
 	}
 
 	// Initialize things dependent on configuration being loaded
-	otelCleanup, err := opentelemetry.Init(ctx, logger.Scoped("otel"), ctr.Diagnostics.OpenTelemetry, res)
+	otelCleanup, err := opentelemetry.Init(ctx, log.Scoped("msp.otel"), ctr.Diagnostics.OpenTelemetry, res)
 	if err != nil {
-		logger.Fatal("failed to initialize OpenTelemetry", log.Error(err))
+		startLogger.Fatal("failed to initialize OpenTelemetry", log.Error(err))
 	}
 	defer otelCleanup()
 
@@ -114,9 +115,9 @@ func Start[
 			AllocForceGC:   true,
 		}); err != nil {
 			// For now, keep this optional and don't prevent startup
-			logger.Error("failed to initialize profiler", log.Error(err))
+			startLogger.Error("failed to initialize profiler", log.Error(err))
 		} else {
-			logger.Debug("Cloud Profiler enabled")
+			startLogger.Debug("Cloud Profiler enabled")
 		}
 	}
 
@@ -128,14 +129,14 @@ func Start[
 		*config,
 	)
 	if err != nil {
-		logger.Fatal("service startup failed", log.Error(err))
+		startLogger.Fatal("service startup failed", log.Error(err))
 	}
 
 	// Start service routine, and block until it stops.
-	logger.Info("starting service",
+	startLogger.Info("starting service",
 		log.Int("port", ctr.Port),
 		log.Bool("msp", ctr.MSP),
 		log.Bool("sentry", sentryEnabled))
 	background.Monitor(ctx, routine)
-	logger.Info("service stopped")
+	startLogger.Info("service stopped")
 }
