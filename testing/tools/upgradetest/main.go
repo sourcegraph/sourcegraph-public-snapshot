@@ -159,6 +159,9 @@ func main() {
 								result := standardUpgradeTest(ctx, version.Version, targetVersion, latestStableVersion)
 								result.Runtime = time.Since(start)
 								results.AddStdTest(result)
+								if len(result.Errors) > 0 {
+									return result.Errors[0]
+								}
 								return nil
 							})
 						case "mvu":
@@ -168,6 +171,9 @@ func main() {
 								result := multiversionUpgradeTest(ctx, version.Version, targetVersion, latestStableVersion)
 								result.Runtime = time.Since(start)
 								results.AddMVUTest(result)
+								if len(result.Errors) > 0 {
+									return result.Errors[0]
+								}
 								return nil
 							})
 						case "auto":
@@ -177,6 +183,9 @@ func main() {
 								result := autoUpgradeTest(ctx, version.Version, targetVersion, latestStableVersion)
 								result.Runtime = time.Since(start)
 								results.AddAutoTest(result)
+								if len(result.Errors) > 0 {
+									return result.Errors[0]
+								}
 								return nil
 							})
 						}
@@ -283,6 +292,9 @@ func main() {
 							result := standardUpgradeTest(ctx, version, targetVersion, latestStableVersion)
 							result.Runtime = time.Since(start)
 							results.AddStdTest(result)
+							if len(result.Errors) > 0 {
+								return result.Errors[0]
+							}
 							return nil
 						})
 					}
@@ -389,6 +401,9 @@ func main() {
 							result := multiversionUpgradeTest(ctx, version, targetVersion, latestStableVersion)
 							result.Runtime = time.Since(start)
 							results.AddMVUTest(result)
+							if len(result.Errors) > 0 {
+								return result.Errors[0]
+							}
 							return nil
 						})
 					}
@@ -495,6 +510,10 @@ func main() {
 							result := autoUpgradeTest(ctx, version, targetVersion, latestStableVersion)
 							result.Runtime = time.Since(start)
 							results.AddAutoTest(result)
+							if len(result.Errors) > 0 {
+								return result.Errors[0]
+							}
+
 							return nil
 						})
 					}
@@ -514,6 +533,7 @@ func main() {
 
 	if err := app.Run(os.Args); err != nil {
 		fmt.Println("🚨 Error: failed to run tests: ", err)
+		os.Exit(1)
 	}
 
 }
