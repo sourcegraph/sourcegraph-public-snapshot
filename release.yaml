@@ -113,8 +113,15 @@ test:
         rosetta bazelrc > "$aspectRC"
         bazelrc=(--bazelrc="$aspectRC" --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
 
+        # The upgradetest are inferring the stamp-version flag based on the version, so we need to unset it here.
+        _VERSION=$VERSION
+        unset VERSION
+
         # Hardcoding version, as for now I just want to make sure this works in CI.
         bazel ${bazelrc[*]} run //testing/tools/upgradetest:sh_upgradetest -- auto --post-release-version=5.3.9071 --avs 5.3.1,5.3.2, 5.3.0 --target-registry us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal/
+
+        # Restoring it to avoid creating a footgun if we add more test steps later on.
+        VERSION=$_VERSION
 
 promoteToPublic:
   create:
