@@ -19,6 +19,9 @@ if [[ "$IS_MAIN" != "true" ]]; then
   BRANCH_PATH="branches/$BRANCH_PATH"
 fi
 
+echo "~~~ :aspect: :stethoscope: Agent Health check"
+/etc/aspect/workflows/bin/agent_health_check
+
 aspectRC="/tmp/aspect-generated.bazelrc"
 rosetta bazelrc >"$aspectRC"
 export BAZELRC="$aspectRC"

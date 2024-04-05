@@ -9,6 +9,9 @@ BRANCH="${BUILDKITE_BRANCH:-'default-branch'}"
 MAIN_BRANCH="main"
 IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
 
+echo "~~~ :aspect: :stethoscope: Agent Health check"
+/etc/aspect/workflows/bin/agent_health_check
+
 aspectRC="/tmp/aspect-generated.bazelrc"
 rosetta bazelrc >"$aspectRC"
 export BAZELRC="$aspectRC"
