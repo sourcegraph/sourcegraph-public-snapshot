@@ -7246,12 +7246,31 @@ type DefaultSettings implements SettingsSubject {
         )
 }
 
+"""
+Rules defining whether the matching repositories may be included (allowed) or should be excluded (ignored)
+from Cody context in requests to third-party LLMs.
+"""
 type CodyContextFilterItem {
+    """
+    Regular expression which matches a set of repository names.
+    """
     repoNamePattern: String!
 }
 
+"""
+Rules defining the repositories that will never be shared by Cody with third-party LLM providers.
+"""
 type CodyContextFilters {
+    """
+    List of rules specifying repositories that Cody may include as context in requests to third-party LLMs.
+    If defined, only repositories matching these rules will be considered for sharing.
+    If not defined, all repositories may be shared.
+    """
     include: [CodyContextFilterItem]
+    """
+    List of rules specifying repositories that Cody should excluded from context in requests to third-party LLMs.
+    These rules are applied only to repositories matching the include rules.
+    """
     exclude: [CodyContextFilterItem]
 }
 
