@@ -31,6 +31,9 @@ func (s *store) GetConfigurationPolicies(ctx context.Context, opts shared.GetCon
 	if opts.ForIndexing != nil {
 		attrs = append(attrs, attribute.Bool("forIndexing", *opts.ForIndexing))
 	}
+	if opts.ForSyntacticIndexing != nil {
+		attrs = append(attrs, attribute.Bool("forSyntacticIndexing", *opts.ForSyntacticIndexing))
+	}
 	if opts.ForEmbeddings != nil {
 		attrs = append(attrs, attribute.Bool("forEmbeddings", *opts.ForEmbeddings))
 	}
@@ -84,6 +87,13 @@ func (s *store) GetConfigurationPolicies(ctx context.Context, opts shared.GetCon
 			conds = append(conds, sqlf.Sprintf("p.indexing_enabled"))
 		} else {
 			conds = append(conds, sqlf.Sprintf("NOT p.indexing_enabled"))
+		}
+	}
+	if opts.ForSyntacticIndexing != nil {
+		if *opts.ForSyntacticIndexing {
+			conds = append(conds, sqlf.Sprintf("p.syntactic_indexing_enabled"))
+		} else {
+			conds = append(conds, sqlf.Sprintf("NOT p.syntactic_indexing_enabled"))
 		}
 	}
 	if opts.ForEmbeddings != nil {

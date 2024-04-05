@@ -53,6 +53,10 @@ type GetConfigurationPoliciesOptions struct {
 	// be returned (or filtered).
 	ForIndexing *bool
 
+	// ForIndexing indicates that configuration policies with indexing enabled should
+	// be returned (or filtered).
+	ForSyntacticIndexing *bool
+
 	// ForEmbeddings indicates that configuration policies with embeddings enabled
 	// should be returned (or filtered).
 	ForEmbeddings *bool
