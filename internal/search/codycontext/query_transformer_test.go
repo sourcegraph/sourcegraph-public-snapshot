@@ -25,7 +25,8 @@ func TestTransformPattern(t *testing.T) {
 		"a",
 		"timer",
 		"computing",
-		"!?", // punctuation-only token should be removed
+		"own", // key terms should not be removed, even if they are common
+		"!?",  // punctuation-only token should be removed
 	}
 	wantPatterns := []string{
 		"comput",
@@ -34,6 +35,7 @@ func TestTransformPattern(t *testing.T) {
 		"string",
 		"elaps",
 		"timer",
+		"own",
 	}
 
 	gotPatterns := transformPatterns(patterns)
