@@ -175,8 +175,9 @@ The mapping is added to the `_meta` export of the corresponding `+page.ts` or
 ```ts
 // src/routes/path/to/+page.ts
 import type { RouteMeta } from '$lib/routeMeta'
+
 export const _meta: RouteMeta = {
-  serverRouteName: 'server-route-name'
+  serverRouteName: 'server-route-name',
 }
 ```
 
