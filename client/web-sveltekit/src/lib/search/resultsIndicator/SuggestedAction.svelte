@@ -49,6 +49,12 @@
                 </small>
             </div>
         {/if}
+        <!--
+        TODO: @jasonhawkharris - When we implement search jobs,
+        we can change the link so that it points to where a user
+        can actually create a search job. We should also change
+        the text of the link when we do so, "Create a search job"
+        -->
         {#if severity === 'error' && !Object.hasOwn(mostSevere, 'suggested')}
             <div class="separator">{CENTER_DOT}</div>
             <div class="search-job-link">

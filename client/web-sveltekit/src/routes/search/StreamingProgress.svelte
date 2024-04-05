@@ -119,6 +119,11 @@
                 </Button>
             </form>
         {/if}
+        <!--
+        TODO: @jasonhawkharris - When we implement search jobs,
+        we can change the link so that it points to where a user
+        can actually create a search job
+        -->
         {#if severity === 'error' || state === 'loading'}
             <div class="search-job-link">
                 <small>
