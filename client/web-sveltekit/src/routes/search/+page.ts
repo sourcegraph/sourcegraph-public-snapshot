@@ -4,6 +4,7 @@ import { get } from 'svelte/store'
 import { browser } from '$app/environment'
 import { navigating } from '$app/stores'
 import { SearchPatternType } from '$lib/graphql-operations'
+import type { RouteMeta } from '$lib/routeMeta'
 import { parseExtendedSearchURL, type ExtendedParsedSearchURL } from '$lib/search'
 import { USE_CLIENT_CACHE_QUERY_PARAMETER } from '$lib/search/constants'
 import {
@@ -21,6 +22,10 @@ import {
 import type { PageLoad } from './$types'
 
 type SearchStreamCacheEntry = Observable<AggregateStreamingSearchResults>
+
+export const _meta: RouteMeta = {
+    serverRouteName: 'search',
+}
 
 /**
  * CachingStreamManager helps caching and canceling search streams in the browser.

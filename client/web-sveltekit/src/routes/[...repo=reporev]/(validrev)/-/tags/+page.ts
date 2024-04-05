@@ -1,8 +1,13 @@
 import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
+import type { RouteMeta } from '$lib/routeMeta'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
 import { TagsPage_TagsQuery } from './page.gql'
+
+export const _meta: RouteMeta = {
+    serverRouteName: 'repo-tags',
+}
 
 export const load: PageLoad = ({ params }) => {
     const client = getGraphQLClient()

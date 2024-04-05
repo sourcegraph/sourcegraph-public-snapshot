@@ -1,9 +1,14 @@
 import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
 import { resolveRevision } from '$lib/repo/utils'
+import type { RouteMeta } from '$lib/routeMeta'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
 import { BlobDiffQuery, BlobPageQuery, BlobSyntaxHighlightQuery } from './page.gql'
+
+export const _meta: RouteMeta = {
+    serverRouteName: 'blob',
+}
 
 export const load: PageLoad = ({ parent, params, url }) => {
     const revisionToCompare = url.searchParams.get('rev')

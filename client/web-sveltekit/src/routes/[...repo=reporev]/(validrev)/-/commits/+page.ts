@@ -2,10 +2,15 @@ import { from } from 'rxjs'
 
 import { getGraphQLClient, infinityQuery } from '$lib/graphql'
 import { resolveRevision } from '$lib/repo/utils'
+import type { RouteMeta } from '$lib/routeMeta'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
 import { CommitsPage_CommitsQuery } from './page.gql'
+
+export const _meta: RouteMeta = {
+    serverRouteName: 'repo-commits',
+}
 
 const PAGE_SIZE = 20
 

@@ -14,9 +14,6 @@ pnpm install
 pnpm run dev
 ```
 
-You can also build the dotcom version by running `pnpm run dev:dotcom`, but it doesn't really differ
-in functionality yet.
-
 The dev server can be accessed on http://localhost:5173. API requests and
 signin/signout are proxied to an actual Sourcegraph instance,
 https://sourcegraph.com by default (can be overwritten via the
@@ -42,8 +39,21 @@ packages:
 
 ### Tests
 
-There are no tests yet. It would be great to try out Playwright but it looks
-like this depends on getting the production build working first (see below).
+We use vitst for unit tests and playwright for integration tests. Both of these
+are located next to the source files they test.
+Vitest files end with `.test.ts` and Playwright files end with `.spec.ts`.
+
+For example the Playwright test for testing `src/routes/search/+page.svelte`
+is located at `src/routes/search/page.spec.ts`.
+
+Locally you can run the tests with
+
+```sh
+pnpm vitest # Run vitest tests
+pnpm test # Run playwright tests
+```
+
+In CI we run vitest tests. Playwright test support is currently being worked on.
 
 ### Formatting and linting
 
@@ -65,6 +75,11 @@ TypeScript, CSS, etc in Svelte components. This currently produces many errors
 because it also validates imported modules from other packages, and we are not
 explicitly marking type-only imports with `type` in other parts of the code
 base (which is required by this package).
+This noise can be avoided by running the corresponding bazel command instead:
+
+```sh
+bazel test //client/web-sveltekit:svelte-check
+```
 
 ### Data loading with GraphQL
 
@@ -98,6 +113,72 @@ have to make exceptions:
   rendering page. Data for e.g. typeaheads is fetched on demand. Ideally the
   related queries are still composed by the data loader, which passes a
   function for fetching the data to the page.
+
+### Rolling out pages to production
+
+For a page to be properly in production and to ensure proper navigation between
+the client app works as expected, multiple steps have to be taken.
+
+#### 1. Add/wrap server side route
+
+By passing the route to `sk.Register` the server knows that a route is
+supported by the SvelteKit app:
+
+```go
+// cmd/frontend/internal/app/ui/router.go
+
+sk.Register(route, sveltekit.EnableOptIn)
+```
+
+The second argument defines when the SvelteKit app should be served for this
+route. Possible options are:
+
+- `EnableOptIn`: The SvelteKit app is served when the `web-next` feature flag
+  is enabled.
+- `EnabledRollout`: The SvelteKit app is served when the `web-next-rollout`
+  feature flag is enabled. This is currently enabled by default on S2.
+- `EnabledAlways`: The SvelteKit app is served for this route unconditionally.
+
+#### 2. Add route name mapping to React app
+
+When navigating to a different page in the React app it has to decided whether
+to perform a client side navigation or whether to trigger a server refresh to
+load the SvelteKit app (and let the SvelteKit app handle the route).
+
+This is done by adding a mapping for the server side route name to the React
+app. The mapping added to the `routeMap` array in `client/web/src/routes.ts`:
+
+```ts
+// client/web/sveltekit/util.ts
+
+const routeMap = [
+  // ...
+  {
+    route: PageRoutes.ClientRouteName
+    serverRoute: 'server-route-name'
+    pathMatch: /regex-to-match-url-pathname/
+  }
+]
+```
+
+This only needs to be done if the page exists in the React app.
+
+#### 3. Add route name mapping to SvelteKit app
+
+When navigating to a different page in the SvelteKit app it has to decided
+whether to perform a client side navigation or whether to trigger a server
+refresh to load the React app (and let the React app handle the route).
+
+The mapping is added to the `_meta` export of the corresponding `+page.ts` or
+`+layout.ts` file:
+
+```ts
+// src/routes/path/to/+page.ts
+import type { RouteMeta } from '$lib/routeMeta'
+export const _meta: RouteMeta = {
+  serverRouteName: 'server-route-name'
+}
+```
 
 ## Production build
 

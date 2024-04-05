@@ -1,7 +1,7 @@
 import { join } from 'path'
 
 import { sveltekit } from '@sveltejs/kit/vite'
-import { defineConfig, mergeConfig, type UserConfig } from 'vite'
+import { defineConfig, mergeConfig, type Plugin, type UserConfig } from 'vite'
 import inspect from 'vite-plugin-inspect'
 
 import graphqlCodegen from './dev/vite-graphql-codegen'
@@ -9,6 +9,28 @@ import graphqlCodegen from './dev/vite-graphql-codegen'
 export default defineConfig(({ mode }) => {
     let config: UserConfig = {
         plugins: [
+            // This plugin generates a `export const _meta = {}` statement for every page and layout loader, if it
+            // doesn't have one already. This is used together with vite's glob-import feature to get extract meta
+            // data about all routes in the app. Without this fallback an error would be thrown that the _meta export
+            // is missing.
+            ((): Plugin => {
+                function isRouteMetaRequest(id: string): boolean {
+                    return /\+(page|layout)\.ts\?/.test(id) && /[?&]meta=true/.test(id)
+                }
+
+                return {
+                    name: 'route-meta',
+                    enforce: 'pre',
+                    async transform(code, id) {
+                        // Very superficial check to see if the _meta export is missing. This is not foolproof but
+                        // should be good enough for our purposes.
+                        if (isRouteMetaRequest(id) && !/^export\s+const\s+_meta(\s|:)/m.test(code)) {
+                            return `export const _meta = {}`
+                        }
+                        return undefined
+                    },
+                }
+            })(),
             sveltekit(),
             // Generates typescript types for gql-tags and .gql files
             graphqlCodegen(),
