@@ -98,7 +98,11 @@ func NewRouteRegistry() *RouteRegistry {
 }
 
 func fromContext(ctx context.Context) *contextValue {
-	return ctx.Value(contextKey{}).(*contextValue)
+	v := ctx.Value(contextKey{})
+	if v == nil {
+		return nil
+	}
+	return v.(*contextValue)
 }
 
 func getRouteMap(ctx context.Context) map[string]struct{} {
