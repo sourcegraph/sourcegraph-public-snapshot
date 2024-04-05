@@ -49,6 +49,7 @@ func TestNonAmbiguousExtensions(t *testing.T) {
 		".json":  "JSON",
 		".yml":   "YAML",
 		".xml":   "XML",
+		".pkl":   "Pkl",
 	}
 
 	for ext, language := range nonAmbiguousExtensionsCheck {
