@@ -29,7 +29,20 @@ func configureMetrics(_ context.Context, logger log.Logger, config Config, res *
 		if err != nil {
 			return nil, errors.Wrap(err, "gcpmetricexporter.New")
 		}
-		reader = sdkmetric.NewPeriodicReader(exporter,
+
+		// Initialize instrumentation
+		collectedMetrics, err := meter.Int64Counter("otel.metric.exported.count",
+			metric.WithDescription("Total number of metrics collected, and whether the collection succeeded or failed."))
+		if err != nil {
+			return nil, errors.Wrap(err, "initialize collectedMetrics metric")
+		}
+
+		reader = sdkmetric.NewPeriodicReader(
+			// Wrap exporter in instrumentation
+			&instrumentedMetricExporter{
+				Exporter:         exporter,
+				collectedMetrics: collectedMetrics,
+			},
 			sdkmetric.WithInterval(30*time.Second))
 	} else {
 		logger.Info("initializing Prometheus exporter")
@@ -41,27 +54,17 @@ func configureMetrics(_ context.Context, logger log.Logger, config Config, res *
 		if err != nil {
 			return nil, errors.Wrap(err, "exporters.NewPrometheusExporter")
 		}
+		// Note: no easy way to instrument here, as we just get a Reader, which
+		// isn't the right place to instrument exports. Since this is mostly
+		// local dev, just ignore for now
 	}
 
-	// Initialize instrumentation
-	collectedMetrics, err := meter.Int64Counter("otel.metric.collected.count",
-		metric.WithDescription("Total number of metrics collected, and whether the collection succeeded or failed."))
-	if err != nil {
-		return nil, errors.Wrap(err, "initialize collectedMetrics metric")
-	}
-
-	// Create and set global tracer, wrapping the metric reader in instrumentation
+	// Create and set global tracer
 	provider := sdkmetric.NewMeterProvider(
-		sdkmetric.WithReader(&instrumentedMetricReader{
-			Reader: reader,
-			// NOTE: This does NOT work with the Prometheus exporter, because it
-			// wraps an internal reader, and the top-level Collect does not get
-			// called unless an OpenTelemetry metric exporter is used. If we want
-			// to add an equivalent for Prometheus exporter, we probably need
-			// to wrap the prometheus Gatherer implementation instead, but since
-			// it's mostly intended for local dev, this is fine to not do for now.
-			collectedMetrics: collectedMetrics,
-		}),
+		// Note: adding reader-level instrumentation here doesn't seem to be
+		// the right way to collect metrics, it must be added to sdkmetric.Exporter
+		// implementations instead.
+		sdkmetric.WithReader(reader),
 		sdkmetric.WithResource(res))
 	otel.SetMeterProvider(provider)
 
@@ -81,19 +84,18 @@ func configureMetrics(_ context.Context, logger log.Logger, config Config, res *
 	}, nil
 }
 
-// instrumentedMetricReader wraps sdkmetric.Reader in instrumentation because the
-// SDK does not provide metrics out of the box. This effectively measures success
-// and volume of metrics export.
-type instrumentedMetricReader struct {
-	sdkmetric.Reader
+// instrumentedMetricExporter wraps sdkmetric.Exporter in instrumentation because
+// the SDK does not provide metrics out of the box.
+type instrumentedMetricExporter struct {
+	sdkmetric.Exporter
 
 	collectedMetrics metric.Int64Counter
 }
 
-var _ sdkmetric.Reader = &instrumentedMetricReader{}
+var _ sdkmetric.Exporter = &instrumentedMetricExporter{}
 
-func (r *instrumentedMetricReader) Collect(ctx context.Context, data *metricdata.ResourceMetrics) error {
-	err := r.Reader.Collect(ctx, data) // call underlying first
+func (r *instrumentedMetricExporter) Export(ctx context.Context, data *metricdata.ResourceMetrics) error {
+	err := r.Exporter.Export(ctx, data) // call underlying first
 
 	if data != nil { // guard out of abundance of caution
 		var count int
