@@ -22,41 +22,41 @@ See the [Add and Update Wolfi Base Images](https://sourcegraph.com/docs/dev/how-
 
 ## High-level Architecture
 
-       file                                                                                                
-      ┌──────────┐                                                                                         
-      │          │                                                                                         
-      │          │                                                                                         
-      │   YAML   ├────────┐                                                                                
-      │          │        │          sg wolfi image <image>                                                
-      │          │        │                                            bazel target                        
-      └─────┬────┘        │                   OR                      ┌─────────────────────┐              
-            │             │                                           │                     │              
-            │             │     bazel build //<image>/:base_image     │                     │              
-       sg wolfi lock      ├──────────────────────────────────────────►│     :base_image     │              
-       (manual step)      │                                           │                     │              
-            │             │                                           │                     │              
-       file │             │                                           └──────────┬──────────┘              
-      ┌─────▼─────┐       │                                                      │                         
-      │           │       │                                                      │                         
-      │           │       │                                                      │                         
-      │ Lockfile  ├───────┘                                                      │                         
-      │           │            ┌─────────────────────────────────────────────────┘                         
-      │           │            │                                                                           
-      └───────────┘            │                                                                           
-                               │                                                                           
-                               │      bazel rule                                                           
-                               │     ┌──────────────────────────────────────┐                              
-                               │     │                                      │                              
-                               │     │  oci_image(                          │                              
-                               │     │                                      │                              
-                               │     │    name = "image"                    │                              
-                               │     │                                      │                              
-                               └─────┼──► base = ":base_image"              │                              
-        Bazel-genenarated            │                                      │                              
-        binaries and      ───────────┼──► tars = ":tar_sourcegraph_binary"  │                              
-        other resources              │                                      │                              
-                                     │    [...]                             │                              
-                                     │                                      │                              
-                                     │  )                                   │                              
-                                     │                                      │                              
-                                     └──────────────────────────────────────┘    
+       file
+      ┌──────────┐
+      │          │
+      │          │
+      │   YAML   ├────────┐
+      │          │        │          sg wolfi image <image>
+      │          │        │                                            bazel target
+      └─────┬────┘        │                   OR                      ┌─────────────────────┐
+            │             │                                           │                     │
+            │             │     bazel build //<image>/:base_image     │                     │
+       sg wolfi lock      ├──────────────────────────────────────────►│     :base_image     │
+       (manual step)      │                                           │                     │
+            │             │                                           │                     │
+       file │             │                                           └──────────┬──────────┘
+      ┌─────▼─────┐       │                                                      │
+      │           │       │                                                      │
+      │           │       │                                                      │
+      │ Lockfile  ├───────┘                                                      │
+      │           │            ┌─────────────────────────────────────────────────┘
+      │           │            │
+      └───────────┘            │
+                               │
+                               │      bazel rule
+                               │     ┌──────────────────────────────────────┐
+                               │     │                                      │
+                               │     │  oci_image(                          │
+                               │     │                                      │
+                               │     │    name = "image"                    │
+                               │     │                                      │
+                               └─────┼──► base = ":base_image"              │
+        Bazel-genenarated            │                                      │
+        binaries and      ───────────┼──► tars = ":tar_sourcegraph_binary"  │
+        other resources              │                                      │
+                                     │    [...]                             │
+                                     │                                      │
+                                     │  )                                   │
+                                     │                                      │
+                                     └──────────────────────────────────────┘
