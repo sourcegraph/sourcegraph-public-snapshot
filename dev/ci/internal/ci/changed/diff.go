@@ -192,7 +192,7 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 		}
 
 		// Affects Wolfi base images
-		if strings.HasPrefix(p, "wolfi-images/") && (strings.HasSuffix(p, ".yaml") || strings.HasSuffix(p, ".lock.json")) {
+		if strings.HasPrefix(p, "wolfi-images/") && strings.HasSuffix(p, ".yaml") {
 			diff |= WolfiBaseImages
 			changedFiles[WolfiBaseImages] = append(changedFiles[WolfiBaseImages], p)
 		}

@@ -2,7 +2,6 @@ load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tar
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("//cmd/server:macro.bzl", "container_dependencies", "dependencies_tars")
-load("//wolfi-images:defs.bzl", "wolfi_base")
 
 DEPS = [
     "//cmd/executor",
@@ -18,7 +17,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = ":base_image",
+    base = "@wolfi_executor_kubernetes_base",
     entrypoint = [
         "/sbin/tini",
         "--",
@@ -51,5 +50,3 @@ oci_push(
     image = ":image",
     repository = image_repository("executor-kubernetes"),
 )
-
-wolfi_base()

@@ -2,7 +2,6 @@ load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tar
 load("//cmd/server:macro.bzl", "container_dependencies", "dependencies_tars")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
-load("//wolfi-images:defs.bzl", "wolfi_base")
 
 DEPS = [
     "@com_github_sourcegraph_zoekt//cmd/zoekt-archive-index",
@@ -22,7 +21,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = ":base_image",
+    base = "@wolfi_search_indexer_base",
     cmd = [
         "/sbin/tini",
         "--",
@@ -62,5 +61,3 @@ oci_push(
     image = ":image",
     repository = image_repository("search-indexer"),
 )
-
-wolfi_base()
