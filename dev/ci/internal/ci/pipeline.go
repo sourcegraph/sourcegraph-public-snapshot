@@ -144,16 +144,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		securityOps.Append(semgrepScan())
 		ops.Merge(securityOps)
 
-		// Wolfi package and base images
-		packageOps, baseImageOps, apkoOps := addWolfiOps(c)
+		// Wolfi package and apko lock check
+		packageOps, _, apkoOps := addWolfiOps(c)
 		if apkoOps != nil {
 			ops.Merge(apkoOps)
 		}
 		if packageOps != nil {
 			ops.Merge(packageOps)
-		}
-		if baseImageOps != nil {
-			ops.Merge(baseImageOps)
 		}
 
 		if c.Diff.Has(changed.ClientBrowserExtensions) {
