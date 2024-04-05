@@ -1,4 +1,4 @@
-package backport
+package execute
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"os/exec"
 )
 
-func gitExec(ctx context.Context, args ...string) error {
+func Git(ctx context.Context, args ...string) error {
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -15,12 +15,12 @@ func gitExec(ctx context.Context, args ...string) error {
 	return cmd.Run()
 }
 
-func ghCmd(ctx context.Context, args ...string) *exec.Cmd {
+func GHCmd(ctx context.Context, args ...string) *exec.Cmd {
 	return exec.CommandContext(ctx, "gh", args...)
 }
 
-func ghExec(ctx context.Context, args ...string) ([]byte, error) {
-	cmd := ghCmd(ctx, args...)
+func GH(ctx context.Context, args ...string) ([]byte, error) {
+	cmd := GHCmd(ctx, args...)
 
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout

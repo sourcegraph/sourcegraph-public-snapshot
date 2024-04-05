@@ -197,6 +197,30 @@ var Command = &cli.Command{
 				},
 			},
 		},
+		{
+			Name:      "cut",
+			Usage:     "Cut a release",
+			Category:  category.Util,
+			UsageText: "sg release cut",
+			Action:    cutReleaseBranch,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:     "version",
+					Required: true,
+					Usage:    "The version to cut",
+					Action: func(ctx *cli.Context, s string) error {
+						if _, err := semver.NewVersion(s); err != nil {
+							return errors.Newf("invalid version %q, must be semver", s)
+						}
+						return nil
+					},
+				},
+				&cli.StringFlag{
+					Name:  "branch",
+					Usage: "The branch to cut the release from",
+				},
+			},
+		},
 	},
 }
 
