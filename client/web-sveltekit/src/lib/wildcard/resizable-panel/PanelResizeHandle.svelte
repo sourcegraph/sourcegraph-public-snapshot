@@ -78,24 +78,47 @@
 />
 
 <style lang="scss">
+    :root {
+        --resize-handle-bg: var(--border-color);
+        --resize-handle-hover-bg: var(--border-color-2);
+        --resize-handle-drag-bg: var(--oc-blue-3);
+        --resize-handle-width: 1px;
+        --resize-handle-active-width: 3px;
+    }
+
     .separator {
         // Since drag handler is always rendered within flex
         // PanelGroup component is safe to assume that flex rules
         // can applied here.
-        flex: 0 0 3px;
+        flex: 0 0 var(--resize-handle-width);
         display: flex;
         touch-action: none;
         user-select: none;
         width: 100%;
         height: 100%;
-        background: transparent;
+        background: var(--resize-handle-bg);
+        position: relative;
 
-        &[data-resize-handle-state='hover'] {
-            background: var(--border-color);
+        &::before {
+            content: '';
+            z-index: 1;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            min-width: var(--resize-handle-active-width);
         }
 
-        &[data-resize-handle-state='drag'] {
-            background: var(--oc-blue-3);
+        &[data-resize-handle-state='hover']::before {
+            display: block;
+            background: var(--resize-handle-hover-bg);
+        }
+
+        &[data-resize-handle-state='drag']::before {
+            display: block;
+            background: var(--resize-handle-drag-bg);
         }
     }
 </style>
