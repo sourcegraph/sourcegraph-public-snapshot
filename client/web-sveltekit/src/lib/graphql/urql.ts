@@ -122,7 +122,8 @@ interface OperationResultState<TData = any, TVariables extends AnyVariables = An
     restoring: boolean
 }
 
-interface InfinityQueryStore<TData = any, TVariables extends AnyVariables = AnyVariables>
+// This needs to be exported so that TS type inference can work in SvelteKit generated files.
+export interface InfinityQueryStore<TData = any, TVariables extends AnyVariables = AnyVariables>
     extends Readable<OperationResultState<TData, TVariables>> {
     /**
      * Reruns the query with the next set of variables returned by {@link InfinityQueryArgs.nextVariables}.

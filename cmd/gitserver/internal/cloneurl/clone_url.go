@@ -268,15 +268,31 @@ func gitlabCloneURL(logger log.Logger, repo *gitlab.Project, cfg *schema.GitLabC
 }
 
 func gerritCloneURL(logger log.Logger, project *gerrit.Project, cfg *schema.GerritConnection) string {
-	u, err := url.Parse(cfg.Url)
+	if cfg.GitURLType == "ssh" {
+		return project.SSHURLToRepo // SSH authentication must be provided out-of-band
+	}
+
+	// TODO: Backcompat. Remove this branch in Sourcegraph 5.5.
+	if project.HTTPURLToRepo == "" {
+		u, err := url.Parse(cfg.Url)
+		if err != nil {
+			logger.Warn("Error adding authentication to Gerrit project remote URL.", log.String("url", cfg.Url), log.Error(err))
+			return cfg.Url
+		}
+		u.User = url.UserPassword(cfg.Username, cfg.Password)
+
+		// Gerrit encodes slashes in IDs, so need to decode them. The 'a' is for cloning with auth.
+		u.Path = path.Join("a", strings.ReplaceAll(project.ID, "%2F", "/"))
+
+		return u.String()
+	}
+
+	u, err := url.Parse(project.HTTPURLToRepo)
 	if err != nil {
 		logger.Warn("Error adding authentication to Gerrit project remote URL.", log.String("url", cfg.Url), log.Error(err))
 		return cfg.Url
 	}
 	u.User = url.UserPassword(cfg.Username, cfg.Password)
-
-	// Gerrit encodes slashes in IDs, so need to decode them. The 'a' is for cloning with auth.
-	u.Path = path.Join("a", strings.ReplaceAll(project.ID, "%2F", "/"))
 
 	return u.String()
 }

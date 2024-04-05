@@ -68,6 +68,9 @@ type Config struct {
 	}
 
 	Sourcegraph SourcegraphConfig
+
+	// SAMSClientConfig for verifying and generating SAMS access tokens.
+	SAMSClientConfig SAMSClientConfig
 }
 
 type OpenTelemetryConfig struct {
@@ -128,6 +131,16 @@ type FlaggingConfig struct {
 	// a response. e.g. the client sends a request desiring a response with 100 max tokens, we will
 	// block it IFF the ResponseTokenBlockingLimit is less than 100.
 	ResponseTokenBlockingLimit int
+}
+
+type SAMSClientConfig struct {
+	URL          string
+	ClientID     string
+	ClientSecret string
+}
+
+func (scc SAMSClientConfig) Valid() bool {
+	return !(scc.URL == "" || scc.ClientID == "" || scc.ClientSecret == "")
 }
 
 func (c *Config) Load() {
@@ -270,6 +283,9 @@ func (c *Config) Load() {
 	c.Sourcegraph.TritonURL = c.Get("CODY_GATEWAY_SOURCEGRAPH_TRITON_URL", "https://embeddings-triton-direct.sgdev.org/v2/models/ensemble_model/infer", "URL of the Triton server.")
 	c.Sourcegraph.UnlimitedEmbeddings = c.GetBool("CODY_GATEWAY_SOURCEGRAPH_UNLIMITED_EMBEDDINGS", "false", "Enable unlimited embeddings.")
 
+	c.SAMSClientConfig.URL = c.GetOptional("SAMS_URL", "SAMS service endpoint")
+	c.SAMSClientConfig.ClientID = c.GetOptional("SAMS_CLIENT_ID", "SAMS OAuth client ID")
+	c.SAMSClientConfig.ClientSecret = c.GetOptional("SAMS_CLIENT_SECRET", "SAMS OAuth client secret")
 }
 
 // loadFlaggingConfig loads the common set of flagging-related environment variables for
