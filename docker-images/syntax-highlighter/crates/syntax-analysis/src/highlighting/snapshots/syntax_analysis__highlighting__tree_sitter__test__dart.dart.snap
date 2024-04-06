@@ -1,0 +1,365 @@
+---
+source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
+---
+  // Libraries and Imports
+//^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  import 'dart:math';
+//^^^^^^ IdentifierType
+//        ^^^^ Identifier
+//            ^ IdentifierOperator
+//             ^^^^ Identifier
+//                  ^ PunctuationDelimiter
+  
+  // Classes and Objects
+//^^^^^^^^^^^^^^^^^^^^^^ Comment
+  class Person {
+//^^^^^ Keyword
+//      ^^^^^^ IdentifierType
+    String name;
+//  ^^^^^^ IdentifierType
+//         ^^^^ IdentifierAttribute
+//             ^ PunctuationDelimiter
+    int age;
+//  ^^^ IdentifierBuiltinType
+//      ^^^ IdentifierAttribute
+//         ^ PunctuationDelimiter
+  
+    Person(this.name, this.age);
+//  ^^^^^^ IdentifierType
+//         ^^^^ Keyword
+//             ^ PunctuationDelimiter
+//              ^^^^ IdentifierParameter
+//                  ^ PunctuationDelimiter
+//                    ^^^^ Keyword
+//                        ^ PunctuationDelimiter
+//                         ^^^ IdentifierParameter
+//                             ^ PunctuationDelimiter
+  
+    void sayHello() {
+//  ^^^^ IdentifierBuiltin
+//       ^^^^^^^^ IdentifierFunction
+      print("Hello, my name is $name and I'm $age years old.");
+//    ^^^^^ IdentifierFunction
+//          ^ StringLiteral
+//           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                          ^ StringLiteral
+//                                                            ^ PunctuationDelimiter
+    }
+  }
+  
+  // Enums
+//^^^^^^^^ Comment
+  enum Status { active, inactive, suspended }
+//^^^^ Keyword
+//     ^^^^^^ IdentifierType
+//              ^^^^^^ IdentifierConstant
+//                    ^ PunctuationDelimiter
+//                      ^^^^^^^^ IdentifierConstant
+//                              ^ PunctuationDelimiter
+//                                ^^^^^^^^^ IdentifierConstant
+  
+  void main() {
+    // Variables and Data Types
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+    int age = 30;
+//  ^^^ IdentifierConstant
+//          ^ IdentifierOperator
+//            ^^ NumericLiteral
+//              ^ PunctuationDelimiter
+    double pi = 3.14;
+//  ^^^^^^ IdentifierBuiltinType
+//         ^^ Identifier
+//            ^ IdentifierOperator
+//              ^^^^ NumericLiteral
+//                  ^ PunctuationDelimiter
+    String name = "John Doe";
+//         ^^^^ Identifier
+//              ^ IdentifierOperator
+//                ^ StringLiteral
+//                 ^^^^^^^^ StringLiteral
+//                         ^ StringLiteral
+//                          ^ PunctuationDelimiter
+    bool isStudent = true;
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^^^^^^ Identifier
+//                 ^ IdentifierOperator
+//                   ^^^^ IdentifierBuiltin
+//                       ^ PunctuationDelimiter
+  
+    // Conditional Statements
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+    if (age > 18) {
+//  ^^ Keyword
+//      ^^^ Identifier
+//          ^ IdentifierOperator
+//            ^^ NumericLiteral
+      print("You are an adult");
+//    ^^^^^ IdentifierFunction
+//          ^ StringLiteral
+//           ^^^^^^^^^^^^^^^^ StringLiteral
+//                           ^ StringLiteral
+//                             ^ PunctuationDelimiter
+    } else {
+      print("You are a minor");
+//    ^^^^^ IdentifierFunction
+//          ^ StringLiteral
+//           ^^^^^^^^^^^^^^^ StringLiteral
+//                          ^ StringLiteral
+//                            ^ PunctuationDelimiter
+    }
+  
+    // Loops
+//  ^^^^^^^^ Comment
+    for (int i = 0; i < 5; i++) {
+//  ^^^ IdentifierFunction
+//       ^^^ IdentifierBuiltinType
+//           ^ Identifier
+//             ^ IdentifierOperator
+//               ^ NumericLiteral
+//                ^ PunctuationDelimiter
+//                    ^ IdentifierOperator
+//                      ^ NumericLiteral
+//                       ^ PunctuationDelimiter
+//                          ^^ IdentifierOperator
+      print("Count: $i");
+//    ^^^^^ IdentifierFunction
+//          ^ StringLiteral
+//           ^^^^^^^^^ StringLiteral
+//                    ^ StringLiteral
+//                      ^ PunctuationDelimiter
+    }
+  
+    List<String> fruits = ['apple', 'banana', 'cherry'];
+//  ^^^^ Identifier
+//      ^ IdentifierOperator
+//       ^^^^^^ Identifier
+//             ^ IdentifierOperator
+//               ^^^^^^ Identifier
+//                      ^ IdentifierOperator
+//                         ^^^^^^^ StringLiteral
+//                                ^ PunctuationDelimiter
+//                                  ^^^^^^^^ StringLiteral
+//                                          ^ PunctuationDelimiter
+//                                            ^^^^^^^^ StringLiteral
+//                                                     ^ PunctuationDelimiter
+    for (String fruit in fruits) {
+//  ^^^ Keyword
+//       ^^^^^^ Identifier
+//              ^^^^^ Identifier
+//                    ^^ Keyword
+      print("Fruit: $fruit");
+//    ^^^^^ IdentifierFunction
+//          ^ StringLiteral
+//           ^^^^^^^^^^^^^ StringLiteral
+//                        ^ StringLiteral
+//                          ^ PunctuationDelimiter
+    }
+  
+    // Functions
+//  ^^^^^^^^^^^^ Comment
+    int add(int a, int b) {
+//      ^^^ IdentifierFunction
+//          ^^^ IdentifierBuiltinType
+//              ^ Identifier
+//               ^ PunctuationDelimiter
+//                 ^^^ IdentifierBuiltinType
+//                     ^ Identifier
+      return a + b;
+//    ^^^^^^ Identifier
+//             ^ IdentifierOperator
+//               ^ Identifier
+//                ^ PunctuationDelimiter
+    }
+  
+    print("Sum: ${add(5, 3)}");
+//  ^^^^^ IdentifierFunction
+//        ^ StringLiteral
+//         ^^^^^^^^^^^^^^^^^ StringLiteral
+//                          ^ StringLiteral
+//                            ^ PunctuationDelimiter
+  
+    final person = Person("Alice", 25);
+//        ^^^^^^ Identifier
+//               ^ IdentifierOperator
+//                 ^^^^^^ IdentifierFunction
+//                        ^ StringLiteral
+//                         ^^^^^ StringLiteral
+//                              ^ StringLiteral
+//                               ^ PunctuationDelimiter
+//                                 ^^ NumericLiteral
+//                                    ^ PunctuationDelimiter
+    person.sayHello();
+//  ^^^^^^ Identifier
+//        ^ PunctuationDelimiter
+//         ^^^^^^^^ IdentifierFunction
+//                   ^ PunctuationDelimiter
+  
+    // Lists and Maps
+//  ^^^^^^^^^^^^^^^^^ Comment
+    var numbers = <int>[1, 2, 3, 4, 5];
+//  ^^^ Keyword
+//      ^^^^^^^ Identifier
+//              ^ IdentifierOperator
+//                ^ IdentifierOperator
+//                 ^^^ IdentifierBuiltinType
+//                    ^ IdentifierOperator
+//                      ^ NumericLiteral
+//                       ^ PunctuationDelimiter
+//                         ^ NumericLiteral
+//                          ^ PunctuationDelimiter
+//                            ^ NumericLiteral
+//                             ^ PunctuationDelimiter
+//                               ^ NumericLiteral
+//                                ^ PunctuationDelimiter
+//                                  ^ NumericLiteral
+//                                    ^ PunctuationDelimiter
+    numbers.add(6);
+//  ^^^^^^^ Identifier
+//         ^ PunctuationDelimiter
+//          ^^^ IdentifierFunction
+//              ^ NumericLiteral
+//                ^ PunctuationDelimiter
+  
+    Map<String, String> capitals = {'USA': 'Washington, D.C.', 'France': 'Paris'};
+//  ^^^ IdentifierType
+//     ^ IdentifierOperator
+//      ^^^^^^ IdentifierType
+//            ^ PunctuationDelimiter
+//              ^^^^^^ IdentifierType
+//                    ^ IdentifierOperator
+//                      ^^^^^^^^ Identifier
+//                               ^ IdentifierOperator
+//                                  ^^^^^ StringLiteral
+//                                       ^ IdentifierOperator
+//                                          ^^^^^^^^^^ Identifier
+//                                                    ^ PunctuationDelimiter
+//                                                      ^ Identifier
+//                                                       ^ PunctuationDelimiter
+//                                                        ^ IdentifierAttribute
+//                                                         ^ PunctuationDelimiter
+//                                                           ^ PunctuationDelimiter
+//                                                             ^^^^^^^^ StringLiteral
+//                                                                     ^ IdentifierOperator
+//                                                                               ^ PunctuationDelimiter
+    capitals['Germany'] = 'Berlin';
+//  ^^^^^^^^ Identifier
+//           ^^^^^^^^^ StringLiteral
+//                      ^ IdentifierOperator
+//                        ^^^^^^^^ StringLiteral
+//                                ^ PunctuationDelimiter
+  
+    // Exception Handling
+//  ^^^^^^^^^^^^^^^^^^^^^ Comment
+    try {
+//  ^^^ Keyword
+      int result = 12 ~/ 0;
+//    ^^^ IdentifierBuiltinType
+//        ^^^^^^ Identifier
+//               ^ IdentifierOperator
+//                 ^^ NumericLiteral
+//                    ^ IdentifierOperator
+//                     ^ IdentifierOperator
+//                       ^ NumericLiteral
+//                        ^ PunctuationDelimiter
+      print("Result: $result");
+//    ^^^^^ IdentifierFunction
+//          ^ StringLiteral
+//           ^^^^^^^^^^^^^^^ StringLiteral
+//                          ^ StringLiteral
+//                            ^ PunctuationDelimiter
+    } catch (e) {
+//    ^^^^^ IdentifierFunction
+//           ^ Identifier
+      print("Error: $e");
+//    ^^^^^ IdentifierFunction
+//          ^ StringLiteral
+//           ^^^^^^^^^ StringLiteral
+//                    ^ StringLiteral
+//                      ^ PunctuationDelimiter
+    }
+  
+    Status userStatus = Status.active;
+//         ^^^^^^^^^^ Identifier
+//                    ^ IdentifierOperator
+//                      ^^^^^^ Identifier
+//                            ^ PunctuationDelimiter
+//                             ^^^^^^ IdentifierAttribute
+//                                   ^ PunctuationDelimiter
+    print("User Status: $userStatus");
+//  ^^^^^ IdentifierFunction
+//        ^ StringLiteral
+//         ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                 ^ StringLiteral
+//                                   ^ PunctuationDelimiter
+  
+    int random = Random().nextInt(100);
+//  ^^^ IdentifierBuiltinType
+//      ^^^^^^ Identifier
+//             ^ IdentifierOperator
+//               ^^^^^^ IdentifierFunction
+//                       ^ PunctuationDelimiter
+//                        ^^^^^^^ IdentifierFunction
+//                                ^^^ NumericLiteral
+//                                    ^ PunctuationDelimiter
+    print("Random Number: $random");
+//  ^^^^^ IdentifierFunction
+//        ^ StringLiteral
+//         ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                               ^ StringLiteral
+//                                 ^ PunctuationDelimiter
+  
+    fetchData().then((value) => print(value));
+//  ^^^^^^^^^ IdentifierFunction
+//             ^ PunctuationDelimiter
+//              ^^^^ IdentifierFunction
+//                    ^^^^^ IdentifierParameter
+//                          ^ Identifier
+//                           ^^ IdentifierOperator
+//                             ^ Identifier
+//                              ^^^^^ IdentifierFunction
+//                                    ^^^^^ Identifier
+//                                           ^ PunctuationDelimiter
+  
+    printData();
+//  ^^^^^^^^^ IdentifierFunction
+//             ^ PunctuationDelimiter
+  }
+  
+  // Async Programming (Future)
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  Future<String> fetchData() {
+//      ^ IdentifierOperator
+//             ^ IdentifierOperator
+    return Future.delayed(Duration(seconds: 2), () => "Data loaded");
+//  ^^^^^^ Keyword
+//               ^ PunctuationDelimiter
+//                                        ^ IdentifierOperator
+//                                          ^ NumericLiteral
+//                                            ^ PunctuationDelimiter
+//                                                 ^^ IdentifierOperator
+//                                                    ^ StringLiteral
+//                                                          ^^^^^^ IdentifierConstant
+//                                                                ^ StringLiteral
+//                                                                  ^ PunctuationDelimiter
+  }
+  
+  // Async Programming (Async/Await)
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  Future<void> printData() async {
+//      ^ IdentifierOperator
+//       ^^^^ IdentifierBuiltin
+//           ^ IdentifierOperator
+    String data = await fetchData();
+//  ^^^^^^ IdentifierType
+//         ^^^^ Identifier
+//              ^ IdentifierOperator
+//                ^^^^^ Keyword
+//                      ^^^^^^^^^ IdentifierFunction
+//                                 ^ PunctuationDelimiter
+    print(data);
+//  ^^^^^ IdentifierFunction
+//        ^^^^ Identifier
+//             ^ PunctuationDelimiter
+  }
+
