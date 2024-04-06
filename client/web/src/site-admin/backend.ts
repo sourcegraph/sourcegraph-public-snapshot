@@ -1085,3 +1085,17 @@ export const useGitserversConnection = (): UseShowMorePaginationResult<Gitserver
             return gitservers
         },
     })
+
+export const WEBHOOK_EXTERNAL_SERVICES = gql`
+    query WebhookExternalServices {
+        externalServices {
+            nodes {
+                ...WebhookExternalService
+            }
+        }
+    }
+
+    fragment WebhookExternalService on ExternalService {
+        kind
+    }
+`
