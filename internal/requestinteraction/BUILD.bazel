@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "requestinteraction",
+    srcs = [
+        "client.go",
+        "grpc.go",
+        "http.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/requestinteraction",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/grpc/propagator",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_google_grpc//metadata",
+    ],
+)

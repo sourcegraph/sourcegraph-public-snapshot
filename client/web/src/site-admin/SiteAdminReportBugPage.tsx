@@ -3,6 +3,7 @@ import React, { useMemo } from 'react'
 import { mapValues, values } from 'lodash'
 
 import type { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, useObservable, Alert, Link, H2, Text } from '@sourcegraph/wildcard'
@@ -17,7 +18,6 @@ import gitlabSchemaJSON from '../../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../../schema/gitolite.schema.json'
 import goModulesSchemaJSON from '../../../../schema/go-modules.schema.json'
 import jvmPackagesSchemaJSON from '../../../../schema/jvm-packages.schema.json'
-import localGitSchemaJSON from '../../../../schema/localgit.schema.json'
 import npmPackagesSchemaJSON from '../../../../schema/npm-packages.schema.json'
 import otherExternalServiceSchemaJSON from '../../../../schema/other_external_service.schema.json'
 import pagureSchemaJSON from '../../../../schema/pagure.schema.json'
@@ -61,7 +61,6 @@ const externalServices: Record<ExternalServiceKind, JSONSchema> = {
     PERFORCE: perforceSchemaJSON,
     PHABRICATOR: phabricatorSchemaJSON,
     PAGURE: pagureSchemaJSON,
-    LOCALGIT: localGitSchemaJSON,
 }
 
 const allConfigSchema = {
@@ -111,13 +110,11 @@ const allConfigSchema = {
         .reduce((allDefinitions, definitions) => ({ ...allDefinitions, ...definitions }), {}),
 }
 
-interface Props extends TelemetryProps {
-    isCodyApp: boolean
-}
+interface Props extends TelemetryProps, TelemetryV2Props {}
 
 export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
-    isCodyApp,
+    telemetryRecorder,
 }) => {
     const isLightTheme = useIsLightTheme()
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
@@ -129,11 +126,7 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
                 <Link
                     target="_blank"
                     rel="noopener noreferrer"
-                    to={
-                        isCodyApp
-                            ? 'https://github.com/sourcegraph/app/issues/new?assignees=&labels=&template=bug_report.md&title='
-                            : 'https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title='
-                    }
+                    to="https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title="
                 >
                     Create an issue on the public issue tracker
                 </Link>
@@ -161,6 +154,7 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
                     isLightTheme={isLightTheme}
                     readOnly={true}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
         </div>

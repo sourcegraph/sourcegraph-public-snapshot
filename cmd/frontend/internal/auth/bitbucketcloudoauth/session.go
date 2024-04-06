@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/session"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -43,7 +44,7 @@ func (s *sessionIssuerHelper) GetServiceID() string {
 	return s.baseURL.String()
 }
 
-func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
+func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, hubSpotProps *hubspot.ContactProperties) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
 	var client bitbucketcloud.Client
 	if s.client != nil {
 		client = s.client
@@ -107,11 +108,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			CreateIfNotExist:    attempt.createIfNotExist,
 		})
 		if err == nil {
-			go hubspotutil.SyncUser(attempt.email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
-				AnonymousUserID: anonymousUserID,
-				FirstSourceURL:  firstSourceURL,
-				LastSourceURL:   lastSourceURL,
-			})
+			go hubspotutil.SyncUser(attempt.email, hubspotutil.SignupEventID, hubSpotProps)
 			return newUserCreated, actor.FromUser(userID), "", nil
 		}
 		if i == 0 {
@@ -121,8 +118,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	// On failure, return the first error
 	verifiedEmails := make([]string, 0, len(attempts))
-	for i, attempt := range attempts {
-		verifiedEmails[i] = attempt.email
+	for _, attempt := range attempts {
+		verifiedEmails = append(verifiedEmails, attempt.email)
 	}
 	return false, nil, fmt.Sprintf("No Sourcegraph user exists matching any of the verified emails: %s.\n\nFirst error was: %s", strings.Join(verifiedEmails, ", "), firstSafeErrMsg), firstErr
 }
@@ -159,10 +156,8 @@ func buildUserFetchAttempts(emails []*bitbucketcloud.UserEmail, allowSignup bool
 	return attempts, nil
 }
 
-func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {
-	stateConfig := getStateConfig()
-	stateConfig.MaxAge = -1
-	http.SetCookie(w, oauth.NewCookie(stateConfig, ""))
+func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter, r *http.Request) {
+	session.SetData(w, r, "oauthState", "")
 }
 
 func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData {

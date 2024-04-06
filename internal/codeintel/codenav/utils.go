@@ -29,47 +29,13 @@ func sliceContains(slice []string, str string) bool {
 	return false
 }
 
-func uploadIDsToString(vs []uploadsshared.Dump) string {
+func uploadIDsToString(vs []uploadsshared.CompletedUpload) string {
 	ids := make([]string, 0, len(vs))
 	for _, v := range vs {
 		ids = append(ids, strconv.Itoa(v.ID))
 	}
 
 	return strings.Join(ids, ", ")
-}
-
-// isSourceLocation returns true if the given location encloses the source position within one of the visible uploads.
-func isSourceLocation(visibleUploads []visibleUpload, location shared.Location) bool {
-	for i := range visibleUploads {
-		if location.DumpID == visibleUploads[i].Upload.ID && location.Path == visibleUploads[i].TargetPath {
-			if rangeContainsPosition(location.Range, visibleUploads[i].TargetPosition) {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-// rangeContainsPosition returns true if the given range encloses the given position.
-func rangeContainsPosition(r shared.Range, pos shared.Position) bool {
-	if pos.Line < r.Start.Line {
-		return false
-	}
-
-	if pos.Line > r.End.Line {
-		return false
-	}
-
-	if pos.Line == r.Start.Line && pos.Character < r.Start.Character {
-		return false
-	}
-
-	if pos.Line == r.End.Line && pos.Character > r.End.Character {
-		return false
-	}
-
-	return true
 }
 
 func sortRanges(ranges []shared.Range) []shared.Range {

@@ -1,15 +1,14 @@
 import React, { useMemo } from 'react'
 
-import { mdiCog, mdiFileOutline, mdiGlasses, mdiInformationOutline } from '@mdi/js'
+import { mdiCog, mdiFileOutline, mdiSourceCommit, mdiGlasses, mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 
-import { RepoMetadata } from '@sourcegraph/branded'
+import { metadataToTag, TagList, topicToTag } from '@sourcegraph/branded'
 import { encodeURIPathComponent, numberWithCommas, pluralize } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType, type TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -41,10 +40,11 @@ import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { buildSearchURLQueryFromQueryState, useNavbarQueryState } from '../../stores'
 import { canWriteRepoMetadata } from '../../util/rbac'
 import { OWNER_FIELDS, RECENT_CONTRIBUTOR_FIELDS, RECENT_VIEW_FIELDS } from '../blob/own/grapqlQueries'
-import { getRefType } from '../utils'
+import { getRefType, RepoCommitsButton } from '../utils'
 
 import { FilesCard, ReadmePreviewCard } from './TreePagePanels'
 
+import menuStyles from './TreePage.module.scss'
 import styles from './TreePageContent.module.scss'
 import contributorsStyles from './TreePageContentContributors.module.scss'
 import panelStyles from './TreePagePanels.module.scss'
@@ -82,8 +82,17 @@ const ExtraInfoSection: React.FC<{
 }> = ({ repo, className, hasWritePermissions }) => {
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
 
-    const metadataItems = useMemo(() => repo.metadata.map(({ key, value }) => ({ key, value })) || [], [repo.metadata])
     const queryState = useNavbarQueryState(state => state.queryState)
+
+    const metadataTags = useMemo(
+        () => repo.metadata.map(item => metadataToTag(item, queryState, true, buildSearchURLQueryFromQueryState)),
+        [repo.metadata, queryState]
+    )
+
+    const topicTags = useMemo(
+        () => repo.topics.map(topic => topicToTag(topic, queryState, true, buildSearchURLQueryFromQueryState)),
+        [repo.topics, queryState]
+    )
 
     return (
         <Card className={className}>
@@ -91,6 +100,13 @@ const ExtraInfoSection: React.FC<{
                 <ExtraInfoSectionItemHeader title="Description" tooltip="Synchronized from the code host" />
                 {repo.description && <Text>{repo.description}</Text>}
             </ExtraInfoSectionItem>
+            {/* Not all code hosts support the concept of "topics", hence we only show topics if we have them */}
+            {topicTags.length > 0 && (
+                <ExtraInfoSectionItem>
+                    <ExtraInfoSectionItemHeader title="Topics" tooltip={<>Topics synced from the code host</>} />
+                    <TagList tags={topicTags} />
+                </ExtraInfoSectionItem>
+            )}
             {enableRepositoryMetadata && (
                 <ExtraInfoSectionItem>
                     <ExtraInfoSectionItemHeader
@@ -122,23 +138,14 @@ const ExtraInfoSection: React.FC<{
                             </Tooltip>
                         )}
                     </ExtraInfoSectionItemHeader>
-                    {metadataItems.length ? (
-                        <RepoMetadata
-                            items={metadataItems}
-                            queryState={queryState}
-                            queryBuildOptions={{ omitRepoFilter: true }}
-                            buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
-                        />
-                    ) : (
-                        <Text className="text-muted">None</Text>
-                    )}
+                    {metadataTags.length ? <TagList tags={metadataTags} /> : <Text className="text-muted">None</Text>}
                 </ExtraInfoSectionItem>
             )}
         </Card>
     )
 }
 
-interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
+interface TreePageContentProps extends TelemetryProps, PlatformContextProps {
     filePath: string
     tree: TreeFields
     treeWithHistory?: TreeHistoryFields[]
@@ -147,10 +154,11 @@ interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps
     revision: string
     isPackage: boolean
     authenticatedUser: AuthenticatedUser | null
+    showOwnership: boolean
 }
 
 export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = props => {
-    const { filePath, tree, treeWithHistory, repo, revision, isPackage } = props
+    const { filePath, tree, treeWithHistory, repo, revision, isPackage, showOwnership } = props
 
     const isRoot = filePath === ''
 
@@ -169,6 +177,19 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
     return (
         <>
+            {!isRoot && (
+                <div className={menuStyles.menu}>
+                    <RepoCommitsButton
+                        repoName={repo.name}
+                        repoType={repo.sourceType}
+                        revision={revision}
+                        filePath={filePath}
+                        svgPath={mdiSourceCommit}
+                        className={menuStyles.text}
+                    />
+                </div>
+            )}
+
             {(readmeEntry || isRoot) && (
                 <section className={classNames('container mb-3 px-0', styles.section)}>
                     {readmeEntry && (
@@ -188,18 +209,25 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                     )}
                 </section>
             )}
-            <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
+
+            <section
+                className={classNames(
+                    'test-tree-entries container mb-3 px-0',
+                    styles.section,
+                    !readmeEntry ? 'mt-3' : undefined
+                )}
+            >
                 <FilesCard historyEntries={treeWithHistory} entries={tree.entries} className={styles.files} />
 
                 {!isPackage && (
                     <div className={styles.contributors}>
-                        {enableOwnershipPanels && (
+                        {enableOwnershipPanels && showOwnership && (
                             <Card>
                                 <CardHeader className={panelStyles.cardColHeaderWrapper}>Own</CardHeader>
                                 <Ownership {...props} />
                             </Card>
                         )}
-                        <Card className={enableOwnershipPanels ? 'mt-3' : undefined}>
+                        <Card className={enableOwnershipPanels && showOwnership ? 'mt-3' : undefined}>
                             <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
                             <Contributors {...props} />
                         </Card>

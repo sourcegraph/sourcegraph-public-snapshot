@@ -13,9 +13,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
-	githubapp "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/githubappauth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches"
 	codeintelinit "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codeintel"
@@ -27,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/embeddings"
 	executor "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/githubapp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/insights"
 	licensing "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/licensing/init"
@@ -52,7 +51,6 @@ import (
 type EnterpriseInitializer = func(context.Context, *observation.Context, database.DB, codeintel.Services, conftypes.UnifiedWatchable, *enterprise.Services) error
 
 var initFunctions = map[string]EnterpriseInitializer{
-	"app":            app.Init,
 	"authz":          authz.Init,
 	"batches":        batches.Init,
 	"codeintel":      codeintelinit.Init,

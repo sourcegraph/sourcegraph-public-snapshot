@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
@@ -25,12 +24,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -39,6 +41,7 @@ var BillingPublishableKey string
 
 type authProviderInfo struct {
 	IsBuiltin         bool    `json:"isBuiltin"`
+	NoSignIn          bool    `json:"noSignIn"`
 	DisplayName       string  `json:"displayName"`
 	DisplayPrefix     *string `json:"displayPrefix"`
 	ServiceType       string  `json:"serviceType"`
@@ -116,6 +119,31 @@ type CurrentUser struct {
 	Permissions    PermissionsConnection        `json:"permissions"`
 }
 
+// FeatureBatchChanges describes if and how the Batch Changes feature is available on
+// the given license plan. It mirrors the type licensing.FeatureBatchChanges.
+type FeatureBatchChanges struct {
+	// If true, there is no limit to the number of changesets that can be created.
+	Unrestricted bool `json:"unrestricted"`
+	// Maximum number of changesets that can be created per batch change.
+	// If Unrestricted is true, this is ignored.
+	MaxNumChangesets int `json:"maxNumChangesets"`
+}
+
+// LicenseFeatures contains information about licensed features that are
+// enabled/disabled on the current license.
+type LicenseFeatures struct {
+	CodeSearch bool `json:"codeSearch"`
+	Cody       bool `json:"cody"`
+}
+
+// LicenseInfo contains non-sensitive information about the legitimate usage of the
+// current license on the instance. It is technically accessible to all users, so only
+// include information that is safe to be seen by others.
+type LicenseInfo struct {
+	BatchChanges *FeatureBatchChanges `json:"batchChanges"`
+	Features     LicenseFeatures      `json:"features"`
+}
+
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
 //
@@ -151,11 +179,12 @@ type JSContext struct {
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
-	CodyAppMode bool `json:"codyAppMode"`
-
 	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
-	AccessTokensAllow conf.AccessTokenAllow `json:"accessTokensAllow"`
+	AccessTokensAllow                 conf.AccessTokenAllow `json:"accessTokensAllow"`
+	AccessTokensAllowNoExpiration     bool                  `json:"accessTokensAllowNoExpiration"`
+	AccessTokensDefaultExpirationDays int                   `json:"accessTokensExpirationDaysDefault"`
+	AccessTokensExpirationDaysOptions []int                 `json:"accessTokensExpirationDaysOptions"`
 
 	AllowSignup bool `json:"allowSignup"`
 
@@ -190,11 +219,18 @@ type JSContext struct {
 	// user to have a verified email.
 	CodyRequiresVerifiedEmail bool `json:"codyRequiresVerifiedEmail"`
 
-	ExecutorsEnabled                         bool `json:"executorsEnabled"`
-	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
-	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
+	ExecutorsEnabled                               bool `json:"executorsEnabled"`
+	CodeIntelAutoIndexingEnabled                   bool `json:"codeIntelAutoIndexingEnabled"`
+	CodeIntelAutoIndexingAllowGlobalPolicies       bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
+	CodeIntelRankingDocumentReferenceCountsEnabled bool `json:"codeIntelRankingDocumentReferenceCountsEnabled"`
 
-	CodeInsightsEnabled bool `json:"codeInsightsEnabled"`
+	CodeInsightsEnabled      bool `json:"codeInsightsEnabled"`
+	CodeIntelligenceEnabled  bool `json:"codeIntelligenceEnabled"`
+	SearchContextsEnabled    bool `json:"searchContextsEnabled"`
+	NotebooksEnabled         bool `json:"notebooksEnabled"`
+	CodeMonitoringEnabled    bool `json:"codeMonitoringEnabled"`
+	SearchAggregationEnabled bool `json:"searchAggregationEnabled"`
+	OwnEnabled               bool `json:"ownEnabled"`
 
 	EmbeddingsEnabled bool `json:"embeddingsEnabled"`
 
@@ -204,7 +240,7 @@ type JSContext struct {
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
 
-	LicenseInfo *hooks.LicenseInfo `json:"licenseInfo"`
+	LicenseInfo LicenseInfo `json:"licenseInfo"`
 
 	HashedLicenseKey string `json:"hashedLicenseKey"`
 
@@ -219,8 +255,6 @@ type JSContext struct {
 	ExtsvcConfigAllowEdits bool `json:"extsvcConfigAllowEdits"`
 
 	RunningOnMacOS bool `json:"runningOnMacOS"`
-
-	SrcServeGitUrl string `json:"srcServeGitUrl"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -257,6 +291,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		if info != nil {
 			authProviders = append(authProviders, authProviderInfo{
 				IsBuiltin:         p.Config().Builtin != nil,
+				NoSignIn:          commonConfig.NoSignIn,
 				DisplayName:       commonConfig.DisplayName,
 				DisplayPrefix:     commonConfig.DisplayPrefix,
 				ServiceType:       p.ConfigID().Type,
@@ -287,12 +322,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		openTelemetry = clientObservability.OpenTelemetry
 	}
 
-	// License info contains basic, non-sensitive information about the license type. Some
-	// properties are only set for certain license types. This information can be used to
-	// soft-gate features from the UI, and to provide info to admins from site admin
-	// settings pages in the UI.
-	licenseInfo := hooks.GetLicenseInfo()
-
 	var user *types.User
 	temporarySettings := "{}"
 	if a.IsAuthenticated() {
@@ -313,14 +342,17 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	extsvcConfigFileExists := envvar.ExtsvcConfigFile() != ""
 	runningOnMacOS := runtime.GOOS == "darwin"
-	srcServeGitUrl := envvar.SrcServeGitUrl()
+
+	accessTokenDefaultExpirationDays, accessTokenExpirationDaysOptions := conf.AccessTokensExpirationOptions()
+
+	codyEnabled, _ := cody.IsCodyEnabled(ctx, db)
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
 	// authentication above, but do not include e.g. hard-coded secrets about
 	// the server instance here as they would be sent to anonymous users.
-	return JSContext{
+	context := JSContext{
 		ExternalURL:         globals.ExternalURL().String(),
 		XHRHeaders:          headers,
 		UserAgentIsBot:      isBot(req.UserAgent()),
@@ -344,14 +376,16 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
 		DeployType:        deploy.Type(),
 
-		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-		CodyAppMode:           deploy.IsApp(),
+		SourcegraphDotComMode: dotcom.SourcegraphDotComMode(),
 
 		BillingPublishableKey: BillingPublishableKey,
 
 		// Experiments. We pass these through explicitly, so we can
 		// do the default behavior only in Go land.
-		AccessTokensAllow: conf.AccessTokensAllow(),
+		AccessTokensAllow:                 conf.AccessTokensAllow(),
+		AccessTokensAllowNoExpiration:     conf.AccessTokensAllowNoExpiration(),
+		AccessTokensDefaultExpirationDays: accessTokenDefaultExpirationDays,
+		AccessTokensExpirationDaysOptions: accessTokenExpirationDaysOptions,
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
 
@@ -372,14 +406,24 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
 
 		CodyEnabled:               conf.CodyEnabled(),
-		CodyEnabledForCurrentUser: cody.IsCodyEnabled(ctx),
+		CodyEnabledForCurrentUser: codyEnabled,
 		CodyRequiresVerifiedEmail: siteResolver.RequiresVerifiedEmailForCody(ctx),
 
-		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
-		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
-		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
+		ExecutorsEnabled:                               conf.ExecutorsEnabled(),
+		CodeIntelAutoIndexingEnabled:                   conf.CodeIntelAutoIndexingEnabled(),
+		CodeIntelAutoIndexingAllowGlobalPolicies:       conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
+		CodeIntelRankingDocumentReferenceCountsEnabled: conf.CodeIntelRankingDocumentReferenceCountsEnabled(),
 
 		CodeInsightsEnabled: insights.IsEnabled(),
+
+		// This used to be hardcoded configuration on the frontend.
+		// https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@ec5cc97a11c3f78743388b85b9ae0f1bc5d43932/-/blob/client/web/src/enterprise/EnterpriseWebApp.tsx?L63-71
+		CodeIntelligenceEnabled:  true,
+		SearchContextsEnabled:    true,
+		NotebooksEnabled:         true,
+		CodeMonitoringEnabled:    true,
+		SearchAggregationEnabled: true,
+		OwnEnabled:               true,
 
 		EmbeddingsEnabled: conf.EmbeddingsEnabled(),
 
@@ -387,7 +431,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 
-		LicenseInfo: licenseInfo,
+		LicenseInfo: licenseInfo(),
 
 		HashedLicenseKey: conf.HashedCurrentLicenseKeyForAnalytics(),
 
@@ -402,9 +446,34 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExtsvcConfigAllowEdits: envvar.ExtsvcConfigAllowEdits(),
 
 		RunningOnMacOS: runningOnMacOS,
-
-		SrcServeGitUrl: srcServeGitUrl,
 	}
+
+	// If the license a Sourcegraph instance is running under does not support Code Search features
+	// we force disable related features (executors, batch-changes, executors, code-insights).
+	if !context.LicenseInfo.Features.CodeSearch {
+		context.BatchChangesEnabled = false
+		context.CodeInsightsEnabled = false
+		context.ExecutorsEnabled = false
+		context.CodeMonitoringEnabled = false
+		context.CodeIntelligenceEnabled = false
+		context.SearchAggregationEnabled = false
+		context.SearchContextsEnabled = false
+		context.OwnEnabled = false
+		context.NotebooksEnabled = false
+
+		// experimental features
+		context.ExperimentalFeatures.SearchJobs = pointers.Ptr(false)
+	}
+
+	// If the license a Sourcegraph instance is running under does not support Cody features
+	// we force disable related features (embeddings etc).
+	if !context.LicenseInfo.Features.Cody {
+		context.CodyEnabled = false
+		context.CodyEnabledForCurrentUser = false
+		context.EmbeddingsEnabled = false
+	}
+
+	return context
 }
 
 // createCurrentUser creates CurrentUser object which contains of types.User
@@ -571,4 +640,31 @@ var isBotPat = lazyregexp.New(`(?i:googlecloudmonitoring|pingdom.com|go .* packa
 
 func isBot(userAgent string) bool {
 	return isBotPat.MatchString(userAgent)
+}
+
+func licenseInfo() (info LicenseInfo) {
+	if !dotcom.SourcegraphDotComMode() {
+		bcFeature := &licensing.FeatureBatchChanges{}
+		if err := licensing.Check(bcFeature); err == nil {
+			if bcFeature.Unrestricted {
+				info.BatchChanges = &FeatureBatchChanges{
+					Unrestricted: true,
+					// Superceded by being unrestricted
+					MaxNumChangesets: -1,
+				}
+			} else {
+				max := int(bcFeature.MaxNumChangesets)
+				info.BatchChanges = &FeatureBatchChanges{
+					MaxNumChangesets: max,
+				}
+			}
+		}
+	}
+
+	info.Features = LicenseFeatures{
+		CodeSearch: licensing.Check(licensing.FeatureCodeSearch) == nil,
+		Cody:       licensing.Check(licensing.FeatureCody) == nil,
+	}
+
+	return info
 }

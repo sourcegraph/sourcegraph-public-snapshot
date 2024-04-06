@@ -1,0 +1,70 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.responsive-container {
+    gap: 0.5rem;
+
+    @media (--sm-breakpoint-down) {
+        flex-direction: column;
+    }
+}
+
+.plan-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.counter {
+    font-size: 1.25rem;
+}
+
+.overflow-visible {
+    overflow: visible;
+}
+
+.ide-name {
+    font-size: 1rem;
+}
+
+.pro-title {
+    font-size: 2.25rem;
+    color: #820dde;
+
+    :global(.theme-dark) & {
+        color: #ffffff;
+    }
+}
+
+.pro-description {
+    color: #820dde;
+
+    :global(.theme-dark) & {
+        color: #ffffff;
+    }
+}
+
+.upgrade-modal {
+    width: 50rem;
+}
+
+.cancel-modal {
+    width: 30rem;
+}
+
+.subscription-summary-container {
+    @media (--sm-breakpoint-down) {
+        flex-direction: column;
+    }
+}
+
+.pro-container {
+    margin: -1.5rem -0.625rem -1.5rem -0.625rem;
+    z-index: 1;
+}
+
+.pro-border-top {
+    height: 0.25rem;
+    z-index: 2;
+    border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+    background-color: #eff2f5;
+    background-image: linear-gradient(90deg, #7048e8, #4ac1e8 32.21%, #a112ff 65.39%, #ff5543 104.43%), none;
+}

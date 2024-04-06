@@ -1,0 +1,2118 @@
+---
+source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
+---
+  #include "compiler/rule.h"
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^^^^^^^^ StringLiteral
+  #include "compiler/util/hash_combine.h"
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+  
+  namespace tree_sitter {
+//^^^^^^^^^ Keyword
+//          ^^^^^^^^^^^ IdentifierNamespace
+  namespace rules {
+//^^^^^^^^^ Keyword
+//          ^^^^^ IdentifierNamespace
+  
+  using std::move;
+//^^^^^ Keyword
+//      ^^^ IdentifierNamespace
+//           ^^^^ Identifier
+  using std::vector;
+//^^^^^ Keyword
+//      ^^^ IdentifierNamespace
+//           ^^^^^^ Identifier
+  using util::hash_combine;
+//^^^^^ Keyword
+//      ^^^^ IdentifierNamespace
+//            ^^^^^^^^^^^^ Identifier
+  
+  Rule::Rule(const Rule &other) : blank_(Blank{}), type(BlankType) {
+//^^^^ IdentifierNamespace
+//      ^^^^ Identifier
+//           ^^^^^ Keyword
+//                 ^^^^ IdentifierType
+//                       ^^^^^ Identifier
+//                                ^^^^^^ IdentifierAttribute
+//                                       ^^^^^ IdentifierType
+//                                                 ^^^^ IdentifierAttribute
+//                                                      ^^^^^^^^^ Identifier
+    *this = other;
+//   ^^^^ IdentifierBuiltin
+//          ^^^^^ Identifier
+  }
+  
+  Rule::Rule(Rule &&other) noexcept : blank_(Blank{}), type(BlankType) {
+//^^^^ IdentifierNamespace
+//      ^^^^ Identifier
+//           ^^^^ IdentifierType
+//                  ^^^^^ Identifier
+//                         ^^^^^^^^ Keyword
+//                                    ^^^^^^ IdentifierAttribute
+//                                           ^^^^^ IdentifierType
+//                                                     ^^^^ IdentifierAttribute
+//                                                          ^^^^^^^^^ Identifier
+    *this = move(other);
+//   ^^^^ IdentifierBuiltin
+//          ^^^^ IdentifierFunction
+//               ^^^^^ Identifier
+  }
+  
+  static void destroy_value(Rule *rule) {
+//^^^^^^ Keyword
+//       ^^^^ IdentifierBuiltinType
+//            ^^^^^^^^^^^^^ IdentifierFunction
+//                          ^^^^ IdentifierType
+//                                ^^^^ Identifier
+    switch (rule->type) {
+//  ^^^^^^ Keyword
+//          ^^^^ Identifier
+//                ^^^^ IdentifierAttribute
+      case Rule::BlankType: return rule->blank_.~Blank();
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^ Identifier
+//                          ^^^^^^ Keyword
+//                                 ^^^^ Identifier
+//                                       ^^^^^^ IdentifierAttribute
+//                                              ^^^^^^ IdentifierFunction
+      case Rule::CharacterSetType: return rule->character_set_.~CharacterSet();
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^^^^^^^ Identifier
+//                                 ^^^^^^ Keyword
+//                                        ^^^^ Identifier
+//                                              ^^^^^^^^^^^^^^ IdentifierAttribute
+//                                                             ^^^^^^^^^^^^^ IdentifierFunction
+      case Rule::StringType: return rule->string_ .~String();
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^ Identifier
+//                           ^^^^^^ Keyword
+//                                  ^^^^ Identifier
+//                                        ^^^^^^^ IdentifierAttribute
+//                                                 ^^^^^^^ IdentifierFunction
+      case Rule::PatternType: return rule->pattern_ .~Pattern();
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^^ Identifier
+//                            ^^^^^^ Keyword
+//                                   ^^^^ Identifier
+//                                         ^^^^^^^^ IdentifierAttribute
+//                                                   ^^^^^^^^ IdentifierFunction
+      case Rule::NamedSymbolType: return rule->named_symbol_.~NamedSymbol();
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^^^^^^ Identifier
+//                                ^^^^^^ Keyword
+//                                       ^^^^ Identifier
+//                                             ^^^^^^^^^^^^^ IdentifierAttribute
+//                                                           ^^^^^^^^^^^^ IdentifierFunction
+      case Rule::SymbolType: return rule->symbol_ .~Symbol();
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^ Identifier
+//                           ^^^^^^ Keyword
+//                                  ^^^^ Identifier
+//                                        ^^^^^^^ IdentifierAttribute
+//                                                 ^^^^^^^ IdentifierFunction
+      case Rule::ChoiceType: return rule->choice_ .~Choice();
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^ Identifier
+//                           ^^^^^^ Keyword
+//                                  ^^^^ Identifier
+//                                        ^^^^^^^ IdentifierAttribute
+//                                                 ^^^^^^^ IdentifierFunction
+      case Rule::MetadataType: return rule->metadata_ .~Metadata();
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^^^ Identifier
+//                             ^^^^^^ Keyword
+//                                    ^^^^ Identifier
+//                                          ^^^^^^^^^ IdentifierAttribute
+//                                                     ^^^^^^^^^ IdentifierFunction
+      case Rule::RepeatType: return rule->repeat_ .~Repeat();
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^ Identifier
+//                           ^^^^^^ Keyword
+//                                  ^^^^ Identifier
+//                                        ^^^^^^^ IdentifierAttribute
+//                                                 ^^^^^^^ IdentifierFunction
+      case Rule::SeqType: return rule->seq_ .~Seq();
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^ Identifier
+//                        ^^^^^^ Keyword
+//                               ^^^^ Identifier
+//                                     ^^^^ IdentifierAttribute
+//                                           ^^^^ IdentifierFunction
+    }
+  }
+  
+  Rule &Rule::operator=(const Rule &other) {
+//^^^^ IdentifierType
+//      ^^^^ IdentifierNamespace
+//            ^^^^^^^^ Keyword
+//                    ^ Identifier
+//                      ^^^^^ Keyword
+//                            ^^^^ IdentifierType
+//                                  ^^^^^ Identifier
+    destroy_value(this);
+//  ^^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^ IdentifierBuiltin
+    type = other.type;
+//  ^^^^ Identifier
+//         ^^^^^ Identifier
+//               ^^^^ IdentifierAttribute
+    switch (type) {
+//  ^^^^^^ Keyword
+//          ^^^^ Identifier
+      case BlankType:
+//    ^^^^ Keyword
+//         ^^^^^^^^^ Identifier
+        new (&blank_) Blank(other.blank_);
+//      ^^^ Keyword
+//            ^^^^^^ Identifier
+//                    ^^^^^ IdentifierType
+//                          ^^^^^ Identifier
+//                                ^^^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+      case CharacterSetType:
+//    ^^^^ Keyword
+//         ^^^^^^^^^^^^^^^^ Identifier
+        new (&character_set_) CharacterSet(other.character_set_);
+//      ^^^ Keyword
+//            ^^^^^^^^^^^^^^ Identifier
+//                            ^^^^^^^^^^^^ IdentifierType
+//                                         ^^^^^ Identifier
+//                                               ^^^^^^^^^^^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+      case StringType:
+//    ^^^^ Keyword
+//         ^^^^^^^^^^ Identifier
+        new (&string_) String(other.string_);
+//      ^^^ Keyword
+//            ^^^^^^^ Identifier
+//                     ^^^^^^ IdentifierType
+//                            ^^^^^ Identifier
+//                                  ^^^^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+      case PatternType:
+//    ^^^^ Keyword
+//         ^^^^^^^^^^^ Identifier
+        new (&pattern_) Pattern(other.pattern_);
+//      ^^^ Keyword
+//            ^^^^^^^^ Identifier
+//                      ^^^^^^^ IdentifierType
+//                              ^^^^^ Identifier
+//                                    ^^^^^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+      case NamedSymbolType:
+//    ^^^^ Keyword
+//         ^^^^^^^^^^^^^^^ Identifier
+        new (&named_symbol_) NamedSymbol(other.named_symbol_);
+//      ^^^ Keyword
+//            ^^^^^^^^^^^^^ Identifier
+//                           ^^^^^^^^^^^ IdentifierType
+//                                       ^^^^^ Identifier
+//                                             ^^^^^^^^^^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+      case SymbolType:
+//    ^^^^ Keyword
+//         ^^^^^^^^^^ Identifier
+        new (&symbol_) Symbol(other.symbol_);
+//      ^^^ Keyword
+//            ^^^^^^^ Identifier
+//                     ^^^^^^ IdentifierType
+//                            ^^^^^ Identifier
+//                                  ^^^^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+      case ChoiceType:
+//    ^^^^ Keyword
+//         ^^^^^^^^^^ Identifier
+        new (&choice_) Choice(other.choice_);
+//      ^^^ Keyword
+//            ^^^^^^^ Identifier
+//                     ^^^^^^ IdentifierType
+//                            ^^^^^ Identifier
+//                                  ^^^^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+      case MetadataType:
+//    ^^^^ Keyword
+//         ^^^^^^^^^^^^ Identifier
+        new (&metadata_) Metadata(other.metadata_);
+//      ^^^ Keyword
+//            ^^^^^^^^^ Identifier
+//                       ^^^^^^^^ IdentifierType
+//                                ^^^^^ Identifier
+//                                      ^^^^^^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+      case RepeatType:
+//    ^^^^ Keyword
+//         ^^^^^^^^^^ Identifier
+        new (&repeat_) Repeat(other.repeat_);
+//      ^^^ Keyword
+//            ^^^^^^^ Identifier
+//                     ^^^^^^ IdentifierType
+//                            ^^^^^ Identifier
+//                                  ^^^^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+      case SeqType:
+//    ^^^^ Keyword
+//         ^^^^^^^ Identifier
+        new (&seq_) Seq(other.seq_);
+//      ^^^ Keyword
+//            ^^^^ Identifier
+//                  ^^^ IdentifierType
+//                      ^^^^^ Identifier
+//                            ^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+    }
+    return *this;
+//  ^^^^^^ Keyword
+//          ^^^^ IdentifierBuiltin
+  }
+  
+  Rule &Rule::operator=(Rule &&other) noexcept {
+//^^^^ IdentifierType
+//      ^^^^ IdentifierNamespace
+//            ^^^^^^^^ Keyword
+//                    ^ Identifier
+//                      ^^^^ IdentifierType
+//                             ^^^^^ Identifier
+//                                    ^^^^^^^^ Keyword
+    destroy_value(this);
+//  ^^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^ IdentifierBuiltin
+    type = other.type;
+//  ^^^^ Identifier
+//         ^^^^^ Identifier
+//               ^^^^ IdentifierAttribute
+    switch (type) {
+//  ^^^^^^ Keyword
+//          ^^^^ Identifier
+      case BlankType:
+//    ^^^^ Keyword
+//         ^^^^^^^^^ Identifier
+        new (&blank_) Blank(move(other.blank_));
+//      ^^^ Keyword
+//            ^^^^^^ Identifier
+//                    ^^^^^ IdentifierType
+//                          ^^^^ IdentifierFunction
+//                               ^^^^^ Identifier
+//                                     ^^^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+      case CharacterSetType:
+//    ^^^^ Keyword
+//         ^^^^^^^^^^^^^^^^ Identifier
+        new (&character_set_) CharacterSet(move(other.character_set_));
+//      ^^^ Keyword
+//            ^^^^^^^^^^^^^^ Identifier
+//                            ^^^^^^^^^^^^ IdentifierType
+//                                         ^^^^ IdentifierFunction
+//                                              ^^^^^ Identifier
+//                                                    ^^^^^^^^^^^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+      case StringType:
+//    ^^^^ Keyword
+//         ^^^^^^^^^^ Identifier
+        new (&string_) String(move(other.string_));
+//      ^^^ Keyword
+//            ^^^^^^^ Identifier
+//                     ^^^^^^ IdentifierType
+//                            ^^^^ IdentifierFunction
+//                                 ^^^^^ Identifier
+//                                       ^^^^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+      case PatternType:
+//    ^^^^ Keyword
+//         ^^^^^^^^^^^ Identifier
+        new (&pattern_) Pattern(move(other.pattern_));
+//      ^^^ Keyword
+//            ^^^^^^^^ Identifier
+//                      ^^^^^^^ IdentifierType
+//                              ^^^^ IdentifierFunction
+//                                   ^^^^^ Identifier
+//                                         ^^^^^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+      case NamedSymbolType:
+//    ^^^^ Keyword
+//         ^^^^^^^^^^^^^^^ Identifier
+        new (&named_symbol_) NamedSymbol(move(other.named_symbol_));
+//      ^^^ Keyword
+//            ^^^^^^^^^^^^^ Identifier
+//                           ^^^^^^^^^^^ IdentifierType
+//                                       ^^^^ IdentifierFunction
+//                                            ^^^^^ Identifier
+//                                                  ^^^^^^^^^^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+      case SymbolType:
+//    ^^^^ Keyword
+//         ^^^^^^^^^^ Identifier
+        new (&symbol_) Symbol(move(other.symbol_));
+//      ^^^ Keyword
+//            ^^^^^^^ Identifier
+//                     ^^^^^^ IdentifierType
+//                            ^^^^ IdentifierFunction
+//                                 ^^^^^ Identifier
+//                                       ^^^^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+      case ChoiceType:
+//    ^^^^ Keyword
+//         ^^^^^^^^^^ Identifier
+        new (&choice_) Choice(move(other.choice_));
+//      ^^^ Keyword
+//            ^^^^^^^ Identifier
+//                     ^^^^^^ IdentifierType
+//                            ^^^^ IdentifierFunction
+//                                 ^^^^^ Identifier
+//                                       ^^^^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+      case MetadataType:
+//    ^^^^ Keyword
+//         ^^^^^^^^^^^^ Identifier
+        new (&metadata_) Metadata(move(other.metadata_));
+//      ^^^ Keyword
+//            ^^^^^^^^^ Identifier
+//                       ^^^^^^^^ IdentifierType
+//                                ^^^^ IdentifierFunction
+//                                     ^^^^^ Identifier
+//                                           ^^^^^^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+      case RepeatType:
+//    ^^^^ Keyword
+//         ^^^^^^^^^^ Identifier
+        new (&repeat_) Repeat(move(other.repeat_));
+//      ^^^ Keyword
+//            ^^^^^^^ Identifier
+//                     ^^^^^^ IdentifierType
+//                            ^^^^ IdentifierFunction
+//                                 ^^^^^ Identifier
+//                                       ^^^^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+      case SeqType:
+//    ^^^^ Keyword
+//         ^^^^^^^ Identifier
+        new (&seq_) Seq(move(other.seq_));
+//      ^^^ Keyword
+//            ^^^^ Identifier
+//                  ^^^ IdentifierType
+//                      ^^^^ IdentifierFunction
+//                           ^^^^^ Identifier
+//                                 ^^^^ IdentifierAttribute
+        break;
+//      ^^^^^ Keyword
+    }
+    other.type = BlankType;
+//  ^^^^^ Identifier
+//        ^^^^ IdentifierAttribute
+//               ^^^^^^^^^ Identifier
+    other.blank_ = Blank{};
+//  ^^^^^ Identifier
+//        ^^^^^^ IdentifierAttribute
+//                 ^^^^^ IdentifierType
+    return *this;
+//  ^^^^^^ Keyword
+//          ^^^^ IdentifierBuiltin
+  }
+  
+  Rule::~Rule() noexcept {
+//^^^^ IdentifierNamespace
+//      ^^^^^ IdentifierFunction
+//              ^^^^^^^^ Keyword
+    destroy_value(this);
+//  ^^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^ IdentifierBuiltin
+  }
+  
+  bool Rule::operator==(const Rule &other) const {
+//^^^^ IdentifierBuiltinType
+//     ^^^^ IdentifierNamespace
+//           ^^^^^^^^ Keyword
+//                   ^^ Identifier
+//                      ^^^^^ Keyword
+//                            ^^^^ IdentifierType
+//                                  ^^^^^ Identifier
+//                                         ^^^^^ Keyword
+    if (type != other.type) return false;
+//  ^^ Keyword
+//      ^^^^ Identifier
+//              ^^^^^ Identifier
+//                    ^^^^ IdentifierAttribute
+//                          ^^^^^^ Keyword
+//                                 ^^^^^ BooleanLiteral
+    switch (type) {
+//  ^^^^^^ Keyword
+//          ^^^^ Identifier
+      case Rule::CharacterSetType: return character_set_ == other.character_set_;
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^^^^^^^ Identifier
+//                                 ^^^^^^ Keyword
+//                                        ^^^^^^^^^^^^^^ Identifier
+//                                                          ^^^^^ Identifier
+//                                                                ^^^^^^^^^^^^^^ IdentifierAttribute
+      case Rule::StringType: return string_ == other.string_;
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^ Identifier
+//                           ^^^^^^ Keyword
+//                                  ^^^^^^^ Identifier
+//                                             ^^^^^ Identifier
+//                                                   ^^^^^^^ IdentifierAttribute
+      case Rule::PatternType: return pattern_ == other.pattern_;
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^^ Identifier
+//                            ^^^^^^ Keyword
+//                                   ^^^^^^^^ Identifier
+//                                               ^^^^^ Identifier
+//                                                     ^^^^^^^^ IdentifierAttribute
+      case Rule::NamedSymbolType: return named_symbol_ == other.named_symbol_;
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^^^^^^ Identifier
+//                                ^^^^^^ Keyword
+//                                       ^^^^^^^^^^^^^ Identifier
+//                                                        ^^^^^ Identifier
+//                                                              ^^^^^^^^^^^^^ IdentifierAttribute
+      case Rule::SymbolType: return symbol_ == other.symbol_;
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^ Identifier
+//                           ^^^^^^ Keyword
+//                                  ^^^^^^^ Identifier
+//                                             ^^^^^ Identifier
+//                                                   ^^^^^^^ IdentifierAttribute
+      case Rule::ChoiceType: return choice_ == other.choice_;
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^ Identifier
+//                           ^^^^^^ Keyword
+//                                  ^^^^^^^ Identifier
+//                                             ^^^^^ Identifier
+//                                                   ^^^^^^^ IdentifierAttribute
+      case Rule::MetadataType: return metadata_ == other.metadata_;
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^^^ Identifier
+//                             ^^^^^^ Keyword
+//                                    ^^^^^^^^^ Identifier
+//                                                 ^^^^^ Identifier
+//                                                       ^^^^^^^^^ IdentifierAttribute
+      case Rule::RepeatType: return repeat_ == other.repeat_;
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^ Identifier
+//                           ^^^^^^ Keyword
+//                                  ^^^^^^^ Identifier
+//                                             ^^^^^ Identifier
+//                                                   ^^^^^^^ IdentifierAttribute
+      case Rule::SeqType: return seq_ == other.seq_;
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^ Identifier
+//                        ^^^^^^ Keyword
+//                               ^^^^ Identifier
+//                                       ^^^^^ Identifier
+//                                             ^^^^ IdentifierAttribute
+      default: return blank_ == other.blank_;
+//    ^^^^^^^ Keyword
+//             ^^^^^^ Keyword
+//                    ^^^^^^ Identifier
+//                              ^^^^^ Identifier
+//                                    ^^^^^^ IdentifierAttribute
+    }
+  }
+  
+  template <>
+//^^^^^^^^ Keyword
+  bool Rule::is<Blank>() const { return type == BlankType; }
+//^^^^ IdentifierBuiltinType
+//     ^^^^ IdentifierNamespace
+//           ^^ Identifier
+//              ^^^^^ IdentifierType
+//                       ^^^^^ Keyword
+//                               ^^^^^^ Keyword
+//                                      ^^^^ Identifier
+//                                              ^^^^^^^^^ Identifier
+  
+  template <>
+//^^^^^^^^ Keyword
+  bool Rule::is<Symbol>() const { return type == SymbolType; }
+//^^^^ IdentifierBuiltinType
+//     ^^^^ IdentifierNamespace
+//           ^^ Identifier
+//              ^^^^^^ IdentifierType
+//                        ^^^^^ Keyword
+//                                ^^^^^^ Keyword
+//                                       ^^^^ Identifier
+//                                               ^^^^^^^^^^ Identifier
+  
+  template <>
+//^^^^^^^^ Keyword
+  bool Rule::is<Repeat>() const { return type == RepeatType; }
+//^^^^ IdentifierBuiltinType
+//     ^^^^ IdentifierNamespace
+//           ^^ Identifier
+//              ^^^^^^ IdentifierType
+//                        ^^^^^ Keyword
+//                                ^^^^^^ Keyword
+//                                       ^^^^ Identifier
+//                                               ^^^^^^^^^^ Identifier
+  
+  template <>
+//^^^^^^^^ Keyword
+  const Symbol & Rule::get_unchecked<Symbol>() const { return symbol_; }
+//^^^^^ Keyword
+//      ^^^^^^ IdentifierType
+//               ^^^^ IdentifierNamespace
+//                     ^^^^^^^^^^^^^ Identifier
+//                                   ^^^^^^ IdentifierType
+//                                             ^^^^^ Keyword
+//                                                     ^^^^^^ Keyword
+//                                                            ^^^^^^^ Identifier
+  
+  static inline void add_choice_element(std::vector<Rule> *elements, const Rule &new_rule) {
+//^^^^^^ Keyword
+//       ^^^^^^ Keyword
+//              ^^^^ IdentifierBuiltinType
+//                   ^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                      ^^^ IdentifierNamespace
+//                                           ^^^^^^ IdentifierType
+//                                                  ^^^^ IdentifierType
+//                                                         ^^^^^^^^ Identifier
+//                                                                   ^^^^^ Keyword
+//                                                                         ^^^^ IdentifierType
+//                                                                               ^^^^^^^^ Identifier
+    new_rule.match(
+//  ^^^^^^^^ Identifier
+//           ^^^^^ IdentifierFunction
+      [elements](Choice choice) {
+//     ^^^^^^^^ Identifier
+//               ^^^^^^ IdentifierType
+//                      ^^^^^^ Identifier
+        for (auto &element : choice.elements) {
+//      ^^^ Keyword
+//           ^^^^ Keyword
+//                 ^^^^^^^ Identifier
+//                           ^^^^^^ Identifier
+//                                  ^^^^^^^^ IdentifierAttribute
+          add_choice_element(elements, element);
+//        ^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                           ^^^^^^^^ Identifier
+//                                     ^^^^^^^ Identifier
+        }
+      },
+  
+      [elements](auto rule) {
+//     ^^^^^^^^ Identifier
+//               ^^^^ Keyword
+//                    ^^^^ Identifier
+        for (auto &element : *elements) {
+//      ^^^ Keyword
+//           ^^^^ Keyword
+//                 ^^^^^^^ Identifier
+//                            ^^^^^^^^ Identifier
+          if (element == rule) return;
+//        ^^ Keyword
+//            ^^^^^^^ Identifier
+//                       ^^^^ Identifier
+//                             ^^^^^^ Keyword
+        }
+        elements->push_back(rule);
+//      ^^^^^^^^ Identifier
+//                ^^^^^^^^^ IdentifierFunction
+//                          ^^^^ Identifier
+      }
+    );
+  }
+  
+  Rule Rule::choice(const vector<Rule> &rules) {
+//^^^^ IdentifierType
+//     ^^^^ IdentifierNamespace
+//           ^^^^^^ Identifier
+//                  ^^^^^ Keyword
+//                        ^^^^^^ IdentifierType
+//                               ^^^^ IdentifierType
+//                                      ^^^^^ Identifier
+    vector<Rule> elements;
+//  ^^^^^^ IdentifierType
+//         ^^^^ IdentifierType
+//               ^^^^^^^^ Identifier
+    for (auto &element : rules) {
+//  ^^^ Keyword
+//       ^^^^ Keyword
+//             ^^^^^^^ Identifier
+//                       ^^^^^ Identifier
+      add_choice_element(&elements, element);
+//    ^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                        ^^^^^^^^ Identifier
+//                                  ^^^^^^^ Identifier
+    }
+    return (elements.size() == 1) ? elements.front() : Choice{elements};
+//  ^^^^^^ Keyword
+//          ^^^^^^^^ Identifier
+//                   ^^^^ IdentifierFunction
+//                             ^ NumericLiteral
+//                                  ^^^^^^^^ Identifier
+//                                           ^^^^^ IdentifierFunction
+//                                                     ^^^^^^ IdentifierType
+//                                                            ^^^^^^^^ Identifier
+  }
+  
+  Rule Rule::repeat(const Rule &rule) {
+//^^^^ IdentifierType
+//     ^^^^ IdentifierNamespace
+//           ^^^^^^ Identifier
+//                  ^^^^^ Keyword
+//                        ^^^^ IdentifierType
+//                              ^^^^ Identifier
+    return rule.is<Repeat>() ? rule : Repeat{rule};
+//  ^^^^^^ Keyword
+//         ^^^^ Identifier
+//              ^^ IdentifierAttribute
+//                 ^^^^^^ IdentifierType
+//                             ^^^^ Identifier
+//                                    ^^^^^^ IdentifierType
+//                                           ^^^^ Identifier
+  }
+  
+  Rule Rule::seq(const vector<Rule> &rules) {
+//^^^^ IdentifierType
+//     ^^^^ IdentifierNamespace
+//           ^^^ Identifier
+//               ^^^^^ Keyword
+//                     ^^^^^^ IdentifierType
+//                            ^^^^ IdentifierType
+//                                   ^^^^^ Identifier
+    Rule result;
+//  ^^^^ IdentifierType
+//       ^^^^^^ Identifier
+    for (const auto &rule : rules) {
+//  ^^^ Keyword
+//       ^^^^^ Keyword
+//             ^^^^ Keyword
+//                   ^^^^ Identifier
+//                          ^^^^^ Identifier
+      rule.match(
+//    ^^^^ Identifier
+//         ^^^^^ IdentifierFunction
+        [](Blank) {},
+//         ^^^^^ IdentifierType
+        [&](Metadata metadata) {
+//          ^^^^^^^^ IdentifierType
+//                   ^^^^^^^^ Identifier
+          if (!metadata.rule->is<Blank>()) {
+//        ^^ Keyword
+//             ^^^^^^^^ Identifier
+//                      ^^^^ IdentifierAttribute
+//                            ^^ IdentifierAttribute
+//                               ^^^^^ IdentifierType
+            result = Seq{result, rule};
+//          ^^^^^^ Identifier
+//                   ^^^ IdentifierType
+//                       ^^^^^^ Identifier
+//                               ^^^^ Identifier
+          }
+        },
+        [&](auto) {
+//          ^^^^ Keyword
+          if (result.is<Blank>()) {
+//        ^^ Keyword
+//            ^^^^^^ Identifier
+//                   ^^ IdentifierAttribute
+//                      ^^^^^ IdentifierType
+            result = rule;
+//          ^^^^^^ Identifier
+//                   ^^^^ Identifier
+          } else {
+//          ^^^^ Keyword
+            result = Seq{result, rule};
+//          ^^^^^^ Identifier
+//                   ^^^ IdentifierType
+//                       ^^^^^^ Identifier
+//                               ^^^^ Identifier
+          }
+        }
+      );
+    }
+    return result;
+//  ^^^^^^ Keyword
+//         ^^^^^^ Identifier
+  }
+  
+  }  // namespace rules
+//   ^^^^^^^^^^^^^^^^^^ Comment
+  }  // namespace tree_sitter
+//   ^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  
+  namespace std {
+//^^^^^^^^^ Keyword
+//          ^^^ IdentifierNamespace
+  
+  size_t hash<Symbol>::operator()(const Symbol &symbol) const {
+//^^^^^^ IdentifierBuiltinType
+//       ^^^^ IdentifierType
+//            ^^^^^^ IdentifierType
+//                     ^^^^^^^^ Keyword
+//                             ^^ Identifier
+//                                ^^^^^ Keyword
+//                                      ^^^^^^ IdentifierType
+//                                              ^^^^^^ Identifier
+//                                                      ^^^^^ Keyword
+    auto result = hash<int>()(symbol.index);
+//  ^^^^ Keyword
+//       ^^^^^^ Identifier
+//                ^^^^ Identifier
+//                     ^^^ IdentifierBuiltinType
+//                            ^^^^^^ Identifier
+//                                   ^^^^^ IdentifierAttribute
+    hash_combine(&result, hash<int>()(symbol.type));
+//  ^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^^^ Identifier
+//                        ^^^^ Identifier
+//                             ^^^ IdentifierBuiltinType
+//                                    ^^^^^^ Identifier
+//                                           ^^^^ IdentifierAttribute
+    return result;
+//  ^^^^^^ Keyword
+//         ^^^^^^ Identifier
+  }
+  
+  size_t hash<NamedSymbol>::operator()(const NamedSymbol &symbol) const {
+//^^^^^^ IdentifierBuiltinType
+//       ^^^^ IdentifierType
+//            ^^^^^^^^^^^ IdentifierType
+//                          ^^^^^^^^ Keyword
+//                                  ^^ Identifier
+//                                     ^^^^^ Keyword
+//                                           ^^^^^^^^^^^ IdentifierType
+//                                                        ^^^^^^ Identifier
+//                                                                ^^^^^ Keyword
+    return hash<string>()(symbol.value);
+//  ^^^^^^ Keyword
+//         ^^^^ Identifier
+//              ^^^^^^ IdentifierType
+//                        ^^^^^^ Identifier
+//                               ^^^^^ IdentifierAttribute
+  }
+  
+  size_t hash<Pattern>::operator()(const Pattern &symbol) const {
+//^^^^^^ IdentifierBuiltinType
+//       ^^^^ IdentifierType
+//            ^^^^^^^ IdentifierType
+//                      ^^^^^^^^ Keyword
+//                              ^^ Identifier
+//                                 ^^^^^ Keyword
+//                                       ^^^^^^^ IdentifierType
+//                                                ^^^^^^ Identifier
+//                                                        ^^^^^ Keyword
+    return hash<string>()(symbol.value);
+//  ^^^^^^ Keyword
+//         ^^^^ Identifier
+//              ^^^^^^ IdentifierType
+//                        ^^^^^^ Identifier
+//                               ^^^^^ IdentifierAttribute
+  }
+  
+  size_t hash<String>::operator()(const String &symbol) const {
+//^^^^^^ IdentifierBuiltinType
+//       ^^^^ IdentifierType
+//            ^^^^^^ IdentifierType
+//                     ^^^^^^^^ Keyword
+//                             ^^ Identifier
+//                                ^^^^^ Keyword
+//                                      ^^^^^^ IdentifierType
+//                                              ^^^^^^ Identifier
+//                                                      ^^^^^ Keyword
+    return hash<string>()(symbol.value);
+//  ^^^^^^ Keyword
+//         ^^^^ Identifier
+//              ^^^^^^ IdentifierType
+//                        ^^^^^^ Identifier
+//                               ^^^^^ IdentifierAttribute
+  }
+  
+  size_t hash<CharacterSet>::operator()(const CharacterSet &character_set) const {
+//^^^^^^ IdentifierBuiltinType
+//       ^^^^ IdentifierType
+//            ^^^^^^^^^^^^ IdentifierType
+//                           ^^^^^^^^ Keyword
+//                                   ^^ Identifier
+//                                      ^^^^^ Keyword
+//                                            ^^^^^^^^^^^^ IdentifierType
+//                                                          ^^^^^^^^^^^^^ Identifier
+//                                                                         ^^^^^ Keyword
+    size_t result = 0;
+//  ^^^^^^ IdentifierBuiltinType
+//         ^^^^^^ Identifier
+//                  ^ NumericLiteral
+    hash_combine(&result, character_set.includes_all);
+//  ^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^^^ Identifier
+//                        ^^^^^^^^^^^^^ Identifier
+//                                      ^^^^^^^^^^^^ IdentifierAttribute
+    hash_combine(&result, character_set.included_chars.size());
+//  ^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^^^ Identifier
+//                        ^^^^^^^^^^^^^ Identifier
+//                                      ^^^^^^^^^^^^^^ IdentifierAttribute
+//                                                     ^^^^ IdentifierFunction
+    for (uint32_t c : character_set.included_chars) {
+//  ^^^ Keyword
+//       ^^^^^^^^ IdentifierBuiltinType
+//                ^ Identifier
+//                    ^^^^^^^^^^^^^ Identifier
+//                                  ^^^^^^^^^^^^^^ IdentifierAttribute
+      hash_combine(&result, c);
+//    ^^^^^^^^^^^^ IdentifierFunction
+//                  ^^^^^^ Identifier
+//                          ^ Identifier
+    }
+    hash_combine(&result, character_set.excluded_chars.size());
+//  ^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^^^ Identifier
+//                        ^^^^^^^^^^^^^ Identifier
+//                                      ^^^^^^^^^^^^^^ IdentifierAttribute
+//                                                     ^^^^ IdentifierFunction
+    for (uint32_t c : character_set.excluded_chars) {
+//  ^^^ Keyword
+//       ^^^^^^^^ IdentifierBuiltinType
+//                ^ Identifier
+//                    ^^^^^^^^^^^^^ Identifier
+//                                  ^^^^^^^^^^^^^^ IdentifierAttribute
+      hash_combine(&result, c);
+//    ^^^^^^^^^^^^ IdentifierFunction
+//                  ^^^^^^ Identifier
+//                          ^ Identifier
+    }
+    return result;
+//  ^^^^^^ Keyword
+//         ^^^^^^ Identifier
+  }
+  
+  size_t hash<Blank>::operator()(const Blank &blank) const {
+//^^^^^^ IdentifierBuiltinType
+//       ^^^^ IdentifierType
+//            ^^^^^ IdentifierType
+//                    ^^^^^^^^ Keyword
+//                            ^^ Identifier
+//                               ^^^^^ Keyword
+//                                     ^^^^^ IdentifierType
+//                                            ^^^^^ Identifier
+//                                                   ^^^^^ Keyword
+    return 0;
+//  ^^^^^^ Keyword
+//         ^ NumericLiteral
+  }
+  
+  size_t hash<Choice>::operator()(const Choice &choice) const {
+//^^^^^^ IdentifierBuiltinType
+//       ^^^^ IdentifierType
+//            ^^^^^^ IdentifierType
+//                     ^^^^^^^^ Keyword
+//                             ^^ Identifier
+//                                ^^^^^ Keyword
+//                                      ^^^^^^ IdentifierType
+//                                              ^^^^^^ Identifier
+//                                                      ^^^^^ Keyword
+    size_t result = 0;
+//  ^^^^^^ IdentifierBuiltinType
+//         ^^^^^^ Identifier
+//                  ^ NumericLiteral
+    for (const auto &element : choice.elements) {
+//  ^^^ Keyword
+//       ^^^^^ Keyword
+//             ^^^^ Keyword
+//                   ^^^^^^^ Identifier
+//                             ^^^^^^ Identifier
+//                                    ^^^^^^^^ IdentifierAttribute
+      symmetric_hash_combine(&result, element);
+//    ^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                            ^^^^^^ Identifier
+//                                    ^^^^^^^ Identifier
+    }
+    return result;
+//  ^^^^^^ Keyword
+//         ^^^^^^ Identifier
+  }
+  
+  size_t hash<Repeat>::operator()(const Repeat &repeat) const {
+//^^^^^^ IdentifierBuiltinType
+//       ^^^^ IdentifierType
+//            ^^^^^^ IdentifierType
+//                     ^^^^^^^^ Keyword
+//                             ^^ Identifier
+//                                ^^^^^ Keyword
+//                                      ^^^^^^ IdentifierType
+//                                              ^^^^^^ Identifier
+//                                                      ^^^^^ Keyword
+    size_t result = 0;
+//  ^^^^^^ IdentifierBuiltinType
+//         ^^^^^^ Identifier
+//                  ^ NumericLiteral
+    hash_combine(&result, *repeat.rule);
+//  ^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^^^ Identifier
+//                         ^^^^^^ Identifier
+//                                ^^^^ IdentifierAttribute
+    return result;
+//  ^^^^^^ Keyword
+//         ^^^^^^ Identifier
+  }
+  
+  size_t hash<Seq>::operator()(const Seq &seq) const {
+//^^^^^^ IdentifierBuiltinType
+//       ^^^^ IdentifierType
+//            ^^^ IdentifierType
+//                  ^^^^^^^^ Keyword
+//                          ^^ Identifier
+//                             ^^^^^ Keyword
+//                                   ^^^ IdentifierType
+//                                        ^^^ Identifier
+//                                             ^^^^^ Keyword
+    size_t result = 0;
+//  ^^^^^^ IdentifierBuiltinType
+//         ^^^^^^ Identifier
+//                  ^ NumericLiteral
+    hash_combine(&result, *seq.left);
+//  ^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^^^ Identifier
+//                         ^^^ Identifier
+//                             ^^^^ IdentifierAttribute
+    hash_combine(&result, *seq.right);
+//  ^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^^^ Identifier
+//                         ^^^ Identifier
+//                             ^^^^^ IdentifierAttribute
+    return result;
+//  ^^^^^^ Keyword
+//         ^^^^^^ Identifier
+  }
+  
+  size_t hash<Metadata>::operator()(const Metadata &metadata) const {
+//^^^^^^ IdentifierBuiltinType
+//       ^^^^ IdentifierType
+//            ^^^^^^^^ IdentifierType
+//                       ^^^^^^^^ Keyword
+//                               ^^ Identifier
+//                                  ^^^^^ Keyword
+//                                        ^^^^^^^^ IdentifierType
+//                                                  ^^^^^^^^ Identifier
+//                                                            ^^^^^ Keyword
+    size_t result = 0;
+//  ^^^^^^ IdentifierBuiltinType
+//         ^^^^^^ Identifier
+//                  ^ NumericLiteral
+    hash_combine(&result, *metadata.rule);
+//  ^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^^^ Identifier
+//                         ^^^^^^^^ Identifier
+//                                  ^^^^ IdentifierAttribute
+    hash_combine(&result, metadata.params.precedence);
+//  ^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^^^ Identifier
+//                        ^^^^^^^^ Identifier
+//                                 ^^^^^^ IdentifierAttribute
+//                                        ^^^^^^^^^^ IdentifierAttribute
+    hash_combine<int>(&result, metadata.params.associativity);
+//  ^^^^^^^^^^^^ Identifier
+//               ^^^ IdentifierBuiltinType
+//                     ^^^^^^ Identifier
+//                             ^^^^^^^^ Identifier
+//                                      ^^^^^^ IdentifierAttribute
+//                                             ^^^^^^^^^^^^^ IdentifierAttribute
+    hash_combine(&result, metadata.params.has_precedence);
+//  ^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^^^ Identifier
+//                        ^^^^^^^^ Identifier
+//                                 ^^^^^^ IdentifierAttribute
+//                                        ^^^^^^^^^^^^^^ IdentifierAttribute
+    hash_combine(&result, metadata.params.has_associativity);
+//  ^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^^^ Identifier
+//                        ^^^^^^^^ Identifier
+//                                 ^^^^^^ IdentifierAttribute
+//                                        ^^^^^^^^^^^^^^^^^ IdentifierAttribute
+    hash_combine(&result, metadata.params.is_token);
+//  ^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^^^ Identifier
+//                        ^^^^^^^^ Identifier
+//                                 ^^^^^^ IdentifierAttribute
+//                                        ^^^^^^^^ IdentifierAttribute
+    hash_combine(&result, metadata.params.is_string);
+//  ^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^^^ Identifier
+//                        ^^^^^^^^ Identifier
+//                                 ^^^^^^ IdentifierAttribute
+//                                        ^^^^^^^^^ IdentifierAttribute
+    hash_combine(&result, metadata.params.is_active);
+//  ^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^^^ Identifier
+//                        ^^^^^^^^ Identifier
+//                                 ^^^^^^ IdentifierAttribute
+//                                        ^^^^^^^^^ IdentifierAttribute
+    hash_combine(&result, metadata.params.is_main_token);
+//  ^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^^^ Identifier
+//                        ^^^^^^^^ Identifier
+//                                 ^^^^^^ IdentifierAttribute
+//                                        ^^^^^^^^^^^^^ IdentifierAttribute
+    return result;
+//  ^^^^^^ Keyword
+//         ^^^^^^ Identifier
+  }
+  
+  size_t hash<Rule>::operator()(const Rule &rule) const {
+//^^^^^^ IdentifierBuiltinType
+//       ^^^^ IdentifierType
+//            ^^^^ IdentifierType
+//                   ^^^^^^^^ Keyword
+//                           ^^ Identifier
+//                              ^^^^^ Keyword
+//                                    ^^^^ IdentifierType
+//                                          ^^^^ Identifier
+//                                                ^^^^^ Keyword
+    size_t result = hash<int>()(rule.type);
+//  ^^^^^^ IdentifierBuiltinType
+//         ^^^^^^ Identifier
+//                  ^^^^ Identifier
+//                       ^^^ IdentifierBuiltinType
+//                              ^^^^ Identifier
+//                                   ^^^^ IdentifierAttribute
+    switch (rule.type) {
+//  ^^^^^^ Keyword
+//          ^^^^ Identifier
+//               ^^^^ IdentifierAttribute
+      case Rule::CharacterSetType: return result ^ hash<CharacterSet>()(rule.character_set_);
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^^^^^^^ Identifier
+//                                 ^^^^^^ Keyword
+//                                        ^^^^^^ Identifier
+//                                                 ^^^^ Identifier
+//                                                      ^^^^^^^^^^^^ IdentifierType
+//                                                                      ^^^^ Identifier
+//                                                                           ^^^^^^^^^^^^^^ IdentifierAttribute
+      case Rule::StringType: return result ^ hash<String>()(rule.string_);
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^ Identifier
+//                           ^^^^^^ Keyword
+//                                  ^^^^^^ Identifier
+//                                           ^^^^ Identifier
+//                                                ^^^^^^ IdentifierType
+//                                                          ^^^^ Identifier
+//                                                               ^^^^^^^ IdentifierAttribute
+      case Rule::PatternType: return result ^ hash<Pattern>()(rule.pattern_);
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^^ Identifier
+//                            ^^^^^^ Keyword
+//                                   ^^^^^^ Identifier
+//                                            ^^^^ Identifier
+//                                                 ^^^^^^^ IdentifierType
+//                                                            ^^^^ Identifier
+//                                                                 ^^^^^^^^ IdentifierAttribute
+      case Rule::NamedSymbolType: return result ^ hash<NamedSymbol>()(rule.named_symbol_);
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^^^^^^ Identifier
+//                                ^^^^^^ Keyword
+//                                       ^^^^^^ Identifier
+//                                                ^^^^ Identifier
+//                                                     ^^^^^^^^^^^ IdentifierType
+//                                                                    ^^^^ Identifier
+//                                                                         ^^^^^^^^^^^^^ IdentifierAttribute
+      case Rule::SymbolType: return result ^ hash<Symbol>()(rule.symbol_);
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^ Identifier
+//                           ^^^^^^ Keyword
+//                                  ^^^^^^ Identifier
+//                                           ^^^^ Identifier
+//                                                ^^^^^^ IdentifierType
+//                                                          ^^^^ Identifier
+//                                                               ^^^^^^^ IdentifierAttribute
+      case Rule::ChoiceType: return result ^ hash<Choice>()(rule.choice_);
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^ Identifier
+//                           ^^^^^^ Keyword
+//                                  ^^^^^^ Identifier
+//                                           ^^^^ Identifier
+//                                                ^^^^^^ IdentifierType
+//                                                          ^^^^ Identifier
+//                                                               ^^^^^^^ IdentifierAttribute
+      case Rule::MetadataType: return result ^ hash<Metadata>()(rule.metadata_);
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^^^ Identifier
+//                             ^^^^^^ Keyword
+//                                    ^^^^^^ Identifier
+//                                             ^^^^ Identifier
+//                                                  ^^^^^^^^ IdentifierType
+//                                                              ^^^^ Identifier
+//                                                                   ^^^^^^^^^ IdentifierAttribute
+      case Rule::RepeatType: return result ^ hash<Repeat>()(rule.repeat_);
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^^^^ Identifier
+//                           ^^^^^^ Keyword
+//                                  ^^^^^^ Identifier
+//                                           ^^^^ Identifier
+//                                                ^^^^^^ IdentifierType
+//                                                          ^^^^ Identifier
+//                                                               ^^^^^^^ IdentifierAttribute
+      case Rule::SeqType: return result ^ hash<Seq>()(rule.seq_);
+//    ^^^^ Keyword
+//         ^^^^ IdentifierNamespace
+//               ^^^^^^^ Identifier
+//                        ^^^^^^ Keyword
+//                               ^^^^^^ Identifier
+//                                        ^^^^ Identifier
+//                                             ^^^ IdentifierType
+//                                                    ^^^^ Identifier
+//                                                         ^^^^ IdentifierAttribute
+      default: return result ^ hash<Blank>()(rule.blank_);
+//    ^^^^^^^ Keyword
+//             ^^^^^^ Keyword
+//                    ^^^^^^ Identifier
+//                             ^^^^ Identifier
+//                                  ^^^^^ IdentifierType
+//                                           ^^^^ Identifier
+//                                                ^^^^^^ IdentifierAttribute
+    }
+  }
+  
+  }  // namespace std
+//   ^^^^^^^^^^^^^^^^ Comment
+  
+  // Handler to validate a compilation database in a streaming fashion.
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  //
+//^^ Comment
+  // Spec: https://clang.llvm.org/docs/JSONCompilationDatabase.html
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  template <typename H>
+//^^^^^^^^ Keyword
+//          ^^^^^^^^ Keyword
+//                   ^ IdentifierType
+  class ValidateHandler
+//^^^^^ Keyword
+//      ^^^^^^^^^^^^^^^ IdentifierType
+      : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>,
+//      ^^^^^^ Keyword
+//             ^^^^^^^^^ IdentifierNamespace
+//                        ^^^^^^^^^^^^^^^^^ IdentifierType
+//                                          ^^^^^^^^^ IdentifierNamespace
+//                                                     ^^^^ IdentifierType
+                                            ValidateHandler<H>> {
+//                                          ^^^^^^^^^^^^^^^ IdentifierType
+//                                                          ^ IdentifierType
+    H &inner;
+//  ^ IdentifierType
+//     ^^^^^ IdentifierAttribute
+  
+    enum class Context {
+//  ^^^^ Keyword
+//       ^^^^^ Keyword
+//             ^^^^^^^ IdentifierType
+      // Outside the outermost '['
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      Outermost,
+//    ^^^^^^^^^ Identifier
+      // Inside the outermost '[' but outside any command object
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      InTopLevelArray,
+//    ^^^^^^^^^^^^^^^ Identifier
+      // Inside a '{'
+//    ^^^^^^^^^^^^^^^ Comment
+      InObject,
+//    ^^^^^^^^ Identifier
+      // At the RHS after seeing "arguments"
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      InArgumentsValue,
+//    ^^^^^^^^^^^^^^^^ Identifier
+      // Inside the array after "arguments": [
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      InArgumentsValueArray,
+//    ^^^^^^^^^^^^^^^^^^^^^ Identifier
+    } context;
+//    ^^^^^^^ IdentifierAttribute
+  
+    uint32_t presentKeys;
+//  ^^^^^^^^ IdentifierBuiltinType
+//           ^^^^^^^^^^^ IdentifierAttribute
+    Key lastKey;
+//  ^^^ IdentifierType
+//      ^^^^^^^ IdentifierAttribute
+    ValidationOptions options;
+//  ^^^^^^^^^^^^^^^^^ IdentifierType
+//                    ^^^^^^^ IdentifierAttribute
+  
+  public:
+//^^^^^^ Keyword
+    std::string errorMessage;
+//  ^^^ IdentifierNamespace
+//       ^^^^^^ IdentifierType
+//              ^^^^^^^^^^^^ IdentifierAttribute
+    absl::flat_hash_set<std::string> warnings;
+//  ^^^^ IdentifierNamespace
+//        ^^^^^^^^^^^^^ IdentifierType
+//                      ^^^ IdentifierNamespace
+//                           ^^^^^^ IdentifierType
+//                                   ^^^^^^^^ IdentifierAttribute
+  
+    ValidateHandler(H &inner, ValidationOptions options)
+//  ^^^^^^^^^^^^^^^ IdentifierFunction
+//                  ^ IdentifierType
+//                     ^^^^^ Identifier
+//                            ^^^^^^^^^^^^^^^^^ IdentifierType
+//                                              ^^^^^^^ Identifier
+        : inner(inner), context(Context::Outermost), lastKey(Key::Unset),
+//        ^^^^^ IdentifierAttribute
+//              ^^^^^ Identifier
+//                      ^^^^^^^ IdentifierAttribute
+//                              ^^^^^^^ IdentifierNamespace
+//                                       ^^^^^^^^^ Identifier
+//                                                   ^^^^^^^ IdentifierAttribute
+//                                                           ^^^ IdentifierNamespace
+//                                                                ^^^^^ Identifier
+          options(options), errorMessage(), warnings() {}
+//        ^^^^^^^ IdentifierAttribute
+//                ^^^^^^^ Identifier
+//                          ^^^^^^^^^^^^ IdentifierAttribute
+//                                          ^^^^^^^^ IdentifierAttribute
+  
+  private:
+//^^^^^^^ Keyword
+    void markContextIllegal(std::string forItem) {
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                          ^^^ IdentifierNamespace
+//                               ^^^^^^ IdentifierType
+//                                      ^^^^^^^ Identifier
+      const char *ctx;
+//    ^^^^^ Keyword
+//          ^^^^ IdentifierBuiltinType
+//                ^^^ Identifier
+      switch (this->context) {
+//    ^^^^^^ Keyword
+//            ^^^^ IdentifierBuiltin
+//                  ^^^^^^^ IdentifierAttribute
+      case Context::Outermost:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^ Identifier
+        ctx = "outermost context";
+//      ^^^ Identifier
+//            ^^^^^^^^^^^^^^^^^^^ StringLiteral
+        break;
+//      ^^^^^ Keyword
+      case Context::InTopLevelArray:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^ Identifier
+        ctx = "top-level array context";
+//      ^^^ Identifier
+//            ^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+        break;
+//      ^^^^^ Keyword
+      case Context::InObject:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^ Identifier
+        ctx = "command object context";
+//      ^^^ Identifier
+//            ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+        break;
+//      ^^^^^ Keyword
+      case Context::InArgumentsValue:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^^ Identifier
+        ctx = "value for the key 'arguments'";
+//      ^^^ Identifier
+//            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+        break;
+//      ^^^^^ Keyword
+      case Context::InArgumentsValueArray:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^^^^^^^ Identifier
+        ctx = "array for the key 'arguments'";
+//      ^^^ Identifier
+//            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+        break;
+//      ^^^^^ Keyword
+      }
+      this->errorMessage = fmt::format("unexpected {} in {}", forItem, ctx);
+//    ^^^^ IdentifierBuiltin
+//          ^^^^^^^^^^^^ IdentifierAttribute
+//                         ^^^ IdentifierNamespace
+//                              ^^^^^^ Identifier
+//                                     ^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                            ^^^^^^^ Identifier
+//                                                                     ^^^ Identifier
+    }
+  
+    std::optional<std::string> checkNecessaryKeysPresent() const {
+//  ^^^ IdentifierNamespace
+//       ^^^^^^^^ IdentifierType
+//                ^^^ IdentifierNamespace
+//                     ^^^^^^ IdentifierType
+//                             ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                                         ^^^^^ Keyword
+      std::vector<std::string> missingKeys;
+//    ^^^ IdentifierNamespace
+//         ^^^^^^ IdentifierType
+//                ^^^ IdentifierNamespace
+//                     ^^^^^^ IdentifierType
+//                             ^^^^^^^^^^^ Identifier
+      using UInt = decltype(this->presentKeys);
+//    ^^^^^ Keyword
+//          ^^^^ IdentifierType
+//                 ^^^^^^^^ Keyword
+//                          ^^^^ IdentifierBuiltin
+//                                ^^^^^^^^^^^ IdentifierAttribute
+      if (!(this->presentKeys & UInt(Key::Directory))) {
+//    ^^ Keyword
+//          ^^^^ IdentifierBuiltin
+//                ^^^^^^^^^^^ IdentifierAttribute
+//                              ^^^^ IdentifierFunction
+//                                   ^^^ IdentifierNamespace
+//                                        ^^^^^^^^^ Identifier
+        missingKeys.push_back("directory");
+//      ^^^^^^^^^^^ Identifier
+//                  ^^^^^^^^^ IdentifierFunction
+//                            ^^^^^^^^^^^ StringLiteral
+      }
+      if (!(this->presentKeys & UInt(Key::File))) {
+//    ^^ Keyword
+//          ^^^^ IdentifierBuiltin
+//                ^^^^^^^^^^^ IdentifierAttribute
+//                              ^^^^ IdentifierFunction
+//                                   ^^^ IdentifierNamespace
+//                                        ^^^^ Identifier
+        missingKeys.push_back("file");
+//      ^^^^^^^^^^^ Identifier
+//                  ^^^^^^^^^ IdentifierFunction
+//                            ^^^^^^ StringLiteral
+      }
+      if (!(this->presentKeys & UInt(Key::Command))
+//    ^^ Keyword
+//          ^^^^ IdentifierBuiltin
+//                ^^^^^^^^^^^ IdentifierAttribute
+//                              ^^^^ IdentifierFunction
+//                                   ^^^ IdentifierNamespace
+//                                        ^^^^^^^ Identifier
+          && !(this->presentKeys & UInt(Key::Arguments))) {
+//             ^^^^ IdentifierBuiltin
+//                   ^^^^^^^^^^^ IdentifierAttribute
+//                                 ^^^^ IdentifierFunction
+//                                      ^^^ IdentifierNamespace
+//                                           ^^^^^^^^^ Identifier
+        missingKeys.push_back("either command or arguments");
+//      ^^^^^^^^^^^ Identifier
+//                  ^^^^^^^^^ IdentifierFunction
+//                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+      }
+      if (missingKeys.empty()) {
+//    ^^ Keyword
+//        ^^^^^^^^^^^ Identifier
+//                    ^^^^^ IdentifierFunction
+        return {};
+//      ^^^^^^ Keyword
+      }
+      std::string buf;
+//    ^^^ IdentifierNamespace
+//         ^^^^^^ IdentifierType
+//                ^^^ Identifier
+      for (size_t i = 0; i < missingKeys.size() - 1; i++) {
+//    ^^^ Keyword
+//         ^^^^^^ IdentifierBuiltinType
+//                ^ Identifier
+//                    ^ NumericLiteral
+//                       ^ Identifier
+//                           ^^^^^^^^^^^ Identifier
+//                                       ^^^^ IdentifierFunction
+//                                                ^ NumericLiteral
+//                                                   ^ Identifier
+        buf.append(missingKeys[i]);
+//      ^^^ Identifier
+//          ^^^^^^ IdentifierFunction
+//                 ^^^^^^^^^^^ Identifier
+//                             ^ Identifier
+        buf.append(", ");
+//      ^^^ Identifier
+//          ^^^^^^ IdentifierFunction
+//                 ^^^^ StringLiteral
+      }
+      buf.append(" and ");
+//    ^^^ Identifier
+//        ^^^^^^ IdentifierFunction
+//               ^^^^^^^ StringLiteral
+      buf.append(missingKeys.back());
+//    ^^^ Identifier
+//        ^^^^^^ IdentifierFunction
+//               ^^^^^^^^^^^ Identifier
+//                           ^^^^ IdentifierFunction
+      return buf;
+//    ^^^^^^ Keyword
+//           ^^^ Identifier
+    }
+  
+  public:
+//^^^^^^ Keyword
+    bool Null() {
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^ IdentifierFunction
+      this->errorMessage = "unexpected null";
+//    ^^^^ IdentifierBuiltin
+//          ^^^^^^^^^^^^ IdentifierAttribute
+//                         ^^^^^^^^^^^^^^^^^ StringLiteral
+      return false;
+//    ^^^^^^ Keyword
+//           ^^^^^ BooleanLiteral
+    }
+    bool Bool(bool b) {
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^ IdentifierFunction
+//            ^^^^ IdentifierBuiltinType
+//                 ^ Identifier
+      this->errorMessage = fmt::format("unexpected bool {}", b);
+//    ^^^^ IdentifierBuiltin
+//          ^^^^^^^^^^^^ IdentifierAttribute
+//                         ^^^ IdentifierNamespace
+//                              ^^^^^^ Identifier
+//                                     ^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                           ^ Identifier
+      return false;
+//    ^^^^^^ Keyword
+//           ^^^^^ BooleanLiteral
+    }
+    bool Int(int i) {
+//  ^^^^ IdentifierBuiltinType
+//       ^^^ IdentifierFunction
+//           ^^^ IdentifierBuiltinType
+//               ^ Identifier
+      this->errorMessage = fmt::format("unexpected int {}", i);
+//    ^^^^ IdentifierBuiltin
+//          ^^^^^^^^^^^^ IdentifierAttribute
+//                         ^^^ IdentifierNamespace
+//                              ^^^^^^ Identifier
+//                                     ^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                          ^ Identifier
+      return false;
+//    ^^^^^^ Keyword
+//           ^^^^^ BooleanLiteral
+    }
+    bool Uint(unsigned i) {
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^ IdentifierFunction
+//            ^^^^^^^^ IdentifierBuiltinType
+//                     ^ Identifier
+      this->errorMessage = fmt::format("unexpected unsigned int {}", i);
+//    ^^^^ IdentifierBuiltin
+//          ^^^^^^^^^^^^ IdentifierAttribute
+//                         ^^^ IdentifierNamespace
+//                              ^^^^^^ Identifier
+//                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                                   ^ Identifier
+      return false;
+//    ^^^^^^ Keyword
+//           ^^^^^ BooleanLiteral
+    }
+    bool Int64(int64_t i) {
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^^ IdentifierFunction
+//             ^^^^^^^ IdentifierBuiltinType
+//                     ^ Identifier
+      this->errorMessage = fmt::format("unexpected int64_t {}", i);
+//    ^^^^ IdentifierBuiltin
+//          ^^^^^^^^^^^^ IdentifierAttribute
+//                         ^^^ IdentifierNamespace
+//                              ^^^^^^ Identifier
+//                                     ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                              ^ Identifier
+      return false;
+//    ^^^^^^ Keyword
+//           ^^^^^ BooleanLiteral
+    }
+    bool Uint64(uint64_t i) {
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^^^ IdentifierFunction
+//              ^^^^^^^^ IdentifierBuiltinType
+//                       ^ Identifier
+      this->errorMessage = fmt::format("unexpected uint64_t {}", i);
+//    ^^^^ IdentifierBuiltin
+//          ^^^^^^^^^^^^ IdentifierAttribute
+//                         ^^^ IdentifierNamespace
+//                              ^^^^^^ Identifier
+//                                     ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                               ^ Identifier
+      return false;
+//    ^^^^^^ Keyword
+//           ^^^^^ BooleanLiteral
+    }
+    bool Double(double d) {
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^^^ IdentifierFunction
+//              ^^^^^^ IdentifierBuiltinType
+//                     ^ Identifier
+      this->errorMessage = fmt::format("unexpected double {}", d);
+//    ^^^^ IdentifierBuiltin
+//          ^^^^^^^^^^^^ IdentifierAttribute
+//                         ^^^ IdentifierNamespace
+//                              ^^^^^^ Identifier
+//                                     ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                             ^ Identifier
+      return false;
+//    ^^^^^^ Keyword
+//           ^^^^^ BooleanLiteral
+    }
+    bool RawNumber(const char *str, rapidjson::SizeType length, bool /*copy*/) {
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^^^^^^ IdentifierFunction
+//                 ^^^^^ Keyword
+//                       ^^^^ IdentifierBuiltinType
+//                             ^^^ Identifier
+//                                  ^^^^^^^^^ IdentifierNamespace
+//                                             ^^^^^^^^ IdentifierType
+//                                                      ^^^^^^ Identifier
+//                                                              ^^^^ IdentifierBuiltinType
+//                                                                   ^^^^^^^^ Comment
+      this->errorMessage =
+//    ^^^^ IdentifierBuiltin
+//          ^^^^^^^^^^^^ IdentifierAttribute
+          fmt::format("unexpected number {}", std::string_view(str, length));
+//        ^^^ IdentifierNamespace
+//             ^^^^^^ Identifier
+//                    ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                            ^^^ IdentifierNamespace
+//                                                 ^^^^^^^^^^^ Identifier
+//                                                             ^^^ Identifier
+//                                                                  ^^^^^^ Identifier
+      return false;
+//    ^^^^^^ Keyword
+//           ^^^^^ BooleanLiteral
+    }
+    bool String(const char *str, rapidjson::SizeType length, bool copy) {
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^^^ IdentifierFunction
+//              ^^^^^ Keyword
+//                    ^^^^ IdentifierBuiltinType
+//                          ^^^ Identifier
+//                               ^^^^^^^^^ IdentifierNamespace
+//                                          ^^^^^^^^ IdentifierType
+//                                                   ^^^^^^ Identifier
+//                                                           ^^^^ IdentifierBuiltinType
+//                                                                ^^^^ Identifier
+      switch (this->context) {
+//    ^^^^^^ Keyword
+//            ^^^^ IdentifierBuiltin
+//                  ^^^^^^^ IdentifierAttribute
+      case Context::Outermost:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^ Identifier
+      case Context::InTopLevelArray:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^ Identifier
+      case Context::InArgumentsValue:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^^ Identifier
+        this->markContextIllegal("string");
+//      ^^^^ IdentifierBuiltin
+//            ^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                               ^^^^^^^^ StringLiteral
+        return false;
+//      ^^^^^^ Keyword
+//             ^^^^^ BooleanLiteral
+      case Context::InObject:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^ Identifier
+        if (this->options.checkDirectoryPathsAreAbsolute
+//      ^^ Keyword
+//          ^^^^ IdentifierBuiltin
+//                ^^^^^^^ IdentifierAttribute
+//                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierAttribute
+            && this->lastKey == Key::Directory) {
+//             ^^^^ IdentifierBuiltin
+//                   ^^^^^^^ IdentifierAttribute
+//                              ^^^ IdentifierNamespace
+//                                   ^^^^^^^^^ Identifier
+          auto dirPath = std::string_view(str, length);
+//        ^^^^ Keyword
+//             ^^^^^^^ Identifier
+//                       ^^^ IdentifierNamespace
+//                            ^^^^^^^^^^^ Identifier
+//                                        ^^^ Identifier
+//                                             ^^^^^^ Identifier
+          // NOTE(ref: directory-field-is-absolute): While the JSON compilation
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+          // database schema
+//        ^^^^^^^^^^^^^^^^^^ Comment
+          // (https://clang.llvm.org/docs/JSONCompilationDatabase.html) does not
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+          // specify if the "directory" key should be an absolute path or not, if
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+          // it is relative, it is ambiguous as to which directory should be used
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+          // as the root if it is relative (the directory containing the
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+          // compile_commands.json is one option).
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+          if (!AbsolutePathRef::tryFrom(dirPath).has_value()) {
+//        ^^ Keyword
+//             ^^^^^^^^^^^^^^^ IdentifierNamespace
+//                              ^^^^^^^ Identifier
+//                                      ^^^^^^^ Identifier
+//                                               ^^^^^^^^^ IdentifierFunction
+            this->errorMessage = fmt::format(
+//          ^^^^ IdentifierBuiltin
+//                ^^^^^^^^^^^^ IdentifierAttribute
+//                               ^^^ IdentifierNamespace
+//                                    ^^^^^^ Identifier
+                "expected absolute path for \"directory\" key but found '{}'",
+//              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+                dirPath);
+//              ^^^^^^^ Identifier
+            return false;
+//          ^^^^^^ Keyword
+//                 ^^^^^ BooleanLiteral
+          }
+        }
+        return this->inner.String(str, length, copy);
+//      ^^^^^^ Keyword
+//             ^^^^ IdentifierBuiltin
+//                   ^^^^^ IdentifierAttribute
+//                         ^^^^^^ IdentifierFunction
+//                                ^^^ Identifier
+//                                     ^^^^^^ Identifier
+//                                             ^^^^ Identifier
+      case Context::InArgumentsValueArray:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^^^^^^^ Identifier
+        return this->inner.String(str, length, copy);
+//      ^^^^^^ Keyword
+//             ^^^^ IdentifierBuiltin
+//                   ^^^^^ IdentifierAttribute
+//                         ^^^^^^ IdentifierFunction
+//                                ^^^ Identifier
+//                                     ^^^^^^ Identifier
+//                                             ^^^^ Identifier
+      }
+    }
+    bool StartObject() {
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^^^^^^^^ IdentifierFunction
+      switch (this->context) {
+//    ^^^^^^ Keyword
+//            ^^^^ IdentifierBuiltin
+//                  ^^^^^^^ IdentifierAttribute
+      case Context::Outermost:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^ Identifier
+      case Context::InObject:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^ Identifier
+      case Context::InArgumentsValue:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^^ Identifier
+      case Context::InArgumentsValueArray:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^^^^^^^ Identifier
+        this->markContextIllegal("object start ('{')");
+//      ^^^^ IdentifierBuiltin
+//            ^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                               ^^^^^^^^^^^^^^^^^^^^ StringLiteral
+        return false;
+//      ^^^^^^ Keyword
+//             ^^^^^ BooleanLiteral
+      case Context::InTopLevelArray:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^ Identifier
+        this->context = Context::InObject;
+//      ^^^^ IdentifierBuiltin
+//            ^^^^^^^ IdentifierAttribute
+//                      ^^^^^^^ IdentifierNamespace
+//                               ^^^^^^^^ Identifier
+        return this->inner.StartObject();
+//      ^^^^^^ Keyword
+//             ^^^^ IdentifierBuiltin
+//                   ^^^^^ IdentifierAttribute
+//                         ^^^^^^^^^^^ IdentifierFunction
+      }
+    }
+    bool Key(const char *str, rapidjson::SizeType length, bool copy) {
+//  ^^^^ IdentifierBuiltinType
+//       ^^^ IdentifierFunction
+//           ^^^^^ Keyword
+//                 ^^^^ IdentifierBuiltinType
+//                       ^^^ Identifier
+//                            ^^^^^^^^^ IdentifierNamespace
+//                                       ^^^^^^^^ IdentifierType
+//                                                ^^^^^^ Identifier
+//                                                        ^^^^ IdentifierBuiltinType
+//                                                             ^^^^ Identifier
+      switch (this->context) {
+//    ^^^^^^ Keyword
+//            ^^^^ IdentifierBuiltin
+//                  ^^^^^^^ IdentifierAttribute
+      case Context::Outermost:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^ Identifier
+      case Context::InTopLevelArray:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^ Identifier
+      case Context::InArgumentsValue:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^^ Identifier
+      case Context::InArgumentsValueArray:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^^^^^^^ Identifier
+        this->markContextIllegal(
+//      ^^^^ IdentifierBuiltin
+//            ^^^^^^^^^^^^^^^^^^ IdentifierFunction
+            fmt::format("object key {}", std::string_view(str, length)));
+//          ^^^ IdentifierNamespace
+//               ^^^^^^ Identifier
+//                      ^^^^^^^^^^^^^^^ StringLiteral
+//                                       ^^^ IdentifierNamespace
+//                                            ^^^^^^^^^^^ Identifier
+//                                                        ^^^ Identifier
+//                                                             ^^^^^^ Identifier
+        return false;
+//      ^^^^^^ Keyword
+//             ^^^^^ BooleanLiteral
+      case Context::InObject:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^ Identifier
+        auto key = std::string_view(str, length);
+//      ^^^^ Keyword
+//           ^^^ Identifier
+//                 ^^^ IdentifierNamespace
+//                      ^^^^^^^^^^^ Identifier
+//                                  ^^^ Identifier
+//                                       ^^^^^^ Identifier
+        using UInt = decltype(this->presentKeys);
+//      ^^^^^ Keyword
+//            ^^^^ IdentifierType
+//                   ^^^^^^^^ Keyword
+//                            ^^^^ IdentifierBuiltin
+//                                  ^^^^^^^^^^^ IdentifierAttribute
+        compdb::Key sawKey = Key::Unset;
+//      ^^^^^^ IdentifierNamespace
+//              ^^^ IdentifierType
+//                  ^^^^^^ Identifier
+//                           ^^^ IdentifierNamespace
+//                                ^^^^^ Identifier
+        if (key == "directory") {
+//      ^^ Keyword
+//          ^^^ Identifier
+//                 ^^^^^^^^^^^ StringLiteral
+          sawKey = Key::Directory;
+//        ^^^^^^ Identifier
+//                 ^^^ IdentifierNamespace
+//                      ^^^^^^^^^ Identifier
+        } else if (key == "file") {
+//        ^^^^ Keyword
+//             ^^ Keyword
+//                 ^^^ Identifier
+//                        ^^^^^^ StringLiteral
+          sawKey = Key::File;
+//        ^^^^^^ Identifier
+//                 ^^^ IdentifierNamespace
+//                      ^^^^ Identifier
+        } else if (key == "command") {
+//        ^^^^ Keyword
+//             ^^ Keyword
+//                 ^^^ Identifier
+//                        ^^^^^^^^^ StringLiteral
+          sawKey = Key::Command;
+//        ^^^^^^ Identifier
+//                 ^^^ IdentifierNamespace
+//                      ^^^^^^^ Identifier
+        } else if (key == "arguments") {
+//        ^^^^ Keyword
+//             ^^ Keyword
+//                 ^^^ Identifier
+//                        ^^^^^^^^^^^ StringLiteral
+          this->context = Context::InArgumentsValue;
+//        ^^^^ IdentifierBuiltin
+//              ^^^^^^^ IdentifierAttribute
+//                        ^^^^^^^ IdentifierNamespace
+//                                 ^^^^^^^^^^^^^^^^ Identifier
+          sawKey = Key::Arguments;
+//        ^^^^^^ Identifier
+//                 ^^^ IdentifierNamespace
+//                      ^^^^^^^^^ Identifier
+        } else if (key == "output") {
+//        ^^^^ Keyword
+//             ^^ Keyword
+//                 ^^^ Identifier
+//                        ^^^^^^^^ StringLiteral
+          sawKey = Key::Output;
+//        ^^^^^^ Identifier
+//                 ^^^ IdentifierNamespace
+//                      ^^^^^^ Identifier
+        } else {
+//        ^^^^ Keyword
+          this->warnings.insert(fmt::format("unknown key {}", key));
+//        ^^^^ IdentifierBuiltin
+//              ^^^^^^^^ IdentifierAttribute
+//                       ^^^^^^ IdentifierFunction
+//                              ^^^ IdentifierNamespace
+//                                   ^^^^^^ Identifier
+//                                          ^^^^^^^^^^^^^^^^ StringLiteral
+//                                                            ^^^ Identifier
+        }
+        if (sawKey != Key::Unset) {
+//      ^^ Keyword
+//          ^^^^^^ Identifier
+//                    ^^^ IdentifierNamespace
+//                         ^^^^^ Identifier
+          this->lastKey = sawKey;
+//        ^^^^ IdentifierBuiltin
+//              ^^^^^^^ IdentifierAttribute
+//                        ^^^^^^ Identifier
+          this->presentKeys |= UInt(this->lastKey);
+//        ^^^^ IdentifierBuiltin
+//              ^^^^^^^^^^^ IdentifierAttribute
+//                             ^^^^ IdentifierFunction
+//                                  ^^^^ IdentifierBuiltin
+//                                        ^^^^^^^ IdentifierAttribute
+        }
+        return this->inner.Key(str, length, copy);
+//      ^^^^^^ Keyword
+//             ^^^^ IdentifierBuiltin
+//                   ^^^^^ IdentifierAttribute
+//                         ^^^ IdentifierFunction
+//                             ^^^ Identifier
+//                                  ^^^^^^ Identifier
+//                                          ^^^^ Identifier
+      }
+    }
+    bool EndObject(rapidjson::SizeType memberCount) {
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^^^^^^ IdentifierFunction
+//                 ^^^^^^^^^ IdentifierNamespace
+//                            ^^^^^^^^ IdentifierType
+//                                     ^^^^^^^^^^^ Identifier
+      switch (this->context) {
+//    ^^^^^^ Keyword
+//            ^^^^ IdentifierBuiltin
+//                  ^^^^^^^ IdentifierAttribute
+      case Context::Outermost:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^ Identifier
+      case Context::InTopLevelArray:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^ Identifier
+      case Context::InArgumentsValue:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^^ Identifier
+      case Context::InArgumentsValueArray:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^^^^^^^ Identifier
+        this->markContextIllegal("object end ('}')");
+//      ^^^^ IdentifierBuiltin
+//            ^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                               ^^^^^^^^^^^^^^^^^^ StringLiteral
+        return false;
+//      ^^^^^^ Keyword
+//             ^^^^^ BooleanLiteral
+      case Context::InObject:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^ Identifier
+        this->context = Context::InTopLevelArray;
+//      ^^^^ IdentifierBuiltin
+//            ^^^^^^^ IdentifierAttribute
+//                      ^^^^^^^ IdentifierNamespace
+//                               ^^^^^^^^^^^^^^^ Identifier
+        if (auto missing = this->checkNecessaryKeysPresent()) {
+//      ^^ Keyword
+//          ^^^^ Keyword
+//               ^^^^^^^ Identifier
+//                         ^^^^ IdentifierBuiltin
+//                               ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+          spdlog::warn("missing keys: {}", missing.value());
+//        ^^^^^^ IdentifierNamespace
+//                ^^^^ Identifier
+//                     ^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                         ^^^^^^^ Identifier
+//                                                 ^^^^^ IdentifierFunction
+        }
+        this->presentKeys = 0;
+//      ^^^^ IdentifierBuiltin
+//            ^^^^^^^^^^^ IdentifierAttribute
+//                          ^ NumericLiteral
+        return this->inner.EndObject(memberCount);
+//      ^^^^^^ Keyword
+//             ^^^^ IdentifierBuiltin
+//                   ^^^^^ IdentifierAttribute
+//                         ^^^^^^^^^ IdentifierFunction
+//                                   ^^^^^^^^^^^ Identifier
+      }
+    }
+    bool StartArray() {
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^^^^^^^ IdentifierFunction
+      switch (this->context) {
+//    ^^^^^^ Keyword
+//            ^^^^ IdentifierBuiltin
+//                  ^^^^^^^ IdentifierAttribute
+      case Context::InTopLevelArray:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^ Identifier
+      case Context::InObject:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^ Identifier
+      case Context::InArgumentsValueArray:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^^^^^^^ Identifier
+        this->markContextIllegal("array start ('[')");
+//      ^^^^ IdentifierBuiltin
+//            ^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                               ^^^^^^^^^^^^^^^^^^^ StringLiteral
+        return false;
+//      ^^^^^^ Keyword
+//             ^^^^^ BooleanLiteral
+      case Context::Outermost:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^ Identifier
+        this->context = Context::InTopLevelArray;
+//      ^^^^ IdentifierBuiltin
+//            ^^^^^^^ IdentifierAttribute
+//                      ^^^^^^^ IdentifierNamespace
+//                               ^^^^^^^^^^^^^^^ Identifier
+        break;
+//      ^^^^^ Keyword
+      case Context::InArgumentsValue:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^^ Identifier
+        this->context = Context::InArgumentsValueArray;
+//      ^^^^ IdentifierBuiltin
+//            ^^^^^^^ IdentifierAttribute
+//                      ^^^^^^^ IdentifierNamespace
+//                               ^^^^^^^^^^^^^^^^^^^^^ Identifier
+        break;
+//      ^^^^^ Keyword
+      }
+      return this->inner.StartObject();
+//    ^^^^^^ Keyword
+//           ^^^^ IdentifierBuiltin
+//                 ^^^^^ IdentifierAttribute
+//                       ^^^^^^^^^^^ IdentifierFunction
+    }
+    bool EndArray(rapidjson::SizeType elementCount) {
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^^^^^ IdentifierFunction
+//                ^^^^^^^^^ IdentifierNamespace
+//                           ^^^^^^^^ IdentifierType
+//                                    ^^^^^^^^^^^^ Identifier
+      switch (this->context) {
+//    ^^^^^^ Keyword
+//            ^^^^ IdentifierBuiltin
+//                  ^^^^^^^ IdentifierAttribute
+      case Context::Outermost:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^ Identifier
+      case Context::InObject:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^ Identifier
+      case Context::InArgumentsValue:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^^ Identifier
+        this->markContextIllegal("array end (']')");
+//      ^^^^ IdentifierBuiltin
+//            ^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                               ^^^^^^^^^^^^^^^^^ StringLiteral
+        return false;
+//      ^^^^^^ Keyword
+//             ^^^^^ BooleanLiteral
+      case Context::InTopLevelArray:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^ Identifier
+        this->context = Context::Outermost;
+//      ^^^^ IdentifierBuiltin
+//            ^^^^^^^ IdentifierAttribute
+//                      ^^^^^^^ IdentifierNamespace
+//                               ^^^^^^^^^ Identifier
+        break;
+//      ^^^^^ Keyword
+      case Context::InArgumentsValueArray:
+//    ^^^^ Keyword
+//         ^^^^^^^ IdentifierNamespace
+//                  ^^^^^^^^^^^^^^^^^^^^^ Identifier
+        this->context = Context::InObject;
+//      ^^^^ IdentifierBuiltin
+//            ^^^^^^^ IdentifierAttribute
+//                      ^^^^^^^ IdentifierNamespace
+//                               ^^^^^^^^ Identifier
+        break;
+//      ^^^^^ Keyword
+      }
+      return this->inner.EndArray(elementCount);
+//    ^^^^^^ Keyword
+//           ^^^^ IdentifierBuiltin
+//                 ^^^^^ IdentifierAttribute
+//                       ^^^^^^^^ IdentifierFunction
+//                                ^^^^^^^^^^^^ Identifier
+    }
+  };
+

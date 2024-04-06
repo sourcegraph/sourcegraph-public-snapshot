@@ -3,6 +3,7 @@
  * UI.
  */
 
+import type { ApolloClient } from '@apollo/client'
 import {
     findNext,
     findPrevious,
@@ -56,6 +57,7 @@ import { Keybindings } from '../../../components/KeyboardShortcutsHelp/KeyboardS
 import { createElement } from '../../../util/dom'
 
 import { CodeMirrorContainer } from './react-interop'
+import { SearchPanelViewMode } from './types'
 
 import styles from './search.module.scss'
 
@@ -80,6 +82,13 @@ export const BLOB_SEARCH_CONTAINER_ID = 'blob-search-container'
 
 const focusSearchInput = StateEffect.define<boolean>()
 
+export interface SearchPanelConfig {
+    searchValue: string
+    regexp: boolean
+    caseSensitive: boolean
+    mode: SearchPanelViewMode
+}
+
 interface SearchPanelState {
     searchQuery: SearchQuery
     // The input value is usually derived from searchQuery. But we are
@@ -90,6 +99,7 @@ interface SearchPanelState {
     matches: SearchMatches
     // Currently selected 1-based match index.
     currentMatchIndex: number | null
+    mode: SearchPanelViewMode
 }
 
 class SearchPanel implements Panel {
@@ -102,9 +112,14 @@ class SearchPanel implements Panel {
     private searchTerm = new Subject<string>()
     private subscriptions = new Subscription()
 
-    constructor(private view: EditorView, private navigate: NavigateFunction) {
+    constructor(
+        private view: EditorView,
+        private navigate: NavigateFunction,
+        private graphQLClient: ApolloClient<any>,
+        config?: SearchPanelConfig
+    ) {
         this.dom = createElement('div', {
-            className: 'cm-sg-search-container d-flex align-items-center',
+            className: classNames('cm-sg-search-container', styles.root),
             id: BLOB_SEARCH_CONTAINER_ID,
             onkeydown: this.onkeydown,
         })
@@ -112,11 +127,17 @@ class SearchPanel implements Panel {
         const searchQuery = getSearchQuery(this.view.state)
         const matches = calculateMatches(searchQuery, view.state.doc)
         this.state = {
-            searchQuery,
-            inputValue: searchQuery.search,
+            searchQuery: new SearchQuery({
+                ...searchQuery,
+                caseSensitive: config?.caseSensitive ?? searchQuery.caseSensitive,
+                regexp: config?.regexp ?? searchQuery.regexp,
+                search: config?.searchValue ?? searchQuery.search,
+            }),
+            inputValue: config?.searchValue ?? searchQuery.search,
             overrideBrowserSearch: this.view.state.field(overrideBrowserFindInPageShortcut),
             matches,
             currentMatchIndex: getMatchIndexForSelection(matches, view.state.selection.main),
+            mode: config?.mode ?? SearchPanelViewMode.FullSearch,
         }
 
         this.subscriptions.add(
@@ -191,22 +212,25 @@ class SearchPanel implements Panel {
         overrideBrowserSearch,
         currentMatchIndex,
         matches,
+        mode,
     }: SearchPanelState): void {
         if (!this.root) {
             this.root = createRoot(this.dom)
         }
 
         const totalMatches = matches.size
+        const isFullMode = mode === SearchPanelViewMode.FullSearch
 
         this.root.render(
             <CodeMirrorContainer
+                graphQLClient={this.graphQLClient}
                 navigate={this.navigate}
                 onMount={() => {
                     this.input?.focus()
                     this.input?.select()
                 }}
             >
-                <div className="cm-sg-search-input d-flex align-items-center pr-2 mr-1">
+                <div className={classNames('cm-sg-search-input', styles.input)}>
                     <Input
                         ref={element => (this.input = element)}
                         type="search"
@@ -235,7 +259,7 @@ class SearchPanel implements Panel {
                     />
                 </div>
                 {totalMatches > 1 && (
-                    <div className="ml-2">
+                    <div>
                         <Button
                             className={classNames(styles.bgroupLeft, 'p-1')}
                             type="button"
@@ -265,35 +289,35 @@ class SearchPanel implements Panel {
                 )}
 
                 {searchQuery.search ? (
-                    <div>
-                        <Text className="cm-search-results mt-0 mr-0 mb-0 ml-2 small">
-                            {currentMatchIndex !== null && `${currentMatchIndex} of `}
-                            {totalMatches} {pluralize('result', totalMatches)}
-                        </Text>
-                    </div>
+                    <Text className="cm-search-results m-0 small">
+                        {currentMatchIndex !== null && `${currentMatchIndex} of `}
+                        {totalMatches} {pluralize('result', totalMatches)}
+                    </Text>
                 ) : null}
 
-                <div className="ml-auto">
-                    <Label className="mb-0">
-                        <Toggle
-                            className="mr-1 align-text-bottom"
-                            value={overrideBrowserSearch}
-                            onToggle={this.setOverrideBrowserSearch}
-                        />
-                        {searchKeybinding}
-                    </Label>
-                    {searchKeybindingTooltip}
-                    <span className={classNames(styles.closeButton, 'ml-4')}>
-                        <Icon
-                            className={classNames(styles.x)}
-                            onClick={() => closeSearchPanel(this.view)}
-                            size="sm"
-                            svgPath={mdiClose}
-                            aria-hidden={false}
-                            aria-label="close search"
-                        />
-                    </span>
-                </div>
+                {isFullMode && (
+                    <div className={styles.actions}>
+                        <Label className={styles.actionsLabel}>
+                            <Toggle
+                                className="mr-1 align-text-bottom"
+                                value={overrideBrowserSearch}
+                                onToggle={this.setOverrideBrowserSearch}
+                            />
+                            {searchKeybinding}
+                        </Label>
+                        {searchKeybindingTooltip}
+                        <span className={styles.closeButton}>
+                            <Icon
+                                className={classNames(styles.x)}
+                                onClick={() => closeSearchPanel(this.view)}
+                                size="sm"
+                                svgPath={mdiClose}
+                                aria-hidden={false}
+                                aria-label="close search"
+                            />
+                        </span>
+                    </div>
+                )}
             </CodeMirrorContainer>
         )
     }
@@ -305,10 +329,24 @@ class SearchPanel implements Panel {
 
     private findNext = (): void => {
         findNext(this.view)
+        // Scroll the selection into the middle third of the view
+        this.view.dispatch({
+            effects: EditorView.scrollIntoView(this.view.state.selection.main.from, {
+                y: 'nearest',
+                yMargin: this.view.dom.getBoundingClientRect().height / 3,
+            }),
+        })
     }
 
     private findPrevious = (): void => {
         findPrevious(this.view)
+        // Scroll the selection into the middle third of the view
+        this.view.dispatch({
+            effects: EditorView.scrollIntoView(this.view.state.selection.main.from, {
+                y: 'nearest',
+                yMargin: this.view.dom.getBoundingClientRect().height / 3,
+            }),
+        })
     }
 
     // Taken from CodeMirror's default search panel implementation. This is
@@ -396,29 +434,24 @@ class SearchPanel implements Panel {
 }
 
 function calculateMatches(query: SearchQuery, document: CodeMirrorText): SearchMatches {
-    if (!query.valid) {
-        return new Map()
-    }
-
     const newSearchMatches: SearchMatches = new Map()
+
+    if (!query.valid) {
+        return newSearchMatches
+    }
+
     let index = 1
-    let result = query.getCursor(document).next()
-    // Regular expressions that result in matches with length 0 would
-    // cause an infinite loop. So we guard against that by verifying
-    // whether or not the cursor moves to the next match at a new position.
-    let prevValue: { from: number; to: number } | null = null
+    const matches = query.getCursor(document)
+    let result = matches.next()
 
-    while (!result.done && result.value.from !== prevValue?.from) {
-        newSearchMatches.set(result.value.from, index++)
-        prevValue = result.value
-        result = query.getCursor(document, result.value.to).next()
+    while (!result.done) {
+        if (result.value.from !== result.value.to) {
+            newSearchMatches.set(result.value.from, index++)
+        }
+
+        result = matches.next()
     }
 
-    // If the result is not done, it detected an infinite loop, so we
-    // do not have any matches.
-    if (!result.done) {
-        return new Map()
-    }
     return newSearchMatches
 }
 
@@ -506,6 +539,8 @@ interface SearchConfig {
     overrideBrowserFindInPageShortcut: boolean
     onOverrideBrowserFindInPageToggle: (enabled: boolean) => void
     navigate: NavigateFunction
+    graphQLClient: ApolloClient<any>
+    initialState?: SearchPanelConfig
 }
 
 const [overrideBrowserFindInPageShortcut, , setOverrideBrowserFindInPageShortcut] = createUpdateableField(true)
@@ -550,10 +585,12 @@ export function search(config: SearchConfig): Extension {
         theme,
         keymapCompartment.of(keymap.of(getKeyBindings(config.overrideBrowserFindInPageShortcut))),
         codemirrorSearch({
-            createPanel: view => new SearchPanel(view, config.navigate),
+            createPanel: view => new SearchPanel(view, config.navigate, config.graphQLClient, config.initialState),
         }),
         ViewPlugin.define(view => {
-            if (!config.overrideBrowserFindInPageShortcut) {
+            // If we have some initial state for the search bar this means we want
+            // to render it by default
+            if (!config.overrideBrowserFindInPageShortcut || config.initialState) {
                 window.requestAnimationFrame(() => openSearchPanel(view))
             }
             return {}

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"sort"
 	"strings"
@@ -10,15 +9,13 @@ import (
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 
-	"github.com/sourcegraph/conc/pool"
-
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
-	"github.com/sourcegraph/sourcegraph/lib/output"
 )
+
+var deprecationNotice = "sg run is deprecated. Use 'sg start -cmd' instead.\n"
 
 func init() {
 	postInitHooks = append(postInitHooks,
@@ -39,9 +36,9 @@ func init() {
 
 var runCommand = &cli.Command{
 	Name:      "run",
-	Usage:     "Run the given commands",
+	Usage:     deprecationNotice,
 	ArgsUsage: "[command]",
-	UsageText: `
+	UsageText: deprecationNotice + `
 # Run specific commands
 sg run gitserver
 sg run frontend
@@ -56,18 +53,14 @@ sg run gitserver frontend repo-updater
 sg run -describe jaeger
 `,
 	Category: category.Dev,
+	Action:   runExec,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:  "describe",
 			Usage: "Print details about selected run target",
 		},
-		&cli.BoolFlag{
-			Name:  "legacy",
-			Usage: "Force run to pick the non-bazel variant of the command",
-		},
 	},
-	Action: runExec,
-	BashComplete: completions.CompleteOptions(func() (options []string) {
+	BashComplete: completions.CompleteArgs(func() (options []string) {
 		config, _ := getConfig()
 		if config == nil {
 			return
@@ -84,62 +77,32 @@ func runExec(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	legacy := ctx.Bool("legacy")
-
-	args := ctx.Args().Slice()
-	if len(args) == 0 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "No command specified"))
-		return flag.ErrHelp
-	}
-
-	var cmds []run.Command
-	var bcmds []run.BazelCommand
-	for _, arg := range args {
-		if bazelCmd, okB := config.BazelCommands[arg]; okB && !legacy {
-			bcmds = append(bcmds, bazelCmd)
-		} else {
-			cmd, okC := config.Commands[arg]
-			if !okC && !okB {
-				std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: command %q not found :(", arg))
-				return flag.ErrHelp
-			}
-			cmds = append(cmds, cmd)
-		}
+	cmds, err := listToCommands(config, ctx.Args().Slice())
+	if err != nil {
+		return err
 	}
 
 	if ctx.Bool("describe") {
-		// TODO Bazel commands
-		for _, cmd := range cmds {
+		for _, cmd := range cmds.commands {
 			out, err := yaml.Marshal(cmd)
 			if err != nil {
 				return err
 			}
-			std.Out.WriteMarkdown(fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", cmd.Name, string(out)))
+			if err = std.Out.WriteMarkdown(fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", cmd.GetConfig().Name, string(out))); err != nil {
+				return err
+			}
 		}
 
 		return nil
 	}
 
-	if !legacy {
-		// First we build everything once, to ensure all binaries are present.
-		if err := run.BazelBuild(ctx.Context, bcmds...); err != nil {
-			return err
-		}
-	}
-
-	p := pool.New().WithContext(ctx.Context).WithCancelOnError()
-	p.Go(func(ctx context.Context) error {
-		return run.Commands(ctx, config.Env, verbose, cmds...)
-	})
-	p.Go(func(ctx context.Context) error {
-		return run.BazelCommands(ctx, config.Env, verbose, bcmds...)
-	})
-
-	return p.Wait()
+	return cmds.start(ctx.Context)
 }
 
 func constructRunCmdLongHelp() string {
 	var out strings.Builder
+
+	fmt.Fprint(&out, deprecationNotice)
 
 	fmt.Fprintf(&out, "Runs the given command. If given a whitespace-separated list of commands it runs the set of commands.\n")
 
@@ -156,8 +119,8 @@ func constructRunCmdLongHelp() string {
 
 	var names []string
 	for name, command := range config.Commands {
-		if command.Description != "" {
-			name = fmt.Sprintf("%s: %s", name, command.Description)
+		if command.Config.Description != "" {
+			name = fmt.Sprintf("%s: %s", name, command.Config.Description)
 		}
 		names = append(names, name)
 	}

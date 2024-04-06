@@ -1,0 +1,1116 @@
+---
+source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
+---
+  import fs from 'fs'
+//^^^^^^ Keyword
+//       ^^ Identifier
+//          ^^^^ Keyword
+//               ^ StringLiteral
+//                ^^ StringLiteral
+//                  ^ StringLiteral
+  export class MyClass {
+//^^^^^^ Keyword
+//       ^^^^^ Keyword
+//             ^^^^^^^ IdentifierType
+    public static myValue: string;
+//  ^^^^^^ Keyword
+//         ^^^^^^ Keyword
+//                ^^^^^^^ Identifier
+//                         ^^^^^^ IdentifierBuiltinType
+    constructor(init: string) {
+//  ^^^^^^^^^^^ IdentifierFunction
+//              ^^^^ Identifier
+//                    ^^^^^^ IdentifierBuiltinType
+      super();
+//    ^^^^^ IdentifierBuiltin
+      this.myValue = init;
+//    ^^^^ IdentifierBuiltin
+//         ^^^^^^^ Identifier
+//                   ^^^^ Identifier
+    }
+  }
+  export abstract class MyAbstractClass {}
+//^^^^^^ Keyword
+//       ^^^^^^^^ Keyword
+//                ^^^^^ Keyword
+//                      ^^^^^^^^^^^^^^^ IdentifierType
+  import fs = require("fs");
+//^^^^^^ Keyword
+//       ^^ Identifier
+//                    ^ StringLiteral
+//                     ^^ StringLiteral
+//                       ^ StringLiteral
+  declare module MyModule {
+//^^^^^^^ Keyword
+//        ^^^^^^ Keyword
+//               ^^^^^^^^ Identifier
+    export interface MyInterface extends Other {
+//  ^^^^^^ Keyword
+//         ^^^^^^^^^ Keyword
+//                   ^^^^^^^^^^^ IdentifierType
+//                               ^^^^^^^ Keyword
+//                                       ^^^^^ IdentifierType
+      myProperty: any;
+//    ^^^^^^^^^^ Identifier
+//                ^^^ IdentifierBuiltinType
+      myKeyoff: keyof MyClass;
+//    ^^^^^^^^ Identifier
+//              ^^^^^ Keyword
+//                    ^^^^^^^ IdentifierType
+    }
+  }
+  declare magicNumber number;
+//^^^^^^^ Identifier
+//        ^^^^^^^^^^^ Identifier
+  myArray.forEach(() => { }); // fat arrow syntax
+//^^^^^^^ Identifier
+//        ^^^^^^^ IdentifierFunction
+//                            ^^^^^^^^^^^^^^^^^^^ Comment
+  const oneOf = (a:number): number => a + 1
+//^^^^^ Keyword
+//      ^^^^^ IdentifierFunction
+//               ^ Identifier
+//                 ^^^^^^ IdentifierBuiltinType
+//                          ^^^^^^ IdentifierBuiltinType
+//                                    ^ Identifier
+//                                        ^ NumericLiteral
+  export enum Day {
+//^^^^^^ Keyword
+//       ^^^^ Keyword
+//            ^^^ Identifier
+      Weekday = 1,
+//    ^^^^^^^ Identifier
+//              ^ NumericLiteral
+      Weekend = 2
+//    ^^^^^^^ Identifier
+//              ^ NumericLiteral
+  }
+  export type MyNumber = number
+//^^^^^^ Keyword
+//       ^^^^ Keyword
+//            ^^^^^^^^ IdentifierType
+//                       ^^^^^^ IdentifierBuiltinType
+  export const a = 42
+//^^^^^^ Keyword
+//       ^^^^^ Keyword
+//             ^ Identifier
+//                 ^^ NumericLiteral
+  const aa = 42
+//^^^^^ Keyword
+//      ^^ Identifier
+//           ^^ NumericLiteral
+  export let b = 42
+//^^^^^^ Keyword
+//       ^^^ Keyword
+//           ^ Identifier
+//               ^^ NumericLiteral
+  export var c = 42
+//^^^^^^ Keyword
+//       ^^^ Keyword
+//           ^ Identifier
+//               ^^ NumericLiteral
+  export var d1 = {e2:41}
+//^^^^^^ Keyword
+//       ^^^ Keyword
+//           ^^ Identifier
+//                 ^^ IdentifierAttribute
+//                    ^^ NumericLiteral
+  export var d = {
+//^^^^^^ Keyword
+//       ^^^ Keyword
+//           ^ Identifier
+      key1: 1,
+//    ^^^^ IdentifierAttribute
+//          ^ NumericLiteral
+      key2: null,
+//    ^^^^ IdentifierAttribute
+//          ^^^^ IdentifierBuiltin
+      key3: `abc${d1.e2}`,
+//    ^^^^ IdentifierAttribute
+//          ^^^^ StringLiteral
+//              ^^ StringLiteralEscape
+//                ^^ Identifier
+//                  ^ StringLiteral
+//                   ^^ Identifier
+//                     ^ StringLiteralEscape
+//                      ^ StringLiteral
+      key4: true,
+//    ^^^^ IdentifierAttribute
+//          ^^^^ IdentifierBuiltin
+      key5: 1.5,
+//    ^^^^ IdentifierAttribute
+//          ^^^ NumericLiteral
+      key6: 'a',
+//    ^^^^ IdentifierAttribute
+//          ^ StringLiteral
+//           ^ StringLiteral
+//            ^ StringLiteral
+      key7: [1].map(n => ({n, a: n + 1}))
+//    ^^^^ IdentifierAttribute
+//           ^ NumericLiteral
+//              ^^^ IdentifierFunction
+//                  ^ Identifier
+//                         ^ IdentifierAttribute
+//                            ^ IdentifierAttribute
+//                               ^ Identifier
+//                                   ^ NumericLiteral
+  }
+  export var e = Object.keys(d) as MyClass
+//^^^^^^ Keyword
+//       ^^^ Keyword
+//           ^ Identifier
+//               ^^^^^^ Identifier
+//                      ^^^^ IdentifierFunction
+//                           ^ Identifier
+//                              ^^ Keyword
+//                                 ^^^^^^^ IdentifierType
+  export const e2: never[] = []
+//^^^^^^ Keyword
+//       ^^^^^ Keyword
+//             ^^ Identifier
+//                 ^^^^^ IdentifierBuiltinType
+  export const e3: undefined = undefined
+//^^^^^^ Keyword
+//       ^^^^^ Keyword
+//             ^^ Identifier
+//                 ^^^^^^^^^ IdentifierBuiltin
+//                             ^^^^^^^^^ IdentifierBuiltin
+  export const e4: null = null
+//^^^^^^ Keyword
+//       ^^^^^ Keyword
+//             ^^ Identifier
+//                 ^^^^ IdentifierBuiltin
+//                        ^^^^ IdentifierBuiltin
+  export function e5(): void = {}
+//^^^^^^ Keyword
+//       ^^^^^^^^ Keyword
+//                ^^ IdentifierFunction
+//                      ^^^^ Keyword
+  export const e6 = Math.max(Math.min, Math.PI)
+//^^^^^^ Keyword
+//       ^^^^^ Keyword
+//             ^^ Identifier
+//                  ^^^^ Identifier
+//                       ^^^ IdentifierFunction
+//                           ^^^^ Identifier
+//                                ^^^ Identifier
+//                                     ^^^^ Identifier
+//                                          ^^ Identifier
+  const { a, b: c } = { a, b: 42 }
+//^^^^^ Keyword
+//        ^ Identifier
+//           ^ Identifier
+//              ^ Identifier
+//                      ^ IdentifierAttribute
+//                         ^ IdentifierAttribute
+//                            ^^ NumericLiteral
+  export function f() {}
+//^^^^^^ Keyword
+//       ^^^^^^^^ Keyword
+//                ^ IdentifierFunction
+  
+  const negatedFilterToNegatableFilter: { [key: string]: MyClass } = null as any
+//^^^^^ Keyword
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//                                         ^^^ Identifier
+//                                              ^^^^^^ IdentifierBuiltinType
+//                                                       ^^^^^^^ IdentifierType
+//                                                                   ^^^^ IdentifierBuiltin
+//                                                                        ^^ Keyword
+//                                                                           ^^^ IdentifierBuiltinType
+  
+  const scanToken = <T extends Term = Literal>(
+//^^^^^ Keyword
+//      ^^^^^^^^^ IdentifierFunction
+//                   ^ IdentifierType
+//                     ^^^^^^^ Keyword
+//                             ^^^^ IdentifierType
+//                                    ^^^^^^^ IdentifierType
+      regexp: RegExp,
+//    ^^^^^^ Identifier
+//            ^^^^^^ IdentifierType
+      output?: T | ((input: string, range: CharacterRange) => T),
+//    ^^^^^^ Identifier
+//             ^ IdentifierType
+//                   ^^^^^ Identifier
+//                          ^^^^^^ IdentifierBuiltinType
+//                                  ^^^^^ Identifier
+//                                         ^^^^^^^^^^^^^^ IdentifierType
+//                                                            ^ IdentifierType
+      expected?: string
+//    ^^^^^^^^ Identifier
+//               ^^^^^^ IdentifierBuiltinType
+  ): Parser<T> => {
+//   ^^^^^^ IdentifierType
+//          ^ IdentifierType
+      const { a, b: c } = { a, b: 42 }
+//    ^^^^^ Keyword
+//            ^ Identifier
+//               ^ Identifier
+//                  ^ Identifier
+//                          ^ IdentifierAttribute
+//                             ^ IdentifierAttribute
+//                                ^^ NumericLiteral
+      if (!regexp.source.startsWith('^')) {
+//    ^^ Keyword
+//         ^^^^^^ Identifier
+//                ^^^^^^ Identifier
+//                       ^^^^^^^^^^ IdentifierFunction
+//                                  ^ StringLiteral
+//                                   ^ StringLiteral
+//                                    ^ StringLiteral
+          regexp = new RegExp(`^${regexp.source}`, regexp.flags)
+//        ^^^^^^ Identifier
+//                 ^^^ Keyword
+//                     ^^^^^^ Identifier
+//                            ^^ StringLiteral
+//                              ^^ StringLiteralEscape
+//                                ^^^^^^ Identifier
+//                                      ^ StringLiteral
+//                                       ^^^^^^ Identifier
+//                                             ^ StringLiteralEscape
+//                                              ^ StringLiteral
+//                                                 ^^^^^^ Identifier
+//                                                        ^^^^^ Identifier
+      }
+  }
+  
+  export const URI: typeof URL
+//^^^^^^ Keyword
+//       ^^^^^ Keyword
+//             ^^^ Identifier
+//                  ^^^^^^ Keyword
+//                         ^^^ Identifier
+  
+  export class SiteAdminUsageStatisticsPage extends React.Component<
+//^^^^^^ Keyword
+//       ^^^^^ Keyword
+//             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType
+//                                          ^^^^^^^ Keyword
+//                                                  ^^^^^ Identifier
+//                                                        ^^^^^^^^^ Identifier
+      SiteAdminUsageStatisticsPageProps,
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType
+      SiteAdminUsageStatisticsPageState
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType
+  > {
+      private loadLatestChartFromStorage(): keyof ChartOptions {
+//    ^^^^^^^ Keyword
+//            ^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                          ^^^^^ Keyword
+//                                                ^^^^^^^^^^^^ IdentifierType
+          const latest = localStorage.getItem(CHART_ID_KEY)
+//        ^^^^^ Keyword
+//              ^^^^^^ Identifier
+//                       ^^^^^^^^^^^^ Identifier
+//                                    ^^^^^^^ IdentifierFunction
+//                                            ^^^^^^^^^^^^ Identifier
+          return latest && latest in chartGeneratorOptions ? (latest as keyof ChartOptions) : 'daus'
+//        ^^^^^^ Keyword
+//               ^^^^^^ Identifier
+//                         ^^^^^^ Identifier
+//                                ^^ Keyword
+//                                   ^^^^^^^^^^^^^^^^^^^^^ Identifier
+//                                                            ^^^^^^ Identifier
+//                                                                   ^^ Keyword
+//                                                                      ^^^^^ Keyword
+//                                                                            ^^^^^^^^^^^^ IdentifierType
+//                                                                                            ^ StringLiteral
+//                                                                                             ^^^^ StringLiteral
+//                                                                                                 ^ StringLiteral
+      }
+  
+  }
+  
+  export function newFuzzyFSM(filenames: string[], createUrl: createUrlFunction): FuzzyFSM {
+//^^^^^^ Keyword
+//       ^^^^^^^^ Keyword
+//                ^^^^^^^^^^^ IdentifierFunction
+//                            ^^^^^^^^^ Identifier
+//                                       ^^^^^^ IdentifierBuiltinType
+//                                                 ^^^^^^^^^ Identifier
+//                                                            ^^^^^^^^^^^^^^^^^ IdentifierType
+//                                                                                ^^^^^^^^ IdentifierType
+      return newFuzzyFSMFromValues(
+//    ^^^^^^ Keyword
+//           ^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+          filenames.map(text => ({
+//        ^^^^^^^^^ Identifier
+//                  ^^^ IdentifierFunction
+//                      ^^^^ Identifier
+              text,
+//            ^^^^ IdentifierAttribute
+              icon: fileIcon(text),
+//            ^^^^ IdentifierAttribute
+//                  ^^^^^^^^ IdentifierFunction
+//                           ^^^^ Identifier
+          })),
+          createUrl
+//        ^^^^^^^^^ Identifier
+      )
+  }
+  
+  // 1. Advanced types
+//^^^^^^^^^^^^^^^^^^^^ Comment
+  type Age = number;
+//^^^^ Keyword
+//     ^^^ IdentifierType
+//           ^^^^^^ IdentifierBuiltinType
+  type Person = {
+//^^^^ Keyword
+//     ^^^^^^ IdentifierType
+      name: string;
+//    ^^^^ Identifier
+//          ^^^^^^ IdentifierBuiltinType
+      age: Age;
+//    ^^^ Identifier
+//         ^^^ IdentifierType
+  };
+  
+  const john: Person = {
+//^^^^^ Keyword
+//      ^^^^ Identifier
+//            ^^^^^^ IdentifierType
+      name: "John",
+//    ^^^^ IdentifierAttribute
+//          ^ StringLiteral
+//           ^^^^ StringLiteral
+//               ^ StringLiteral
+      age: 30
+//    ^^^ IdentifierAttribute
+//         ^^ NumericLiteral
+  };
+  
+  // 2. Intersection Types
+//^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  type Admin = {
+//^^^^ Keyword
+//     ^^^^^ IdentifierType
+      role: "admin";
+//    ^^^^ Identifier
+//          ^ StringLiteral
+//           ^^^^^ StringLiteral
+//                ^ StringLiteral
+  };
+  type Manager = {
+//^^^^ Keyword
+//     ^^^^^^^ IdentifierType
+      role: "manager";
+//    ^^^^ Identifier
+//          ^ StringLiteral
+//           ^^^^^^^ StringLiteral
+//                  ^ StringLiteral
+  };
+  type User = Person & (Admin | Manager);
+//^^^^ Keyword
+//     ^^^^ IdentifierType
+//            ^^^^^^ IdentifierType
+//                      ^^^^^ IdentifierType
+//                              ^^^^^^^ IdentifierType
+  
+  const admin: User = {
+//^^^^^ Keyword
+//      ^^^^^ Identifier
+//             ^^^^ IdentifierType
+      name: "admin",
+//    ^^^^ IdentifierAttribute
+//          ^ StringLiteral
+//           ^^^^^ StringLiteral
+//                ^ StringLiteral
+      age: 35,
+//    ^^^ IdentifierAttribute
+//         ^^ NumericLiteral
+      role: "admin"
+//    ^^^^ IdentifierAttribute
+//          ^ StringLiteral
+//           ^^^^^ StringLiteral
+//                ^ StringLiteral
+  };
+  
+  // 3. Union Types
+//^^^^^^^^^^^^^^^^^ Comment
+  type StringOrNumber = string | number;
+//^^^^ Keyword
+//     ^^^^^^^^^^^^^^ IdentifierType
+//                      ^^^^^^ IdentifierBuiltinType
+//                               ^^^^^^ IdentifierBuiltinType
+  const unionExample: StringOrNumber = "hello";
+//^^^^^ Keyword
+//      ^^^^^^^^^^^^ Identifier
+//                    ^^^^^^^^^^^^^^ IdentifierType
+//                                     ^ StringLiteral
+//                                      ^^^^^ StringLiteral
+//                                           ^ StringLiteral
+  
+  // 4. Type Aliases
+//^^^^^^^^^^^^^^^^^^ Comment
+  type AgeRange = 18 | 25 | 30 | 40;
+//^^^^ Keyword
+//     ^^^^^^^^ IdentifierType
+//                ^^ NumericLiteral
+//                     ^^ NumericLiteral
+//                          ^^ NumericLiteral
+//                               ^^ NumericLiteral
+  const ageRange: AgeRange = 25;
+//^^^^^ Keyword
+//      ^^^^^^^^ Identifier
+//                ^^^^^^^^ IdentifierType
+//                           ^^ NumericLiteral
+  
+  // 5. Type Guards
+//^^^^^^^^^^^^^^^^^ Comment
+  function isString(value: StringOrNumber): value is string {
+//^^^^^^^^ Keyword
+//         ^^^^^^^^ IdentifierFunction
+//                  ^^^^^ Identifier
+//                         ^^^^^^^^^^^^^^ IdentifierType
+//                                          ^^^^^ Identifier
+//                                                   ^^^^^^ IdentifierBuiltinType
+      return typeof value === "string";
+//    ^^^^^^ Keyword
+//           ^^^^^^ Keyword
+//                  ^^^^^ Identifier
+//                            ^ StringLiteral
+//                             ^^^^^^ StringLiteral
+//                                   ^ StringLiteral
+  }
+  if (isString(unionExample)) {
+//^^ Keyword
+//    ^^^^^^^^ IdentifierFunction
+//             ^^^^^^^^^^^^ Identifier
+      console.log(`Value is a string: ${unionExample}`);
+//    ^^^^^^^ Identifier
+//            ^^^ IdentifierFunction
+//                ^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                    ^^ StringLiteralEscape
+//                                      ^^^^^^^^^^^^ Identifier
+//                                                  ^ StringLiteralEscape
+//                                                   ^ StringLiteral
+  }
+  
+  // 6. Type inference
+//^^^^^^^^^^^^^^^^^^^^ Comment
+  const value = "Hello";
+//^^^^^ Keyword
+//      ^^^^^ Identifier
+//              ^ StringLiteral
+//               ^^^^^ StringLiteral
+//                    ^ StringLiteral
+  const valueLength = value.length;
+//^^^^^ Keyword
+//      ^^^^^^^^^^^ Identifier
+//                    ^^^^^ Identifier
+//                          ^^^^^^ Identifier
+  
+  // 7. Type parameter constraints
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  class Collection<T extends object> {
+//^^^^^ Keyword
+//      ^^^^^^^^^^ IdentifierType
+//                 ^ IdentifierType
+//                   ^^^^^^^ Keyword
+//                           ^^^^^^ IdentifierBuiltinType
+      items: T[];
+//    ^^^^^ Identifier
+//           ^ IdentifierType
+      constructor(items: T[]) {
+//    ^^^^^^^^^^^ IdentifierFunction
+//                ^^^^^ Identifier
+//                       ^ IdentifierType
+          this.items = items;
+//        ^^^^ IdentifierBuiltin
+//             ^^^^^ Identifier
+//                     ^^^^^ Identifier
+      }
+      getFirst(): T {
+//    ^^^^^^^^ IdentifierFunction
+//                ^ IdentifierType
+          return this.items[0];
+//        ^^^^^^ Keyword
+//               ^^^^ IdentifierBuiltin
+//                    ^^^^^ Identifier
+//                          ^ NumericLiteral
+      }
+  }
+  
+  const people = new Collection([{ name: "John" }, { name: "Jane" }]);
+//^^^^^ Keyword
+//      ^^^^^^ Identifier
+//               ^^^ Keyword
+//                   ^^^^^^^^^^ Identifier
+//                                 ^^^^ IdentifierAttribute
+//                                       ^ StringLiteral
+//                                        ^^^^ StringLiteral
+//                                            ^ StringLiteral
+//                                                   ^^^^ IdentifierAttribute
+//                                                         ^ StringLiteral
+//                                                          ^^^^ StringLiteral
+//                                                              ^ StringLiteral
+  const firstPerson = people.getFirst();
+//^^^^^ Keyword
+//      ^^^^^^^^^^^ Identifier
+//                    ^^^^^^ Identifier
+//                           ^^^^^^^^ IdentifierFunction
+  
+  // 8. Higher Order Types
+//^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  type Filter = {
+//^^^^ Keyword
+//     ^^^^^^ IdentifierType
+      (array: number[], callback: (item: number) => boolean): number[];
+//     ^^^^^ Identifier
+//            ^^^^^^ IdentifierBuiltinType
+//                      ^^^^^^^^ Identifier
+//                                 ^^^^ Identifier
+//                                       ^^^^^^ IdentifierBuiltinType
+//                                                  ^^^^^^^ IdentifierBuiltinType
+//                                                            ^^^^^^ IdentifierBuiltinType
+  };
+  const filter: Filter = (array, callback) => {
+//^^^^^ Keyword
+//      ^^^^^^ IdentifierFunction
+//              ^^^^^^ IdentifierType
+//                        ^^^^^ Identifier
+//                               ^^^^^^^^ Identifier
+      const result = [];
+//    ^^^^^ Keyword
+//          ^^^^^^ Identifier
+      for (const item of array) {
+//    ^^^ Keyword
+//         ^^^^^ Keyword
+//               ^^^^ Identifier
+//                    ^^ Keyword
+//                       ^^^^^ Identifier
+          if (callback(item)) {
+//        ^^ Keyword
+//            ^^^^^^^^ IdentifierFunction
+//                     ^^^^ Identifier
+              result.push(item);
+//            ^^^^^^ Identifier
+//                   ^^^^ IdentifierFunction
+//                        ^^^^ Identifier
+          }
+      }
+      return result;
+//    ^^^^^^ Keyword
+//           ^^^^^^ Identifier
+  };
+  
+  const filtered = filter([1, 2, 3, 4], item => item % 2 === 0);
+//^^^^^ Keyword
+//      ^^^^^^^^ Identifier
+//                 ^^^^^^ IdentifierFunction
+//                         ^ NumericLiteral
+//                            ^ NumericLiteral
+//                               ^ NumericLiteral
+//                                  ^ NumericLiteral
+//                                      ^^^^ Identifier
+//                                              ^^^^ Identifier
+//                                                     ^ NumericLiteral
+//                                                           ^ NumericLiteral
+  console.log(filtered);
+//^^^^^^^ Identifier
+//        ^^^ IdentifierFunction
+//            ^^^^^^^^ Identifier
+  
+  // 9. Index Types
+//^^^^^^^^^^^^^^^^^ Comment
+  type People = {
+//^^^^ Keyword
+//     ^^^^^^ IdentifierType
+      [key: string]: Person;
+//     ^^^ Identifier
+//          ^^^^^^ IdentifierBuiltinType
+//                   ^^^^^^ IdentifierType
+  };
+  const peopleObject: People = {
+//^^^^^ Keyword
+//      ^^^^^^^^^^^^ Identifier
+//                    ^^^^^^ IdentifierType
+      john: { name: "John", age: 30 },
+//    ^^^^ IdentifierAttribute
+//            ^^^^ IdentifierAttribute
+//                  ^ StringLiteral
+//                   ^^^^ StringLiteral
+//                       ^ StringLiteral
+//                          ^^^ IdentifierAttribute
+//                               ^^ NumericLiteral
+      jane: { name: "Jane", age: 25 }
+//    ^^^^ IdentifierAttribute
+//            ^^^^ IdentifierAttribute
+//                  ^ StringLiteral
+//                   ^^^^ StringLiteral
+//                       ^ StringLiteral
+//                          ^^^ IdentifierAttribute
+//                               ^^ NumericLiteral
+  };
+  
+  // 10. Readonly properties
+//^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  interface Car {
+//^^^^^^^^^ Keyword
+//          ^^^ IdentifierType
+      readonly make: string;
+//    ^^^^^^^^ Keyword
+//             ^^^^ Identifier
+//                   ^^^^^^ IdentifierBuiltinType
+      readonly model: string;
+//    ^^^^^^^^ Keyword
+//             ^^^^^ Identifier
+//                    ^^^^^^ IdentifierBuiltinType
+      readonly year: number;
+//    ^^^^^^^^ Keyword
+//             ^^^^ Identifier
+//                   ^^^^^^ IdentifierBuiltinType
+  }
+  const car: Car = {
+//^^^^^ Keyword
+//      ^^^ Identifier
+//           ^^^ IdentifierType
+      make: "Tesla",
+//    ^^^^ IdentifierAttribute
+//          ^ StringLiteral
+//           ^^^^^ StringLiteral
+//                ^ StringLiteral
+      model: "Model S",
+//    ^^^^^ IdentifierAttribute
+//           ^ StringLiteral
+//            ^^^^^^^ StringLiteral
+//                   ^ StringLiteral
+      year: 2020
+//    ^^^^ IdentifierAttribute
+//          ^^^^ NumericLiteral
+  };
+  
+  // 11. Keyof operator
+//^^^^^^^^^^^^^^^^^^^^^ Comment
+  type CarProperties = keyof Car;
+//^^^^ Keyword
+//     ^^^^^^^^^^^^^ IdentifierType
+//                     ^^^^^ Keyword
+//                           ^^^ IdentifierType
+  const property: CarProperties = "make";
+//^^^^^ Keyword
+//      ^^^^^^^^ Identifier
+//                ^^^^^^^^^^^^^ IdentifierType
+//                                ^ StringLiteral
+//                                 ^^^^ StringLiteral
+//                                     ^ StringLiteral
+  
+  // 12. Mapped Types
+//^^^^^^^^^^^^^^^^^^^ Comment
+  type ReadonlyCar = Readonly<Car>;
+//^^^^ Keyword
+//     ^^^^^^^^^^^ IdentifierType
+//                   ^^^^^^^^ IdentifierType
+//                            ^^^ IdentifierType
+  const readonlyCar: ReadonlyCar = {
+//^^^^^ Keyword
+//      ^^^^^^^^^^^ Identifier
+//                   ^^^^^^^^^^^ IdentifierType
+      make: "Tesla",
+//    ^^^^ IdentifierAttribute
+//          ^ StringLiteral
+//           ^^^^^ StringLiteral
+//                ^ StringLiteral
+      model: "Model S",
+//    ^^^^^ IdentifierAttribute
+//           ^ StringLiteral
+//            ^^^^^^^ StringLiteral
+//                   ^ StringLiteral
+      year: 2020
+//    ^^^^ IdentifierAttribute
+//          ^^^^ NumericLiteral
+  };
+  
+  // 13. Conditional Types
+//^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  type IsNumber<T> = T extends number ? true : false;
+//^^^^ Keyword
+//     ^^^^^^^^ IdentifierType
+//              ^ IdentifierType
+//                   ^ IdentifierType
+//                     ^^^^^^^ Keyword
+//                             ^^^^^^ IdentifierBuiltinType
+//                                      ^^^^ IdentifierBuiltin
+//                                             ^^^^^ IdentifierBuiltin
+  type IsNumberType = IsNumber<number>;
+//^^^^ Keyword
+//     ^^^^^^^^^^^^ IdentifierType
+//                    ^^^^^^^^ IdentifierType
+//                             ^^^^^^ IdentifierBuiltinType
+  const isNumberType: IsNumberType = true;
+//^^^^^ Keyword
+//      ^^^^^^^^^^^^ Identifier
+//                    ^^^^^^^^^^^^ IdentifierType
+//                                   ^^^^ IdentifierBuiltin
+  
+  
+  
+  // 14. Exclude from type
+//^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  type ExcludePersonAge = Exclude<keyof Person, "age">;
+//^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^ IdentifierType
+//                        ^^^^^^^ IdentifierType
+//                                ^^^^^ Keyword
+//                                      ^^^^^^ IdentifierType
+//                                              ^ StringLiteral
+//                                               ^^^ StringLiteral
+//                                                  ^ StringLiteral
+  const excludedPersonProperties: ExcludePersonAge = "name";
+//^^^^^ Keyword
+//      ^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//                                ^^^^^^^^^^^^^^^^ IdentifierType
+//                                                   ^ StringLiteral
+//                                                    ^^^^ StringLiteral
+//                                                        ^ StringLiteral
+  
+  // 15. Extract from type
+//^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  type ExtractPersonAge = Extract<keyof Person, "age">;
+//^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^ IdentifierType
+//                        ^^^^^^^ IdentifierType
+//                                ^^^^^ Keyword
+//                                      ^^^^^^ IdentifierType
+//                                              ^ StringLiteral
+//                                               ^^^ StringLiteral
+//                                                  ^ StringLiteral
+  const extractedPersonProperties2: ExtractPersonAge = "age";
+//^^^^^ Keyword
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//                                  ^^^^^^^^^^^^^^^^ IdentifierType
+//                                                     ^ StringLiteral
+//                                                      ^^^ StringLiteral
+//                                                         ^ StringLiteral
+  
+  // 16. Non-nullable type
+//^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  type NonNullableCar = NonNullable<Car>;
+//^^^^ Keyword
+//     ^^^^^^^^^^^^^^ IdentifierType
+//                      ^^^^^^^^^^^ IdentifierType
+//                                  ^^^ IdentifierType
+  const nonNullableCar: NonNullableCar = {
+//^^^^^ Keyword
+//      ^^^^^^^^^^^^^^ Identifier
+//                      ^^^^^^^^^^^^^^ IdentifierType
+      make: "Tesla",
+//    ^^^^ IdentifierAttribute
+//          ^ StringLiteral
+//           ^^^^^ StringLiteral
+//                ^ StringLiteral
+      model: "Model S",
+//    ^^^^^ IdentifierAttribute
+//           ^ StringLiteral
+//            ^^^^^^^ StringLiteral
+//                   ^ StringLiteral
+      year: 2020
+//    ^^^^ IdentifierAttribute
+//          ^^^^ NumericLiteral
+  };
+  
+  // 17. Required properties
+//^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  interface CarDetails {
+//^^^^^^^^^ Keyword
+//          ^^^^^^^^^^ IdentifierType
+      make?: string;
+//    ^^^^ Identifier
+//           ^^^^^^ IdentifierBuiltinType
+      model?: string;
+//    ^^^^^ Identifier
+//            ^^^^^^ IdentifierBuiltinType
+      year?: number;
+//    ^^^^ Identifier
+//           ^^^^^^ IdentifierBuiltinType
+  }
+  type RequiredCarDetails = Required<CarDetails>;
+//^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^ IdentifierType
+//                          ^^^^^^^^ IdentifierType
+//                                   ^^^^^^^^^^ IdentifierType
+  const requiredCarDetails: RequiredCarDetails = {
+//^^^^^ Keyword
+//      ^^^^^^^^^^^^^^^^^^ Identifier
+//                          ^^^^^^^^^^^^^^^^^^ IdentifierType
+      make: "Tesla",
+//    ^^^^ IdentifierAttribute
+//          ^ StringLiteral
+//           ^^^^^ StringLiteral
+//                ^ StringLiteral
+      model: "Model S",
+//    ^^^^^ IdentifierAttribute
+//           ^ StringLiteral
+//            ^^^^^^^ StringLiteral
+//                   ^ StringLiteral
+      year: 2020
+//    ^^^^ IdentifierAttribute
+//          ^^^^ NumericLiteral
+  };
+  
+  
+  // 18. Tuple types
+//^^^^^^^^^^^^^^^^^^ Comment
+  type PersonTuple = [string, Age];
+//^^^^ Keyword
+//     ^^^^^^^^^^^ IdentifierType
+//                    ^^^^^^ IdentifierBuiltinType
+//                            ^^^ IdentifierType
+  const personTuple: PersonTuple = ["John", 30];
+//^^^^^ Keyword
+//      ^^^^^^^^^^^ Identifier
+//                   ^^^^^^^^^^^ IdentifierType
+//                                  ^ StringLiteral
+//                                   ^^^^ StringLiteral
+//                                       ^ StringLiteral
+//                                          ^^ NumericLiteral
+  
+  // 19. Literal types
+//^^^^^^^^^^^^^^^^^^^^ Comment
+  type Days = "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday";
+//^^^^ Keyword
+//     ^^^^ IdentifierType
+//            ^ StringLiteral
+//             ^^^^^^ StringLiteral
+//                   ^ StringLiteral
+//                       ^ StringLiteral
+//                        ^^^^^^^ StringLiteral
+//                               ^ StringLiteral
+//                                   ^ StringLiteral
+//                                    ^^^^^^^^^ StringLiteral
+//                                             ^ StringLiteral
+//                                                 ^ StringLiteral
+//                                                  ^^^^^^^^ StringLiteral
+//                                                          ^ StringLiteral
+//                                                              ^ StringLiteral
+//                                                               ^^^^^^ StringLiteral
+//                                                                     ^ StringLiteral
+  const days: Days = "Monday";
+//^^^^^ Keyword
+//      ^^^^ Identifier
+//            ^^^^ IdentifierType
+//                   ^ StringLiteral
+//                    ^^^^^^ StringLiteral
+//                          ^ StringLiteral
+  
+  // 20. Enum
+//^^^^^^^^^^^ Comment
+  enum Color {
+//^^^^ Keyword
+//     ^^^^^ Identifier
+      Red,
+//    ^^^ Identifier
+      Green,
+//    ^^^^^ Identifier
+      Blue
+//    ^^^^ Identifier
+  }
+  const color = Color.Blue;
+//^^^^^ Keyword
+//      ^^^^^ Identifier
+//              ^^^^^ Identifier
+//                    ^^^^ Identifier
+  
+  // 21. Numeric enums
+//^^^^^^^^^^^^^^^^^^^^ Comment
+  enum Result {
+//^^^^ Keyword
+//     ^^^^^^ Identifier
+      Success = 100,
+//    ^^^^^^^ Identifier
+//              ^^^ NumericLiteral
+      Failure = 200
+//    ^^^^^^^ Identifier
+//              ^^^ NumericLiteral
+  }
+  const result = Result.Success;
+//^^^^^ Keyword
+//      ^^^^^^ Identifier
+//               ^^^^^^ Identifier
+//                      ^^^^^^^ Identifier
+  
+  // 22. String enums
+//^^^^^^^^^^^^^^^^^^^ Comment
+  enum Direction {
+//^^^^ Keyword
+//     ^^^^^^^^^ Identifier
+      Up = "UP",
+//    ^^ Identifier
+//         ^ StringLiteral
+//          ^^ StringLiteral
+//            ^ StringLiteral
+      Down = "DOWN",
+//    ^^^^ Identifier
+//           ^ StringLiteral
+//            ^^^^ StringLiteral
+//                ^ StringLiteral
+      Left = "LEFT",
+//    ^^^^ Identifier
+//           ^ StringLiteral
+//            ^^^^ StringLiteral
+//                ^ StringLiteral
+      Right = "RIGHT"
+//    ^^^^^ Identifier
+//            ^ StringLiteral
+//             ^^^^^ StringLiteral
+//                  ^ StringLiteral
+  }
+  const direction = Direction.Right;
+//^^^^^ Keyword
+//      ^^^^^^^^^ Identifier
+//                  ^^^^^^^^^ Identifier
+//                            ^^^^^ Identifier
+  
+  // 23. Generics
+//^^^^^^^^^^^^^^^ Comment
+  function identity<T>(value: T): T {
+//^^^^^^^^ Keyword
+//         ^^^^^^^^ IdentifierFunction
+//                  ^ IdentifierType
+//                     ^^^^^ Identifier
+//                            ^ IdentifierType
+//                                ^ IdentifierType
+      return value;
+//    ^^^^^^ Keyword
+//           ^^^^^ Identifier
+  }
+  const identityExample = identity<string>("hello");
+//^^^^^ Keyword
+//      ^^^^^^^^^^^^^^^ Identifier
+//                        ^^^^^^^^ IdentifierFunction
+//                                 ^^^^^^ IdentifierBuiltinType
+//                                         ^ StringLiteral
+//                                          ^^^^^ StringLiteral
+//                                               ^ StringLiteral
+  
+  // 24. Polymorphic this types
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  class MyArray<T> {
+//^^^^^ Keyword
+//      ^^^^^^^ IdentifierType
+//              ^ IdentifierType
+      add(value: T) {
+//    ^^^ IdentifierFunction
+//        ^^^^^ Identifier
+//               ^ IdentifierType
+          this[this.length] = value;
+//        ^^^^ IdentifierBuiltin
+//             ^^^^ IdentifierBuiltin
+//                  ^^^^^^ Identifier
+//                            ^^^^^ Identifier
+          return this;
+//        ^^^^^^ Keyword
+//               ^^^^ IdentifierBuiltin
+      }
+  }
+  const myArray = new MyArray<string>();
+//^^^^^ Keyword
+//      ^^^^^^^ Identifier
+//                ^^^ Keyword
+//                    ^^^^^^^ Identifier
+//                            ^^^^^^ IdentifierBuiltinType
+  myArray.add("hello").add("world");
+//^^^^^^^ Identifier
+//        ^^^ IdentifierFunction
+//            ^ StringLiteral
+//             ^^^^^ StringLiteral
+//                  ^ StringLiteral
+//                     ^^^ IdentifierFunction
+//                         ^ StringLiteral
+//                          ^^^^^ StringLiteral
+//                               ^ StringLiteral
+  
+  // 25. Partial types
+//^^^^^^^^^^^^^^^^^^^^ Comment
+  type PartialPerson = Partial<Person>;
+//^^^^ Keyword
+//     ^^^^^^^^^^^^^ IdentifierType
+//                     ^^^^^^^ IdentifierType
+//                             ^^^^^^ IdentifierType
+  const partialPerson: PartialPerson = { name: "John" };
+//^^^^^ Keyword
+//      ^^^^^^^^^^^^^ Identifier
+//                     ^^^^^^^^^^^^^ IdentifierType
+//                                       ^^^^ IdentifierAttribute
+//                                             ^ StringLiteral
+//                                              ^^^^ StringLiteral
+//                                                  ^ StringLiteral
+  
+  // 26. Pick types
+//^^^^^^^^^^^^^^^^^ Comment
+  type PickPersonAge = Pick<Person, 'age'>;
+//^^^^ Keyword
+//     ^^^^^^^^^^^^^ IdentifierType
+//                     ^^^^ IdentifierType
+//                          ^^^^^^ IdentifierType
+//                                  ^ StringLiteral
+//                                   ^^^ StringLiteral
+//                                      ^ StringLiteral
+  const pickedPersonProperties: PickPersonAge = { age: 30 };
+//^^^^^ Keyword
+//      ^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//                              ^^^^^^^^^^^^^ IdentifierType
+//                                                ^^^ IdentifierAttribute
+//                                                     ^^ NumericLiteral
+  
+  // 27. Record types
+//^^^^^^^^^^^^^^^^^^^ Comment
+  type RecordPerson = Record<"key", Person>;
+//^^^^ Keyword
+//     ^^^^^^^^^^^^ IdentifierType
+//                    ^^^^^^ IdentifierType
+//                           ^ StringLiteral
+//                            ^^^ StringLiteral
+//                               ^ StringLiteral
+//                                  ^^^^^^ IdentifierType
+  const recordPerson: RecordPerson = { key: { name: "John", age: 30 } };
+//^^^^^ Keyword
+//      ^^^^^^^^^^^^ Identifier
+//                    ^^^^^^^^^^^^ IdentifierType
+//                                     ^^^ IdentifierAttribute
+//                                            ^^^^ IdentifierAttribute
+//                                                  ^ StringLiteral
+//                                                   ^^^^ StringLiteral
+//                                                       ^ StringLiteral
+//                                                          ^^^ IdentifierAttribute
+//                                                               ^^ NumericLiteral
+  
+  // 28. Interface inheritance
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  interface Shape {
+//^^^^^^^^^ Keyword
+//          ^^^^^ IdentifierType
+      width: number;
+//    ^^^^^ Identifier
+//           ^^^^^^ IdentifierBuiltinType
+      height: number;
+//    ^^^^^^ Identifier
+//            ^^^^^^ IdentifierBuiltinType
+  }
+  interface Square extends Shape {
+//^^^^^^^^^ Keyword
+//          ^^^^^^ IdentifierType
+//                 ^^^^^^^ Keyword
+//                         ^^^^^ IdentifierType
+      sideLength: number;
+//    ^^^^^^^^^^ Identifier
+//                ^^^^^^ IdentifierBuiltinType
+  }
+  const square: Square = {
+//^^^^^ Keyword
+//      ^^^^^^ Identifier
+//              ^^^^^^ IdentifierType
+      width: 10,
+//    ^^^^^ IdentifierAttribute
+//           ^^ NumericLiteral
+      height: 10,
+//    ^^^^^^ IdentifierAttribute
+//            ^^ NumericLiteral
+      sideLength: 10
+//    ^^^^^^^^^^ IdentifierAttribute
+//                ^^ NumericLiteral
+  };
+

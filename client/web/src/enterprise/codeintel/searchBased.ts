@@ -2,9 +2,8 @@ import { extname } from 'path'
 
 import escapeRegExp from 'lodash/escapeRegExp'
 
-import { appendLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
+import { SourcegraphURL } from '@sourcegraph/common'
 import type { Range } from '@sourcegraph/extension-api-types'
-import type { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 
 import { raceWithDelayOffset } from '../../codeintel/promise'
 import type { Result } from '../../codeintel/searchBased'
@@ -14,14 +13,14 @@ import { isDefined } from '../../codeintel/util/helpers'
 export function definitionQuery({
     searchToken,
     path,
-    fileExts,
+    languages,
 }: {
     /** The search token text. */
     searchToken: string
     /** The path to file **/
     path: string
-    /** File extensions used by the current extension. */
-    fileExts: string[]
+    /** Potential languages for this file */
+    languages: string[]
 }): string[] {
     return [
         `^${searchToken}$`,
@@ -29,7 +28,7 @@ export function definitionQuery({
         'patternType:regexp',
         'count:50',
         'case:yes',
-        fileExtensionTerm(path, fileExts),
+        ...languageFilter(languages, path),
     ]
 }
 
@@ -41,14 +40,14 @@ export function definitionQuery({
 export function referencesQuery({
     searchToken,
     path,
-    fileExts,
+    languages,
 }: {
     /** The search token text. */
     searchToken: string
     /** The path to file **/
     path: string
-    /** File extensions used by the current extension. */
-    fileExts: string[]
+    /** Language(s) applicable to current file */
+    languages: string[]
 }): string[] {
     let pattern = ''
     if (/^\w/.test(searchToken)) {
@@ -58,26 +57,19 @@ export function referencesQuery({
     if (/\w$/.test(searchToken)) {
         pattern += '\\b'
     }
-    return [pattern, 'type:file', 'patternType:regexp', 'count:500', 'case:yes', fileExtensionTerm(path, fileExts)]
+    return [pattern, 'type:file', 'patternType:regexp', 'count:500', 'case:yes', ...languageFilter(languages, path)]
 }
-/**
- * Constructs a file term containing include-listed extensions. If the current
- * text document path has an excluded extension or an extension absent from the
- * include list, an empty file term will be returned.
- *
- * @param textDocument The current text document.
- * @param includelist The file extensions for the current language.
- */
-function fileExtensionTerm(path: string, includelist: string[]): string {
-    const extension = extname(path).slice(1)
-    if (!extension || excludelist.has(extension) || !includelist.includes(extension)) {
-        return ''
+
+function languageFilter(languages: string[], path: string): string[] {
+    if (languages.length > 0) {
+        return ['(', languages.map(language => `lang:"${language}"`).join(' OR '), ')']
     }
-
-    return `file:\\.(${includelist.join('|')})$`
+    const extension = extname(path).slice(1)
+    if (extension === '') {
+        return []
+    }
+    return [`file:\\.${extension}$`]
 }
-
-const excludelist = new Set(['thrift', 'proto', 'graphql'])
 
 /**
  * Returns fork and archived terms that should be supplied with the query.
@@ -110,11 +102,11 @@ function makeRepositoryPattern(repo: string): string {
 /** The time in ms to delay between unindexed search request and the fallback indexed search request. */
 const DEFAULT_UNINDEXED_SEARCH_TIMEOUT_MS = 5000
 
+export type RepoFilter = 'current-repo' | 'all-other-repos'
+
 /**
  * Invoke the given search function by modifying the query with a term that will
- * only look in the current git tree by appending a repo filter with the repo name
- * and the current commit or, if `negateRepoFilter` is set, outside of current git
- * tree.
+ * look in certain git trees (controlled by `repoFilter`).
  *
  * This is likely to timeout on large repos or organizations with monorepos if the
  * current commit is not an indexed commit. Instead of waiting for a timeout, we
@@ -125,7 +117,6 @@ const DEFAULT_UNINDEXED_SEARCH_TIMEOUT_MS = 5000
  *
  * @param search The search function.
  * @param args The arguments to the search function.
- * @param negateRepoFilter Whether to look only inside or outside the given repo.
  */
 export function searchWithFallback<
     P extends {
@@ -136,14 +127,14 @@ export function searchWithFallback<
         queryTerms: string[]
     },
     R
->(search: (args: P) => Promise<R>, args: P, negateRepoFilter = false, getSetting: SettingsGetter): Promise<R> {
+>(search: (args: P) => Promise<R>, args: P, repoFilter: RepoFilter, getSetting: SettingsGetter): Promise<R> {
     if (getSetting<boolean>('basicCodeIntel.indexOnly', false)) {
-        return searchIndexed(search, args, negateRepoFilter, getSetting)
+        return searchIndexed(search, args, repoFilter, getSetting)
     }
 
     return raceWithDelayOffset(
-        searchUnindexed(search, args, negateRepoFilter, getSetting),
-        () => searchIndexed(search, args, negateRepoFilter, getSetting),
+        searchUnindexed(search, args, repoFilter, getSetting),
+        () => searchIndexed(search, args, repoFilter, getSetting),
         getSetting<number>('basicCodeIntel.unindexedSearchTimeout', DEFAULT_UNINDEXED_SEARCH_TIMEOUT_MS)
     )
 }
@@ -153,18 +144,16 @@ export function searchWithFallback<
  *
  * @param search The search function.
  * @param args The arguments to the search function.
- * @param negateRepoFilter Whether to look only inside or outside the given repo.
  */
 function searchIndexed<
     P extends {
         repo: string
         isFork: boolean
         isArchived: boolean
-        commit: string
         queryTerms: string[]
     },
     R
->(search: (args: P) => Promise<R>, args: P, negateRepoFilter = false, getSetting: SettingsGetter): Promise<R> {
+>(search: (args: P) => Promise<R>, args: P, repoFilter: RepoFilter, getSetting: SettingsGetter): Promise<R> {
     const { repo, isFork, isArchived, queryTerms } = args
 
     // Create a copy of the args so that concurrent calls to other
@@ -175,14 +164,16 @@ function searchIndexed<
     // Unlike unindexed search, we can't supply a commit as that particular
     // commit may not be indexed. We force index and look inside/outside
     // the repo at _whatever_ commit happens to be indexed at the time.
-    queryTermsCopy.push((negateRepoFilter ? '-' : '') + `repo:${makeRepositoryPattern(repo)}`)
+    const isCurrentRepoSearch = repoFilter === 'current-repo'
+    const prefix = isCurrentRepoSearch ? '' : '-'
+    queryTermsCopy.push(prefix + `repo:${makeRepositoryPattern(repo)}`)
     queryTermsCopy.push('index:only')
 
     // If we're a fork, search in forks _for the same repo_. Otherwise,
     // search in forks only if it's set in the settings. This is also
     // symmetric for archived repositories.
     queryTermsCopy.push(
-        ...repositoryKindTerms(isFork && !negateRepoFilter, isArchived && !negateRepoFilter, getSetting)
+        ...repositoryKindTerms(isFork && isCurrentRepoSearch, isArchived && isCurrentRepoSearch, getSetting)
     )
 
     return search({ ...args, queryTerms: queryTermsCopy })
@@ -193,7 +184,6 @@ function searchIndexed<
  *
  * @param search The search function.
  * @param args The arguments to the search function.
- * @param negateRepoFilter Whether to look only inside or outside the given repo.
  */
 function searchUnindexed<
     P extends {
@@ -204,7 +194,7 @@ function searchUnindexed<
         queryTerms: string[]
     },
     R
->(search: (args: P) => Promise<R>, args: P, negateRepoFilter = false, getSetting: SettingsGetter): Promise<R> {
+>(search: (args: P) => Promise<R>, args: P, repoFilter: RepoFilter, getSetting: SettingsGetter): Promise<R> {
     const { repo, isFork, isArchived, commit, queryTerms } = args
 
     // Create a copy of the args so that concurrent calls to other
@@ -212,7 +202,8 @@ function searchUnindexed<
     // modified.
     const queryTermsCopy = [...queryTerms]
 
-    if (!negateRepoFilter) {
+    const isCurrentRepoSearch = repoFilter === 'current-repo'
+    if (isCurrentRepoSearch) {
         // Look in this commit only
         queryTermsCopy.push(`repo:${makeRepositoryPattern(repo)}@${commit}`)
     } else {
@@ -224,7 +215,7 @@ function searchUnindexed<
     // search in forks only if it's set in the settings. This is also
     // symmetric for archived repositories.
     queryTermsCopy.push(
-        ...repositoryKindTerms(isFork && !negateRepoFilter, isArchived && !negateRepoFilter, getSetting)
+        ...repositoryKindTerms(isFork && isCurrentRepoSearch, isArchived && isCurrentRepoSearch, getSetting)
     )
 
     return search({ ...args, queryTerms: queryTermsCopy })
@@ -243,7 +234,7 @@ export function isSourcegraphDotCom(): boolean {
  * @param result The search result.
  */
 export function isExternalPrivateSymbol(
-    spec: LanguageSpec,
+    languages: string[],
     path: string,
     { fileLocal, file, symbolKind }: Result
 ): boolean {
@@ -251,8 +242,12 @@ export function isExternalPrivateSymbol(
     // doesn't let us treat that way.
     // See https://github.com/universal-ctags/ctags/issues/1844
 
-    if (spec.languageID === 'java' && symbolKind === 'ENUMMEMBER') {
-        return false
+    if (symbolKind === 'ENUMMEMBER') {
+        for (const language of languages) {
+            if (language.toLowerCase() === 'java') {
+                return false
+            }
+        }
     }
 
     return !!fileLocal && file !== path
@@ -370,12 +365,12 @@ function lineMatchesToResults(
     { lineNumber, offsetAndLengths }: LineMatch
 ): Result[] {
     return offsetAndLengths.map(([offset, length]) => {
-        const url = appendLineRangeQueryParameter(
-            fileUrl,
-            toPositionOrRangeQueryParameter({
-                position: { line: lineNumber + 1, character: offset + 1 },
+        const url = SourcegraphURL.from(fileUrl)
+            .setLineRange({
+                line: lineNumber + 1,
+                character: offset + 1,
             })
-        )
+            .toString()
         return {
             repo,
             rev: revision,

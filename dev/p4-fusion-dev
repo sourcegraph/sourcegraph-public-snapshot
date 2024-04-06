@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+# This script is a wrapper around `p4-fusion` to download and run p4-fusion using bazel
+#
+
+# We silence a few things, because the arguments that symbols pass to this script, which are then passed to
+# the bazel run are printed out again by Bazel by default. And they're very long, so much that it hads about
+# 40 lines, adding unecessary noise to the output of `sg start`
+bazel run //dev/tools:p4-fusion --logging=0 --noshow_progress --ui_event_filters=-info,-debug,-stdout -- "$@"

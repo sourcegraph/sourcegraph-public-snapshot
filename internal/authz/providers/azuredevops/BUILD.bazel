@@ -35,6 +35,7 @@ go_test(
         "//internal/database/dbmocks",
         "//internal/extsvc",
         "//internal/extsvc/azuredevops",
+        "//internal/httpcli",
         "//internal/licensing",
         "//internal/ratelimit",
         "//internal/rcache",

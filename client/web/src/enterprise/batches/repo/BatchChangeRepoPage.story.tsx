@@ -1,6 +1,7 @@
 import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { of } from 'rxjs'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { mockAuthenticatedUser } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 
 import { WebStory } from '../../../components/WebStory'
@@ -26,6 +27,7 @@ const repoDefaults: RepositoryFields = {
     isFork: false,
     metadata: [],
     sourceType: RepositoryType.GIT_REPOSITORY,
+    topics: [],
 }
 
 const queryRepoBatchChangeStats: typeof _queryRepoBatchChangeStats = () =>
@@ -115,6 +117,7 @@ export const ListOfBatchChanges: StoryFn = () => (
                 queryRepoBatchChangeStats={queryRepoBatchChangeStats}
                 queryRepoBatchChanges={queryList}
                 queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
+                telemetryRecorder={noOpTelemetryRecorder}
             />
         )}
     </WebStory>
@@ -132,6 +135,7 @@ export const NoBatchChanges: StoryFn = () => (
                 isSourcegraphDotCom={false}
                 queryRepoBatchChangeStats={queryEmptyRepoBatchChangeStats}
                 queryRepoBatchChanges={queryNone}
+                telemetryRecorder={noOpTelemetryRecorder}
             />
         )}
     </WebStory>

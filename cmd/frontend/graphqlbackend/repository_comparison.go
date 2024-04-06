@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -92,23 +92,29 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, client gitserv
 		return nil, err
 	}
 
-	// Find the common merge-base for the diff. That's the revision the diff applies to,
-	// not the baseRevspec.
-	mergeBaseCommit, err := client.MergeBase(ctx, r.RepoName(), api.CommitID(baseRevspec), api.CommitID(headRevspec))
+	var base *GitCommitResolver
+	rangeType := ".."
+	if baseRevspec != gitserver.DevNullSHA {
+		rangeType = "..."
+		// Find the common merge-base for the diff. That's the revision the diff applies to,
+		// not the baseRevspec.
+		mergeBaseCommit, err := client.MergeBase(ctx, r.RepoName(), baseRevspec, headRevspec)
+		if err != nil {
+			return nil, err
+		}
 
-	// If possible, use the merge-base as the base commit, as the diff will only be guaranteed to be
-	// applicable to the file from that revision.
-	commitString := strings.TrimSpace(string(mergeBaseCommit))
-	rangeType := "..."
-	if err != nil {
-		// Fallback option which should work even if there is no merge base.
-		commitString = baseRevspec
-		rangeType = ".."
-	}
-
-	base, err := getCommit(ctx, r.RepoName(), commitString)
-	if err != nil {
-		return nil, err
+		// If possible, use the merge-base as the base commit, as the diff will only be guaranteed to be
+		// applicable to the file from that revision.
+		commitString := string(mergeBaseCommit)
+		if commitString == "" {
+			// Fallback option which should work even if there is no merge base.
+			commitString = baseRevspec
+			rangeType = ".."
+		}
+		base, err = getCommit(ctx, r.RepoName(), commitString)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &RepositoryComparisonResolver{

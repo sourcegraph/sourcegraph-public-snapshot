@@ -227,7 +227,7 @@ func TestToEventLogs(t *testing.T) {
 					},
 				},
 				Parameters: &telemetrygatewayv1.EventParameters{
-					Metadata: map[string]int64{"public": 2},
+					Metadata: map[string]float64{"public": 2},
 					PrivateMetadata: &structpb.Struct{Fields: map[string]*structpb.Value{
 						"private": structpb.NewStringValue("sensitive-data"),
 					}},
@@ -295,7 +295,7 @@ func TestToEventLogs(t *testing.T) {
 					},
 				},
 				Parameters: &telemetrygatewayv1.EventParameters{
-					Metadata: map[string]int64{"public": 2},
+					Metadata: map[string]float64{"public": 2},
 					PrivateMetadata: &structpb.Struct{Fields: map[string]*structpb.Value{
 						"private": structpb.NewStringValue("sensitive-data"),
 					}},
@@ -358,6 +358,9 @@ func TestToEventLogs(t *testing.T) {
 			// Make sure the rendered events can be inserted into the legacy
 			// table, which has some restrictions that might prevent us from
 			// successfully inserting a translated event.
+			//
+			//lint:ignore SA1019 this is a test for functionality that explicitly
+			// uses this deprecated functionality.
 			assert.NoError(t, db.EventLogs().BulkInsert(context.Background(), eventLogs))
 		})
 	}

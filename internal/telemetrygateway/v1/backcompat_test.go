@@ -39,6 +39,9 @@ var (
 				tid, _ := (tracetest.StaticTraceIDGenerator{}).NewIDs(context.Background())
 				return pointers.Ptr(tid.String())
 			}(),
+			Geolocation: &telemetrygatewayv1.EventInteraction_Geolocation{
+				CountryCode: "US",
+			},
 		},
 		Source: &telemetrygatewayv1.EventSource{
 			Server: &telemetrygatewayv1.EventSource_Server{
@@ -50,8 +53,11 @@ var (
 			},
 		},
 		Parameters: &telemetrygatewayv1.EventParameters{
-			Version:         1,
-			Metadata:        map[string]int64{"metadata": 1},
+			Version: 1,
+			Metadata: map[string]float64{
+				"metadata": 1,
+				"float":    1.3,
+			},
 			PrivateMetadata: must(structpb.NewStruct(map[string]any{"private": "data"})),
 			BillingMetadata: &telemetrygatewayv1.EventBillingMetadata{
 				Product:  "Product",

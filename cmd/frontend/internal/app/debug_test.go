@@ -2,7 +2,6 @@ package app
 
 import (
 	"bytes"
-	"database/sql"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -10,14 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -109,62 +104,6 @@ func Test_prometheusValidator(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestGrafanaLicensing(t *testing.T) {
-	t.Run("licensed requests succeed", func(t *testing.T) {
-		users := dbmocks.NewStrictMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-
-		featureFlags := dbmocks.NewMockFeatureFlagStore()
-		featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
-
-		db := dbmocks.NewStrictMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
-		db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
-
-		PreMountGrafanaHook = func() error { return nil }
-		defer func() { PreMountGrafanaHook = nil }()
-
-		router := mux.NewRouter()
-		addGrafana(router, db)
-		rec := httptest.NewRecorder()
-		router.ServeHTTP(rec, httptest.NewRequest("GET", "/grafana", nil))
-
-		if got, want := rec.Code, http.StatusOK; got != want {
-			t.Fatalf("status code: got %d, want %d", got, want)
-		}
-	})
-
-	t.Run("non-licensed requests fail", func(t *testing.T) {
-		users := dbmocks.NewStrictMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-
-		featureFlags := dbmocks.NewMockFeatureFlagStore()
-		featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
-
-		db := dbmocks.NewStrictMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
-		db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
-
-		PreMountGrafanaHook = func() error { return errors.New("test fail") }
-		defer func() { PreMountGrafanaHook = nil }()
-
-		router := mux.NewRouter()
-		// nil db as calls are mocked above
-		addGrafana(router, db)
-		rec := httptest.NewRecorder()
-		router.ServeHTTP(rec, httptest.NewRequest("GET", "/grafana", nil))
-
-		if got, want := rec.Code, http.StatusUnauthorized; got != want {
-			t.Fatalf("status code: got %d, want %d", got, want)
-		}
-		// http.Error appends a trailing newline that won't be present in
-		// the error message itself, so we need to remove it.
-		if diff := cmp.Diff(strings.TrimSuffix(rec.Body.String(), "\n"), errMonitoringNotLicensed); diff != "" {
-			t.Fatal(diff)
-		}
-	})
 }
 
 func TestSentryTunnel(t *testing.T) {

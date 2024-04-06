@@ -2,7 +2,7 @@
 
 > NOTE: This guide helps Sourcegraph admins migrate from deploying Oracle OpenGrok to Sourcegraph. See our [Oracle OpenGrok end user migration guide](../../../code_search/how-to/opengrok.md) to learn how to switch from OpenGrok's search syntax to Sourcegraph's.
 
-You can migrate from Oracle's [OpenGrok](https://oracle.github.io/opengrok/) to [Sourcegraph](https://about.sourcegraph.com) for code search by following the steps in this document.
+You can migrate from Oracle's [OpenGrok](https://oracle.github.io/opengrok/) to [Sourcegraph](https://sourcegraph.com) for code search by following the steps in this document.
 
 - [Background](opengrok.md#background)
 - [Migration guide](opengrok.md#migration-guide)
@@ -23,7 +23,7 @@ Sourcegraph is a self-hosted code search and intelligence tool that helps develo
 
 Both Sourcegraph and OpenGrok are self-hosted, and your code never touches Sourcegraph's (or Oracle's) servers.
 
-Oracle releases OpenGrok under the open-source CDDL license and does not (currently) have any monetization plans for it. Sourcegraph is a commercial product, with a free tier and [paid premium features](https://about.sourcegraph.com/pricing) available.
+Oracle releases OpenGrok under the open-source CDDL license and does not (currently) have any monetization plans for it. Sourcegraph is a commercial product, with a free tier and [paid premium features](https://sourcegraph.com/pricing) available.
 
 Every organization's needs are different. [Try Sourcegraph for free](../deploy/index.md) to see if it's right for your organization.
 
@@ -106,4 +106,4 @@ After you've set Sourcegraph up, it's time to share it with your organization. S
 
 If there are any blockers preventing your organization from switching to Sourcegraph, we'd love to hear from you so we can address them.
 
-Let us know how we can help! [File an issue](https://github.com/sourcegraph/sourcegraph) with feedback/problems/questions, or [contact us directly](https://about.sourcegraph.com/contact).
+Let us know how we can help! [File an issue](https://github.com/sourcegraph/sourcegraph) with feedback/problems/questions, or [contact us directly](https://sourcegraph.com/contact).

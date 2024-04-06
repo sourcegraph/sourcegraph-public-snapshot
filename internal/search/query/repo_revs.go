@@ -1,6 +1,7 @@
 package query
 
 import (
+	"cmp"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -32,19 +33,18 @@ func (r1 RevisionSpecifier) String() string {
 	return r1.RevSpec
 }
 
-// Less compares two revspecOrRefGlob entities, suitable for use
-// with sort.Slice()
+// Compare r1 to r2, suitable for use with sort.Slice().
 //
 // possibly-undesired: this results in treating an entity with
 // no revspec, but a refGlob, as "earlier" than any revspec.
-func (r1 RevisionSpecifier) Less(r2 RevisionSpecifier) bool {
-	if r1.RevSpec != r2.RevSpec {
-		return r1.RevSpec < r2.RevSpec
+func (r1 RevisionSpecifier) Compare(r2 RevisionSpecifier) int {
+	if v := cmp.Compare(r1.RevSpec, r2.RevSpec); v != 0 {
+		return v
 	}
-	if r1.RefGlob != r2.RefGlob {
-		return r1.RefGlob < r2.RefGlob
+	if v := cmp.Compare(r1.RefGlob, r2.RefGlob); v != 0 {
+		return v
 	}
-	return r1.ExcludeRefGlob < r2.ExcludeRefGlob
+	return cmp.Compare(r1.ExcludeRefGlob, r2.ExcludeRefGlob)
 }
 
 func (r1 RevisionSpecifier) HasRefGlob() bool {

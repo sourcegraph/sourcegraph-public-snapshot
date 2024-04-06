@@ -28,13 +28,12 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -127,10 +126,9 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(false)
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	confGet := func() *conf.Unified { return &conf.Unified{} }
 
@@ -275,30 +273,6 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	}
 }
 
-func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
-
-	ctx := context.Background()
-	confGet := func() *conf.Unified { return &conf.Unified{} }
-	es := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
-	}
-	store := db.ExternalServices()
-	BeforeCreateExternalService = func(context.Context, ExternalServiceStore, *types.ExternalService) error {
-		return errcode.NewPresentationError("test plan limit exceeded")
-	}
-	t.Cleanup(func() { BeforeCreateExternalService = nil })
-	if err := store.Create(ctx, confGet, es); err == nil {
-		t.Fatal("expected an error, got none")
-	}
-}
-
 func TestExternalServicesStore_Update(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -306,23 +280,27 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
+	user, err := db.Users().Create(ctx, NewUser{Username: "foo"})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	now := timeutil.Now()
 	codeHostURL := "https://github.com/"
 
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(false)
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	// Create a new external service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
 	es := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
+		Kind:          extsvc.KindGitHub,
+		DisplayName:   "GITHUB #1",
+		Config:        extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
+		LastUpdaterID: &user.ID,
 	}
-	err := db.ExternalServices().Create(ctx, confGet, es)
+	err = db.ExternalServices().Create(ctx, confGet, es)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -337,9 +315,40 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			PermissionsUserMapping: &schema.PermissionsUserMapping{
+				Enabled: true,
+				BindID:  "email",
+			},
+		},
+	})
+	t.Cleanup(func() { conf.Mock(nil) })
+
+	esOther := &types.ExternalService{
+		Kind:          extsvc.KindOther,
+		DisplayName:   "Other",
+		Config:        extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repos": [ "sourcegraph/sourcegraph" ] }`),
+		LastUpdaterID: &user.ID,
+	}
+	err = db.ExternalServices().Create(ctx, confGet, esOther)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	esOther, err = db.ExternalServices().GetByID(ctx, esOther.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if esOther.Unrestricted {
+		t.Fatal("Expected external services to not be unrestricted")
+	}
+
 	// NOTE: The order of tests matters
 	tests := []struct {
 		name               string
+		esID               int64
 		update             *ExternalServiceUpdate
 		wantUnrestricted   bool
 		wantCloudDefault   bool
@@ -351,6 +360,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	}{
 		{
 			name: "update with authorization",
+			esID: es.ID,
 			update: &ExternalServiceUpdate{
 				DisplayName: pointers.Ptr("GITHUB (updated) #1"),
 				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}, "webhooks": [{"org": "org", "secret": "secret"}]}`),
@@ -361,6 +371,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		},
 		{
 			name: "update without authorization",
+			esID: es.ID,
 			update: &ExternalServiceUpdate{
 				DisplayName: pointers.Ptr("GITHUB (updated) #2"),
 				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
@@ -371,6 +382,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		},
 		{
 			name: "update with authorization in comments",
+			esID: es.ID,
 			update: &ExternalServiceUpdate{
 				DisplayName: pointers.Ptr("GITHUB (updated) #3"),
 				Config: pointers.Ptr(`
@@ -387,6 +399,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		},
 		{
 			name: "set cloud_default true",
+			esID: es.ID,
 			update: &ExternalServiceUpdate{
 				DisplayName:  pointers.Ptr("GITHUB (updated) #4"),
 				CloudDefault: pointers.Ptr(true),
@@ -405,6 +418,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		},
 		{
 			name: "update token_expires_at",
+			esID: es.ID,
 			update: &ExternalServiceUpdate{
 				DisplayName:    pointers.Ptr("GITHUB (updated) #5"),
 				Config:         pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
@@ -415,6 +429,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		},
 		{
 			name: "update with empty config",
+			esID: es.ID,
 			update: &ExternalServiceUpdate{
 				Config: pointers.Ptr(``),
 			},
@@ -422,6 +437,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		},
 		{
 			name: "update with comment config",
+			esID: es.ID,
 			update: &ExternalServiceUpdate{
 				Config: pointers.Ptr(`// {}`),
 			},
@@ -429,6 +445,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		},
 		{
 			name: "update last_sync_at",
+			esID: es.ID,
 			update: &ExternalServiceUpdate{
 				DisplayName: pointers.Ptr("GITHUB (updated) #6"),
 				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
@@ -440,6 +457,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		},
 		{
 			name: "update next_sync_at",
+			esID: es.ID,
 			update: &ExternalServiceUpdate{
 				DisplayName: pointers.Ptr("GITHUB (updated) #7"),
 				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
@@ -450,10 +468,21 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			wantTokenExpiresAt: true,
 			wantNextSyncAt:     now,
 		},
+		{
+			name: "update keeps unrestricted state",
+			esID: esOther.ID,
+			update: &ExternalServiceUpdate{
+				DisplayName: pointers.Ptr("Other (updated)"),
+				Config:      pointers.Ptr(`{"url": "https://github.com", "repos": [ "sourcegraph/sourcegraph", "sourcegraph/cody" ]}`),
+				LastSyncAt:  pointers.Ptr(now),
+				NextSyncAt:  pointers.Ptr(now),
+			},
+			wantUnrestricted: false,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err = db.ExternalServices().Update(ctx, nil, es.ID, test.update)
+			err = db.ExternalServices().Update(ctx, nil, test.esID, test.update)
 			if test.wantError {
 				if err == nil {
 					t.Fatal("Wanted an error")
@@ -465,7 +494,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			}
 
 			// Get and verify update
-			got, err := db.ExternalServices().GetByID(ctx, es.ID)
+			got, err := db.ExternalServices().GetByID(ctx, test.esID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -634,9 +663,12 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
+	user, err := db.Users().Create(ctx, NewUser{Username: "foo"})
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(false)
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
@@ -649,7 +681,7 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 		DisplayName: "GITHUB #1",
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 	}
-	err := externalServices.Create(ctx, confGet, es)
+	err = externalServices.Create(ctx, confGet, es)
 	require.NoError(t, err)
 
 	got, err := externalServices.GetByID(ctx, es.ID)
@@ -681,7 +713,8 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 		conf.Get().AuthProviders,
 		es.ID,
 		&ExternalServiceUpdate{
-			Config: &cfg,
+			Config:        &cfg,
+			LastUpdaterID: &user.ID,
 		},
 	)
 	require.NoError(t, err)
@@ -986,7 +1019,7 @@ func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
 		go createRepo(offset, ready)
 	}
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		if status := <-ready; status != 0 {
 			t.Fatal("Error during repo creation")
 		}
@@ -1026,7 +1059,7 @@ func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
 		go createExtSvc(offset, ready2)
 	}
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		if status := <-ready2; status != 0 {
 			t.Fatal("Error during external service repo creation")
 		}
@@ -1297,7 +1330,6 @@ func TestGetLastSyncError(t *testing.T) {
 INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at)
 VALUES ($1,'errored', now())
 `, es.ID)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1316,7 +1348,6 @@ VALUES ($1,'errored', now())
 INSERT INTO external_service_sync_jobs (external_service_id, failure_message, state, finished_at)
 VALUES ($1,$2,'errored', now())
 `, es.ID, expectedError)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1772,16 +1803,15 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	ctx := context.Background()
 
 	clock := timeutil.NewFakeClock(time.Now(), 0)
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	t.Run("no external services", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(t))
 		if err := db.ExternalServices().Upsert(ctx); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
 	})
 
 	t.Run("validation", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(t))
 		store := db.ExternalServices()
 
 		t.Run("config can't be empty", func(t *testing.T) {
@@ -1805,7 +1835,11 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("one external service", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(t))
+		t.Cleanup(func() {
+			_, err := db.ExecContext(ctx, "DELETE FROM external_services")
+			require.NoError(t, err)
+		})
+
 		store := db.ExternalServices()
 
 		svc := typestest.MakeGitLabExternalService()
@@ -1832,7 +1866,11 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("many external services", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(t))
+		t.Cleanup(func() {
+			_, err := db.ExecContext(ctx, "DELETE FROM external_services")
+			require.NoError(t, err)
+		})
+
 		store := db.ExternalServices()
 
 		svcs := typestest.MakeExternalServices()
@@ -1904,7 +1942,11 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("with encryption key", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(t))
+		t.Cleanup(func() {
+			_, err := db.ExecContext(ctx, "DELETE FROM external_services")
+			require.NoError(t, err)
+		})
+
 		store := db.ExternalServices().WithEncryptionKey(et.TestKey{})
 
 		svcs := typestest.MakeExternalServices()
@@ -1987,7 +2029,11 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("check code hosts created with many external services", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(t))
+		t.Cleanup(func() {
+			_, err := db.ExecContext(ctx, "DELETE FROM external_services")
+			require.NoError(t, err)
+		})
+
 		store := db.ExternalServices()
 
 		svcs := typestest.MakeExternalServices()
@@ -2460,18 +2506,18 @@ func TestExternalServiceStore_recalculateFields(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			pmu := globals.PermissionsUserMapping()
-			t.Cleanup(func() {
-				globals.SetPermissionsUserMapping(pmu)
-			})
-
 			es := &types.ExternalService{}
 
 			if tc.explicitPermsEnabled {
-				globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{
-					BindID:  "email",
-					Enabled: true,
+				conf.Mock(&conf.Unified{
+					SiteConfiguration: schema.SiteConfiguration{
+						PermissionsUserMapping: &schema.PermissionsUserMapping{
+							Enabled: true,
+							BindID:  "email",
+						},
+					},
 				})
+				t.Cleanup(func() { conf.Mock(nil) })
 			}
 			rawConfig := "{}"
 			var err error
@@ -2480,7 +2526,7 @@ func TestExternalServiceStore_recalculateFields(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			require.NoError(t, e.recalculateFields(es, rawConfig))
+			e.recalculateFields(es, rawConfig)
 
 			require.Equal(t, es.Unrestricted, tc.expectUnrestricted)
 		})
@@ -2571,10 +2617,178 @@ func Test_validateOtherExternalServiceConnection(t *testing.T) {
 	require.Error(t, err)
 
 	// On DotCom, no error should be returned
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	err = validateOtherExternalServiceConnection(conn)
 	require.NoError(t, err)
+}
+
+func TestExternalServices_CleanupSyncJobs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+	}
+	err := db.ExternalServices().Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	now := timeutil.Now()
+	q := `
+		INSERT INTO external_service_sync_jobs
+			(external_service_id, state, queued_at, finished_at)
+		VALUES
+			($2, 'completed', $1::timestamp - interval '40 day', $1::timestamp - interval '40 day'),  -- completed and older than 30d, delete
+			($2, 'failed', $1::timestamp - interval '40 day', $1::timestamp - interval '40 day'),     -- failed and older than 30d, delete
+			($2, 'processing', $1::timestamp - interval '40 day', $1::timestamp - interval '40 day'), -- processing but older than 30d, still keep
+			($2, 'processing', $1::timestamp - interval '20 day', $1::timestamp - interval '20 day'), -- processing and newer than 30d, keep
+			($2, 'failed', $1::timestamp - interval '20 day', $1::timestamp - interval '20 day'),     -- failed but newer than 30d, keep
+			($2, 'canceled', $1::timestamp - interval '10 day', $1::timestamp - interval '10 day'),   -- canceled but newer than 30d, keep
+			($2, 'completed', $1::timestamp - interval '10 day', $1::timestamp - interval '10 day')   -- completed but newer than 30d, keep
+		`
+	_, err = db.ExecContext(ctx, q, now, es.ID)
+	require.NoError(t, err)
+
+	require.NoError(
+		t,
+		db.ExternalServices().CleanupSyncJobs(ctx, ExternalServicesCleanupSyncJobsOptions{
+			MaxPerExternalService: 1000,
+			OlderThan:             30 * 24 * time.Hour,
+		}),
+	)
+
+	// With large MaxPerExternalService, expect that only the jobs that are older than 30d
+	// are deleted.
+	syncJobs, err := db.ExternalServices().GetSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{})
+	require.NoError(t, err)
+	require.Equal(t, []*types.ExternalServiceSyncJob{
+		{
+			ID:                3,
+			ExternalServiceID: es.ID,
+			State:             "processing",
+			QueuedAt:          now.Add(-40 * 24 * time.Hour),
+			FinishedAt:        now.Add(-40 * 24 * time.Hour),
+		},
+		{
+			ID:                4,
+			ExternalServiceID: es.ID,
+			State:             "processing",
+			QueuedAt:          now.Add(-20 * 24 * time.Hour),
+			FinishedAt:        now.Add(-20 * 24 * time.Hour),
+		},
+		{
+			ID:                5,
+			ExternalServiceID: es.ID,
+			State:             "failed",
+			QueuedAt:          now.Add(-20 * 24 * time.Hour),
+			FinishedAt:        now.Add(-20 * 24 * time.Hour),
+		},
+		{
+			ID:                6,
+			ExternalServiceID: es.ID,
+			State:             "canceled",
+			QueuedAt:          now.Add(-10 * 24 * time.Hour),
+			FinishedAt:        now.Add(-10 * 24 * time.Hour),
+		},
+		{
+			ID:                7,
+			ExternalServiceID: es.ID,
+			State:             "completed",
+			QueuedAt:          now.Add(-10 * 24 * time.Hour),
+			FinishedAt:        now.Add(-10 * 24 * time.Hour),
+		},
+	}, syncJobs)
+
+	// Now only keep the last 2 records:
+	require.NoError(
+		t,
+		db.ExternalServices().CleanupSyncJobs(ctx, ExternalServicesCleanupSyncJobsOptions{
+			MaxPerExternalService: 2,
+			OlderThan:             30 * 24 * time.Hour,
+		}),
+	)
+
+	syncJobs, err = db.ExternalServices().GetSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{})
+	require.NoError(t, err)
+	require.Equal(t, []*types.ExternalServiceSyncJob{
+		// Processing are skipped in deletion.
+		{
+			ID:                3,
+			ExternalServiceID: es.ID,
+			State:             "processing",
+			QueuedAt:          now.Add(-40 * 24 * time.Hour),
+			FinishedAt:        now.Add(-40 * 24 * time.Hour),
+		},
+		// Processing are skipped in deletion.
+		{
+			ID:                4,
+			ExternalServiceID: es.ID,
+			State:             "processing",
+			QueuedAt:          now.Add(-20 * 24 * time.Hour),
+			FinishedAt:        now.Add(-20 * 24 * time.Hour),
+		},
+		{
+			ID:                6,
+			ExternalServiceID: es.ID,
+			State:             "canceled",
+			QueuedAt:          now.Add(-10 * 24 * time.Hour),
+			FinishedAt:        now.Add(-10 * 24 * time.Hour),
+		},
+		{
+			ID:                7,
+			ExternalServiceID: es.ID,
+			State:             "completed",
+			QueuedAt:          now.Add(-10 * 24 * time.Hour),
+			FinishedAt:        now.Add(-10 * 24 * time.Hour),
+		},
+	}, syncJobs)
+}
+
+func TestCalcUnrestricted(t *testing.T) {
+	// Separate test for dotcom mode to test a mix of cases
+	t.Run("dotcom mode always returns false", func(t *testing.T) {
+		require.False(t, calcUnrestricted("", true, false))
+		require.False(t, calcUnrestricted(`{"authorization": {}}`, true, false))
+		require.False(t, calcUnrestricted(`{"authorization": {}, "enforcePermissions": false}`, true, false))
+	})
+
+	otherTests := map[string]struct {
+		authorization          bool
+		enforcePermissions     bool
+		permissionsUserMapping bool
+		want                   bool
+	}{
+		"all false returns unrestricted":                                       {want: true},
+		"authorization true returns restricted":                                {authorization: true, want: false},
+		"permissionsUserMapping true returns restrcited":                       {permissionsUserMapping: true, want: false},
+		"enforcePermissions and no permissionsUserMapping returns restrictred": {enforcePermissions: true, want: false},
+	}
+
+	for testName, test := range otherTests {
+		t.Run(testName, func(t *testing.T) {
+			var vals []string
+			if test.authorization {
+				vals = append(vals, `"authorization": {}`)
+			}
+			if test.enforcePermissions {
+				vals = append(vals, `"enforcePermissions": true`)
+			}
+
+			conf := fmt.Sprintf("{%s}", strings.Join(vals, ","))
+			require.Equal(t, test.want, calcUnrestricted(conf, false, test.permissionsUserMapping))
+		})
+	}
 }

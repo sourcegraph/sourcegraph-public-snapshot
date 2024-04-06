@@ -2,7 +2,7 @@ package observation
 
 import (
 	"go.opentelemetry.io/otel/attribute"
-	"go.uber.org/zap"
+	"go.uber.org/zap" //nolint:logging // This is an expected usage
 
 	"github.com/sourcegraph/log"
 )

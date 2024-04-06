@@ -5,7 +5,7 @@
 <span class="badge badge-note">Note</span> This is new!
 </p>
 
-<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, leave feedback <a href="https://github.com/sourcegraph/sourcegraph/issues/14851">in this issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
+<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://sourcegraph.com/contact">contact us directly</a>, leave feedback <a href="https://github.com/sourcegraph/sourcegraph/issues/14851">in this issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 
 <p>This feature is available in Sourcegraph 4.1 with <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 4.0.1 and later.</p>
 </aside>

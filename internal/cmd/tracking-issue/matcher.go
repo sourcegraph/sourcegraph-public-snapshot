@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"slices"
+)
 
 type Matcher struct {
 	labels     []string
@@ -23,7 +26,7 @@ func NewMatcher(labels []string, milestone string, assignee string, noAssignee b
 // with the tracking issue will never be matched.
 func (m *Matcher) Issue(issue *Issue) bool {
 	return testAll(
-		!contains(issue.Labels, "tracking"),
+		!slices.Contains(issue.Labels, "tracking"),
 		m.testAssignee(issue.Assignees...),
 		m.testLabels(issue.Labels),
 		m.testMilestone(issue.Milestone, issue.Labels),
@@ -50,14 +53,14 @@ func (m *Matcher) testAssignee(assignees ...string) bool {
 		return true
 	}
 
-	return contains(assignees, m.assignee)
+	return slices.Contains(assignees, m.assignee)
 }
 
 // testLabels returns true if every label that this matcher was configured with exists
 // in the given label list.
 func (m *Matcher) testLabels(labels []string) bool {
 	for _, label := range m.labels {
-		if !contains(labels, label) {
+		if !slices.Contains(labels, label) {
 			return false
 		}
 	}
@@ -69,7 +72,7 @@ func (m *Matcher) testLabels(labels []string) bool {
 // was configured with, if the given labels contains a planned/{milestone} label, or
 // the milestone on the tracking issue is not restricted.
 func (m *Matcher) testMilestone(milestone string, labels []string) bool {
-	return m.milestone == "" || milestone == m.milestone || contains(labels, fmt.Sprintf("planned/%s", m.milestone))
+	return m.milestone == "" || milestone == m.milestone || slices.Contains(labels, fmt.Sprintf("planned/%s", m.milestone))
 }
 
 // testAll returns true if all of the given values are true.

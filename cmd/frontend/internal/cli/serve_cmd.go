@@ -3,18 +3,19 @@ package cli
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/go-logr/stdr"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/tmpfriend"
 	sglog "github.com/sourcegraph/log"
 	"github.com/throttled/throttled/v2"
-	"github.com/throttled/throttled/v2/store/memstore"
 	"github.com/throttled/throttled/v2/store/redigostore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -26,7 +27,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -35,6 +38,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
@@ -43,6 +47,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
@@ -85,10 +90,16 @@ func InitDB(logger sglog.Logger) (*sql.DB, error) {
 	return sqlDB, nil
 }
 
+type LazyDebugserverEndpoint struct {
+	GlobalRateLimiterState       http.Handler
+	ListAuthzProvidersEndpoint   http.Handler
+	GitserverReposStatusEndpoint http.Handler
+}
+
 type SetupFunc func(database.DB, conftypes.UnifiedWatchable) enterprise.Services
 
 // Main is the main entrypoint for the frontend server program.
-func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, enterpriseSetupHook SetupFunc, enterpriseMigratorHook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) error {
+func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, debugserverEndpoints *LazyDebugserverEndpoint, enterpriseSetupHook SetupFunc, enterpriseMigratorHook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) error {
 	logger := observationCtx.Logger
 
 	if err := tryAutoUpgrade(ctx, observationCtx, ready, enterpriseMigratorHook); err != nil {
@@ -105,9 +116,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	stdr.SetVerbosity(10)
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
-		if !deploy.IsSingleBinary() {
-			logger.Warn("Skipping out-of-band migrations check")
-		}
+		logger.Warn("Skipping out-of-band migrations check")
 	} else {
 		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(observationCtx, db, oobmigration.RefreshInterval)
 
@@ -122,11 +131,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	userpasswd.Init()
 	highlight.Init()
-
-	// After our DB, redis is our next most important datastore
-	if err := redispoolRegisterDB(db); err != nil {
-		return errors.Wrap(err, "failed to register postgres backed redis")
-	}
 
 	// override site config first
 	if err := overrideSiteConfig(ctx, logger, db); err != nil {
@@ -153,9 +157,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// Run enterprise setup hook
 	enterpriseServices := enterpriseSetupHook(db, conf.DefaultClient())
 
-	if err != nil {
-		return errors.Wrap(err, "Failed to create sub-repo client")
-	}
 	ui.InitRouter(db)
 
 	if len(os.Args) >= 2 {
@@ -207,12 +208,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	globals.WatchBranding()
 	globals.WatchExternalURL()
-	globals.WatchPermissionsUserMapping()
 
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), logger, db) })
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), logger, db) })
+	goroutine.Go(func() { bg.ScheduleStoreTokenUsage(ctx, db) })
 	goroutine.Go(func() { bg.UpdatePermissions(ctx, logger, db) })
 	goroutine.Go(func() { updatecheck.Start(logger, db) })
 	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })
@@ -249,6 +250,71 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	oce.GlobalExporter = oce.NewDataExporter(db, logger)
 
+	debugserverEndpoints.GlobalRateLimiterState = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		info, err := ratelimit.GetGlobalLimiterState(r.Context())
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to read rate limiter state: %q", err.Error()), http.StatusInternalServerError)
+			return
+		}
+		resp, err := json.MarshalIndent(info, "", "  ")
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to marshal rate limiter state: %q", err.Error()), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(resp)
+	})
+	debugserverEndpoints.GitserverReposStatusEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		repo := r.FormValue("repo")
+		if repo == "" {
+			http.Error(w, "missing 'repo' param", http.StatusBadRequest)
+			return
+		}
+
+		status, err := db.GitserverRepos().GetByName(r.Context(), api.RepoName(repo))
+		if err != nil {
+			http.Error(w, fmt.Sprintf("fetching repository status: %q", err), http.StatusInternalServerError)
+			return
+		}
+
+		resp, err := json.MarshalIndent(status, "", "  ")
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to marshal status: %q", err.Error()), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(resp)
+	})
+	debugserverEndpoints.ListAuthzProvidersEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		type providerInfo struct {
+			ServiceType        string `json:"service_type"`
+			ServiceID          string `json:"service_id"`
+			ExternalServiceURL string `json:"external_service_url"`
+		}
+
+		_, providers := authz.GetProviders()
+		infos := make([]providerInfo, len(providers))
+		for i, p := range providers {
+			_, id := extsvc.DecodeURN(p.URN())
+
+			// Note that the ID marshalling below replicates code found in `graphqlbackend`.
+			// We cannot import that package's code into this one (see /dev/check/go-dbconn-import.sh).
+			infos[i] = providerInfo{
+				ServiceType:        p.ServiceType(),
+				ServiceID:          p.ServiceID(),
+				ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", globals.ExternalURL(), relay.MarshalID("ExternalService", id)),
+			}
+		}
+
+		resp, err := json.MarshalIndent(infos, "", "  ")
+		if err != nil {
+			http.Error(w, "failed to marshal infos: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(resp)
+	})
+
 	if printLogo {
 		// This is not a log entry and is usually disabled
 		println(fmt.Sprintf("\n\n%s\n\n", logoColor))
@@ -256,8 +322,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	logger.Info(fmt.Sprintf("✱ Sourcegraph is ready at: %s", globals.ExternalURL()))
 	ready()
 
-	// We only want to run this task once Sourcegraph is ready to serve user requests.
-	goroutine.Go(func() { bg.AppReady(db, logger) })
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 	return nil
 }
@@ -298,7 +362,6 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 			NewCodeCompletionsHandler:       enterprise.NewCodeCompletionsHandler,
 		},
 		enterprise.NewExecutorProxyHandler,
-		enterprise.NewGitHubAppSetupHandler,
 	)
 	if err != nil {
 		return nil, errors.Errorf("create external HTTP handler: %v", err)
@@ -384,30 +447,13 @@ func isAllowedOrigin(origin string, allowedOrigins []string) bool {
 func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
 	var store throttled.GCRAStoreCtx
 	var err error
-	if pool, ok := redispool.Cache.Pool(); ok {
-		store, err = redigostore.NewCtx(pool, "gql:rl:", 0)
-	} else {
-		// If redis is disabled we are in Cody App and can rely on an
-		// in-memory store.
-		store, err = memstore.NewCtx(0)
-	}
+	pool := redispool.Cache.Pool()
+	store, err = redigostore.NewCtx(pool, "gql:rl:", 0)
 	if err != nil {
 		return nil, err
 	}
 
 	return graphqlbackend.NewBasicLimitWatcher(sglog.Scoped("BasicLimitWatcher"), store), nil
-}
-
-// redispoolRegisterDB registers our postgres backed redis. These package
-// avoid depending on each other, hence the wrapping to get Go to play nice
-// with the interface definitions.
-func redispoolRegisterDB(db database.DB) error {
-	kvNoTX := db.RedisKeyValue()
-	return redispool.DBRegisterStore(func(ctx context.Context, f func(redispool.DBStore) error) error {
-		return kvNoTX.WithTransact(ctx, func(tx database.RedisKeyValueStore) error {
-			return f(tx)
-		})
-	})
 }
 
 // GetInternalAddr returns the address of the internal HTTP API server.

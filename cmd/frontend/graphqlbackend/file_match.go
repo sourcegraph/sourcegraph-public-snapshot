@@ -77,6 +77,10 @@ func (fm *FileMatchResolver) ChunkMatches() []chunkMatchResolver {
 	return r
 }
 
+func (fm *FileMatchResolver) Languages() []string {
+	return fm.FileMatch.Languages()
+}
+
 func (fm *FileMatchResolver) LimitHit() bool {
 	return fm.FileMatch.LimitHit
 }

@@ -3,21 +3,26 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/gofrs/uuid"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -62,9 +67,7 @@ func TestOrganization(t *testing.T) {
 	})
 
 	t.Run("users not invited or not a member cannot access on Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		RunTests(t, []*Test{
 			{
@@ -92,9 +95,7 @@ func TestOrganization(t *testing.T) {
 	})
 
 	t.Run("org members can access on Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
@@ -131,9 +132,7 @@ func TestOrganization(t *testing.T) {
 	})
 
 	t.Run("invited users can access on Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
@@ -175,9 +174,7 @@ func TestOrganization(t *testing.T) {
 	})
 
 	t.Run("invited users can access org by ID on Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
@@ -269,8 +266,7 @@ func TestCreateOrganization(t *testing.T) {
 	})
 
 	t.Run("Creates organization and sets statistics", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(false)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		id, err := uuid.NewV4()
 		if err != nil {
@@ -307,8 +303,7 @@ func TestCreateOrganization(t *testing.T) {
 	})
 
 	t.Run("Fails for unauthenticated user", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(false)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		RunTest(t, &Test{
 			Schema:  mustParseGraphQLSchema(t, db),
@@ -333,8 +328,7 @@ func TestCreateOrganization(t *testing.T) {
 	})
 
 	t.Run("Fails for suspicious organization name", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(false)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		RunTest(t, &Test{
 			Schema:  mustParseGraphQLSchema(t, db),
@@ -416,8 +410,7 @@ func TestAddOrganizationMember(t *testing.T) {
 	})
 
 	t.Run("Does not work for site admin on Cloud", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(false)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		RunTest(t, &Test{
 			Schema:  mustParseGraphQLSchema(t, db),
@@ -442,7 +435,7 @@ func TestAddOrganizationMember(t *testing.T) {
 	})
 
 	t.Run("Works on Cloud if site admin is org member", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(true)
+		dotcom.MockSourcegraphDotComMode(t, true)
 		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(ctx context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
 			if userID == 1 {
 				return &types.OrgMembership{OrgID: orgID, UserID: 1}, nil
@@ -454,7 +447,6 @@ func TestAddOrganizationMember(t *testing.T) {
 		})
 
 		defer func() {
-			envvar.MockSourcegraphDotComMode(false)
 			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
 		}()
 
@@ -555,4 +547,31 @@ func TestUnmarshalOrgID(t *testing.T) {
 		_, err := UnmarshalOrgID(namespaceOrgID)
 		assert.Error(t, err)
 	})
+}
+
+func TestMembersConnectionStore(t *testing.T) {
+	ctx := context.Background()
+
+	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(t))
+
+	org, err := db.Orgs().Create(ctx, "test-org", nil)
+	require.NoError(t, err)
+
+	for i := range 10 {
+		user, err := db.Users().Create(ctx, database.NewUser{
+			Username:        "test" + strconv.Itoa(i),
+			Email:           fmt.Sprintf("test%d@sourcegraph.com", i),
+			EmailIsVerified: true,
+		})
+		require.NoError(t, err)
+		_, err = db.OrgMembers().Create(ctx, org.ID, user.ID)
+		require.NoError(t, err)
+	}
+
+	connectionStore := &membersConnectionStore{
+		db:    db,
+		orgID: org.ID,
+	}
+
+	graphqlutil.TestConnectionResolverStoreSuite(t, connectionStore)
 }

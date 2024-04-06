@@ -13,11 +13,13 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
-        "//internal/inventory",
+        "//internal/gitserver/gitdomain",
         "//internal/lazyregexp",
         "//internal/search",
         "//internal/search/result",
         "@com_github_grafana_regexp//:regexp",
+        "@org_golang_x_text//cases",
+        "@org_golang_x_text//language",
         "@org_uber_go_atomic//:atomic",
     ],
 )
@@ -32,6 +34,7 @@ go_test(
     ],
     embed = [":streaming"],
     deps = [
+        "//internal/gitserver/gitdomain",
         "//internal/search/result",
         "//internal/types",
         "@com_github_google_go_cmp//cmp",

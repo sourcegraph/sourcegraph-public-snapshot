@@ -1,7 +1,7 @@
 package background
 
 import (
-	"log"
+	"log" //nolint:logging // Legacy and special case handling of panics in background routines
 	"runtime/debug"
 )
 

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/iancoleman/strcase"
+
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -20,12 +21,20 @@ type SiteConfigurationMetricsOptions struct {
 	//
 	// Example: (gitserver-0 | gitserver-1)
 	InstanceFilterRegex string
+
+	// JobFilterRegex is the PromQL regex that's used to filter the
+	// site configuration client metrics to only those emitted by the Prometheus scrape job(s) that were interested in.
+	//
+	// Example: `.*gitserver`
+	JobFilterRegex string
 }
 
 // NewSiteConfigurationClientMetricsGroup creates a group containing site configuration fetching latency statistics for the service
 // specified in the given options.
 func NewSiteConfigurationClientMetricsGroup(opts SiteConfigurationMetricsOptions, owner monitoring.ObservableOwner) monitoring.Group {
 	opts.HumanServiceName = strcase.ToSnake(opts.HumanServiceName)
+
+	jobFilter := fmt.Sprintf("job=~`%s`", opts.JobFilterRegex)
 
 	metric := func(base string, labelFilters ...string) string {
 		metric := base
@@ -49,7 +58,7 @@ func NewSiteConfigurationClientMetricsGroup(opts SiteConfigurationMetricsOptions
 				{
 					Name:           fmt.Sprintf("%s_site_configuration_duration_since_last_successful_update_by_instance", opts.HumanServiceName),
 					Description:    "duration since last successful site configuration update (by instance)",
-					Query:          metric("src_conf_client_time_since_last_successful_update_seconds"),
+					Query:          metric("src_conf_client_time_since_last_successful_update_seconds", jobFilter),
 					Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
 					Owner:          owner,
 					NoAlert:        true,
@@ -58,7 +67,7 @@ func NewSiteConfigurationClientMetricsGroup(opts SiteConfigurationMetricsOptions
 				{
 					Name:        fmt.Sprintf("%s_site_configuration_duration_since_last_successful_update_by_instance", opts.HumanServiceName),
 					Description: fmt.Sprintf("maximum duration since last successful site configuration update (all %q instances)", opts.HumanServiceName),
-					Query:       fmt.Sprintf("max(max_over_time(%s[1m]))", metric("src_conf_client_time_since_last_successful_update_seconds")),
+					Query:       fmt.Sprintf("max(max_over_time(%s[1m]))", metric("src_conf_client_time_since_last_successful_update_seconds", jobFilter)),
 					Panel:       monitoring.Panel().Unit(monitoring.Seconds),
 					Owner:       owner,
 					Critical:    monitoring.Alert().GreaterOrEqual((5 * time.Minute).Seconds()),

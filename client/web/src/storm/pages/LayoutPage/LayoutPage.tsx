@@ -10,7 +10,6 @@ import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackPrompt, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
-import { StartupUpdateChecker } from '../../../cody/update/StartupUpdateChecker'
 import { communitySearchContextsRoutes } from '../../../communitySearchContexts/routes'
 import { AppRouterContainer } from '../../../components/AppRouterContainer'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
@@ -190,9 +189,15 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            <GlobalAlerts authenticatedUser={props.authenticatedUser} isCodyApp={props.isCodyApp} />
+            <GlobalAlerts
+                authenticatedUser={props.authenticatedUser}
+                telemetryRecorder={props.platformContext.telemetryRecorder}
+            />
             {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
-                <SurveyToast authenticatedUser={props.authenticatedUser} />
+                <SurveyToast
+                    authenticatedUser={props.authenticatedUser}
+                    telemetryRecorder={props.platformContext.telemetryRecorder}
+                />
             )}
             {!isSiteInit && props.isSourcegraphDotCom && props.authenticatedUser && (
                 <CodySurveyToast
@@ -218,7 +223,6 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     showFeedbackModal={showFeedbackModal}
                 />
             )}
-            {props.isCodyApp && <StartupUpdateChecker />}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
             <ErrorBoundary location={location}>
                 <Suspense
@@ -250,6 +254,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     settingsCascade={props.settingsCascade}
                     telemetryService={props.telemetryService}
+                    telemetryRecorder={props.platformContext.telemetryRecorder}
                     location={location}
                     userHistory={userHistory}
                 />

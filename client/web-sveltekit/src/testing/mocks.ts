@@ -3,7 +3,7 @@ import signale from 'signale'
 import { writable, type Readable, type Writable } from 'svelte/store'
 import { vi } from 'vitest'
 
-import type { SettingsCascade } from '$lib/shared'
+import type { Settings } from '$lib/shared'
 import { KEY, type SourcegraphContext } from '$lib/stores'
 import type { FeatureFlagName } from '$lib/web'
 
@@ -12,7 +12,7 @@ let fakerRefDate: Date
 /**
  * Use fake timers and optionally set the current date and reference date for data generation.
  */
-export function useFakeTimers(refDate?: Date) {
+export function useFakeTimers(refDate?: Date): void {
     if (!refDate) {
         refDate = faker.defaultRefDate()
     } else {
@@ -28,7 +28,7 @@ export function useFakeTimers(refDate?: Date) {
  * Use real timers. The reference date for date generation will be
  * restored to a fixed default value.
  */
-export function useRealTimers() {
+export function useRealTimers(): void {
     faker.setDefaultRefDate(fakerRefDate)
     vi.useFakeTimers()
     vi.useRealTimers()
@@ -37,18 +37,18 @@ export function useRealTimers() {
 /**
  * Mocks arbitrary Svelte context values
  */
-export function mockSvelteContext<T>(key: any, value: T) {
+export function mockSvelteContext<T>(key: any, value: T): void {
     mockedContexts.set(key, value)
 }
 
 /**
  * Unmock SvelteContext
  */
-export function unmockSvelteContext(key: any) {
+export function unmockSvelteContext(key: any): void {
     mockedContexts.delete(key)
 }
 
-// Stores all mocke context values
+// Stores all mocked context values
 export const mockedContexts = new Map<any, any>()
 
 type SourcegraphContextKey = keyof SourcegraphContext
@@ -61,10 +61,8 @@ const mockedSourcgraphContext: {
     [key in SourcegraphContextKey]: MockedSourcegraphContextValue<SourcegraphContext[key]> | typeof unmocked
 } = {
     user: writable(null),
-    client: unmocked,
     settings: writable({}),
     featureFlags: writable([]),
-    isLightTheme: writable(true),
     temporarySettingsStorage: unmocked,
 }
 
@@ -95,7 +93,7 @@ mockedContexts.set(
  * calling `unmockFeatureFlags` in between then subsequent calls will update the underlying feature flag
  * store, updating all subscribers.
  */
-export function mockFeatureFlags(evaluatedFeatureFlags: Partial<Record<FeatureFlagName, boolean>>) {
+export function mockFeatureFlags(evaluatedFeatureFlags: Partial<Record<FeatureFlagName, boolean>>): void {
     const flags = Object.entries(evaluatedFeatureFlags).map(([name, value]) => ({ name, value }))
 
     if (mockedSourcgraphContext.featureFlags === unmocked) {
@@ -108,7 +106,7 @@ export function mockFeatureFlags(evaluatedFeatureFlags: Partial<Record<FeatureFl
 /**
  * Unmock all feature flags.
  */
-export function unmockFeatureFlags() {
+export function unmockFeatureFlags(): void {
     mockedSourcgraphContext.featureFlags = writable([])
 }
 
@@ -117,7 +115,7 @@ export function unmockFeatureFlags() {
  * calling `unmockUserSettings` in between then subsequent calls will update the underlying settings
  * store, updating all subscribers.
  */
-export function mockUserSettings(settings: Partial<SettingsCascade['final']>) {
+export function mockUserSettings(settings: Partial<Settings>): void {
     if (mockedSourcgraphContext.settings === unmocked) {
         mockedSourcgraphContext.settings = writable(settings)
     } else {
@@ -128,6 +126,6 @@ export function mockUserSettings(settings: Partial<SettingsCascade['final']>) {
 /**
  * Unmock all user settings.
  */
-export function unmockUserSettings() {
+export function unmockUserSettings(): void {
     mockedSourcgraphContext.settings = writable({})
 }

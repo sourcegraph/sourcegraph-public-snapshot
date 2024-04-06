@@ -1,0 +1,32 @@
+query GitHistoryQuery($repoName: String!, $revspec: String!, $first: Int, $afterCursor: String, $filePath: String) {
+    repository(name: $repoName) {
+        id
+        commit(rev: $revspec) {
+            id
+            ancestors(first: $first, path: $filePath, afterCursor: $afterCursor) {
+                ...GitHistory_HistoryConnection
+            }
+        }
+    }
+}
+
+query LastCommitQuery($repoName: String!, $revspec: String!, $filePath: String!) {
+    repository(name: $repoName) {
+        lastCommit: commit(rev: $revspec) {
+            id
+            ancestors(first: 1, path: $filePath) {
+                nodes {
+                    ...LastCommitFragment
+                }
+            }
+        }
+    }
+}
+
+fragment GitHistory_HistoryConnection on GitCommitConnection {
+    ...HistoryPanel_HistoryConnection
+    pageInfo {
+        hasNextPage
+        endCursor
+    }
+}

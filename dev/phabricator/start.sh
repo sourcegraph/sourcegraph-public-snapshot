@@ -53,7 +53,7 @@ docker run -d --name $app_container -p 80:80 -p 443:443 \
   -e PHABRICATOR_PASSWORD=sourcegraph \
   -e PHABRICATOR_EMAIL=phabricator@sourcegraph.com \
   -e MARIADB_HOST=$db_container \
-  bitnami/phabricator:${version}
+  bitnami/phabricator:"${version}"
 
 echo
 echo "Phabricator ${version} is now running at http://127.0.0.1"

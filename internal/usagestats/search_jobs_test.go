@@ -33,15 +33,11 @@ func TestSearchJobsUsageStatistics(t *testing.T) {
 		VALUES
 			(1, 'ViewSearchJobsListPage', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
 			(2, 'ViewSearchJobsListPage', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(3, 'SearchJobsValidationErrors', '{"errors": ["rev", "or_operator"]}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(4, 'SearchJobsValidationErrors', '{"errors": ["rev", "or_operator"]}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(5, 'SearchJobsValidationErrors', '{"errors": ["and", "or_operator"]}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(6, 'SearchJobsValidationErrors', '{"errors": ["and"]}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(7, 'SearchJobsResultDownloadClick', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '2 days'),
-			(8, 'SearchJobsResultViewLogsClick', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '2 days'),
-			(9, 'SearchJobsCreateClick', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(10, 'SearchJobsSearchFormShown', '{"validState": "valid"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(11, 'SearchJobsSearchFormShown', '{"validState": "invalid"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day')
+			(3, 'SearchJobsResultDownloadClick', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '2 days'),
+			(4, 'SearchJobsResultViewLogsClick', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '2 days'),
+			(5, 'SearchJobsCreateClick', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			(6, 'SearchJobsSearchFormShown', '{"validState": "valid"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			(7, 'SearchJobsSearchFormShown', '{"validState": "invalid"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day')
 	`, now)
 
 	if err != nil {
@@ -68,21 +64,6 @@ func TestSearchJobsUsageStatistics(t *testing.T) {
 		},
 	}
 
-	weeklySearchJobsValidationErrors := []types.SearchJobsValidationErrorPing{
-		{
-			TotalCount: 2,
-			Errors:     []string{"rev", "or_operator"},
-		},
-		{
-			TotalCount: 1,
-			Errors:     []string{"and", "or_operator"},
-		},
-		{
-			TotalCount: 1,
-			Errors:     []string{"and"},
-		},
-	}
-
 	want := &types.SearchJobsUsageStatistics{
 		WeeklySearchJobsPageViews:            &twoInt,
 		WeeklySearchJobsCreateClick:          &oneInt,
@@ -92,11 +73,9 @@ func TestSearchJobsUsageStatistics(t *testing.T) {
 		WeeklySearchJobsUniqueDownloadClicks: &oneInt,
 		WeeklySearchJobsUniqueViewLogsClicks: &oneInt,
 		WeeklySearchJobsSearchFormShown:      []types.SearchJobsSearchFormShownPing{},
-		WeeklySearchJobsValidationErrors:     []types.SearchJobsValidationErrorPing{},
 	}
 
 	want.WeeklySearchJobsSearchFormShown = weeklySearchJobsSearchFormShown
-	want.WeeklySearchJobsValidationErrors = weeklySearchJobsValidationErrors
 
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)

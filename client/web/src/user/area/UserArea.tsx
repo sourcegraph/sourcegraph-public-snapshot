@@ -21,6 +21,7 @@ import type {
 } from '../../graphql-operations'
 import type { NamespaceProps } from '../../namespaces'
 import type { RouteV6Descriptor } from '../../util/contributions'
+import { getLicenseFeatures } from '../../util/license'
 import { isAccessTokenCallbackPage } from '../settings/accessTokens/UserSettingsCreateAccessTokenCallbackPage'
 import type { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import type { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
@@ -94,7 +95,6 @@ interface UserAreaProps
     authenticatedUser: AuthenticatedUser | null
 
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
 }
 
 /**
@@ -127,19 +127,18 @@ export interface UserAreaRouteContext
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
 
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
+
+    // license related properties
+    license: {
+        isCodeSearchEnabled: boolean
+        isCodyEnabled: boolean
+    }
 }
 
 /**
  * A user's public profile area.
  */
-export const UserArea: FC<UserAreaProps> = ({
-    useBreadcrumb,
-    userAreaRoutes,
-    isSourcegraphDotCom,
-    isCodyApp,
-    ...props
-}) => {
+export const UserArea: FC<UserAreaProps> = ({ useBreadcrumb, userAreaRoutes, isSourcegraphDotCom, ...props }) => {
     const { username } = useParams()
     const userAreaMainUrl = `/users/${username}`
 
@@ -194,7 +193,7 @@ export const UserArea: FC<UserAreaProps> = ({
         namespace: user,
         ...childBreadcrumbSetters,
         isSourcegraphDotCom,
-        isCodyApp,
+        license: getLicenseFeatures(),
     }
 
     return (

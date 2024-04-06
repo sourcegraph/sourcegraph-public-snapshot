@@ -3,7 +3,7 @@
 package main
 
 import (
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman"

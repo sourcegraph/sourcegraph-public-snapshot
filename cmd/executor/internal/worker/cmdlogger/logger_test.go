@@ -2,6 +2,7 @@ package cmdlogger
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -22,7 +23,7 @@ func TestLogger(t *testing.T) {
 
 	job := types.Job{}
 	internalLogger := logtest.Scoped(t)
-	l := NewLogger(internalLogger, s, job, map[string]string{})
+	l := NewLogger(internalLogger, s, job, strings.NewReplacer())
 
 	e := l.LogEntry("the_key", []string{"cmd", "arg1"})
 
@@ -68,7 +69,7 @@ func TestLogger_Failure(t *testing.T) {
 
 	job := types.Job{}
 	internalLogger := logtest.Scoped(t)
-	l := NewLogger(internalLogger, s, job, map[string]string{})
+	l := NewLogger(internalLogger, s, job, strings.NewReplacer())
 
 	e := l.LogEntry("the_key", []string{"cmd", "arg1"})
 

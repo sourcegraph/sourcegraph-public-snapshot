@@ -35,7 +35,7 @@ sg secret reset buildkite
 				ArgsUsage:    "<...key>",
 				Usage:        "Remove a specific secret from secrets file",
 				Action:       resetSecretExec,
-				BashComplete: completions.CompleteOptions(bashCompleteSecrets),
+				BashComplete: completions.CompleteArgs(bashCompleteSecrets),
 			},
 			{
 				Name:  "list",

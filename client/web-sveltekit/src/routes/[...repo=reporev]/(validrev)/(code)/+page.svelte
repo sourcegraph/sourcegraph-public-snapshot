@@ -2,40 +2,36 @@
     import { mdiFileDocumentOutline } from '@mdi/js'
 
     import Icon from '$lib/Icon.svelte'
+    import Readme from '$lib/repo/Readme.svelte'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
     import { createPromiseStore } from '$lib/utils'
 
     import type { PageData } from './$types'
+    import type { RepoPage_Readme } from './page.gql'
 
     export let data: PageData
 
-    const {
-        value: readme,
-        set: setReadme,
-        pending: readmePending,
-    } = createPromiseStore<PageData['deferred']['readme']>()
-    $: setReadme(data.deferred.readme)
+    const readme = createPromiseStore<RepoPage_Readme | null>()
+    $: readme.set(data.readme)
 </script>
 
 <h3 class="header">
     <div class="sidebar-button" class:hidden={$sidebarOpen}>
         <SidebarToggleButton />
     </div>
-    {#if $readme}
+    {#if $readme.value}
         <Icon svgPath={mdiFileDocumentOutline} />
         &nbsp;
-        {$readme.name}
-    {:else if !$readmePending}
+        {$readme.value.name}
+    {:else if !$readme.pending}
         Description
     {/if}
 </h3>
 <div class="content">
-    {#if $readme?.richHTML}
-        {@html $readme.richHTML}
-    {:else if $readme?.content}
-        <pre>{$readme.content}</pre>
-    {:else if !$readmePending}
+    {#if $readme.value}
+        <Readme file={$readme.value} />
+    {:else if !$readme.pending}
         {data.resolvedRevision.repo.description}
     {/if}
 </div>
@@ -72,13 +68,5 @@
         padding: 1rem;
         overflow: auto;
         flex: 1;
-
-        :global(img) {
-            max-width: 100%;
-        }
-
-        pre {
-            white-space: pre-wrap;
-        }
     }
 </style>

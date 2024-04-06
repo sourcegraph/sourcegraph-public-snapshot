@@ -99,8 +99,6 @@
 
 /internal/authz/**/* @unknwon
 
-/internal/codeintel/dependencies/**/* @mrnugget
-
 /internal/database/external* @eseliger
 /internal/database/namespaces* @eseliger
 /internal/database/repos* @eseliger

@@ -66,6 +66,7 @@ func (s *searchRepos) getJob(ctx context.Context) func() error {
 			Indexed:         s.repoSet.IsIndexed(),
 			UseFullDeadline: s.args.UseFullDeadline,
 			Features:        s.args.Features,
+			NumContextLines: s.args.NumContextLines,
 		}
 
 		_, err := searcherJob.Run(ctx, s.clients, s.stream)
@@ -169,7 +170,7 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
+	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.SearcherGRPCConnectionCache, clients.Zoekt)
 	it := repos.Iterator(ctx, s.RepoOpts)
 
 	for it.Next() {

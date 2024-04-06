@@ -37,7 +37,7 @@ const EMPTY_CODE_INTEL_DATA: CodeIntelData = {
 export const useCodeIntel = ({
     variables,
     searchToken,
-    spec,
+    languages,
     fileContent,
     isFork,
     isArchived,
@@ -82,7 +82,7 @@ export const useCodeIntel = ({
             character: variables.character,
         },
         fileContent,
-        spec,
+        languages,
         isFork,
         isArchived,
         getSetting,

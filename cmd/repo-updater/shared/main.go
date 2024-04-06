@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"database/sql"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -12,21 +13,19 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel"
-	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/phabricator"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/purge"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/scheduler"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
@@ -35,26 +34,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/repos/scheduler"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -65,10 +59,8 @@ const port = "3182"
 var stateHTMLTemplate string
 
 type LazyDebugserverEndpoint struct {
-	repoUpdaterStateEndpoint     http.HandlerFunc
-	listAuthzProvidersEndpoint   http.HandlerFunc
-	gitserverReposStatusEndpoint http.HandlerFunc
-	manualPurgeEndpoint          http.HandlerFunc
+	repoUpdaterStateEndpoint http.HandlerFunc
+	manualPurgeEndpoint      http.HandlerFunc
 }
 
 func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, debugserverEndpoints *LazyDebugserverEndpoint) error {
@@ -93,7 +85,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// bit more to do in this method, though, and the process will be marked ready
 	// further down this function.
 
-	repos.MustRegisterMetrics(log.Scoped("MustRegisterMetrics"), db, envvar.SourcegraphDotComMode())
+	mustRegisterMetrics(log.Scoped("MustRegisterMetrics"), db, dotcom.SourcegraphDotComMode())
 
 	store := repos.NewStore(logger.Scoped("store"), db)
 	{
@@ -109,21 +101,26 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	sourceMetrics := repos.NewSourceMetrics()
 	sourceMetrics.MustRegister(prometheus.DefaultRegisterer)
-	src := repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.NewService(observationCtx, db)), repos.ObservedSource(sourcerLogger, sourceMetrics))
+	src := repos.NewSourcer(
+		sourcerLogger,
+		db,
+		cf,
+		gitserver.NewClient("repo-updater.sourcer"),
+		repos.WithDependenciesService(dependencies.NewService(observationCtx, db)),
+		repos.ObservedSource(sourcerLogger, sourceMetrics),
+	)
 	syncer := repos.NewSyncer(observationCtx, store, src)
 	updateScheduler := scheduler.NewUpdateScheduler(logger, db, gitserver.NewClient("repos.updatescheduler"))
 	server := &repoupdater.Server{
-		Logger:                logger,
-		ObservationCtx:        observationCtx,
-		Store:                 store,
-		Syncer:                syncer,
-		Scheduler:             updateScheduler,
-		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		Logger:    logger,
+		Store:     store,
+		Syncer:    syncer,
+		Scheduler: updateScheduler,
 	}
 
 	// No Batch Changes on dotcom, so we don't need to spawn the
 	// background jobs for this feature.
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		syncRegistry := batches.InitBackgroundJobs(ctx, db, keyring.Default().BatchChangesCredentialKey, cf)
 		server.ChangesetSyncRegistry = syncRegistry
 	}
@@ -132,42 +129,24 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	go watchAuthzProviders(ctx, db)
 	go watchSyncer(ctx, logger, syncer, updateScheduler, server.ChangesetSyncRegistry)
 
-	permsSyncer := authz.NewPermsSyncer(
-		observationCtx.Logger.Scoped("PermsSyncer"),
-		db,
-		store,
-		database.Perms(observationCtx.Logger, db, timeutil.Now),
-		timeutil.Now,
-	)
-	repoWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeRepo)
-	userWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeUser)
-	permissionSyncJobStore := database.PermissionSyncJobsWith(observationCtx.Logger, db)
 	routines := []goroutine.BackgroundRoutine{
-		makeHTTPServer(logger, server),
-		// repoSyncWorker
-		authz.MakeWorker(ctx, observationCtx, repoWorkerStore, permsSyncer, authz.SyncTypeRepo, permissionSyncJobStore),
-		// userSyncWorker
-		authz.MakeWorker(ctx, observationCtx, userWorkerStore, permsSyncer, authz.SyncTypeUser, permissionSyncJobStore),
-		// Type of store (repo/user) for resetter doesn't matter, because it has its
-		// separate name for logging and metrics.
-		authz.MakeResetter(observationCtx, repoWorkerStore),
-		newUnclonedReposManager(ctx, logger, envvar.SourcegraphDotComMode(), updateScheduler, store),
-		repos.NewPhabricatorRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker"), store),
+		makeGRPCServer(logger, server),
+		newUnclonedReposManager(ctx, logger, dotcom.SourcegraphDotComMode(), updateScheduler, store),
+		phabricator.NewRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker"), store),
 		// Run git fetches scheduler
 		updateScheduler,
 	}
 
 	routines = append(routines,
 		syncer.Routines(ctx, store, repos.RunOptions{
-			EnqueueInterval: repos.ConfRepoListUpdateInterval,
-			IsDotCom:        envvar.SourcegraphDotComMode(),
-			MinSyncInterval: repos.ConfRepoListUpdateInterval,
+			EnqueueInterval: conf.RepoListUpdateInterval,
+			IsDotCom:        dotcom.SourcegraphDotComMode(),
+			MinSyncInterval: conf.RepoListUpdateInterval,
 		})...,
 	)
 
-	if envvar.SourcegraphDotComMode() {
-		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(.05, 1))
-		routines = append(routines, syncer.NewSyncReposWithLastErrorsWorker(ctx, rateLimiter))
+	if server.ChangesetSyncRegistry != nil {
+		routines = append(routines, server.ChangesetSyncRegistry)
 	}
 
 	// git-server repos purging thread
@@ -176,7 +155,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	if disabled, _ := strconv.ParseBool(os.Getenv("DISABLE_REPO_PURGE")); disabled {
 		logger.Info("repository purger is disabled via env DISABLE_REPO_PURGE")
 	} else {
-		routines = append(routines, repos.NewRepositoryPurgeWorker(ctx, log.Scoped("repoPurgeWorker"), db, conf.DefaultClient()))
+		routines = append(routines, purge.NewRepositoryPurgeWorker(ctx, log.Scoped("repoPurgeWorker"), db, conf.DefaultClient()))
 	}
 
 	// Register recorder in all routines that support it.
@@ -194,8 +173,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	debugDumpers := make(map[string]debugserver.Dumper)
 	debugDumpers["repos"] = updateScheduler
 	debugserverEndpoints.repoUpdaterStateEndpoint = repoUpdaterStatsHandler(debugDumpers)
-	debugserverEndpoints.listAuthzProvidersEndpoint = listAuthzProvidersHandler()
-	debugserverEndpoints.gitserverReposStatusEndpoint = gitserverReposStatusHandler(db)
 	debugserverEndpoints.manualPurgeEndpoint = manualPurgeHandler(db)
 
 	// We mark the service as ready now AFTER assigning the additional endpoints in
@@ -220,7 +197,7 @@ func getDB(observationCtx *observation.Context) (database.DB, error) {
 	return database.NewDB(observationCtx.Logger, sqlDB), nil
 }
 
-func makeHTTPServer(logger log.Logger, server *repoupdater.Server) goroutine.BackgroundRoutine {
+func makeGRPCServer(logger log.Logger, server *repoupdater.Server) goroutine.BackgroundRoutine {
 	host := ""
 	if env.InsecureDev {
 		host = "127.0.0.1"
@@ -229,62 +206,11 @@ func makeHTTPServer(logger log.Logger, server *repoupdater.Server) goroutine.Bac
 	addr := net.JoinHostPort(host, port)
 	logger.Info("listening", log.String("addr", addr))
 
-	m := repoupdater.NewHandlerMetrics()
-	m.MustRegister(prometheus.DefaultRegisterer)
-	handler := repoupdater.ObservedHandler(
-		logger,
-		m,
-		otel.GetTracerProvider(),
-	)(server.Handler())
 	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
-	serviceServer := &repoupdater.RepoUpdaterServiceServer{
-		Server: server,
-	}
-	proto.RegisterRepoUpdaterServiceServer(grpcServer, serviceServer)
+	proto.RegisterRepoUpdaterServiceServer(grpcServer, server)
 	reflection.Register(grpcServer)
-	handler = internalgrpc.MultiplexHandlers(grpcServer, handler)
 
-	// NOTE: Internal actor is required to have full visibility of the repo table
-	// 	(i.e. bypass repository authorization).
-	authzBypass := func(f http.Handler) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			r = r.WithContext(actor.WithInternalActor(r.Context()))
-			f.ServeHTTP(w, r)
-		}
-	}
-
-	return httpserver.NewFromAddr(addr, &http.Server{
-		ReadTimeout:  75 * time.Second,
-		WriteTimeout: 10 * time.Minute,
-		Handler: instrumentation.HTTPMiddleware(
-			"",
-			trace.HTTPMiddleware(logger, authzBypass(handler), conf.DefaultClient()),
-		),
-	})
-}
-
-func gitserverReposStatusHandler(db database.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		repo := r.FormValue("repo")
-		if repo == "" {
-			http.Error(w, "missing 'repo' param", http.StatusBadRequest)
-			return
-		}
-
-		status, err := db.GitserverRepos().GetByName(r.Context(), api.RepoName(repo))
-		if err != nil {
-			http.Error(w, fmt.Sprintf("fetching repository status: %q", err), http.StatusInternalServerError)
-			return
-		}
-
-		resp, err := json.MarshalIndent(status, "", "  ")
-		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to marshal status: %q", err.Error()), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write(resp)
-	}
+	return grpcserver.NewFromAddr(logger.Scoped("repo-updater.grpcserver"), addr, grpcServer)
 }
 
 func manualPurgeHandler(db database.DB) http.HandlerFunc {
@@ -316,44 +242,12 @@ func manualPurgeHandler(db database.DB) http.HandlerFunc {
 				return
 			}
 		}
-		err = repos.PurgeOldestRepos(log.Scoped("PurgeOldestRepos"), db, limit, perSecond)
+		err = purge.PurgeOldestRepos(log.Scoped("PurgeOldestRepos"), db, limit, perSecond)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("starting manual purge: %v", err), http.StatusInternalServerError)
 			return
 		}
-		_, _ = w.Write([]byte(fmt.Sprintf("manual purge started with limit of %d and rate of %f", limit, perSecond)))
-	}
-}
-
-func listAuthzProvidersHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		type providerInfo struct {
-			ServiceType        string `json:"service_type"`
-			ServiceID          string `json:"service_id"`
-			ExternalServiceURL string `json:"external_service_url"`
-		}
-
-		_, providers := ossAuthz.GetProviders()
-		infos := make([]providerInfo, len(providers))
-		for i, p := range providers {
-			_, id := extsvc.DecodeURN(p.URN())
-
-			// Note that the ID marshalling below replicates code found in `graphqlbackend`.
-			// We cannot import that package's code into this one (see /dev/check/go-dbconn-import.sh).
-			infos[i] = providerInfo{
-				ServiceType:        p.ServiceType(),
-				ServiceID:          p.ServiceID(),
-				ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", globals.ExternalURL(), relay.MarshalID("ExternalService", id)),
-			}
-		}
-
-		resp, err := json.MarshalIndent(infos, "", "  ")
-		if err != nil {
-			http.Error(w, "failed to marshal infos: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write(resp)
+		fmt.Fprintf(w, "manual purge started with limit of %d and rate of %f", limit, perSecond)
 	}
 }
 
@@ -488,7 +382,6 @@ func newUnclonedReposManager(ctx context.Context, logger log.Logger, isSourcegra
 // TODO: This might clash with what osscmd.Main does.
 // watchAuthzProviders updates authz providers if config changes.
 func watchAuthzProviders(ctx context.Context, db database.DB) {
-	globals.WatchPermissionsUserMapping()
 	go func() {
 		t := time.NewTicker(providers.RefreshInterval())
 		for range t.C {
@@ -497,7 +390,176 @@ func watchAuthzProviders(ctx context.Context, db database.DB) {
 				conf.Get(),
 				db,
 			)
-			ossAuthz.SetProviders(allowAccessByDefault, authzProviders)
+			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()
+}
+
+func mustRegisterMetrics(logger log.Logger, db dbutil.DB, sourcegraphDotCom bool) {
+	scanCount := func(sql string) (float64, error) {
+		row := db.QueryRowContext(context.Background(), sql)
+		var count int64
+		err := row.Scan(&count)
+		if err != nil {
+			return 0, err
+		}
+		return float64(count), nil
+	}
+
+	scanNullFloat := func(q string) (sql.NullFloat64, error) {
+		row := db.QueryRowContext(context.Background(), q)
+		var v sql.NullFloat64
+		err := row.Scan(&v)
+		return v, err
+	}
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_external_services_total",
+		Help: "The total number of external services added",
+	}, func() float64 {
+		count, err := scanCount(`
+SELECT COUNT(*) FROM external_services
+WHERE deleted_at IS NULL
+`)
+		if err != nil {
+			logger.Error("Failed to get total external services", log.Error(err))
+			return 0
+		}
+		return count
+	})
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_queued_sync_jobs_total",
+		Help: "The total number of queued sync jobs",
+	}, func() float64 {
+		count, err := scanCount(`
+SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'queued'
+`)
+		if err != nil {
+			logger.Error("Failed to get total queued sync jobs", log.Error(err))
+			return 0
+		}
+		return count
+	})
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_completed_sync_jobs_total",
+		Help: "The total number of completed sync jobs",
+	}, func() float64 {
+		count, err := scanCount(`
+SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'completed'
+`)
+		if err != nil {
+			logger.Error("Failed to get total completed sync jobs", log.Error(err))
+			return 0
+		}
+		return count
+	})
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_errored_sync_jobs_percentage",
+		Help: "The percentage of external services that have failed their most recent sync",
+	}, func() float64 {
+		percentage, err := scanNullFloat(`
+with latest_state as (
+    -- Get the most recent state per external service
+    select distinct on (external_service_id) external_service_id, state
+    from external_service_sync_jobs
+    order by external_service_id, finished_at desc
+)
+select round((select cast(count(*) as float) from latest_state where state = 'errored') /
+             nullif((select cast(count(*) as float) from latest_state), 0) * 100)
+`)
+		if err != nil {
+			logger.Error("Failed to get total errored sync jobs", log.Error(err))
+			return 0
+		}
+		if !percentage.Valid {
+			return 0
+		}
+		return percentage.Float64
+	})
+
+	backoffQuery := `
+SELECT extract(epoch from max(now() - last_sync_at))
+FROM external_services AS es
+WHERE deleted_at IS NULL
+AND NOT cloud_default
+AND last_sync_at IS NOT NULL
+-- Exclude any external services that are currently syncing since it's possible they may sync for more
+-- than our max backoff time.
+AND NOT EXISTS(SELECT FROM external_service_sync_jobs WHERE external_service_id = es.id AND finished_at IS NULL)
+`
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_max_sync_backoff",
+		Help: "The maximum number of seconds since any external service synced",
+	}, func() float64 {
+		seconds, err := scanNullFloat(backoffQuery)
+		if err != nil {
+			logger.Error("Failed to get max sync backoff", log.Error(err))
+			return 0
+		}
+		if !seconds.Valid {
+			// This can happen when no external services have been synced and they all
+			// have last_sync_at as null.
+			return 0
+		}
+		return seconds.Float64
+	})
+
+	// Count the number of repos owned by site level external services that haven't
+	// been fetched in 8 hours.
+	//
+	// We always return zero for Sourcegraph.com because we currently have a lot of
+	// repos owned by the Starburst service in this state and until that's resolved
+	// it would just be noise.
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_stale_repos",
+		Help: "The number of repos that haven't been fetched in at least 8 hours",
+	}, func() float64 {
+		if sourcegraphDotCom {
+			return 0
+		}
+
+		count, err := scanCount(`
+select count(*)
+from gitserver_repos
+where last_fetched < now() - interval '8 hours'
+  and last_error != ''
+  and exists(select
+             from external_service_repos
+                      join external_services es on external_service_repos.external_service_id = es.id
+                      join repo r on external_service_repos.repo_id = r.id
+             where not es.cloud_default
+               and gitserver_repos.repo_id = repo_id
+               and es.deleted_at is null
+               and r.deleted_at is null
+    )
+`)
+		if err != nil {
+			logger.Error("Failed to count stale repos", log.Error(err))
+			return 0
+		}
+		return count
+	})
+
+	// Count the number of repos that are deleted but still cloned on disk. These
+	// repos are eligible to be purged.
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_purgeable_repos",
+		Help: "The number of deleted repos that are still cloned on disk",
+	}, func() float64 {
+		count, err := scanCount(`
+SELECT
+	COALESCE(SUM(cloned), 0)
+FROM
+	repo_statistics
+`)
+		if err != nil {
+			logger.Error("Failed to count purgeable repos", log.Error(err))
+			return 0
+		}
+		return count
+	})
 }

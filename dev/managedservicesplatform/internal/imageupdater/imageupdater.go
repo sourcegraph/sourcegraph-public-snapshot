@@ -2,13 +2,13 @@ package imageupdater
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/google"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

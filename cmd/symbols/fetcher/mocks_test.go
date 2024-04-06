@@ -31,9 +31,9 @@ type MockGitserverClient struct {
 	// LogReverseEachFunc is an instance of a mock function object
 	// controlling the behavior of the method LogReverseEach.
 	LogReverseEachFunc *GitserverClientLogReverseEachFunc
-	// ReadFileFunc is an instance of a mock function object controlling the
-	// behavior of the method ReadFile.
-	ReadFileFunc *GitserverClientReadFileFunc
+	// NewFileReaderFunc is an instance of a mock function object
+	// controlling the behavior of the method NewFileReader.
+	NewFileReaderFunc *GitserverClientNewFileReaderFunc
 	// RevListFunc is an instance of a mock function object controlling the
 	// behavior of the method RevList.
 	RevListFunc *GitserverClientRevListFunc
@@ -59,8 +59,8 @@ func NewMockGitserverClient() *MockGitserverClient {
 				return
 			},
 		},
-		ReadFileFunc: &GitserverClientReadFileFunc{
-			defaultHook: func(context.Context, types.RepoCommitPath) (r0 []byte, r1 error) {
+		NewFileReaderFunc: &GitserverClientNewFileReaderFunc{
+			defaultHook: func(context.Context, types.RepoCommitPath) (r0 io.ReadCloser, r1 error) {
 				return
 			},
 		},
@@ -91,9 +91,9 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.LogReverseEach")
 			},
 		},
-		ReadFileFunc: &GitserverClientReadFileFunc{
-			defaultHook: func(context.Context, types.RepoCommitPath) ([]byte, error) {
-				panic("unexpected invocation of MockGitserverClient.ReadFile")
+		NewFileReaderFunc: &GitserverClientNewFileReaderFunc{
+			defaultHook: func(context.Context, types.RepoCommitPath) (io.ReadCloser, error) {
+				panic("unexpected invocation of MockGitserverClient.NewFileReader")
 			},
 		},
 		RevListFunc: &GitserverClientRevListFunc{
@@ -118,8 +118,8 @@ func NewMockGitserverClientFrom(i gitserver.GitserverClient) *MockGitserverClien
 		LogReverseEachFunc: &GitserverClientLogReverseEachFunc{
 			defaultHook: i.LogReverseEach,
 		},
-		ReadFileFunc: &GitserverClientReadFileFunc{
-			defaultHook: i.ReadFile,
+		NewFileReaderFunc: &GitserverClientNewFileReaderFunc{
+			defaultHook: i.NewFileReader,
 		},
 		RevListFunc: &GitserverClientRevListFunc{
 			defaultHook: i.RevList,
@@ -471,35 +471,36 @@ func (c GitserverClientLogReverseEachFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// GitserverClientReadFileFunc describes the behavior when the ReadFile
-// method of the parent MockGitserverClient instance is invoked.
-type GitserverClientReadFileFunc struct {
-	defaultHook func(context.Context, types.RepoCommitPath) ([]byte, error)
-	hooks       []func(context.Context, types.RepoCommitPath) ([]byte, error)
-	history     []GitserverClientReadFileFuncCall
+// GitserverClientNewFileReaderFunc describes the behavior when the
+// NewFileReader method of the parent MockGitserverClient instance is
+// invoked.
+type GitserverClientNewFileReaderFunc struct {
+	defaultHook func(context.Context, types.RepoCommitPath) (io.ReadCloser, error)
+	hooks       []func(context.Context, types.RepoCommitPath) (io.ReadCloser, error)
+	history     []GitserverClientNewFileReaderFuncCall
 	mutex       sync.Mutex
 }
 
-// ReadFile delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverClient) ReadFile(v0 context.Context, v1 types.RepoCommitPath) ([]byte, error) {
-	r0, r1 := m.ReadFileFunc.nextHook()(v0, v1)
-	m.ReadFileFunc.appendCall(GitserverClientReadFileFuncCall{v0, v1, r0, r1})
+// NewFileReader delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverClient) NewFileReader(v0 context.Context, v1 types.RepoCommitPath) (io.ReadCloser, error) {
+	r0, r1 := m.NewFileReaderFunc.nextHook()(v0, v1)
+	m.NewFileReaderFunc.appendCall(GitserverClientNewFileReaderFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the ReadFile method of
-// the parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientReadFileFunc) SetDefaultHook(hook func(context.Context, types.RepoCommitPath) ([]byte, error)) {
+// SetDefaultHook sets function that is called when the NewFileReader method
+// of the parent MockGitserverClient instance is invoked and the hook queue
+// is empty.
+func (f *GitserverClientNewFileReaderFunc) SetDefaultHook(hook func(context.Context, types.RepoCommitPath) (io.ReadCloser, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// ReadFile method of the parent MockGitserverClient instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitserverClientReadFileFunc) PushHook(hook func(context.Context, types.RepoCommitPath) ([]byte, error)) {
+// NewFileReader method of the parent MockGitserverClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitserverClientNewFileReaderFunc) PushHook(hook func(context.Context, types.RepoCommitPath) (io.ReadCloser, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -507,20 +508,20 @@ func (f *GitserverClientReadFileFunc) PushHook(hook func(context.Context, types.
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitserverClientReadFileFunc) SetDefaultReturn(r0 []byte, r1 error) {
-	f.SetDefaultHook(func(context.Context, types.RepoCommitPath) ([]byte, error) {
+func (f *GitserverClientNewFileReaderFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
+	f.SetDefaultHook(func(context.Context, types.RepoCommitPath) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientReadFileFunc) PushReturn(r0 []byte, r1 error) {
-	f.PushHook(func(context.Context, types.RepoCommitPath) ([]byte, error) {
+func (f *GitserverClientNewFileReaderFunc) PushReturn(r0 io.ReadCloser, r1 error) {
+	f.PushHook(func(context.Context, types.RepoCommitPath) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientReadFileFunc) nextHook() func(context.Context, types.RepoCommitPath) ([]byte, error) {
+func (f *GitserverClientNewFileReaderFunc) nextHook() func(context.Context, types.RepoCommitPath) (io.ReadCloser, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -533,26 +534,26 @@ func (f *GitserverClientReadFileFunc) nextHook() func(context.Context, types.Rep
 	return hook
 }
 
-func (f *GitserverClientReadFileFunc) appendCall(r0 GitserverClientReadFileFuncCall) {
+func (f *GitserverClientNewFileReaderFunc) appendCall(r0 GitserverClientNewFileReaderFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitserverClientReadFileFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientReadFileFunc) History() []GitserverClientReadFileFuncCall {
+// History returns a sequence of GitserverClientNewFileReaderFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverClientNewFileReaderFunc) History() []GitserverClientNewFileReaderFuncCall {
 	f.mutex.Lock()
-	history := make([]GitserverClientReadFileFuncCall, len(f.history))
+	history := make([]GitserverClientNewFileReaderFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitserverClientReadFileFuncCall is an object that describes an invocation
-// of method ReadFile on an instance of MockGitserverClient.
-type GitserverClientReadFileFuncCall struct {
+// GitserverClientNewFileReaderFuncCall is an object that describes an
+// invocation of method NewFileReader on an instance of MockGitserverClient.
+type GitserverClientNewFileReaderFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -561,7 +562,7 @@ type GitserverClientReadFileFuncCall struct {
 	Arg1 types.RepoCommitPath
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []byte
+	Result0 io.ReadCloser
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -569,13 +570,13 @@ type GitserverClientReadFileFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitserverClientReadFileFuncCall) Args() []interface{} {
+func (c GitserverClientNewFileReaderFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitserverClientReadFileFuncCall) Results() []interface{} {
+func (c GitserverClientNewFileReaderFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

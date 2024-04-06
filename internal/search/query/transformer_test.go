@@ -9,6 +9,35 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestExperimentalPhraseBoost(t *testing.T) {
+	test := func(input string, searchType SearchType) string {
+		plan, err := Pipeline(
+			Init(input, SearchTypeKeyword))
+		require.NoError(t, err)
+
+		plan = MapPlan(plan, ExperimentalPhraseBoost)
+
+		return plan.ToQ().String()
+	}
+
+	// expect phrase query
+	autogold.Expect(`(or "foo bar bas" (and "foo" "bar" "bas"))`).Equal(t, test("foo bar bas", SearchTypeKeyword))
+	autogold.Expect(`(or "foo bar bas" (and "foo" "bar" "bas"))`).Equal(t, test("(foo and bar) and bas", SearchTypeKeyword))
+	autogold.Expect(`(or "* int func(" (and "*" "int" "func("))`).Equal(t, test("* int func(", SearchTypeKeyword))
+	autogold.Expect(`(or "foo bar bas qux" (and "foo bar" "bas" "qux"))`).Equal(t, test(`"foo bar" bas qux`, SearchTypeKeyword))
+
+	// expect no phrase query
+	autogold.Expect(`"foo bar bas"`).Equal(t, test("/foo bar bas/", SearchTypeKeyword))
+	autogold.Expect(`(and "foo" "bar" "ba.*")`).Equal(t, test("foo bar /ba.*/", SearchTypeKeyword))
+	autogold.Expect(`"foo"`).Equal(t, test("foo", SearchTypeKeyword))
+	autogold.Expect(`(and "foo" "bar")`).Equal(t, test("foo bar", SearchTypeKeyword))
+	autogold.Expect(`(and "foo" "bar")`).Equal(t, test("foo and bar", SearchTypeKeyword))
+	autogold.Expect(`(and "foo" (not "bar"))`).Equal(t, test("foo not bar", SearchTypeKeyword))
+	autogold.Expect(`(and "foo" "bar" (not "bas") "quz")`).Equal(t, test("foo bar not bas quz", SearchTypeKeyword))
+	autogold.Expect(`(or "foo" "bar" "bas")`).Equal(t, test("foo or bar or bas", SearchTypeKeyword))
+	autogold.Expect(`(or (and "foo" "bar") (and "quz" "biz"))`).Equal(t, test("foo and bar or (quz and biz)", SearchTypeKeyword))
+}
+
 func TestSubstituteAliases(t *testing.T) {
 	test := func(input string, searchType SearchType) string {
 		query, _ := ParseSearchType(input, searchType)
@@ -19,20 +48,20 @@ func TestSubstituteAliases(t *testing.T) {
 	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"field":"file","value":"file","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":13}}}]}]`).
 		Equal(t, test("r:repo f:file", SearchTypeRegex))
 
-	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"^a-regexp:tbf$","negated":false,"labels":["IsAlias","Regexp"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":29}}}]}]`).
+	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"^a-regexp:tbf$","negated":false,"labels":["IsContent","Regexp"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":29}}}]}]`).
 		Equal(t, test("r:repo content:^a-regexp:tbf$", SearchTypeRegex))
 
-	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["IsAlias","Literal"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":42}}}]}]`).
+	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["IsContent","Literal"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":42}}}]}]`).
 		Equal(t, test("r:repo content:^not-actually-a-regexp:tbf$", SearchTypeLiteral))
 
 	autogold.Expect(`[{"field":"file","value":"foo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}}]`).
 		Equal(t, test("path:foo", SearchTypeLiteral))
 
-	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":10}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":11},"end":{"line":0,"column":14}}}]}]`).
-		Equal(t, test("r:repo foo bar", SearchTypeNewStandardRC1))
+	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"foo","negated":false,"labels":["Literal","QuotesAsLiterals","Standard"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":10}}},{"value":"bar","negated":false,"labels":["Literal","QuotesAsLiterals","Standard"],"range":{"start":{"line":0,"column":11},"end":{"line":0,"column":14}}}]}]`).
+		Equal(t, test("r:repo foo bar", SearchTypeKeyword))
 
-	autogold.Expect(`[{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":4},"end":{"line":0,"column":7}}},{"value":"bas","negated":false,"labels":["Regexp"],"range":{"start":{"line":0,"column":8},"end":{"line":0,"column":13}}}]}]`).
-		Equal(t, test("foo bar /bas/", SearchTypeNewStandardRC1))
+	autogold.Expect(`[{"and":[{"value":"foo","negated":false,"labels":["Literal","QuotesAsLiterals","Standard"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal","QuotesAsLiterals","Standard"],"range":{"start":{"line":0,"column":4},"end":{"line":0,"column":7}}},{"value":"bas","negated":false,"labels":["Regexp"],"range":{"start":{"line":0,"column":8},"end":{"line":0,"column":13}}}]}]`).
+		Equal(t, test("foo bar /bas/", SearchTypeKeyword))
 }
 
 func TestLowercaseFieldNames(t *testing.T) {
@@ -194,23 +223,23 @@ func TestConcat(t *testing.T) {
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test(`/alsace/ bourgogne bordeaux /champagne/`, SearchTypeNewStandardRC1)))
+		autogold.ExpectFile(t, autogold.Raw(test(`/alsace/ bourgogne bordeaux /champagne/`, SearchTypeKeyword)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeNewStandardRC1)))
+		autogold.ExpectFile(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeKeyword)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("a b c d e f", SearchTypeNewStandardRC1)))
+		autogold.ExpectFile(t, autogold.Raw(test("a b c d e f", SearchTypeKeyword)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("(a not b not c d)", SearchTypeNewStandardRC1)))
+		autogold.ExpectFile(t, autogold.Raw(test("(a not b not c d)", SearchTypeKeyword)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("(((a b c))) and d", SearchTypeNewStandardRC1)))
+		autogold.ExpectFile(t, autogold.Raw(test("(((a b c))) and d", SearchTypeKeyword)))
 	})
 }
 

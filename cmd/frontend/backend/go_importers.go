@@ -12,9 +12,9 @@ import (
 
 	"github.com/grafana/regexp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -33,7 +33,7 @@ func CountGoImporters(ctx context.Context, cli httpcli.Doer, repo api.RepoName) 
 		return MockCountGoImporters(ctx, repo)
 	}
 
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		// Avoid confusing users by exposing this on self-hosted instances, because it relies on the
 		// public godoc.org API.
 		return 0, errors.New("counting Go importers is not supported on self-hosted instances")

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react'
 
 import { mdiAccount, mdiCommentOutline, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
-import format from 'date-fns/format'
+import { format } from 'date-fns'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { AnchorLink, Card, H2, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
@@ -117,7 +117,7 @@ export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
                                 </>
                             ) : (
                                 <AnchorLink
-                                    to="http://about.sourcegraph.com/contact/sales"
+                                    to="http://sourcegraph.com/contact/sales"
                                     target="_blank"
                                     rel="noopener"
                                     className="ml-1"

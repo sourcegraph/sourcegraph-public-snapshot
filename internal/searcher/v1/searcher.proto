@@ -9,7 +9,9 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/searcher/v1";
 // SearcherService is an internal interface for the searcher service.
 service SearcherService {
   // Search executes a search, streaming back its results
-  rpc Search(SearchRequest) returns (stream SearchResponse) {}
+  rpc Search(SearchRequest) returns (stream SearchResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }
 
 // SearchRequest is set of parameters for a search.
@@ -33,8 +35,9 @@ message SearchRequest {
 
   PatternInfo pattern_info = 5;
 
-  // URL specifies the repository's Git remote URL (for gitserver). It is optional. See
-  // (gitserver.ExecRequest).URL for documentation on what it is used for.
+  // URL specifies the repository's Git remote URL (for gitserver). It is
+  // optional. See (gitserver.ExecRequest).URL for documentation on what it is
+  // used for.
   string url = 6;
 
   // branch is used for structural search as an alternative to Commit
@@ -56,6 +59,10 @@ message SearchRequest {
   // fetch will still happen in the background so future requests don't
   // have to wait.
   google.protobuf.Duration fetch_timeout = 8;
+
+  // num_context_lines is the number of additional lines of context
+  // (before and after the matched lines) to return with the match.
+  int32 num_context_lines = 10;
 }
 
 // SearchResponse is a message in the response stream for Search
@@ -64,7 +71,7 @@ message SearchResponse {
   // of responses to Search.
   message Done {
     bool limit_hit = 1;
-    bool deadline_hit = 2;
+    reserved 2;
   }
 
   oneof message {
@@ -86,6 +93,9 @@ message FileMatch {
   // file. Indicates that the results for this file
   // may not be complete.
   bool limit_hit = 3;
+
+  // The file's detected language
+  bytes language = 4;
 }
 
 // ChunkMatch is a matched chunk of a file.
@@ -118,23 +128,42 @@ message Location {
   int32 column = 3;
 }
 
-message PatternInfo {
-  // pattern is the search query. It is a regular expression if IsRegExp
-  // is true, otherwise a fixed string. eg "route variable"
-  string pattern = 1;
+message QueryNode {
+  oneof value {
+    PatternNode pattern = 1;
+    AndNode and = 2;
+    OrNode or = 3;
+  }
+}
 
-  // is_negated if true will invert the matching logic for regexp searches. IsNegated=true is
-  // not supported for structural searches.
+// PatternNode represents a leaf query against a specific pattern
+message PatternNode {
+  // value is the search query. It is a regular expression if IsRegExp
+  // is true, otherwise a fixed string.
+  string value = 1;
+
+  // is_negated if true will invert the matching logic for regexp searches.
+  // Structural searches do not support negation.
   bool is_negated = 2;
 
   // is_regexp if true will treat the pattern as a regular expression.
   bool is_regexp = 3;
+}
 
-  // is_structural if true will treat the pattern as a Comby structural search pattern.
+message AndNode {
+  repeated QueryNode children = 1;
+}
+
+message OrNode {
+  repeated QueryNode children = 1;
+}
+
+message PatternInfo {
+  reserved 1, 2, 3, 5;
+
+  // is_structural if true will treat the pattern as a Comby structural search
+  // pattern.
   bool is_structural = 4;
-
-  // is_word_match if true will only match the pattern at word boundaries.
-  bool is_word_match = 5;
 
   // is_case_sensitive if false will ignore the case of text and pattern
   // when finding matches.
@@ -159,7 +188,8 @@ message PatternInfo {
   bool path_patterns_are_case_sensitive = 9;
 
   // limit is the cap on the total number of matches returned.
-  // A match is either a path match, or a fragment of a line matched by the query.
+  // A match is either a path match, or a fragment of a line matched by the
+  // query.
   int64 limit = 10;
 
   // pattern_matches_content is whether the pattern should be matched
@@ -172,16 +202,25 @@ message PatternInfo {
 
   // comby_rule is a rule that constrains matching for structural search.
   // It only applies when IsStructuralPat is true.
-  // As a temporary measure, the expression `where "backcompat" == "backcompat"` acts as
-  // a flag to activate the old structural search path, which queries zoekt for the
-  // file list in the frontend and passes it to searcher.
+  // As a temporary measure, the expression `where "backcompat" == "backcompat"`
+  // acts as a flag to activate the old structural search path, which queries
+  // zoekt for the file list in the frontend and passes it to searcher.
   string comby_rule = 13;
 
-  // languages is the list of languages passed via the lang filters (e.g., "lang:c")
+  // languages is the list of languages passed via the lang filters (e.g.,
+  // "lang:c") and is used for structural search
   repeated string languages = 14;
 
-  // select is the value of the the select field in the query. It is not necessary to
-  // use it since selection is done after the query completes, but exposing it can enable
-  // optimizations.
+  // select is the value of the the select field in the query. It is not
+  // necessary to use it since selection is done after the query completes, but
+  // exposing it can enable optimizations.
   string select = 15;
+
+  // query defines the query to match files against. It supports regexp
+  // patterns optionally combined through boolean operators.
+  QueryNode query = 16;
+
+  // include_langs and exclude_langs represent the languages to filter on
+  repeated string include_langs = 17;
+  repeated string exclude_langs = 18;
 }

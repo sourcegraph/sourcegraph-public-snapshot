@@ -11,8 +11,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/auth"
+	workerauthz "github.com/sourcegraph/sourcegraph/cmd/worker/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/batches"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codemonitors"
@@ -77,6 +77,7 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 		"gitserver-metrics":                     gitserver.NewMetricsJob(),
 		"record-encrypter":                      encryption.NewRecordEncrypterJob(),
 		"repo-statistics-compactor":             repostatistics.NewCompactor(),
+		"repo-statistics-resetter":              repostatistics.NewResetter(),
 		"zoekt-repos-updater":                   zoektrepos.NewUpdater(),
 		"outbound-webhook-sender":               outboundwebhooks.NewSender(),
 		"license-check":                         licensecheck.NewJob(),
@@ -112,7 +113,6 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 		"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
 		"codeintel-ranking-file-reference-counter":    codeintel.NewRankingFileReferenceCounter(),
 		"codeintel-uploadstore-expirer":               codeintel.NewPreciseCodeIntelUploadExpirer(),
-		"codeintel-crates-syncer":                     codeintel.NewCratesSyncerJob(),
 		"codeintel-sentinel-cve-scanner":              codeintel.NewSentinelCVEScannerJob(),
 		"codeintel-package-filter-applicator":         codeintel.NewPackagesFilterApplicatorJob(),
 
@@ -127,6 +127,8 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 		"github-apps-installation-validation-job": githubapps.NewGitHubApsInstallationJob(),
 
 		"exhaustive-search-job": search.NewSearchJob(),
+
+		"repo-perms-syncer": workerauthz.NewPermsSyncerJob(),
 	}
 
 	var config Config
@@ -340,7 +342,7 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 		wg.Add(1)
 		jobLogger.Debug("Running job")
 
-		go func(name string) {
+		go func() {
 			defer wg.Done()
 
 			routines, err := jobs[name].Routines(ctx, observationCtx)
@@ -358,7 +360,7 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 			} else {
 				cancel()
 			}
-		}(name)
+		}()
 	}
 
 	wg.Wait()
@@ -387,9 +389,6 @@ func setAuthzProviders(ctx context.Context, observationCtx *observation.Context)
 	if err != nil {
 		return
 	}
-
-	// authz also relies on UserMappings being setup.
-	globals.WatchPermissionsUserMapping()
 
 	for range time.NewTicker(providers.RefreshInterval()).C {
 		allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)

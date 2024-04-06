@@ -487,14 +487,17 @@ $$;
 CREATE FUNCTION recalc_gitserver_repos_statistics_on_delete() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
-      UPDATE gitserver_repos_statistics grs
-      SET
-        total        = grs.total      - (SELECT COUNT(*)                                           FROM oldtab WHERE oldtab.shard_id = grs.shard_id),
-        not_cloned   = grs.not_cloned - (SELECT COUNT(*) FILTER(WHERE clone_status = 'not_cloned') FROM oldtab WHERE oldtab.shard_id = grs.shard_id),
-        cloning      = grs.cloning    - (SELECT COUNT(*) FILTER(WHERE clone_status = 'cloning')    FROM oldtab WHERE oldtab.shard_id = grs.shard_id),
-        cloned       = grs.cloned     - (SELECT COUNT(*) FILTER(WHERE clone_status = 'cloned')     FROM oldtab WHERE oldtab.shard_id = grs.shard_id),
-        failed_fetch = grs.cloned     - (SELECT COUNT(*) FILTER(WHERE last_error IS NOT NULL)      FROM oldtab WHERE oldtab.shard_id = grs.shard_id)
-      ;
+      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)
+      SELECT
+        oldtab.shard_id,
+        (-COUNT(*)),
+        (-COUNT(*) FILTER(WHERE clone_status = 'not_cloned')),
+        (-COUNT(*) FILTER(WHERE clone_status = 'cloning')),
+        (-COUNT(*) FILTER(WHERE clone_status = 'cloned')),
+        (-COUNT(*) FILTER(WHERE last_error IS NOT NULL)),
+        (-COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL))
+      FROM oldtab
+      GROUP BY oldtab.shard_id;
 
       RETURN NULL;
   END
@@ -503,25 +506,21 @@ $$;
 CREATE FUNCTION recalc_gitserver_repos_statistics_on_insert() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
-      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch)
+      -------------------------------------------------
+      -- THIS IS CHANGED TO APPEND
+      -------------------------------------------------
+      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)
       SELECT
         shard_id,
         COUNT(*) AS total,
         COUNT(*) FILTER(WHERE clone_status = 'not_cloned') AS not_cloned,
         COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,
         COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,
-        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch
+        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch,
+        COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL) AS corrupted
       FROM
         newtab
       GROUP BY shard_id
-      ON CONFLICT(shard_id)
-      DO UPDATE
-      SET
-        total        = grs.total        + excluded.total,
-        not_cloned   = grs.not_cloned   + excluded.not_cloned,
-        cloning      = grs.cloning      + excluded.cloning,
-        cloned       = grs.cloned       + excluded.cloned,
-        failed_fetch = grs.failed_fetch + excluded.failed_fetch
       ;
 
       RETURN NULL;
@@ -531,61 +530,40 @@ $$;
 CREATE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
+
+      -------------------------------------------------
+      -- THIS IS CHANGED TO APPEND
+      -------------------------------------------------
+      WITH diff(shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted) AS (
+        SELECT
+            COALESCE(newtab.shard_id, oldtab.shard_id) AS shard_id,
+            COUNT(newtab.repo_id) - COUNT(oldtab.repo_id) AS total,
+            COUNT(newtab.repo_id) FILTER (WHERE newtab.clone_status = 'not_cloned') - COUNT(oldtab.repo_id) FILTER (WHERE oldtab.clone_status = 'not_cloned') AS not_cloned,
+            COUNT(newtab.repo_id) FILTER (WHERE newtab.clone_status = 'cloning')    - COUNT(oldtab.repo_id) FILTER (WHERE oldtab.clone_status = 'cloning') AS cloning,
+            COUNT(newtab.repo_id) FILTER (WHERE newtab.clone_status = 'cloned')     - COUNT(oldtab.repo_id) FILTER (WHERE oldtab.clone_status = 'cloned') AS cloned,
+            COUNT(newtab.repo_id) FILTER (WHERE newtab.last_error IS NOT NULL)      - COUNT(oldtab.repo_id) FILTER (WHERE oldtab.last_error IS NOT NULL) AS failed_fetch,
+            COUNT(newtab.repo_id) FILTER (WHERE newtab.corrupted_at IS NOT NULL)    - COUNT(oldtab.repo_id) FILTER (WHERE oldtab.corrupted_at IS NOT NULL) AS corrupted
+        FROM
+            newtab
+        FULL OUTER JOIN
+            oldtab ON newtab.repo_id = oldtab.repo_id AND newtab.shard_id = oldtab.shard_id
+        GROUP BY
+            COALESCE(newtab.shard_id, oldtab.shard_id)
+      )
       INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)
-      SELECT
-        newtab.shard_id AS shard_id,
-        COUNT(*) AS total,
-        COUNT(*) FILTER(WHERE clone_status = 'not_cloned')  AS not_cloned,
-        COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,
-        COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,
-        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch,
-        COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL) AS corrupted
-      FROM
-        newtab
-      GROUP BY newtab.shard_id
-      ON CONFLICT(shard_id) DO
-      UPDATE
-      SET
-        total        = grs.total        + (excluded.total        - (SELECT COUNT(*)                                              FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
-        not_cloned   = grs.not_cloned   + (excluded.not_cloned   - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'not_cloned') FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
-        cloning      = grs.cloning      + (excluded.cloning      - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloning')    FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
-        cloned       = grs.cloned       + (excluded.cloned       - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloned')     FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
-        failed_fetch = grs.failed_fetch + (excluded.failed_fetch - (SELECT COUNT(*) FILTER(WHERE ot.last_error IS NOT NULL)      FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
-        corrupted    = grs.corrupted    + (excluded.corrupted    - (SELECT COUNT(*) FILTER(WHERE ot.corrupted_at IS NOT NULL)    FROM oldtab ot WHERE ot.shard_id = excluded.shard_id))
+      SELECT shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted
+      FROM diff
+      WHERE
+            total != 0
+        OR not_cloned != 0
+        OR cloning != 0
+        OR cloned != 0
+        OR failed_fetch != 0
+        OR corrupted != 0
       ;
 
       -------------------------------------------------
-      -- IMPORTANT: THIS IS CHANGED TO INCLUDE `corrupted`
-      -------------------------------------------------
-      WITH moved AS (
-        SELECT
-          oldtab.shard_id AS shard_id,
-          COUNT(*) AS total,
-          COUNT(*) FILTER(WHERE oldtab.clone_status = 'not_cloned')  AS not_cloned,
-          COUNT(*) FILTER(WHERE oldtab.clone_status = 'cloning') AS cloning,
-          COUNT(*) FILTER(WHERE oldtab.clone_status = 'cloned') AS cloned,
-          COUNT(*) FILTER(WHERE oldtab.last_error IS NOT NULL) AS failed_fetch,
-          COUNT(*) FILTER(WHERE oldtab.corrupted_at IS NOT NULL) AS corrupted
-        FROM
-          oldtab
-        JOIN newtab ON newtab.repo_id = oldtab.repo_id
-        WHERE
-          oldtab.shard_id != newtab.shard_id
-        GROUP BY oldtab.shard_id
-      )
-      UPDATE gitserver_repos_statistics grs
-      SET
-        total        = grs.total        - moved.total,
-        not_cloned   = grs.not_cloned   - moved.not_cloned,
-        cloning      = grs.cloning      - moved.cloning,
-        cloned       = grs.cloned       - moved.cloned,
-        failed_fetch = grs.failed_fetch - moved.failed_fetch,
-        corrupted    = grs.corrupted    - moved.corrupted
-      FROM moved
-      WHERE moved.shard_id = grs.shard_id;
-
-      -------------------------------------------------
-      -- IMPORTANT: THIS IS CHANGED TO INCLUDE `corrupted`
+      -- UNCHANGED
       -------------------------------------------------
       WITH diff(not_cloned, cloning, cloned, failed_fetch, corrupted) AS (
         VALUES (
@@ -782,21 +760,6 @@ BEGIN
 END;
 $$;
 
-CREATE FUNCTION soft_delete_user_reference_on_external_service() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    -- If a user is soft-deleted, delete every row that references that user
-    IF (OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL) THEN
-        UPDATE external_services
-        SET deleted_at = NOW()
-        WHERE namespace_user_id = OLD.id;
-    END IF;
-
-    RETURN OLD;
-END;
-$$;
-
 CREATE FUNCTION soft_deleted_repository_name(name text) RETURNS text
     LANGUAGE plpgsql
     AS $$
@@ -922,7 +885,8 @@ CREATE TABLE access_tokens (
     deleted_at timestamp with time zone,
     creator_user_id integer NOT NULL,
     scopes text[] NOT NULL,
-    internal boolean DEFAULT false
+    internal boolean DEFAULT false,
+    expires_at timestamp with time zone
 );
 
 CREATE SEQUENCE access_tokens_id_seq
@@ -1629,6 +1593,7 @@ CREATE TABLE cm_trigger_jobs (
     search_results jsonb,
     queued_at timestamp with time zone DEFAULT now(),
     cancel boolean DEFAULT false NOT NULL,
+    logs json[],
     CONSTRAINT search_results_is_array CHECK ((jsonb_typeof(search_results) = 'array'::text))
 );
 
@@ -1757,7 +1722,8 @@ CREATE TABLE lsif_configuration_policies (
     protected boolean DEFAULT false NOT NULL,
     repository_patterns text[],
     last_resolved_at timestamp with time zone,
-    embeddings_enabled boolean DEFAULT false NOT NULL
+    embeddings_enabled boolean DEFAULT false NOT NULL,
+    syntactic_indexing_enabled boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON COLUMN lsif_configuration_policies.repository_id IS 'The identifier of the repository to which this configuration policy applies. If absent, this policy is applied globally.';
@@ -2579,8 +2545,6 @@ CREATE TABLE external_service_repos (
     external_service_id bigint NOT NULL,
     repo_id integer NOT NULL,
     clone_url text NOT NULL,
-    user_id integer,
-    org_id integer,
     created_at timestamp with time zone DEFAULT transaction_timestamp() NOT NULL
 );
 
@@ -2637,16 +2601,15 @@ CREATE TABLE external_services (
     deleted_at timestamp with time zone,
     last_sync_at timestamp with time zone,
     next_sync_at timestamp with time zone,
-    namespace_user_id integer,
     unrestricted boolean DEFAULT false NOT NULL,
     cloud_default boolean DEFAULT false NOT NULL,
     encryption_key_id text DEFAULT ''::text NOT NULL,
-    namespace_org_id integer,
     has_webhooks boolean,
     token_expires_at timestamp with time zone,
     code_host_id integer,
-    CONSTRAINT check_non_empty_config CHECK ((btrim(config) <> ''::text)),
-    CONSTRAINT external_services_max_1_namespace CHECK ((((namespace_user_id IS NULL) AND (namespace_org_id IS NULL)) OR ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))))
+    creator_id integer,
+    last_updater_id integer,
+    CONSTRAINT check_non_empty_config CHECK ((btrim(config) <> ''::text))
 );
 
 CREATE VIEW external_service_sync_jobs_with_next_sync_at AS
@@ -2837,7 +2800,7 @@ COMMENT ON COLUMN gitserver_repos.corrupted_at IS 'Timestamp of when repo corrup
 COMMENT ON COLUMN gitserver_repos.corruption_logs IS 'Log output of repo corruptions that have been detected - encoded as json';
 
 CREATE TABLE gitserver_repos_statistics (
-    shard_id text NOT NULL,
+    shard_id text,
     total bigint DEFAULT 0 NOT NULL,
     not_cloned bigint DEFAULT 0 NOT NULL,
     cloning bigint DEFAULT 0 NOT NULL,
@@ -4215,7 +4178,6 @@ CREATE TABLE users (
     billing_customer_id text,
     invalidated_sessions_at timestamp with time zone DEFAULT now() NOT NULL,
     tos_accepted boolean DEFAULT false NOT NULL,
-    searchable boolean DEFAULT true NOT NULL,
     completions_quota integer,
     code_completions_quota integer,
     completed_post_signup boolean DEFAULT false NOT NULL,
@@ -4664,6 +4626,74 @@ CREATE SEQUENCE survey_responses_id_seq
     CACHE 1;
 
 ALTER SEQUENCE survey_responses_id_seq OWNED BY survey_responses.id;
+
+CREATE TABLE syntactic_scip_indexing_jobs (
+    id bigint NOT NULL,
+    commit text NOT NULL,
+    queued_at timestamp with time zone DEFAULT now() NOT NULL,
+    state text DEFAULT 'queued'::text NOT NULL,
+    failure_message text,
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    repository_id integer NOT NULL,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    execution_logs json[],
+    commit_last_checked_at timestamp with time zone,
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    cancel boolean DEFAULT false NOT NULL,
+    should_reindex boolean DEFAULT false NOT NULL,
+    enqueuer_user_id integer DEFAULT 0 NOT NULL,
+    CONSTRAINT syntactic_scip_indexing_jobs_commit_valid_chars CHECK ((commit ~ '^[a-f0-9]{40}$'::text))
+);
+
+COMMENT ON TABLE syntactic_scip_indexing_jobs IS 'Stores metadata about a code intel syntactic index job.';
+
+COMMENT ON COLUMN syntactic_scip_indexing_jobs.commit IS 'A 40-char revhash. Note that this commit may not be resolvable in the future.';
+
+COMMENT ON COLUMN syntactic_scip_indexing_jobs.execution_logs IS 'An array of [log entries](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/internal/workerutil/store.go#L48:6) (encoded as JSON) from the most recent execution.';
+
+COMMENT ON COLUMN syntactic_scip_indexing_jobs.enqueuer_user_id IS 'ID of the user who scheduled this index. Records with a non-NULL user ID are prioritised over the rest';
+
+CREATE SEQUENCE syntactic_scip_indexing_jobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE syntactic_scip_indexing_jobs_id_seq OWNED BY syntactic_scip_indexing_jobs.id;
+
+CREATE VIEW syntactic_scip_indexing_jobs_with_repository_name AS
+ SELECT u.id,
+    u.commit,
+    u.queued_at,
+    u.state,
+    u.failure_message,
+    u.started_at,
+    u.finished_at,
+    u.repository_id,
+    u.process_after,
+    u.num_resets,
+    u.num_failures,
+    u.execution_logs,
+    u.should_reindex,
+    u.enqueuer_user_id,
+    r.name AS repository_name
+   FROM (syntactic_scip_indexing_jobs u
+     JOIN repo r ON ((r.id = u.repository_id)))
+  WHERE (r.deleted_at IS NULL);
+
+CREATE TABLE syntactic_scip_last_index_scan (
+    repository_id integer NOT NULL,
+    last_index_scan_at timestamp with time zone NOT NULL
+);
+
+COMMENT ON TABLE syntactic_scip_last_index_scan IS 'Tracks the last time repository was checked for syntactic indexing job scheduling.';
+
+COMMENT ON COLUMN syntactic_scip_last_index_scan.last_index_scan_at IS 'The last time uploads of this repository were considered for syntactic indexing job scheduling.';
 
 CREATE TABLE team_members (
     team_id integer NOT NULL,
@@ -5270,6 +5300,8 @@ ALTER TABLE ONLY settings ALTER COLUMN id SET DEFAULT nextval('settings_id_seq':
 
 ALTER TABLE ONLY survey_responses ALTER COLUMN id SET DEFAULT nextval('survey_responses_id_seq'::regclass);
 
+ALTER TABLE ONLY syntactic_scip_indexing_jobs ALTER COLUMN id SET DEFAULT nextval('syntactic_scip_indexing_jobs_id_seq'::regclass);
+
 ALTER TABLE ONLY teams ALTER COLUMN id SET DEFAULT nextval('teams_id_seq'::regclass);
 
 ALTER TABLE ONLY temporary_settings ALTER COLUMN id SET DEFAULT nextval('temporary_settings_id_seq'::regclass);
@@ -5556,9 +5588,6 @@ ALTER TABLE ONLY gitserver_relocator_jobs
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_pkey PRIMARY KEY (repo_id);
 
-ALTER TABLE ONLY gitserver_repos_statistics
-    ADD CONSTRAINT gitserver_repos_statistics_pkey PRIMARY KEY (shard_id);
-
 ALTER TABLE ONLY gitserver_repos_sync_output
     ADD CONSTRAINT gitserver_repos_sync_output_pkey PRIMARY KEY (repo_id);
 
@@ -5781,6 +5810,12 @@ ALTER TABLE ONLY settings
 ALTER TABLE ONLY survey_responses
     ADD CONSTRAINT survey_responses_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY syntactic_scip_indexing_jobs
+    ADD CONSTRAINT syntactic_scip_indexing_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY syntactic_scip_last_index_scan
+    ADD CONSTRAINT syntactic_scip_last_index_scan_pkey PRIMARY KEY (repository_id);
+
 ALTER TABLE ONLY team_members
     ADD CONSTRAINT team_members_team_id_user_id_key PRIMARY KEY (team_id, user_id);
 
@@ -5867,6 +5902,8 @@ CREATE INDEX access_requests_created_at ON access_requests USING btree (created_
 CREATE INDEX access_requests_status ON access_requests USING btree (status);
 
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
+
+CREATE INDEX access_tokens_lookup_double_hash ON access_tokens USING hash (digest(value_sha256, 'sha256'::text)) WHERE (deleted_at IS NULL);
 
 CREATE INDEX app_id_idx ON github_app_installs USING btree (app_id);
 
@@ -6050,21 +6087,9 @@ CREATE INDEX external_service_repos_clone_url_idx ON external_service_repos USIN
 
 CREATE INDEX external_service_repos_idx ON external_service_repos USING btree (external_service_id, repo_id);
 
-CREATE INDEX external_service_repos_org_id_idx ON external_service_repos USING btree (org_id) WHERE (org_id IS NOT NULL);
-
 CREATE INDEX external_service_sync_jobs_state_external_service_id ON external_service_sync_jobs USING btree (state, external_service_id) INCLUDE (finished_at);
 
-CREATE INDEX external_service_user_repos_idx ON external_service_repos USING btree (user_id, repo_id) WHERE (user_id IS NOT NULL);
-
 CREATE INDEX external_services_has_webhooks_idx ON external_services USING btree (has_webhooks);
-
-CREATE INDEX external_services_namespace_org_id_idx ON external_services USING btree (namespace_org_id);
-
-CREATE INDEX external_services_namespace_user_id_idx ON external_services USING btree (namespace_user_id);
-
-CREATE UNIQUE INDEX external_services_unique_kind_org_id ON external_services USING btree (kind, namespace_org_id) WHERE ((deleted_at IS NULL) AND (namespace_user_id IS NULL) AND (namespace_org_id IS NOT NULL));
-
-CREATE UNIQUE INDEX external_services_unique_kind_user_id ON external_services USING btree (kind, namespace_user_id) WHERE ((deleted_at IS NULL) AND (namespace_org_id IS NULL) AND (namespace_user_id IS NOT NULL));
 
 CREATE INDEX feature_flag_overrides_org_id ON feature_flag_overrides USING btree (namespace_org_id) WHERE (namespace_org_id IS NOT NULL);
 
@@ -6093,6 +6118,8 @@ CREATE INDEX gitserver_repos_not_cloned_status_idx ON gitserver_repos USING btre
 CREATE INDEX gitserver_repos_not_explicitly_cloned_idx ON gitserver_repos USING btree (repo_id) WHERE (clone_status <> 'cloned'::text);
 
 CREATE INDEX gitserver_repos_shard_id ON gitserver_repos USING btree (shard_id, repo_id);
+
+CREATE INDEX gitserver_repos_statistics_shard_id ON gitserver_repos_statistics USING btree (shard_id);
 
 CREATE INDEX idx_repo_topics ON repo USING gin (topics);
 
@@ -6140,6 +6167,8 @@ CREATE INDEX lsif_indexes_queued_at_id ON lsif_indexes USING btree (queued_at DE
 
 CREATE INDEX lsif_indexes_repository_id_commit ON lsif_indexes USING btree (repository_id, commit);
 
+CREATE INDEX lsif_indexes_repository_id_indexer ON lsif_indexes USING btree (repository_id, indexer);
+
 CREATE INDEX lsif_indexes_state ON lsif_indexes USING btree (state);
 
 CREATE INDEX lsif_nearest_uploads_links_repository_id_ancestor_commit_bytea ON lsif_nearest_uploads_links USING btree (repository_id, ancestor_commit_bytea);
@@ -6173,6 +6202,8 @@ CREATE INDEX lsif_uploads_last_reconcile_at ON lsif_uploads USING btree (last_re
 CREATE INDEX lsif_uploads_repository_id_commit ON lsif_uploads USING btree (repository_id, commit);
 
 CREATE UNIQUE INDEX lsif_uploads_repository_id_commit_root_indexer ON lsif_uploads USING btree (repository_id, commit, root, indexer) WHERE (state = 'completed'::text);
+
+CREATE INDEX lsif_uploads_repository_id_indexer ON lsif_uploads USING btree (repository_id, indexer);
 
 CREATE INDEX lsif_uploads_state ON lsif_uploads USING btree (state);
 
@@ -6264,6 +6295,8 @@ CREATE INDEX repo_description_trgm_idx ON repo USING gin (lower(description) gin
 
 CREATE INDEX repo_dotcom_indexable_repos_idx ON repo USING btree (stars DESC NULLS LAST) INCLUDE (id, name) WHERE ((deleted_at IS NULL) AND (blocked IS NULL) AND (((stars >= 5) AND (NOT COALESCE(fork, false)) AND (NOT archived)) OR (lower((name)::text) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'::text)));
 
+CREATE INDEX repo_embedding_jobs_repo ON repo_embedding_jobs USING btree (repo_id, revision);
+
 CREATE UNIQUE INDEX repo_external_unique_idx ON repo USING btree (external_service_type, external_service_id, external_id);
 
 CREATE INDEX repo_fork ON repo USING btree (fork);
@@ -6315,6 +6348,14 @@ CREATE INDEX settings_user_id_idx ON settings USING btree (user_id);
 CREATE UNIQUE INDEX sub_repo_permissions_repo_id_user_id_version_uindex ON sub_repo_permissions USING btree (repo_id, user_id, version);
 
 CREATE INDEX sub_repo_perms_user_id ON sub_repo_permissions USING btree (user_id);
+
+CREATE INDEX syntactic_scip_indexing_jobs_dequeue_order_idx ON syntactic_scip_indexing_jobs USING btree (((enqueuer_user_id > 0)) DESC, queued_at DESC, id) WHERE ((state = 'queued'::text) OR (state = 'errored'::text));
+
+CREATE INDEX syntactic_scip_indexing_jobs_queued_at_id ON syntactic_scip_indexing_jobs USING btree (queued_at DESC, id);
+
+CREATE INDEX syntactic_scip_indexing_jobs_repository_id_commit ON syntactic_scip_indexing_jobs USING btree (repository_id, commit);
+
+CREATE INDEX syntactic_scip_indexing_jobs_state ON syntactic_scip_indexing_jobs USING btree (state);
 
 CREATE UNIQUE INDEX teams_name ON teams USING btree (name);
 
@@ -6399,8 +6440,6 @@ CREATE TRIGGER trig_recalc_repo_statistics_on_repo_delete AFTER DELETE ON repo R
 CREATE TRIGGER trig_recalc_repo_statistics_on_repo_insert AFTER INSERT ON repo REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_insert();
 
 CREATE TRIGGER trig_recalc_repo_statistics_on_repo_update AFTER UPDATE ON repo REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_update();
-
-CREATE TRIGGER trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE FUNCTION soft_delete_user_reference_on_external_service();
 
 CREATE TRIGGER trigger_configuration_policies_delete AFTER DELETE ON lsif_configuration_policies REFERENCING OLD TABLE AS old FOR EACH STATEMENT EXECUTE FUNCTION func_configuration_policies_delete();
 
@@ -6691,28 +6730,19 @@ ALTER TABLE ONLY external_service_repos
     ADD CONSTRAINT external_service_repos_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY external_service_repos
-    ADD CONSTRAINT external_service_repos_org_id_fkey FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY external_service_repos
     ADD CONSTRAINT external_service_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY external_service_repos
-    ADD CONSTRAINT external_service_repos_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY external_services
     ADD CONSTRAINT external_services_code_host_id_fkey FOREIGN KEY (code_host_id) REFERENCES code_hosts(id) ON UPDATE CASCADE ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED;
+
+ALTER TABLE ONLY external_services
+    ADD CONSTRAINT external_services_creator_id_fkey FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
 
 ALTER TABLE ONLY external_service_sync_jobs
     ADD CONSTRAINT external_services_id_fk FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY external_services
-    ADD CONSTRAINT external_services_namepspace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY external_services
-    ADD CONSTRAINT external_services_namespace_org_id_fkey FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY feature_flag_overrides
-    ADD CONSTRAINT feature_flag_overrides_flag_name_fkey FOREIGN KEY (flag_name) REFERENCES feature_flags(flag_name) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT external_services_last_updater_id_fkey FOREIGN KEY (last_updater_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
 
 ALTER TABLE ONLY feature_flag_overrides
     ADD CONSTRAINT feature_flag_overrides_namespace_org_id_fkey FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE;
@@ -7026,9 +7056,9 @@ ALTER TABLE ONLY webhooks
 ALTER TABLE ONLY zoekt_repos
     ADD CONSTRAINT zoekt_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
-INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch retention policy', 'GIT_TREE', '*', true, 2016, false, false, 0, false, true, NULL, NULL, false);
-INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL, false);
-INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retention policy', 'GIT_TREE', '*', true, 168, true, false, 0, false, true, NULL, NULL, false);
+INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch retention policy', 'GIT_TREE', '*', true, 2016, false, false, 0, false, true, NULL, NULL, false, false);
+INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL, false, false);
+INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retention policy', 'GIT_TREE', '*', true, 168, true, false, 0, false, true, NULL, NULL, false, false);
 
 SELECT pg_catalog.setval('lsif_configuration_policies_id_seq', 3, true);
 

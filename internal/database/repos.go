@@ -154,7 +154,7 @@ var counterAccessGranted = promauto.NewCounter(prometheus.CounterOpts{
 func logPrivateRepoAccessGranted(ctx context.Context, db DB, ids []api.RepoID) {
 
 	a := actor.FromContext(ctx)
-	arg, _ := json.Marshal(struct {
+	arg := struct {
 		Resource string       `json:"resource"`
 		Service  string       `json:"service"`
 		Repos    []api.RepoID `json:"repo_ids"`
@@ -162,26 +162,18 @@ func logPrivateRepoAccessGranted(ctx context.Context, db DB, ids []api.RepoID) {
 		Resource: "db.repo",
 		Service:  env.MyName,
 		Repos:    ids,
-	})
-
-	event := &SecurityEvent{
-		Name:            SecurityEventNameAccessGranted,
-		URL:             "",
-		UserID:          uint32(a.UID),
-		AnonymousUserID: "",
-		Argument:        arg,
-		Source:          "BACKEND",
-		Timestamp:       time.Now(),
 	}
 
+	anonymousID := ""
 	// If this event was triggered by an internal actor we need to ensure that at
 	// least the UserID or AnonymousUserID field are set so that we don't trigger
 	// the security_event_logs_check_has_user constraint
 	if a.Internal {
-		event.AnonymousUserID = "internal"
+		anonymousID = "internal"
 	}
-
-	db.SecurityEventLogs().LogEvent(ctx, event)
+	if err := db.SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventNameAccessGranted, anonymousID, uint32(a.UID), "", "BACKEND", arg); err != nil {
+		log.Error(err)
+	}
 }
 
 // GetByName returns the repository with the given nameOrUri from the
@@ -343,6 +335,7 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 			"repo.stars",
 			"gr.last_fetched",
 			"(SELECT json_object_agg(key, value) FROM repo_kvps WHERE repo_kvps.repo_id = repo.id)",
+			"repo.topics",
 		},
 		// Required so gr.last_fetched is select-able
 		joinGitserverRepos: true,
@@ -352,6 +345,7 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 	scanMetadata := func(rows *sql.Rows) error {
 		var r types.SearchedRepo
 		var kvps repoKVPs
+		var topics repoTopics
 		if err := rows.Scan(
 			&r.ID,
 			&r.Name,
@@ -362,11 +356,14 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 			&dbutil.NullInt{N: &r.Stars},
 			&r.LastFetched,
 			&kvps,
+			&topics,
 		); err != nil {
 			return err
 		}
 
 		r.KeyValuePairs = kvps.kvps
+		r.Topics = topics.topics
+
 		res = append(res, &r)
 		return nil
 	}
@@ -387,6 +384,24 @@ func (r *repoKVPs) Scan(value any) error {
 	default:
 		return errors.Newf("type assertion to []byte failed, got type %T", value)
 	}
+}
+
+// repoTopics implements the sql.Scanner interface. It is used to scan the
+// topics column into a []string. It scans the default '{}'::text[] value into a
+// nil slice instead of an empty array.
+type repoTopics struct {
+	topics []string
+}
+
+func (r *repoTopics) Scan(value any) error {
+	err := pq.Array(&r.topics).Scan(value)
+	if err != nil {
+		return err
+	}
+	if len(r.topics) == 0 {
+		r.topics = nil
+	}
+	return nil
 }
 
 const listReposQueryFmtstr = `
@@ -445,6 +460,7 @@ var repoColumns = []string{
 	"repo.metadata",
 	"repo.blocked",
 	"(SELECT json_object_agg(key, value) FROM repo_kvps WHERE repo_kvps.repo_id = repo.id)",
+	"repo.topics",
 }
 
 func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
@@ -452,6 +468,7 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 	var metadata json.RawMessage
 	var blocked dbutil.NullJSONRawMessage
 	var kvps repoKVPs
+	var topics repoTopics
 
 	err = rows.Scan(
 		&r.ID,
@@ -471,6 +488,7 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 		&metadata,
 		&blocked,
 		&kvps,
+		&topics,
 		&sources,
 	)
 	if err != nil {
@@ -485,6 +503,7 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 	}
 
 	r.KeyValuePairs = kvps.kvps
+	r.Topics = topics.topics
 
 	type sourceInfo struct {
 		ID       int64
@@ -549,8 +568,6 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = &struct{}{}
 	case extsvc.TypeRubyPackages:
 		r.Metadata = &struct{}{}
-	case extsvc.VariantLocalGit.AsType():
-		r.Metadata = new(extsvc.LocalGitMetadata)
 	default:
 		logger.Warn("unknown service type", log.String("type", typ))
 		return nil
@@ -953,7 +970,7 @@ func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOp
 	}
 
 	if opt.Query != "" && (len(opt.IncludePatterns) > 0 || opt.ExcludePattern != "") {
-		return nil, errors.New("Repos.List: Query and IncludePatterns/ExcludePattern options are mutually exclusive")
+		return nil, errors.New("Repos.List: Query and IncludePaths/ExcludePaths options are mutually exclusive")
 	}
 
 	if opt.Query != "" {

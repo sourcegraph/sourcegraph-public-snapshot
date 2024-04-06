@@ -37,8 +37,21 @@ export enum PageRoutes {
     Notebooks = '/notebooks',
     SearchNotebook = '/search/notebook',
     CodySearch = '/search/cody',
-    Cody = '/cody/chat',
+    Cody = '/cody',
+    CodyChat = '/cody/chat',
+    CodyManagement = '/cody/manage',
+    CodySubscription = '/cody/subscription',
     Own = '/own',
-    AppAuthCallback = '/app/auth/callback',
-    AppSetup = '/app-setup',
+}
+
+export enum CommunityPageRoutes {
+    Kubernetes = '/kubernetes',
+    Stackstorm = '/stackstorm',
+    Temporal = '/temporal',
+    O3de = '/o3de',
+    ChakraUI = '/chakraui',
+    Stanford = '/stanford',
+    Cncf = '/cncf',
+    Julia = '/julia',
+    Backstage = '/backstage',
 }

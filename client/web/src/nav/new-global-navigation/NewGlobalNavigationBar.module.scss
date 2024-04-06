@@ -14,6 +14,10 @@
 
     // TODO: Move to the top level of this component consumer
     flex-shrink: 0;
+
+    &--without-menu {
+        padding-left: 0.75rem;
+    }
 }
 
 .menu-button {
@@ -61,26 +65,11 @@
     min-width: 0;
 
     --search-box-border: none;
-
-    :global(.theme-dark) & {
-        --search-box-color: var(--input-bg);
-
-        &--focused {
-            --search-box-color: unset;
-        }
-    }
-
-    :global(.theme-light) & {
-        --search-box-color: var(--oc-gray-2);
-
-        &--focused {
-            --search-box-color: unset;
-        }
-    }
+    --search-box-shadow: 0 0 0 1px var(--border-color-2);
 }
 
 .inline-navigation-list {
-    margin: -0.5rem 1rem;
+    margin: -0.5rem 0.5rem;
 }
 
 .overlay {

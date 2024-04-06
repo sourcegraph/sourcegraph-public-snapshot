@@ -2,15 +2,8 @@
 
 export type { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
 
-export {
-    parseRepoRevision,
-    parseQueryAndHash,
-    buildSearchURLQuery,
-    makeRepoURI,
-    type RevisionSpec,
-    type ResolvedRevisionSpec,
-    type RepoSpec,
-} from '@sourcegraph/shared/src/util/url'
+export { parseRepoRevision, buildSearchURLQuery, makeRepoGitURI } from '@sourcegraph/shared/src/util/url'
+
 export {
     isCloneInProgressErrorLike,
     isRepoSeeOtherErrorLike,
@@ -29,6 +22,7 @@ export {
     getFileMatchUrl,
     getRepositoryUrl,
     aggregateStreamingSearch,
+    emptyAggregateResults,
     LATEST_VERSION,
     type AggregateStreamingSearchResults,
     type StreamSearchOptions,
@@ -39,6 +33,8 @@ export {
     type SymbolMatch,
     type PathMatch,
     type ContentMatch,
+    type ChunkMatch,
+    type LineMatch,
     type SearchMatch,
     type OwnerMatch,
     type TeamMatch,
@@ -46,33 +42,35 @@ export {
     type CommitMatch,
     type Progress,
     type Range,
+    type Filter,
+    type SearchEvent,
 } from '@sourcegraph/shared/src/search/stream'
-export type {
-    MatchItem,
-    MatchGroupMatch,
-    MatchGroup,
-    PerFileResultRanking,
-    RankingResult,
+export {
+    type MatchItem,
+    type MatchGroupMatch,
+    type MatchGroup,
+    rankPassthrough,
+    rankByLine,
+    truncateGroups,
 } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
-export { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
-export { LineRanking } from '@sourcegraph/shared/src/components/ranking/LineRanking'
-export { type AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 export { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+export { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+export { KeywordKind } from '@sourcegraph/shared/src/search/query/token'
 export { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 export { getGlobalSearchContextFilter, findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
-export { omitFilter, appendFilter } from '@sourcegraph/shared/src/search/query/transformer'
-export {
-    type SettingsCascade,
-    type SettingsSubject,
-    type SettingsCascadeOrError,
-    SettingsProvider,
-    gqlToCascade,
-} from '@sourcegraph/shared/src/settings/settings'
+export { omitFilter, appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
+export { type Settings, SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
 export { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 export { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search/helpers'
 export { migrateLocalStorageToTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/migrateLocalStorageToTemporarySettings'
 export type { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 export { SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
+export { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
+export { createCodeIntelAPI, type CodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
+export { getModeFromPath } from '@sourcegraph/shared/src/languages'
+export type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+export { repositoryInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
+export { ThemeSetting, Theme } from '@sourcegraph/shared/src/theme-types'
 
 // Copies of non-reusable code
 
@@ -94,5 +92,5 @@ export function displayRepoName(repoName: string): string {
  */
 export function splitPath(path: string): [string, string] {
     const components = path.split('/')
-    return [components.slice(0, -1).join('/'), components.at(-1)]
+    return [components.slice(0, -1).join('/'), components.at(-1) ?? '']
 }

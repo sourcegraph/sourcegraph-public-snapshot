@@ -75,7 +75,7 @@ Note: To match the string `...` literally, use regular expression patterns like 
 
 ### More examples
 
-Here are some additional examples. Visit our [structural search blog post](https://about.sourcegraph.com/blog/going-beyond-regular-expressions-with-structural-code-search) for more.
+Here are some additional examples. Visit our [structural search blog post](https://sourcegraph.com/blog/going-beyond-regular-expressions-with-structural-code-search) for more.
 
 #### Match stringy data
 

@@ -10,13 +10,13 @@ import type {
     LegacyRouteStaticInjections,
 } from '../LegacyRouteContext'
 import type { DynamicSourcegraphWebAppContext, StaticSourcegraphWebAppContext } from '../SourcegraphWebApp'
-import type {
-    StaticInjectedAppConfig,
-    StaticHardcodedAppConfig,
-    StaticWindowContextComputedAppConfig,
-} from '../staticAppConfig'
+import type { StaticInjectedAppConfig, StaticWindowContextComputedAppConfig } from '../staticAppConfig'
 
-const hardcodedConfig = {
+export const windowContextConfig = {
+    isSourcegraphDotCom: false,
+    needsRepositoryConfiguration: false,
+    batchChangesWebhookLogsEnabled: true,
+    batchChangesEnabled: true,
     codeIntelligenceEnabled: true,
     codeInsightsEnabled: true,
     searchContextsEnabled: true,
@@ -24,14 +24,6 @@ const hardcodedConfig = {
     codeMonitoringEnabled: true,
     searchAggregationEnabled: true,
     ownEnabled: true,
-} satisfies StaticHardcodedAppConfig
-
-export const windowContextConfig = {
-    isSourcegraphDotCom: false,
-    isCodyApp: false,
-    needsRepositoryConfiguration: false,
-    batchChangesWebhookLogsEnabled: true,
-    batchChangesEnabled: true,
 } satisfies StaticWindowContextComputedAppConfig
 
 export const injectedAppConfig = {} as unknown as StaticInjectedAppConfig
@@ -39,7 +31,6 @@ export const injectedAppConfig = {} as unknown as StaticInjectedAppConfig
 export const staticWebAppConfig = {
     setSelectedSearchContextSpec: () => {},
     platformContext: NOOP_PLATFORM_CONTEXT as PlatformContext,
-    extensionsController: null,
 } satisfies StaticSourcegraphWebAppContext
 
 export const dynamicWebAppConfig = {
@@ -75,11 +66,14 @@ export const legacyRouteInjectedContext = {
 } as Record<keyof LegacyRouteStaticInjections, unknown> as LegacyRouteStaticInjections
 
 export const legacyLayoutRouteContextMock = {
-    ...hardcodedConfig,
     ...windowContextConfig,
     ...injectedAppConfig,
     ...staticWebAppConfig,
     ...dynamicWebAppConfig,
     ...legacyRouteComputedContext,
     ...legacyRouteInjectedContext,
+    licenseFeatures: {
+        isCodeSearchEnabled: true,
+        isCodyEnabled: true,
+    },
 } satisfies LegacyLayoutRouteContext

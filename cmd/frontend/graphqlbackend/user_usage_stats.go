@@ -7,16 +7,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -26,7 +26,7 @@ import (
 )
 
 func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatisticsResolver, error) {
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 			return nil, err
 		}
@@ -112,6 +112,7 @@ type EventBatch struct {
 	Events *[]Event
 }
 
+// LogEvent is the deprecated mutation, superceded by { telemetry { recordEvents } }
 func (r *schemaResolver) LogEvent(ctx context.Context, args *Event) (*EmptyResponse, error) {
 	if args == nil {
 		return nil, nil
@@ -120,6 +121,7 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *Event) (*EmptyRespo
 	return r.LogEvents(ctx, &EventBatch{Events: &[]Event{*args}})
 }
 
+// LogEvents is the deprecated mutation, superceded by { telemetry { recordEvents } }
 func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*EmptyResponse, error) {
 	if !conf.EventLoggingEnabled() || args.Events == nil {
 		return nil, nil
@@ -127,7 +129,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 
 	userID := actor.FromContext(ctx).UID
 	userPrimaryEmail := ""
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		userPrimaryEmail, _, _ = r.db.UserEmails().GetPrimaryEmail(ctx, userID)
 	}
 
@@ -159,8 +161,8 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 		}
 
 		// On Sourcegraph.com only, log a HubSpot event indicating when the user installed a Cody client.
-		// if envvar.SourcegraphDotComMode() && args.Event == "CodyInstalled" && userID != 0 && userPrimaryEmail != "" {
-		if envvar.SourcegraphDotComMode() && args.Event == "CodyInstalled" {
+		// if  dotcom.SourcegraphDotComMode() && args.Event == "CodyInstalled" && userID != 0 && userPrimaryEmail != "" {
+		if dotcom.SourcegraphDotComMode() && args.Event == "CodyInstalled" {
 			emailsEnabled := false
 
 			ide := getIdeFromEvent(&args)
@@ -186,7 +188,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 		}
 
 		// On Sourcegraph.com only, log a HubSpot event indicating when the user clicks button to downloads Cody App.
-		if envvar.SourcegraphDotComMode() && args.Event == "DownloadApp" && userID != 0 && userPrimaryEmail != "" {
+		if dotcom.SourcegraphDotComMode() && args.Event == "DownloadApp" && userID != 0 && userPrimaryEmail != "" {
 			hubspotutil.SyncUser(userPrimaryEmail, hubspotutil.AppDownloadButtonClickedEventID, &hubspot.ContactProperties{})
 		}
 
@@ -234,6 +236,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 		})
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality to back deprecated GraphQL mutation
 	if err := usagestats.LogEvents(ctx, r.db, events); err != nil {
 		return nil, err
 	}
@@ -348,7 +351,7 @@ func (r *schemaResolver) SubmitCodySurvey(ctx context.Context, args *struct {
 	IsForWork     bool
 	IsForPersonal bool
 }) (*EmptyResponse, error) {
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		return nil, errors.New("Cody survey is not supported outside sourcegraph.com")
 	}
 

@@ -1,7 +1,6 @@
 package repos
 
 import (
-	"net/http"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -40,20 +39,8 @@ func Update(name string) bool {
 func TestClientFactorySetup(t testing.TB, name string, mws ...httpcli.Middleware) (httpcli.Middleware, *recorder.Recorder) {
 	cassete := filepath.Join("testdata", "sources", strings.ReplaceAll(name, " ", "-"))
 	rec := NewRecorder(t, cassete, Update(name))
-	mws = append(mws, GitserverRedirectMiddleware)
 	mw := httpcli.NewMiddleware(mws...)
 	return mw, rec
-}
-
-func GitserverRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
-	return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
-		if req.URL.Hostname() == "gitserver" {
-			// Start local git server first
-			req.URL.Host = "127.0.0.1:3178"
-			req.URL.Scheme = "http"
-		}
-		return cli.Do(req)
-	})
 }
 
 func NewRecorder(t testing.TB, file string, record bool) *recorder.Recorder {

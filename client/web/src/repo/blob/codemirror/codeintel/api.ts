@@ -14,7 +14,7 @@ import {
     hasFindImplementationsSupport,
 } from '@sourcegraph/shared/src/codeintel/api'
 import type { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
-import { parseRepoURI, toURIWithPath } from '@sourcegraph/shared/src/util/url'
+import { makeRepoGitURI, parseRepoGitURI } from '@sourcegraph/shared/src/util/url'
 import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
 import type { WebHoverOverlayProps } from '../../../../components/WebHoverOverlay'
@@ -47,7 +47,7 @@ export interface Location {
     readonly range: Range
 }
 
-type Definition =
+export type Definition =
     | {
           type: 'at-definition' | 'single' | 'multiple'
           readonly destination: Location
@@ -56,15 +56,16 @@ type Definition =
       }
     | { type: 'none'; occurrence: Occurrence }
 
-interface GoToDefinitionOptions {
+export interface GoToDefinitionOptions {
     newWindow: boolean
 }
 
-interface DocumentInfo {
+export interface DocumentInfo {
     repoName: string
     filePath: string
     commitID: string
-    revision?: string
+    revision: string
+    languages: string[]
 }
 
 export interface CodeIntelAPIConfig {
@@ -76,7 +77,6 @@ export interface CodeIntelAPIConfig {
      * Information about the current document.
      */
     documentInfo: DocumentInfo
-    mode: string
 
     /**
      * Called to create the code intel tooltip.
@@ -117,7 +117,7 @@ export class CodeIntelAPIAdapter {
     private hasCodeIntelligenceSupport: boolean
 
     constructor(private config: CodeIntelAPIConfig) {
-        this.documentURI = toURIWithPath({
+        this.documentURI = makeRepoGitURI({
             repoName: config.documentInfo.repoName,
             filePath: config.documentInfo.filePath,
             commitID: config.documentInfo.commitID,
@@ -173,7 +173,7 @@ export class CodeIntelAPIAdapter {
             )
             .then(locations => {
                 for (const location of locations) {
-                    const { repoName, filePath, revision } = parseRepoURI(location.uri)
+                    const { repoName, filePath, revision } = parseRepoGitURI(location.uri)
                     if (
                         filePath &&
                         location.range &&
@@ -197,7 +197,7 @@ export class CodeIntelAPIAdapter {
                 }
                 if (locations.length === 1) {
                     const location = locations[0]
-                    const { repoName, filePath, revision } = parseRepoURI(location.uri)
+                    const { repoName, filePath, revision } = parseRepoGitURI(location.uri)
                     if (!(filePath && location.range)) {
                         return { type: 'none', occurrence }
                     }
@@ -392,7 +392,7 @@ export class CodeIntelAPIAdapter {
                     },
                 })
 
-                if (isPrecise && hasFindImplementationsSupport(this.config.mode)) {
+                if (isPrecise && this.config.documentInfo.languages.some(hasFindImplementationsSupport)) {
                     actions.push({
                         active: true,
                         action: {
@@ -445,7 +445,7 @@ function isPrecise(hover: HoverMerged | null | undefined): boolean {
 /**
  * Facet for registering the code intel API.
  */
-export const codeIntelAPI = Facet.define<CodeIntelAPIAdapter, CodeIntelAPIAdapter | null>({
+export const codeIntelAPIAdapter = Facet.define<CodeIntelAPIAdapter, CodeIntelAPIAdapter | null>({
     combine(values) {
         return values[0] ?? null
     },
@@ -455,21 +455,21 @@ export const codeIntelAPI = Facet.define<CodeIntelAPIAdapter, CodeIntelAPIAdapte
  * Helper function for getting a reference to the current code intel API.
  * Throws an error if it is not set.
  */
-function getCodeIntelAPI(state: EditorState): CodeIntelAPIAdapter {
-    const api = state.facet(codeIntelAPI)
-    if (!api) {
+function getCodeIntelAPIAdapter(state: EditorState): CodeIntelAPIAdapter {
+    const apiAdapter = state.facet(codeIntelAPIAdapter)
+    if (!apiAdapter) {
         throw new Error('A CodeIntelAPI instance has to be provided via the `codeIntelAPI` facet.')
     }
-    return api
+    return apiAdapter
 }
 
 /**
  * Returns true if the token at this position has a definition. Lookup is cached.
  */
 export async function hasDefinitionAt(state: EditorState, offset: number): Promise<boolean> {
-    const api = getCodeIntelAPI(state)
-    const occurrence = api.findOccurrenceAt(offset, state).occurrence
-    return !!occurrence && (await api.getDefinition(state, occurrence)).type !== 'none'
+    const apiAdapter = getCodeIntelAPIAdapter(state)
+    const occurrence = apiAdapter.findOccurrenceAt(offset, state).occurrence
+    return !!occurrence && (await apiAdapter.getDefinition(state, occurrence)).type !== 'none'
 }
 
 /**
@@ -477,7 +477,7 @@ export async function hasDefinitionAt(state: EditorState, offset: number): Promi
  * Lookup is cached.
  */
 export function findOccurrenceRangeAt(state: EditorState, offset: number): { from: number; to: number } | null {
-    return getCodeIntelAPI(state).findOccurrenceAt(offset, state).range
+    return getCodeIntelAPIAdapter(state).findOccurrenceAt(offset, state).range
 }
 
 /**
@@ -485,7 +485,7 @@ export function findOccurrenceRangeAt(state: EditorState, offset: number): { fro
  * Lookup is cached.
  */
 export function getDocumentHighlights(state: EditorState, offset: number): Promise<{ from: number; to: number }[]> {
-    return getCodeIntelAPI(state).getDocumentHighlights(state, offset)
+    return getCodeIntelAPIAdapter(state).getDocumentHighlights(state, offset)
 }
 
 /**
@@ -493,7 +493,7 @@ export function getDocumentHighlights(state: EditorState, offset: number): Promi
  * Looltip is cached.
  */
 export function getHoverTooltip(state: EditorState, offset: number): Promise<(Tooltip & { end: number }) | null> {
-    return getCodeIntelAPI(state).getHoverTooltip(state, offset)
+    return getCodeIntelAPIAdapter(state).getHoverTooltip(state, offset)
 }
 
 /**
@@ -505,10 +505,10 @@ export async function goToDefinitionAt(
     offset: number,
     options?: GoToDefinitionOptions
 ): Promise<void> {
-    const api = getCodeIntelAPI(view.state)
-    const occurrence = api.findOccurrenceAt(offset, view.state).occurrence
+    const apiAdapter = getCodeIntelAPIAdapter(view.state)
+    const occurrence = apiAdapter.findOccurrenceAt(offset, view.state).occurrence
     if (occurrence) {
-        await api.goToDefinitionAtOccurrence(view, occurrence, options)
+        await apiAdapter.goToDefinitionAtOccurrence(view, occurrence, options)
     }
 }
 

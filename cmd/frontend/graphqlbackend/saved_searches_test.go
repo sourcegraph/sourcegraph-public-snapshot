@@ -5,9 +5,11 @@ import (
 	"reflect"
 	"testing"
 
-	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -15,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -547,4 +550,33 @@ func TestDeleteSavedSearch(t *testing.T) {
 	}
 
 	mockrequire.Called(t, ss.DeleteFunc)
+}
+
+func TestSavedSearchesConnectionStore(t *testing.T) {
+	ctx := context.Background()
+
+	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(t))
+
+	user, err := db.Users().Create(ctx, database.NewUser{
+		Email:           "test@sourcegraph.com",
+		Username:        "test",
+		EmailIsVerified: true,
+	})
+	require.NoError(t, err)
+
+	for range 10 {
+		_, err := db.SavedSearches().Create(ctx, &types.SavedSearch{
+			Description: "Test Search",
+			Query:       "r:src-cli",
+			UserID:      &user.ID,
+		})
+		require.NoError(t, err)
+	}
+
+	connectionStore := &savedSearchesConnectionStore{
+		db:     db,
+		userID: &user.ID,
+	}
+
+	graphqlutil.TestConnectionResolverStoreSuite(t, connectionStore)
 }

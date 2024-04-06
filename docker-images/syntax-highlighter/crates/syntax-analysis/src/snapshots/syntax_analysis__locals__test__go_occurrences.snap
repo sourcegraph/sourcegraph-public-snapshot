@@ -1,0 +1,141 @@
+---
+source: crates/syntax-analysis/src/locals.rs
+expression: dumped
+---
+  package main
+  
+  import (
+   "fmt"
+  )
+  
+  // Not actually local
+  var local = 10
+  
+  func main() {
+   local = 20
+   local := 5
+// ^^^^^ definition local 1
+   something := func(unrelated int) int {
+// ^^^^^^^^^ definition local 2
+//                   ^^^^^^^^^ definition local 3
+    superNested := func(deeplyNested int) int {
+//  ^^^^^^^^^^^ definition local 4
+//                      ^^^^^^^^^^^^ definition local 5
+     return local + unrelated + deeplyNested
+//          ^^^^^ reference local 1
+//                  ^^^^^^^^^ reference local 3
+//                              ^^^^^^^^^^^^ reference local 5
+    }
+  
+    overwriteName := func(local int) int {
+//  ^^^^^^^^^^^^^ definition local 6
+//                        ^^^^^ definition local 7
+     return local + unrelated
+//          ^^^^^ reference local 7
+//                  ^^^^^^^^^ reference local 3
+    }
+  
+    return superNested(1) + overwriteName(1)
+//         ^^^^^^^^^^^ reference local 4
+//                          ^^^^^^^^^^^^^ reference local 6
+   }
+  
+   println(local, something)
+//         ^^^^^ reference local 1
+//                ^^^^^^^^^ reference local 2
+  }
+  
+  func ifFn(local int) int {
+//          ^^^^^ definition local 8
+   if local := 9; local < 0 {
+//    ^^^^^ definition local 9
+//                ^^^^^ reference local 9
+    fmt.Println(local, "is negative")
+//              ^^^^^ reference local 9
+   } else if local < 10 {
+//           ^^^^^ reference local 9
+    fmt.Println(local, "has 1 digit")
+//              ^^^^^ reference local 9
+   } else {
+    fmt.Println(local, "has multiple digits")
+//              ^^^^^ reference local 9
+   }
+   return local
+//        ^^^^^ reference local 8
+  }
+  
+  func switchFn(local int) int {
+//              ^^^^^ definition local 10
+   switch x := 0; x {
+//        ^ definition local 11
+//                ^ reference local 11
+   case 0:
+    x := "local x"
+//  ^ definition local 12
+    fmt.Println(x)
+//              ^ reference local 12
+   case 1:
+    fmt.Println(x)
+//              ^ reference local 11
+   case x:
+//      ^ reference local 11
+    fmt.Println("something")
+   }
+   return local
+//        ^^^^^ reference local 10
+  }
+  
+  func forFn(local int) int {
+//           ^^^^^ definition local 13
+   for i := 0; i < 3; i++ {
+//     ^ definition local 14
+//             ^ reference local 14
+//                    ^ reference local 14
+    fmt.Println(i)
+//              ^ reference local 14
+   }
+   return local
+//        ^^^^^ reference local 13
+  
+  }
+  
+  func constFunc() int {
+   const LOCAL_CONST = 10
+//       ^^^^^^^^^^^ definition local 15
+   return LOCAL_CONST
+//        ^^^^^^^^^^^ reference local 15
+  }
+  
+  func assignmentFn(arg int) int {
+//                  ^^^ definition local 16
+   local := 0
+// ^^^^^ definition local 17
+   local = 1
+// ^^^^^ reference local 17
+   local[arg] = 2
+// ^^^^^ reference local 17
+//       ^^^ reference local 16
+   *local = 3
+//  ^^^^^ reference local 17
+  }
+  
+  type MyStruct struct {
+   field1 int
+   field2 string
+  }
+  
+  type MyInterface interface {
+   method(param int) int
+//        ^^^^^ definition local 18
+  }
+  
+  func (m *MyStruct) method(local int) int {
+//      ^ definition local 19
+//                          ^^^^^ definition local 20
+   return m.field1 + local
+//        ^ reference local 19
+//                   ^^^^^ reference local 20
+  }
+  
+  const MY_CONST int = 10
+

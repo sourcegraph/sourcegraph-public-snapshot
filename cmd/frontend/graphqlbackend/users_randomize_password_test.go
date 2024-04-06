@@ -7,9 +7,9 @@ import (
 	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -57,9 +57,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 
 	t.Run("DotCom mode", func(t *testing.T) {
 		// Test dotcom mode
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		t.Run("Errors on DotCom when sending emails is not enabled", func(t *testing.T) {
 			conf.Mock(smtpDisabledConf)

@@ -1,0 +1,16 @@
+---
+source: crates/syntax-analysis/src/lib.rs
+expression: dumped
+---
+  var myObject = {
+//    ^^^^^^^^ definition(Variable) scip-ctags myObject.
+    myProperty: "value",
+//  ^^^^^^^^^^ definition(Property) scip-ctags myObject.myProperty.
+  
+    myMethod: function() {},
+//  ^^^^^^^^ definition(Function) scip-ctags myObject.myMethod().
+    myArrow: () => {},
+//  ^^^^^^^ definition(Function) scip-ctags myObject.myArrow().
+  };
+  
+

@@ -1,6 +1,6 @@
 use std::io::{BufReader, BufWriter};
 
-use scip_syntax::ctags::ctags_runner;
+use syntax_analysis::ctags::ctags_runner;
 
 fn main() {
     // Exits with a code zero if the environment variable SANITY_CHECK equals

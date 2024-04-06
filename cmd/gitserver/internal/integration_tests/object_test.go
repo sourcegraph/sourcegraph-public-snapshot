@@ -5,10 +5,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetObject(t *testing.T) {
@@ -51,37 +49,9 @@ func TestGetObject(t *testing.T) {
 		})
 	}
 
-	t.Run("gRPC", func(t *testing.T) {
-		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EnableGRPC: boolPointer(true),
-				},
-			},
-		})
-		for label, test := range tests {
-			source := gitserver.NewTestClientSource(t, GitserverAddresses)
-			cli := gitserver.NewTestClient(t).WithClientSource(source)
-			runTest(t, label, test, cli)
-		}
-	})
-
-	t.Run("HTTP", func(t *testing.T) {
-		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EnableGRPC: boolPointer(false),
-				},
-			},
-		})
-		for label, test := range tests {
-			source := gitserver.NewTestClientSource(t, GitserverAddresses)
-			cli := gitserver.NewTestClient(t).WithClientSource(source)
-			runTest(t, label, test, cli)
-		}
-	})
-}
-
-func boolPointer(b bool) *bool {
-	return &b
+	for label, test := range tests {
+		source := gitserver.NewTestClientSource(t, GitserverAddresses)
+		cli := gitserver.NewTestClient(t).WithClientSource(source)
+		runTest(t, label, test, cli)
+	}
 }

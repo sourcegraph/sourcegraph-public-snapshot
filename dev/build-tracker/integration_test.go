@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -15,8 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/team"
 )
 
-var RunSlackIntegrationTest = flag.Bool("RunSlackIntegrationTest", false, "Run Slack integration tests")
-var RunGitHubIntegrationTest = flag.Bool("RunGitHubIntegrationTest", false, "Run Github integration tests")
+var (
+	RunSlackIntegrationTest  = flag.Bool("RunSlackIntegrationTest", false, "Run Slack integration tests")
+	RunGitHubIntegrationTest = flag.Bool("RunGitHubIntegrationTest", false, "Run Github integration tests")
+)
 
 type TestJobLine struct {
 	title string
@@ -34,7 +37,10 @@ func (l *TestJobLine) LogURL() string {
 func newJob(t *testing.T, name string, exit int) *build.Job {
 	t.Helper()
 
-	state := build.JobFinishedState
+	state := build.JobFailedState
+	if exit == 0 {
+		state = build.JobPassedState
+	}
 	return &build.Job{
 		Job: buildkite.Job{
 			Name:       &name,
@@ -54,7 +60,7 @@ func TestLargeAmountOfFailures(t *testing.T) {
 		BuildNumber:        num,
 		ConsecutiveFailure: 0,
 		PipelineName:       pipelineID,
-		AuthorEmail:        "william.bezuidenhout@sourcegraph.com",
+		AuthorName:         "william.bezuidenhout@sourcegraph.com",
 		Message:            msg,
 		Commit:             commit,
 		BuildURL:           url,
@@ -75,14 +81,9 @@ func TestLargeAmountOfFailures(t *testing.T) {
 	}
 	logger := logtest.NoOp(t)
 
-	conf, err := config.NewFromEnv()
-	if err != nil {
-		t.Fatal(err)
-	}
+	client := notify.NewClient(logger, os.Getenv("SLACK_TOKEN"), config.DefaultChannel)
 
-	client := notify.NewClient(logger, conf.SlackToken, conf.GithubToken, config.DefaultChannel)
-
-	err = client.Send(info)
+	err := client.Send(info)
 	if err != nil {
 		t.Fatalf("failed to send build: %s", err)
 	}
@@ -117,14 +118,9 @@ func TestGetTeammateFromBuild(t *testing.T) {
 	}
 
 	logger := logtest.NoOp(t)
-	conf, err := config.NewFromEnv()
-	if err != nil {
-		t.Fatal(err)
-	}
-	conf.SlackChannel = config.DefaultChannel
 
 	t.Run("with nil author, commit author is still retrieved", func(t *testing.T) {
-		client := notify.NewClient(logger, conf.SlackToken, conf.GithubToken, conf.SlackChannel)
+		client := notify.NewClient(logger, os.Getenv("SLACK_TOKEN"), config.DefaultChannel)
 
 		num := 160000
 		commit := "ca7c44f79984ff8d645b580bfaaf08ce9a37a05d"
@@ -138,7 +134,7 @@ func TestGetTeammateFromBuild(t *testing.T) {
 				Number: &num,
 				Commit: &commit,
 			},
-			Pipeline: &build.Pipeline{buildkite.Pipeline{
+			Pipeline: &build.Pipeline{Pipeline: buildkite.Pipeline{
 				Name: &pipelineID,
 			}},
 			Steps: map[string]*build.Step{},
@@ -150,7 +146,7 @@ func TestGetTeammateFromBuild(t *testing.T) {
 		require.Equal(t, teammate.Name, "Leo Papaloizos")
 	})
 	t.Run("commit author preferred over build author", func(t *testing.T) {
-		client := notify.NewClient(logger, conf.SlackToken, conf.GithubToken, conf.SlackChannel)
+		client := notify.NewClient(logger, os.Getenv("SLACK_TOKEN"), config.DefaultChannel)
 
 		num := 160000
 		commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
@@ -168,7 +164,7 @@ func TestGetTeammateFromBuild(t *testing.T) {
 					Email: "william.bezuidenhout@sourcegraph.com",
 				},
 			},
-			Pipeline: &build.Pipeline{buildkite.Pipeline{
+			Pipeline: &build.Pipeline{Pipeline: buildkite.Pipeline{
 				Name: &pipelineID,
 			}},
 			Steps: map[string]*build.Step{},
@@ -179,7 +175,7 @@ func TestGetTeammateFromBuild(t *testing.T) {
 		require.Equal(t, teammate.Name, "Ryan Slade")
 	})
 	t.Run("retrieving teammate for build populates cache", func(t *testing.T) {
-		client := notify.NewClient(logger, conf.SlackToken, conf.GithubToken, conf.SlackChannel)
+		client := notify.NewClient(logger, os.Getenv("SLACK_TOKEN"), config.DefaultChannel)
 
 		num := 160000
 		commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
@@ -197,7 +193,7 @@ func TestGetTeammateFromBuild(t *testing.T) {
 					Email: "william.bezuidenhout@sourcegraph.com",
 				},
 			},
-			Pipeline: &build.Pipeline{buildkite.Pipeline{
+			Pipeline: &build.Pipeline{Pipeline: buildkite.Pipeline{
 				Name: &pipelineID,
 			}},
 			Steps: map[string]*build.Step{},
@@ -216,12 +212,7 @@ func TestSlackNotification(t *testing.T) {
 	}
 	logger := logtest.NoOp(t)
 
-	conf, err := config.NewFromEnv()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	client := notify.NewClient(logger, conf.SlackToken, conf.GithubToken, config.DefaultChannel)
+	client := notify.NewClient(logger, os.Getenv("SLACK_TOKEN"), config.DefaultChannel)
 
 	// Each child test needs to increment this number, otherwise notifications will be overwritten
 	buildNumber := 160000
@@ -261,7 +252,7 @@ func TestSlackNotification(t *testing.T) {
 			":four: fake step":  build.NewStepFromJob(newJob(t, ":four: fake step", exit)),
 		}
 
-		info := determineBuildStatusNotification(b)
+		info := determineBuildStatusNotification(logtest.NoOp(t), b)
 		err := client.Send(info)
 		if err != nil {
 			t.Fatalf("failed to send slack notification: %v", err)
@@ -289,7 +280,7 @@ func TestSlackNotification(t *testing.T) {
 		}
 
 		// post a new notification
-		info := determineBuildStatusNotification(b)
+		info := determineBuildStatusNotification(logtest.NoOp(t), b)
 		err := client.Send(info)
 		if err != nil {
 			t.Fatalf("failed to send slack notification: %v", err)
@@ -300,7 +291,7 @@ func TestSlackNotification(t *testing.T) {
 		}
 		// now update the notification with additional jobs that failed
 		b.AddJob(newJob(t, ":alarm_clock: delayed job", exit))
-		info = determineBuildStatusNotification(b)
+		info = determineBuildStatusNotification(logtest.NoOp(t), b)
 		err = client.Send(info)
 		if err != nil {
 			t.Fatalf("failed to send slack notification: %v", err)
@@ -324,7 +315,7 @@ func TestSlackNotification(t *testing.T) {
 		}
 
 		// post a new notification
-		info := determineBuildStatusNotification(b)
+		info := determineBuildStatusNotification(logtest.NoOp(t), b)
 		err := client.Send(info)
 		if err != nil {
 			t.Fatalf("failed to send slack notification: %v", err)
@@ -335,17 +326,17 @@ func TestSlackNotification(t *testing.T) {
 		}
 
 		b.AddJob(newJob(t, ":alarm: outlier", 1))
-		info = determineBuildStatusNotification(b)
+		info = determineBuildStatusNotification(logtest.NoOp(t), b)
 		err = client.Send(info)
 		if err != nil {
 			t.Fatalf("failed to send slack notification: %v", err)
 		}
 
 		// now add a bunch
-		for i := 0; i < 5; i++ {
+		for i := range 5 {
 			b.AddJob(newJob(t, fmt.Sprintf(":alarm_clock: delayed job %d", i), exit))
 		}
-		info = determineBuildStatusNotification(b)
+		info = determineBuildStatusNotification(logtest.NoOp(t), b)
 		err = client.Send(info)
 		if err != nil {
 			t.Fatalf("failed to send slack notification: %v", err)
@@ -364,7 +355,7 @@ func TestSlackNotification(t *testing.T) {
 		}
 
 		// post a new notification
-		info := determineBuildStatusNotification(b)
+		info := determineBuildStatusNotification(logtest.NoOp(t), b)
 		err := client.Send(info)
 		if err != nil {
 			t.Fatalf("failed to send slack notification: %v", err)
@@ -378,7 +369,7 @@ func TestSlackNotification(t *testing.T) {
 		for _, s := range b.Steps {
 			b.AddJob(newJob(t, s.Name, 0))
 		}
-		info = determineBuildStatusNotification(b)
+		info = determineBuildStatusNotification(logtest.NoOp(t), b)
 		if info.BuildStatus != string(build.BuildFixed) {
 			t.Errorf("all jobs are fixed, build status should be fixed")
 		}
@@ -403,7 +394,7 @@ func TestSlackNotification(t *testing.T) {
 		}
 
 		// post a new notification
-		info := determineBuildStatusNotification(b)
+		info := determineBuildStatusNotification(logtest.NoOp(t), b)
 		err := client.Send(info)
 		if err != nil {
 			t.Fatalf("failed to send slack notification: %v", err)
@@ -421,7 +412,7 @@ func TestSlackNotification(t *testing.T) {
 			}
 			count++
 		}
-		info = determineBuildStatusNotification(b)
+		info = determineBuildStatusNotification(logtest.NoOp(t), b)
 		if info.BuildStatus != string(build.BuildFailed) {
 			t.Errorf("some jobs are still failed so overall build status should be Failed")
 		}
@@ -439,12 +430,13 @@ func TestServerNotify(t *testing.T) {
 	}
 	logger := logtest.NoOp(t)
 
-	conf, err := config.NewFromEnv()
-	if err != nil {
-		t.Fatal(err)
+	conf := config.Config{
+		BuildkiteWebhookToken: os.Getenv("BUILDKITE_WEBHOOK_TOKEN"),
+		SlackToken:            os.Getenv("SLACK_TOKEN"),
+		SlackChannel:          os.Getenv("SLACK_CHANNEL"),
 	}
 
-	server := NewServer(logger, *conf)
+	server := NewServer(":8080", logger, conf)
 
 	num := 160000
 	url := "http://www.google.com"
@@ -471,7 +463,7 @@ func TestServerNotify(t *testing.T) {
 			URL:    &url,
 			Commit: &commit,
 		},
-		Pipeline: &build.Pipeline{buildkite.Pipeline{
+		Pipeline: &build.Pipeline{Pipeline: buildkite.Pipeline{
 			Name: &pipelineID,
 		}},
 		Steps: map[string]*build.Step{
@@ -480,7 +472,7 @@ func TestServerNotify(t *testing.T) {
 	}
 
 	// post a new notification
-	err = server.notifyIfFailed(build)
+	err := server.notifyIfFailed(build)
 	if err != nil {
 		t.Fatalf("failed to send slack notification: %v", err)
 	}

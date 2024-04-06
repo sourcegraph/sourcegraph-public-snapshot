@@ -181,8 +181,8 @@ func NewInserterWithReturn(
 		db:                   db,
 		numColumns:           numColumns,
 		maxNumValues:         maxNumValues,
-		values:               make([]any, 0, maxNumValues),
-		cumulativeValueSizes: make([]int, 0, maxNumValues),
+		values:               nil,
+		cumulativeValueSizes: nil,
 		queryPrefix:          queryPrefix,
 		querySuffix:          querySuffix,
 		onConflictSuffix:     onConflictSuffix,
@@ -384,7 +384,7 @@ func makeQuerySuffix(numColumns, maxNumParameters int) string {
 	qs := []byte{
 		',', // Start with trailing comma for processing uniformity
 	}
-	for i := 0; i < maxNumParameters; i++ {
+	for i := range maxNumParameters {
 		if i%numColumns == 0 {
 			// Replace previous `,` with `),(`
 			qs[len(qs)-1] = ')'

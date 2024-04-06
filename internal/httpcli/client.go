@@ -24,11 +24,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/hostmatcher"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -101,7 +103,7 @@ var ExternalClientFactory = NewExternalClientFactory()
 // UncachedExternalClientFactory is a httpcli.Factory with common options
 // and middleware pre-set for communicating with external services, but with caching
 // responses disabled.
-var UncachedExternalClientFactory = newExternalClientFactory(false)
+var UncachedExternalClientFactory = newExternalClientFactory(false, false)
 
 var (
 	externalTimeout, _               = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_TIMEOUT", "5m", "Timeout for external HTTP requests"))
@@ -109,6 +111,7 @@ var (
 	externalRetryDelayMax, _         = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_MAX", "3s", "Max retry delay duration for external HTTP requests"))
 	externalRetryMaxAttempts, _      = strconv.Atoi(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for external HTTP requests"))
 	externalRetryAfterMaxDuration, _ = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION", "3s", "Max duration to wait in retry-after header before we won't auto-retry"))
+	codyGatewayDisableHTTP2          = env.MustGetBool("SRC_HTTP_CLI_DISABLE_CODY_GATEWAY_HTTP2", false, "Whether we should disable HTTP2 for Cody Gateway communication")
 )
 
 // NewExternalClientFactory returns a httpcli.Factory with common options
@@ -118,7 +121,7 @@ var (
 // use them for one-off requests if possible, and definitely not for larger payloads,
 // like downloading arbitrarily sized files!
 func NewExternalClientFactory(middleware ...Middleware) *Factory {
-	return newExternalClientFactory(true, middleware...)
+	return newExternalClientFactory(true, false, middleware...)
 }
 
 // NewExternalClientFactory returns a httpcli.Factory with common options
@@ -126,24 +129,33 @@ func NewExternalClientFactory(middleware ...Middleware) *Factory {
 // middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
 // If cache is true, responses will be cached in redis for improved rate limiting
 // and reduced byte transfer sizes.
-func newExternalClientFactory(cache bool, middleware ...Middleware) *Factory {
+// If testOpt is true, a test-only transport option will be used that does not have
+// any IP restrictions for external requests.
+func newExternalClientFactory(cache bool, testOpt bool, middleware ...Middleware) *Factory {
 	mw := []Middleware{
 		ContextErrorMiddleware,
 		HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
 		redisLoggerMiddleware(),
+		externalRequestCountMetricsMiddleware,
 	}
 	mw = append(mw, middleware...)
 
+	externalTransportOpt := ExternalTransportOpt
+	if testOpt {
+		externalTransportOpt = TestExternalTransportOpt
+	}
+
 	opts := []Opt{
 		NewTimeoutOpt(externalTimeout),
-		// ExternalTransportOpt needs to be before TracedTransportOpt and
+		// externalTransportOpt needs to be before TracedTransportOpt and
 		// NewCachedTransportOpt since it wants to extract a http.Transport,
 		// not a generic http.RoundTripper.
-		ExternalTransportOpt,
+		externalTransportOpt,
 		NewErrorResilientTransportOpt(
 			NewRetryPolicy(MaxRetries(externalRetryMaxAttempts), externalRetryAfterMaxDuration),
 			ExpJitterDelayOrRetryAfterDelay(externalRetryDelayBase, externalRetryDelayMax),
 		),
+		RequestInteractionTransportOpt,
 		TracedTransportOpt,
 	}
 	if cache {
@@ -167,6 +179,23 @@ var ExternalDoer, _ = ExternalClientFactory.Doer()
 // convenience for existing uses of http.DefaultClient.
 // This client does not cache responses. To cache responses see ExternalDoer instead.
 var UncachedExternalDoer, _ = UncachedExternalClientFactory.Doer()
+
+// CodyGatewayDoer is a client for communication with Cody Gateway.
+// This client does not cache responses.
+var CodyGatewayDoer, _ = UncachedExternalClientFactory.Doer(NewDisableHTTP2Opt(codyGatewayDisableHTTP2))
+
+// TestExternalClientFactory is a httpcli.Factory with common options
+// and is created for tests where you'd normally use an ExternalClientFactory.
+// Must be used in tests only as it doesn't apply any IP restrictions.
+var TestExternalClientFactory = newExternalClientFactory(false, true)
+
+// TestExternalClient is a shared client for external communication.
+// It does not apply any IP filering and must only be used in tests.
+var TestExternalClient, _ = TestExternalClientFactory.Client()
+
+// TestExternalDoer is a shared client for testing external communications.
+// It does not apply any IP filering and must only be used in tests.
+var TestExternalDoer, _ = TestExternalClientFactory.Doer()
 
 // ExternalClient returns a shared client for external communication. This is
 // a convenience for existing uses of http.DefaultClient.
@@ -212,6 +241,7 @@ func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Facto
 		MeteredTransportOpt(subsystem),
 		ActorTransportOpt,
 		RequestClientTransportOpt,
+		RequestInteractionTransportOpt,
 		TracedTransportOpt,
 	)
 }
@@ -370,19 +400,62 @@ func NewLoggingMiddleware(logger log.Logger) Middleware {
 	}
 }
 
-//
 // Common Opts
-//
+var externalDenyList = env.Get("EXTERNAL_DENY_LIST", "", "Deny list for outgoing requests")
+
+type denyRule struct {
+	pattern string
+	builtin string
+}
+
+var defaultDenylist = []denyRule{
+	{builtin: "loopback"},
+	{pattern: "169.254.169.254"},
+}
+
+var localDevDenylist = []denyRule{
+	{pattern: "169.254.169.254"},
+}
+
+// TestTransportOpt creates a transport for tests that does not apply any denylisting
+func TestExternalTransportOpt(cli *http.Client) error {
+	tr, err := getTransportForMutation(cli)
+	if err != nil {
+		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
+	}
+
+	cli.Transport = &externalTransport{base: tr}
+	return nil
+}
 
 // ExternalTransportOpt returns an Opt that ensures the http.Client.Transport
 // can contact non-Sourcegraph services. For example Admins can configure
-// TLS/SSL settings.
+// TLS/SSL settings. This adds filtering for external requests based on
+// predefined deny lists. Can be extended using the EXTERNAL_DENY_LIST
+// environment variable.
 func ExternalTransportOpt(cli *http.Client) error {
 	tr, err := getTransportForMutation(cli)
 	if err != nil {
 		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
 	}
 
+	var denyMatchList = hostmatcher.ParseHostMatchList("EXTERNAL_DENY_LIST", externalDenyList)
+
+	denyList := defaultDenylist
+	if env.InsecureDev {
+		denyList = localDevDenylist
+	}
+
+	for _, rule := range denyList {
+		if rule.builtin != "" {
+			denyMatchList.AppendBuiltin(rule.builtin)
+		} else if rule.pattern != "" {
+			denyMatchList.AppendPattern(rule.pattern)
+		}
+	}
+
+	// this dialer will match resolved domain names against the deny list
+	tr.DialContext = hostmatcher.NewDialContext("", nil, denyMatchList)
 	cli.Transport = &externalTransport{base: tr}
 	return nil
 }
@@ -492,6 +565,43 @@ var metricRetry = promauto.NewCounter(prometheus.CounterOpts{
 	Help: "Total number of times we retry HTTP requests.",
 })
 
+var metricExternalRequestCount = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_http_client_external_request_count",
+	Help: "Count of external HTTP requests made by the Sourcegraph HTTP client.",
+}, []string{"host", "method", "status_code"})
+
+func externalRequestCountMetricsMiddleware(next Doer) Doer {
+	return doExternalRequestCountMetricsMiddleware(next, func(host, method string, statusCode int) {
+		code := strconv.Itoa(statusCode)
+		metricExternalRequestCount.WithLabelValues(host, method, code).Inc()
+	})
+}
+
+func doExternalRequestCountMetricsMiddleware(next Doer, observe func(host, method string, statusCode int)) Doer {
+	return DoerFunc(func(req *http.Request) (*http.Response, error) {
+		host := "<unknown>"
+		if req.Host != "" {
+			host = req.Host
+		} else if u := req.URL; u != nil && u.Host != "" {
+			host = u.Host
+		}
+
+		method := req.Method
+
+		var statusCode int
+
+		resp, err := next.Do(req)
+		if err != nil {
+			statusCode = -1 // -1 indicates unknown status code if an error occurred
+		} else {
+			statusCode = resp.StatusCode
+		}
+
+		observe(host, method, statusCode)
+		return resp, err
+	})
+}
+
 // A regular expression to match the error returned by net/http when the
 // configured number of redirects is exhausted. This error isn't typed
 // specifically so we resort to matching on the error string.
@@ -578,7 +688,7 @@ func NewRetryPolicy(max int, maxRetryAfterDuration time.Duration) rehttp.RetryFn
 			return false
 		default:
 			// Don't retry more than 3 times for no such host errors.
-			// This affords some resilience to dns unreliability while
+			// This affords some resilience to DNS unreliability while
 			// preventing 20 attempts with a non existing name.
 			var dnsErr *net.DNSError
 			if a.Index >= 3 && errors.As(a.Error, &dnsErr) && dnsErr.IsNotFound {
@@ -760,6 +870,22 @@ func NewMaxIdleConnsPerHostOpt(max int) Opt {
 	}
 }
 
+// NewDisableHTTP2Opt returns an Opt that makes the http.Client use HTTP/1.1 (instead of defaulting to HTTP/2).
+func NewDisableHTTP2Opt(disable bool) Opt {
+	return func(cli *http.Client) error {
+		tr, err := getTransportForMutation(cli)
+		if err != nil {
+			return errors.Wrap(err, "httpcli.NewDisableHTTP2Opt")
+		}
+		if disable {
+			tr.ForceAttemptHTTP2 = false
+			tr.TLSNextProto = make(map[string]func(authority string, c *tls.Conn) http.RoundTripper)
+			tr.TLSClientConfig = &tls.Config{}
+		}
+		return nil
+	}
+}
+
 // NewTimeoutOpt returns a Opt that sets the Timeout field of an http.Client.
 func NewTimeoutOpt(timeout time.Duration) Opt {
 	return func(cli *http.Client) error {
@@ -834,6 +960,19 @@ func RequestClientTransportOpt(cli *http.Client) error {
 
 	cli.Transport = &wrappedTransport{
 		RoundTripper: &requestclient.HTTPTransport{RoundTripper: cli.Transport},
+		Wrapped:      cli.Transport,
+	}
+
+	return nil
+}
+
+func RequestInteractionTransportOpt(cli *http.Client) error {
+	if cli.Transport == nil {
+		cli.Transport = http.DefaultTransport
+	}
+
+	cli.Transport = &wrappedTransport{
+		RoundTripper: &requestinteraction.HTTPTransport{RoundTripper: cli.Transport},
 		Wrapped:      cli.Transport,
 	}
 

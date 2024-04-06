@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"golang.org/x/exp/maps"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -42,6 +45,10 @@ type Stack struct {
 	// at generation time.
 	DynamicVariables TFVars
 }
+
+// Locals allows stack options to add local variables for reference in custom
+// Terraform and outputs.
+func (s Stack) Locals() *StackLocals { return &StackLocals{s} }
 
 // Set collects the stacks that comprise a CDKTF application.
 type Set struct {
@@ -80,20 +87,58 @@ func NewSet(renderDir string, opts ...NewStackOption) *Set {
 // local variables for reference by custom resources.
 type StackLocals struct{ s Stack }
 
+// MetadataKeyStackLocalsGSMProjectID, if set on stack.Metadata, configures
+// StackLocals to also add locals to GSM in the given project.
+const MetadataKeyStackLocalsGSMProjectID = "locals_gsm_project_id"
+
 // Add renders a non-sensitive key-value pair as part of the workspace outputs,
 // under the resource ID 'output-${name}'.
 //
 // The value is also available to locals under '${name}', so that they can
 // accessed under 'local.${name}' in custom resources.
-func (l *StackLocals) Add(name string, value any, description string) {
+//
+// If a StackOption is used to create the stack that configures
+// MetadataKeyStackLocalsGSMProjectID, then the added value will also be stored
+// in GSM. This allows tooling to access stack outputs and locals from GSM.
+func (l *StackLocals) Add(name string, value string, description string) {
+	id := resourceid.New("output")
 	_ = cdktf.NewTerraformOutput(l.s.Stack,
-		resourceid.New("output").TerraformID(name),
+		id.TerraformID(name),
 		&cdktf.TerraformOutputConfig{
 			Value:       value,
 			Sensitive:   pointers.Ptr(false),
 			Description: &description,
 		})
 	_ = cdktf.NewTerraformLocal(l.s.Stack, &name, value)
+
+	l.maybeEmitToGSM(id, name, value)
+}
+
+// AddSlice is the same as Add, but accepts a slice instead. The value is
+// represented as a comma-separated string in GSM.
+func (l *StackLocals) AddSlice(name string, value []string, description string) {
+	id := resourceid.New("output")
+	_ = cdktf.NewTerraformOutput(l.s.Stack,
+		id.TerraformID(name),
+		&cdktf.TerraformOutputConfig{
+			Value:       value,
+			Sensitive:   pointers.Ptr(false),
+			Description: &description,
+		})
+	_ = cdktf.NewTerraformLocal(l.s.Stack, &name, value)
+
+	l.maybeEmitToGSM(id, name, strings.Join(value, ","))
+}
+
+func (l *StackLocals) maybeEmitToGSM(id resourceid.ID, name, value string) {
+	// If MetadataKeyStackLocalsGSMProjectID is set, emit to GSM
+	if project, ok := l.s.Metadata[MetadataKeyStackLocalsGSMProjectID]; ok {
+		_ = gsmsecret.New(l.s.Stack, id.Group("gsm").Group(name), gsmsecret.Config{
+			ID:        stacks.OutputSecretID(l.s.Name, name),
+			ProjectID: project,
+			Value:     value,
+		})
+	}
 }
 
 // New creates a new stack belonging to this set.
@@ -125,3 +170,9 @@ func ExtractApp(set *Set) cdktf.App { return set.app }
 // It is intentionally not part of the stack.Set interface as it should not
 // generally be needed.
 func ExtractStacks(set *Set) []Stack { return set.stacks }
+
+// ExtractStacks returns the "current" (last) stack in this stack.Set.
+//
+// It is intentionally not part of the stack.Set interface as it should not
+// generally be needed.
+func ExtractCurrentStack(set *Set) Stack { return set.stacks[len(set.stacks)-1] }

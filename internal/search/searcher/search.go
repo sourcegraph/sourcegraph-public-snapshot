@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -22,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -40,6 +38,8 @@ type TextSearchJob struct {
 	// to communicate whether searcher should call Zoekt search on these
 	// repos).
 	Indexed bool
+
+	NumContextLines int
 
 	// UseFullDeadline indicates that the search should try do as much work as
 	// it can within context.Deadline. If false the search should try and be
@@ -110,7 +110,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.Gitserver, clients.SearcherURLs, clients.SearcherGRPCConnectionCache, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.Gitserver, clients.SearcherURLs, clients.SearcherGRPCConnectionCache, repo, repo.Name, rev, s.Indexed, s.PatternInfo, s.NumContextLines, fetchTimeout, stream)
 					if err != nil {
 						tr.SetAttributes(
 							repo.Name.Attr(),
@@ -120,11 +120,11 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 						clients.Logger.Warn("searchFilesInRepo failed", log.Error(err), log.String("repo", string(repo.Name)))
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
-					status, limitHit, err := search.HandleRepoSearchResult(repo.ID, []string{rev}, repoLimitHit, false, err)
+					status, err := search.HandleRepoSearchResult(repo.ID, []string{rev}, repoLimitHit, false, err)
 					stream.Send(streaming.SearchEvent{
 						Stats: streaming.Stats{
 							Status:     status,
-							IsLimitHit: limitHit,
+							IsLimitHit: repoLimitHit,
 						},
 					})
 					return err
@@ -183,6 +183,7 @@ func (s *TextSearchJob) searchFilesInRepo(
 	rev string,
 	index bool,
 	info *search.TextPatternInfo,
+	contextLines int,
 	fetchTimeout time.Duration,
 	stream streaming.Sender,
 ) (bool, error) {
@@ -199,96 +200,13 @@ func (s *TextSearchJob) searchFilesInRepo(
 		return false, err
 	}
 
-	if conf.IsGRPCEnabled(ctx) {
-		onMatches := func(searcherMatch *proto.FileMatch) {
-			stream.Send(streaming.SearchEvent{
-				Results: []result.Match{convertProtoMatch(repo, commit, &rev, searcherMatch, s.PathRegexps)},
-			})
-		}
-
-		return SearchGRPC(ctx, searcherURLs, searcherGRPCConnectionCache, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatches)
-	}
-
-	onMatches := func(searcherMatches []*protocol.FileMatch) {
+	onMatch := func(searcherMatch *protocol.FileMatch) {
 		stream.Send(streaming.SearchEvent{
-			Results: convertMatches(repo, commit, &rev, searcherMatches, s.PathRegexps),
+			Results: convertMatches(repo, commit, &rev, []*protocol.FileMatch{searcherMatch}, s.PathRegexps),
 		})
 	}
 
-	onMatchGRPC := func(searcherMatch *proto.FileMatch) {
-		stream.Send(streaming.SearchEvent{
-			Results: []result.Match{convertProtoMatch(repo, commit, &rev, searcherMatch, s.PathRegexps)},
-		})
-	}
-
-	if conf.IsGRPCEnabled(ctx) {
-		return SearchGRPC(ctx, searcherURLs, searcherGRPCConnectionCache, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatchGRPC)
-	} else {
-		return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatches)
-	}
-}
-
-func convertProtoMatch(repo types.MinimalRepo, commit api.CommitID, rev *string, fm *proto.FileMatch, pathRegexps []*regexp.Regexp) result.Match {
-	chunkMatches := make(result.ChunkMatches, 0, len(fm.GetChunkMatches()))
-	for _, cm := range fm.GetChunkMatches() {
-		ranges := make(result.Ranges, 0, len(cm.GetRanges()))
-		for _, rr := range cm.Ranges {
-			ranges = append(ranges, result.Range{
-				Start: result.Location{
-					Offset: int(rr.GetStart().GetOffset()),
-					Line:   int(rr.GetStart().GetLine()),
-					Column: int(rr.GetStart().GetColumn()),
-				},
-				End: result.Location{
-					Offset: int(rr.GetEnd().GetOffset()),
-					Line:   int(rr.GetEnd().GetLine()),
-					Column: int(rr.GetEnd().GetColumn()),
-				},
-			})
-		}
-
-		chunkMatches = append(chunkMatches, result.ChunkMatch{
-			Content: string(cm.GetContent()),
-			ContentStart: result.Location{
-				Offset: int(cm.GetContentStart().GetOffset()),
-				Line:   int(cm.GetContentStart().GetLine()),
-				Column: 0,
-			},
-			Ranges: ranges,
-		})
-
-	}
-
-	var pathMatches []result.Range
-	for _, pathRe := range pathRegexps {
-		pathSubmatches := pathRe.FindAllStringSubmatchIndex(string(fm.GetPath()), -1)
-		for _, sm := range pathSubmatches {
-			pathMatches = append(pathMatches, result.Range{
-				Start: result.Location{
-					Offset: sm[0],
-					Line:   0,
-					Column: utf8.RuneCountInString(string(fm.GetPath()[:sm[0]])),
-				},
-				End: result.Location{
-					Offset: sm[1],
-					Line:   0,
-					Column: utf8.RuneCountInString(string(fm.GetPath()[:sm[1]])),
-				},
-			})
-		}
-	}
-
-	return &result.FileMatch{
-		File: result.File{
-			Path:     string(fm.GetPath()),
-			Repo:     repo,
-			CommitID: commit,
-			InputRev: rev,
-		},
-		ChunkMatches: chunkMatches,
-		PathMatches:  pathMatches,
-		LimitHit:     fm.GetLimitHit(),
-	}
+	return Search(ctx, searcherURLs, searcherGRPCConnectionCache, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, contextLines, onMatch)
 }
 
 // convert converts a set of searcher matches into []result.Match
@@ -350,6 +268,8 @@ func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, se
 				Repo:     repo,
 				CommitID: commit,
 				InputRev: rev,
+				// Pass on the detected language. It's not always available and may be empty.
+				PreciseLanguage: fm.Language,
 			},
 			ChunkMatches: chunkMatches,
 			PathMatches:  pathMatches,

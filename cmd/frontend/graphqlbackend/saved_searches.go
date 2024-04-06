@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -157,25 +156,22 @@ func (s *savedSearchesConnectionStore) MarshalCursor(node *savedSearchResolver, 
 	return &cursor, nil
 }
 
-func (s *savedSearchesConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *savedSearchesConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
 	nodeID, err := unmarshalSavedSearchID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
 
-	id := strconv.Itoa(int(nodeID))
-
-	return &id, nil
+	return []any{nodeID}, nil
 }
 
-func (s *savedSearchesConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (s *savedSearchesConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
 	count, err := s.db.SavedSearches().CountSavedSearchesByOrgOrUser(ctx, s.userID, s.orgID)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	total := int32(count)
-	return &total, nil
+	return int32(count), nil
 }
 
 func (s *savedSearchesConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*savedSearchResolver, error) {
@@ -331,10 +327,10 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-var patternType = lazyregexp.New(`(?i)\bpatternType:(literal|regexp|structural|standard)\b`)
+var patternType = lazyregexp.New(`(?i)\bpatternType:(literal|regexp|structural|standard|keyword)\b`)
 
 func queryHasPatternType(query string) bool {
 	return patternType.Match([]byte(query))
 }
 
-var errMissingPatternType = errors.New("a `patternType:` filter is required in the query for all saved searches. `patternType` can be \"standard\", \"literal\", \"regexp\" or \"structural\"")
+var errMissingPatternType = errors.New("a `patternType:` filter is required in the query for all saved searches. `patternType` can be \"keyword\", \"standard\", \"literal\", or \"regexp\"")

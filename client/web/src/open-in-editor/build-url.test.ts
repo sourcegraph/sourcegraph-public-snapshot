@@ -310,7 +310,7 @@ describe('buildEditorUrl tests', () => {
         it('builds the right "Learn more" URL', () => {
             expect(() => {
                 buildEditorUrl(defaultPath, defaultPosition, { editorIds: ['vscode'] }, baseUrl)
-            }).toThrow(/https:\/\/docs\.sourcegraph\.com\/integration\/open_in_editor/)
+            }).toThrow(/https:\/\/sourcegraph\.com\/docs\/integration\/open_in_editor/)
         })
     })
 })

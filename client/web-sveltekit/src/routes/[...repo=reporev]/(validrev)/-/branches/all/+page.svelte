@@ -1,34 +1,36 @@
 <script lang="ts">
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import GitReference from '$lib/repo/GitReference.svelte'
-    import { createPromiseStore } from '$lib/utils'
 
     import type { PageData } from './$types'
+    import { Alert } from '$lib/wildcard'
 
     export let data: PageData
-
-    const { pending, value: branches, set } = createPromiseStore<PageData['deferred']['branches']>()
-    $: set(data.deferred.branches)
-    $: nodes = $branches?.nodes
-    $: total = $branches?.totalCount
 </script>
 
-{#if $pending}
+<svelte:head>
+    <title>All branches - {data.displayRepoName} - Sourcegraph</title>
+</svelte:head>
+
+{#await data.branches}
     <LoadingSpinner />
-{:else if nodes}
+{:then branches}
     <!-- TODO: Search input to filter branches by name -->
     <!-- TODO: Pagination -->
     <table>
         <tbody>
-            {#each nodes as node (node.id)}
+            {#each branches.nodes as node (node.id)}
                 <GitReference ref={node} />
             {/each}
         </tbody>
     </table>
-    {#if total !== null}
-        <small class="text-muted">{total} branches total</small>
-    {/if}
-{/if}
+    <small class="text-muted">{branches.totalCount} branches total</small>
+{:catch error}
+    <Alert variant="danger">
+        Unable to fetch branches information:
+        {error.message}
+    </Alert>
+{/await}
 
 <style lang="scss">
     table {

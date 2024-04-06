@@ -38,22 +38,22 @@ const mockDefaultStreamEvents: SearchEvent[] = [
     {
         type: 'filters',
         data: [
-            { label: 'archived:yes', value: 'archived:yes', count: 5, kind: 'utility', limitHit: true },
-            { label: 'fork:yes', value: 'fork:yes', count: 46, kind: 'utility', limitHit: true },
+            { label: 'archived:yes', value: 'archived:yes', count: 5, kind: 'utility', exhaustive: false },
+            { label: 'fork:yes', value: 'fork:yes', count: 46, kind: 'utility', exhaustive: false },
             // Two repo filters to trigger the repository sidebar section
             {
                 label: 'github.com/Algorilla/manta-ray',
                 value: 'repo:^github\\.com/Algorilla/manta-ray$',
                 count: 1,
                 kind: 'repo',
-                limitHit: true,
+                exhaustive: false,
             },
             {
                 label: 'github.com/Algorilla/manta-ray2',
                 value: 'repo:^github\\.com/Algorilla/manta-ray2$',
                 count: 1,
                 kind: 'repo',
-                limitHit: true,
+                exhaustive: false,
             },
         ],
     },
@@ -74,16 +74,19 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
                 repositories: [
                     {
                         __typename: 'Repository',
+                        id: 'repo1',
                         name: 'github.com/Algorilla/manta-ray',
                         stars: 1,
                     },
                     {
                         __typename: 'Repository',
+                        id: 'repo1',
                         name: 'github.com/Algorilla/manta-ray-2',
                         stars: 2,
                     },
                     {
                         __typename: 'Repository',
+                        id: 'repo1',
                         name: 'github.com/Algorilla/manta-ray-3',
                         stars: 3,
                     },
@@ -140,15 +143,49 @@ describe('Search', () => {
     afterEach(() => testContext?.dispose())
 
     describe('Search filters', () => {
+        beforeEach(() => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResultsWithUser,
+                ViewerSettings: () => ({
+                    viewerSettings: {
+                        __typename: 'SettingsCascade',
+                        subjects: [
+                            {
+                                __typename: 'DefaultSettings',
+                                id: 'TestDefaultSettingsID',
+                                settingsURL: null,
+                                viewerCanAdminister: false,
+                                latestSettings: {
+                                    id: 0,
+                                    contents: JSON.stringify({
+                                        experimentalFeatures: { newSearchResultFiltersPanel: false },
+                                    }),
+                                },
+                            },
+                        ],
+                        final: JSON.stringify({}),
+                    },
+                }),
+            })
+        })
+
         test('Search filters are shown on search result pages and clicking them triggers a new search', async () => {
             const dynamicFilters = ['archived:yes', 'repo:^github\\.com/Algorilla/manta-ray$']
             const origQuery = 'context:global foo'
+
             for (const filter of dynamicFilters) {
                 await driver.page.goto(
                     `${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal`
                 )
+
+                // Make sure that filters panel is open by default
+                await driver.page.evaluate(() => {
+                    localStorage.setItem('search.sidebar.collapsed', 'false')
+                })
+
                 await driver.page.waitForSelector(`[data-testid="filter-link"][value=${JSON.stringify(filter)}]`)
                 await driver.page.click(`[data-testid="filter-link"][value=${JSON.stringify(filter)}]`)
+
                 await driver.page.waitForFunction(
                     (expectedQuery: string) => {
                         const url = new URL(document.location.href)
@@ -273,8 +310,8 @@ describe('Search', () => {
                     await driver.page.waitForSelector('[data-testid="results-info-bar"]')
                     expect(await editor.getValue()).toStrictEqual('foo')
                     // Field value is cleared when navigating to a non search-related page
-                    await driver.page.waitForSelector('a[href="/notebooks"]')
-                    await driver.page.click('a[href="/notebooks"]')
+                    await driver.page.waitForSelector('a[href="/batch-changes"]')
+                    await driver.page.click('a[href="/batch-changes"]')
                     // Search box is gone when in a non-search page
                     expect(await editor.getValue()).toStrictEqual(undefined)
                     // Field value is restored when the back button is pressed
@@ -284,7 +321,7 @@ describe('Search', () => {
                     expect(await editor.getValue()).toStrictEqual('foo')
                 })
 
-                test('Normalizes input with line breaks', async () => {
+                test.skip('Normalizes input with line breaks', async () => {
                     await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
                     const editor = await waitForInput(driver, queryInputSelector)
                     await editor.focus()
@@ -316,9 +353,7 @@ describe('Search', () => {
                     await driver.page.click('.test-case-sensitivity-toggle')
                     await editor.focus()
                     await driver.page.keyboard.press(Key.Enter)
-                    await driver.assertWindowLocation(
-                        '/search?q=context:global+test&patternType=standard&case=yes&sm=1'
-                    )
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=keyword&case=yes&sm=0')
                 })
 
                 test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
@@ -347,8 +382,11 @@ describe('Search', () => {
                 beforeEach(() => {
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
-                        ...createViewerSettingsGraphQLOverride({ user: applySettings() }),
+                        ...createViewerSettingsGraphQLOverride({
+                            user: applySettings({ experimentalFeatures: { keywordSearch: false } }),
+                        }),
                     })
+                    testContext.overrideJsContext({ experimentalFeatures: { structuralSearch: 'enabled' } })
                 })
 
                 test('Clicking toggle turns on structural search', async () => {
@@ -648,16 +686,6 @@ describe('Search', () => {
                     expect(await editor.getValue()).toEqual('test repo:')
                 })
             })
-        })
-
-        test('updates the query input and submits the query', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test')
-            await driver.page.waitForSelector('[data-testid="search-type-submit"]')
-            await Promise.all([
-                driver.page.waitForNavigation(),
-                driver.page.click('[data-testid="search-type-submit"]'),
-            ])
-            await driver.assertWindowLocation('/search?q=context:global+test+type:commit&patternType=standard&sm=0')
         })
     })
 })

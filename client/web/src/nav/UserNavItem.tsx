@@ -1,6 +1,6 @@
 import { useCallback, useMemo, type ChangeEventHandler, type FC } from 'react'
 
-import { mdiChevronDown, mdiChevronUp, mdiCogOutline, mdiOpenInNew } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
@@ -23,14 +23,12 @@ import {
     AnchorLink,
     Select,
     Icon,
-    Text,
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
-import { useV2QueryInput } from '../search/useV2QueryInput'
 import { enableDevSettings, isSourcegraphDev, useDeveloperSettings } from '../stores'
 
-import { AppUserConnectDotComAccount } from './AppUserConnectDotComAccount'
+import { useNewSearchNavigation } from './new-global-navigation'
 
 import styles from './UserNavItem.module.scss'
 
@@ -44,7 +42,6 @@ type MinimalAuthenticatedUser = Pick<
 export interface UserNavItemProps extends TelemetryProps {
     authenticatedUser: MinimalAuthenticatedUser
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
     menuButtonRef?: React.Ref<HTMLButtonElement>
     showFeedbackModal: () => void
     showKeyboardShortcutsHelp: () => void
@@ -59,11 +56,9 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     const {
         authenticatedUser,
         isSourcegraphDotCom,
-        isCodyApp,
         menuButtonRef,
         showFeedbackModal,
         showKeyboardShortcutsHelp,
-        telemetryService,
         className,
     } = props
 
@@ -87,16 +82,15 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     }, [setThemeSetting, themeSetting])
 
     const organizations = authenticatedUser.organizations.nodes
-    const searchQueryInputFeature = useExperimentalFeatures(features => features.searchQueryInput)
-    const [v2QueryInputEnabled, setV2QueryInputEnabled] = useV2QueryInput()
+    const newSearchNavigationUI = useExperimentalFeatures(features => features.newSearchNavigationUI)
+    const [newNavigationEnabled, setNewNavigationEnabled] = useNewSearchNavigation()
     const developerMode = useDeveloperSettings(settings => settings.enabled)
 
-    const onV2QueryInputChange = useCallback(
+    const onNewSearchNavigationChange = useCallback(
         (enabled: boolean) => {
-            telemetryService.log(`SearchInputToggle${enabled ? 'On' : 'Off'}`)
-            setV2QueryInputEnabled(enabled)
+            setNewNavigationEnabled(enabled)
         },
-        [telemetryService, setV2QueryInputEnabled]
+        [setNewNavigationEnabled]
     )
 
     return (
@@ -122,14 +116,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                         >
                             <div className="position-relative">
                                 <div className="align-items-center d-flex">
-                                    {isCodyApp ? (
-                                        <>
-                                            <Icon svgPath={mdiCogOutline} aria-hidden={true} />
-                                            <Text className="mb-0 ml-1">Settings</Text>
-                                        </>
-                                    ) : (
-                                        <UserAvatar user={authenticatedUser} className={styles.avatar} />
-                                    )}
+                                    <UserAvatar user={authenticatedUser} className={styles.avatar} />
                                     <Icon svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
                                 </div>
                             </div>
@@ -140,24 +127,17 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             className={styles.dropdownMenu}
                             aria-label="User. Open menu"
                         >
-                            {!isCodyApp ? (
-                                <>
-                                    <MenuHeader className={styles.dropdownHeader}>
-                                        Signed in as <strong>@{authenticatedUser.username}</strong>
-                                    </MenuHeader>
-                                    <MenuDivider className={styles.dropdownDivider} />
-                                </>
-                            ) : null}
-                            <MenuLink as={Link} to={isCodyApp ? '/user/app-settings' : authenticatedUser.settingsURL!}>
-                                {isCodyApp ? 'Local Repositories' : 'Settings'}
+                            <MenuHeader className={styles.dropdownHeader}>
+                                Signed in as <strong>@{authenticatedUser.username}</strong>
+                            </MenuHeader>
+                            <MenuDivider className={styles.dropdownDivider} />
+                            <MenuLink as={Link} to={authenticatedUser.settingsURL!}>
+                                Settings
                             </MenuLink>
-                            {!isCodyApp && (
-                                <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
-                                    Saved searches
-                                </MenuLink>
-                            )}
-                            {isCodyApp && <AppUserConnectDotComAccount />}
-                            {!isSourcegraphDotCom && !isCodyApp && (
+                            <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
+                                Saved searches
+                            </MenuLink>
+                            {!isSourcegraphDotCom && (
                                 <MenuLink as={Link} to="/teams">
                                     Teams
                                 </MenuLink>
@@ -195,11 +175,12 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     </div>
                                 )}
                             </div>
-                            {!isCodyApp && searchQueryInputFeature !== 'v1' && (
+
+                            {!newSearchNavigationUI && (
                                 <div className="px-2 py-1">
                                     <div className="d-flex align-items-center justify-content-between">
-                                        <div className="mr-2">New search input</div>
-                                        <Toggle value={v2QueryInputEnabled} onToggle={onV2QueryInputChange} />
+                                        <div className="mr-2">Minimize navigation</div>
+                                        <Toggle value={newNavigationEnabled} onToggle={onNewSearchNavigationChange} />
                                     </div>
                                 </div>
                             )}
@@ -229,35 +210,27 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     )}
                                 </>
                             )}
-                            {!isCodyApp && (
-                                <>
-                                    <MenuDivider className={styles.dropdownDivider} />
-                                    {authenticatedUser.siteAdmin && (
-                                        <MenuLink as={Link} to="/site-admin">
-                                            Site admin
-                                        </MenuLink>
-                                    )}
-                                    <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
-                                        Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
-                                    </MenuLink>
-                                    <MenuItem onSelect={showFeedbackModal}>Feedback</MenuItem>
-                                    <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
-                                    {authenticatedUser.session?.canSignOut && (
-                                        <MenuLink as={AnchorLink} to="/-/sign-out">
-                                            Sign out
-                                        </MenuLink>
-                                    )}
-                                </>
+
+                            <MenuDivider className={styles.dropdownDivider} />
+                            {authenticatedUser.siteAdmin && (
+                                <MenuLink as={Link} to="/site-admin">
+                                    Site admin
+                                </MenuLink>
+                            )}
+                            <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
+                                Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
+                            </MenuLink>
+                            <MenuItem onSelect={showFeedbackModal}>Feedback</MenuItem>
+                            <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
+                            {authenticatedUser.session?.canSignOut && (
+                                <MenuLink as={AnchorLink} to="/-/sign-out">
+                                    Sign out
+                                </MenuLink>
                             )}
 
                             {isSourcegraphDotCom && <MenuDivider className={styles.dropdownDivider} />}
                             {isSourcegraphDotCom && (
-                                <MenuLink
-                                    as={AnchorLink}
-                                    to="https://about.sourcegraph.com"
-                                    target="_blank"
-                                    rel="noopener"
-                                >
+                                <MenuLink as={AnchorLink} to="https://sourcegraph.com" target="_blank" rel="noopener">
                                     About Sourcegraph <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                                 </MenuLink>
                             )}

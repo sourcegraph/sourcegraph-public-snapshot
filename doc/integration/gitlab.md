@@ -1,6 +1,6 @@
 # GitLab integration with Sourcegraph
 
-You can use Sourcegraph with [GitLab.com](https://gitlab.com) and GitLab CE/EE.  Read a high-level overview of how Sourcegraph and GitLab work together in our [GitLab solution brief](https://about.sourcegraph.com/guides/sourcegraph-gitlab-solution-brief.pdf).
+You can use Sourcegraph with [GitLab.com](https://gitlab.com) and GitLab CE/EE.  Read a high-level overview of how Sourcegraph and GitLab work together in our [GitLab solution brief](https://sourcegraph.com/guides/sourcegraph-gitlab-solution-brief.pdf).
 
 Feature | Supported?
 ------- | ----------

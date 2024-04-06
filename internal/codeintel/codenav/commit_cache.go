@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -110,9 +111,9 @@ func (c *commitCache) commitsExist(ctx context.Context, commits []RepositoryComm
 	// unresolvable repo. We also ensure that we only represent each repo/commit pair
 	// ONCE in the input slice.
 
-	repoCommits := make([]api.RepoCommit, 0, len(commits)) // input to CommitsExist
-	indexMapping := make(map[int]int, len(commits))        // map commits[i] to relevant repoCommits[i]
-	commitsRepresentedInInput := map[int]map[string]int{}  // used to populate index mapping
+	repoCommits := make([]repoCommit, 0, len(commits))    // input to CommitsExist
+	indexMapping := make(map[int]int, len(commits))       // map commits[i] to relevant repoCommits[i]
+	commitsRepresentedInInput := map[int]map[string]int{} // used to populate index mapping
 
 	for i, rc := range commits {
 		repoName, ok := repositoryNames[rc.RepositoryID]
@@ -138,24 +139,24 @@ func (c *commitCache) commitsExist(ctx context.Context, commits []RepositoryComm
 			indexMapping[i] = n
 			commitsRepresentedInInput[rc.RepositoryID][rc.Commit] = n
 
-			repoCommits = append(repoCommits, api.RepoCommit{
-				Repo:     repoName,
-				CommitID: api.CommitID(rc.Commit),
+			repoCommits = append(repoCommits, repoCommit{
+				repoName: repoName,
+				commitID: api.CommitID(rc.Commit),
 			})
 		}
 	}
 
-	exists, err := c.gitserverClient.CommitsExist(ctx, repoCommits)
-	if err != nil {
-		return nil, err
-	}
-	if len(exists) != len(repoCommits) {
-		// Add assertion here so that the blast radius of new or newly discovered errors southbound
-		// from the internal/vcs/git package does not leak into code intelligence. The existing callers
-		// of this method panic when this assertion is not met. Describing the error in more detail here
-		// will not cause destruction outside of the particular user-request in which this assertion
-		// was not true.
-		return nil, errors.Newf("expected slice returned from git.CommitsExist to have len %d, but has len %d", len(repoCommits), len(exists))
+	exists := make([]bool, len(commits))
+	for i, rc := range repoCommits {
+		_, err := c.gitserverClient.GetCommit(ctx, rc.repoName, rc.commitID)
+		if err != nil {
+			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				exists[i] = false
+				continue
+			}
+			return nil, err
+		}
+		exists[i] = true
 	}
 
 	// Spread the response back to the correct indexes the caller is expecting. Each value in the
@@ -169,6 +170,11 @@ func (c *commitCache) commitsExist(ctx context.Context, commits []RepositoryComm
 	}
 
 	return out, nil
+}
+
+type repoCommit struct {
+	repoName api.RepoName
+	commitID api.CommitID
 }
 
 // AreCommitsResolvable determines if the given commits are resolvable for the given repositories.

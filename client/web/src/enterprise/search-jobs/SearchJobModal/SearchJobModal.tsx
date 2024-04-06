@@ -177,8 +177,8 @@ export const CancelSearchJobModal: FC<SearchJobModalProps> = props => {
     })
 
     return (
-        <Modal position="center" aria-label="Delete search job" onDismiss={onDismiss}>
-            <H2>Do you want to cancel this search job?</H2>
+        <Modal position="center" aria-label="Stop search job" onDismiss={onDismiss}>
+            <H2>Do you want to stop this search job?</H2>
 
             <Text className="mt-4">
                 <b>Note:</b> All query runs across all repositories and revisions will be stopped. You can re-run this
@@ -191,7 +191,7 @@ export const CancelSearchJobModal: FC<SearchJobModalProps> = props => {
 
             <footer className={styles.footer}>
                 <Button variant="secondary" outline={true} onClick={onDismiss}>
-                    Cancel
+                    Close
                 </Button>
                 <Button
                     variant="danger"
@@ -201,10 +201,10 @@ export const CancelSearchJobModal: FC<SearchJobModalProps> = props => {
                 >
                     {loading ? (
                         <>
-                            <LoadingSpinner /> Canceling
+                            <LoadingSpinner /> Stopping
                         </>
                     ) : (
-                        <>Cancel</>
+                        <>Yes - stop this search job.</>
                     )}
                 </Button>
             </footer>

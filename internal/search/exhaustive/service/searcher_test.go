@@ -1,7 +1,11 @@
 package service
 
 import (
+	"bytes"
+	"cmp"
 	"context"
+	"fmt"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -10,7 +14,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/zoekt"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -38,10 +41,9 @@ func TestBackendFake(t *testing.T) {
 		Query:        "1@rev1 1@rev2 2@rev3",
 		WantRefSpecs: "RepositoryRevSpec{1@spec} RepositoryRevSpec{2@spec}",
 		WantRepoRevs: "RepositoryRevision{1@rev1} RepositoryRevision{1@rev2} RepositoryRevision{2@rev3}",
-		WantCSV: autogold.Expect(`repo,revspec,revision
-1,spec,rev1
-1,spec,rev2
-2,spec,rev3
+		WantResults: autogold.Expect(`{"type":"path","path":"path/to/file.go","repositoryID":1,"repository":"repo1","commit":"rev1","language":"Go"}
+{"type":"path","path":"path/to/file.go","repositoryID":1,"repository":"repo1","commit":"rev2","language":"Go"}
+{"type":"path","path":"path/to/file.go","repositoryID":2,"repository":"repo2","commit":"rev3","language":"Go"}
 `),
 	})
 }
@@ -50,7 +52,7 @@ type newSearcherTestCase struct {
 	Query        string
 	WantRefSpecs string
 	WantRepoRevs string
-	WantCSV      autogold.Value
+	WantResults  autogold.Value
 }
 
 func TestFromSearchClient(t *testing.T) {
@@ -94,9 +96,17 @@ func TestFromSearchClient(t *testing.T) {
 		Query:        "content",
 		WantRefSpecs: "RepositoryRevSpec{1@HEAD} RepositoryRevSpec{2@HEAD} RepositoryRevSpec{3@HEAD}",
 		WantRepoRevs: "RepositoryRevision{1@HEAD} RepositoryRevision{2@HEAD} RepositoryRevision{3@HEAD}",
-		WantCSV: autogold.Expect(`repository,revision,file_path,match_count,first_match_url
-foo1,commitfoo0,,1,/foo1@commitfoo0/-/blob/?L2
-bar2,commitbar0,,1,/bar2@commitbar0/-/blob/?L2
+		WantResults: autogold.Expect(`{"type":"content","path":"","repositoryID":1,"repository":"foo1","commit":"commitfoo0","hunks":null,"chunkMatches":[{"content":"line1","contentStart":{"offset":0,"line":1,"column":0},"ranges":[{"start":{"offset":1,"line":1,"column":1},"end":{"offset":3,"line":1,"column":3}}]}]}
+{"type":"content","path":"","repositoryID":2,"repository":"bar2","commit":"commitbar0","hunks":null,"chunkMatches":[{"content":"line1","contentStart":{"offset":0,"line":1,"column":0},"ranges":[{"start":{"offset":1,"line":1,"column":1},"end":{"offset":3,"line":1,"column":3}}]}]}
+`),
+	})
+
+	do("explicit type:file", newSearcherTestCase{
+		Query:        "content type:file",
+		WantRefSpecs: "RepositoryRevSpec{1@HEAD} RepositoryRevSpec{2@HEAD} RepositoryRevSpec{3@HEAD}",
+		WantRepoRevs: "RepositoryRevision{1@HEAD} RepositoryRevision{2@HEAD} RepositoryRevision{3@HEAD}",
+		WantResults: autogold.Expect(`{"type":"content","path":"","repositoryID":1,"repository":"foo1","commit":"commitfoo0","hunks":null,"chunkMatches":[{"content":"line1","contentStart":{"offset":0,"line":1,"column":0},"ranges":[{"start":{"offset":1,"line":1,"column":1},"end":{"offset":3,"line":1,"column":3}}]}]}
+{"type":"content","path":"","repositoryID":2,"repository":"bar2","commit":"commitbar0","hunks":null,"chunkMatches":[{"content":"line1","contentStart":{"offset":0,"line":1,"column":0},"ranges":[{"start":{"offset":1,"line":1,"column":1},"end":{"offset":3,"line":1,"column":3}}]}]}
 `),
 	})
 
@@ -104,8 +114,7 @@ bar2,commitbar0,,1,/bar2@commitbar0/-/blob/?L2
 		Query:        "repo:foo content",
 		WantRefSpecs: "RepositoryRevSpec{1@HEAD}",
 		WantRepoRevs: "RepositoryRevision{1@HEAD}",
-		WantCSV: autogold.Expect(`repository,revision,file_path,match_count,first_match_url
-foo1,commitfoo0,,1,/foo1@commitfoo0/-/blob/?L2
+		WantResults: autogold.Expect(`{"type":"content","path":"","repositoryID":1,"repository":"foo1","commit":"commitfoo0","hunks":null,"chunkMatches":[{"content":"line1","contentStart":{"offset":0,"line":1,"column":0},"ranges":[{"start":{"offset":1,"line":1,"column":1},"end":{"offset":3,"line":1,"column":3}}]}]}
 `),
 	})
 
@@ -113,8 +122,7 @@ foo1,commitfoo0,,1,/foo1@commitfoo0/-/blob/?L2
 		Query:        "repo:foo rev:dev1 content",
 		WantRefSpecs: "RepositoryRevSpec{1@dev1}",
 		WantRepoRevs: "RepositoryRevision{1@dev1}",
-		WantCSV: autogold.Expect(`repository,revision,file_path,match_count,first_match_url
-foo1,commitfoo1,,1,/foo1@commitfoo1/-/blob/?L2
+		WantResults: autogold.Expect(`{"type":"content","path":"","repositoryID":1,"repository":"foo1","commit":"commitfoo1","hunks":null,"chunkMatches":[{"content":"line1","contentStart":{"offset":0,"line":1,"column":0},"ranges":[{"start":{"offset":1,"line":1,"column":1},"end":{"offset":3,"line":1,"column":3}}]}]}
 `),
 	})
 
@@ -122,20 +130,18 @@ foo1,commitfoo1,,1,/foo1@commitfoo1/-/blob/?L2
 		Query:        "repo:foo rev:*refs/heads/dev* content",
 		WantRefSpecs: "RepositoryRevSpec{1@*refs/heads/dev*}",
 		WantRepoRevs: "RepositoryRevision{1@dev1} RepositoryRevision{1@dev2}",
-		WantCSV: autogold.Expect(`repository,revision,file_path,match_count,first_match_url
-foo1,commitfoo1,,1,/foo1@commitfoo1/-/blob/?L2
-foo1,commitfoo2,,1,/foo1@commitfoo2/-/blob/?L2
+		WantResults: autogold.Expect(`{"type":"content","path":"","repositoryID":1,"repository":"foo1","commit":"commitfoo1","hunks":null,"chunkMatches":[{"content":"line1","contentStart":{"offset":0,"line":1,"column":0},"ranges":[{"start":{"offset":1,"line":1,"column":1},"end":{"offset":3,"line":1,"column":3}}]}]}
+{"type":"content","path":"","repositoryID":1,"repository":"foo1","commit":"commitfoo2","hunks":null,"chunkMatches":[{"content":"line1","contentStart":{"offset":0,"line":1,"column":0},"ranges":[{"start":{"offset":1,"line":1,"column":1},"end":{"offset":3,"line":1,"column":3}}]}]}
 `),
 	})
 
-	do("globall", newSearcherTestCase{
+	do("global", newSearcherTestCase{
 		Query:        "repo:. rev:*refs/heads/dev* content",
 		WantRefSpecs: "RepositoryRevSpec{1@*refs/heads/dev*} RepositoryRevSpec{2@*refs/heads/dev*} RepositoryRevSpec{3@*refs/heads/dev*}",
 		WantRepoRevs: "RepositoryRevision{1@dev1} RepositoryRevision{1@dev2} RepositoryRevision{2@dev1}",
-		WantCSV: autogold.Expect(`repository,revision,file_path,match_count,first_match_url
-foo1,commitfoo1,,1,/foo1@commitfoo1/-/blob/?L2
-foo1,commitfoo2,,1,/foo1@commitfoo2/-/blob/?L2
-bar2,commitbar1,,1,/bar2@commitbar1/-/blob/?L2
+		WantResults: autogold.Expect(`{"type":"content","path":"","repositoryID":1,"repository":"foo1","commit":"commitfoo1","hunks":null,"chunkMatches":[{"content":"line1","contentStart":{"offset":0,"line":1,"column":0},"ranges":[{"start":{"offset":1,"line":1,"column":1},"end":{"offset":3,"line":1,"column":3}}]}]}
+{"type":"content","path":"","repositoryID":1,"repository":"foo1","commit":"commitfoo2","hunks":null,"chunkMatches":[{"content":"line1","contentStart":{"offset":0,"line":1,"column":0},"ranges":[{"start":{"offset":1,"line":1,"column":1},"end":{"offset":3,"line":1,"column":3}}]}]}
+{"type":"content","path":"","repositoryID":2,"repository":"bar2","commit":"commitbar1","hunks":null,"chunkMatches":[{"content":"line1","contentStart":{"offset":0,"line":1,"column":0},"ranges":[{"start":{"offset":1,"line":1,"column":1},"end":{"offset":3,"line":1,"column":3}}]}]}
 `),
 	})
 
@@ -143,8 +149,7 @@ bar2,commitbar1,,1,/bar2@commitbar1/-/blob/?L2
 		Query:        "repo:foo rev:*refs/heads/dev*:*!refs/heads/dev1 content",
 		WantRefSpecs: "RepositoryRevSpec{1@*refs/heads/dev*:*!refs/heads/dev1}",
 		WantRepoRevs: "RepositoryRevision{1@dev2}",
-		WantCSV: autogold.Expect(`repository,revision,file_path,match_count,first_match_url
-foo1,commitfoo2,,1,/foo1@commitfoo2/-/blob/?L2
+		WantResults: autogold.Expect(`{"type":"content","path":"","repositoryID":1,"repository":"foo1","commit":"commitfoo2","hunks":null,"chunkMatches":[{"content":"line1","contentStart":{"offset":0,"line":1,"column":0},"ranges":[{"start":{"offset":1,"line":1,"column":1},"end":{"offset":3,"line":1,"column":3}}]}]}
 `),
 	})
 
@@ -161,8 +166,7 @@ foo1,commitfoo2,,1,/foo1@commitfoo2/-/blob/?L2
 		Query:        "repo:foo rev:dev1:missing content",
 		WantRefSpecs: "RepositoryRevSpec{1@dev1:missing}",
 		WantRepoRevs: "RepositoryRevision{1@dev1}",
-		WantCSV: autogold.Expect(`repository,revision,file_path,match_count,first_match_url
-foo1,commitfoo1,,1,/foo1@commitfoo1/-/blob/?L2
+		WantResults: autogold.Expect(`{"type":"content","path":"","repositoryID":1,"repository":"foo1","commit":"commitfoo1","hunks":null,"chunkMatches":[{"content":"line1","contentStart":{"offset":0,"line":1,"column":0},"ranges":[{"start":{"offset":1,"line":1,"column":1},"end":{"offset":3,"line":1,"column":3}}]}]}
 `),
 	})
 }
@@ -234,8 +238,8 @@ func mockGitserver(repoMocks []repoMock) *gitserver.MockClient {
 				CommitID: api.CommitID(commit),
 			})
 		}
-		slices.SortFunc(refs, func(a, b gitdomain.Ref) bool {
-			return a.Name < b.Name
+		slices.SortFunc(refs, func(a, b gitdomain.Ref) int {
+			return cmp.Compare(a.Name, b.Name)
 		})
 		return refs, nil
 	})
@@ -353,13 +357,32 @@ func testNewSearcher(t *testing.T, ctx context.Context, newSearcher NewSearcher,
 	}
 	assert.Equal(tc.WantRepoRevs, joinStringer(repoRevs))
 
+	bw := &bufferedWriter{
+		flushSize: 1024,
+		buf:       bytes.Buffer{},
+	}
+
+	bw.write = func(p []byte) error {
+		_, err := bw.buf.Write(p)
+		return err
+	}
+
+	matchWriter := MatchJSONWriter{bw}
+
 	// Test Search
-	var csv csvBuffer
 	for _, repoRev := range repoRevs {
-		err := searcher.Search(ctx, repoRev, &csv)
+		err := searcher.Search(ctx, repoRev, matchWriter)
 		assert.NoError(err)
 	}
-	if tc.WantCSV != nil {
-		tc.WantCSV.Equal(t, csv.buf.String())
+	if tc.WantResults != nil {
+		tc.WantResults.Equal(t, bw.buf.String())
 	}
+}
+
+func joinStringer[T fmt.Stringer](xs []T) string {
+	var parts []string
+	for _, x := range xs {
+		parts = append(parts, x.String())
+	}
+	return strings.Join(parts, " ")
 }

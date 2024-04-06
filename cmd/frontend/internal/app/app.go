@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth/accessrequest"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
@@ -23,16 +22,8 @@ import (
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Handler) http.Handler {
+func NewHandler(db database.DB, logger log.Logger) http.Handler {
 	session.SetSessionStore(session.NewRedisStore(func() bool {
-		if deploy.IsSingleBinary() {
-			// Safari / WebKit-based browsers refuse to set cookies on localhost as it is not treated
-			// as a secure domain, in contrast to all other browsers.
-			// https://bugs.webkit.org/show_bug.cgi?id=232088
-			// As a result, if secure is set to true here then it becomes impossible to sign into
-			// Sourcegraph using Safari/WebKit.
-			return false
-		}
 		return globals.ExternalURL().Scheme == "https"
 	}))
 
@@ -57,7 +48,7 @@ func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Ha
 	})))
 
 	r.Get(router.GopherconLiveBlog).Handler(trace.Route(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "https://about.sourcegraph.com/go", http.StatusFound)
+		http.Redirect(w, r, "https://sourcegraph.com/go", http.StatusFound)
 	})))
 
 	r.Get(router.UI).Handler(ui.Router())
@@ -86,10 +77,6 @@ func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Ha
 
 	// Ping retrieval
 	r.Get(router.LatestPing).Handler(trace.Route(latestPingHandler(db)))
-
-	// Sourcegraph GitHub App setup (Cloud and on-prem)
-	r.Get(router.SetupGitHubAppCloud).Handler(trace.Route(githubAppSetupHandler))
-	r.Get(router.SetupGitHubApp).Handler(trace.Route(githubAppSetupHandler))
 
 	r.Get(router.Editor).Handler(trace.Route(errorutil.Handler(serveEditor(db))))
 

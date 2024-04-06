@@ -136,7 +136,15 @@ This job dispatches HTTP requests for outbound webhooks and periodically removes
 
 #### `repo-statistics-compactor`
 
-This job periodically cleans up the `repo_statistics` table by rolling up all rows into a single row.
+This job periodically cleans up the `repo_statistics` and `gitserver_repos_statistics` tables by rolling up all rows into a single row.
+
+#### `repo-statistics-resetter`
+
+This job cleans up and recreates the `repo_statistics`/`gitserver_repos_statistics` table.
+
+**Attention:** it requires exclusive locks on the `repo` and `gitserver_repos`, which means it might take 3-4 minutes to run if the instance is very busy.
+
+It's only running on Sunday mornings at ~2am UTC.
 
 #### `record-encrypter`
 

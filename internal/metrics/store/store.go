@@ -48,13 +48,7 @@ type distributedStore struct {
 }
 
 func (d *distributedStore) Gather() ([]*dto.MetricFamily, error) {
-	pool, ok := redispool.Cache.Pool()
-	if !ok {
-		// Redis is disabled. This means we are using Cody App which
-		// does not expose prometheus metrics. For now that means we can skip
-		// this store doing anything.
-		return nil, nil
-	}
+	pool := redispool.Cache.Pool()
 
 	reConn := pool.Get()
 	defer reConn.Close()
@@ -98,13 +92,7 @@ func (d *distributedStore) Gather() ([]*dto.MetricFamily, error) {
 }
 
 func (d *distributedStore) Ingest(instance string, mfs []*dto.MetricFamily) error {
-	pool, ok := redispool.Cache.Pool()
-	if !ok {
-		// Redis is disabled. This means we are using Cody App which
-		// does not expose prometheus metrics. For now that means we can skip
-		// this store doing anything.
-		return nil
-	}
+	pool := redispool.Cache.Pool()
 
 	// First, encode the metrics to text format so we can store them.
 	var enc bytes.Buffer

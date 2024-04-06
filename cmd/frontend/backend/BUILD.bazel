@@ -1,10 +1,10 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "backend",
     srcs = [
-        "app.go",
         "doc.go",
         "external_services.go",
         "go_importers.go",
@@ -21,7 +21,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/backend",
     visibility = ["//visibility:public"],
     deps = [
-        "//cmd/frontend/envvar",
         "//cmd/frontend/globals",
         "//cmd/frontend/internal/app/router",
         "//internal/actor",
@@ -34,21 +33,24 @@ go_library(
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbcache",
+        "//internal/dotcom",
         "//internal/encryption/keyring",
         "//internal/env",
         "//internal/errcode",
         "//internal/extsvc",
         "//internal/extsvc/awscodecommit",
+        "//internal/extsvc/azuredevops",
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/bitbucketserver",
+        "//internal/extsvc/gerrit",
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",
         "//internal/extsvc/gitolite",
+        "//internal/featureflag",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/httpcli",
         "//internal/inventory",
-        "//internal/jsonc",
         "//internal/observation",
         "//internal/randstring",
         "//internal/rcache",
@@ -86,7 +88,6 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/actor",
         "//internal/api",
         "//internal/conf",
@@ -94,14 +95,17 @@ go_test(
         "//internal/database/basestore",
         "//internal/database/dbmocks",
         "//internal/database/dbtest",
+        "//internal/dotcom",
         "//internal/encryption",
         "//internal/encryption/keyring",
         "//internal/errcode",
         "//internal/extsvc",
         "//internal/extsvc/auth",
         "//internal/extsvc/awscodecommit",
+        "//internal/extsvc/azuredevops",
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/bitbucketserver",
+        "//internal/extsvc/gerrit",
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",
         "//internal/extsvc/gitolite",
@@ -121,7 +125,7 @@ go_test(
         "//internal/types/typestest",
         "//lib/errors",
         "//schema",
-        "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_derision_test_go_mockgen_v2//testutil/require",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_uuid//:uuid",
         "@com_github_sourcegraph_log//:log",
@@ -129,4 +133,15 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_temp.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [":backend"],
 )

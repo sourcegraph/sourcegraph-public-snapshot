@@ -1,3 +1,4 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("//dev:go_defs.bzl", "go_test")
 
@@ -5,25 +6,26 @@ go_library(
     name = "git",
     srcs = [
         "cleanup.go",
-        "config.go",
         "git.go",
-        "object.go",
+        "iface.go",
+        "mock.go",
+        "observability.go",
         "type.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git",
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//cmd/gitserver/internal/common",
-        "//cmd/gitserver/internal/executil",
         "//cmd/gitserver/internal/gitserverfs",
         "//internal/api",
         "//internal/conf",
         "//internal/fileutil",
         "//internal/gitserver/gitdomain",
-        "//internal/syncx",
-        "//internal/trace",
-        "//internal/wrexec",
+        "//internal/metrics",
+        "//internal/observation",
         "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
     ],
@@ -31,18 +33,21 @@ go_library(
 
 go_test(
     name = "git_test",
-    srcs = [
-        "git_test.go",
-        "object_test.go",
-    ],
+    srcs = ["git_test.go"],
     embed = [":git"],
     deps = [
         "//cmd/gitserver/internal/common",
-        "//internal/api",
-        "//internal/gitserver/gitdomain",
-        "//internal/wrexec",
-        "//lib/errors",
-        "@com_github_google_go_cmp//cmp",
         "@com_github_stretchr_testify//require",
     ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mock.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [":git"],
 )

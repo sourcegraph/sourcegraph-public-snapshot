@@ -61,7 +61,6 @@ func generateWeeklySummary(dateFrom, dateTo string, builds, flakes int, avgFlake
 • Average %% of build flakes: *%v%%*
 • Total incident duration: *%v*
 
-For a more detailed breakdown, view the dashboards in <https://sourcegraph.grafana.net/d/iBBWbxFnk/buildkite?orgId=1&from=now-7d&to=now|Grafana>.
 `, dateFrom, dateTo, builds, flakes, avgFlakes, downtime)
 }
 

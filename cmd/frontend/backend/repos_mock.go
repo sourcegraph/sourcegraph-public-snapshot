@@ -17,8 +17,8 @@ type MockRepos struct {
 	Get                      func(v0 context.Context, id api.RepoID) (*types.Repo, error)
 	GetByName                func(v0 context.Context, name api.RepoName) (*types.Repo, error)
 	List                     func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error)
-	ResolveRev               func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)
-	GetInventory             func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
+	ResolveRev               func(v0 context.Context, repo api.RepoName, rev string) (api.CommitID, error)
+	GetInventory             func(v0 context.Context, repo api.RepoName, commitID api.CommitID) (*inventory.Inventory, error)
 	DeleteRepositoryFromDisk func(v0 context.Context, name api.RepoID) error
 }
 
@@ -91,7 +91,7 @@ func (s *MockRepos) MockDeleteRepositoryFromDisk(t *testing.T, wantRepo api.Repo
 func (s *MockRepos) MockResolveRev_NoCheck(t *testing.T, commitID api.CommitID) (called *bool) {
 	var once sync.Once
 	called = new(bool)
-	s.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	s.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		once.Do(func() {
 			*called = true
 		})
@@ -100,17 +100,17 @@ func (s *MockRepos) MockResolveRev_NoCheck(t *testing.T, commitID api.CommitID) 
 	return
 }
 
-func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, wantRepo api.RepoID, wantRev string) (called *bool) {
+func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, wantRepo api.RepoName, wantRev string) (called *bool) {
 	called = new(bool)
-	s.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	s.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		*called = true
-		if repo.ID != wantRepo {
-			t.Errorf("got repo %v, want %v", repo.ID, wantRepo)
+		if repo != wantRepo {
+			t.Errorf("got repo %v, want %v", repo, wantRepo)
 		}
 		if rev != wantRev {
 			t.Errorf("got rev %v, want %v", rev, wantRev)
 		}
-		return "", &gitdomain.RevisionNotFoundError{Repo: repo.Name, Spec: rev}
+		return "", &gitdomain.RevisionNotFoundError{Repo: repo, Spec: rev}
 	}
 	return
 }

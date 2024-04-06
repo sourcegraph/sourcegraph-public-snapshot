@@ -2,25 +2,11 @@ package internal
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/security"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func (s *Server) handleListGitolite(w http.ResponseWriter, r *http.Request) {
-	repos, err := defaultGitolite.listRepos(r.Context(), r.URL.Query().Get("gitolite"))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if err := json.NewEncoder(w).Encode(repos); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
 
 var defaultGitolite = gitoliteFetcher{client: gitoliteClient{}}
 

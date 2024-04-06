@@ -145,7 +145,7 @@ export function useSearchResultsKeyboardNavigation(
     const onVisibilityChange = useCallback(
         (isVisible: boolean, index: number) => {
             if (index === 0 && isVisible && root && enableKeyboardNavigation) {
-                selectFirstResult(root)
+                selectFirstResult(root, true)
             }
         },
         [root, enableKeyboardNavigation]
@@ -154,8 +154,8 @@ export function useSearchResultsKeyboardNavigation(
     return [showFocusInputMessage, onVisibilityChange]
 }
 
-function selectFirstResult(root: HTMLElement): void {
-    selectElement(root.querySelector<HTMLElement>('[data-selectable-search-result="true"]'))
+function selectFirstResult(root: HTMLElement, preventScroll?: boolean): void {
+    selectElement(root.querySelector<HTMLElement>('[data-selectable-search-result="true"]'), preventScroll)
 }
 
 function selectNextResult(
@@ -174,12 +174,17 @@ function selectNextResult(
     return selectElement(nextSelected)
 }
 
-function selectElement(resultElement: HTMLElement | undefined | null): boolean {
+function selectElement(resultElement: HTMLElement | undefined | null, preventScroll?: boolean): boolean {
     if (!resultElement) {
         return false
     }
-    resultElement?.focus()
-    resultElement?.scrollIntoView({ behavior: 'auto', block: 'nearest' })
+
+    resultElement?.focus({ preventScroll })
+
+    if (!preventScroll) {
+        resultElement?.scrollIntoView({ behavior: 'auto', block: 'nearest' })
+    }
+
     return true
 }
 

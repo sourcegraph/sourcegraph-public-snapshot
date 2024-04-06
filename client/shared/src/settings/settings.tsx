@@ -308,11 +308,13 @@ const defaultFeatures: SettingsExperimentalFeatures = {
     showMultilineSearchConsole: false,
     codeMonitoringWebHooks: true,
     showCodeMonitoringLogs: true,
+    showFullTreeContext: false,
     codeInsightsCompute: false,
     editor: 'codemirror6',
     codeInsightsRepoUI: 'search-query-or-strict-list',
     isInitialized: true,
     searchQueryInput: 'v2',
+    newSearchResultFiltersPanel: true,
 }
 
 /**

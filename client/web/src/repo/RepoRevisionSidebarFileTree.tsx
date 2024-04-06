@@ -1,18 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { useApolloClient, gql as apolloGql } from '@apollo/client'
-import {
-    mdiFileDocumentOutline,
-    mdiSourceRepository,
-    mdiFolderOutline,
-    mdiFolderOpenOutline,
-    mdiFolderArrowUp,
-} from '@mdi/js'
+import { useApolloClient, gql as apolloGql, type ApolloError } from '@apollo/client'
+import { mdiSourceRepository, mdiFolderOutline, mdiFolderOpenOutline, mdiFolderArrowUp } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { dirname } from '@sourcegraph/common'
-import { gql, useQuery } from '@sourcegraph/http-client'
+import { gql } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
@@ -23,10 +18,12 @@ import {
     LoadingSpinner,
     Tooltip,
     ErrorAlert,
+    LanguageIcon,
 } from '@sourcegraph/wildcard'
 
 import type { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
 
+import { isProbablyTestFile } from './icon-utils'
 import { FocusableTree, type FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'
@@ -57,6 +54,9 @@ const QUERY = gql`
                             url
                             commit
                         }
+                        ... on GitBlob {
+                            languages
+                        }
                     }
                 }
             }
@@ -76,7 +76,7 @@ type FileTreeEntry = Extract<
     { __typename?: 'GitTree' }
 >['entries'][number]
 
-interface Props extends FocusableTreeProps {
+interface Props extends FocusableTreeProps, TelemetryV2Props {
     commitID: string
     initialFilePath: string
     initialFilePathIsDirectory: boolean
@@ -89,13 +89,15 @@ interface Props extends FocusableTreeProps {
 }
 
 export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props => {
-    const { telemetryService, onExpandParent } = props
+    const { telemetryService, telemetryRecorder, onExpandParent } = props
 
     // Ensure that the initial file path does not update when the props change
     const [initialFilePath] = useState(() =>
         props.initialFilePathIsDirectory ? props.initialFilePath : getParentPath(props.initialFilePath)
     )
     const [treeData, setTreeData] = useState<TreeData | null>(null)
+    const [loading, setLoading] = useState<boolean>(false)
+    const [error, setError] = useState<ApolloError | undefined>(undefined)
 
     // We need a mutable reference to the tree data since we don't want some
     // hooks to run when the tree data changes.
@@ -129,14 +131,6 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
         first: MAX_TREE_ENTRIES,
     })
 
-    const { data, error, loading } = useQuery<FileTreeEntriesResult, FileTreeEntriesVariables>(QUERY, {
-        variables: {
-            ...defaultVariables,
-            filePath: initialFilePath,
-            ancestors: false,
-        },
-    })
-
     const updateTreeData = useCallback((currentTreeData: TreeData, data: FileTreeEntriesResult) => {
         const rootTreeUrl = data?.repository?.commit?.tree?.url
         const entries = data?.repository?.commit?.tree?.entries
@@ -154,15 +148,27 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
     }, [])
 
     // Initialize the treeData from the initial query
-    useEffect(() => {
-        if (data === undefined || treeData !== null) {
-            return
-        }
-
-        updateTreeData(createTreeData(initialFilePath), data)
-    }, [data, initialFilePath, treeData, updateTreeData])
-
     const client = useApolloClient()
+    const [initialVariables] = useState({
+        filePath: props.filePathIsDirectory ? props.filePath : getParentPath(props.filePath),
+        // Only fetch ancestors if the file tree is rooted higher than the target file.
+        ancestors: props.initialFilePath !== props.filePath,
+    })
+    useEffect(() => {
+        const result = client.query<FileTreeEntriesResult, FileTreeEntriesVariables>({
+            query: APOLLO_QUERY,
+            variables: { ...defaultVariables, ...initialVariables },
+        })
+
+        setLoading(true)
+
+        result.then(res => {
+            setLoading(res.loading)
+            setError(res.error)
+            updateTreeData(createTreeData(initialFilePath), res.data)
+        })
+    }, [initialFilePath, updateTreeData, client, defaultVariables, initialVariables])
+
     const fetchEntries = useCallback(
         async (variables: FileTreeEntriesVariables) => {
             const result = await client.query<FileTreeEntriesResult, FileTreeEntriesVariables>({
@@ -188,6 +194,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             }
 
             telemetryService.log('FileTreeLoadDirectory')
+            telemetryRecorder.recordEvent('blobSidebar.fileTreeDirectory', 'load')
             await fetchEntries({
                 ...defaultVariables,
                 filePath: fullPath,
@@ -196,7 +203,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
 
             setTreeData(treeData => setLoadedPath(treeData!, fullPath))
         },
-        [defaultVariables, fetchEntries, treeData?.loadedIds, telemetryService]
+        [defaultVariables, fetchEntries, treeData?.loadedIds, telemetryService, telemetryRecorder]
     )
 
     const defaultSelectFiredRef = useRef<boolean>(false)
@@ -220,6 +227,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
 
             if (element.dotdot) {
                 telemetryService.log('FileTreeLoadParent')
+                telemetryRecorder.recordEvent('blobSidebar.fileTreeParentLink', 'click')
                 navigate(element.dotdot)
 
                 let parent = props.initialFilePathIsDirectory
@@ -234,6 +242,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
 
             if (element.entry) {
                 telemetryService.log('FileTreeClick')
+                telemetryRecorder.recordEvent('blobSidebar.fileTreeLink', 'click')
                 navigate(element.entry.url)
             }
             setSelectedIds([element.id])
@@ -242,6 +251,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             selectedIds,
             defaultNodeId,
             telemetryService,
+            telemetryRecorder,
             navigate,
             props.initialFilePathIsDirectory,
             initialFilePath,
@@ -389,6 +399,9 @@ function renderNode({
     const { entry, error, dotdot, name } = element
     const submodule = entry?.submodule
     const url = entry?.url
+    const isLikelyTest = entry?.isDirectory ? false : isProbablyTestFile(element.name)
+
+    // const fileIcon = FILE_ICONS.get(fileInfo.extension)
 
     if (error) {
         return <ErrorAlert {...props} className={classNames(props.className, 'm-0')} variant="note" error={error} />
@@ -404,11 +417,7 @@ function renderNode({
                     handleSelect(event)
                 }}
             >
-                <Icon
-                    svgPath={mdiFolderArrowUp}
-                    className={classNames('mr-1', styles.icon)}
-                    aria-label="Load parent directory"
-                />
+                <Icon svgPath={mdiFolderArrowUp} className="mr-1" aria-label="Load parent directory" />
                 {name}
             </Link>
         )
@@ -430,11 +439,7 @@ function renderNode({
                             handleSelect(event)
                         }}
                     >
-                        <Icon
-                            svgPath={mdiSourceRepository}
-                            className={classNames('mr-1', styles.icon)}
-                            aria-label={tooltip}
-                        />
+                        <Icon svgPath={mdiSourceRepository} className="mr-1" aria-label={tooltip} />
                         {title}
                     </Link>
                 </Tooltip>
@@ -443,11 +448,7 @@ function renderNode({
         return (
             <Tooltip content={tooltip}>
                 <span {...props}>
-                    <Icon
-                        svgPath={mdiSourceRepository}
-                        className={classNames('mr-1', styles.icon)}
-                        aria-label={tooltip}
-                    />
+                    <Icon svgPath={mdiSourceRepository} className="mr-1" aria-label={tooltip} />
                     {title}
                 </span>
             </Tooltip>
@@ -470,12 +471,25 @@ function renderNode({
                 }
             }}
         >
-            <Icon
-                svgPath={isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : mdiFileDocumentOutline}
-                className={classNames('mr-1', styles.icon)}
-                aria-hidden={true}
-            />
-            {name}
+            <div className={styles.fileContainer}>
+                <div className={styles.iconContainer}>
+                    {entry?.__typename === 'GitBlob' && !isBranch ? (
+                        <LanguageIcon
+                            language={entry.languages.at(0) ?? ''}
+                            fileNameOrExtensions={element.name}
+                            className="mr-1"
+                        />
+                    ) : (
+                        <Icon
+                            svgPath={isExpanded ? mdiFolderOpenOutline : mdiFolderOutline}
+                            className="mr-1"
+                            aria-hidden={true}
+                        />
+                    )}
+                    {isLikelyTest && <div className={classNames(styles.testIndicator)} />}
+                </div>
+                {name}
+            </div>
         </Link>
     )
 }

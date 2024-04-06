@@ -8,14 +8,15 @@ import (
 	"github.com/dghubble/gologin/v2"
 	"github.com/dghubble/gologin/v2/github"
 	goauth2 "github.com/dghubble/gologin/v2/oauth2"
-	"github.com/inconshreveable/log15"
-	gh "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
+	gh "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -59,7 +60,6 @@ func parseProvider(logger log.Logger, p *schema.GitHubAuthProvider, db database.
 			}
 		},
 		SourceConfig: sourceCfg,
-		StateConfig:  getStateConfig(),
 		ServiceID:    codeHost.ServiceID,
 		ServiceType:  codeHost.ServiceType,
 		Login: func(oauth2Cfg oauth2.Config) http.Handler {
@@ -115,7 +115,7 @@ func validateClientIDAndSecret(clientIDOrSecret string) (valid bool) {
 
 func requestedScopes(p *schema.GitHubAuthProvider) []string {
 	scopes := []string{"user:email"}
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		scopes = append(scopes, "repo")
 	}
 

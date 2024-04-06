@@ -5,10 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
+
 	sglog "github.com/sourcegraph/log"
 
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -28,7 +33,19 @@ type GetAndSaveUserOp struct {
 	ExternalAccountData extsvc.AccountData
 	CreateIfNotExist    bool
 	LookUpByUsername    bool
+	// SingleIdentityPerUser indicates that the provider should only allow to
+	// connect a single external identity per user.
+	SingleIdentityPerUser bool
+	// UserCreateEventProperties is a map of key-value pairs to be added to the
+	// `ExternalAuthSignupSucceeded` (V1) or 'externalAuthSignup' (V2) telemetry
+	// event that is logged when a new user is created.
+	//
+	// It must fulfil telemetry.EventMetadata requirements, i.e. not contain
+	// any sensitive data/PII.
+	UserCreateEventProperties telemetry.EventMetadata
 }
+
+const telemetryV2UserSignUpFeatureName = "externalAuthSignup"
 
 // GetAndSaveUser accepts authentication information associated with a given user, validates and applies
 // the necessary updates to the DB, and returns the user ID after the updates have been applied.
@@ -65,9 +82,11 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		return MockGetAndSaveUser(ctx, op)
 	}
 
+	logger := sglog.Scoped("authGetAndSaveUser")
+	recorder := telemetryrecorder.NewBestEffort(logger, db)
+
 	externalAccountsStore := db.UserExternalAccounts()
 	users := db.Users()
-	logger := sglog.Scoped("authGetAndSaveUser")
 
 	acct := &extsvc.Account{
 		AccountSpec: op.ExternalAccount,
@@ -132,6 +151,14 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		// operator or not.
 		ctx = sgactor.WithActor(ctx, act)
 		user, err := users.CreateWithExternalAccount(ctx, op.UserProps, acct)
+		// We re-try creation with a different username with random suffix if the first one is taken.
+		if database.IsUsernameExists(err) {
+			op.UserProps.Username, err = userpasswd.AddRandomSuffix(op.UserProps.Username)
+			if err != nil {
+				return 0, false, false, "Unable to create a new user account due to a unexpected error. Ask a site admin for help.", errors.Wrapf(err, "username: %q, email: %q", op.UserProps.Username, op.UserProps.Email)
+			}
+			user, err = users.CreateWithExternalAccount(ctx, op.UserProps, acct)
+		}
 
 		switch {
 		case database.IsUsernameExists(err):
@@ -163,19 +190,26 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 			// OK to continue, since this is a best-effort to improve the UX with some initial permissions available.
 		}
 
-		const eventName = "ExternalAuthSignupSucceeded"
+		// Legacy event - new event is recorded outside this closure to cover
+		// more scenarios. We retain the legacy event because it is still
+		// exported by the legacy Cloud exporter, remove in future release.
+		const legacyEventName = "ExternalAuthSignupSucceeded"
 
 		// SECURITY: This args map is treated as a public argument in the LogEvent call below, so it must not contain
 		// any sensitive data.
-		args, err := json.Marshal(map[string]any{
-			// NOTE: The conventional name should be "service_type", but keeping as-is for
-			// backwards capability.
-			"serviceType": acct.AccountSpec.ServiceType,
-		})
+		argMap := map[string]any{}
+		for k, v := range op.UserCreateEventProperties {
+			argMap[string(k)] = v
+		}
+		// NOTE: The conventional name should be "service_type", but keeping as-is for
+		// backwards capability.
+		argMap["serviceType"] = acct.AccountSpec.ServiceType
+
+		args, err := json.Marshal(argMap)
 		if err != nil {
 			logger.Error(
 				"failed to marshal JSON for event log argument",
-				sglog.String("eventName", eventName),
+				sglog.String("eventName", legacyEventName),
 				sglog.Error(err),
 			)
 			// OK to continue, we still want the event log to be created
@@ -184,11 +218,14 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		// NOTE: It is important to propagate the correct context that carries the
 		// information of the actor, especially whether the actor is a Sourcegraph
 		// operator or not.
+		//
+		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
+		//lint:ignore SA1019 existing usage of deprecated functionality.
 		err = usagestats.LogEvent(
 			ctx,
 			db,
 			usagestats.Event{
-				EventName:      eventName,
+				EventName:      legacyEventName,
 				UserID:         act.UID,
 				Argument:       args,
 				PublicArgument: args,
@@ -198,7 +235,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		if err != nil {
 			logger.Error(
 				"failed to log event",
-				sglog.String("eventName", eventName),
+				sglog.String("eventName", legacyEventName),
 				sglog.Error(err),
 			)
 		}
@@ -206,17 +243,91 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		return user.ID, true, true, "", nil
 	}()
 	if err != nil {
-		const eventName = "ExternalAuthSignupFailed"
+		// Retain legacy event logging format since there are references to it
+		ctx = teestore.WithoutV1(ctx)
+
+		// New event - most external services have an exstvc.Variant, so add that as safe metadata
+		serviceVariant, _ := extsvc.VariantValueOf(acct.AccountSpec.ServiceType)
+		recorder.Record(ctx, telemetryV2UserSignUpFeatureName, telemetry.ActionFailed, &telemetry.EventParameters{
+			Metadata: telemetry.MergeMetadata(
+				telemetry.EventMetadata{"serviceVariant": telemetry.Number(serviceVariant)},
+				op.UserCreateEventProperties,
+			),
+			PrivateMetadata: map[string]any{"serviceType": acct.AccountSpec.ServiceType},
+		})
+
+		// Legacy event - retain because it is still exported by the legacy
+		// Cloud exporter, remove in future release.
+		const legacyEventName = "ExternalAuthSignupFailed"
 		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %q}`, acct.AccountSpec.ServiceType))
-		if logErr := usagestats.LogBackendEvent(db, sgactor.FromContext(ctx).UID, deviceid.FromContext(ctx), eventName, serviceTypeArg, serviceTypeArg, featureflag.GetEvaluatedFlagSet(ctx), nil); logErr != nil {
+		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
+		//lint:ignore SA1019 existing usage of deprecated functionality.
+		if logErr := usagestats.LogBackendEvent(db, sgactor.FromContext(ctx).UID, deviceid.FromContext(ctx), legacyEventName, serviceTypeArg, serviceTypeArg, featureflag.GetEvaluatedFlagSet(ctx), nil); logErr != nil {
 			logger.Error(
 				"failed to log event",
-				sglog.String("eventName", eventName),
+				sglog.String("eventName", legacyEventName),
 				sglog.Error(err),
 			)
 		}
 		return newUserSaved, 0, safeErrMsg, err
 	}
+
+	if op.SingleIdentityPerUser && !extAcctSaved {
+		// If we're here, the user has already signed up before this request,
+		// but has no entry for this exact accountID in the user external accounts
+		// table yet.
+		// In single identity mode, we want to attach a new external account
+		// only if no other identity of the same provider for the same user already
+		// exists.
+		other, err := externalAccountsStore.List(ctx, database.ExternalAccountsListOptions{
+			UserID:      userID,
+			ServiceType: acct.ServiceType,
+			ServiceID:   acct.ServiceID,
+			ClientID:    acct.ClientID,
+		})
+		if err != nil {
+			return newUserSaved, 0, "Failed to list user identities. Ask a site admin for help.", err
+		}
+
+		// Confirm that the user already has a different identity from the same
+		// provider. In cases where the user is already logged in (on an existing
+		// browser session) extAcctSaved would be false, even though they logged in with
+		// the same external identity. So as long as is the same identity, we are OK.
+		found := false
+		for _, eac := range other {
+			if eac.ServiceType == acct.ServiceType &&
+				eac.ServiceID == acct.ServiceID &&
+				eac.AccountID == acct.AccountID &&
+				eac.ClientID == acct.ClientID {
+				found = true
+				break
+			}
+		}
+		if !found && len(other) >= 1 {
+			return newUserSaved, 0, "Another identity for this user from this provider already exists. Remove the link to the other identity from your account.", errors.New("duplicate identity for single identity provider")
+		}
+	}
+
+	// There is a legacy event instrumented earlier in this function that covers
+	// the new-user case only, that we are retaining because it might still be
+	// in use. Since this event is quite rare, we DON'T use teestore.WithoutV1
+	// here on the new event even though the legacy event still exists so that
+	// we can consistently capture all the cases.
+	serviceVariant, _ := extsvc.VariantValueOf(acct.AccountSpec.ServiceType)
+	recorder.Record(ctx, telemetryV2UserSignUpFeatureName, telemetry.ActionSucceeded, &telemetry.EventParameters{
+		Metadata: telemetry.MergeMetadata(
+			telemetry.EventMetadata{
+				// Most auth providers services have an exstvc.Variant, so add that
+				// as safe metadata.
+				"serviceVariant": telemetry.Number(serviceVariant),
+				// Track the various outcomes of the massive signup closer above.
+				"newUserSaved": telemetry.Bool(newUserSaved),
+				"extAcctSaved": telemetry.Bool(extAcctSaved),
+			},
+			op.UserCreateEventProperties,
+		),
+		PrivateMetadata: map[string]any{"serviceType": acct.AccountSpec.ServiceType},
+	})
 
 	// Update user properties, if they've changed
 	if !newUserSaved {

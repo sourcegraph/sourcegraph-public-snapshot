@@ -6,7 +6,9 @@
    "parent": "",
    "state": "ACTIVE",
    "branches": null,
-   "labels": null
+   "labels": null,
+   "http_url_to_repo": "",
+   "ssh_url_to_repo": ""
   },
   "All-Users": {
    "description": "",
@@ -15,7 +17,9 @@
    "parent": "",
    "state": "ACTIVE",
    "branches": null,
-   "labels": null
+   "labels": null,
+   "http_url_to_repo": "",
+   "ssh_url_to_repo": ""
   },
   "beatrix": {
    "description": "",
@@ -24,7 +28,9 @@
    "parent": "",
    "state": "ACTIVE",
    "branches": null,
-   "labels": null
+   "labels": null,
+   "http_url_to_repo": "",
+   "ssh_url_to_repo": ""
   },
   "idan-temp": {
    "description": "",
@@ -33,7 +39,9 @@
    "parent": "",
    "state": "ACTIVE",
    "branches": null,
-   "labels": null
+   "labels": null,
+   "http_url_to_repo": "",
+   "ssh_url_to_repo": ""
   },
   "k8s-gerrit": {
    "description": "",
@@ -42,6 +50,8 @@
    "parent": "",
    "state": "ACTIVE",
    "branches": null,
-   "labels": null
+   "labels": null,
+   "http_url_to_repo": "",
+   "ssh_url_to_repo": ""
   }
  }

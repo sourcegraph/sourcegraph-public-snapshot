@@ -1,0 +1,174 @@
+---
+source: crates/syntax-analysis/src/lib.rs
+expression: dumped
+---
+  // Top level package, symbol: com.example
+  package com.example
+//        ^^^^^^^^^^^ definition scip-ctags `com.example`/
+  
+  // Import statements (not typically symbol indexed)
+  import scala.collection.immutable._
+  
+  // Top level class, symbol: com.example.MyClass
+  class MyClass {
+//      ^^^^^^^ definition scip-ctags `com.example`/MyClass#
+    def method1(): Unit = ()
+//      ^^^^^^^ definition scip-ctags `com.example`/MyClass#method1().
+  }
+  
+  // Top level abstract class, symbol: com.example.MyAbstractClass
+  abstract class MyAbstractClass {
+//               ^^^^^^^^^^^^^^^ definition scip-ctags `com.example`/MyAbstractClass#
+    def abstractMethod: Int
+//      ^^^^^^^^^^^^^^ definition scip-ctags `com.example`/MyAbstractClass#abstractMethod().
+  }
+  
+  // Top level case class, symbol: com.example.MyCaseClass
+  case class MyCaseClass(a: Int, b: String)
+//           ^^^^^^^^^^^ definition scip-ctags `com.example`/MyCaseClass#
+//                       ^ definition scip-ctags `com.example`/MyCaseClass#a.
+//                               ^ definition scip-ctags `com.example`/MyCaseClass#b.
+  
+  // Top level object, symbol: com.example.MyObject
+  object MyObject {
+//       ^^^^^^^^ definition scip-ctags `com.example`/MyObject#
+    def method2(): Unit = ()
+//      ^^^^^^^ definition scip-ctags `com.example`/MyObject#method2().
+  }
+  
+  // Top level case object, symbol: com.example.MyCaseObject
+  case object MyCaseObject {
+//            ^^^^^^^^^^^^ definition scip-ctags `com.example`/MyCaseObject#
+    def method3(): Unit = ()
+//      ^^^^^^^ definition scip-ctags `com.example`/MyCaseObject#method3().
+  }
+  
+  // Top level trait, symbol: com.example.MyTrait
+  trait MyTrait {
+//      ^^^^^^^ definition scip-ctags `com.example`/MyTrait#
+    def method4(): String
+//      ^^^^^^^ definition scip-ctags `com.example`/MyTrait#method4().
+  }
+  
+  // Another way to declare package, symbol: com.example.inner
+  package inner {
+//        ^^^^^ definition scip-ctags `com.example`/inner/
+    // Top level class within package, symbol: com.example.inner.InnerClass
+    class InnerClass {
+//        ^^^^^^^^^^ definition scip-ctags `com.example`/inner/InnerClass#
+      def innerMethod(): Unit = ()
+//        ^^^^^^^^^^^ definition scip-ctags `com.example`/inner/InnerClass#innerMethod().
+    }
+  
+    // Nested object within package, symbol: com.example.inner.NestedObject
+    object NestedObject {
+//         ^^^^^^^^^^^^ definition scip-ctags `com.example`/inner/NestedObject#
+      def nestedMethod(): Unit = ()
+//        ^^^^^^^^^^^^ definition scip-ctags `com.example`/inner/NestedObject#nestedMethod().
+    }
+  }
+  
+  // Top level type alias, symbol: com.example.MyAlias
+  type MyAlias = MyCaseClass
+//     ^^^^^^^ definition scip-ctags `com.example`/MyAlias#
+  
+  // Top level implicit class, symbol: com.example.MyImplicitClass
+  implicit class MyImplicitClass(val s: String) {
+//               ^^^^^^^^^^^^^^^ definition scip-ctags `com.example`/MyImplicitClass#
+//                                   ^ definition scip-ctags `com.example`/MyImplicitClass#s.
+  def method5(): String = s.toUpperCase
+//    ^^^^^^^ definition scip-ctags `com.example`/MyImplicitClass#method5().
+  }
+  
+  // Top level implicit def, symbol: com.example.stringToInt
+  implicit def stringToInt(s: String): Int = s.toInt
+//             ^^^^^^^^^^^ definition scip-ctags `com.example`/stringToInt().
+  
+  case class MinimizedCaseClass(value: String) {
+//           ^^^^^^^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedCaseClass#
+//                              ^^^^^ definition scip-ctags `com.example`/MinimizedCaseClass#value.
+    def this() = this(value = "value")
+//      ^^^^ definition scip-ctags `com.example`/MinimizedCaseClass#this().
+  }
+  object MinimizedCaseClass {
+//       ^^^^^^^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedCaseClass#
+    def main(): Unit = {
+//      ^^^^ definition scip-ctags `com.example`/MinimizedCaseClass#main().
+      println(MinimizedCaseClass.apply(value = "value1").copy(value = "value2").value)
+    }
+  }
+  
+  trait MinimizedTrait[T] extends AutoCloseable {
+//      ^^^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedTrait#
+    def add(e: T): T
+//      ^^^ definition scip-ctags `com.example`/MinimizedTrait#add().
+    final def +(e: T): T = add(e)
+//            ^ definition scip-ctags `com.example`/MinimizedTrait#+().
+  }
+  
+  class MinimizedScalaSignatures extends AutoCloseable with java.io.Serializable {
+//      ^^^^^^^^^^^^^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#
+    def close(): Unit = ()
+//      ^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#close().
+  }
+  
+  object MinimizedScalaSignatures extends MinimizedScalaSignatures with Comparable[Int] {
+//       ^^^^^^^^^^^^^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#
+    @inline def annotation(x: Int): Int = x + 1
+//              ^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#annotation().
+    @deprecated("2020-07-27") def annotationMessage(x: Int): Int = x + 1
+//                                ^^^^^^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#annotationMessage().
+    def compareTo(x: Int): Int = ???
+//      ^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#compareTo().
+    def identity[T](e: T): T = e
+//      ^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#identity().
+    def tuple(): (Int, String) = null
+//      ^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#tuple().
+    def function0(): () => String = null
+//      ^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#function0().
+    def function1(): Int => String = null
+//      ^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#function1().
+    def function2(): (Int, String) => Unit = null
+//      ^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#function2().
+    def typeParameter(): Map[Int, String] = null
+//      ^^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#typeParameter().
+    def termParameter(a: Int, b: String): String = null
+//      ^^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#termParameter().
+    def singletonType(e: String): e.type = e
+//      ^^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#singletonType().
+    def thisType(): this.type = this
+//      ^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#thisType().
+    def constantInt(): 1 = 1
+//      ^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#constantInt().
+    def constantString(): "string" = "string"
+//      ^^^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#constantString().
+    def constantBoolean(): true = true
+//      ^^^^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#constantBoolean().
+    def constantFloat(): 1.2f = 1.2f
+//      ^^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#constantFloat().
+    def constantChar(): 'a' = 'a'
+//      ^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#constantChar().
+    def structuralType(): { val x: Int; def foo(a: Int): String } = null
+//      ^^^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#structuralType().
+//                                          ^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#structuralType().foo().
+    def byNameType(a: => Int): Unit = ()
+//      ^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#byNameType().
+    def repeatedType(a: Int*): Unit = ()
+//      ^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#repeatedType().
+  
+    type TypeAlias = Int
+//       ^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#TypeAlias#
+    type ParameterizedTypeAlias[A] = () => A
+//       ^^^^^^^^^^^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#ParameterizedTypeAlias#
+    type ParameterizedTypeAlias2[A, B] = A => B
+//       ^^^^^^^^^^^^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#ParameterizedTypeAlias2#
+    type TypeBound
+//       ^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#TypeBound#
+    type TypeUpperBound <: String
+//       ^^^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#TypeUpperBound#
+    type TypeLowerBound >: CharSequence
+//       ^^^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#TypeLowerBound#
+    type TypeLowerUpperBound >: String <: CharSequence
+//       ^^^^^^^^^^^^^^^^^^^ definition scip-ctags `com.example`/MinimizedScalaSignatures#TypeLowerUpperBound#
+  }
+

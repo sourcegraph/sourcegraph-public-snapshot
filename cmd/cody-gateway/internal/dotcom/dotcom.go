@@ -34,6 +34,10 @@ func NewClient(endpoint, token string) graphql.Client {
 	})}
 }
 
+type contextKey int
+
+const contextKeyOp contextKey = iota
+
 // tracedClient instruments graphql.Client with OpenTelemetry tracing.
 type tracedClient struct{ c graphql.Client }
 
@@ -47,6 +51,8 @@ func (tc *tracedClient) MakeRequest(
 	// Start a span
 	ctx, span := tracer.Start(ctx, fmt.Sprintf("GraphQL: %s", req.OpName),
 		trace.WithAttributes(attribute.String("query", req.Query)))
+
+	ctx = context.WithValue(ctx, contextKeyOp, req.OpName)
 
 	// Do the request
 	err := tc.c.MakeRequest(ctx, req, resp)
@@ -70,6 +76,11 @@ type tokenAuthTransport struct {
 }
 
 func (t *tokenAuthTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	// HACK: We use the query to denote the type of a GraphQL request,
+	// e.g. /.api/graphql?Repositories, which in our case is basically the
+	// operation name.
+	req.URL.RawQuery = req.Context().Value(contextKeyOp).(string)
+
 	req.Header.Set("Authorization", fmt.Sprintf("token %s", t.token))
 	return t.wrapped.RoundTrip(req)
 }

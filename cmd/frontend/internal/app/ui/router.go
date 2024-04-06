@@ -15,13 +15,14 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/githubapp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
@@ -52,7 +53,7 @@ const (
 
 	routeAboutSubdomain = "about-subdomain"
 	aboutRedirectScheme = "https"
-	aboutRedirectHost   = "about.sourcegraph.com"
+	aboutRedirectHost   = "sourcegraph.com"
 
 	// Legacy redirects
 	routeLegacyLogin      = "login"
@@ -61,7 +62,7 @@ const (
 )
 
 // aboutRedirects contains map entries, each of which indicates that
-// sourcegraph.com/$KEY should redirect to about.sourcegraph.com/$VALUE.
+// sourcegraph.com/$KEY should redirect to sourcegraph.com/$VALUE.
 var aboutRedirects = map[string]string{
 	"about":      "about",
 	"blog":       "blog",
@@ -107,6 +108,9 @@ func InitRouter(db database.DB) {
 	r.Path("/sign-in").Methods(http.MethodGet, http.MethodHead).Name(uirouter.RouteSignIn).Handler(handler(db, serveSignIn(db)))
 	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted).Handler(handler(db, servePingFromSelfHosted))
 
+	ghAppRouter := r.PathPrefix("/githubapp/").Subrouter()
+	githubapp.SetupGitHubAppRoutes(ghAppRouter, db)
+
 	// Basic pages with static titles
 	for _, p := range []struct {
 		// Specify either path OR pathPrefix.
@@ -141,6 +145,8 @@ func InitRouter(db database.DB) {
 		{path: "/search/cody", name: "cody-search", title: "Search (Cody)", index: false},
 		{path: "/app/coming-soon", name: "app-coming-soon", title: "Coming soon", index: false},
 		{path: "/app/auth/callback", name: "app-auth-callback", title: "Auth callback", index: false},
+		{path: "/cody/manage", name: "cody", title: "Cody Manage", index: false},
+		{path: "/cody/subscription", name: "cody", title: "Cody Pricing", index: false},
 		{path: "/cody/chat", name: "cody", title: "Cody", index: false},
 		{path: "/cody/chat/{chatID}", name: "cody-chat", title: "Cody", index: false},
 		// TODO: [TEMPORARY] remove this redirect route when the marketing page is added.
@@ -198,8 +204,8 @@ func InitRouter(db database.DB) {
 	// search badge
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge).Handler(searchBadgeHandler())
 
-	if envvar.SourcegraphDotComMode() {
-		// about.sourcegraph.com subdomain
+	if dotcom.SourcegraphDotComMode() {
+		// sourcegraph.com subdomain
 		r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").
 			Name(routeAboutSubdomain).
 			Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -220,7 +226,7 @@ func InitRouter(db database.DB) {
 
 		// legacy routes
 		r.Path("/login").Methods("GET").Name(routeLegacyLogin).Handler(staticRedirectHandler("/sign-in", http.StatusMovedPermanently))
-		r.Path("/careers").Methods("GET").Name(routeLegacyCareers).Handler(staticRedirectHandler("https://about.sourcegraph.com/jobs", http.StatusMovedPermanently))
+		r.Path("/careers").Methods("GET").Name(routeLegacyCareers).Handler(staticRedirectHandler("https://sourcegraph.com/jobs", http.StatusMovedPermanently))
 
 		r.PathPrefix("/extensions").Methods("GET").Name("extensions").
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -295,7 +301,7 @@ func InitRouter(db database.DB) {
 	}
 
 	// legacy redirects
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		repo.Path("/info").Methods("GET").Name("page.repo.landing").Handler(handler(db, serveRepoLanding(db)))
 		repoRev.Path("/{dummy:def|refs}/" + routevar.Def).Methods("GET").Name("page.def.redirect").Handler(http.HandlerFunc(serveDefRedirectToDefLanding))
 		repoRev.Path("/info/" + routevar.Def).Methods("GET").Name(routeLegacyDefLanding).Handler(handler(db, serveDefLanding))

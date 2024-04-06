@@ -1,6 +1,7 @@
 package collections
 
 import (
+	"cmp"
 	"testing"
 
 	"github.com/grafana/regexp"
@@ -11,7 +12,7 @@ func TestSet(t *testing.T) {
 	a := NewSet(1, 2, 3)
 	b := NewSet(2, 3, 4)
 
-	cmp := NaturalCompare[int]
+	cmp := cmp.Less[int]
 
 	t.Run("Set can be created from another Set", func(t *testing.T) {
 		c := NewSet(a.Values()...)

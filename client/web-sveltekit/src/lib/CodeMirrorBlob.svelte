@@ -1,22 +1,60 @@
 <script lang="ts" context="module">
-    const shCompartment = new Compartment()
-    const miscSettingsCompartment = new Compartment()
+    import { HovercardView } from '$lib/repo/HovercardView'
+
+    export interface BlobInfo {
+        /**
+         * Name of the repository this file belongs to.
+         */
+        repoName: string
+        /**
+         * The commit OID of the currently viewed commit.
+         */
+        commitID: string
+        /**
+         * Human readable version of the current commit (e.g. branch name).
+         */
+        revision: string
+        /**
+         * The path of the file relative to the repository root.
+         */
+        filePath: string
+        /**
+         * The content of the file.
+         */
+        content: string
+        /**
+         * The language of the file.
+         */
+        languages: string[]
+    }
+
+    const extensionsCompartment = new Compartment()
 
     const defaultTheme = EditorView.theme({
         '&': {
-            width: '100%',
-            'min-height': 0,
+            height: '100%',
             color: 'var(--color-code)',
-            flex: 1,
+        },
+        '&.cm-focused': {
+            outline: 'none',
         },
         '.cm-scroller': {
             lineHeight: '1rem',
             fontFamily: 'var(--code-font-family)',
             fontSize: 'var(--code-font-size)',
         },
-        '.cm-content:focus-visible': {
-            outline: 'none',
-            boxShadow: 'none',
+        '.cm-content': {
+            backgroundColor: 'var(--code-bg)',
+            '&:focus-visible': {
+                outline: 'none',
+                boxShadow: 'none',
+            },
+        },
+        '.cm-panels': {
+            '&-top': {
+                borderBottom: '1px solid var(--border-color)',
+            },
+            backgroundColor: 'transparent',
         },
         '.cm-gutters': {
             'background-color': 'var(--code-bg)',
@@ -35,6 +73,15 @@
         },
         '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
+        },
+        '.sourcegraph-document-highlight': {
+            backgroundColor: 'var(--secondary)',
+        },
+        '.selection-highlight': {
+            backgroundColor: 'var(--mark-bg)',
+        },
+        '.cm-tooltip': {
+            border: 'none',
         },
     })
 
@@ -57,6 +104,7 @@
             role: 'generic',
         }),
         defaultTheme,
+        linkify,
     ]
 
     function configureSyntaxHighlighting(content: string, lsif: string): Extension {
@@ -71,96 +119,138 @@
 <script lang="ts">
     import '$lib/highlight.scss'
 
-    import { Compartment, EditorState, StateEffect, type Extension } from '@codemirror/state'
+    import { Compartment, EditorState, type Extension } from '@codemirror/state'
     import { EditorView } from '@codemirror/view'
-    import { createEventDispatcher } from 'svelte'
+    import { createEventDispatcher, onMount } from 'svelte'
 
     import { browser } from '$app/environment'
+    import { goto } from '$app/navigation'
+    import type { LineOrPositionOrRange } from '$lib/common'
+    import type { CodeIntelAPI } from '$lib/shared'
     import {
-        blobPropsFacet,
         selectableLineNumbers,
         syntaxHighlight,
         type SelectedLineRange,
         setSelectedLines,
         isValidLineRange,
+        linkify,
+        createCodeIntelExtension,
+        syncSelection,
+        temporaryTooltip,
     } from '$lib/web'
-    import type { BlobFileFields } from '$lib/repo/api/blob'
 
-    export let blob: BlobFileFields
+    import { type Range, staticHighlights } from './codemirror/static-highlights'
+    import { goToDefinition, openImplementations, openReferences } from './repo/blob'
+
+    export let blobInfo: BlobInfo
     export let highlights: string
     export let wrapLines: boolean = false
-    export let selectedLines: SelectedLineRange | null = null
+    export let selectedLines: LineOrPositionOrRange | null = null
+    export let codeIntelAPI: CodeIntelAPI
+    export let staticHighlightRanges: Range[] = []
 
     const dispatch = createEventDispatcher<{ selectline: SelectedLineRange }>()
 
     let editor: EditorView
     let container: HTMLDivElement | null = null
 
-    function createEditor(container: HTMLDivElement): EditorView {
-        const extensions = [
-            // @ts-ignore - ugly (temporary?) hack to avoid issues with existing extension (selectableLineNumbers)
-            blobPropsFacet.of({}),
-            staticExtensions,
-            selectableLineNumbers({
-                onSelection(range) {
-                    dispatch('selectline', range)
-                },
-                initialSelection: selectedLines,
-                navigateToLineOnAnyClick: false,
-            }),
-            miscSettingsCompartment.of(configureMiscSettings({ wrapLines })),
-            shCompartment.of(configureSyntaxHighlighting(blob.content, highlights)),
-        ]
+    const lineNumbers = selectableLineNumbers({
+        onSelection(range) {
+            dispatch('selectline', range)
+        },
+        initialSelection: selectedLines?.line === undefined ? null : selectedLines,
+    })
 
-        const view = new EditorView({
-            state: EditorState.create({ doc: blob.content, extensions }),
-            parent: container,
-        })
-        return view
+    $: documentInfo = {
+        repoName: blobInfo.repoName,
+        commitID: blobInfo.commitID,
+        revision: blobInfo.revision,
+        filePath: blobInfo.filePath,
+        languages: blobInfo.languages,
     }
+    $: codeIntelExtension = createCodeIntelExtension({
+        api: {
+            api: codeIntelAPI,
+            documentInfo: documentInfo,
+            goToDefinition: (view, definition, options) => goToDefinition(documentInfo, view, definition, options),
+            openReferences,
+            openImplementations,
+            createTooltipView: options => new HovercardView(options.view, options.token, options.hovercardData),
+        },
+        // TODO(fkling): Support tooltip pinning
+        pin: {},
+        navigate: to => {
+            if (typeof to === 'number') {
+                if (to > 0) {
+                    history.forward()
+                } else {
+                    history.back()
+                }
+            } else {
+                goto(to.toString())
+            }
+        },
+    })
+    $: settings = configureMiscSettings({ wrapLines })
+    $: sh = configureSyntaxHighlighting(blobInfo.content, highlights)
+    $: staticHighlightExtension = staticHighlights(staticHighlightRanges)
 
-    function updateExtensions(effects: StateEffect<unknown> | readonly StateEffect<unknown>[]) {
+    $: extensions = [
+        sh,
+        settings,
+        lineNumbers,
+        temporaryTooltip,
+        codeIntelExtension,
+        staticExtensions,
+        staticHighlightExtension,
+    ]
+
+    function update(blobInfo: BlobInfo, extensions: Extension, range: LineOrPositionOrRange | null) {
         if (editor) {
-            editor.dispatch({ effects })
+            // TODO(fkling): Find a way to combine this into a single transaction.
+            if (editor.state.sliceDoc() !== blobInfo.content) {
+                editor.setState(
+                    EditorState.create({ doc: blobInfo.content, extensions: extensionsCompartment.of(extensions) })
+                )
+            } else {
+                editor.dispatch({ effects: [extensionsCompartment.reconfigure(extensions)] })
+            }
+            editor.dispatch({
+                effects: setSelectedLines.of(range?.line && isValidLineRange(range, editor.state.doc) ? range : null),
+            })
+
+            if (range) {
+                syncSelection(editor, range)
+            }
         }
     }
 
-    function updateSelectedLines(range: SelectedLineRange) {
-        if (editor) {
-            updateExtensions(setSelectedLines.of(range && isValidLineRange(range, editor.state.doc) ? range : null))
+    $: update(blobInfo, extensions, selectedLines)
+
+    onMount(() => {
+        if (container) {
+            editor = new EditorView({
+                state: EditorState.create({ doc: blobInfo.content, extensions: extensionsCompartment.of(extensions) }),
+                parent: container,
+            })
+            if (selectedLines) {
+                syncSelection(editor, selectedLines)
+            }
         }
-    }
-
-    // Update blob content and highlights
-    $: updateExtensions(shCompartment.reconfigure(configureSyntaxHighlighting(blob.content, highlights)))
-    // Update line wrapping
-    $: updateExtensions(miscSettingsCompartment.reconfigure(configureMiscSettings({ wrapLines })))
-    // Update selected line
-    $: updateSelectedLines(selectedLines)
-
-    $: if (editor && editor?.state.sliceDoc() !== blob.content) {
-        editor.dispatch({
-            changes: { from: 0, to: editor.state.doc.length, insert: blob.content },
-        })
-    }
-
-    $: if (container && !editor) {
-        editor = createEditor(container)
-    }
+    })
 </script>
 
 {#if browser}
     <div bind:this={container} class="root test-editor" data-editor="codemirror6" />
 {:else}
     <div class="root">
-        <pre>{blob.content}</pre>
+        <pre>{blobInfo.content}</pre>
     </div>
 {/if}
 
 <style lang="scss">
     .root {
         display: contents;
-        overflow: hidden;
     }
     pre {
         margin: 0;

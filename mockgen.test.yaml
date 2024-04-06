@@ -228,7 +228,7 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store
       interfaces:
         - Store
-    - path: internal/codeintel/uploads
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads
       interfaces:
         - RepoStore
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore
@@ -386,9 +386,9 @@
     - InsightPermissionStore
 - filename: cmd/cody-gateway/internal/auth/mocks_test.go
   sources:
-    - path: github.com/gregjones/httpcache
+    - path: github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription
       interfaces:
-        - Cache
+        - ListingCache
 - filename: cmd/cody-gateway/internal/dotcom/mocks.go
   sources:
     - path: github.com/Khan/genqlient/graphql
@@ -415,3 +415,9 @@
       interfaces:
         - RepositoryLocker
         - RepositoryLock
+- filename: cmd/gitserver/internal/mocks_test.go
+  package: internal
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal
+      interfaces:
+        - service

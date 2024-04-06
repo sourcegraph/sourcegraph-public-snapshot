@@ -225,7 +225,6 @@ func TestRunnerFix(t *testing.T) {
 func TestRunnerInteractive(t *testing.T) {
 	t.Run("bad input", func(t *testing.T) {
 		inputs := []string{
-			"1",  // skipped, so unfixable
 			"12", // not an option
 		}
 		var output strings.Builder
@@ -238,11 +237,9 @@ func TestRunnerInteractive(t *testing.T) {
 
 		got := output.String()
 		for _, c := range []string{
-			"Some checks failed. Which one do you want to fix?",
-			// Our choice was invalid
-			"1 is an invalid choice :(",
+			"What do you want to do?",
 			// Our second choice was invalid
-			"12 is an invalid choice :(",
+			"❌ Invalid choice\n",
 		} {
 			assert.Contains(t, got, c)
 		}
@@ -267,9 +264,34 @@ func TestRunnerInteractive(t *testing.T) {
 
 		got := output.String()
 		for _, c := range []string{
-			"Some checks failed. Which one do you want to fix?",
+			"What do you want to do?",
 			// Unfixable error
 			"4 cannot be fixed",
+		} {
+			assert.Contains(t, got, c)
+		}
+	})
+
+	t.Run("fix everything", func(t *testing.T) {
+		inputs := []string{
+			"0",
+		}
+		var output strings.Builder
+		runner := check.NewRunner(
+			strings.NewReader(strings.Join(inputs, "\n")),
+			getOutput(&output),
+			getUnsatisfiableChecks(t))
+
+		// Fix did not work, we should return to main menu
+		err := runner.Interactive(context.Background(), nil)
+		require.Nil(t, err)
+
+		got := output.String()
+		for _, c := range []string{
+			"Right time for the BIG FIX. Let's try to fix everything!",
+			"Trying my hardest to fix \"required\" automatically...",
+			"Trying my hardest to fix \"has requirements\" automatically...",
+			"Trying my hardest to fix \"fix doesnt work\" automatically...",
 		} {
 			assert.Contains(t, got, c)
 		}
@@ -281,7 +303,7 @@ func TestRunnerInteractive(t *testing.T) {
 			"2", // manual fix
 			"1", // fix the first
 			"4", // try again
-			"",
+			"99",
 		}
 		var output strings.Builder
 		runner := check.NewRunner(
@@ -295,15 +317,13 @@ func TestRunnerInteractive(t *testing.T) {
 
 		scanner := bufio.NewScanner(strings.NewReader(output.String()))
 		want := []string{
-			"Some checks failed. Which one do you want to fix?",
+			"What do you want to do?",
 			// description
 			"how to fix manually",
 			// failure to fix
 			"Encountered error while fixing: i need to be fixed",
 			// should be prompted to try again
-			"Let's try again?",
-			// After entering choice again, we should see this again
-			"What do you want to do",
+			"What do you want to do?",
 		}
 		var found int
 		for _, c := range want {

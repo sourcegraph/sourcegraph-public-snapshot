@@ -8,7 +8,6 @@ import {
     mdiOpenInNew,
     mdiPlus,
     mdiChevronRight,
-    mdiViewList,
     mdiFormatListBulleted,
 } from '@mdi/js'
 import classNames from 'classnames'
@@ -17,6 +16,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { CodyLogo } from '@sourcegraph/cody-ui/dist/icons/CodyLogo'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Badge,
     Button,
@@ -39,6 +39,7 @@ import {
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type { SourcegraphContext } from '../../jscontext'
 import { EventName } from '../../util/constants'
 import { ChatUI } from '../components/ChatUI'
@@ -51,11 +52,10 @@ import { CodyColorIcon } from './CodyPageIcon'
 
 import styles from './CodyChatPage.module.scss'
 
-interface CodyChatPageProps {
+interface CodyChatPageProps extends TelemetryV2Props {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
-    isCodyApp: boolean
-    context: Pick<SourcegraphContext, 'authProviders'>
+    context: Pick<SourcegraphContext, 'externalURL'>
 }
 
 const transcriptIdFromUrl = (pathname: string): string | undefined => {
@@ -93,16 +93,19 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     authenticatedUser,
     context,
     isSourcegraphDotCom,
-    isCodyApp,
+    telemetryRecorder,
 }) => {
     const { pathname } = useLocation()
     const navigate = useNavigate()
+
+    // Evaluate a mock feature flag for the purpose of an A/A test. No functionality is affected by this flag.
+    const [_codyChatMockTestValue] = useFeatureFlag('cody-chat-mock-test')
 
     const codyChatStore = useCodyChat({
         userID: authenticatedUser?.id,
         onTranscriptHistoryLoad,
         autoLoadTranscriptFromHistory: false,
-        autoLoadScopeWithRepositories: isCodyApp,
+        telemetryRecorder,
     })
     const {
         initializeNewChat,
@@ -118,7 +121,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     const onCTADismiss = (): void => setIsCTADismissed(true)
 
     useEffect(() => {
-        logTranscriptEvent(EventName.CODY_CHAT_PAGE_VIEWED)
+        logTranscriptEvent(EventName.CODY_CHAT_PAGE_VIEWED, 'cody.chat', 'view')
     }, [logTranscriptEvent])
 
     const transcriptId = transcript?.id
@@ -152,14 +155,17 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                 isSourcegraphDotCom={isSourcegraphDotCom}
                 authenticatedUser={authenticatedUser}
                 context={context}
+                telemetryRecorder={telemetryRecorder}
             />
         )
     }
 
+    const codyDashboardLink = isSourcegraphDotCom ? '/cody/manage' : '/cody'
+
     return (
         <Page className={classNames('d-flex flex-column', styles.page)}>
             <PageTitle title="Cody chat" />
-            {!isSourcegraphDotCom && !isCTADismissed && !isCodyApp && (
+            {!isSourcegraphDotCom && !isCTADismissed && (
                 <MarketingBlock
                     wrapperClassName="mb-5"
                     contentClassName={classNames(styles.ctaWrapper, styles.ctaContent)}
@@ -199,7 +205,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                     <>
                         Cody answers code questions and writes code for you using your entire codebase and the code
                         graph.
-                        {!isSourcegraphDotCom && !isCodyApp && isCTADismissed && (
+                        {!isSourcegraphDotCom && isCTADismissed && (
                             <>
                                 {' '}
                                 <Link to="/help/cody#get-cody">Get Cody in your editor.</Link>
@@ -213,11 +219,14 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                     <PageHeader.Breadcrumb icon={CodyColorIcon}>
                         <div className="d-inline-flex align-items-center">
                             Cody Chat
-                            {!isCodyApp && (
-                                <Badge variant="info" className="ml-2">
-                                    Beta
-                                </Badge>
-                            )}
+                            <Badge variant="info" className="ml-2">
+                                Experimental
+                            </Badge>
+                            <Link to={codyDashboardLink}>
+                                <Text className="mb-0 ml-2" size="small">
+                                    Manage
+                                </Text>
+                            </Link>
                         </div>
                     </PageHeader.Breadcrumb>
                 </PageHeader.Heading>
@@ -243,15 +252,10 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                         <MenuDivider />
                                     </>
                                 )}
-                                <MenuLink
-                                    as={Link}
-                                    to={isCodyApp ? 'https://docs.sourcegraph.com/app' : '/help/cody'}
-                                    target="_blank"
-                                    rel="noopener"
-                                >
+                                <MenuLink as={Link} to="/help/cody" target="_blank" rel="noopener">
                                     <Icon aria-hidden={true} svgPath={mdiOpenInNew} /> Cody Docs & FAQ
                                 </MenuLink>
-                                {!isCodyApp && authenticatedUser?.siteAdmin && (
+                                {authenticatedUser?.siteAdmin && (
                                     <MenuLink as={Link} to="/site-admin/cody">
                                         <Icon aria-hidden={true} svgPath={mdiCogOutline} /> Cody Settings
                                     </MenuLink>
@@ -283,12 +287,18 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                             </Text>
                             <div className="mb-2">
                                 <Link
-                                    to="/get-cody"
+                                    to="/cody/manage"
                                     className={classNames(
                                         'd-inline-flex align-items-center text-merged',
                                         styles.ctaLink
                                     )}
-                                    onClick={() => logTranscriptEvent(EventName.CODY_CHAT_GET_EDITOR_EXTENSION)}
+                                    onClick={() =>
+                                        logTranscriptEvent(
+                                            EventName.CODY_CHAT_GET_EDITOR_EXTENSION,
+                                            'cody.chat.getEditorExtensionCTA',
+                                            'click'
+                                        )
+                                    }
                                 >
                                     Get Cody in your editor
                                     <Icon svgPath={mdiChevronRight} aria-hidden={true} />
@@ -309,127 +319,66 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                     )}
                 </div>
 
-                {isCodyApp ? (
-                    <>
-                        <div
-                            className={classNames(
-                                'col-md-9 h-100',
-                                styles.chatMainWrapper,
-                                showMobileHistory && styles.chatMainWrapperWithMobileHistory
-                            )}
-                        >
-                            <div className={styles.mobileTopBar}>
+                <div className={classNames('col-md-9 h-100', styles.chatMainWrapper)}>
+                    <div className={styles.mobileTopBarWeb}>
+                        <div className="d-flex col-2 p-0">
+                            <Tooltip content="Chat history">
                                 <Button
                                     variant="icon"
-                                    className={styles.mobileTopBarButton}
+                                    className="mr-2"
+                                    aria-label="Active chats"
                                     onClick={() => setShowMobileHistory(true)}
+                                    aria-pressed={showMobileHistory}
                                 >
-                                    <Icon aria-hidden={true} svgPath={mdiViewList} className="mr-2" />
-                                    All chats
+                                    <Icon aria-hidden={true} svgPath={mdiFormatListBulleted} />
                                 </Button>
-                                <div className={classNames('border-right', styles.mobileTopBarDivider)} />
-                                <Button
-                                    variant="icon"
-                                    className={styles.mobileTopBarButton}
-                                    onClick={initializeNewChat}
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiPlus} className="mr-2" />
-                                    New chat
+                            </Tooltip>
+                            <Tooltip content="Start a new chat">
+                                <Button variant="icon" aria-label="Start a new chat" onClick={initializeNewChat}>
+                                    <Icon aria-hidden={true} svgPath={mdiPlus} />
                                 </Button>
-                            </div>
-                            <ChatUI
-                                codyChatStore={codyChatStore}
-                                isCodyApp={true}
-                                isCodyChatPage={true}
-                                authenticatedUser={authenticatedUser}
-                            />
-                        </div>
-
-                        {showMobileHistory && (
-                            <div className={styles.mobileHistoryWrapper}>
-                                <div className={styles.mobileTopBar}>
+                            </Tooltip>
+                            {(transcriptHistory.length > 1 || !!transcriptHistory[0]?.interactions?.length) && (
+                                <Tooltip content="Clear all chats">
                                     <Button
                                         variant="icon"
-                                        className={classNames('w-100', styles.mobileTopBarButton)}
-                                        onClick={() => setShowMobileHistory(false)}
+                                        className="ml-2"
+                                        aria-label="Clear all chats"
+                                        onClick={clearHistory}
                                     >
-                                        <Icon aria-hidden={true} svgPath={mdiClose} className="mr-2" />
-                                        Close
-                                    </Button>
-                                </div>
-                                <div className={styles.mobileHistory}>
-                                    <HistoryList
-                                        currentTranscript={transcript}
-                                        transcriptHistory={transcriptHistory}
-                                        truncateMessageLength={60}
-                                        loadTranscriptFromHistory={loadTranscriptFromHistory}
-                                        deleteHistoryItem={deleteHistoryItem}
-                                    />
-                                </div>
-                            </div>
-                        )}
-                    </>
-                ) : (
-                    <div className={classNames('col-md-9 h-100', styles.chatMainWrapper)}>
-                        <div className={styles.mobileTopBarWeb}>
-                            <div className="d-flex col-2 p-0">
-                                <Tooltip content="Chat history">
-                                    <Button
-                                        variant="icon"
-                                        className="mr-2"
-                                        aria-label="Active chats"
-                                        onClick={() => setShowMobileHistory(true)}
-                                        aria-pressed={showMobileHistory}
-                                    >
-                                        <Icon aria-hidden={true} svgPath={mdiFormatListBulleted} />
+                                        <Icon aria-hidden={true} svgPath={mdiDelete} />
                                     </Button>
                                 </Tooltip>
-                                <Tooltip content="Start a new chat">
-                                    <Button variant="icon" aria-label="Start a new chat" onClick={initializeNewChat}>
-                                        <Icon aria-hidden={true} svgPath={mdiPlus} />
-                                    </Button>
-                                </Tooltip>
-                                {(transcriptHistory.length > 1 || !!transcriptHistory[0]?.interactions?.length) && (
-                                    <Tooltip content="Clear all chats">
-                                        <Button
-                                            variant="icon"
-                                            className="ml-2"
-                                            aria-label="Clear all chats"
-                                            onClick={clearHistory}
-                                        >
-                                            <Icon aria-hidden={true} svgPath={mdiDelete} />
-                                        </Button>
-                                    </Tooltip>
-                                )}
-                            </div>
-                            <div className="col-8 d-flex justify-content-center">
-                                <div className="d-flex flex-shrink-0 align-items-center">
-                                    <CodyLogo />
-                                    {showMobileHistory ? 'Chats' : 'Ask Cody'}
-                                    <div className="ml-2">
-                                        <Badge variant="info">Beta</Badge>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="col-2 d-flex" />
+                            )}
                         </div>
-                        {showMobileHistory ? (
-                            <HistoryList
-                                currentTranscript={transcript}
-                                transcriptHistory={transcriptHistory}
-                                truncateMessageLength={60}
-                                loadTranscriptFromHistory={loadTranscriptFromHistory}
-                                deleteHistoryItem={deleteHistoryItem}
-                            />
-                        ) : (
-                            <ChatUI
-                                codyChatStore={codyChatStore}
-                                isCodyChatPage={true}
-                                authenticatedUser={authenticatedUser}
-                            />
-                        )}
+                        <div className="col-8 d-flex justify-content-center">
+                            <div className="d-flex flex-shrink-0 align-items-center">
+                                <CodyLogo />
+                                {showMobileHistory ? 'Chats' : 'Ask Cody'}
+                                <div className="ml-2">
+                                    <Badge variant="info">Experimental</Badge>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="col-2 d-flex" />
                     </div>
-                )}
+                    {showMobileHistory ? (
+                        <HistoryList
+                            currentTranscript={transcript}
+                            transcriptHistory={transcriptHistory}
+                            truncateMessageLength={60}
+                            loadTranscriptFromHistory={loadTranscriptFromHistory}
+                            deleteHistoryItem={deleteHistoryItem}
+                        />
+                    ) : (
+                        <ChatUI
+                            codyChatStore={codyChatStore}
+                            isCodyChatPage={true}
+                            authenticatedUser={authenticatedUser}
+                            telemetryRecorder={telemetryRecorder}
+                        />
+                    )}
+                </div>
             </div>
         </Page>
     )

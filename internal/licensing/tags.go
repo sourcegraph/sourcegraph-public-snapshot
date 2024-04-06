@@ -2,8 +2,6 @@ package licensing
 
 import (
 	"strings"
-
-	"github.com/sourcegraph/sourcegraph/internal/license"
 )
 
 const (
@@ -19,24 +17,26 @@ const (
 	// GPTLLMAccessTag is the license tag that indicates that the licensed instance
 	// should be allowed by default to use GPT models in Cody Gateway.
 	GPTLLMAccessTag = "gpt"
-	// AllowAnonymousUsageTag denotes licenses that allow anonymous usage, a.k.a public access to the instance
-	// Warning: This should be used with care and only at special, probably trial/poc stages with customers
-	AllowAnonymousUsageTag = "allow-anonymous-usage"
 
 	// TelemetryEventsExportDisabledTag disables telemery events export EXCEPT
 	// for Cody-related events, which we are always allowed to export as part of
-	// Cody usage terms: https://about.sourcegraph.com/terms/cody-notice
+	// Cody usage terms: https://sourcegraph.com/terms/cody-notice
 	//
-	// To completely disable telemetry events export, use PlanAirGappedEnterprise
+	// To completely disable telemetry events export, use FeatureAllowAirGapped.
 	TelemetryEventsExportDisabledTag = "disable-telemetry-events-export"
 )
 
 // ProductNameWithBrand returns the product name with brand (e.g., "Sourcegraph Enterprise") based
 // on the license info.
-func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
-	if !hasLicense {
-		return "Sourcegraph Free"
+func ProductNameWithBrand(licenseTags []string) string {
+	plan := PlanFromTags(licenseTags)
+
+	details, ok := planDetails[plan]
+	if !ok {
+		return "Unrecognized plan"
 	}
+
+	name := details.DisplayName
 
 	hasTag := func(tag string) bool {
 		for _, t := range licenseTags {
@@ -45,32 +45,6 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 			}
 		}
 		return false
-	}
-
-	baseName := "Sourcegraph Enterprise"
-	var name string
-
-	info := &Info{
-		Info: license.Info{
-			Tags: licenseTags,
-		},
-	}
-	plan := info.Plan()
-	// Identify known plans first
-	switch {
-	case strings.HasPrefix(string(plan), "team-"):
-		baseName = "Sourcegraph Team"
-	case strings.HasPrefix(string(plan), "enterprise-"):
-		baseName = "Sourcegraph Enterprise"
-	case strings.HasPrefix(string(plan), "business-"):
-		baseName = "Sourcegraph Business"
-
-	default:
-		if hasTag("team") {
-			baseName = "Sourcegraph Team"
-		} else if hasTag("starter") {
-			name = " Starter"
-		}
 	}
 
 	var misc []string
@@ -87,17 +61,5 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 		name += " (" + strings.Join(misc, ", ") + ")"
 	}
 
-	return baseName + name
-}
-
-var MiscTags = []string{
-	TrialTag,
-	TrueUpUserCountTag,
-	InternalTag,
-	DevTag,
-	AllowAnonymousUsageTag,
-	"starter",
-	"mau",
-	GPTLLMAccessTag,
-	TelemetryEventsExportDisabledTag,
+	return name
 }

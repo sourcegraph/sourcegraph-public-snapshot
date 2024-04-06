@@ -10,7 +10,7 @@ Welcome, new batch change developer! This section will give you a rough overview
 
 Before diving into the technical part of batch changes, make sure to read up on what batch changes are, what they're not and what we want them to be:
 
-1. Look at the [batch changes product page](https://about.sourcegraph.com).
+1. Look at the [batch changes product page](https://sourcegraph.com).
 1. Watch the 2min [demo video](https://www.youtube.com/watch?v=GKyHYqH6ggY)
 
 Next: **create your first batch change!**

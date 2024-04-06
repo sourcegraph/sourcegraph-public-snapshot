@@ -14,9 +14,6 @@ import { userTracker } from '../tracking/userTracker'
 import { ApolloTelemetryExporter } from './apolloTelemetryExporter'
 
 function getTelemetrySourceClient(): string {
-    if (window.context?.codyAppMode) {
-        return 'app.web'
-    }
     if (window.context?.sourcegraphDotComMode) {
         return 'dotcom.web'
     }

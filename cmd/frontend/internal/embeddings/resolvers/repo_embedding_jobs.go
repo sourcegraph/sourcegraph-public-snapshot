@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -56,21 +55,21 @@ func withRepoID(o *repobg.ListOpts, id graphql.ID) error {
 	return nil
 }
 
-func (s *repoEmbeddingJobsConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (s *repoEmbeddingJobsConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
 	opts := repobg.ListOpts{Query: s.args.Query, State: s.args.State}
 	if s.args.Repo != nil {
 		err := withRepoID(&opts, *s.args.Repo)
 		if err != nil {
-			return nil, err
+			return 0, err
 		}
 	}
 
 	count, err := s.store.CountRepoEmbeddingJobs(ctx, opts)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	total := int32(count)
-	return &total, nil
+
+	return int32(count), nil
 }
 
 func (s *repoEmbeddingJobsConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.RepoEmbeddingJobResolver, error) {
@@ -105,13 +104,13 @@ func (s *repoEmbeddingJobsConnectionStore) MarshalCursor(node graphqlbackend.Rep
 	return &cursor, nil
 }
 
-func (s *repoEmbeddingJobsConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *repoEmbeddingJobsConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
 	nodeID, err := unmarshalRepoEmbeddingJobID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
-	id := strconv.Itoa(nodeID)
-	return &id, nil
+
+	return []any{nodeID}, nil
 }
 
 type repoEmbeddingJobResolver struct {

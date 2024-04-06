@@ -1,5 +1,6 @@
 export * from './browserDetection'
 export * from './compatNavigate'
+export * from './deviceDetection'
 export * from './fetchCache'
 export * from './hashCode'
 export * from './highlightNode'

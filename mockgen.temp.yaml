@@ -80,6 +80,7 @@
     - WebhookLogStore
     - WebhookStore
     - ZoektReposStore
+    - TelemetryEventsExportQueueStore
 - filename: internal/gitserver/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/gitserver
   interfaces:
@@ -135,3 +136,20 @@
   path: github.com/sourcegraph/sourcegraph/internal/gitserver/v1
   interfaces:
     - GitserverServiceClient
+    - GitserverService_ExecServer
+    - GitserverService_ArchiveServer
+    - GitserverService_ArchiveClient
+    - GitserverService_BlameServer
+    - GitserverService_BlameClient
+    - GitserverService_ReadFileServer
+    - GitserverService_ReadFileClient
+- filename: cmd/gitserver/internal/git/mock.go
+  path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git
+  interfaces:
+    - GitBackend
+    - GitConfigBackend
+    - BlameHunkReader
+- filename: cmd/gitserver/internal/gitserverfs/mock.go
+  path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs
+  interfaces:
+    - FS

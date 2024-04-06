@@ -8,29 +8,37 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
+func NewClient(cli httpcli.Doer, endpoint, accessToken string, tokenManager tokenusage.Manager) types.CompletionsClient {
 	return &openAIChatCompletionStreamClient{
-		cli:         cli,
-		accessToken: accessToken,
-		endpoint:    endpoint,
+		cli:          cli,
+		accessToken:  accessToken,
+		endpoint:     endpoint,
+		tokenManager: tokenManager,
 	}
 }
 
 type openAIChatCompletionStreamClient struct {
-	cli         httpcli.Doer
-	accessToken string
-	endpoint    string
+	cli          httpcli.Doer
+	accessToken  string
+	endpoint     string
+	tokenManager tokenusage.Manager
 }
 
 func (c *openAIChatCompletionStreamClient) Complete(
 	ctx context.Context,
 	feature types.CompletionsFeature,
+	_ types.CompletionsVersion,
 	requestParams types.CompletionRequestParameters,
+	logger log.Logger,
 ) (*types.CompletionResponse, error) {
 	var resp *http.Response
 	var err error
@@ -59,7 +67,10 @@ func (c *openAIChatCompletionStreamClient) Complete(
 		// Empty response.
 		return &types.CompletionResponse{}, nil
 	}
-
+	err = c.tokenManager.TokenizeAndCalculateUsage(inputText(requestParams.Messages), response.Choices[0].Text, tokenizer.OpenAIModel+"/"+requestParams.Model, string(feature))
+	if err != nil {
+		logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
+	}
 	return &types.CompletionResponse{
 		Completion: response.Choices[0].Text,
 		StopReason: response.Choices[0].FinishReason,
@@ -69,8 +80,10 @@ func (c *openAIChatCompletionStreamClient) Complete(
 func (c *openAIChatCompletionStreamClient) Stream(
 	ctx context.Context,
 	feature types.CompletionsFeature,
+	_ types.CompletionsVersion,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
+	logger log.Logger,
 ) error {
 	var resp *http.Response
 	var err error
@@ -90,6 +103,7 @@ func (c *openAIChatCompletionStreamClient) Stream(
 	}
 	dec := NewDecoder(resp.Body)
 	var content string
+	var ev types.CompletionResponse
 	for dec.Scan() {
 		if ctx.Err() != nil && ctx.Err() == context.Canceled {
 			return nil
@@ -112,7 +126,7 @@ func (c *openAIChatCompletionStreamClient) Stream(
 			} else {
 				content += event.Choices[0].Delta.Content
 			}
-			ev := types.CompletionResponse{
+			ev = types.CompletionResponse{
 				Completion: content,
 				StopReason: event.Choices[0].FinishReason,
 			}
@@ -122,8 +136,22 @@ func (c *openAIChatCompletionStreamClient) Stream(
 			}
 		}
 	}
+	if dec.Err() != nil {
+		return dec.Err()
+	}
+	err = c.tokenManager.TokenizeAndCalculateUsage(inputText(requestParams.Messages), content, tokenizer.OpenAIModel+"/"+requestParams.Model, string(feature))
+	if err != nil {
+		logger.Warn("Failed to count tokens with the token manager %w", log.Error(err))
+	}
+	return nil
+}
 
-	return dec.Err()
+func inputText(messages []types.Message) string {
+	allText := ""
+	for _, message := range messages {
+		allText += message.Text
+	}
+	return allText
 }
 
 // makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
@@ -155,7 +183,7 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 		switch m.Speaker {
 		case types.HUMAN_MESSAGE_SPEAKER:
 			role = "user"
-		case types.ASISSTANT_MESSAGE_SPEAKER:
+		case types.ASSISTANT_MESSAGE_SPEAKER:
 			role = "assistant"
 			//
 		default:

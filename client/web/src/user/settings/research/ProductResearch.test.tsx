@@ -11,7 +11,6 @@ describe('ProductResearchPage', () => {
     beforeEach(() => {
         queries = render(
             <ProductResearchPage
-                isCodyApp={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 authenticatedUser={{
                     emails: [{ email: 'test@sourcegraph.com', isPrimary: true, verified: true }],

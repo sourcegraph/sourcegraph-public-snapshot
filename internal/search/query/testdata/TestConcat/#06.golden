@@ -20,7 +20,8 @@
     "value": "bourgogne bordeaux",
     "negated": false,
     "labels": [
-      "Literal"
+      "Literal",
+      "Standard"
     ],
     "range": {
       "start": {

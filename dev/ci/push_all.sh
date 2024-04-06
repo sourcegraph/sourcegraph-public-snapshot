@@ -2,6 +2,13 @@
 
 set -eu
 
+echo "~~~ :aspect: :stethoscope: Agent Health check"
+/etc/aspect/workflows/bin/agent_health_check
+
+aspectRC="/tmp/aspect-generated.bazelrc"
+rosetta bazelrc > "$aspectRC"
+bazelrc=(--bazelrc="$aspectRC" --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
+
 function preview_tags() {
   IFS=' ' read -r -a registries <<<"$1"
   IFS=' ' read -r -a tags <<<"$2"
@@ -11,6 +18,40 @@ function preview_tags() {
       echo -e "\t ${registry}/\$IMAGE:${tag}"
     done
   done
+}
+
+# Append to annotations which image was pushed and with which tags.
+# Because this is meant to be executed by parallel, meaning we write commands
+# to a jobfile, this echoes the command to post the annotation instead of actually
+# doing it.
+function echo_append_annotation() {
+  repository="$1"
+  IFS=' ' read -r -a registries <<<"$2"
+  IFS=' ' read -r -a tag_args <<<"$3"
+  formatted_tags=""
+  formatted_registries=""
+
+  for arg in "${tag_args[@]}"; do
+    if [ "$arg" != "--tag" ]; then
+      if [ "$formatted_tags" == "" ]; then
+        # Do not insert a comma for the first element
+        formatted_tags="<code>$arg</code>"
+      else
+        formatted_tags="${formatted_tags}, <code>$arg</code>"
+      fi
+    fi
+  done
+
+  for reg in "${registries[@]}"; do
+    if [ "$formatted_registries" == "" ]; then
+      formatted_registries="<code>$reg</code>"
+    else
+      formatted_registries="${formatted_registries}, <code>$reg</code>"
+    fi
+  done
+
+  raw="<tr><td>${repository}</td><td>${formatted_registries}</td><td>${formatted_tags}</td></tr>"
+  echo "echo -e '${raw}' >>./annotations/pushed_images.md"
 }
 
 function create_push_command() {
@@ -30,22 +71,21 @@ function create_push_command() {
   done
 
   cmd="bazel \
-    --bazelrc=.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+    ${bazelrc[*]} \
     run \
     $target \
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh"
 
-  echo "$cmd -- $tags_args $repositories_args"
+  echo "$cmd -- $tags_args $repositories_args && $(echo_append_annotation "$repository" "${registries[@]}" "${tags_args[@]}")"
 }
 
 dev_registries=(
-  "us.gcr.io/sourcegraph-dev"
+  "$DEV_REGISTRY"
 )
+
 prod_registries=(
-  "index.docker.io/sourcegraph"
+  "$PROD_REGISTRY"
 )
 
 date_fragment="$(date +%Y-%m-%d)"
@@ -63,28 +103,35 @@ CANDIDATE_ONLY=${CANDIDATE_ONLY:-""}
 
 push_prod=false
 
-# ok: main
-# ok: main-dry-run
-# ok: main-dry-run-123
-# no: main-foo
-if [[ "$BUILDKITE_BRANCH" =~ ^main(-dry-run/)?.* ]] || [[ "$BUILDKITE_BRANCH" =~ ^docker-images-candidates-notest/.* ]]; then
+# If we're doing an internal release, we need to push to the prod registry too.
+# TODO(rfc795) this should be more granular than this, we're abit abusing the idea of the prod registry here.
+if [ "${RELEASE_INTERNAL:-}" == "true" ]; then
+  push_prod=true
+elif [[ "$BUILDKITE_BRANCH" =~ ^main$ ]] || [[ "$BUILDKITE_BRANCH" =~ ^docker-images-candidates-notest/.* ]]; then
   dev_tags+=("insiders")
   prod_tags+=("insiders")
   push_prod=true
-fi
+elif [[ "$BUILDKITE_BRANCH" =~ ^main-dry-run/.*  ]]; then
+  # We only push on internal registries on a main-dry-run.
+  dev_tags+=("insiders")
+  prod_tags+=("insiders")
+  push_prod=false
+elif [[ "$BUILDKITE_BRANCH" =~ ^cloud-ephemeral/.* ]]; then
+  # Cloud Ephemeral images need a proper semver version
+  dev_tags+=("insiders" "${PUSH_VERSION}")
+  prod_tags+=("insiders")
+  push_prod=false
 
-# All release branch builds must be published to prod tags to support
-# format introduced by https://github.com/sourcegraph/sourcegraph/pull/48050
-# by release branch deployments.
-if [[ "$BUILDKITE_BRANCH" =~ ^[0-9]+\.[0-9]+$ ]]; then
+elif [[ "$BUILDKITE_BRANCH" =~ ^[0-9]+\.[0-9]+$ ]]; then
+  # All release branch builds must be published to prod tags to support
+  # format introduced by https://github.com/sourcegraph/sourcegraph/pull/48050
+  # by release branch deployments.
   push_prod=true
-fi
-
-# ok: v5.1.0
-# ok: v5.1.0-rc.5
-# no: v5.1.0-beta.1
-# no: v5.1.0-rc5
-if [[ "$BUILDKITE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\-rc\.[0-9]+)?$ ]]; then
+elif [[ "$BUILDKITE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\-rc\.[0-9]+)?$ ]]; then
+  # ok: v5.1.0
+  # ok: v5.1.0-rc.5
+  # no: v5.1.0-beta.1
+  # no: v5.1.0-rc5
   dev_tags+=("${BUILDKITE_TAG:1}")
   prod_tags+=("${BUILDKITE_TAG:1}")
   push_prod=true
@@ -96,12 +143,16 @@ if [ -n "$CANDIDATE_ONLY" ]; then
   push_prod=false
 fi
 
+
+# Posting the preamble for image pushes.
+echo -e "### ${BUILDKITE_LABEL}" > ./annotations/pushed_images.md
+echo -e "<details><summary>Click to expand table</summary><table>\n" >>./annotations/pushed_images.md
+echo -e "<tr><th>Name</th><th>Registries</th><th>Tags</th></tr>\n" >> ./annotations/pushed_images.md
+
 preview_tags "${dev_registries[*]}" "${dev_tags[*]}"
 if $push_prod; then
   preview_tags "${prod_registries[*]}" "${prod_tags[*]}"
 fi
-
-echo "--- done"
 
 dev_tags_args=""
 for t in "${dev_tags[@]}"; do
@@ -114,7 +165,7 @@ if $push_prod; then
   done
 fi
 
-images=$(bazel query 'kind("oci_push rule", //...)')
+images=$(bazel "${bazelrc[@]}" query 'kind("oci_push rule", //...)')
 
 job_file=$(mktemp)
 # shellcheck disable=SC2064
@@ -122,7 +173,7 @@ trap "rm -rf $job_file" EXIT
 
 # shellcheck disable=SC2068
 for target in ${images[@]}; do
-  [[ "$target" =~ ([A-Za-z0-9_-]+): ]]
+  [[ "$target" =~ ([A-Za-z0-9_.-]+): ]]
   name="${BASH_REMATCH[1]}"
   # Append push commands for dev registries
   create_push_command "${dev_registries[*]}" "$name" "$target" "$dev_tags_args" >>"$job_file"
@@ -132,9 +183,8 @@ for target in ${images[@]}; do
   fi
 done
 
-echo "-- jobfile"
+echo "--- :bash: Generated jobfile"
 cat "$job_file"
-echo "--- done"
 
 echo "--- :bazel::docker: Pushing images..."
 log_file=$(mktemp)
@@ -159,6 +209,7 @@ while read -r line; do
   fi
 done <"$log_file"
 
+echo -e "</table></details>" >>./annotations/pushed_images.md
+
 echo "--- :bazel::docker: detailed summary"
 cat "$log_file"
-echo "--- done"

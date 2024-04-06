@@ -8,7 +8,7 @@ Note: For request logs, see [Outbound request log](outbound-request-log.md).
 
 A Sourcegraph service's log level is configured via the environment variable `SRC_LOG_LEVEL`. The valid values (from most to least verbose) are:
 
-* `dbug`: Debug. Output all logs. Default in cluster deployments.
+* `debug`: Debug. Output all logs. Default in cluster deployments. A legacy `dbug` value is also supported.
 * `info`: Informational.
 * `warn`: Warning. Default in Docker deployments.
 * `eror`: Error.

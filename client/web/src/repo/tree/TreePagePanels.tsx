@@ -8,11 +8,13 @@ import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
 import { basename } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import type { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
+import { useSettings } from '@sourcegraph/shared/src/settings/settings'
 import {
     Card,
     CardHeader,
     H2,
     Icon,
+    LanguageIcon,
     Link,
     LinkOrSpan,
     LoadingSpinner,
@@ -147,17 +149,21 @@ export interface DiffStat {
 }
 
 export interface FilePanelProps {
-    entries: Pick<TreeFields['entries'][number], 'name' | 'url' | 'isDirectory' | 'path'>[]
+    entries: TreeFields['entries']
     historyEntries?: TreeHistoryFields[]
     className?: string
 }
 
 export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, className }) => {
+    const settings = useSettings()
+    const preferAbsoluteTimestamps = Boolean(settings?.['history.preferAbsoluteTimestamps'])
     const hasHistoryEntries = historyEntries && historyEntries.length > 0
     const fileHistoryByPath = useMemo(() => {
         const fileHistoryByPath: Record<string, TreeHistoryFields['history']['nodes'][number]['commit']> = {}
         for (const entry of historyEntries || []) {
-            fileHistoryByPath[entry.path] = entry.history.nodes[0].commit
+            if (entry.history.nodes.length > 0) {
+                fileHistoryByPath[entry.path] = entry.history.nodes[0].commit
+            }
         }
         return fileHistoryByPath
     }, [historyEntries])
@@ -170,7 +176,14 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                     {hasHistoryEntries && (
                         <>
                             <th>Last commit message</th>
-                            <th className={styles.commitDateColumn}>Last commit date</th>
+                            <th
+                                className={classNames(
+                                    styles.commitDateColumn,
+                                    preferAbsoluteTimestamps && styles.absolute
+                                )}
+                            >
+                                Last commit date
+                            </th>
                         </>
                     )}
                 </CardHeader>
@@ -189,11 +202,19 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                                 title={entry.path}
                                 data-testid="tree-entry"
                             >
-                                <Icon
-                                    className="mr-1"
-                                    svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline}
-                                    aria-hidden={true}
-                                />
+                                {entry.__typename === 'GitBlob' ? (
+                                    <LanguageIcon
+                                        language={entry.languages.at(0) ?? ''}
+                                        fileNameOrExtensions={entry.name}
+                                        className="mr-1"
+                                    />
+                                ) : (
+                                    <Icon
+                                        svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline}
+                                        className="mr-1"
+                                        aria-hidden={true}
+                                    />
+                                )}
                                 {entry.name}
                                 {entry.isDirectory && '/'}
                             </LinkOrSpan>
@@ -216,7 +237,7 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                                 <td className={classNames(styles.commitDate, 'text-muted')}>
                                     <Timestamp
                                         noAbout={true}
-                                        noAgo={true}
+                                        preferAbsolute={preferAbsoluteTimestamps}
                                         date={getCommitDate(fileHistoryByPath[entry.path])}
                                     />
                                 </td>

@@ -5,7 +5,7 @@
     import { mdiAccountGroup } from '@mdi/js'
 
     import SearchResult from './SearchResult.svelte'
-    import { getSearchResultsContext } from './SearchResults.svelte'
+    import { getSearchResultsContext } from './searchResultsContext'
     import { getOwnerDisplayName, getOwnerMatchURL, buildSearchURLQueryForOwner } from '$lib/search/results'
     import type { TeamMatch } from '$lib/shared'
 
@@ -22,7 +22,7 @@
     <div slot="title">
         &nbsp;
         {#if ownerURL}
-            <a data-sveltekit-reload href={ownerURL}>{displayName}</a>
+            <a href={ownerURL}>{displayName}</a>
         {:else}
             {displayName}
         {/if}

@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
@@ -31,8 +32,8 @@ type SessionData struct {
 }
 
 type SessionIssuerHelper interface {
-	GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error)
-	DeleteStateCookie(w http.ResponseWriter)
+	GetOrCreateUser(ctx context.Context, token *oauth2.Token, hubSpotProps *hubspot.ContactProperties) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error)
+	DeleteStateCookie(w http.ResponseWriter, r *http.Request)
 	SessionData(token *oauth2.Token) SessionData
 	AuthSucceededEventName() database.SecurityEventName
 	AuthFailedEventName() database.SecurityEventName
@@ -90,7 +91,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 		)
 
 		// Delete state cookie (no longer needed, will be stale if user logs out and logs back in within 120s)
-		defer s.DeleteStateCookie(w)
+		defer s.DeleteStateCookie(w, r)
 
 		getCookie := func(name string) string {
 			c, err := r.Cookie(name)
@@ -100,18 +101,30 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			return c.Value
 		}
 		anonymousId, _ := cookie.AnonymousUID(r)
-		newUserCreated, actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token, anonymousId, getCookie("sourcegraphSourceUrl"), getCookie("sourcegraphRecentSourceUrl"))
+		newUserCreated, actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token, &hubspot.ContactProperties{
+			AnonymousUserID:        anonymousId,
+			FirstSourceURL:         getCookie("sourcegraphSourceUrl"),
+			LastSourceURL:          getCookie("sourcegraphRecentSourceUrl"),
+			OriginalReferrer:       getCookie("originalReferrer"),
+			LastReferrer:           getCookie("sg_referrer"),
+			SignupSessionSourceURL: getCookie("sourcegraphSignupSourceUrl"),
+			SignupSessionReferrer:  getCookie("sourcegraphSignupReferrer"),
+			SessionUTMCampaign:     getCookie("sg_utm_campaign"),
+			SessionUTMSource:       getCookie("sg_utm_source"),
+			SessionUTMMedium:       getCookie("sg_utm_medium"),
+			SessionUTMContent:      getCookie("sg_utm_content"),
+			SessionUTMTerm:         getCookie("sg_utm_term"),
+			GoogleClickID:          getCookie("gclid"),
+			MicrosoftClickID:       getCookie("msclkid"),
+		})
 		if err != nil {
 			span.SetError(err)
 			logger.Error("OAuth failed: error looking up or creating user from OAuth token.", log.Error(err), log.String("userErr", safeErrMsg))
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
-			db.SecurityEventLogs().LogEvent(ctx, &database.SecurityEvent{
-				Name:            s.AuthFailedEventName(),
-				URL:             r.URL.Path, // don't log query params w/ OAuth data
-				AnonymousUserID: anonymousId,
-				Source:          "BACKEND",
-				Timestamp:       time.Now(),
-			})
+
+			if err = db.SecurityEventLogs().LogSecurityEvent(ctx, s.AuthFailedEventName(), r.URL.Path, uint32(actor.FromContext(ctx).UID), anonymousId, "BACKEND", nil); err != nil {
+				logger.Warn("Error logging security event.", log.Error(err))
+			}
 			return
 		}
 
@@ -123,7 +136,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			return
 		}
 
-		// Since we obtained a valid user from the OAuth token, we consider the GitHub login successful at this point
+		// Since we obtained a valid user from the OAuth token, we consider the login successful at this point
 		ctx, err = session.SetActorFromUser(ctx, w, r, user, expiryDuration)
 		if err != nil {
 			span.SetError(err)
@@ -132,13 +145,9 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			return
 		}
 
-		db.SecurityEventLogs().LogEvent(ctx, &database.SecurityEvent{
-			Name:      s.AuthSucceededEventName(),
-			URL:       r.URL.Path, // don't log query params w/ OAuth data
-			UserID:    uint32(user.ID),
-			Source:    "BACKEND",
-			Timestamp: time.Now(),
-		})
+		if err := db.SecurityEventLogs().LogSecurityEvent(ctx, s.AuthSucceededEventName(), r.URL.Path, uint32(user.ID), "", "BACKEND", nil); err != nil {
+			logger.Warn("Error logging security event.", log.Error(err))
+		}
 
 		redirectURL := auth.AddPostAuthRedirectParametersToString(state.Redirect, newUserCreated, "OAuth::"+s.GetServiceID())
 		http.Redirect(w, r, auth.SafeRedirectURL(redirectURL), http.StatusFound)

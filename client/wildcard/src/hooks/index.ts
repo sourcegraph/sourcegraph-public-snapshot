@@ -25,3 +25,10 @@ export { useUpdateEffect } from './useUpdateEffect'
 export { useFocusOnLoadedMore } from './useFocusOnLoadedMore'
 export { useBeforeUnloadPrompt } from './usePrompt'
 export { useCookieStorage } from './useCookieStorage'
+export { useScrollManager } from './useScrollManager'
+export {
+    useSyncedWithURLState,
+    type SetStateResult,
+    type URLStateOptions,
+    type UpdatedSearchQuery,
+} from './useSyncedWithUrlState'

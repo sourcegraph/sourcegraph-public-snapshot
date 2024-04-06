@@ -1231,7 +1231,7 @@ The `utils/uid` component bind-mount `/etc/passwd` as read-only through hostpath
 
 ## Add license key
 
-Sourcegraph's Kubernetes deployment [requires an Enterprise license key](https://about.sourcegraph.com/pricing).
+Sourcegraph's Kubernetes deployment [requires an Enterprise license key](https://sourcegraph.com/pricing).
 
 Once you have a license key, add it to your [site configuration](https://docs.sourcegraph.com/admin/patches/site_config).
 

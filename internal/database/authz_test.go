@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -10,11 +11,10 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -216,7 +216,15 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			defer cleanupPermsTables(t, s.store.(*permsStore))
 
-			globals.SetPermissionsUserMapping(test.config)
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					PermissionsUserMapping: &schema.PermissionsUserMapping{
+						Enabled: true,
+						BindID:  test.config.BindID,
+					},
+				},
+			})
+			t.Cleanup(func() { conf.Mock(nil) })
 
 			for _, update := range test.updates {
 				err := s.store.SetRepoPendingPermissions(ctx, update.accounts, &authz.RepoPermissions{

@@ -1,0 +1,24 @@
+---
+source: crates/syntax-analysis/src/lib.rs
+expression: "String::from_utf8_lossy(buf_writer.buffer())"
+---
+{"_type":"tag","name":"multierror","path":"go-globals.go","language":"go","line":1,"kind":"package","scope":null}
+{"_type":"tag","name":"Group","path":"go-globals.go","language":"go","line":7,"kind":"struct","scope":"multierror"}
+{"_type":"tag","name":"nested","path":"go-globals.go","language":"go","line":11,"kind":"struct","scope":"multierror.Group"}
+{"_type":"tag","name":"inner","path":"go-globals.go","language":"go","line":12,"kind":"field","scope":"multierror.Group.nested"}
+{"_type":"tag","name":"innerface","path":"go-globals.go","language":"go","line":15,"kind":"interface","scope":"multierror.Group"}
+{"_type":"tag","name":"Another","path":"go-globals.go","language":"go","line":16,"kind":"methodSpec","scope":"multierror.Group.innerface"}
+{"_type":"tag","name":"wg","path":"go-globals.go","language":"go","line":10,"kind":"field","scope":"multierror.Group"}
+{"_type":"tag","name":"err","path":"go-globals.go","language":"go","line":9,"kind":"field","scope":"multierror.Group"}
+{"_type":"tag","name":"mutex","path":"go-globals.go","language":"go","line":8,"kind":"field","scope":"multierror.Group"}
+{"_type":"tag","name":"SomeInterface","path":"go-globals.go","language":"go","line":20,"kind":"interface","scope":"multierror"}
+{"_type":"tag","name":"Incredible","path":"go-globals.go","language":"go","line":22,"kind":"methodSpec","scope":"multierror.SomeInterface"}
+{"_type":"tag","name":"Something","path":"go-globals.go","language":"go","line":21,"kind":"methodSpec","scope":"multierror.SomeInterface"}
+{"_type":"tag","name":"RegularFunc","path":"go-globals.go","language":"go","line":60,"kind":"function","scope":"multierror"}
+{"_type":"tag","name":"fileIdx","path":"go-globals.go","language":"go","line":57,"kind":"variable","scope":"multierror"}
+{"_type":"tag","name":"diffPath","path":"go-globals.go","language":"go","line":56,"kind":"variable","scope":"multierror"}
+{"_type":"tag","name":"Wait","path":"go-globals.go","language":"go","line":48,"kind":"method","scope":"multierror.Group"}
+{"_type":"tag","name":"Go","path":"go-globals.go","language":"go","line":32,"kind":"method","scope":"multierror.Group"}
+{"_type":"tag","name":"TypeAlias","path":"go-globals.go","language":"go","line":26,"kind":"typeAlias","scope":"multierror"}
+{"_type":"tag","name":"TypeDef","path":"go-globals.go","language":"go","line":25,"kind":"typeAlias","scope":"multierror"}
+

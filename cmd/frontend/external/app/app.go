@@ -14,9 +14,3 @@ var RegisterSSOSignOutHandler = app.RegisterSSOSignOutHandler
 func SetBillingPublishableKey(value string) {
 	jscontext.BillingPublishableKey = value
 }
-
-// SetPreMountGrafanaHook allows the enterprise package to inject a tier
-// enforcement function during initialization.
-func SetPreMountGrafanaHook(hookFn func() error) {
-	app.PreMountGrafanaHook = hookFn
-}

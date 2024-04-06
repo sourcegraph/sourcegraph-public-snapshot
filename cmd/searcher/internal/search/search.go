@@ -13,11 +13,6 @@ package search
 
 import (
 	"context"
-	"encoding/json"
-	"math"
-	"net"
-	"net/http"
-	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -30,14 +25,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
-	// numWorkers is how many concurrent readerGreps run in the case of
+	// numWorkers is how many concurrent goroutines run in the case of
 	// regexSearch, and the number of parallel workers in the case of
 	// structuralSearch.
 	numWorkers = 8
@@ -60,81 +53,11 @@ type Service struct {
 	// single call to git archive. This mainly needs to be less than ARG_MAX
 	// for the exec.Command on gitserver.
 	MaxTotalPathsLength int
-}
 
-// ServeHTTP handles HTTP based search requests
-func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	var p protocol.Request
-	dec := json.NewDecoder(r.Body)
-	if err := dec.Decode(&p); err != nil {
-		http.Error(w, "failed to decode form: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if !p.PatternMatchesContent && !p.PatternMatchesPath {
-		// BACKCOMPAT: Old frontends send neither of these fields, but we still want to
-		// search file content in that case.
-		p.PatternMatchesContent = true
-	}
-	if err := validateParams(&p); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	s.streamSearch(ctx, w, p)
-}
-
-// isNetOpError returns true if net.OpError is contained in err. This is
-// useful to ignore errors when the connection has gone away.
-func isNetOpError(err error) bool {
-	return errors.HasType(err, (*net.OpError)(nil))
-}
-
-func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p protocol.Request) {
-	if p.Limit == 0 {
-		// No limit for streaming search since upstream limits
-		// will either be sent in the request, or propagated by
-		// a cancelled context.
-		p.Limit = math.MaxInt32
-	}
-	eventWriter, err := streamhttp.NewWriter(w)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	var bufMux sync.Mutex
-	matchesBuf := streamhttp.NewJSONArrayBuf(32*1024, func(data []byte) error {
-		return eventWriter.EventBytes("matches", data)
-	})
-	onMatches := func(match protocol.FileMatch) {
-		bufMux.Lock()
-		if err := matchesBuf.Append(match); err != nil && !isNetOpError(err) {
-			s.Log.Warn("failed appending match to buffer", log.Error(err))
-		}
-		bufMux.Unlock()
-	}
-
-	ctx, cancel, stream := newLimitedStream(ctx, p.Limit, onMatches)
-	defer cancel()
-
-	err = s.search(ctx, &p, stream)
-	doneEvent := searcher.EventDone{
-		LimitHit: stream.LimitHit(),
-	}
-	if err != nil {
-		doneEvent.Error = err.Error()
-	}
-
-	// Flush remaining matches before sending a different event
-	if err := matchesBuf.Flush(); err != nil && !isNetOpError(err) {
-		s.Log.Warn("failed to flush matches", log.Error(err))
-	}
-	if err := eventWriter.Event("done", doneEvent); err != nil && !isNetOpError(err) {
-		s.Log.Warn("failed to send done event", log.Error(err))
-	}
+	// DisableHybridSearch disables hybrid search, which means searcher will not
+	// call out to Zoekt to offload part of the search workload. This is useful for
+	// troubleshooting, for example if searcher causes a high load on Zoekt.
+	DisableHybridSearch bool
 }
 
 func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
@@ -146,10 +69,8 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		p.Repo.Attr(),
 		p.Commit.Attr(),
 		attribute.String("url", p.URL),
-		attribute.String("pattern", p.Pattern),
-		attribute.Bool("isRegExp", p.IsRegExp),
-		attribute.StringSlice("languages", p.Languages),
-		attribute.Bool("isWordMatch", p.IsWordMatch),
+		attribute.String("query", p.Query.String()),
+		attribute.StringSlice("languages", p.IncludeLangs),
 		attribute.Bool("isCaseSensitive", p.IsCaseSensitive),
 		attribute.Bool("pathPatternsAreCaseSensitive", p.PathPatternsAreCaseSensitive),
 		attribute.Int("limit", p.Limit),
@@ -183,11 +104,9 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		s.Log.Debug("search request",
 			log.String("repo", string(p.Repo)),
 			log.String("commit", string(p.Commit)),
-			log.String("pattern", p.Pattern),
-			log.Bool("isRegExp", p.IsRegExp),
+			log.String("query", p.String()),
 			log.Bool("isStructuralPat", p.IsStructuralPat),
-			log.Strings("languages", p.Languages),
-			log.Bool("isWordMatch", p.IsWordMatch),
+			log.Strings("languages", p.IncludeLangs),
 			log.Bool("isCaseSensitive", p.IsCaseSensitive),
 			log.Bool("patternMatchesContent", p.PatternMatchesContent),
 			log.Bool("patternMatchesPath", p.PatternMatchesPath),
@@ -197,40 +116,39 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 			log.Error(err))
 	}(time.Now())
 
-	if p.IsStructuralPat && p.Indexed {
-		// Execute the new structural search path that directly calls Zoekt.
-		// TODO use limit in indexed structural search
-		return structuralSearchWithZoekt(ctx, s.Log, s.Indexed, p, sender)
-	}
-
-	// Compile pattern before fetching from store incase it is bad.
-	var rg *readerGrep
-	if !p.IsStructuralPat {
-		rg, err = compile(&p.PatternInfo)
-		if err != nil {
-			return badRequestError{err.Error()}
-		}
-	}
-
 	if p.FetchTimeout == time.Duration(0) {
 		p.FetchTimeout = 500 * time.Millisecond
 	}
-	prepareCtx, cancel := context.WithTimeout(ctx, p.FetchTimeout)
-	defer cancel()
 
-	getZf := func() (string, *zipFile, error) {
-		path, err := s.Store.PrepareZip(prepareCtx, p.Repo, p.Commit)
-		if err != nil {
-			return "", nil, err
+	if p.IsStructuralPat {
+		if p.Indexed {
+			// Execute the new structural search path that directly calls Zoekt.
+			// TODO use limit in indexed structural search
+			return structuralSearchWithZoekt(ctx, s.Log, s.Indexed, p, sender)
 		}
-		zf, err := s.Store.zipCache.Get(path)
-		return path, zf, err
+
+		zipPath, zf, err := s.getZipFile(ctx, tr, p, nil)
+		if err != nil {
+			return errors.Wrap(err, "failed to get archive")
+		}
+		defer zf.Close()
+		return filteredStructuralSearch(ctx, s.Log, zipPath, zf, &p.PatternInfo, p.Repo, sender, int32(p.NumContextLines))
 	}
 
-	// Hybrid search only works with our normal searcher code path, not
-	// structural search.
-	hybrid := !p.IsStructuralPat
-	if hybrid {
+	// Process the query before fetching from store in case it's invalid.
+	rm, err := toMatchTree(p.Query, p.IsCaseSensitive)
+	if err != nil {
+		return badRequestError{err.Error()}
+	}
+
+	lm := toLangMatcher(&p.PatternInfo)
+	pm, err := toPathMatcher(&p.PatternInfo)
+	if err != nil {
+		return badRequestError{err.Error()}
+	}
+
+	var paths []string
+	if !s.DisableHybridSearch {
 		logger := logWithTrace(ctx, s.Log).Scoped("hybrid").With(
 			log.String("repo", string(p.Repo)),
 			log.String("commit", string(p.Commit)),
@@ -250,52 +168,59 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 				// indexed search did it all
 				return nil
 			}
-
-			getZf = func() (string, *zipFile, error) {
-				path, err := s.Store.PrepareZipPaths(prepareCtx, p.Repo, p.Commit, unsearched)
-				if err != nil {
-					return "", nil, err
-				}
-				zf, err := s.Store.zipCache.Get(path)
-				return path, zf, err
-			}
+			paths = unsearched
 		}
 	}
 
-	zipPath, zf, err := getZipFileWithRetry(getZf)
+	_, zf, err := s.getZipFile(ctx, tr, p, paths)
 	if err != nil {
 		return errors.Wrap(err, "failed to get archive")
 	}
 	defer zf.Close()
 
-	nFiles := uint64(len(zf.Files))
-	bytes := int64(len(zf.Data))
-	tr.AddEvent("archive",
-		attribute.Int64("archive.files", int64(nFiles)),
-		attribute.Int64("archive.size", bytes))
-	metricArchiveFiles.Observe(float64(nFiles))
-	metricArchiveSize.Observe(float64(bytes))
-
-	if p.IsStructuralPat {
-		return filteredStructuralSearch(ctx, s.Log, zipPath, zf, &p.PatternInfo, p.Repo, sender)
-	} else {
-		return regexSearch(ctx, rg, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
-	}
+	return regexSearch(ctx, rm, pm, lm, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsCaseSensitive, sender, p.NumContextLines)
 }
 
-func validateParams(p *protocol.Request) error {
-	if p.Repo == "" {
+func (s *Service) getZipFile(ctx context.Context, tr trace.Trace, p *protocol.Request, paths []string) (string, *zipFile, error) {
+	fetchCtx, cancel := context.WithTimeout(ctx, p.FetchTimeout)
+	defer cancel()
+
+	zipPath, zf, err := getZipFileWithRetry(func() (string, *zipFile, error) {
+		path, err := s.Store.PrepareZip(fetchCtx, p.Repo, p.Commit, paths)
+		if err != nil {
+			return "", nil, err
+		}
+		zf, err := s.Store.zipCache.Get(path)
+		return path, zf, err
+	})
+
+	if err == nil {
+		nFiles := uint64(len(zf.Files))
+		bytes := int64(len(zf.Data))
+		tr.AddEvent("archive",
+			attribute.Int64("archive.files", int64(nFiles)),
+			attribute.Int64("archive.size", bytes))
+		metricArchiveFiles.Observe(float64(nFiles))
+		metricArchiveSize.Observe(float64(bytes))
+	}
+
+	return zipPath, zf, err
+}
+
+func validateParams(r *protocol.Request) error {
+	if r.Repo == "" {
 		return errors.New("Repo must be non-empty")
 	}
 	// Surprisingly this is the same sanity check used in the git source.
-	if len(p.Commit) != 40 {
-		return errors.Errorf("Commit must be resolved (Commit=%q)", p.Commit)
+	if len(r.Commit) != 40 {
+		return errors.Errorf("Commit must be resolved (Commit=%q)", r.Commit)
 	}
-	if p.Pattern == "" && p.ExcludePattern == "" && len(p.IncludePatterns) == 0 {
-		return errors.New("At least one of pattern and include/exclude pattners must be non-empty")
-	}
-	if p.IsNegated && p.IsStructuralPat {
-		return errors.New("Negated patterns are not supported for structural searches")
+
+	if p, ok := r.Query.(*protocol.PatternNode); ok {
+		if p.Value == "" && r.ExcludePaths == "" && len(r.IncludePaths) == 0 &&
+			len(r.IncludeLangs) == 0 && len(r.ExcludeLangs) == 0 {
+			return errors.New("At least one of pattern and include/exclude patterns must be non-empty")
+		}
 	}
 	return nil
 }

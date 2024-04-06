@@ -3,9 +3,24 @@ import { basename } from 'path'
 /** The LSP mode used for plain text files and all other unrecognized files. */
 const PLAINTEXT_MODE = 'plaintext'
 
+// FIXME(id: language-detection)
+//
+// For correctness, we should do language detection on the server
+// and use the inferred language on the client instead of approximating
+// language detection on the client using the file extension.
+//
+// The most common example of this in practice is '.h' files, which
+// may be C, C++ or Objective-C. Examining which language is most
+// appropriate requires examining the file's contents, which we do
+// via the go-enry library.
+//
+// See also https://github.com/sourcegraph/sourcegraph/issues/56376
+// and its sub-issue https://github.com/sourcegraph/sourcegraph/issues/56377
+
 /**
  * getModeFromPath returns the LSP mode for the provided file path. If the file path does not correspond to any
  * known mode, 'plaintext' is returned.
+ * @deprecated See FIXME(id: language-detection).
  */
 export function getModeFromPath(path: string): string {
     const fileName = basename(path)
@@ -19,6 +34,7 @@ export function getModeFromPath(path: string): string {
  * provided file name (e.g. "dockerfile")
  *
  * Cherry picked from https://github.com/github/linguist/blob/master/lib/linguist/languages.yml
+ * @deprecated See FIXME(id: language-detection)
  */
 function getModeFromExactFilename(fileName: string): string | undefined {
     switch (fileName.toLowerCase()) {
@@ -43,6 +59,7 @@ function getModeFromExactFilename(fileName: string): string | undefined {
  *
  * Cherry picked from https://github.com/isagalaev/highlight.js/tree/master/src/languages
  * and https://github.com/github/linguist/blob/master/lib/linguist/languages.yml.
+ * @deprecated See FIXME(id: language-detection)
  */
 function getModeFromExtension(extension: string): string | undefined {
     switch (extension.toLowerCase()) {
@@ -128,6 +145,7 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'hh':
         case 'h':
         case 'hpp':
+        case 'hxx':
         // https://github.com/sourcegraph/customer/issues/124
         case 'pc':
         case 'pcc': {

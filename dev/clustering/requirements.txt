@@ -1,0 +1,4 @@
+pandas~=2.1.3
+scikit-learn~=1.3.2
+matplotlib~=3.8.2
+sentence-transformers~=2.2.2

@@ -2,6 +2,7 @@ import React, { type FC, useState, useCallback, useRef, useEffect } from 'react'
 
 import { noop } from 'lodash'
 
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Alert,
     Container,
@@ -31,7 +32,7 @@ interface FormOptions {
     webhookURL?: string
 }
 
-export interface CreateGitHubAppPageProps {
+export interface CreateGitHubAppPageProps extends TelemetryV2Props {
     /** The events that the new GitHub App should subscribe to by default. */
     defaultEvents: string[]
     /** The permissions that the new GitHub App will request by default. */
@@ -77,6 +78,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     defaultAppName = 'Sourcegraph',
     baseURL,
     validateURL,
+    telemetryRecorder,
 }) => {
     const ref = useRef<HTMLFormElement>(null)
     const formInput = useRef<HTMLInputElement>(null)
@@ -88,7 +90,10 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     const [isPublic, setIsPublic] = useState<boolean>(false)
     const [error, setError] = useState<string>()
 
-    useEffect(() => eventLogger.logPageView('SiteAdminCreateGiHubApp'), [])
+    useEffect(() => {
+        eventLogger.logPageView('SiteAdminCreateGiHubApp')
+        telemetryRecorder.recordEvent('admin.GitHubApp.create', 'view')
+    }, [telemetryRecorder])
 
     const originURL = window.location.origin
     const getManifest = useCallback(
@@ -97,8 +102,8 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                 name: name.trim(),
                 url: originURL,
                 hook_attributes: webhookURL ? { url: webhookURL } : undefined,
-                redirect_url: new URL('/.auth/githubapp/redirect', originURL).href,
-                setup_url: new URL('/.auth/githubapp/setup', originURL).href,
+                redirect_url: new URL('/githubapp/redirect', originURL).href,
+                setup_url: new URL('/githubapp/setup', originURL).href,
                 callback_urls: [new URL('/.auth/github/callback', originURL).href],
                 setup_on_update: true,
                 public: isPublic,
@@ -139,7 +144,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
         setError(undefined)
         try {
             const response = await fetch(
-                `/.auth/githubapp/new-app-state?appName=${name}&webhookURN=${url}&domain=${appDomain}&baseURL=${url}`
+                `/githubapp/new-app-state?appName=${name}&webhookURN=${url}&domain=${appDomain}&baseURL=${url}`
             )
             if (!response.ok) {
                 if (response.body instanceof ReadableStream) {

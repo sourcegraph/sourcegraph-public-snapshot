@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,28 +10,53 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunks []*gitserver.Hunk) gitserver.Client {
-	hunkReader := gitserver.NewMockHunkReader(hunks, returnErr)
+type mockHunkReader struct {
+	hunks []*gitdomain.Hunk
+	err   error
+}
+
+func newMockHunkReader(hunks []*gitdomain.Hunk, err error) gitserver.HunkReader {
+	return &mockHunkReader{
+		hunks: hunks,
+		err:   err,
+	}
+}
+
+func (mh *mockHunkReader) Read() (*gitdomain.Hunk, error) {
+	if mh.err != nil {
+		return nil, mh.err
+	}
+	if len(mh.hunks) > 0 {
+		next := mh.hunks[0]
+		mh.hunks = mh.hunks[1:]
+		return next, nil
+	}
+	return nil, io.EOF
+}
+
+func (mh *mockHunkReader) Close() error { return nil }
+
+func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunks []*gitdomain.Hunk) gitserver.Client {
+	hunkReader := newMockHunkReader(hunks, returnErr)
 	gsClient := gitserver.NewMockClient()
 	gsClient.GetCommitFunc.SetDefaultHook(
 		func(_ context.Context,
 			repoName api.RepoName,
 			commit api.CommitID,
-			opts gitserver.ResolveRevisionOptions,
 		) (*gitdomain.Commit, error) {
 			return &gitdomain.Commit{
 				Parents: []api.CommitID{"xxx", "yyy"},
@@ -55,7 +81,7 @@ func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunk
 func TestStreamBlame(t *testing.T) {
 	logger, _ := logtest.Captured(t)
 
-	hunks := []*gitserver.Hunk{
+	hunks := []*gitdomain.Hunk{
 		{
 			StartLine: 1,
 			EndLine:   2,
@@ -101,14 +127,14 @@ func TestStreamBlame(t *testing.T) {
 	backend.Mocks.Repos.Get = func(ctx context.Context, repo api.RepoID) (*types.Repo, error) {
 		return &types.Repo{Name: "github.com/bob/foo"}, nil
 	}
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		switch rev {
 		case "1234":
 			return "efgh", nil
 		case "":
 			return "abcd", nil
 		default:
-			return "", &gitdomain.RevisionNotFoundError{Repo: repo.Name}
+			return "", &gitdomain.RevisionNotFoundError{Repo: repo}
 		}
 	}
 	usersStore := dbmocks.NewMockUserStore()
@@ -122,19 +148,7 @@ func TestStreamBlame(t *testing.T) {
 		backend.Mocks.Repos = backend.MockRepos{}
 	})
 
-	ffs := featureflag.NewMemoryStore(nil, nil, map[string]bool{"enable-streaming-git-blame": true})
-	ctx := featureflag.WithFlags(context.Background(), ffs)
-
-	t.Run("NOK feature flag disabled", func(t *testing.T) {
-		rec := httptest.NewRecorder()
-		req, err := http.NewRequest(http.MethodGet, "/no-vars", nil)
-		require.NoError(t, err)
-		req = req.WithContext(context.Background()) // no feature flag there
-
-		gsClient := setupMockGSClient(t, "abcd", nil, hunks)
-		handleStreamBlame(logger, db, gsClient).ServeHTTP(rec, req)
-		assert.Equal(t, http.StatusNotFound, rec.Code)
-	})
+	ctx := context.Background()
 
 	t.Run("NOK no mux vars", func(t *testing.T) {
 		rec := httptest.NewRecorder()
@@ -208,7 +222,7 @@ func TestStreamBlame(t *testing.T) {
 			"Repo": "github.com/bob/foo",
 			"path": "foo.c",
 		})
-		gsClient := setupMockGSClient(t, "efgh", nil, []*gitserver.Hunk{
+		gsClient := setupMockGSClient(t, "efgh", nil, []*gitdomain.Hunk{
 			{
 				StartLine: 1,
 				EndLine:   2,
@@ -257,7 +271,7 @@ func TestStreamBlame(t *testing.T) {
 			"Repo": "foo",
 			"path": "foo.c",
 		})
-		gsClient := setupMockGSClient(t, "efgh", nil, []*gitserver.Hunk{
+		gsClient := setupMockGSClient(t, "efgh", nil, []*gitdomain.Hunk{
 			{
 				StartLine: 1,
 				EndLine:   2,

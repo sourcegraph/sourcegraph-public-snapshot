@@ -55,7 +55,7 @@ export { Panel } from './Panel'
 export { Tooltip, TooltipOpenChangeReason } from './Tooltip'
 export { Tree, flattenTree } from './Tree'
 export { Card, CardBody, CardHeader, CardList, CardSubtitle, CardText, CardTitle, CardFooter } from './Card'
-export { Icon } from './Icon'
+export { Icon, LanguageIcon, getFileIconInfo } from './Icon'
 export { ButtonLink } from './ButtonLink'
 export { Menu, MenuButton, MenuDivider, MenuHeader, MenuItem, MenuLink, MenuList, MenuText } from './Menu'
 export { NavMenu } from './NavMenu'
@@ -78,6 +78,7 @@ export {
     Flipping,
     Strategy,
     Overlapping,
+    TetherAPI,
 } from './Popover'
 export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
 export {
@@ -109,11 +110,10 @@ export type { ButtonLinkProps } from './ButtonLink'
 export type { SelectProps, InputProps } from './Form'
 export type { Series, SeriesLikeChart, CategoricalLikeChart, LineChartProps, BarChartProps } from './Charts'
 export type { LinkProps } from './Link'
-export type { PopoverOpenEvent, Rectangle, TetherInstanceAPI } from './Popover'
+export type { PopoverOpenEvent, Rectangle, TetherInstanceAPI, Point } from './Popover'
 export type { MenuLinkProps, MenuItemProps } from './Menu'
 export type { TabsProps, TabListProps, TabProps, TabPanelProps, TabPanelsProps } from './Tabs'
 export type { IconProps, IconType } from './Icon'
-export type { Point } from './Popover'
 export type { TreeNode, TreeProps, TreeRef } from './Tree'
 export type { TooltipProps, TooltipOpenEvent } from './Tooltip'
 export type { HeadingProps, HeadingElement } from './Typography'

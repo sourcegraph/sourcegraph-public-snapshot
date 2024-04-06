@@ -45,7 +45,7 @@ func Containers() *monitoring.Dashboard {
 							Query:       fmt.Sprintf(`cadvisor_container_memory_usage_percentage_total{%s}`, containerNameQuery),
 							NoAlert:     true,
 							Panel:       monitoring.Panel().With(monitoring.PanelOptions.LegendOnRight()).LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
-							Owner:       monitoring.ObservableOwnerDevOps,
+							Owner:       monitoring.ObservableOwnerInfraOrg,
 							Interpretation: `
 								This value indicates the memory usage of all containers.
 							`,
@@ -58,7 +58,7 @@ func Containers() *monitoring.Dashboard {
 							Query:       fmt.Sprintf(`cadvisor_container_cpu_usage_percentage_total{%s}`, containerNameQuery),
 							NoAlert:     true,
 							Panel:       monitoring.Panel().With(monitoring.PanelOptions.LegendOnRight()).LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
-							Owner:       monitoring.ObservableOwnerDevOps,
+							Owner:       monitoring.ObservableOwnerInfraOrg,
 							Interpretation: `
 								This value indicates the CPU usage of all containers.
 							`,
@@ -77,7 +77,7 @@ func Containers() *monitoring.Dashboard {
 							Query:       fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[5m]) >= 80`, containerNameQuery),
 							NoAlert:     true,
 							Panel:       monitoring.Panel().With(monitoring.PanelOptions.LegendOnRight()).LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
-							Owner:       monitoring.ObservableOwnerDevOps,
+							Owner:       monitoring.ObservableOwnerInfraOrg,
 							Interpretation: `
 								Containers that exceed 80% memory limit. The value indicates potential underprovisioned resources.
 							`,
@@ -90,7 +90,7 @@ func Containers() *monitoring.Dashboard {
 							Query:       fmt.Sprintf(`max_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[5m]) >= 80`, containerNameQuery),
 							NoAlert:     true,
 							Panel:       monitoring.Panel().With(monitoring.PanelOptions.LegendOnRight()).LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
-							Owner:       monitoring.ObservableOwnerDevOps,
+							Owner:       monitoring.ObservableOwnerInfraOrg,
 							Interpretation: `
 								Containers that exceed 80% CPU limit. The value indicates potential underprovisioned resources.
 							`,
@@ -103,7 +103,7 @@ func Containers() *monitoring.Dashboard {
 							Query:       fmt.Sprintf(`max by (name) (container_oom_events_total{%s}) >= 1`, containerNameQuery),
 							NoAlert:     true,
 							Panel:       monitoring.Panel().With(monitoring.PanelOptions.LegendOnRight()).LegendFormat("{{name}}"),
-							Owner:       monitoring.ObservableOwnerDevOps,
+							Owner:       monitoring.ObservableOwnerInfraOrg,
 							Interpretation: `
 								This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
 								When it occurs frequently, it is an indicator of underprovisioning.
@@ -118,7 +118,7 @@ func Containers() *monitoring.Dashboard {
 							Query:   fmt.Sprintf(`count by(name) ((time() - container_last_seen{%s}) > 60)`, containerNameQuery),
 							NoAlert: true,
 							Panel:   monitoring.Panel().With(monitoring.PanelOptions.LegendOnRight()).LegendFormat("{{name}}"),
-							Owner:   monitoring.ObservableOwnerDevOps,
+							Owner:   monitoring.ObservableOwnerInfraOrg,
 							Interpretation: `
 								This value is the number of times a container has not been seen for more than one minute. If you observe this
 								value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.

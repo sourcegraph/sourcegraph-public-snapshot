@@ -47,30 +47,30 @@ func TestMiddleware(t *testing.T) {
 	providers.MockProviders = []providers.Provider{mockBitbucketCloud.Provider}
 	defer func() { providers.MockProviders = nil }()
 
-	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response {
+	doRequest := func(method, urlStr, body string, state string, cookies []*http.Cookie, authed bool) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
+		req.Header.Set("User-Agent", "Mozilla")
 		for _, cookie := range cookies {
 			req.AddCookie(cookie)
 		}
-		req.Header.Set("User-Agent", "Mozilla")
 		if authed {
 			req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: mockUserID}))
 		}
 		respRecorder := httptest.NewRecorder()
+		session.SetData(respRecorder, req, "oauthState", state)
 		authedHandler.ServeHTTP(respRecorder, req)
 		return respRecorder.Result()
 	}
 
 	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg sign-in", func(t *testing.T) {
 		cookie := &http.Cookie{Name: auth.SignOutCookie, Value: "true"}
-
-		resp := doRequest("GET", "http://example.com/", "", []*http.Cookie{cookie}, false)
+		resp := doRequest("GET", "http://example.com/", "", "", []*http.Cookie{cookie}, false)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
 	})
 	t.Run("unauthenticated homepage visit, no sign-out cookie -> bitbucket cloud oauth flow", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/", "", nil, false)
+		resp := doRequest("GET", "http://example.com/", "", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -86,7 +86,7 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("unauthenticated subpage visit -> bitbucket cloud oauth flow", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/page", "", nil, false)
+		resp := doRequest("GET", "http://example.com/page", "", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -104,7 +104,7 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("unauthenticated API request -> pass through", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.api/foo", "", nil, false)
+		resp := doRequest("GET", "http://example.com/.api/foo", "", "", nil, false)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -117,7 +117,7 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("login -> bitbucket cloud auth flow with redirect param", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/bitbucketcloud/login?pc="+mockBitbucketCloud.Provider.ConfigID().ID+"&redirect=%2Fpage", "", nil, false)
+		resp := doRequest("GET", "http://example.com/.auth/bitbucketcloud/login?pc="+mockBitbucketCloud.Provider.ConfigID().ID+"&redirect=%2Fpage", "", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -158,8 +158,7 @@ func TestMiddleware(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		callbackCookies := []*http.Cookie{oauth.NewCookie(getStateConfig(), encodedState)}
-		resp := doRequest("GET", "http://example.com/.auth/bitbucketcloud/callback?code=the-oauth-code&state="+encodedState, "", callbackCookies, false)
+		resp := doRequest("GET", "http://example.com/.auth/bitbucketcloud/callback?code=the-oauth-code&state="+encodedState, "", encodedState, nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -177,8 +176,7 @@ func TestMiddleware(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		callbackCookies := []*http.Cookie{oauth.NewCookie(getStateConfig(), encodedState)}
-		resp := doRequest("GET", "http://example.com/.auth/bitbucketcloud/callback?code=the-oauth-code&state="+encodedState, "", callbackCookies, false)
+		resp := doRequest("GET", "http://example.com/.auth/bitbucketcloud/callback?code=the-oauth-code&state="+encodedState, "", encodedState, nil, false)
 		if want := http.StatusBadRequest; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -188,7 +186,7 @@ func TestMiddleware(t *testing.T) {
 		mockBitbucketCloud.lastCallbackRequestURL = nil
 	})
 	t.Run("authenticated app request", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/", "", nil, true)
+		resp := doRequest("GET", "http://example.com/", "", "", nil, true)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -201,7 +199,7 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("authenticated API request", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.api/foo", "", nil, true)
+		resp := doRequest("GET", "http://example.com/.api/foo", "", "", nil, true)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}

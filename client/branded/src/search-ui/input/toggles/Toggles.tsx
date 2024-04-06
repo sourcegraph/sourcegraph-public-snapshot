@@ -4,19 +4,17 @@ import { mdiCodeBrackets, mdiFormatLetterCase, mdiRegex } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import {
-    type CaseSensitivityProps,
-    type SearchPatternTypeMutationProps,
-    type SubmitSearchProps,
-    SearchMode,
-    type SearchModeProps,
-    type SearchPatternTypeProps,
+import type {
+    CaseSensitivityProps,
+    SearchPatternTypeMutationProps,
+    SubmitSearchProps,
+    SearchModeProps,
+    SearchPatternTypeProps,
 } from '@sourcegraph/shared/src/search'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { QueryInputToggle } from './QueryInputToggle'
-import { SmartSearchToggle } from './SmartSearchToggle'
-import { SmartSearchToggleExtended, SearchModes } from './SmartSearchToggleExtended'
 
 import styles from './Toggles.module.scss'
 
@@ -25,15 +23,10 @@ export interface TogglesProps
         SearchPatternTypeMutationProps,
         CaseSensitivityProps,
         SearchModeProps,
+        TelemetryProps,
         Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
     navbarSearchQuery: string
     className?: string
-    showSmartSearchButton?: boolean
-    /**
-     * If set to true, the search mode picker will let the user select the new
-     * pattern type as a new alternative
-     */
-    showExtendedPicker?: boolean
     /**
      * If set to false makes all buttons non-actionable. The main use case for
      * this prop is showing the toggles in examples. This is different from
@@ -54,31 +47,21 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         setPatternType,
         caseSensitive,
         setCaseSensitivity,
-        searchMode,
-        setSearchMode,
         className,
         submitSearch,
-        showSmartSearchButton = true,
-        showExtendedPicker = false,
         structuralSearchDisabled,
+        telemetryService,
     } = props
 
     const submitOnToggle = useCallback(
-        (
-            args:
-                | { newPatternType: SearchPatternType }
-                | { newCaseSensitivity: boolean }
-                | { newPowerUser: boolean }
-                | { newSearchMode: SearchMode }
-        ): void => {
+        (args: { newPatternType: SearchPatternType } | { newCaseSensitivity: boolean }): void => {
             submitSearch?.({
                 source: 'filter',
                 patternType: 'newPatternType' in args ? args.newPatternType : patternType,
                 caseSensitive: 'newCaseSensitivity' in args ? args.newCaseSensitivity : caseSensitive,
-                searchMode: 'newSearchMode' in args ? args.newSearchMode : searchMode,
             })
         },
-        [caseSensitive, patternType, searchMode, submitSearch]
+        [caseSensitive, patternType, submitSearch]
     )
 
     const toggleCaseSensitivity = useCallback((): void => {
@@ -89,63 +72,20 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
 
     const toggleRegexp = useCallback((): void => {
         const newPatternType =
-            patternType !== SearchPatternType.regexp ? SearchPatternType.regexp : SearchPatternType.standard
+            patternType !== SearchPatternType.regexp ? SearchPatternType.regexp : SearchPatternType.keyword
 
         setPatternType(newPatternType)
         submitOnToggle({ newPatternType })
-    }, [patternType, setPatternType, submitOnToggle])
-
-    const toggleNewStandard = useCallback((): void => {
-        const newPatternType =
-            patternType !== SearchPatternType.newStandardRC1
-                ? SearchPatternType.newStandardRC1
-                : SearchPatternType.standard
-
-        setPatternType(newPatternType)
-
-        // We always want precise mode when switching to the experimental pattern type.
-        setSearchMode(SearchMode.Precise)
-
-        submitOnToggle({ newPatternType })
-    }, [patternType, setPatternType, submitOnToggle, setSearchMode])
+        telemetryService.log('ToggleRegexpPatternType', { currentStatus: patternType === SearchPatternType.regexp })
+    }, [patternType, setPatternType, submitOnToggle, telemetryService])
 
     const toggleStructuralSearch = useCallback((): void => {
         const newPatternType: SearchPatternType =
-            patternType !== SearchPatternType.structural ? SearchPatternType.structural : SearchPatternType.standard
+            patternType !== SearchPatternType.structural ? SearchPatternType.structural : SearchPatternType.keyword
 
         setPatternType(newPatternType)
         submitOnToggle({ newPatternType })
     }, [patternType, setPatternType, submitOnToggle])
-
-    const onSelectSmartSearch = useCallback(
-        (enabled: boolean): void => {
-            const newSearchMode: SearchMode = enabled ? SearchMode.SmartSearch : SearchMode.Precise
-
-            // Disable the experimental pattern type the user activates smart search
-            if (patternType === SearchPatternType.newStandardRC1) {
-                setPatternType(SearchPatternType.standard)
-            }
-
-            setSearchMode(newSearchMode)
-            submitOnToggle({ newSearchMode })
-        },
-        [setSearchMode, submitOnToggle, patternType, setPatternType]
-    )
-
-    // This is hacky and is just for demo purposes. Once we have made the new
-    // pattern type the default we can revert this.
-    const onSelectSearchMode = useCallback(
-        (mode: SearchModes): void => {
-            if (mode === SearchModes.Smart) {
-                onSelectSmartSearch(true)
-            } else if (mode === SearchModes.PreciseNew) {
-                toggleNewStandard()
-            } else {
-                onSelectSmartSearch(false)
-            }
-        },
-        [onSelectSmartSearch, toggleNewStandard]
-    )
 
     return (
         <div className={classNames(className, styles.toggleContainer)}>
@@ -208,29 +148,6 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         />
                     )}
                 </>
-                {showSmartSearchButton && <div className={styles.separator} />}
-                {showSmartSearchButton &&
-                    (showExtendedPicker ? (
-                        <SmartSearchToggleExtended
-                            className="test-smart-search-toggle"
-                            mode={
-                                patternType === SearchPatternType.newStandardRC1
-                                    ? SearchModes.PreciseNew
-                                    : searchMode === SearchMode.SmartSearch
-                                    ? SearchModes.Smart
-                                    : SearchModes.Precise
-                            }
-                            onSelect={onSelectSearchMode}
-                            interactive={props.interactive}
-                        />
-                    ) : (
-                        <SmartSearchToggle
-                            className="test-smart-search-toggle"
-                            isActive={searchMode === SearchMode.SmartSearch}
-                            onSelect={onSelectSmartSearch}
-                            interactive={props.interactive}
-                        />
-                    ))}
             </>
         </div>
     )

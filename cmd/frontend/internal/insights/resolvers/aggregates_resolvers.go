@@ -194,12 +194,6 @@ func getProactiveResultLimit() int {
 
 }
 
-func min(x, y int) int {
-	if x < y {
-		return x
-	}
-	return y
-}
 func getExtendedTimeout(ctx context.Context, db database.DB) int {
 	searchLimit := limits.SearchLimits(conf.Get()).MaxTimeoutSeconds
 
@@ -285,7 +279,7 @@ func buildResults(aggregator aggregation.LimitedAggregator, limit int, mode type
 	otherGroups := aggregator.OtherCounts().GroupCount
 	var totalCount uint32
 
-	for i := 0; i < len(sorted); i++ {
+	for i := range len(sorted) {
 		if i < limit {
 			label := sorted[i].Label
 			drilldownQuery, err := buildDrilldownQuery(mode, originalQuery, label, patternType)

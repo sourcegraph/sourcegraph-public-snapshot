@@ -9,7 +9,9 @@ import { initEndToEndTest } from '../utils/initEndToEndTest'
 
 const { sourcegraphBaseUrl } = getConfig('gitHubDotComToken', 'sourcegraphBaseUrl')
 
-describe('Theme switcher', () => {
+// Since the test inside the describe is skipped the after does not execute. Consequently the page does not get closed
+// causing subsequent failures. This is a known bug in Mocha
+describe.skip('Theme switcher', () => {
     let driver: Driver
 
     before(async () => {

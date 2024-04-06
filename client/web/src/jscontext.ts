@@ -1,5 +1,6 @@
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import type { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/batches'
 
 import type { TemporarySettingsResult } from './graphql-operations'
@@ -28,6 +29,7 @@ export interface AuthProvider {
     authenticationURL: string
     serviceID: string
     clientID: string
+    noSignIn: boolean
 }
 
 /**
@@ -94,6 +96,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         endpoint: string
     }
 
+    telemetryRecorder: TelemetryRecorder
+
     /** Externally accessible URL for Sourcegraph (e.g., https://sourcegraph.com or http://localhost:3080). */
     externalURL: string
 
@@ -114,7 +118,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     debug: boolean
 
     sourcegraphDotComMode: boolean
-    codyAppMode: boolean
 
     /**
      * siteID is the identifier of the Sourcegraph site.
@@ -147,6 +150,15 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether access tokens are enabled. */
     accessTokensAllow: 'all-users-create' | 'site-admin-create' | 'none'
 
+    /** Whether access tokens with not expiration are enabled. */
+    accessTokensAllowNoExpiration: boolean
+
+    /** Available options for number of days until access token expiration. */
+    accessTokensExpirationDaysOptions: number[]
+
+    /** Default value for number of days to access token expiration. */
+    accessTokensExpirationDaysDefault: number
+
     /** Whether the reset-password flow is enabled. */
     resetPasswordEnabled: boolean
 
@@ -170,8 +182,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the batch changes feature is enabled on the site. */
     batchChangesEnabled: boolean
 
-    /** Whether the warning about unconfigured webhooks is disabled within Batch
-     * Changes. */
+    /**
+     * Whether the warning about unconfigured webhooks is disabled within Batch Changes.
+     */
     batchChangesDisableWebhooksWarning: boolean
 
     batchChangesWebhookLogsEnabled: boolean
@@ -194,17 +207,32 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether global policies are enabled for auto-indexing. */
     codeIntelAutoIndexingAllowGlobalPolicies: boolean
 
+    /** Whether to enable the document reference counts feature (a.k.a ranking job). Currently experimental. */
+    codeIntelRankingDocumentReferenceCountsEnabled: boolean
+
     /** Whether code insights API is enabled on the site. */
     codeInsightsEnabled: boolean
 
+    /** Whether code intelliense is enabled on the Sourcegraph instance. */
+    codeIntelligenceEnabled: boolean
+
+    /** Whether search contexts are enabled on the Sourcegraph instance */
+    searchContextsEnabled: boolean
+
+    /** Whether notebooks is enabled on the Sourcegraph instance */
+    notebooksEnabled: boolean
+
+    /** Whether code monitoring is enabled on the Sourcegraph instance */
+    codeMonitoringEnabled: boolean
+
+    /** Whether search aggregation is enabled on the Sourcegraph instance */
+    searchAggregationEnabled: boolean
+
+    /** Whether the own API is enabled on the Sourcegraph instance */
+    ownEnabled: boolean
+
     /** Whether embeddings are enabled on this site. */
     embeddingsEnabled: boolean
-
-    /**
-     * Local git URL, it's used only to create a local external service
-     * in Cody App.
-     */
-    srcServeGitUrl: string
 
     /** Authentication provider instances in site config. */
     authProviders: AuthProvider[]
@@ -252,20 +280,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Contains information about the product license. */
     licenseInfo?: {
-        currentPlan:
-            | 'old-starter-0'
-            | 'old-enterprise-0'
-            | 'team-0'
-            | 'enterprise-0'
-            | 'business-0'
-            | 'enterprise-1'
-            | 'enterprise-air-gap-0'
-
-        codeScaleLimit?: string
-        codeScaleCloseToLimit?: boolean
-        codeScaleExceededLimit?: boolean
         batchChanges?: BatchChangesLicenseInfo
-        knownLicenseTags?: string[]
+        features: LicenseFeatures
     }
 
     /** sha256 hashed license key */
@@ -285,4 +301,12 @@ export interface BrandAssets {
     logo?: string
     /** The URL to the symbol used as the search icon */
     symbol?: string
+}
+
+/**
+ * Defines the license features available.
+ */
+export interface LicenseFeatures {
+    codeSearch: boolean
+    cody: boolean
 }

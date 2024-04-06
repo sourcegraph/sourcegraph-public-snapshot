@@ -9,9 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	goDBConnImport = runScript("Go pkg/database/dbconn", "dev/check/go-dbconn-import.sh")
-)
+var goDBConnImport = runScript("Go pkg/database/dbconn", "dev/check/go-dbconn-import.sh")
 
 func lintSGExit() *linter {
 	return runCheck("Lint dev/sg exit signals", func(ctx context.Context, out *std.Output, s *repo.State) error {
@@ -78,10 +76,11 @@ func lintLoggingLibraries() *linter {
 			return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/log" instead`,
 				bannedImport)
 		},
-		HelpText: "Learn more about logging and why some libraries are banned: https://docs.sourcegraph.com/dev/how-to/add_logging",
+		HelpText: "Learn more about logging and why some libraries are banned: https://sourcegraph.com/docs/dev/how-to/add_logging",
 	})
 }
 
+// keep up to date with dev/linters/tracinglibraries/tracinglibraries.go
 func lintTracingLibraries() *linter {
 	return newUsageLinter("Tracing libraries linter", usageLinterOptions{
 		Target: "**/*.go",

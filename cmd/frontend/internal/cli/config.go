@@ -18,7 +18,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -27,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -364,8 +364,8 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 			if err != nil {
 				return false, err
 			}
-
 			update := &database.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &rawConfig, CloudDefault: &extSvc.CloudDefault}
+
 			if err := extsvcs.Update(ctx, ps, id, update); err != nil {
 				return false, errors.Wrap(err, "ExternalServices.Update")
 			}
@@ -622,7 +622,7 @@ var (
 	indexedListTTL = func() time.Duration {
 		ttl, _ := time.ParseDuration(env.Get("SRC_INDEXED_SEARCH_LIST_CACHE_TTL", "", "Indexed search list cache TTL"))
 		if ttl == 0 {
-			if envvar.SourcegraphDotComMode() {
+			if dotcom.SourcegraphDotComMode() {
 				ttl = 30 * time.Second
 			} else {
 				ttl = 5 * time.Second
@@ -784,7 +784,7 @@ func replicaAddrs(deployType, countStr, serviceName, port string) (string, error
 	}
 
 	var addrs []string
-	for i := 0; i < count; i++ {
+	for i := range count {
 		addrs = append(addrs, strings.Join([]string{fmtStrHead, serviceName, "-", strconv.Itoa(i), fmtStrTail}, ""))
 	}
 	return strings.Join(addrs, " "), nil

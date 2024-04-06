@@ -1,0 +1,39 @@
+.type-list-container {
+    padding: 0.75rem 1rem;
+}
+
+.type-list {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    gap: 0.15rem;
+    margin: 0;
+    padding: 0;
+
+    &-item {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: none;
+        border-radius: 4px;
+        font-weight: normal;
+        padding: 0.375rem 0.25rem 0.375rem 0.5rem;
+
+        &-text {
+            margin-right: auto;
+        }
+
+        &-disabled {
+            cursor: not-allowed !important;
+        }
+
+        &:not(&-selected):hover {
+            background-color: var(--color-bg-3) !important;
+        }
+    }
+}
+
+.heading {
+    margin-bottom: 0.75rem;
+}

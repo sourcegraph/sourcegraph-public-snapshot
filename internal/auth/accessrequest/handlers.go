@@ -66,6 +66,8 @@ func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWrite
 	_, err := db.AccessRequests().Create(r.Context(), &accessRequest)
 	if err == nil {
 		w.WriteHeader(http.StatusCreated)
+		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
+		//lint:ignore SA1019 existing usage of deprecated functionality.
 		if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "CreateAccessRequestSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
 			logger.Warn("Failed to log event CreateAccessRequestSucceeded", log.Error(err))
 		}
@@ -84,6 +86,8 @@ func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWrite
 		http.Error(w, "Request access failed unexpectedly.", http.StatusInternalServerError)
 	}
 
+	// TODO: Use EventRecorder from internal/telemetryrecorder instead.
+	//lint:ignore SA1019 existing usage of deprecated functionality.
 	if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "AccessRequestFailed", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
 		logger.Warn("Failed to log event AccessRequestFailed", log.Error(err))
 	}

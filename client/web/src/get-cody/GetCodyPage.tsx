@@ -1,9 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import { mdiMicrosoftVisualStudioCode, mdiChevronRight, mdiApple, mdiLinux, mdiMicrosoftWindows } from '@mdi/js'
 import classNames from 'classnames'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Badge, H2, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { ExternalsAuth } from '../auth/components/ExternalsAuth'
@@ -27,7 +29,7 @@ interface WaitListButtonProps {
 
 interface GetCodyPageProps {
     authenticatedUser: AuthenticatedUser | null
-    context: Pick<SourcegraphContext, 'authProviders'>
+    context: Pick<SourcegraphContext, 'externalURL'>
 }
 
 const SOURCEGRAPH_MAC_SILICON = 'https://sourcegraph.com/.api/app/latest?arch=aarch64&target=darwin'
@@ -36,25 +38,40 @@ const SOURCEGRAPH_MAC_INTEL = 'https://sourcegraph.com/.api/app/latest?arch=x86_
 
 const SOURCEGRAPH_LINUX = 'https://sourcegraph.com/.api/app/latest?arch=x86_64&target=linux'
 
-const onClickCTAButton = (type: string): void =>
-    eventLogger.log(EventName.SIGNUP_INITIATED, { type, source: 'get-started' })
-
 const logEvent = (eventName: string, type?: string, source?: string): void =>
     eventLogger.log(eventName, { type, source })
 
 const logPageView = (pageTitle: string): void => eventLogger.logPageView(pageTitle)
 
+/* eslint-disable  @sourcegraph/sourcegraph/check-help-links */
+
 export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authenticatedUser, context }) => {
+    const navigate = useNavigate()
+    const location = useLocation()
+    const [search] = useState(location.search)
+
+    useEffect(() => {
+        if (authenticatedUser) {
+            navigate(`/cody/manage${search || ''}`)
+        } else {
+            window.location.href = '/cody'
+        }
+    }, [authenticatedUser, navigate, search])
+
     useEffect(() => {
         logPageView(EventName.VIEW_GET_CODY)
     }, [])
+
+    if (authenticatedUser) {
+        return null
+    }
 
     return (
         <div className={styles.pageWrapper}>
             <Page className={styles.page}>
                 <PageTitle title="Get Started with Cody" />
                 <PageHeader className={styles.pageHeader}>
-                    <Link to="https://about.sourcegraph.com/">
+                    <Link to="https://sourcegraph.com/">
                         <img
                             className={styles.pageHeaderImage}
                             src="https://sourcegraph.com/.assets/img/sourcegraph-logo-dark.svg"
@@ -86,20 +103,23 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                             <div className={styles.authButtonsWrap}>
                                 <div className={styles.externalAuthWrapper}>
                                     <ExternalsAuth
+                                        page="get-cody-page"
                                         context={context}
                                         githubLabel="GitHub"
                                         gitlabLabel="Gitlab"
                                         googleLabel="Google"
                                         withCenteredText={true}
-                                        onClick={onClickCTAButton}
+                                        onClick={() => {}}
                                         ctaClassName={styles.authButton}
+                                        telemetryRecorder={noOpTelemetryRecorder}
+                                        telemetryService={eventLogger}
                                     />
                                 </div>
                             </div>
                             <Text className={styles.terms}>
                                 By registering, you agree to our{' '}
                                 <Link
-                                    to="https://about.sourcegraph.com/terms"
+                                    to="https://sourcegraph.com/terms"
                                     className={styles.termsLink}
                                     target="_blank"
                                     rel="noopener"
@@ -108,7 +128,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                 </Link>{' '}
                                 and{' '}
                                 <Link
-                                    to="https://about.sourcegraph.com/terms/privacy"
+                                    to="https://sourcegraph.com/terms/privacy"
                                     className={styles.termsLink}
                                     target="_blank"
                                     rel="noopener"
@@ -234,7 +254,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                             <Text className={styles.terms}>
                                 By using Sourcegraph, you agree to the{' '}
                                 <Link
-                                    to="https://about.sourcegraph.com/terms/privacy"
+                                    to="https://sourcegraph.com/terms/privacy"
                                     className={styles.termsLink}
                                     target="_blank"
                                     rel="noopener"
@@ -243,7 +263,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                 </Link>{' '}
                                 and{' '}
                                 <Link
-                                    to="https://about.sourcegraph.com/terms"
+                                    to="https://sourcegraph.com/terms"
                                     className={styles.termsLink}
                                     target="_blank"
                                     rel="noopener"
@@ -290,13 +310,13 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                         </Text>
                         <div className={styles.ctaButtonWrapper}>
                             <Link
-                                to="https://about.sourcegraph.com/cody/pricing"
+                                to="https://sourcegraph.com/cody/pricing"
                                 className={classNames('text-decoration-none', styles.getCodyEnterpriseButton)}
                             >
                                 Get Cody for Enterprise
                             </Link>
                             <Link
-                                to="https://about.sourcegraph.com/demo"
+                                to="https://sourcegraph.com/demo"
                                 className={classNames('text-decoration-none', styles.talkToEngineerButton)}
                             >
                                 Talk to an engineer
@@ -309,7 +329,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                 <div className={styles.footer}>
                     <Text>© 2023 Sourcegraph, Inc. </Text>
                     <Link
-                        to="https://about.sourcegraph.com/terms"
+                        to="https://sourcegraph.com/terms"
                         className={styles.footerLink}
                         target="_blank"
                         rel="noopener"
@@ -317,7 +337,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                         Terms
                     </Link>
                     <Link
-                        to="https://about.sourcegraph.com/security"
+                        to="https://sourcegraph.com/security"
                         className={styles.footerLink}
                         target="_blank"
                         rel="noopener"
@@ -325,7 +345,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                         Security
                     </Link>
                     <Link
-                        to="https://about.sourcegraph.com/terms/privacy"
+                        to="https://sourcegraph.com/terms/privacy"
                         className={styles.footerLink}
                         target="_blank"
                         rel="noopener"

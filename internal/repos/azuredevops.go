@@ -57,9 +57,10 @@ func NewAzureDevOpsSource(ctx context.Context, logger log.Logger, svc *types.Ext
 
 	var ex repoExcluder
 	for _, r := range c.Exclude {
-		ex.AddRule().
+		// Either Name must match, or the pattern must match.
+		ex.AddRule(NewRule().
 			Exact(r.Name).
-			Pattern(r.Pattern)
+			Pattern(r.Pattern))
 	}
 	if err := ex.RuleErrors(); err != nil {
 		return nil, err
@@ -158,6 +159,11 @@ func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository) (*types.Repo, err
 		return nil, err
 	}
 
+	cloneURL := p.RemoteURL
+	if s.config.GitURLType == "ssh" {
+		cloneURL = p.SSHURL
+	}
+
 	name := path.Join(fullURL.Host, fullURL.Path)
 	return &types.Repo{
 		Name: api.RepoName(name),
@@ -171,7 +177,7 @@ func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository) (*types.Repo, err
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
-				CloneURL: p.CloneURL,
+				CloneURL: cloneURL,
 			},
 		},
 		Metadata: p,

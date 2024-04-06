@@ -112,10 +112,7 @@ func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret stri
 
 func healthz(ctx context.Context) error {
 	// Check redis health
-	rpool, ok := redispool.Cache.Pool()
-	if !ok {
-		return errors.New("redis: not available")
-	}
+	rpool := redispool.Cache.Pool()
 	rconn, err := rpool.GetContext(ctx)
 	if err != nil {
 		return errors.Wrap(err, "redis: failed to get conn")

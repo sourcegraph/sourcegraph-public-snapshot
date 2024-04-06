@@ -1,5 +1,5 @@
 <p align="center">
-<a href="https://about.sourcegraph.com/" target="_blank">
+<a href="https://sourcegraph.com/" target="_blank">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://p21.p4.n0.cdn.getcloudapp.com/items/6qub2y6g/8c25cf68-2715-4f0e-9de6-26292fad604f.svg" width="50%">
   <img src="https://p21.p4.n0.cdn.getcloudapp.com/items/12u7NWXL/5e21725d-6e84-4ccd-8300-27bf9a050416.svg" width="50%">
@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-    <a href="https://docs.sourcegraph.com">Docs</a> •
+    <a href="https://sourcegraph.com/docs">Docs</a> •
     <a href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CONTRIBUTING.md">Contributing</a> •
     <a href="https://twitter.com/sourcegraph">Twitter</a> •
     <a href="https://discord.gg/s2qDtYGnAE">Discord</a>
@@ -38,16 +38,16 @@
 
 ## Getting started
 
-- [Use Sourcegraph on the cloud or self-hosted](https://docs.sourcegraph.com/)
+- [Use Sourcegraph on the cloud or self-hosted](https://sourcegraph.com/docs/)
 - [Sourcegraph.com public code search](https://sourcegraph.com/search)
 
 <br><br>
 
-<img src="https://about.sourcegraph.com/home/banner.png" />
+<img src="https://sourcegraph.com/home/banner.png" />
 
 ## Development
 
-Refer to the [Developing Sourcegraph guide](https://docs.sourcegraph.com/dev) to get started.
+Refer to the [Developing Sourcegraph guide](https://sourcegraph.com/docs/dev) to get started.
 
 ### Documentation
 

@@ -9,5 +9,13 @@ namespaces:
   - name: REPO_METADATA
     actions:
       - WRITE
+  - name: CODY
+    actions:
+      - ACCESS
+  - name: PRODUCT_SUBSCRIPTIONS
+    dotcom: true
+    actions:
+      - READ
+      - WRITE
 excludeFromUserRole:
   - OWNERSHIP

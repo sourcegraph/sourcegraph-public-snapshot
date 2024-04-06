@@ -3,6 +3,8 @@ package changed
 import (
 	"bytes"
 	"os"
+	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -15,6 +17,7 @@ const (
 	Go Diff = 1 << iota
 	ClientBrowserExtensions
 	Client
+	Pnpm
 	GraphQL
 	DatabaseSchema
 	Docs
@@ -93,6 +96,11 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 		if !strings.HasSuffix(p, ".md") && (isRootClientFile(p) || strings.HasPrefix(p, "client/")) {
 			diff |= Client
 		}
+
+		if slices.Contains(pnpmFiles, filepath.Base(p)) {
+			diff |= Pnpm
+		}
+
 		// dev/release contains a nodejs script that doesn't have tests but needs to be
 		// linted with Client linters. We skip the release config file to reduce friction editing during releases.
 		if strings.HasPrefix(p, "dev/release/") && !strings.Contains(p, "release-config") {
@@ -227,6 +235,8 @@ func (d Diff) String() string {
 		return "Go"
 	case Client:
 		return "Client"
+	case Pnpm:
+		return "pnpm"
 	case ClientBrowserExtensions:
 		return "ClientBrowserExtensions"
 	case GraphQL:

@@ -8,11 +8,12 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
 
 func TestClient_do(t *testing.T) {
@@ -29,7 +30,7 @@ func TestClient_do(t *testing.T) {
 	require.NoError(t, err)
 
 	c := &client{
-		httpClient: httpcli.ExternalDoer,
+		httpClient: httpcli.TestExternalDoer,
 		URL:        srvURL,
 		rateLimit:  &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(10, 10)},
 	}
@@ -56,4 +57,19 @@ func TestClient_do(t *testing.T) {
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 		require.Equal(t, "value", respStruct.Key)
 	})
+}
+
+func TestClient_GetSSHInfo(t *testing.T) {
+	cli, save := NewTestClient(t, "GetSSHInfo", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	hostname, port, err := cli.GetSSHInfo(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	require.Equal(t, "gerrit-ssh.sgdev.org", hostname)
+	require.Equal(t, 29418, port)
 }

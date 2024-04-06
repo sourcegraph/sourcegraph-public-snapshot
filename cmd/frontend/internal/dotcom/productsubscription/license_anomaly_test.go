@@ -158,11 +158,12 @@ func TestCheckAnomalies(t *testing.T) {
 				Timestamp:       ts,
 			}
 		}
+		//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 		err = db.EventLogs().BulkInsert(ctx, events)
 		require.NoError(t, err)
 	}
 
-	slackMessage := fmt.Sprintf(slackMessageFmt, "https://sourcegraph.acme.com", url.QueryEscape(sub2ID), url.QueryEscape(licenseID), licenseID, siteID)
+	slackMessage := fmt.Sprintf(slackMessageFmt, "could not load customer name", siteID, "https://sourcegraph.acme.com", url.QueryEscape(sub2ID), url.QueryEscape(licenseID), licenseID)
 
 	tests := []struct {
 		name      string

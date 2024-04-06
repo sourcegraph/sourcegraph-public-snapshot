@@ -1,7 +1,7 @@
 package goreman
 
 import (
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"os"
 	"os/signal"
 	"sync"
@@ -135,10 +135,10 @@ func stopProcs(kill bool) {
 	var wg sync.WaitGroup
 	for _, proc := range names() {
 		wg.Add(1)
-		go func(proc string) {
+		go func() {
 			defer wg.Done()
 			_ = stopProc(proc, kill)
-		}(proc)
+		}()
 	}
 	wg.Wait()
 }

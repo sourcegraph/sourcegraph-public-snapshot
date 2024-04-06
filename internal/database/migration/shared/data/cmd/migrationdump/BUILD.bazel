@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "migrationdump_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/migration/shared/data/cmd/migrationdump",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//internal/oobmigration",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_urfave_cli_v2//:cli",
+    ],
+)
+
+go_binary(
+    name = "migrationdump",
+    embed = [":migrationdump_lib"],
+    visibility = ["//:__subpackages__"],
+)

@@ -33,7 +33,8 @@
     z-index: 2;
     width: 100%;
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color-2);
+    background-color: var(--color-bg-1);
 }
 
 .list {

@@ -32,8 +32,11 @@ const implementationsQuery = gql`
         $after: String
     ) {
         repository(name: $repository) {
+            id
             commit(rev: $commit) {
+                id
                 blob(path: $path) {
+                    canonicalURL
                     lsif {
                         implementations(line: $line, character: $character, after: $after) {
                             nodes {

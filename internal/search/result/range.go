@@ -2,6 +2,7 @@ package result
 
 import (
 	"bufio"
+	"cmp"
 	"encoding/json"
 	"sort"
 	"strings"
@@ -84,6 +85,11 @@ func (l Location) Sub(o Location) Location {
 		Line:   l.Line - o.Line,
 		Column: l.Column - o.Column,
 	}
+}
+
+// Compare compares the Offset of l and o.
+func (l Location) Compare(o Location) int {
+	return cmp.Compare(l.Offset, o.Offset)
 }
 
 // MarshalJSON provides a custom JSON serialization to reduce

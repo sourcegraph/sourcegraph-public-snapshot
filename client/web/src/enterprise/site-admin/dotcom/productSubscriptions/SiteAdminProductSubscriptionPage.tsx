@@ -6,7 +6,8 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { logger } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { Button, LoadingSpinner, Link, Icon, ErrorAlert, PageHeader, Container, H3 } from '@sourcegraph/wildcard'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { Button, LoadingSpinner, Link, Icon, ErrorAlert, PageHeader, Container, H3, Text } from '@sourcegraph/wildcard'
 
 import {
     ConnectionContainer,
@@ -25,8 +26,6 @@ import type {
     ArchiveProductSubscriptionResult,
     ArchiveProductSubscriptionVariables,
 } from '../../../../graphql-operations'
-import { eventLogger } from '../../../../tracking/eventLogger'
-import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/AccountEmailAddresses'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 import { LicenseGenerationKeyWarning } from '../../../productSubscription/LicenseGenerationKeyWarning'
@@ -41,15 +40,17 @@ import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminG
 import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
 import { accessTokenPath, errorForPath } from './utils'
 
-interface Props {}
+interface Props extends TelemetryV2Props {}
 
 /**
  * Displays a product subscription in the site admin area.
  */
-export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
+export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    telemetryRecorder,
+}) => {
     const navigate = useNavigate()
     const { subscriptionUUID = '' } = useParams<{ subscriptionUUID: string }>()
-    useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscription'), [])
+    useEffect(() => telemetryRecorder.recordEvent('admin.productSubscription', 'view'), [telemetryRecorder])
 
     const [showGenerate, setShowGenerate] = useState<boolean>(false)
 
@@ -78,12 +79,13 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
             return
         }
         try {
+            telemetryRecorder.recordEvent('admin.productSubscription', 'archive')
             await archiveProductSubscription({ variables: { id: data.dotcom.productSubscription.id } })
             navigate('/site-admin/dotcom/product/subscriptions')
         } catch (error) {
             logger.error(error)
         }
-    }, [data, archiveProductSubscription, navigate])
+    }, [data, archiveProductSubscription, navigate, telemetryRecorder])
 
     const toggleShowGenerate = useCallback((): void => setShowGenerate(previousValue => !previousValue), [])
 
@@ -123,13 +125,18 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
     return (
         <>
             <div className="site-admin-product-subscription-page">
-                <PageTitle title="Product subscription" />
+                <PageTitle title="Enterprise subscription" />
                 <PageHeader
                     headingElement="h2"
                     path={[
-                        { text: 'Product subscriptions', to: '/site-admin/dotcom/product/subscriptions' },
+                        { text: 'Enterprise subscriptions', to: '/site-admin/dotcom/product/subscriptions' },
                         { text: productSubscription.name },
                     ]}
+                    description={
+                        <span className="text-muted">
+                            Created <Timestamp date={productSubscription.createdAt} />
+                        </span>
+                    }
                     actions={
                         <Button onClick={onArchive} disabled={archiveLoading} variant="danger">
                             Archive
@@ -148,7 +155,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                                 <td className="w-100">{productSubscription.name}</td>
                             </tr>
                             <tr>
-                                <th className="text-nowrap">Plan</th>
+                                <th className="text-nowrap">Current Plan</th>
                                 <td className="w-100">
                                     <ProductSubscriptionLabel productSubscription={productSubscription} />
                                 </td>
@@ -161,17 +168,29 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                                 </td>
                             </tr>
                             <tr>
-                                <th className="text-nowrap">Account emails</th>
+                                <th className="text-nowrap">Salesforce Opportunity</th>
                                 <td className="w-100">
-                                    {productSubscription.account && (
-                                        <AccountEmailAddresses emails={productSubscription.account.emails} />
+                                    {(!productSubscription.activeLicense ||
+                                        productSubscription.activeLicense.info?.salesforceOpportunityID === null) && (
+                                        <span className="text-muted">None</span>
                                     )}
+                                    {productSubscription.activeLicense &&
+                                        productSubscription.activeLicense.info?.salesforceOpportunityID !== null && (
+                                            <>{productSubscription.activeLicense.info?.salesforceOpportunityID}</>
+                                        )}
                                 </td>
                             </tr>
                             <tr>
-                                <th className="text-nowrap">Created at</th>
+                                <th className="text-nowrap">Salesforce Subscription</th>
                                 <td className="w-100">
-                                    <Timestamp date={productSubscription.createdAt} />
+                                    {(!productSubscription.activeLicense ||
+                                        productSubscription.activeLicense.info?.salesforceSubscriptionID === null) && (
+                                        <span className="text-muted">None</span>
+                                    )}
+                                    {productSubscription.activeLicense &&
+                                        productSubscription.activeLicense.info?.salesforceSubscriptionID !== null && (
+                                            <>{productSubscription.activeLicense.info?.salesforceSubscriptionID}</>
+                                        )}
                                 </td>
                             </tr>
                         </tbody>
@@ -186,19 +205,22 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                     productSubscriptionID={productSubscription.id}
                     productSubscriptionUUID={subscriptionUUID}
                     refetchSubscription={refetch}
+                    telemetryRecorder={telemetryRecorder}
                 />
 
-                <H3 className="d-flex align-items-center mt-5">
+                <H3 className="d-flex align-items-start">
                     Licenses
                     <Button className="ml-auto" onClick={toggleShowGenerate} variant="primary">
-                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate new license manually
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> New license key
                     </Button>
                 </H3>
-                <LicenseGenerationKeyWarning className="mb-3" />
+                <LicenseGenerationKeyWarning className="mb-2" />
                 <Container className="mb-2">
                     <ProductSubscriptionLicensesConnection
                         subscriptionUUID={subscriptionUUID}
+                        toggleShowGenerate={toggleShowGenerate}
                         setRefetch={setRefetchRef}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 </Container>
             </div>
@@ -210,16 +232,25 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                     latestLicense={productSubscription.productLicenses?.nodes[0] ?? undefined}
                     onGenerate={onLicenseUpdate}
                     onCancel={() => setShowGenerate(false)}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
         </>
     )
 }
 
-const ProductSubscriptionLicensesConnection: React.FunctionComponent<{
+interface ProductSubscriptionLicensesConnectionProps extends TelemetryV2Props {
     subscriptionUUID: string
+    toggleShowGenerate: () => void
     setRefetch: (refetch: () => void) => void
-}> = ({ subscriptionUUID, setRefetch }) => {
+}
+
+const ProductSubscriptionLicensesConnection: React.FunctionComponent<ProductSubscriptionLicensesConnectionProps> = ({
+    subscriptionUUID,
+    setRefetch,
+    toggleShowGenerate,
+    telemetryRecorder,
+}) => {
     const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useProductSubscriptionLicensesConnection(
         subscriptionUUID,
         20
@@ -250,11 +281,12 @@ const ProductSubscriptionLicensesConnection: React.FunctionComponent<{
                         defaultExpanded={node.id === licenseIDFromLocationHash}
                         showSubscription={false}
                         onRevokeCompleted={refetchAll}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 ))}
             </ConnectionList>
             {connection && (
-                <SummaryContainer className="mt-2">
+                <SummaryContainer centered={true}>
                     <ConnectionSummary
                         first={15}
                         centered={true}
@@ -262,7 +294,7 @@ const ProductSubscriptionLicensesConnection: React.FunctionComponent<{
                         noun="product license"
                         pluralNoun="product licenses"
                         hasNextPage={hasNextPage}
-                        noSummaryIfAllNodesVisible={true}
+                        emptyElement={<NoProductLicense toggleShowGenerate={toggleShowGenerate} />}
                     />
                     {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                 </SummaryContainer>
@@ -270,3 +302,14 @@ const ProductSubscriptionLicensesConnection: React.FunctionComponent<{
         </ConnectionContainer>
     )
 }
+
+const NoProductLicense: React.FunctionComponent<{
+    toggleShowGenerate: () => void
+}> = ({ toggleShowGenerate }) => (
+    <>
+        <Text className="text-muted">No license key has been generated yet.</Text>
+        <Button onClick={toggleShowGenerate} variant="primary">
+            <Icon aria-hidden={true} svgPath={mdiPlus} /> New license key
+        </Button>
+    </>
+)

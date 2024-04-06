@@ -5,9 +5,10 @@ import (
 	"strings"
 
 	"github.com/iancoleman/strcase"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+
+	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
 type GRPCServerMetricsOptions struct {
@@ -468,6 +469,118 @@ func NewGRPCInternalErrorMetricsGroup(opts GRPCInternalErrorMetricsOptions, owne
 					Owner:          owner,
 					NoAlert:        true,
 					Interpretation: fmt.Sprintf("The rate of gRPC internal-error response codes per method, aggregated across all %q clients.\n\n%s", opts.HumanServiceName, sharedInternalErrorNote),
+				},
+			},
+		},
+	}
+}
+
+type GRPCRetryMetricsOptions struct {
+	// HumanServiceName is the short, lowercase, snake_case, human-readable name of the grpc service that we're gathering metrics for.
+	//
+	// Example: "gitserver"
+	HumanServiceName string
+
+	// RawGRPCServiceName is the full, dot-separated, code-generated gRPC service name that we're gathering metrics for.
+	//
+	// Example: "gitserver.v1.GitserverService"
+	RawGRPCServiceName string
+
+	// MethodFilterRegex is the PromQL regex that's used to filter the
+	// GRPC server metrics to only those emitted by the method(s) that were interested in.
+	//
+	// Example: (Search | Exec)
+	MethodFilterRegex string
+
+	// Namespace is the Prometheus metrics namespace for metrics emitted by this service.
+	Namespace string
+}
+
+// NewGRPCRetryMetricsGroup creates a Group containing metrics that track "internal" gRPC errors.
+func NewGRPCRetryMetricsGroup(opts GRPCRetryMetricsOptions, owner monitoring.ObservableOwner) monitoring.Group {
+	opts.HumanServiceName = strcase.ToSnake(opts.HumanServiceName)
+
+	metric := func(base string, labelFilters ...string) string {
+		m := base
+
+		if opts.Namespace != "" {
+			m = fmt.Sprintf("%s_%s", opts.Namespace, m)
+		}
+
+		if len(labelFilters) > 0 {
+			m = fmt.Sprintf("%s{%s}", m, strings.Join(labelFilters, ","))
+		}
+
+		return m
+	}
+
+	sum := func(metric, duration string, groupByLabels ...string) string {
+		base := fmt.Sprintf("sum(rate(%s[%s]))", metric, duration)
+
+		if len(groupByLabels) > 0 {
+			base = fmt.Sprintf("%s by (%s)", base, strings.Join(groupByLabels, ", "))
+		}
+
+		return fmt.Sprintf("(%s)", base)
+	}
+
+	methodLabelFilter := fmt.Sprintf(`grpc_method=~"%s"`, opts.MethodFilterRegex)
+	serviceLabelFilter := fmt.Sprintf(`grpc_service=~"%s"`, opts.RawGRPCServiceName)
+	isRetriedLabelFilter := fmt.Sprintf(`is_retried="%s"`, "true")
+
+	percentageQuery := func(numerator, denominator string) string {
+		ratio := fmt.Sprintf("((%s) / (%s))", numerator, denominator)
+		return fmt.Sprintf("(100.0 * (%s))", ratio)
+	}
+
+	titleCaser := cases.Title(language.English)
+
+	return monitoring.Group{
+		Title:  fmt.Sprintf("%s GRPC retry metrics", titleCaser.String(strings.ReplaceAll(opts.HumanServiceName, "_", " "))),
+		Hidden: true,
+		Rows: []monitoring.Row{
+			{
+				monitoring.Observable{
+					Name:        fmt.Sprintf("%s_grpc_clients_retry_percentage_across_all_methods", opts.HumanServiceName),
+					Description: "client retry percentage across all methods over 2m",
+					Query: percentageQuery(
+						sum(metric("grpc_client_retry_attempts_total", serviceLabelFilter, isRetriedLabelFilter), "2m"),
+						sum(metric("grpc_client_retry_attempts_total", serviceLabelFilter), "2m"),
+					),
+					Owner:          owner,
+					NoAlert:        true,
+					Interpretation: fmt.Sprintf("The percentage of gRPC requests that were retried across all methods, aggregated across all %q clients.", opts.HumanServiceName),
+					Panel: monitoring.Panel().
+						Unit(monitoring.Percentage).
+						With(monitoring.PanelOptions.LegendOnRight()).
+						With(monitoring.PanelOptions.ZeroIfNoData()),
+				},
+				monitoring.Observable{
+					Name:        fmt.Sprintf("%s_grpc_clients_retry_percentage_per_method", opts.HumanServiceName),
+					Description: "client retry percentage per-method over 2m",
+					Query: percentageQuery(
+						sum(metric("grpc_client_retry_attempts_total", serviceLabelFilter, isRetriedLabelFilter, methodLabelFilter), "2m", "grpc_method"),
+						sum(metric("grpc_client_retry_attempts_total", serviceLabelFilter, methodLabelFilter), "2m", "grpc_method"),
+					),
+					Owner:          owner,
+					NoAlert:        true,
+					Interpretation: fmt.Sprintf("The percentage of gRPC requests that were retried aggregated across all %q clients, broken out per method.", opts.HumanServiceName),
+					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+						Unit(monitoring.Percentage).
+						With(monitoring.PanelOptions.LegendOnRight()).
+						With(monitoring.PanelOptions.ZeroIfNoData("grpc_method")),
+				},
+				monitoring.Observable{
+					Name:           fmt.Sprintf("%s_grpc_clients_retry_count_per_method", opts.HumanServiceName),
+					Description:    "client retry count per-method over 2m",
+					Query:          sum(metric("grpc_client_retry_attempts_total", serviceLabelFilter, methodLabelFilter, isRetriedLabelFilter), "2m", "grpc_method"),
+					Owner:          owner,
+					NoAlert:        true,
+					Interpretation: fmt.Sprintf("The count of gRPC requests that were retried aggregated across all %q clients, broken out per method", opts.HumanServiceName),
+					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+						Unit(monitoring.RequestsPerSecond).
+						With(monitoring.PanelOptions.LegendOnRight()).
+						With(monitoring.PanelOptions.ZeroIfNoData("grpc_method")),
 				},
 			},
 		},

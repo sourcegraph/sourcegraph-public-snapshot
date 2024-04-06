@@ -1,0 +1,843 @@
+---
+source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
+---
+  #include "runtime/parser.h"
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^^^^^^^^^ StringLiteral
+  #include <assert.h>
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^ StringLiteral
+  #include <stdio.h>
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^ StringLiteral
+  #include <limits.h>
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^ StringLiteral
+  #include <stdbool.h>
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^^ StringLiteral
+  #include "tree_sitter/runtime.h"
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+  #include "runtime/tree.h"
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^^^^^^^ StringLiteral
+  #include "runtime/lexer.h"
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^^^^^^^^ StringLiteral
+  #include "runtime/length.h"
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^^^^^^^^^ StringLiteral
+  #include "runtime/array.h"
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^^^^^^^^ StringLiteral
+  #include "runtime/language.h"
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^^^^^^^^^^^ StringLiteral
+  #include "runtime/alloc.h"
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^^^^^^^^ StringLiteral
+  #include "runtime/reduce_action.h"
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+  #include "runtime/error_costs.h"
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+  
+  #define LOG(...)                                                           \
+//^^^^^^^ Keyword
+//        ^^^ IdentifierFunction
+    if (self->lexer.logger.log) {                                            \
+      snprintf(self->lexer.debug_buffer, TS_DEBUG_BUFFER_SIZE, __VA_ARGS__); \
+      self->lexer.logger.log(self->lexer.logger.payload, TSLogTypeParse,     \
+                             self->lexer.debug_buffer);                      \
+    }                                                                        \
+    if (self->print_debugging_graphs) {                                      \
+      fprintf(stderr, "graph {\nlabel=\"");                                  \
+      fprintf(stderr, __VA_ARGS__);                                          \
+      fprintf(stderr, "\"\n}\n\n");                                          \
+    }
+  
+  
+  #define SYM_NAME(symbol) ts_language_symbol_name(self->language, symbol)
+//^^^^^^^ Keyword
+//        ^^^^^^^^ IdentifierFunction
+//                 ^^^^^^ Identifier
+  
+  typedef struct {
+//^^^^^^^ Keyword
+//        ^^^^^^ Keyword
+    Parser *parser;
+//  ^^^^^^ IdentifierType
+//         ^ IdentifierOperator
+//          ^^^^^^ Identifier
+    TSSymbol lookahead_symbol;
+//  ^^^^^^^^ IdentifierType
+//           ^^^^^^^^^^^^^^^^ Identifier
+    TreeArray *trees_above_error;
+//  ^^^^^^^^^ IdentifierType
+//            ^ IdentifierOperator
+//             ^^^^^^^^^^^^^^^^^ Identifier
+    uint32_t tree_count_above_error;
+//  ^^^^^^^^ IdentifierBuiltinType
+//           ^^^^^^^^^^^^^^^^^^^^^^ Identifier
+    bool found_repair;
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^^^^^^^^^ Identifier
+    ReduceAction best_repair;
+//  ^^^^^^^^^^^^ IdentifierType
+//               ^^^^^^^^^^^ Identifier
+    TSStateId best_repair_next_state;
+//  ^^^^^^^^^ IdentifierType
+//            ^^^^^^^^^^^^^^^^^^^^^^ Identifier
+    uint32_t best_repair_skip_count;
+//  ^^^^^^^^ IdentifierBuiltinType
+//           ^^^^^^^^^^^^^^^^^^^^^^ Identifier
+  } ErrorRepairSession;
+//  ^^^^^^^^^^^^^^^^^^ IdentifierType
+  
+  static void parser__push(Parser *self, StackVersion version, Tree *tree,
+//^^^^^^ Keyword
+//       ^^^^ IdentifierBuiltinType
+//            ^^^^^^^^^^^^ IdentifierFunction
+//                         ^^^^^^ IdentifierType
+//                                ^ IdentifierOperator
+//                                 ^^^^ Identifier
+//                                       ^^^^^^^^^^^^ IdentifierType
+//                                                    ^^^^^^^ Identifier
+//                                                             ^^^^ IdentifierType
+//                                                                  ^ IdentifierOperator
+//                                                                   ^^^^ Identifier
+                           TSStateId state) {
+//                         ^^^^^^^^^ IdentifierType
+//                                   ^^^^^ Identifier
+    ts_stack_push(self->stack, version, tree, false, state);
+//  ^^^^^^^^^^^^^ IdentifierFunction
+//                ^^^^ Identifier
+//                    ^^ IdentifierOperator
+//                      ^^^^^ Identifier
+//                             ^^^^^^^ Identifier
+//                                      ^^^^ Identifier
+//                                            ^^^^^ BooleanLiteral
+//                                                   ^^^^^ Identifier
+    ts_tree_release(tree);
+//  ^^^^^^^^^^^^^^^ IdentifierFunction
+//                  ^^^^ Identifier
+  }
+  
+  static bool parser__breakdown_top_of_stack(Parser *self, StackVersion version) {
+//^^^^^^ Keyword
+//       ^^^^ IdentifierBuiltinType
+//            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                           ^^^^^^ IdentifierType
+//                                                  ^ IdentifierOperator
+//                                                   ^^^^ Identifier
+//                                                         ^^^^^^^^^^^^ IdentifierType
+//                                                                      ^^^^^^^ Identifier
+    bool did_break_down = false;
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^^^^^^^^^^^ Identifier
+//                      ^ IdentifierOperator
+//                        ^^^^^ BooleanLiteral
+    bool pending = false;
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^^^^ Identifier
+//               ^ IdentifierOperator
+//                 ^^^^^ BooleanLiteral
+  
+    do {
+//  ^^ Keyword
+      StackPopResult pop = ts_stack_pop_pending(self->stack, version);
+//    ^^^^^^^^^^^^^^ IdentifierType
+//                   ^^^ Identifier
+//                       ^ IdentifierOperator
+//                         ^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                              ^^^^ Identifier
+//                                                  ^^ IdentifierOperator
+//                                                    ^^^^^ Identifier
+//                                                           ^^^^^^^ Identifier
+      if (!pop.slices.size)
+//    ^^ Keyword
+//        ^ IdentifierOperator
+//         ^^^ Identifier
+//             ^^^^^^ Identifier
+//                    ^^^^ Identifier
+        break;
+//      ^^^^^ Keyword
+  
+      did_break_down = true;
+//    ^^^^^^^^^^^^^^ Identifier
+//                   ^ IdentifierOperator
+//                     ^^^^ BooleanLiteral
+      pending = false;
+//    ^^^^^^^ Identifier
+//            ^ IdentifierOperator
+//              ^^^^^ BooleanLiteral
+      for (uint32_t i = 0; i < pop.slices.size; i++) {
+//    ^^^ Keyword
+//         ^^^^^^^^ IdentifierBuiltinType
+//                  ^ Identifier
+//                    ^ IdentifierOperator
+//                      ^ NumericLiteral
+//                         ^ Identifier
+//                           ^ IdentifierOperator
+//                             ^^^ Identifier
+//                                 ^^^^^^ Identifier
+//                                        ^^^^ Identifier
+//                                              ^ Identifier
+//                                               ^^ IdentifierOperator
+        StackSlice slice = pop.slices.contents[i];
+//      ^^^^^^^^^^ IdentifierType
+//                 ^^^^^ Identifier
+//                       ^ IdentifierOperator
+//                         ^^^ Identifier
+//                             ^^^^^^ Identifier
+//                                    ^^^^^^^^ Identifier
+//                                             ^ Identifier
+        TSStateId state = ts_stack_top_state(self->stack, slice.version);
+//      ^^^^^^^^^ IdentifierType
+//                ^^^^^ Identifier
+//                      ^ IdentifierOperator
+//                        ^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                           ^^^^ Identifier
+//                                               ^^ IdentifierOperator
+//                                                 ^^^^^ Identifier
+//                                                        ^^^^^ Identifier
+//                                                              ^^^^^^^ Identifier
+        Tree *parent = *array_front(&slice.trees);
+//      ^^^^ IdentifierType
+//           ^ IdentifierOperator
+//            ^^^^^^ Identifier
+//                   ^ IdentifierOperator
+//                     ^ IdentifierOperator
+//                      ^^^^^^^^^^^ IdentifierFunction
+//                                  ^ IdentifierOperator
+//                                   ^^^^^ Identifier
+//                                         ^^^^^ Identifier
+  
+        for (uint32_t j = 0; j < parent->child_count; j++) {
+//      ^^^ Keyword
+//           ^^^^^^^^ IdentifierBuiltinType
+//                    ^ Identifier
+//                      ^ IdentifierOperator
+//                        ^ NumericLiteral
+//                           ^ Identifier
+//                             ^ IdentifierOperator
+//                               ^^^^^^ Identifier
+//                                     ^^ IdentifierOperator
+//                                       ^^^^^^^^^^^ Identifier
+//                                                    ^ Identifier
+//                                                     ^^ IdentifierOperator
+          Tree *child = parent->children[j];
+//        ^^^^ IdentifierType
+//             ^ IdentifierOperator
+//              ^^^^^ Identifier
+//                    ^ IdentifierOperator
+//                      ^^^^^^ Identifier
+//                            ^^ IdentifierOperator
+//                              ^^^^^^^^ Identifier
+//                                       ^ Identifier
+          pending = child->child_count > 0;
+//        ^^^^^^^ Identifier
+//                ^ IdentifierOperator
+//                  ^^^^^ Identifier
+//                       ^^ IdentifierOperator
+//                         ^^^^^^^^^^^ Identifier
+//                                     ^ IdentifierOperator
+//                                       ^ NumericLiteral
+  
+          if (child->symbol == ts_builtin_sym_error) {
+//        ^^ Keyword
+//            ^^^^^ Identifier
+//                 ^^ IdentifierOperator
+//                   ^^^^^^ Identifier
+//                          ^^ IdentifierOperator
+//                             ^^^^^^^^^^^^^^^^^^^^ Identifier
+            state = ERROR_STATE;
+//          ^^^^^ Identifier
+//                ^ IdentifierOperator
+//                  ^^^^^^^^^^^ IdentifierConstant
+          } else if (!child->extra) {
+//          ^^^^ Keyword
+//               ^^ Keyword
+//                   ^ IdentifierOperator
+//                    ^^^^^ Identifier
+//                         ^^ IdentifierOperator
+//                           ^^^^^ Identifier
+            state = ts_language_next_state(self->language, state, child->symbol);
+//          ^^^^^ Identifier
+//                ^ IdentifierOperator
+//                  ^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                         ^^^^ Identifier
+//                                             ^^ IdentifierOperator
+//                                               ^^^^^^^^ Identifier
+//                                                         ^^^^^ Identifier
+//                                                                ^^^^^ Identifier
+//                                                                     ^^ IdentifierOperator
+//                                                                       ^^^^^^ Identifier
+          }
+  
+          ts_stack_push(self->stack, slice.version, child, pending, state);
+//        ^^^^^^^^^^^^^ IdentifierFunction
+//                      ^^^^ Identifier
+//                          ^^ IdentifierOperator
+//                            ^^^^^ Identifier
+//                                   ^^^^^ Identifier
+//                                         ^^^^^^^ Identifier
+//                                                  ^^^^^ Identifier
+//                                                         ^^^^^^^ Identifier
+//                                                                  ^^^^^ Identifier
+        }
+  
+        for (uint32_t j = 1; j < slice.trees.size; j++) {
+//      ^^^ Keyword
+//           ^^^^^^^^ IdentifierBuiltinType
+//                    ^ Identifier
+//                      ^ IdentifierOperator
+//                        ^ NumericLiteral
+//                           ^ Identifier
+//                             ^ IdentifierOperator
+//                               ^^^^^ Identifier
+//                                     ^^^^^ Identifier
+//                                           ^^^^ Identifier
+//                                                 ^ Identifier
+//                                                  ^^ IdentifierOperator
+          Tree *tree = slice.trees.contents[j];
+//        ^^^^ IdentifierType
+//             ^ IdentifierOperator
+//              ^^^^ Identifier
+//                   ^ IdentifierOperator
+//                     ^^^^^ Identifier
+//                           ^^^^^ Identifier
+//                                 ^^^^^^^^ Identifier
+//                                          ^ Identifier
+          parser__push(self, slice.version, tree, state);
+//        ^^^^^^^^^^^^ IdentifierFunction
+//                     ^^^^ Identifier
+//                           ^^^^^ Identifier
+//                                 ^^^^^^^ Identifier
+//                                          ^^^^ Identifier
+//                                                ^^^^^ Identifier
+        }
+  
+        LOG("breakdown_top_of_stack tree:%s", SYM_NAME(parent->symbol));
+//      ^^^ IdentifierFunction
+//          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                            ^^^^^^^^ IdentifierFunction
+//                                                     ^^^^^^ Identifier
+//                                                           ^^ IdentifierOperator
+//                                                             ^^^^^^ Identifier
+        LOG_STACK();
+//      ^^^^^^^^^ IdentifierFunction
+  
+        ts_stack_decrease_push_count(self->stack, slice.version,
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                   ^^^^ Identifier
+//                                       ^^ IdentifierOperator
+//                                         ^^^^^ Identifier
+//                                                ^^^^^ Identifier
+//                                                      ^^^^^^^ Identifier
+                                     parent->child_count + 1);
+//                                   ^^^^^^ Identifier
+//                                         ^^ IdentifierOperator
+//                                           ^^^^^^^^^^^ Identifier
+//                                                       ^ IdentifierOperator
+//                                                         ^ NumericLiteral
+        ts_tree_release(parent);
+//      ^^^^^^^^^^^^^^^ IdentifierFunction
+//                      ^^^^^^ Identifier
+        array_delete(&slice.trees);
+//      ^^^^^^^^^^^^ IdentifierFunction
+//                   ^ IdentifierOperator
+//                    ^^^^^ Identifier
+//                          ^^^^^ Identifier
+      }
+    } while (pending);
+//    ^^^^^ Keyword
+//           ^^^^^^^ Identifier
+  
+    return did_break_down;
+//  ^^^^^^ Keyword
+//         ^^^^^^^^^^^^^^ Identifier
+  }
+  
+  static bool parser__breakdown_lookahead(Parser *self, Tree **lookahead,
+//^^^^^^ Keyword
+//       ^^^^ IdentifierBuiltinType
+//            ^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                        ^^^^^^ IdentifierType
+//                                               ^ IdentifierOperator
+//                                                ^^^^ Identifier
+//                                                      ^^^^ IdentifierType
+//                                                           ^ IdentifierOperator
+//                                                            ^ IdentifierOperator
+//                                                             ^^^^^^^^^ Identifier
+                                          TSStateId state,
+//                                        ^^^^^^^^^ IdentifierType
+//                                                  ^^^^^ Identifier
+                                          ReusableNode *reusable_node) {
+//                                        ^^^^^^^^^^^^ IdentifierType
+//                                                     ^ IdentifierOperator
+//                                                      ^^^^^^^^^^^^^ Identifier
+    bool result = false;
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^^^ Identifier
+//              ^ IdentifierOperator
+//                ^^^^^ BooleanLiteral
+    while (reusable_node->tree->child_count > 0 &&
+//  ^^^^^ Keyword
+//         ^^^^^^^^^^^^^ Identifier
+//                      ^^ IdentifierOperator
+//                        ^^^^ Identifier
+//                            ^^ IdentifierOperator
+//                              ^^^^^^^^^^^ Identifier
+//                                          ^ IdentifierOperator
+//                                            ^ NumericLiteral
+//                                              ^^ IdentifierOperator
+           (self->is_split || reusable_node->tree->parse_state != state ||
+//          ^^^^ Identifier
+//              ^^ IdentifierOperator
+//                ^^^^^^^^ Identifier
+//                         ^^ IdentifierOperator
+//                            ^^^^^^^^^^^^^ Identifier
+//                                         ^^ IdentifierOperator
+//                                           ^^^^ Identifier
+//                                               ^^ IdentifierOperator
+//                                                 ^^^^^^^^^^^ Identifier
+//                                                             ^^ IdentifierOperator
+//                                                                ^^^^^ Identifier
+//                                                                      ^^ IdentifierOperator
+            reusable_node->tree->fragile_left ||
+//          ^^^^^^^^^^^^^ Identifier
+//                       ^^ IdentifierOperator
+//                         ^^^^ Identifier
+//                             ^^ IdentifierOperator
+//                               ^^^^^^^^^^^^ Identifier
+//                                            ^^ IdentifierOperator
+            reusable_node->tree->fragile_right)) {
+//          ^^^^^^^^^^^^^ Identifier
+//                       ^^ IdentifierOperator
+//                         ^^^^ Identifier
+//                             ^^ IdentifierOperator
+//                               ^^^^^^^^^^^^^ Identifier
+      LOG("state_mismatch sym:%s", SYM_NAME(reusable_node->tree->symbol));
+//    ^^^ IdentifierFunction
+//        ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                 ^^^^^^^^ IdentifierFunction
+//                                          ^^^^^^^^^^^^^ Identifier
+//                                                       ^^ IdentifierOperator
+//                                                         ^^^^ Identifier
+//                                                             ^^ IdentifierOperator
+//                                                               ^^^^^^ Identifier
+      reusable_node_breakdown(reusable_node);
+//    ^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                            ^^^^^^^^^^^^^ Identifier
+      result = true;
+//    ^^^^^^ Identifier
+//           ^ IdentifierOperator
+//             ^^^^ BooleanLiteral
+    }
+  
+    if (result) {
+//  ^^ Keyword
+//      ^^^^^^ Identifier
+      ts_tree_release(*lookahead);
+//    ^^^^^^^^^^^^^^^ IdentifierFunction
+//                    ^ IdentifierOperator
+//                     ^^^^^^^^^ Identifier
+      ts_tree_retain(*lookahead = reusable_node->tree);
+//    ^^^^^^^^^^^^^^ IdentifierFunction
+//                   ^ IdentifierOperator
+//                    ^^^^^^^^^ Identifier
+//                              ^ IdentifierOperator
+//                                ^^^^^^^^^^^^^ Identifier
+//                                             ^^ IdentifierOperator
+//                                               ^^^^ Identifier
+    }
+  
+    return result;
+//  ^^^^^^ Keyword
+//         ^^^^^^ Identifier
+  }
+  
+  static inline bool ts_lex_mode_eq(TSLexMode self, TSLexMode other) {
+//^^^^^^ Keyword
+//       ^^^^^^ Keyword
+//              ^^^^ IdentifierBuiltinType
+//                   ^^^^^^^^^^^^^^ IdentifierFunction
+//                                  ^^^^^^^^^ IdentifierType
+//                                            ^^^^ Identifier
+//                                                  ^^^^^^^^^ IdentifierType
+//                                                            ^^^^^ Identifier
+    return self.lex_state == other.lex_state &&
+//  ^^^^^^ Keyword
+//         ^^^^ Identifier
+//              ^^^^^^^^^ Identifier
+//                        ^^ IdentifierOperator
+//                           ^^^^^ Identifier
+//                                 ^^^^^^^^^ Identifier
+//                                           ^^ IdentifierOperator
+      self.external_lex_state == other.external_lex_state;
+//    ^^^^ Identifier
+//         ^^^^^^^^^^^^^^^^^^ Identifier
+//                            ^^ IdentifierOperator
+//                               ^^^^^ Identifier
+//                                     ^^^^^^^^^^^^^^^^^^ Identifier
+  }
+  
+  static bool parser__can_reuse(Parser *self, TSStateId state, Tree *tree,
+//^^^^^^ Keyword
+//       ^^^^ IdentifierBuiltinType
+//            ^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                              ^^^^^^ IdentifierType
+//                                     ^ IdentifierOperator
+//                                      ^^^^ Identifier
+//                                            ^^^^^^^^^ IdentifierType
+//                                                      ^^^^^ Identifier
+//                                                             ^^^^ IdentifierType
+//                                                                  ^ IdentifierOperator
+//                                                                   ^^^^ Identifier
+                                TableEntry *table_entry) {
+//                              ^^^^^^^^^^ IdentifierType
+//                                         ^ IdentifierOperator
+//                                          ^^^^^^^^^^^ Identifier
+    TSLexMode current_lex_mode = self->language->lex_modes[state];
+//  ^^^^^^^^^ IdentifierType
+//            ^^^^^^^^^^^^^^^^ Identifier
+//                             ^ IdentifierOperator
+//                               ^^^^ Identifier
+//                                   ^^ IdentifierOperator
+//                                     ^^^^^^^^ Identifier
+//                                             ^^ IdentifierOperator
+//                                               ^^^^^^^^^ Identifier
+//                                                         ^^^^^ Identifier
+    if (ts_lex_mode_eq(tree->first_leaf.lex_mode, current_lex_mode))
+//  ^^ Keyword
+//      ^^^^^^^^^^^^^^ IdentifierFunction
+//                     ^^^^ Identifier
+//                         ^^ IdentifierOperator
+//                           ^^^^^^^^^^ Identifier
+//                                      ^^^^^^^^ Identifier
+//                                                ^^^^^^^^^^^^^^^^ Identifier
+      return true;
+//    ^^^^^^ Keyword
+//           ^^^^ BooleanLiteral
+    if (current_lex_mode.external_lex_state != 0)
+//  ^^ Keyword
+//      ^^^^^^^^^^^^^^^^ Identifier
+//                       ^^^^^^^^^^^^^^^^^^ Identifier
+//                                          ^^ IdentifierOperator
+//                                             ^ NumericLiteral
+      return false;
+//    ^^^^^^ Keyword
+//           ^^^^^ BooleanLiteral
+    if (tree->size.bytes == 0)
+//  ^^ Keyword
+//      ^^^^ Identifier
+//          ^^ IdentifierOperator
+//            ^^^^ Identifier
+//                 ^^^^^ Identifier
+//                       ^^ IdentifierOperator
+//                          ^ NumericLiteral
+      return false;
+//    ^^^^^^ Keyword
+//           ^^^^^ BooleanLiteral
+    if (!table_entry->is_reusable)
+//  ^^ Keyword
+//      ^ IdentifierOperator
+//       ^^^^^^^^^^^ Identifier
+//                  ^^ IdentifierOperator
+//                    ^^^^^^^^^^^ Identifier
+      return false;
+//    ^^^^^^ Keyword
+//           ^^^^^ BooleanLiteral
+    if (!table_entry->depends_on_lookahead)
+//  ^^ Keyword
+//      ^ IdentifierOperator
+//       ^^^^^^^^^^^ Identifier
+//                  ^^ IdentifierOperator
+//                    ^^^^^^^^^^^^^^^^^^^^ Identifier
+      return true;
+//    ^^^^^^ Keyword
+//           ^^^^ BooleanLiteral
+    return tree->child_count > 1 && tree->error_cost == 0;
+//  ^^^^^^ Keyword
+//         ^^^^ Identifier
+//             ^^ IdentifierOperator
+//               ^^^^^^^^^^^ Identifier
+//                           ^ IdentifierOperator
+//                             ^ NumericLiteral
+//                               ^^ IdentifierOperator
+//                                  ^^^^ Identifier
+//                                      ^^ IdentifierOperator
+//                                        ^^^^^^^^^^ Identifier
+//                                                   ^^ IdentifierOperator
+//                                                      ^ NumericLiteral
+  }
+  
+  typedef int CondenseResult;
+//^^^^^^^ Keyword
+//        ^^^ IdentifierBuiltinType
+//            ^^^^^^^^^^^^^^ IdentifierType
+  static int CondenseResultMadeChange = 1;
+//^^^^^^ Keyword
+//       ^^^ IdentifierBuiltinType
+//           ^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//                                    ^ IdentifierOperator
+//                                      ^ NumericLiteral
+  static int CondenseResultAllVersionsHadError = 2;
+//^^^^^^ Keyword
+//       ^^^ IdentifierBuiltinType
+//           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//                                             ^ IdentifierOperator
+//                                               ^ NumericLiteral
+  
+  static CondenseResult parser__condense_stack(Parser *self) {
+//^^^^^^ Keyword
+//       ^^^^^^^^^^^^^^ IdentifierType
+//                      ^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                             ^^^^^^ IdentifierType
+//                                                    ^ IdentifierOperator
+//                                                     ^^^^ Identifier
+    CondenseResult result = 0;
+//  ^^^^^^^^^^^^^^ IdentifierType
+//                 ^^^^^^ Identifier
+//                        ^ IdentifierOperator
+//                          ^ NumericLiteral
+    bool has_version_without_errors = false;
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//                                  ^ IdentifierOperator
+//                                    ^^^^^ BooleanLiteral
+  
+    for (StackVersion i = 0; i < ts_stack_version_count(self->stack); i++) {
+//  ^^^ Keyword
+//       ^^^^^^^^^^^^ IdentifierType
+//                    ^ Identifier
+//                      ^ IdentifierOperator
+//                        ^ NumericLiteral
+//                           ^ Identifier
+//                             ^ IdentifierOperator
+//                               ^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                                      ^^^^ Identifier
+//                                                          ^^ IdentifierOperator
+//                                                            ^^^^^ Identifier
+//                                                                    ^ Identifier
+//                                                                     ^^ IdentifierOperator
+      if (ts_stack_is_halted(self->stack, i)) {
+//    ^^ Keyword
+//        ^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                           ^^^^ Identifier
+//                               ^^ IdentifierOperator
+//                                 ^^^^^ Identifier
+//                                        ^ Identifier
+        ts_stack_remove_version(self->stack, i);
+//      ^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                              ^^^^ Identifier
+//                                  ^^ IdentifierOperator
+//                                    ^^^^^ Identifier
+//                                           ^ Identifier
+        result |= CondenseResultMadeChange;
+//      ^^^^^^ Identifier
+//                ^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+        i--;
+//      ^ Identifier
+//       ^^ IdentifierOperator
+        continue;
+//      ^^^^^^^^ Keyword
+      }
+  
+      ErrorStatus error_status = ts_stack_error_status(self->stack, i);
+//    ^^^^^^^^^^^ IdentifierType
+//                ^^^^^^^^^^^^ Identifier
+//                             ^ IdentifierOperator
+//                               ^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                                     ^^^^ Identifier
+//                                                         ^^ IdentifierOperator
+//                                                           ^^^^^ Identifier
+//                                                                  ^ Identifier
+      if (error_status.count == 0) has_version_without_errors = true;
+//    ^^ Keyword
+//        ^^^^^^^^^^^^ Identifier
+//                     ^^^^^ Identifier
+//                           ^^ IdentifierOperator
+//                              ^ NumericLiteral
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//                                                            ^ IdentifierOperator
+//                                                              ^^^^ BooleanLiteral
+  
+      for (StackVersion j = 0; j < i; j++) {
+//    ^^^ Keyword
+//         ^^^^^^^^^^^^ IdentifierType
+//                      ^ Identifier
+//                        ^ IdentifierOperator
+//                          ^ NumericLiteral
+//                             ^ Identifier
+//                               ^ IdentifierOperator
+//                                 ^ Identifier
+//                                    ^ Identifier
+//                                     ^^ IdentifierOperator
+        if (ts_stack_merge(self->stack, j, i)) {
+//      ^^ Keyword
+//          ^^^^^^^^^^^^^^ IdentifierFunction
+//                         ^^^^ Identifier
+//                             ^^ IdentifierOperator
+//                               ^^^^^ Identifier
+//                                      ^ Identifier
+//                                         ^ Identifier
+          result |= CondenseResultMadeChange;
+//        ^^^^^^ Identifier
+//                  ^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+          i--;
+//        ^ Identifier
+//         ^^ IdentifierOperator
+          break;
+//        ^^^^^ Keyword
+        }
+  
+        switch (error_status_compare(error_status,
+//      ^^^^^^ Keyword
+//              ^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                   ^^^^^^^^^^^^ Identifier
+                                     ts_stack_error_status(self->stack, j))) {
+//                                   ^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                                         ^^^^ Identifier
+//                                                             ^^ IdentifierOperator
+//                                                               ^^^^^ Identifier
+//                                                                      ^ Identifier
+          case -1:
+//        ^^^^ Keyword
+//             ^^ NumericLiteral
+            ts_stack_remove_version(self->stack, j);
+//          ^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                  ^^^^ Identifier
+//                                      ^^ IdentifierOperator
+//                                        ^^^^^ Identifier
+//                                               ^ Identifier
+            result |= CondenseResultMadeChange;
+//          ^^^^^^ Identifier
+//                    ^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+            i--;
+//          ^ Identifier
+//           ^^ IdentifierOperator
+            j--;
+//          ^ Identifier
+//           ^^ IdentifierOperator
+            break;
+//          ^^^^^ Keyword
+          case 1:
+//        ^^^^ Keyword
+//             ^ NumericLiteral
+            ts_stack_remove_version(self->stack, i);
+//          ^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                  ^^^^ Identifier
+//                                      ^^ IdentifierOperator
+//                                        ^^^^^ Identifier
+//                                               ^ Identifier
+            result |= CondenseResultMadeChange;
+//          ^^^^^^ Identifier
+//                    ^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+            i--;
+//          ^ Identifier
+//           ^^ IdentifierOperator
+            break;
+//          ^^^^^ Keyword
+        }
+      }
+    }
+  
+    if (!has_version_without_errors && ts_stack_version_count(self->stack) > 0) {
+//  ^^ Keyword
+//      ^ IdentifierOperator
+//       ^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//                                  ^^ IdentifierOperator
+//                                     ^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                                            ^^^^ Identifier
+//                                                                ^^ IdentifierOperator
+//                                                                  ^^^^^ Identifier
+//                                                                         ^ IdentifierOperator
+//                                                                           ^ NumericLiteral
+      result |= CondenseResultAllVersionsHadError;
+//    ^^^^^^ Identifier
+//              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+    }
+  
+    return result;
+//  ^^^^^^ Keyword
+//         ^^^^^^ Identifier
+  }
+  
+  static void parser__restore_external_scanner(Parser *self, StackVersion version) {
+//^^^^^^ Keyword
+//       ^^^^ IdentifierBuiltinType
+//            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                             ^^^^^^ IdentifierType
+//                                                    ^ IdentifierOperator
+//                                                     ^^^^ Identifier
+//                                                           ^^^^^^^^^^^^ IdentifierType
+//                                                                        ^^^^^^^ Identifier
+    const TSExternalTokenState *state = ts_stack_external_token_state(self->stack, version);
+//  ^^^^^ Keyword
+//        ^^^^^^^^^^^^^^^^^^^^ IdentifierType
+//                             ^ IdentifierOperator
+//                              ^^^^^ Identifier
+//                                    ^ IdentifierOperator
+//                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                                                    ^^^^ Identifier
+//                                                                        ^^ IdentifierOperator
+//                                                                          ^^^^^ Identifier
+//                                                                                 ^^^^^^^ Identifier
+    if (self->lexer.last_external_token_state != state) {
+//  ^^ Keyword
+//      ^^^^ Identifier
+//          ^^ IdentifierOperator
+//            ^^^^^ Identifier
+//                  ^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//                                            ^^ IdentifierOperator
+//                                               ^^^^^ Identifier
+      LOG("restore_external_scanner");
+//    ^^^ IdentifierFunction
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+      self->lexer.last_external_token_state = state;
+//    ^^^^ Identifier
+//        ^^ IdentifierOperator
+//          ^^^^^ Identifier
+//                ^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//                                          ^ IdentifierOperator
+//                                            ^^^^^ Identifier
+      if (state) {
+//    ^^ Keyword
+//        ^^^^^ Identifier
+        self->language->external_scanner.deserialize(
+//      ^^^^ Identifier
+//          ^^ IdentifierOperator
+//            ^^^^^^^^ Identifier
+//                    ^^ IdentifierOperator
+//                      ^^^^^^^^^^^^^^^^ Identifier
+//                                       ^^^^^^^^^^^ IdentifierFunction
+          self->external_scanner_payload,
+//        ^^^^ Identifier
+//            ^^ IdentifierOperator
+//              ^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+          *state
+//        ^ IdentifierOperator
+//         ^^^^^ Identifier
+        );
+      } else {
+//      ^^^^ Keyword
+        self->language->external_scanner.reset(self->external_scanner_payload);
+//      ^^^^ Identifier
+//          ^^ IdentifierOperator
+//            ^^^^^^^^ Identifier
+//                    ^^ IdentifierOperator
+//                      ^^^^^^^^^^^^^^^^ Identifier
+//                                       ^^^^^ IdentifierFunction
+//                                             ^^^^ Identifier
+//                                                 ^^ IdentifierOperator
+//                                                   ^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+      }
+    }
+  }
+  
+

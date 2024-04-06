@@ -8,14 +8,16 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -28,7 +30,7 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 		return nil, err
 	}
 	// 🚨 SECURITY: Only org members can get org details on Cloud
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		hasAccess := func() error {
 			if auth.CheckOrgAccess(ctx, r.db, org.ID) == nil {
 				return nil
@@ -48,10 +50,27 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 		if err := hasAccess(); err != nil {
 			// site admin can access org ID
 			if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
+				if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+					// Log action for site admin vieweing an organization's details in dotcom
+					if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
+						r.logger.Warn("Error logging security event", log.Error(err))
+
+					}
+				}
 				onlyOrgID := &types.Org{ID: org.ID}
 				return &OrgResolver{db: r.db, org: onlyOrgID}, nil
 			}
 			return nil, err
+		}
+	}
+
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+		// Log action for siteadmin viewing an organization's details
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+
 		}
 	}
 	return &OrgResolver{db: r.db, org: org}, nil
@@ -81,7 +100,7 @@ func OrgByIDInt32(ctx context.Context, db database.DB, orgID int32) (*OrgResolve
 func orgByIDInt32WithForcedAccess(ctx context.Context, db database.DB, orgID int32, forceAccess bool) (*OrgResolver, error) {
 	// 🚨 SECURITY: Only org members can get org details on Cloud
 	//              And all invited users by email
-	if !forceAccess && envvar.SourcegraphDotComMode() {
+	if !forceAccess && dotcom.SourcegraphDotComMode() {
 		err := auth.CheckOrgAccess(ctx, db, orgID)
 		if err != nil {
 			hasAccess := false
@@ -166,20 +185,18 @@ type membersConnectionStore struct {
 	query *string
 }
 
-func (s *membersConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (s *membersConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
 	query := ""
 	if s.query != nil {
 		query = *s.query
 	}
 
-	result, err := s.db.Users().Count(ctx, &database.UsersListOptions{OrgID: s.orgID, Query: query})
+	count, err := s.db.Users().Count(ctx, &database.UsersListOptions{OrgID: s.orgID, Query: query})
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	totalCount := int32(result)
-
-	return &totalCount, nil
+	return int32(count), nil
 }
 
 func (s *membersConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*UserResolver, error) {
@@ -206,15 +223,13 @@ func (s *membersConnectionStore) MarshalCursor(node *UserResolver, _ database.Or
 	return &cursor, nil
 }
 
-func (s *membersConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *membersConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
 	nodeID, err := UnmarshalUserID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
 
-	id := string(nodeID)
-
-	return &id, nil
+	return []any{nodeID}, nil
 }
 
 func (o *OrgResolver) settingsSubject() api.SettingsSubject {
@@ -235,6 +250,7 @@ func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 	if settings == nil {
 		return nil, nil
 	}
+
 	return &settingsResolver{o.db, &settingsSubjectResolver{org: o}, settings, nil}, nil
 }
 
@@ -313,8 +329,15 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+		// Log an event when a new organization being created
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+
+		}
+	}
 	// Write the org_id into orgs open beta stats table on Cloud
-	if envvar.SourcegraphDotComMode() && args.StatsID != nil {
+	if dotcom.SourcegraphDotComMode() && args.StatsID != nil {
 		// we do not throw errors here as this is best effort
 		err = r.db.Orgs().UpdateOrgsOpenBetaStats(ctx, *args.StatsID, newOrg.ID)
 		if err != nil {
@@ -352,6 +375,13 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+		// Log an event when organization settings are updated
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+
+		}
+	}
 	return &OrgResolver{db: r.db, org: updatedOrg}, nil
 }
 
@@ -414,7 +444,7 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 	}
 
 	// 🚨 SECURITY: Do not allow direct add on Cloud unless the site admin is a member of the org
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		if err := auth.CheckOrgAccess(ctx, r.db, orgID); err != nil {
 			return nil, errors.Errorf("Must be a member of the organization to add members", err)
 		}

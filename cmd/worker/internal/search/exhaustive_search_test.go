@@ -117,11 +117,10 @@ func TestExhaustiveSearch(t *testing.T) {
 			vals = append(vals, v)
 		}
 		sort.Strings(vals)
-		require.Equal([]string{
-			"repo,revspec,revision\n1,spec,rev1\n",
-			"repo,revspec,revision\n1,spec,rev2\n",
-			"repo,revspec,revision\n2,spec,rev3\n",
-		}, vals)
+		require.Equal([]string{`{"type":"path","path":"path/to/file.go","repositoryID":1,"repository":"repo1","commit":"rev1","language":"Go"}
+`, `{"type":"path","path":"path/to/file.go","repositoryID":1,"repository":"repo1","commit":"rev2","language":"Go"}
+`, `{"type":"path","path":"path/to/file.go","repositoryID":2,"repository":"repo2","commit":"rev3","language":"Go"}
+`}, vals)
 	}
 
 	// Minor assertion that the job is regarded as finished.

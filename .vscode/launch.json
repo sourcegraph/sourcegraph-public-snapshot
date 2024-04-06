@@ -51,17 +51,6 @@
       "outFiles": ["${workspaceRoot}/client/vscode/dist/webworker/*.js"]
     },
     {
-      "name": "Launch Sourcegraph Backend (for App)",
-      "type": "go",
-      "request": "launch",
-      "mode": "auto",
-      "program": "${workspaceFolder}/cmd/sourcegraph",
-      "env": {
-        "DEPLOY_TYPE": "app",
-        "INSECURE_DEV": "true"
-      }
-    },
-    {
       "type": "node",
       "request": "launch",
       "name": "Browser extension E2E Tests",

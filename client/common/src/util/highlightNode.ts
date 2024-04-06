@@ -48,8 +48,8 @@ export function highlightNodeMultiline(
     endCharacter: number
 ): void {
     // Take the lastChild of the row to select the code portion of the table row (each table row consists of the line number and code).
-    const startRowCode = startRow.lastChild as HTMLTableCellElement
-    const endRowCode = endRow.lastChild as HTMLTableCellElement
+    const startRowCode = startRow.querySelector('td:last-of-type') as HTMLTableCellElement
+    const endRowCode = endRow.querySelector('td:last-of-type') as HTMLTableCellElement
 
     // Highlight a single-line match
     if (endRowIndex === startRowIndex) {

@@ -18,7 +18,7 @@ const (
 	RepoStatusCloning  RepoStatus = 1 << iota // could not be searched because they were still being cloned
 	RepoStatusMissing                         // could not be searched because they do not exist
 	RepoStatusLimitHit                        // searched, but have results that were not returned due to exceeded limits
-	RepoStatusTimedout                        // repos that were not searched due to timeout
+	RepoStatusTimedOut                        // repos that were not searched due to timeout
 )
 
 var repoStatusName = []struct {
@@ -28,7 +28,7 @@ var repoStatusName = []struct {
 	{RepoStatusCloning, "cloning"},
 	{RepoStatusMissing, "missing"},
 	{RepoStatusLimitHit, "limithit"},
-	{RepoStatusTimedout, "timedout"},
+	{RepoStatusTimedOut, "timedout"},
 }
 
 func (s RepoStatus) String() string {
@@ -158,7 +158,7 @@ func repoStatusSingleton(id api.RepoID, status RepoStatus) RepoStatusMap {
 // search limits are hit, and error promotion. If searchErr is a fatal error, it
 // returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error,
 // it returns a nil error.
-func HandleRepoSearchResult(repoID api.RepoID, revSpecs []string, limitHit, timedOut bool, searchErr error) (RepoStatusMap, bool, error) {
+func HandleRepoSearchResult(repoID api.RepoID, revSpecs []string, limitHit, timedOut bool, searchErr error) (RepoStatusMap, error) {
 	var fatalErr error
 	var status RepoStatus
 	if limitHit {
@@ -180,9 +180,9 @@ func HandleRepoSearchResult(repoID api.RepoID, revSpecs []string, limitHit, time
 	} else if errcode.IsNotFound(searchErr) {
 		status |= RepoStatusMissing
 	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
-		status |= RepoStatusTimedout
+		status |= RepoStatusTimedOut
 	} else if searchErr != nil {
 		fatalErr = searchErr
 	}
-	return repoStatusSingleton(repoID, status), limitHit, fatalErr
+	return repoStatusSingleton(repoID, status), fatalErr
 }

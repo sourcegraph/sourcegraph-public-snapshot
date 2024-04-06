@@ -38,23 +38,13 @@ export const SiteAdminProductSubscriptionNode: React.FunctionComponent<
         </td>
         <td className="w-100">
             <AccountName account={node.account} />
-            {node.account && (
-                <div>
-                    <small>
-                        {node.account.emails
-                            .filter(email => email.isPrimary)
-                            .map(({ email }) => email)
-                            .join(', ')}
-                    </small>
-                </div>
-            )}
         </td>
         <td className="text-nowrap">
             <ProductSubscriptionLabel productSubscription={node} className="mr-3" />
         </td>
         <td className="text-nowrap">
             {node.activeLicense?.info ? (
-                <Timestamp date={node.activeLicense.info.expiresAt} />
+                <Timestamp date={node.activeLicense.info.expiresAt} utc={true} />
             ) : (
                 <span className="text-muted font-italic">None</span>
             )}

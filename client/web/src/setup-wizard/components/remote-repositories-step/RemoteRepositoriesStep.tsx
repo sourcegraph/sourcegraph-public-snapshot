@@ -4,6 +4,7 @@ import { useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import { Routes, Route, matchPath, useLocation } from 'react-router-dom'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, Text } from '@sourcegraph/wildcard'
 
@@ -13,7 +14,7 @@ import { ProgressBar } from '../ProgressBar'
 import { FooterWidget, CustomNextButton } from '../setup-steps'
 
 import { CodeHostDeleteModal, type CodeHostToDelete } from './components/code-host-delete-modal'
-import { AppRemoteNotice, CodeHostsPicker } from './components/code-host-picker'
+import { CodeHostsPicker } from './components/code-host-picker'
 import { CodeHostCreation, CodeHostEdit } from './components/code-hosts'
 import { CodeHostsNavigation } from './components/navigation'
 import { getNextButtonLabel, getNextButtonLogEvent, isAnyConnectedCodeHosts } from './helpers'
@@ -25,7 +26,6 @@ interface RemoteRepositoriesStepProps extends TelemetryProps, HTMLAttributes<HTM
     baseURL: string
     description?: boolean
     progressBar?: boolean
-    isCodyApp: boolean
 }
 
 export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = ({
@@ -34,7 +34,6 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = ({
     baseURL,
     description = true,
     progressBar = true,
-    isCodyApp = false,
     ...attributes
 }) => {
     const location = useLocation()
@@ -80,16 +79,24 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = ({
 
                 <Container className={styles.contentMain}>
                     <Routes>
-                        <Route index={true} element={isCodyApp ? <AppRemoteNotice /> : <CodeHostsPicker />} />
+                        <Route index={true} element={<CodeHostsPicker />} />
                         <Route
                             path=":codeHostType/create"
-                            element={<CodeHostCreation telemetryService={telemetryService} />}
+                            element={
+                                <CodeHostCreation
+                                    telemetryService={telemetryService}
+                                    // TODO (dadlerj) replace with real telemetryRecorder
+                                    telemetryRecorder={noOpTelemetryRecorder}
+                                />
+                            }
                         />
                         <Route
                             path=":codehostId/edit"
                             element={
                                 <CodeHostEdit
                                     telemetryService={telemetryService}
+                                    // TODO (dadlerj) replace with real telemetryRecorder
+                                    telemetryRecorder={noOpTelemetryRecorder}
                                     onCodeHostDelete={setCodeHostToDelete}
                                 />
                             }

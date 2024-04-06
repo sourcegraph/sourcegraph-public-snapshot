@@ -1,13 +1,17 @@
 package search
 
 import (
+	"bytes"
 	"context"
 	"hash/fnv"
+	"io"
 	"io/fs"
 	"sort"
 	"testing"
 
 	"github.com/hexops/autogold/v2"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -18,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestGetCodeOwnersFromMatches(t *testing.T) {
@@ -39,9 +42,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		ctx := context.Background()
 
 		gitserverClient := gitserver.NewMockClient()
-		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
-			return nil, fs.ErrNotExist
-		})
+		gitserverClient.NewFileReaderFunc.SetDefaultReturn(nil, fs.ErrNotExist)
 
 		rules := NewRulesCache(gitserverClient, setupDB())
 
@@ -63,9 +64,9 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		ctx := context.Background()
 
 		gitserverClient := gitserver.NewMockClient()
-		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
+		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID, s string) (io.ReadCloser, error) {
 			// return a codeowner path for no which doesn't match the path of the match below.
-			return []byte("NO.md @test\n"), nil
+			return io.NopCloser(bytes.NewReader([]byte("NO.md @test\n"))), nil
 		})
 		rules := NewRulesCache(gitserverClient, setupDB())
 
@@ -87,10 +88,10 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		ctx := context.Background()
 
 		gitserverClient := gitserver.NewMockClient()
-		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
+		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID, s string) (io.ReadCloser, error) {
 			// README is owned by a user and a team.
 			// code.go is owner by another user and an unknown entity.
-			return []byte("README.md @testUserHandle @testTeamHandle\ncode.go user@email.com @unknown"), nil
+			return io.NopCloser(bytes.NewReader([]byte("README.md @testUserHandle @testTeamHandle\ncode.go user@email.com @unknown"))), nil
 		})
 		mockUserStore := dbmocks.NewMockUserStore()
 		mockTeamStore := dbmocks.NewMockTeamStore()

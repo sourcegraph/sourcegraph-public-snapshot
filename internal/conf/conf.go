@@ -3,7 +3,8 @@ package conf
 
 import (
 	"context"
-	"log"
+	"encoding/json"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,8 +16,8 @@ import (
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -68,11 +69,6 @@ func getMode() configurationMode {
 }
 
 func getModeUncached() configurationMode {
-	if deploy.IsSingleBinary() {
-		// When running everything in the same process, use server mode.
-		return modeServer
-	}
-
 	mode := os.Getenv("CONFIGURATION_MODE")
 
 	switch mode {
@@ -140,7 +136,43 @@ func initDefaultClient() *client {
 
 	prometheus.DefaultRegisterer.MustRegister(m)
 
+	if mode == modeClient {
+		// HACK: We allow a file locally to be used as a configuration source so
+		// we can start services independently of the frontend server.
+		// We use os.Getenv here instead of env.Get to make sure we don't advertise
+		// this as a configuration option to the user.
+		// DO NOT USE THIS ANYWHERE BUT FOR STANDALONE SERVICES IN LOCAL DEV.
+		// STRANGE ERRORS MAY OCCUR WHEN CONFIGS DIVERGE ACROSS SERVICES.
+		e := os.Getenv("SRC_CONFIGURATION_STUB_FROM_FILE")
+		if e != "" {
+			defaultClient.passthrough = &filebasedConfigurationSource{filename: e}
+		}
+	}
+
 	return defaultClient
+}
+
+type filebasedConfigurationSource struct {
+	filename string
+}
+
+var _ ConfigurationSource = &filebasedConfigurationSource{}
+
+func (c *filebasedConfigurationSource) Write(ctx context.Context, data conftypes.RawUnified, lastID int32, authorUserID int32) error {
+	return errors.New("tried to write to file based configuration source")
+}
+
+func (c *filebasedConfigurationSource) Read(ctx context.Context) (ru conftypes.RawUnified, err error) {
+	// We read the file every time Read is called, to interactively react to changes
+	// on disk without a watcher.
+	content, err := os.ReadFile(c.filename)
+	if err != nil {
+		return conftypes.RawUnified{}, err
+	}
+	if err := json.Unmarshal(content, &ru); err != nil {
+		return conftypes.RawUnified{}, err
+	}
+	return ru, nil
 }
 
 // cachedConfigurationSource caches reads for a specified duration to reduce
@@ -234,16 +266,6 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 	}
 
 	siteConfigEscapeHatchPath = os.ExpandEnv(siteConfigEscapeHatchPath)
-	if deploy.IsSingleBinary() {
-		// For single-binary mode, always store the site config on disk, and this is achieved through
-		// making the "escape hatch file" point to our desired location on disk.
-		// The concept of an escape hatch file is not something users care
-		// about (it only makes sense in Docker/Kubernetes, e.g. to edit the config
-		// file if the sourcegraph-frontend container is crashing) - it runs
-		// natively and this mechanism is just a convenient way for us to keep
-		// the file on disk as our source of truth.
-		siteConfigEscapeHatchPath = os.Getenv("SITE_CONFIG_FILE")
-	}
 
 	var (
 		ctx                                        = context.Background()

@@ -22,7 +22,7 @@ Sourcegraph releases use semantic versioning, for example: `v5.0.3`
 | minor         | `0`     |
 | patch         | `3`     |
 
-To learn more about our release schedule see our [handbook](https://handbook.sourcegraph.com/departments/engineering/dev/process/releases/#sourcegraph-releases). In general a new minor version of Sourcegraph is released every month, accompanied by weekly patch releases. Major releases are less frequent and represent significant changes in Sourcegraph.You can also check the [Sourcegraph blog](https://about.sourcegraph.com/blog) for more information about the latest release.
+To learn more about our release schedule see our [handbook](https://handbook.sourcegraph.com/departments/engineering/dev/process/releases/#sourcegraph-releases). In general a new minor version of Sourcegraph is released every month, accompanied by weekly patch releases. Major releases are less frequent and represent significant changes in Sourcegraph.You can also check the [Sourcegraph blog](https://sourcegraph.com/blog) for more information about the latest release.
 
 ### Upgrade types
 

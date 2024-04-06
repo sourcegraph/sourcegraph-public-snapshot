@@ -67,13 +67,13 @@ describe('<NavMenu />', () => {
                     {
                         content: 'About Sourcegraph',
                         itemAs: AnchorLink,
-                        to: 'https://about.sourcegraph.com',
+                        to: 'https://sourcegraph.com',
                         key: 6,
                     },
                     {
                         content: 'Browser Extension',
                         itemAs: AnchorLink,
-                        to: 'https://docs.sourcegraph.com/integration/browser_extension',
+                        to: 'https://sourcegraph.com/docs/integration/browser_extension',
                         key: 7,
                     },
                 ],

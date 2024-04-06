@@ -10,12 +10,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // DefaultEventIDFunc is the default generator for telemetry event IDs.
-var DefaultEventIDFunc = uuid.NewString
+// We currently use V7, which is time-ordered, making them useful for event IDs.
+// https://datatracker.ietf.org/doc/html/draft-peabody-dispatch-new-uuid-format-03#name-uuid-version-7
+var DefaultEventIDFunc = func() string {
+	return uuid.Must(uuid.NewV7()).String()
+}
 
 // NewEventWithDefaults creates a uniform event with defaults filled in. All
 // constructors making raw events should start with this. In particular, this
@@ -29,12 +35,37 @@ func NewEventWithDefaults(ctx context.Context, now time.Time, newEventID func() 
 			// request where the event is being created, as they should all happen
 			// within the interaction, even when recording a set of events e.g. from
 			// buffering.
-			eventTrace := trace.FromContext(ctx).SpanContext()
-			if !eventTrace.IsValid() {
+			var traceID *string
+			if eventTrace := trace.FromContext(ctx).SpanContext(); eventTrace.IsValid() {
+				traceID = pointers.Ptr(eventTrace.TraceID().String())
+			}
+
+			// Get the interaction ID if provided
+			var interactionID *string
+			if it := requestinteraction.FromContext(ctx); it != nil {
+				interactionID = pointers.Ptr(it.ID)
+			}
+
+			// Get geolocation of request client, if there is one.
+			var geolocation *EventInteraction_Geolocation
+			if rc := requestclient.FromContext(ctx); rc != nil {
+				if cc, err := rc.OriginCountryCode(); err == nil {
+					geolocation = &EventInteraction_Geolocation{
+						CountryCode: cc,
+					}
+				}
+			}
+
+			// If we have nothing interesting to show, leave out Interaction
+			// entirely.
+			if traceID == nil && interactionID == nil && geolocation == nil {
 				return nil
 			}
+
 			return &EventInteraction{
-				TraceId: pointers.Ptr(eventTrace.TraceID().String()),
+				TraceId:       traceID,
+				InteractionId: interactionID,
+				Geolocation:   geolocation,
 			}
 		}(),
 		User: func() *EventUser {

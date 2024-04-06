@@ -1,0 +1,254 @@
+---
+source: crates/syntax-analysis/src/highlighting/syntect_scip.rs
+expression: "snapshot_sciptect_documents(&document, &contents)"
+---
+  # Media
+// ^ Identifier markup.heading.1.markdown
+//  ^^^^^ Identifier entity.name.section.markdown
+  
+  ## Logo
+//^^^ Identifier markup.heading.2.markdown
+//   ^^^^ Identifier entity.name.section.markdown
+  
+  - Primary color: `#fc60a8`
+//^ PunctuationBracket punctuation.definition.list_item.markdown
+//                 ^^^^^^^^^ StringLiteral markup.raw.inline.markdown
+  - Secondary color: `#494368`
+//^ PunctuationBracket punctuation.definition.list_item.markdown
+//                   ^^^^^^^^^ StringLiteral markup.raw.inline.markdown
+  - Font: [`Orbitron`](https://fonts.google.com/specimen/Orbitron)
+//^ PunctuationBracket punctuation.definition.list_item.markdown
+//        ^ StringLiteral meta.link.inline.markdown
+//         ^^^^^^^^^^ StringLiteral markup.raw.inline.markdown
+//                   ^ StringLiteral meta.link.inline.markdown
+//                    ^ StringLiteral meta.link.inline.markdown
+//                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier markup.underline.link.markdown
+//                                                               ^ StringLiteral meta.link.inline.markdown
+  - Link: [Normal](#hello)
+//^ PunctuationBracket punctuation.definition.list_item.markdown
+//        ^ StringLiteral meta.link.inline.markdown
+//               ^ StringLiteral meta.link.inline.markdown
+//                ^ StringLiteral meta.link.inline.markdown
+//                 ^^^^^^ Identifier markup.underline.link.markdown
+//                       ^ StringLiteral meta.link.inline.markdown
+  - Bold: **bold**
+//^ PunctuationBracket punctuation.definition.list_item.markdown
+//        ^^^^^^^^ Identifier markup.bold.markdown
+  - Italic: *bold*
+//^ PunctuationBracket punctuation.definition.list_item.markdown
+//          ^^^^^^ Identifier markup.italic.markdown
+  - Italic 2: _bold_
+//^ PunctuationBracket punctuation.definition.list_item.markdown
+//            ^^^^^^ Identifier markup.italic.markdown
+  - Bold and italic: ***bold***
+//^ PunctuationBracket punctuation.definition.list_item.markdown
+//                   ^^ Identifier markup.italic.markdown
+//                     ^ Identifier markup.italic.markdown
+//                      ^^^^ Identifier markup.italic.markdown
+//                          ^ Identifier markup.italic.markdown
+//                           ^^ Identifier markup.bold.markdown
+  - Underlined: __underlined__
+//^ PunctuationBracket punctuation.definition.list_item.markdown
+//              ^^^^^^^^^^^^^^ Identifier markup.bold.markdown
+  - Strikethrough: ~~strikethrough~~
+//^ PunctuationBracket punctuation.definition.list_item.markdown
+  
+  Numbered lists
+  
+  1. a
+// ^ PunctuationBracket punctuation.definition.list_item.markdown
+  2. b
+// ^ PunctuationBracket punctuation.definition.list_item.markdown
+  3. c
+// ^ PunctuationBracket punctuation.definition.list_item.markdown
+  
+  Numbered and nested lists
+  1. a
+// ^ PunctuationBracket punctuation.definition.list_item.markdown
+    - aa
+//  ^ PunctuationBracket punctuation.definition.list_item.markdown
+      - aaa
+//    ^ PunctuationBracket punctuation.definition.list_item.markdown
+    - aa2
+//  ^ PunctuationBracket punctuation.definition.list_item.markdown
+  2. b
+// ^ PunctuationBracket punctuation.definition.list_item.markdown
+    - bb
+//  ^ PunctuationBracket punctuation.definition.list_item.markdown
+      - bbb
+//    ^ PunctuationBracket punctuation.definition.list_item.markdown
+    - bb2
+//  ^ PunctuationBracket punctuation.definition.list_item.markdown
+  3. c
+// ^ PunctuationBracket punctuation.definition.list_item.markdown
+    - cc
+//  ^ PunctuationBracket punctuation.definition.list_item.markdown
+      - ccc
+//    ^ PunctuationBracket punctuation.definition.list_item.markdown
+    - cc2
+//  ^ PunctuationBracket punctuation.definition.list_item.markdown
+  
+  You are free to use and modify the logo for your Awesome list or other usage.
+  
+  # Heading 1
+//^^ Identifier markup.heading.1.markdown
+//  ^^^^^^^^^ Identifier entity.name.section.markdown
+  ## Heading 2
+//^^^ Identifier markup.heading.2.markdown
+//   ^^^^^^^^^ Identifier entity.name.section.markdown
+  ### Heading 3
+//^^^^ Identifier markup.heading.markdown
+//    ^^^^^^^^^ Identifier entity.name.section.markdown
+  #### Heading 4
+//^^^^^ Identifier markup.heading.markdown
+//     ^^^^^^^^^ Identifier entity.name.section.markdown
+  ##### Heading 5
+//^^^^^^ Identifier markup.heading.markdown
+//      ^^^^^^^^^ Identifier entity.name.section.markdown
+  ###### Heading 6
+//^^^^^^^ Identifier markup.heading.markdown
+//       ^^^^^^^^^ Identifier entity.name.section.markdown
+  
+  ### Styles
+//^^^^ Identifier markup.heading.markdown
+//    ^^^^^^ Identifier entity.name.section.markdown
+  <style>
+//^ PunctuationBracket punctuation.definition.tag.begin.html
+// ^^^^^ Identifier entity.name.tag.style.html
+//      ^ PunctuationBracket punctuation.definition.tag.end.html
+  
+  body.theme-dark img.toggle {
+//^^^^ Identifier entity.name.tag.css
+//    ^ PunctuationBracket punctuation.definition.entity.css
+//     ^^^^^^^^^^ Identifier entity.other.attribute-name.class.css
+//                ^^^ Identifier entity.name.tag.css
+//                   ^ PunctuationBracket punctuation.definition.entity.css
+//                    ^^^^^^ Identifier entity.other.attribute-name.class.css
+//                           ^ PunctuationBracket punctuation.section.property-list.css
+      filter: invert(100%);
+//    ^^^^^^ IdentifierType support.type.property-name.css
+//          ^ PunctuationBracket punctuation.separator.key-value.css
+//            ^^^^^^ IdentifierFunction support.function.filter.css
+//                  ^ PunctuationBracket punctuation.definition.group.begin.css
+//                   ^^^ NumericLiteral keyword.other.unit.css
+//                      ^ Keyword keyword.other.unit.css
+//                       ^ PunctuationBracket punctuation.definition.group.end.css
+//                        ^ PunctuationDelimiter punctuation.terminator.rule.css
+  }
+//^ PunctuationBracket punctuation.section.property-list.css
+  </style>
+//^^ PunctuationBracket punctuation.definition.tag.begin.html
+//  ^^^^^ Identifier entity.name.tag.style.html
+//       ^ PunctuationBracket punctuation.definition.tag.end.html
+  
+  ### Scripts
+//^^^^ Identifier markup.heading.markdown
+//    ^^^^^^^ Identifier entity.name.section.markdown
+  
+  <script>
+//^ PunctuationBracket punctuation.definition.tag.begin.html
+// ^^^^^^ Identifier entity.name.tag.script.html
+//       ^ PunctuationBracket punctuation.definition.tag.end.html
+  ComplexDiagram(
+//^^^^^^^^^^^^^^ IdentifierFunction variable.function.js
+//              ^ PunctuationBracket punctuation.section.group.begin.js
+      Terminal("basic query", {href: "#basic-query"}),
+//    ^^^^^^^^ IdentifierFunction variable.function.js
+//            ^ PunctuationBracket punctuation.section.group.begin.js
+//             ^^^^^^^^^^^^^ StringLiteral string.quoted.double.js
+//                          ^ PunctuationBracket punctuation.separator.comma.js
+//                            ^ PunctuationBracket punctuation.section.block.begin.js
+//                                 ^ PunctuationBracket punctuation.separator.key-value.js
+//                                   ^^^^^^^^^^^^^^ StringLiteral string.quoted.double.js
+//                                                 ^ PunctuationBracket punctuation.section.block.end.js
+//                                                  ^ PunctuationBracket punctuation.section.group.end.js
+//                                                   ^ PunctuationBracket punctuation.separator.comma.js
+      ZeroOrMore(
+//    ^^^^^^^^^^ IdentifierFunction variable.function.js
+//              ^ PunctuationBracket punctuation.section.group.begin.js
+          Sequence(
+//        ^^^^^^^^ IdentifierFunction variable.function.js
+//                ^ PunctuationBracket punctuation.section.group.begin.js
+              Choice(0,
+//            ^^^^^^ IdentifierFunction variable.function.js
+//                  ^ PunctuationBracket punctuation.section.group.begin.js
+//                   ^ NumericLiteral constant.numeric.integer.decimal.js
+//                    ^ PunctuationBracket punctuation.separator.comma.js
+                  Terminal("AND"),
+//                ^^^^^^^^ IdentifierFunction variable.function.js
+//                        ^ PunctuationBracket punctuation.section.group.begin.js
+//                         ^^^^^ StringLiteral string.quoted.double.js
+//                              ^ PunctuationBracket punctuation.section.group.end.js
+//                               ^ PunctuationBracket punctuation.separator.comma.js
+                  Terminal("OR")),
+//                ^^^^^^^^ IdentifierFunction variable.function.js
+//                        ^ PunctuationBracket punctuation.section.group.begin.js
+//                         ^^^^ StringLiteral string.quoted.double.js
+//                             ^ PunctuationBracket punctuation.section.group.end.js
+//                              ^ PunctuationBracket punctuation.section.group.end.js
+//                               ^ PunctuationBracket punctuation.separator.comma.js
+              Terminal("basic query", {href: "#basic-query"})),
+//            ^^^^^^^^ IdentifierFunction variable.function.js
+//                    ^ PunctuationBracket punctuation.section.group.begin.js
+//                     ^^^^^^^^^^^^^ StringLiteral string.quoted.double.js
+//                                  ^ PunctuationBracket punctuation.separator.comma.js
+//                                    ^ PunctuationBracket punctuation.section.block.begin.js
+//                                         ^ PunctuationBracket punctuation.separator.key-value.js
+//                                           ^^^^^^^^^^^^^^ StringLiteral string.quoted.double.js
+//                                                         ^ PunctuationBracket punctuation.section.block.end.js
+//                                                          ^ PunctuationBracket punctuation.section.group.end.js
+//                                                           ^ PunctuationBracket punctuation.section.group.end.js
+//                                                            ^ PunctuationBracket punctuation.separator.comma.js
+          null,
+//        ^^^^ IdentifierBuiltin constant.language.null.js
+//            ^ PunctuationBracket punctuation.separator.comma.js
+          'skip')).addTo();
+//        ^^^^^^ StringLiteral string.quoted.single.js
+//              ^ PunctuationBracket punctuation.section.group.end.js
+//               ^ PunctuationBracket punctuation.section.group.end.js
+//                ^ PunctuationBracket punctuation.accessor.js
+//                 ^^^^^ IdentifierFunction variable.function.js
+//                      ^ PunctuationBracket punctuation.section.group.begin.js
+//                       ^ PunctuationBracket punctuation.section.group.end.js
+//                        ^ PunctuationDelimiter punctuation.terminator.statement.js
+  </script>
+//^^ PunctuationBracket punctuation.definition.tag.begin.html
+//  ^^^^^^ Identifier entity.name.tag.script.html
+//        ^ PunctuationBracket punctuation.definition.tag.end.html
+  
+  ### Links
+//^^^^ Identifier markup.heading.markdown
+//    ^^^^^ Identifier entity.name.section.markdown
+  
+  **Example:** [`repo:github.com/sourcegraph/sourcegraph rtr AND newRouter` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+rtr+AND+newRouter&patternType=literal)
+//^^^^^^^^^^^^ Identifier markup.bold.markdown
+//             ^ StringLiteral meta.link.inline.markdown
+//              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral markup.raw.inline.markdown
+//                                                                           ^ StringLiteral meta.link.inline.markdown
+//                                                                            ^ StringLiteral meta.link.inline.markdown
+//                                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier markup.underline.link.markdown
+//                                                                                                                                                                                                    ^ StringLiteral meta.link.inline.markdown
+  
+  Hello
+  
+  This folder contains client code that is **branded**, i.e. it implements the visual design language we use across our web app and e.g. in the options menu of the browser extension.
+//                                         ^^^^^^^^^^^ Identifier markup.bold.markdown
+  Code in here can use Bootstrap and must not adapt styles of the code host (for more details, see [Styling UI in the handbook](../../doc/dev/background-information/web/styling.md)).
+//                                                                                                 ^ StringLiteral meta.link.inline.markdown
+//                                                                                                                            ^ StringLiteral meta.link.inline.markdown
+//                                                                                                                             ^ StringLiteral meta.link.inline.markdown
+//                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier markup.underline.link.markdown
+//                                                                                                                                                                                 ^ StringLiteral meta.link.inline.markdown
+  
+  Any code that is code host agnostic should go into [`../shared`](../shared) instead.
+//                                                   ^ StringLiteral meta.link.inline.markdown
+//                                                    ^^^^^^^^^^^ StringLiteral markup.raw.inline.markdown
+//                                                               ^ StringLiteral meta.link.inline.markdown
+//                                                                ^ StringLiteral meta.link.inline.markdown
+//                                                                 ^^^^^^^^^ Identifier markup.underline.link.markdown
+//                                                                          ^ StringLiteral meta.link.inline.markdown
+  
+  #### Heading
+//^^^^^ Identifier markup.heading.markdown
+//     ^^^^^^^ Identifier entity.name.section.markdown
+

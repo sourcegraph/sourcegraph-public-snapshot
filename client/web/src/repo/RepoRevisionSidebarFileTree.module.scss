@@ -1,5 +1,20 @@
-.icon {
-    flex-shrink: 0;
-    width: 1rem;
-    height: 1rem;
+.file-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.icon-container {
+    display: flex;
+    flex-direction: row;
+}
+
+.test-indicator {
+    border-radius: 100%;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-left: -0.75rem;
+    margin-right: 0.285rem;
+    background-color: var(--gray-05);
+    align-self: end;
 }

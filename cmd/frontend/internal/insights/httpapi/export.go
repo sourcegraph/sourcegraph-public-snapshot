@@ -95,6 +95,7 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 		return nil, authenticationError
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	if err := h.primaryDB.EventLogs().Insert(ctx, &database.Event{
 		Name:            pingName,
 		UserID:          uint32(currentActor.UID),

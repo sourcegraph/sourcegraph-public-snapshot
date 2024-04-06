@@ -12,17 +12,20 @@ import (
 	"golang.org/x/sync/singleflight"
 	"golang.org/x/time/rate"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/bytesize"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -88,7 +91,7 @@ func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []g
 			minSyncInterval: opts.MinSyncInterval,
 		}, SyncWorkerOptions{
 			WorkerInterval: opts.DequeueInterval,
-			NumHandlers:    ConfRepoConcurrentExternalServiceSyncers(),
+			NumHandlers:    conf.RepoConcurrentExternalServiceSyncers(),
 			CleanupOldJobs: true,
 		},
 	)
@@ -111,7 +114,14 @@ func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []g
 		goroutine.WithIntervalFunc(opts.EnqueueInterval),
 	)
 
-	return []goroutine.BackgroundRoutine{worker, resetter, syncerJanitor, scheduler}
+	routines := []goroutine.BackgroundRoutine{worker, resetter, syncerJanitor, scheduler}
+
+	if opts.IsDotCom {
+		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(1, 1))
+		routines = append(routines, s.newSyncReposWithLastErrorsWorker(ctx, rateLimiter))
+	}
+
+	return routines
 }
 
 type syncHandler struct {
@@ -280,7 +290,8 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 		return s.syncRepo(ctx, codehost, name, repo)
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "foreground.SyncRepo (shared=%v)", shared)
+		logger.Warn("foreground sync failed", log.Error(err), log.Bool("shared", shared))
+		return nil, err
 	}
 	return updatedRepo.(*types.Repo), nil
 }
@@ -356,6 +367,10 @@ func (s *Syncer) syncRepo(
 	repo, err = rg.GetRepo(ctx, path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get repo with path: %q", path)
+	}
+
+	if err := repoCanBeAddedOnDemandDotcom(repo); err != nil {
+		return nil, err
 	}
 
 	if repo.Private {
@@ -550,7 +565,7 @@ func (s *Syncer) SyncExternalService(
 
 		sourced := res.Repo
 
-		if envvar.SourcegraphDotComMode() && sourced.Private {
+		if dotcom.SourcegraphDotComMode() && sourced.Private {
 			err := errors.Newf("%s is private, but dotcom does not support private repositories.", sourced.Name)
 			syncProgress.Errors++
 			logger.Error("failed to sync private repo", log.String("repo", string(sourced.Name)), log.Error(err))
@@ -724,6 +739,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		s.ObsvCtx.Logger.Debug("retrieved stored repo, falling through", log.String("stored", fmt.Sprintf("%v", stored)))
 		fallthrough
 	case 1: // Existing repo, update.
+		wasDeleted := !stored[0].DeletedAt.IsZero()
 		s.ObsvCtx.Logger.Debug("existing repo")
 		if err := UpdateRepoLicenseHook(ctx, tx, stored[0], sourced); err != nil {
 			return types.RepoSyncDiff{}, LicenseError{errors.Wrapf(err, "syncer: failed to update repo %s", sourced.Name)}
@@ -739,8 +755,13 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		}
 
 		*sourced = *stored[0]
-		d.Modified = append(d.Modified, types.RepoModified{Repo: stored[0], Modified: modified})
-		s.ObsvCtx.Logger.Debug("appended to modified repos")
+		if wasDeleted {
+			d.Added = append(d.Added, stored[0])
+			s.ObsvCtx.Logger.Debug("revived soft-deleted repo")
+		} else {
+			d.Modified = append(d.Modified, types.RepoModified{Repo: stored[0], Modified: modified})
+			s.ObsvCtx.Logger.Debug("appended to modified repos")
+		}
 	case 0: // New repo, create.
 		s.ObsvCtx.Logger.Debug("new repo")
 
@@ -929,4 +950,32 @@ func syncErrorReason(err error) string {
 	default:
 		return "unknown"
 	}
+}
+
+const (
+	maxSize  = 1 * bytesize.GB
+	minStars = 100
+)
+
+type ErrRepoDeniedTooBig struct{}
+
+func (e ErrRepoDeniedTooBig) Error() string {
+	// NOTE: This message is visible to users!
+	return "repository is larger than 1GB and has less than 100 stars"
+}
+
+func (e ErrRepoDeniedTooBig) IsRepoDenied() bool { return true }
+
+// repoCanBeAddedOnDemandDotcom returns nil if the repository can be added on
+// dotcom and an error if it doesn't meet requirements. For example: if the
+// repo is too big for the number of stars it has, an error is returned with an
+// error message that explains this.
+func repoCanBeAddedOnDemandDotcom(repo *types.Repo) error {
+	if r, ok := repo.Metadata.(*github.Repository); ok {
+		if r.SizeBytes() >= maxSize && r.StargazerCount < minStars {
+			return ErrRepoDeniedTooBig{}
+		}
+	}
+
+	return nil
 }

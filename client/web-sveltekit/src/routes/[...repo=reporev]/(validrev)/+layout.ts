@@ -11,7 +11,7 @@ export const load: LayoutLoad = async ({ parent }) => {
     const { resolvedRevisionOrError } = await parent()
 
     if (isErrorLike(resolvedRevisionOrError)) {
-        throw error(404, resolvedRevisionOrError)
+        error(404, resolvedRevisionOrError)
     }
 
     return {

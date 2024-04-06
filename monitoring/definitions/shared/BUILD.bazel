@@ -16,7 +16,6 @@ go_library(
         "dbconns.go",
         "diskmetrics.go",
         "executors.go",
-        "frontend.go",
         "gitserver.go",
         "go.go",
         "grpc.go",

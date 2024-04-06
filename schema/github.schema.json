@@ -20,13 +20,13 @@
       "examples": ["https://github.com", "https://github-enterprise.example.com"]
     },
     "gitURLType": {
-      "description": "The type of Git URLs to use for cloning and fetching Git repositories on this GitHub instance.\n\nIf \"http\", Sourcegraph will access GitHub repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.",
+      "description": "The type of Git URLs to use for cloning and fetching Git repositories on this GitHub instance.\n\nIf \"http\", Sourcegraph will access GitHub repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://sourcegraph.com/docs/admin/repo/auth.",
       "type": "string",
       "enum": ["http", "ssh"],
       "default": "http"
     },
     "token": {
-      "description": "A GitHub personal access token. Create one for GitHub.com at https://github.com/settings/tokens/new?description=Sourcegraph (for GitHub Enterprise, replace github.com with your instance's hostname). See https://docs.sourcegraph.com/admin/external_service/github#github-api-token-and-access for which scopes are required for which use cases.",
+      "description": "A GitHub personal access token. Create one for GitHub.com at https://github.com/settings/tokens/new?description=Sourcegraph (for GitHub Enterprise, replace github.com with your instance's hostname). See https://sourcegraph.com/docs/admin/external_service/github#github-api-access for which scopes are required for which use cases.",
       "type": "string",
       "minLength": 1
     },
@@ -73,7 +73,7 @@
     },
     "webhooks": {
       "description": "An array of configurations defining existing GitHub webhooks that send updates back to Sourcegraph.",
-      "deprecationMessage": "Deprecated in favour of first class webhooks. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice",
+      "deprecationMessage": "Deprecated in favour of first class webhooks. See https://sourcegraph.com/docs/admin/config/webhooks/incoming#deprecation-notice",
       "type": "array",
       "items": {
         "type": "object",
@@ -177,11 +177,11 @@
     },
     "authorization": {
       "title": "GitHubAuthorization",
-      "description": "If non-null, enforces GitHub repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type \"github\" with the same `url` field as specified in this `GitHubConnection`.",
+      "description": "If non-null, enforces GitHub repository permissions. This requires that there is an item in the [site configuration json](https://sourcegraph.com/docs/admin/config/site_config#auth-providers) `auth.providers` field, of type \"github\" with the same `url` field as specified in this `GitHubConnection`.",
       "type": "object",
       "properties": {
         "groupsCacheTTL": {
-          "description": "Experimental: If set, configures hours cached permissions from teams and organizations should be kept for. Setting a negative value disables syncing from teams and organizations, and falls back to the default behaviour of syncing all permisisons directly from user-repository affiliations instead. [Learn more](https://docs.sourcegraph.com/admin/external_service/github#teams-and-organizations-permissions-caching).",
+          "description": "Experimental: If set, configures hours cached permissions from teams and organizations should be kept for. Setting a negative value disables syncing from teams and organizations, and falls back to the default behaviour of syncing all permisisons directly from user-repository affiliations instead. [Learn more](https://sourcegraph.com/docs/admin/external_service/github#teams-and-organizations-permissions-caching).",
           "type": "number",
           "default": 72
         },

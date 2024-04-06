@@ -6,17 +6,17 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -80,7 +80,7 @@ func ResolveSearchContextSpec(ctx context.Context, db database.DB, searchContext
 
 		// Only member of the organization can use search contexts under the
 		// organization namespace on Sourcegraph Cloud.
-		if envvar.SourcegraphDotComMode() && namespace.Organization > 0 {
+		if dotcom.SourcegraphDotComMode() && namespace.Organization > 0 {
 			_, err = db.OrgMembers().GetByOrgIDAndUserID(ctx, namespace.Organization, actor.FromContext(ctx).UID)
 			if err != nil {
 				if errcode.IsNotFound(err) {

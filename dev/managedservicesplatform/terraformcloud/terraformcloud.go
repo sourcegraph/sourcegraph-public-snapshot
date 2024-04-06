@@ -30,6 +30,8 @@ func WorkspaceName(svc spec.ServiceSpec, env spec.EnvironmentSpec, stackName str
 }
 
 const (
+	// Hostname is the Terraform Cloud endpoint.
+	Hostname = "app.terraform.io"
 	// Organization is our default Terraform Cloud organization.
 	Organization = "sourcegraph"
 	// VCSRepo is the repository that is expected to house Managed Services
@@ -85,6 +87,10 @@ type workspaceOptions struct {
 	TerraformVersion  *string
 	AutoApply         *bool
 	GlobalRemoteState *bool
+
+	QueueAllRuns *bool
+
+	AllowDestroy bool
 }
 
 // AsCreate should be kept up to date with AsUpdate.
@@ -104,6 +110,10 @@ func (c workspaceOptions) AsCreate(tags []*tfe.Tag) tfe.WorkspaceCreateOptions {
 		TerraformVersion:  c.TerraformVersion,
 		AutoApply:         c.AutoApply,
 		GlobalRemoteState: c.GlobalRemoteState,
+
+		QueueAllRuns: c.QueueAllRuns,
+
+		AllowDestroyPlan: &c.AllowDestroy,
 	}
 }
 
@@ -123,6 +133,10 @@ func (c workspaceOptions) AsUpdate() tfe.WorkspaceUpdateOptions {
 		TerraformVersion:  c.TerraformVersion,
 		AutoApply:         c.AutoApply,
 		GlobalRemoteState: c.GlobalRemoteState,
+
+		QueueAllRuns: c.QueueAllRuns,
+
+		AllowDestroyPlan: &c.AllowDestroy,
 	}
 }
 
@@ -132,7 +146,14 @@ type Workspace struct {
 }
 
 func (w Workspace) URL() string {
-	return fmt.Sprintf("https://app.terraform.io/app/sourcegraph/workspaces/%s", w.Name)
+	return fmt.Sprintf("https://%s/app/sourcegraph/workspaces/%s", Hostname, w.Name)
+}
+
+const MSPWorkspaceTag = "msp"
+
+func ServiceWorkspaceTag(svc spec.ServiceSpec) string { return fmt.Sprintf("msp-service-%s", svc.ID) }
+func EnvironmentWorkspaceTag(svc spec.ServiceSpec, env spec.EnvironmentSpec) string {
+	return fmt.Sprintf("msp-env-%s-%s", svc.ID, env.ID)
 }
 
 // SyncWorkspaces is a bit like the Terraform Cloud Terraform provider. We do
@@ -159,7 +180,7 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 	if projects, err := c.client.Projects.List(ctx, c.org, &tfe.ProjectListOptions{
 		Name: tfcProjectName,
 	}); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Projects.List")
 	} else {
 		for _, p := range projects.Items {
 			if p.Name == tfcProjectName {
@@ -174,39 +195,29 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 			Name: tfcProjectName,
 		})
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "Projects.Create")
 		}
 	}
 
-	// Assign access to project
-	wantTeam := "team-gGtVVgtNRaCnkhKp" // TODO: Currently Core Services, parameterize later
-	var existingAccessID string
+	// Grant access to project for Core Services
 	if resp, err := c.client.TeamProjectAccess.List(ctx, tfe.TeamProjectAccessListOptions{
 		ProjectID: tfcProject.ID,
 	}); err != nil {
-		return nil, errors.Wrap(err, "TeamAccess.List")
+		return nil, errors.Wrap(err, "TeamProjectAccess.List")
 	} else {
-		for _, a := range resp.Items {
-			if a.Team.ID == wantTeam {
-				existingAccessID = a.ID
+		for _, team := range []struct {
+			name                 string // only for reference
+			terraformCloudTeamID string
+		}{
+			{name: "Core Services", terraformCloudTeamID: "team-gGtVVgtNRaCnkhKp"},
+			// Operators should use Entitle to request access to this team to
+			// get access to workspaces, if they aren't in Core Services
+			{name: "Managed Services Platform Operators", terraformCloudTeamID: "team-Wdejc42bWrRonQEY"},
+		} {
+			if err := c.ensureAccessForTeam(ctx, tfcProject, resp, team.terraformCloudTeamID); err != nil {
+				return nil, errors.Wrapf(err, "ensure access for %q Terraform Cloud team %q",
+					team.name, team.terraformCloudTeamID)
 			}
-		}
-	}
-	if existingAccessID != "" {
-		_, err := c.client.TeamProjectAccess.Update(ctx, existingAccessID, tfe.TeamProjectAccessUpdateOptions{
-			Access: pointers.Ptr(tfe.TeamProjectAccessWrite),
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "TeamAccess.Update")
-		}
-	} else {
-		_, err := c.client.TeamProjectAccess.Add(ctx, tfe.TeamProjectAccessAddOptions{
-			Project: &tfe.Project{ID: tfcProject.ID},
-			Team:    &tfe.Team{ID: wantTeam},
-			Access:  tfe.TeamProjectAccessWrite,
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "TeamAccess.Add")
 		}
 	}
 
@@ -224,6 +235,8 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 
 			// Allow all stacks to reference each other.
 			GlobalRemoteState: pointers.Ptr(true),
+
+			AllowDestroy: pointers.DerefZero(env.AllowDestroys),
 		}
 		switch c.workspaceConfig.RunMode {
 		case WorkspaceRunModeVCS:
@@ -236,6 +249,11 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 				Branch:       pointers.Ptr("main"),
 			}
 			wantWorkspaceOptions.TriggerPrefixes = []string{workspaceDir}
+			// Automatically apply the workspace that provisions runs for each
+			// workspace and applies any additional configuration.
+			if s == "tfcworkspaces" { // import cycle not allowed, just hand-copy
+				wantWorkspaceOptions.QueueAllRuns = pointers.Ptr(true)
+			}
 		case WorkspaceRunModeCLI:
 			// In CLI, `terraform` runs will upload the content of current working directory
 			// to TFC, hence we need to remove all VCS and working directory override
@@ -246,9 +264,9 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 		}
 
 		wantWorkspaceTags := []*tfe.Tag{
-			{Name: "msp"},
-			{Name: fmt.Sprintf("msp-service-%s", svc.ID)},
-			{Name: fmt.Sprintf("msp-env-%s-%s", svc.ID, env.ID)},
+			{Name: MSPWorkspaceTag},
+			{Name: ServiceWorkspaceTag(svc)},
+			{Name: EnvironmentWorkspaceTag(svc, env)},
 		}
 
 		if existingWorkspace, err := c.client.Workspaces.Read(ctx, c.org, workspaceName); err != nil {
@@ -336,4 +354,32 @@ func (c *Client) DeleteWorkspaces(ctx context.Context, svc spec.ServiceSpec, env
 	}
 
 	return errs
+}
+
+func (c *Client) ensureAccessForTeam(ctx context.Context, project *tfe.Project, currentTeams *tfe.TeamProjectAccessList, teamID string) error {
+	var existingAccessID string
+	for _, a := range currentTeams.Items {
+		if a.Team.ID == teamID {
+			existingAccessID = a.ID
+		}
+	}
+	if existingAccessID != "" {
+		_, err := c.client.TeamProjectAccess.Update(ctx, existingAccessID, tfe.TeamProjectAccessUpdateOptions{
+			Access: pointers.Ptr(tfe.TeamProjectAccessWrite),
+		})
+		if err != nil {
+			return errors.Wrap(err, "TeamAccess.Update")
+		}
+	} else {
+		_, err := c.client.TeamProjectAccess.Add(ctx, tfe.TeamProjectAccessAddOptions{
+			Project: &tfe.Project{ID: project.ID},
+			Team:    &tfe.Team{ID: teamID},
+			Access:  tfe.TeamProjectAccessWrite,
+		})
+		if err != nil {
+			return errors.Wrap(err, "TeamAccess.Add")
+		}
+	}
+
+	return nil
 }

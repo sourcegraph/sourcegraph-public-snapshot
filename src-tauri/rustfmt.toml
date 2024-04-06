@@ -1,7 +1,0 @@
-max_width = 100
-imports_granularity = "Crate"
-reorder_imports = true
-group_imports = "StdExternalCrate"
-
-format_macro_matchers = true
-format_macro_bodies = true

@@ -9,10 +9,10 @@ import type { BuildSearchQueryURLParameters, QueryState } from '@sourcegraph/sha
 import { getRepoMatchLabel, getRepoMatchUrl, type RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { Icon, Link, Text } from '@sourcegraph/wildcard'
 
-import { RepoMetadata } from './RepoMetadata'
+import { metadataToTag, TagList, topicToTag } from './RepoMetadata'
 import { ResultContainer } from './ResultContainer'
 
-import styles from './SearchResult.module.scss'
+import styles from './ResultContainer.module.scss'
 
 const REPO_DESCRIPTION_CHAR_LIMIT = 500
 
@@ -49,7 +49,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             </span>
         </div>
     )
-    const { description, metadata, repository: repoName, descriptionMatches, repositoryMatches } = result
+    const { description, topics, metadata, repository: repoName, descriptionMatches, repositoryMatches } = result
 
     useEffect((): void => {
         if (repoNameElement.current && repoName && repositoryMatches) {
@@ -73,8 +73,18 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
         }
     }, [result, repositoryMatches, repoNameElement, description, descriptionMatches, repoDescriptionElement, repoName])
 
-    const showRepoMetadata = enableRepositoryMetadata && !!metadata
     const showExtraInfo = result.archived || result.fork || result.private
+
+    const tags = [
+        ...(metadata
+            ? Object.entries(metadata).map(([key, value]) =>
+                  metadataToTag({ key, value }, queryState, false, buildSearchURLQueryFromQueryState)
+              )
+            : []),
+        ...(topics ? topics.map(topic => topicToTag(topic, queryState, false, buildSearchURLQueryFromQueryState)) : []),
+    ]
+
+    const showRepoMetadata = enableRepositoryMetadata && tags.length > 0
 
     return (
         <ResultContainer
@@ -91,7 +101,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             {(showExtraInfo || description || showRepoMetadata) && (
                 <div
                     data-testid="search-repo-result"
-                    className={classNames(styles.searchResultMatch, styles.gap1, 'p-2 flex-column')}
+                    className={classNames(styles.searchResultMatch, styles.gap1, 'p-3 flex-column')}
                 >
                     {showExtraInfo && (
                         <div className={classNames('d-flex', styles.dividerBetween)}>
@@ -135,11 +145,9 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                         </Text>
                     )}
                     {showRepoMetadata && (
-                        <RepoMetadata
-                            queryState={queryState}
-                            buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
-                            items={Object.entries(metadata).map(([key, value]) => ({ key, value }))}
-                        />
+                        <div className="d-flex">
+                            <TagList tags={tags} />
+                        </div>
                     )}
                 </div>
             )}

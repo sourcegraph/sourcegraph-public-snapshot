@@ -2,6 +2,7 @@ import React from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, Container, H2, H3, Link, Text, Icon, useReducedMotion } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -9,7 +10,7 @@ import { CallToActionBanner } from '../../../components/CallToActionBanner'
 import { CtaBanner } from '../../../components/CtaBanner'
 import { eventLogger } from '../../../tracking/eventLogger'
 
-export interface GettingStartedProps {
+export interface GettingStartedProps extends TelemetryV2Props {
     isSourcegraphDotCom: boolean
     // canCreate indicates whether or not the currently-authenticated user has sufficient
     // permissions to create a batch change in whatever context this getting started
@@ -19,12 +20,13 @@ export interface GettingStartedProps {
     className?: string
 }
 
-const productPageUrl = 'https://about.sourcegraph.com/batch-changes'
+const productPageUrl = 'https://sourcegraph.com/batch-changes'
 
 export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<GettingStartedProps>> = ({
     isSourcegraphDotCom,
     canCreate,
     className,
+    telemetryRecorder,
 }) => {
     const allowAutoplay = !useReducedMotion()
 
@@ -95,10 +97,13 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                 <CallToActionBanner variant="filled">
                     To automate changes across your team's private repositories,{' '}
                     <Link
-                        to="https://about.sourcegraph.com"
-                        onClick={() =>
+                        to="https://sourcegraph.com"
+                        onClick={() => {
                             eventLogger.log('ClickedOnEnterpriseCTA', { location: 'BatchChangesGettingStarted' })
-                        }
+                            telemetryRecorder.recordEvent('batchChanges.enterpriseCTA', 'click', {
+                                metadata: { location: 1 },
+                            })
+                        }}
                     >
                         get Sourcegraph Enterprise
                     </Link>

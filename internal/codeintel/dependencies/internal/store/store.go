@@ -1,17 +1,18 @@
 package store
 
 import (
+	"cmp"
 	"context"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -218,12 +219,12 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 		return
 	}
 
-	slices.SortStableFunc(deps, func(a, b shared.MinimalPackageRepoRef) bool {
+	slices.SortStableFunc(deps, func(a, b shared.MinimalPackageRepoRef) int {
 		if a.Scheme != b.Scheme {
-			return a.Scheme < b.Scheme
+			return cmp.Compare(a.Scheme, b.Scheme)
 		}
 
-		return a.Name < b.Name
+		return cmp.Compare(a.Name, b.Name)
 	})
 
 	// first reduce

@@ -12,18 +12,22 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func init() {
 	// Enable SourcegraphDotComMode for all tests in this package.
-	envvar.MockSourcegraphDotComMode(true)
+	dotcom.MockSourcegraphDotComMode(fakeTB{}, true)
 }
+
+type fakeTB struct{}
+
+func (fakeTB) Cleanup(func()) {}
 
 func TestRouter(t *testing.T) {
 	InitRouter(dbmocks.NewMockDB())
@@ -122,7 +126,7 @@ func TestRouter(t *testing.T) {
 			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": "/d/f"},
 		},
 
-		// about.sourcegraph.com redirects
+		// sourcegraph.com redirects
 		{
 			path:      "/about",
 			wantRoute: routeAboutSubdomain,
@@ -263,7 +267,7 @@ func TestRouter_RootPath(t *testing.T) {
 				if rec.Code != http.StatusTemporaryRedirect {
 					t.Fatalf("got code %v want %v", rec.Code, http.StatusTemporaryRedirect)
 				}
-				wantLoc := "https://about.sourcegraph.com/" + string(tst.repo)
+				wantLoc := "https://sourcegraph.com/" + string(tst.repo)
 				if got := rec.Header().Get("Location"); got != wantLoc {
 					t.Fatalf("got location %q want location %q", got, wantLoc)
 				}

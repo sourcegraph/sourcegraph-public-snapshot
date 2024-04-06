@@ -7,7 +7,6 @@ go_library(
         "cleanup.go",
         "insert.go",
         "observability.go",
-        "scan_documents.go",
         "store.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore",
@@ -39,7 +38,6 @@ go_test(
     srcs = [
         "cleanup_test.go",
         "insert_test.go",
-        "scan_documents_test.go",
     ],
     data = glob(["testdata/**"]),
     embed = [":lsifstore"],

@@ -24,7 +24,7 @@ exports[`LicenseExpirationAlert > expired 1`] = `
        or 
       <a
         class="anchorLink site-alert__link"
-        href="https://about.sourcegraph.com/contact"
+        href="https://sourcegraph.com/contact"
       >
         <span
           class="underline"
@@ -80,7 +80,7 @@ exports[`LicenseExpirationAlert > expiring soon 1`] = `
        or 
       <a
         class="anchorLink site-alert__link"
-        href="https://about.sourcegraph.com/contact"
+        href="https://sourcegraph.com/contact"
       >
         <span
           class="underline"

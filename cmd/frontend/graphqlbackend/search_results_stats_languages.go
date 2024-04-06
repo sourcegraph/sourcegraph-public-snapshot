@@ -128,12 +128,12 @@ func searchResultsStatsLanguages(ctx context.Context, logger log.Logger, db data
 		} else if repoMatch, ok := res.(*result.RepoMatch); ok && !hasNonRepoMatches {
 			sawRepo(repoMatch.RepoName())
 			p.Go(func() error {
-				repoName := repoMatch.RepoName()
-				_, oid, err := gsClient.GetDefaultBranch(ctx, repoName.Name, false)
+				repoName := repoMatch.Name
+				_, oid, err := gsClient.GetDefaultBranch(ctx, repoName, false)
 				if err != nil {
 					return err
 				}
-				inv, err := backend.NewRepos(logger, db, gsClient).GetInventory(ctx, repoName.ToRepo(), oid, true)
+				inv, err := backend.NewRepos(logger, db, gsClient).GetInventory(ctx, repoName, oid, true)
 				if err != nil {
 					return err
 				}

@@ -35,7 +35,7 @@ var OpsUpdateImagesCommand = &cli.Command{
 		&cli.StringFlag{
 			Name:    "kind",
 			Aliases: []string{"k"},
-			Usage:   "the `kind` of deployment (one of 'k8s', 'helm', 'compose')",
+			Usage:   "the `kind` of deployment (one of 'k8s', 'helm', 'compose', 'pure-docker')",
 			Value:   string(images.DeploymentTypeK8S),
 		},
 		&cli.StringFlag{
@@ -54,14 +54,22 @@ var OpsUpdateImagesCommand = &cli.Command{
 			Usage:   "dockerhub password",
 		},
 		&cli.StringFlag{
-			Name:  "registry",
-			Usage: "Sets the registry we want images to update to, public or internal.",
+			Name: "registry",
+			Usage: `Sets the registry we want images to update to. If you specify "public" or "internal" as a value it will use:
+	- docker.io (public)
+	- us.gcr.io (internal)
+	Alternatively, you can provide a custom registry of the format '<host>/<org>'.
+	`,
 			Value: "public",
 		},
 		&cli.StringFlag{
 			Name:    "skip",
 			Aliases: []string{"skip-images"}, // deprecated
 			Usage:   "List of comma separated images to skip updating, ex: --skip 'gitserver,indexed-server'",
+		},
+		&cli.StringFlag{
+			Name:  "only",
+			Usage: "List of comma separated images to update, ex: --only 'gitserver,indexed-server'. If not specified, all images will be updated. Cannot be combined with --skip",
 		},
 	},
 	Action: func(ctx *cli.Context) error {
@@ -76,6 +84,19 @@ var OpsUpdateImagesCommand = &cli.Command{
 			return flag.ErrHelp
 		}
 
+		var skip, only []string
+		if s := ctx.String("skip"); s != "" {
+			skip = strings.Split(ctx.String("skip"), ",")
+		}
+		if s := ctx.String("only"); s != "" {
+			only = strings.Split(ctx.String("only"), ",")
+		}
+
+		if len(skip) != 0 && len(only) != 0 {
+			std.Out.WriteLine(output.Styled(output.StyleWarning, "Cannot specify both --skip and --only"))
+			return flag.ErrHelp
+		}
+
 		return opsUpdateImages(
 			ctx.Context,
 			args[0],
@@ -84,7 +105,8 @@ var OpsUpdateImagesCommand = &cli.Command{
 			ctx.String("pin-tag"),
 			ctx.String("docker-username"),
 			ctx.String("docker-password"),
-			strings.Split(ctx.String("skip"), ","),
+			skip,
+			only,
 		)
 	},
 }
@@ -159,6 +181,7 @@ func opsUpdateImages(
 	dockerUsername string,
 	dockerPassword string,
 	skipImages []string,
+	onlyImages []string,
 ) error {
 	{
 		// Select the registry we're going to work with.
@@ -173,7 +196,26 @@ func opsUpdateImages(
 		case "public":
 			registry = images.NewDockerHub("sourcegraph", dockerUsername, dockerPassword)
 		default:
-			std.Out.WriteLine(output.Styled(output.StyleWarning, "Registry is either 'internal' or 'public'"))
+			parts := strings.SplitN(registryType, "/", 2)
+			if len(parts) < 2 {
+				std.Out.WriteLine(output.Styled(output.StyleWarning, "custom registry is not in the format <host>/<org>"))
+				return errors.Errorf("invalid custom registry %q", registryType)
+			}
+
+			// might have specified the public registry url without knowing, so we check and create dockrhub!
+			if strings.Contains(registryType, "index.docker.io") {
+				registry = images.NewDockerHub("sourcegraph", dockerUsername, dockerPassword)
+				std.Out.WriteNoticef("using Docker Hub registry %s/%s", registry.Host(), registry.Org())
+				break
+			}
+
+			// custom regisry is in the format <host>/<org>, so host = parts[0], org = parts[1]
+			gcr := images.NewGCR(parts[0], parts[1])
+			if err := gcr.LoadToken(); err != nil {
+				return err
+			}
+			registry = gcr
+			std.Out.WriteNoticef("using custom gcr registry %s/%s", registry.Host(), registry.Org())
 		}
 
 		// Select the type of operation we're performing.
@@ -182,6 +224,16 @@ func opsUpdateImages(
 		foundTags := []string{}
 
 		shouldSkip := func(r *images.Repository) bool {
+			// If only is used, check that the image is in the list of only images.
+			if len(onlyImages) > 0 {
+				for _, img := range onlyImages {
+					if r.Name() == img {
+						return false
+					}
+				}
+				return true
+			}
+			// Otherwise, check that it's not in skipped.
 			for _, img := range skipImages {
 				if r.Name() == img {
 					return true
@@ -236,6 +288,10 @@ func opsUpdateImages(
 			}
 		case images.DeploymentTypeCompose:
 			if err := images.UpdateComposeManifests(ctx, registry, path, op); err != nil {
+				return err
+			}
+		case images.DeploymentTypePureDocker:
+			if err := images.UpdatePureDockerManifests(ctx, registry, path, op); err != nil {
 				return err
 			}
 		}

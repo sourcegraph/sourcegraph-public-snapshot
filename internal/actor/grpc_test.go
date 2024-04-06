@@ -43,4 +43,18 @@ func TestActorPropagator(t *testing.T) {
 		actor := FromContext(ctx2)
 		require.Equal(t, "anon123", actor.AnonymousUID)
 	})
+
+	t.Run("user actor with anonymous UID", func(t *testing.T) {
+		originalActor := FromUser(16)
+		originalActor.AnonymousUID = "foobar"
+		ctx1 := WithActor(context.Background(), originalActor)
+
+		ap := ActorPropagator{}
+		md := ap.FromContext(ctx1)
+		ctx2 := ap.InjectContext(context.Background(), md)
+		actor := FromContext(ctx2)
+		require.True(t, actor.IsAuthenticated())
+		require.Equal(t, "foobar", actor.AnonymousUID)
+		require.Equal(t, int32(16), actor.UID)
+	})
 }

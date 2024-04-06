@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestAccessToken(t *testing.T) {
 	t.Run("create a token and test it", func(t *testing.T) {
-		token, err := client.CreateAccessToken("TestAccessToken", []string{"user:all"})
+		token, err := client.CreateAccessToken("TestAccessToken", []string{"user:all"}, pointers.Ptr(3600))
 		if err != nil {
 			t.Fatal(err)
 		}

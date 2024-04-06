@@ -30,6 +30,8 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             case 'anthropic/claude-v1.3':
             case 'anthropic/claude-v1.3-100k':
             case 'anthropic/claude-2':
+            case 'anthropic/claude-2.0':
+            case 'anthropic/claude-2.1':
             case 'anthropic/claude-instant-v1':
             case 'anthropic/claude-instant-1':
             case 'anthropic/claude-instant-v1-100k':
@@ -37,27 +39,28 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             case 'anthropic/claude-instant-v1.1':
             case 'anthropic/claude-instant-v1.1-100k':
             case 'anthropic/claude-instant-v1.2':
-            case 'anthropic/claude-instant-1.2-cyan':
+            case 'anthropic/claude-instant-1.2':
+            case 'anthropic/claude-3-sonnet-20240229':
+            case 'anthropic/claude-3-opus-20240229':
+            case 'anthropic/claude-3-haiku-20240307':
             // See here: https://platform.openai.com/docs/models/model-endpoint-compatibility
             // for currently available Anthropic models. Note that we also need to
             // allow list the models on the Cody Gateway side.
             case 'openai/gpt-4':
             case 'openai/gpt-3.5-turbo':
             case 'openai/gpt-4-1106-preview':
-            // Bespoken models hosted for us by Fireworks. These are also allowed on the Cody
-            // Gateway side
-            case 'fireworks/accounts/fireworks/models/starcoder-16b-w8a16':
-            case 'fireworks/accounts/fireworks/models/starcoder-7b-w8a16':
-            case 'fireworks/accounts/fireworks/models/starcoder-3b-w8a16':
-            case 'fireworks/accounts/fireworks/models/starcoder-1b-w8a16':
-            case 'fireworks/accounts/sourcegraph/models/starcoder-7b':
-            case 'fireworks/accounts/sourcegraph/models/starcoder-16b':
+            case 'openai/gpt-4-turbo-preview':
+            // Virtual models that are translated by Cody Gateway and allow access to all StarCoder
+            // models hosted for us by Fireworks.
+            case 'fireworks/starcoder':
+            // Bespoke alternative models hosted for us by Fireworks. These are also allowed on the
+            // Cody Gateway side
             case 'fireworks/accounts/fireworks/models/llama-v2-7b-code':
             case 'fireworks/accounts/fireworks/models/llama-v2-13b-code':
             case 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct':
             case 'fireworks/accounts/fireworks/models/llama-v2-34b-code-instruct':
             case 'fireworks/accounts/fireworks/models/mistral-7b-instruct-4k':
-            case 'fireworks/accounts/fireworks/models/wizardcoder-15b': {
+            case 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct': {
                 return 'secondary'
             }
             default: {

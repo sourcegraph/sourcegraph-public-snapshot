@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -187,7 +188,7 @@ func TestMiddleware(t *testing.T) {
 		ServiceProviderPrivateKey:   testSAMLSPKey,
 	})
 
-	mockGetProviderValue = &provider{config: *config}
+	mockGetProviderValue = &provider{config: *config, httpClient: httpcli.TestExternalClient}
 	defer func() { mockGetProviderValue = nil }()
 	providers.MockProviders = []providers.Provider{mockGetProviderValue}
 	defer func() { providers.MockProviders = nil }()

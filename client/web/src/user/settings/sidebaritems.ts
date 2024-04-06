@@ -13,12 +13,6 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         label: 'Profile',
         to: '/profile',
         exact: true,
-        condition: ({ isCodyApp }) => !isCodyApp,
-    },
-    {
-        label: 'Subscriptions',
-        to: '/subscriptions',
-        condition: ({ user }) => SHOW_BUSINESS_FEATURES && user.viewerCanAdminister,
     },
     {
         to: '/batch-changes',
@@ -36,7 +30,6 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         label: 'Emails',
         to: '/emails',
         exact: true,
-        condition: ({ isCodyApp }) => !isCodyApp,
     },
     {
         label: 'Access tokens',
@@ -47,7 +40,11 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         label: 'Account security',
         to: '/security',
         exact: true,
-        condition: ({ isCodyApp }) => !isCodyApp,
+    },
+    {
+        label: 'Enterprise subscriptions',
+        to: '/subscriptions',
+        condition: ({ user }) => SHOW_BUSINESS_FEATURES && user.viewerCanAdminister,
     },
     {
         label: 'Quotas',
@@ -64,7 +61,6 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         label: 'Permissions',
         to: '/permissions',
         exact: true,
-        condition: ({ isCodyApp }) => !isCodyApp,
     },
     {
         to: '/event-log',

@@ -112,17 +112,24 @@ var bazelCommand = &cli.Command{
 			Usage: "Print the web URL for the build and return immediately",
 			Value: false,
 		},
+		&cli.BoolFlag{
+			Name:  "staged",
+			Usage: "Perform the build/test including the current staged files",
+			Value: false,
+		},
 	},
-	Action: func(cmd *cli.Context) error {
+	Action: func(cmd *cli.Context) (err error) {
 		args := cmd.Args().Slice()
 
-		out, err := run.GitCmd("diff", "--cached")
-		if err != nil {
-			return err
-		}
+		if !cmd.Bool("staged") {
+			out, err := run.GitCmd("diff", "--cached")
+			if err != nil {
+				return err
+			}
 
-		if out != "" {
-			return errors.New("You have staged changes, aborting.")
+			if out != "" {
+				return errors.New("You have staged changes, aborting.")
+			}
 		}
 
 		branch := fmt.Sprintf("bazel-do/%s", uuid.NewString())
@@ -138,6 +145,20 @@ var bazelCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
+		commit, err := run.TrimResult(run.GitCmd("rev-parse", "HEAD"))
+		if err != nil {
+			return err
+		}
+
+		if cmd.Bool("staged") {
+			// restore the changes we've commited so theyre back in the staging area
+			// when we checkout the original branch again.
+			_, err = run.GitCmd("reset", "--soft", "HEAD~1")
+			if err != nil {
+				return err
+			}
+		}
+
 		_, err = run.GitCmd("checkout", "-")
 		if err != nil {
 			return err
@@ -153,7 +174,7 @@ var bazelCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
-		build, err := client.GetMostRecentBuild(cmd.Context, "sourcegraph", branch)
+		build, err := client.TriggerBuild(cmd.Context, "sourcegraph", branch, commit, bk.WithEnvVar("DISABLE_ASPECT_WORKFLOWS", "true"))
 		if err != nil {
 			return err
 		}
@@ -318,7 +339,7 @@ sg ci build docker-images-patch-notest prometheus
 # Publish all images without testing
 sg ci build docker-images-candidates-notest
 `,
-	BashComplete: completions.CompleteOptions(getAllowedBuildTypeArgs),
+	BashComplete: completions.CompleteArgs(getAllowedBuildTypeArgs),
 	Flags: []cli.Flag{
 		&ciPipelineFlag,
 		&cli.StringFlag{
@@ -347,7 +368,7 @@ sg ci build docker-images-candidates-notest
 			}
 		}
 
-		var rt = runtype.PullRequest
+		rt := runtype.PullRequest
 		// 🚨 SECURITY: We do a simple check to see if commit is in origin, this is
 		// non blocking but we ask for confirmation to double check that the user
 		// is aware that potentially unknown code is going to get run on our infra.
@@ -408,7 +429,7 @@ sg ci build docker-images-candidates-notest
 		if rt != runtype.PullRequest {
 			pollTicker := time.NewTicker(5 * time.Second)
 			std.Out.WriteLine(output.Styledf(output.StylePending, "Polling for build for branch %s at %s...", branch, commit))
-			for i := 0; i < 30; i++ {
+			for range 30 {
 				// attempt to fetch the new build - it might take some time for the hooks so we will
 				// retry up to 30 times (roughly 30 seconds)
 				if build != nil && build.Commit != nil && *build.Commit == commit {

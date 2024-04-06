@@ -11,10 +11,10 @@ import (
 type JobStatus string
 
 const (
-	JobFixed      JobStatus = JobStatus(BuildFixed)
-	JobFailed     JobStatus = JobStatus(BuildFailed)
-	JobPassed     JobStatus = JobStatus(BuildPassed)
-	JobInProgress JobStatus = JobStatus(BuildInProgress)
+	JobFixed   JobStatus = JobStatus(BuildFixed)
+	JobFailed  JobStatus = JobStatus(BuildFailed)
+	JobPassed  JobStatus = JobStatus(BuildPassed)
+	JobUnknown JobStatus = JobStatus("Unknown")
 )
 
 func (js JobStatus) ToBuildStatus() BuildStatus {
@@ -37,31 +37,34 @@ func (j *Job) exitStatus() int {
 	return util.Intp(j.ExitStatus)
 }
 
-func (j *Job) failed() bool {
-	return !j.SoftFailed && j.exitStatus() > 0
-}
-
-func (j *Job) finished() bool {
-	return j.state() == JobFinishedState
-}
-
-func (j *Job) state() string {
-	return strings.ToLower(util.Strp(j.State))
+func (j *Job) GetState() string {
+	return util.Strp(j.State)
 }
 
 func (j *Job) status() JobStatus {
-	switch {
-	case !j.finished():
-		return JobInProgress
-	case j.failed():
-		return JobFailed
-	default:
+	state := strings.ToLower(j.GetState())
+	// We convert the state from received from buildkite to a known terminal state.
+	// If we don't know about the state we consider it to be unknown
+	// Furthermore, for the Failed / TimedOut state, we additional check the exit code and whether the step
+	// soft failed and then return a JobFailed status accordingly that is because a Job can Fail, but can
+	// fail due to a soft failure - buildkite doesn't distinguish between the two on the job status
+	switch state {
+	case JobFailedState, JobTimedOutState:
+		if !j.SoftFailed && j.exitStatus() > 0 {
+			return JobFailed
+		} else {
+			// SoftFailure so job is considered to have passed
+			return JobPassed
+		}
+	case JobPassedState:
 		return JobPassed
+	default:
+		return JobUnknown
 	}
 }
 
 func (j *Job) hasTimedOut() bool {
-	return j.state() == "timed_out"
+	return j.status() == JobTimedOutState
 }
 
 func NewStep(name string) *Step {

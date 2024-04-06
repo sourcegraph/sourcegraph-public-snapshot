@@ -32,7 +32,7 @@ This page describes how to launch a verified and pre-configured Sourcegraph inst
 * An AWS account <small>(most regions are supported, see our [Launcher](#deploy-sourcegraph) below for a complete list)</small>
 * General familiarity with AWS
 * An [EC2 keypair](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html) for SSH access
-* (optional) A Sourcegraph license to unlock features ([view plans](https://about.sourcegraph.com/pricing) or [learn how licenses work](../../subscriptions/index.md))
+* (optional) A Sourcegraph license to unlock features ([view plans](https://sourcegraph.com/pricing) or [learn how licenses work](../../subscriptions/index.md))
 
 ## What will be created
 
@@ -155,4 +155,4 @@ Sourcegraph comes with extensive built-in monitoring dashboards & the ability to
 
 Feel free to reach out to support@sourcegraph.com if you have any questions.
 
-Business support, training, Slack support, SLAs, and dedicated Technical Advisors are all available through [Business and Enterprise plans](https://about.sourcegraph.com/pricing).
+Business support, training, Slack support, SLAs, and dedicated Technical Advisors are all available through [Business and Enterprise plans](https://sourcegraph.com/pricing).

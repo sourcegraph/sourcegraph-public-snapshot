@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
-
-	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // Request represents a request to searcher
@@ -52,48 +52,43 @@ type Request struct {
 	// Whether the revision to be searched is indexed or unindexed. This matters for
 	// structural search because it will query Zoekt for indexed structural search.
 	Indexed bool
+
+	NumContextLines int32
 }
 
-// PatternInfo describes a search request on a repo. Most of the fields
-// are based on PatternInfo used in vscode.
+// PatternInfo describes a search request on a repo.
 type PatternInfo struct {
-	// Pattern is the search query. It is a regular expression if IsRegExp
-	// is true, otherwise a fixed string. eg "route variable"
-	Pattern string
-
-	// IsNegated if true will invert the matching logic for regexp searches. IsNegated=true is
-	// not supported for structural searches.
-	IsNegated bool
-
-	// IsRegExp if true will treat the Pattern as a regular expression.
-	IsRegExp bool
+	// Query defines the search query. It supports regexp patterns optionally
+	// combined through boolean operators.
+	Query QueryNode
 
 	// IsStructuralPat if true will treat the pattern as a Comby structural search pattern.
 	IsStructuralPat bool
-
-	// IsWordMatch if true will only match the pattern at word boundaries.
-	IsWordMatch bool
 
 	// IsCaseSensitive if false will ignore the case of text and pattern
 	// when finding matches.
 	IsCaseSensitive bool
 
-	// ExcludePattern is a pattern that may not match the returned files' paths.
+	// ExcludePaths is a pattern that may not match the returned files' paths.
 	// eg '**/node_modules'
-	ExcludePattern string
+	ExcludePaths string
 
-	// IncludePatterns is a list of patterns that must *all* match the returned
+	// IncludePaths is a list of patterns that must *all* match the returned
 	// files' paths.
 	// eg '**/node_modules'
 	//
 	// The patterns are ANDed together; a file's path must match all patterns
 	// for it to be kept. That is also why it is a list (unlike the singular
-	// ExcludePattern); it is not possible in general to construct a single
+	// ExcludePaths); it is not possible in general to construct a single
 	// glob or Go regexp that represents multiple such patterns ANDed together.
-	IncludePatterns []string
+	IncludePaths []string
 
-	// IncludeExcludePatternAreCaseSensitive indicates that ExcludePattern, IncludePattern,
-	// and IncludePatterns are case sensitive.
+	// IncludeLangs and ExcludeLangs are the languages passed via the lang filters (e.g., "lang:c")
+	IncludeLangs []string
+	ExcludeLangs []string
+
+	// IncludeExcludePatternAreCaseSensitive indicates that ExcludePaths, IncludePattern,
+	// and IncludePaths are case sensitive.
 	PathPatternsAreCaseSensitive bool
 
 	// Limit is the cap on the total number of matches returned.
@@ -104,12 +99,9 @@ type PatternInfo struct {
 	// of files.
 	PatternMatchesContent bool
 
-	// PatternMatchesPath is whether a file whose path matches Pattern (but whose contents don't) should be
+	// PatternMatchesPath is whether a file whose path matches Query (but whose contents don't) should be
 	// considered a match.
 	PatternMatchesPath bool
-
-	// Languages is the languages passed via the lang filters (e.g., "lang:c")
-	Languages []string
 
 	// CombyRule is a rule that constrains matching for structural search.
 	// It only applies when IsStructuralPat is true.
@@ -122,22 +114,21 @@ type PatternInfo struct {
 	// use it since selection is done after the query completes, but exposing it can enable
 	// optimizations.
 	Select string
+
+	// Languages represents the set of languages requested in the query. It is only used for
+	// structural search and is separate from IncludeLangs, which represents language filters.
+	Languages []string
 }
 
 func (p *PatternInfo) String() string {
-	args := []string{fmt.Sprintf("%q", p.Pattern)}
-	if p.IsRegExp {
-		args = append(args, "re")
-	}
+	args := []string{p.Query.String()}
+
 	if p.IsStructuralPat {
 		if p.CombyRule != "" {
 			args = append(args, fmt.Sprintf("comby:%s", p.CombyRule))
 		} else {
 			args = append(args, "comby")
 		}
-	}
-	if p.IsWordMatch {
-		args = append(args, "word")
 	}
 	if p.IsCaseSensitive {
 		args = append(args, "case")
@@ -151,8 +142,11 @@ func (p *PatternInfo) String() string {
 	if p.Limit > 0 {
 		args = append(args, fmt.Sprintf("limit:%d", p.Limit))
 	}
-	for _, lang := range p.Languages {
+	for _, lang := range p.IncludeLangs {
 		args = append(args, fmt.Sprintf("lang:%s", lang))
+	}
+	for _, lang := range p.ExcludeLangs {
+		args = append(args, fmt.Sprintf("-lang:%s", lang))
 	}
 	if p.Select != "" {
 		args = append(args, fmt.Sprintf("select:%s", p.Select))
@@ -162,10 +156,10 @@ func (p *PatternInfo) String() string {
 	if p.PathPatternsAreCaseSensitive {
 		path = "F"
 	}
-	if p.ExcludePattern != "" {
-		args = append(args, fmt.Sprintf("-%s:%q", path, p.ExcludePattern))
+	if p.ExcludePaths != "" {
+		args = append(args, fmt.Sprintf("-%s:%q", path, p.ExcludePaths))
 	}
-	for _, inc := range p.IncludePatterns {
+	for _, inc := range p.IncludePaths {
 		args = append(args, fmt.Sprintf("%s:%q", path, inc))
 	}
 
@@ -181,23 +175,23 @@ func (r *Request) ToProto() *proto.SearchRequest {
 		Indexed:   r.Indexed,
 		Url:       r.URL,
 		PatternInfo: &proto.PatternInfo{
-			Pattern:                      r.PatternInfo.Pattern,
-			IsNegated:                    r.PatternInfo.IsNegated,
-			IsRegexp:                     r.PatternInfo.IsRegExp,
+			Query:                        r.PatternInfo.Query.ToProto(),
 			IsStructural:                 r.PatternInfo.IsStructuralPat,
-			IsWordMatch:                  r.PatternInfo.IsWordMatch,
 			IsCaseSensitive:              r.PatternInfo.IsCaseSensitive,
-			ExcludePattern:               r.PatternInfo.ExcludePattern,
-			IncludePatterns:              r.PatternInfo.IncludePatterns,
+			ExcludePattern:               r.PatternInfo.ExcludePaths,
+			IncludePatterns:              r.PatternInfo.IncludePaths,
 			PathPatternsAreCaseSensitive: r.PatternInfo.PathPatternsAreCaseSensitive,
 			Limit:                        int64(r.PatternInfo.Limit),
 			PatternMatchesContent:        r.PatternInfo.PatternMatchesContent,
 			PatternMatchesPath:           r.PatternInfo.PatternMatchesPath,
 			CombyRule:                    r.PatternInfo.CombyRule,
-			Languages:                    r.PatternInfo.Languages,
+			IncludeLangs:                 r.PatternInfo.IncludeLangs,
+			ExcludeLangs:                 r.PatternInfo.ExcludeLangs,
 			Select:                       r.PatternInfo.Select,
+			Languages:                    r.PatternInfo.Languages,
 		},
-		FetchTimeout: durationpb.New(r.FetchTimeout),
+		FetchTimeout:    durationpb.New(r.FetchTimeout),
+		NumContextLines: r.NumContextLines,
 	}
 }
 
@@ -209,24 +203,50 @@ func (r *Request) FromProto(req *proto.SearchRequest) {
 		Commit: api.CommitID(req.CommitOid),
 		Branch: req.Branch,
 		PatternInfo: PatternInfo{
-			Pattern:                      req.PatternInfo.Pattern,
-			IsNegated:                    req.PatternInfo.IsNegated,
-			IsRegExp:                     req.PatternInfo.IsRegexp,
+			Query:                        NodeFromProto(req.PatternInfo.Query),
 			IsStructuralPat:              req.PatternInfo.IsStructural,
-			IsWordMatch:                  req.PatternInfo.IsWordMatch,
 			IsCaseSensitive:              req.PatternInfo.IsCaseSensitive,
-			ExcludePattern:               req.PatternInfo.ExcludePattern,
-			IncludePatterns:              req.PatternInfo.IncludePatterns,
+			ExcludePaths:                 req.PatternInfo.ExcludePattern,
+			IncludePaths:                 req.PatternInfo.IncludePatterns,
 			PathPatternsAreCaseSensitive: req.PatternInfo.PathPatternsAreCaseSensitive,
 			Limit:                        int(req.PatternInfo.Limit),
 			PatternMatchesContent:        req.PatternInfo.PatternMatchesContent,
 			PatternMatchesPath:           req.PatternInfo.PatternMatchesPath,
-			Languages:                    req.PatternInfo.Languages,
+			IncludeLangs:                 req.PatternInfo.IncludeLangs,
+			ExcludeLangs:                 req.PatternInfo.ExcludeLangs,
 			CombyRule:                    req.PatternInfo.CombyRule,
 			Select:                       req.PatternInfo.Select,
 		},
-		FetchTimeout: req.FetchTimeout.AsDuration(),
-		Indexed:      req.Indexed,
+		FetchTimeout:    req.FetchTimeout.AsDuration(),
+		Indexed:         req.Indexed,
+		NumContextLines: req.NumContextLines,
+	}
+}
+
+func NodeFromProto(p *proto.QueryNode) QueryNode {
+	switch v := p.GetValue().(type) {
+	case *proto.QueryNode_Pattern:
+		return &PatternNode{
+			Value:     v.Pattern.Value,
+			IsRegExp:  v.Pattern.IsRegexp,
+			IsNegated: v.Pattern.IsNegated,
+		}
+	case *proto.QueryNode_And:
+		children := make([]QueryNode, 0, len(v.And.Children))
+		for _, child := range v.And.Children {
+			children = append(children, NodeFromProto(child))
+		}
+		return &AndNode{Children: children}
+	case *proto.QueryNode_Or:
+		children := make([]QueryNode, 0, len(v.Or.Children))
+		for _, child := range v.Or.Children {
+			children = append(children, NodeFromProto(child))
+		}
+		return &OrNode{Children: children}
+	default:
+		// Use a panic since this is used in a struct initializer, and there's not
+		// a nice way to handle an error
+		panic(fmt.Sprintf("unknown query node type %T", p.GetValue()))
 	}
 }
 
@@ -241,9 +261,10 @@ type Response struct {
 	DeadlineHit bool
 }
 
-// FileMatch is the struct used by vscode to receive search results
+// FileMatch is the struct used to represent search results
 type FileMatch struct {
-	Path string
+	Path     string
+	Language string
 
 	ChunkMatches []ChunkMatch
 
@@ -258,6 +279,7 @@ func (fm *FileMatch) ToProto() *proto.FileMatch {
 	}
 	return &proto.FileMatch{
 		Path:         []byte(fm.Path),
+		Language:     []byte(fm.Language),
 		ChunkMatches: chunkMatches,
 		LimitHit:     fm.LimitHit,
 	}
@@ -270,6 +292,7 @@ func (fm *FileMatch) FromProto(pm *proto.FileMatch) {
 	}
 	*fm = FileMatch{
 		Path:         string(pm.GetPath()), // WARNING: It is not safe to assume that Path is utf-8 encoded.
+		Language:     string(pm.GetLanguage()),
 		ChunkMatches: chunkMatches,
 		LimitHit:     pm.GetLimitHit(),
 	}

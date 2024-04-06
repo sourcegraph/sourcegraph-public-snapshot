@@ -27,7 +27,6 @@ import gitlabSchemaJSON from '../../../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../../../schema/gitolite.schema.json'
 import goModulesSchemaJSON from '../../../../../schema/go-modules.schema.json'
 import jvmPackagesSchemaJSON from '../../../../../schema/jvm-packages.schema.json'
-import localGitSchemaJSON from '../../../../../schema/localgit.schema.json'
 import npmPackagesSchemaJSON from '../../../../../schema/npm-packages.schema.json'
 import otherExternalServiceSchemaJSON from '../../../../../schema/other_external_service.schema.json'
 import pagureSchemaJSON from '../../../../../schema/pagure.schema.json'
@@ -126,10 +125,10 @@ function editWithComment(config: string, path: JSONPath, value: any, comment: st
 
 const editorActionComments = {
     enablePermissions:
-        '// Prerequisite: you must configure GitHub as an OAuth auth provider in the site config (https://docs.sourcegraph.com/admin/auth#github). Otherwise, access to all repositories will be disallowed.',
+        '// Prerequisite: you must configure GitHub as an OAuth auth provider in the site config (https://sourcegraph.com/docs/admin/auth#github). Otherwise, access to all repositories will be disallowed.',
     enforcePermissionsOAuth: `// Prerequisite: you must first update the site configuration to
       // include GitLab OAuth as an auth provider.
-      // See https://docs.sourcegraph.com/admin/auth#gitlab for instructions.`,
+      // See https://sourcegraph.com/docs/admin/auth#gitlab for instructions.`,
     enforcePermissionsSSO: `// Prerequisite: You need a sudo-level access token. If you can configure
     // GitLab as an OAuth identity provider for Sourcegraph, we recommend that
     // option instead.
@@ -137,9 +136,9 @@ const editorActionComments = {
     // 1. Ensure the personal access token in this config has admin privileges
     //    (https://docs.gitlab.com/ee/api/#sudo).
     // 2. Update the site configuration to include the SSO auth provider for GitLab
-    //    (https://docs.sourcegraph.com/admin/auth).
+    //    (https://sourcegraph.com/docs/admin/auth).
     // 3. Update the fields below to match the properties of this auth provider
-    //    (https://docs.sourcegraph.com/admin/repo/permissions#sudo-access-token).`,
+    //    (https://sourcegraph.com/docs/admin/permissions).`,
 }
 
 const Field: React.FunctionComponent<{ children: React.ReactNode | string | string[] }> = props => (
@@ -1147,7 +1146,7 @@ const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
     defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
   // Configuration options are documented here:
-  // https://docs.sourcegraph.com/admin/external_service/phabricator#configuration
+  // https://sourcegraph.com/docs/admin/external_service/phabricator#configuration
 
   "url": "https://phabricator.example.com",
   "token": "",
@@ -1236,15 +1235,6 @@ const GENERIC_GIT: AddExternalServiceOptions = {
             },
         },
     ],
-}
-
-const LOCAL_GIT: AddExternalServiceOptions = {
-    kind: ExternalServiceKind.LOCALGIT,
-    title: 'Local Git repos',
-    icon: GitIcon,
-    jsonSchema: localGitSchemaJSON,
-    defaultDisplayName: 'Git repositories',
-    defaultConfig: '',
 }
 
 const PERFORCE: AddExternalServiceOptions = {
@@ -1633,7 +1623,6 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
     [ExternalServiceKind.GITOLITE]: GITOLITE,
     [ExternalServiceKind.PHABRICATOR]: PHABRICATOR_SERVICE,
     [ExternalServiceKind.OTHER]: GENERIC_GIT,
-    [ExternalServiceKind.LOCALGIT]: LOCAL_GIT,
     [ExternalServiceKind.AWSCODECOMMIT]: AWS_CODE_COMMIT,
     [ExternalServiceKind.PERFORCE]: PERFORCE,
     [ExternalServiceKind.GERRIT]: GERRIT,

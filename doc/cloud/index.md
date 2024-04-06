@@ -7,7 +7,7 @@ Sourcegraph provisions each instance in an isolated and secure cloud environment
 ## Start a Sourcegraph Cloud trial
 
 <div>
-  <a class="cloud-cta" href="https://about.sourcegraph.com/get-started?t=enterprise" target="_blank" rel="noopener noreferrer">
+  <a class="cloud-cta" href="https://sourcegraph.com/get-started?t=enterprise" target="_blank" rel="noopener noreferrer">
     <div class="cloud-cta-copy">
       <h2>Get Sourcegraph on your code.</h2>
       <h3>A single-tenant instance managed by Sourcegraph.</h3>
@@ -19,7 +19,7 @@ Sourcegraph provisions each instance in an isolated and secure cloud environment
   </a>
 </div>
 
-Use the button above to sign up for a free 15-day trial of Sourcegraph Cloud. Please [contact us](https://about.sourcegraph.com/contact/sales) if you have specific VPN requirements or you require a large deployment with >500 users, >1,000 repos, or monorepos >5 GB.
+Use the button above to sign up for a free 15-day trial of Sourcegraph Cloud. Please [contact us](https://sourcegraph.com/contact/sales) if you have specific VPN requirements or you require a large deployment with >500 users, >1,000 repos, or monorepos >5 GB.
 
 ### Trial limitations
 
@@ -60,9 +60,9 @@ All Sourcegraph features are avilable on Sourcegraph Cloud instances out-of-the-
 - Granting your team application-level admin access to the instance.
 - Configuring any IP-restrictions (e.g. VPN) and/or SSO restrictions to the instance.
 
-### Monthly upgrades and maintenance
+### Regular upgrades and maintenance
 
-- Automatic monthly [upgrades](../admin/updates/index.md) and maintenance.
+- Automatic [upgrades](../admin/updates/index.md) when a new Souregraph version is released and maintenance when security patches are needed.
 - Regular reassessment of resource utilization based on your organization's unique usage to determine if costs can be reduced without impact to service. Additionally, you will automatically benefit from any committed use cloud provider discounts we receive.
 
 ### Custom domains
@@ -88,10 +88,9 @@ To verify that your CAA records are set correctly, you can use the following com
 
 ```sh
 dig acme.com caa +short
-dig src.acme.com caa +short
 ```
 
-If the output is empty, you don't have to do anything. If the output is not empty, and it does not contain `letsencrypt.org` and `pki.goog`, you need to add them to your CAA records to the apex domain or your desired subdomain, e.g., `src.acme.com`.
+If the output is empty, you don't have to do anything. If the output is not empty, and it does not contain `letsencrypt.org` and `pki.goog`, you need to add them to your CAA records to the apex domain.
 
 #### Limitations
 
@@ -111,16 +110,20 @@ If you have specific requirements for the region, please reach out to your Sourc
 
 More details about the locations and data storage can be found in [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/multi-region/)
 
-### Private Code Host support
+### Private Connectivity
 
-Public code hosts are supported by Sourcegraph Cloud out-of-the-box. They are either publically accessible or protected by IP-based firewall rules, Sourcegraph Cloud can provide static IP addresses for customers to add to their firewall allowlist. Please let your account team know.
+Sourcegraph Cloud can connect to resources that are publically accessible or protected by IP-based firewall rules out-of-the-box. Sourcegraph can provide static IP addresses for customers to add to their firewall allowlist. Please let your account team know.
 
-Private code hosts refer to code hosts that are not publicly accessible, such as self-hosted GitHub Enterprise servers or self-hosted GitLab instances deployed in a private network that are only accessible through VPN. Learn more about private code hosts support below:
+Private Connectivity enables customers to privately connect Private Resources to the Sourcegraph Cloud instance. Private Resources refer to services that are not publicly accessible, such as self-hosted GitHub Enterprise servers, self-hosted GitLab instances, self-hosted Nexus instance, or Jira Data Center deployed in a private network that are only accessible through VPN. Learn more about Private Connectvity support below:
 
-- [Code hosts on AWS without public access](./private_connectivity_aws.md)
-- [Code hosts on GCP without public access](./private_connectivity_gcp.md)
-- Code hosts on Azure is not supported yet, please reach out to your account manager if you are interested in this feature.
-- Code hosts on custom data center is not supported yet, please reach out to your account manager if you are interested in this feature.
+- [Private Resources on AWS via AWS Private Link](./private_connectivity_aws.md)
+- [Private Resources on GCP via GCP Private Service Connect](./private_connectivity_gcp.md)
+- [Private Resources on on-prem data center via Sourcegraph Connect agent](./private_connectivity_sourcegraph_connect.md)
+- Private Resources on Azure are not supported yet, please reach out to your account manager if you are interested in this feature.
+
+For unsupported private connectivity methods, Sourcegraph offers connectivity via customer-managed alternate public load balancers:
+
+- [Private Resources exposed via alternate public load balancers](./private_connectivity_public_lb.md)
 
 ### Health monitoring, support, and SLAs
 
@@ -144,14 +147,14 @@ As with any Sourcegraph enterprise customer, you will also receive support from 
 - Monitoring and aggregating user feedback
 - Understanding usage statistics of your deployment
 - Internal rollout programs including:
-  - Holding company-wide or team-by-team training sessions ([contact us](https://about.sourcegraph.com/contact/sales) for details)
+  - Holding company-wide or team-by-team training sessions ([contact us](https://sourcegraph.com/contact/sales) for details)
   - Helping the maintainers of your internal engineer onboarding add a session on Sourcegraph
   - Holding ongoing brown bag lunches to introduce new feature releases
   - Advice and templates on how to introduce Sourcegraph to your engineering organization
 
 ### Managed SMTP
 
-All Sourcegraph Cloud instances are provisioned with a Sourcegraph-managed SMTP server through a [third-party provider](https://about.sourcegraph.com/terms/subprocessors) for transactional email delivery. Email capabilities power features like:
+All Sourcegraph Cloud instances are provisioned with a Sourcegraph-managed SMTP server through a [third-party provider](https://sourcegraph.com/terms/subprocessors) for transactional email delivery. Email capabilities power features like:
 
 - [Code Monitoring](../code_monitoring/index.md) notifications
 - Inviting other users to a Sourcegraph instance, or to an organization/team on a Sourcegraph instance
@@ -211,7 +214,7 @@ A few things you can ask Cody:
 
 - A dedicated project manager who serves as the point of contact for the rollout process.
 - A mutual non-disclosure agreement and any additional approvals or special status required to allow Sourcegraph to manage infrastructure access tokens (listed below).
-- Acceptance of our [Terms of Service for private instances](https://about.sourcegraph.com/terms-private) or an enterprise contract.
+- Acceptance of our [Terms of Service for private instances](https://sourcegraph.com/terms-private) or an enterprise contract.
 
 ### Technical
 
@@ -224,7 +227,6 @@ A few things you can ask Cody:
 > NOTE: We may be able to [support special requests](#accommodating-special-requirements), please reach out to your account team.
 
 - The Sourcegraph instance can only be accessible via a public IP. Running it in a private network and pairing it with your private network via site-to-site VPN or VPC Peering is not yet supported.
-- Code hosts or user authentication providers running in a private network are not yet supported. They have to be publically available or they must allow incoming traffic from Sourcegraph-owned static IP addresses. We do not have proper support for other connectivity methods, e.g. site-to-site VPN, VPC peering, tunneling.
 - Instances currently run only on Google Cloud Platform in the [chosen regions](#multiple-region-availability). Other regions and cloud providers (such as AWS or Azure) are not yet supported.
 - Some [configuration options](../admin/config/index.md) are managed by Sourcegrpah and cannot be override by customers, e.g. feature flags, experimental features.
 
@@ -232,11 +234,11 @@ A few things you can ask Cody:
 
 Your managed instance will be accessible over HTTPS/TLS, provide storage volumes that are encrypted at rest, and have access restricted to only your team through your enterprise VPN and/or internal [SSO (single sign-on provider)](../admin/auth/index.md) of choice.
 
-For all managed instances, we will provide security capabilities from Cloudflare such as WAF and rate-limiting to protect your instance from malicious traffic.
+For all managed instances, we will provide security capabilities from Cloudflare such as WAF and rate-limiting to protect your instance from malicious traffic. By default, we permit 1000 requests per minute based on IP address. If you need a higher quota, please reach out to your account manager.
 
 Your instance will be hosted in isolated Google Cloud infrastructure. See our [employee handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/) to learn more about the cloud architecture we use. Both your team and limited Sourcegraph personnel will have application-level administrator access to the instance.
 
-Only essential Sourcegraph personnel will have access to the instance, server, code, and any other sensitive materials, such as tokens or keys. The employees or contractors with access are bound by the same terms as Sourcegraph itself. Learn more in our [security policies for Sourcegraph Cloud](https://about.sourcegraph.com/security) or [contact us](https://about.sourcegraph.com/contact/sales) with any questions or concerns. You may also request a copy of our SOC 2 Report on our [security portal](https://security.sourcegraph.com).
+Only essential Sourcegraph personnel will have access to the instance, server, code, and any other sensitive materials, such as tokens or keys. The employees or contractors with access are bound by the same terms as Sourcegraph itself. Learn more in our [security policies for Sourcegraph Cloud](https://sourcegraph.com/security) or [contact us](https://sourcegraph.com/contact/sales) with any questions or concerns. You may also request a copy of our SOC 2 Report on our [security portal](https://security.sourcegraph.com).
 
 ### Sourcegraph management access
 
@@ -246,8 +248,89 @@ All Sourcegraph Cloud instances have Sourcegraph management access enabled by de
 
 ### Audit Logs
 
-Our Cloud instances provide [audit logs](../admin/audit_log.md#cloud) to help you monitor and investigate actions taken by users and the system. These logs are available to download by request  and are also sent to a [centralized logging service](https://about.sourcegraph.com/security#logging) for 30 day retention (configurable for greater periods by request).
+Our Cloud instances provide [audit logs](../admin/audit_log.md#cloud) to help you monitor and investigate actions taken by users and the system. These logs are available to download by request  and are also sent to a [centralized logging service](https://sourcegraph.com/security#logging) for 30 day retention (configurable for greater periods by request).
 
 ## Accommodating special requirements
 
-We may be able to support special requests (network access policies, infrastructure requirements, custom version control systems, etc.) with additional time, support, and fees. [Contact us](https://about.sourcegraph.com/contact/sales) to discuss any special requirements you may have.
+We may be able to support special requests (network access policies, infrastructure requirements, custom version control systems, etc.) with additional time, support, and fees. [Contact us](https://sourcegraph.com/contact/sales) to discuss any special requirements you may have.
+
+## FAQ
+
+### Why Sourcegraph Cloud?
+
+Sourcegraph Cloud is fully managed by a dedicated team of Sourcegraph experts who maintain 24 x 7 x 365 incident response and perform routine updates with [uptime SLA](https://docs.sourcegraph.com/sla#sourcegraph-cloud-sla-managed-instance). Sourcegraph Cloud is SOC 2 Type II audited.
+
+Sourcegraph Cloud instances are single-tenant, limiting exposure to outages and security risks to individual instances. Each customer instance is isolated in a dedicated and fully segregated GCP project.
+
+[Diagram 1](https://link.excalidraw.com/readonly/YGpFIX7DcEBezf5iGXTP)
+
+<iframe src="https://link.excalidraw.com/readonly/YGpFIX7DcEBezf5iGXTP" width="100%" height="100%" style="border: none;"></iframe>
+
+[Diagram 2](https://link.excalidraw.com/readonly/Dbs30t8ahBZadGHZACoc)
+
+<iframe src="https://link.excalidraw.com/readonly/Dbs30t8ahBZadGHZACoc" width="100%" height="100%" style="border: none;"></iframe>
+
+### Is data safe with Sourcegraph Cloud?
+
+Sourcegraph Cloud utilizes a single-tenant architecture. Each customer's data is isolated and stored in a dedicated GCP project. Data is [encrypted in transit](https://cloud.google.com/docs/security/encryption-in-transit) and [at rest](https://cloud.google.com/docs/security/encryption/default-encryption) and is backed up daily. The data encryption keys are unique to each customer and are fully managed by GCP. Such data includes but is not limited to, customer source code, repository metadata, code host connection configuration, and user profile. Sourcegraph Cloud also has [4 supported regions](https://docs.sourcegraph.com/cloud#multiple-region-availability) on GCP to meet data sovereignty requirements.
+
+Sourcegraph continuously monitors Cloud instances for security vulnerability using manual reviews and automated tools. Third-party auditors regularly perform testing to ensure maximum protection against vulnerabilities and are automatically upgraded to fix any vulnerability in third-party dependencies. In addition, GCP’s managed offering regularly patches any vulnerability in the underlying infrastructure. Any infrastructure changes must pass security checks, which are tested against industry-standard controls.
+
+Access to Cloud instances are not permitted by default to all Sourcegraph teammates and requires an audit-logged approval to escalate permissions.
+
+### What data does Sourcegraph have access to?
+
+For Sourcegraph Cloud to function properly, we will have possession of some customer data. This is a non-exhaustive list and may not be up-to-date. Please refer to our [Security Portal](https://security.sourcegraph.com/) for the latest information.
+
+- source code
+- user metadata, such as email address, username, and name
+- code host connection credentials
+- repository metadata, such as name, labels
+
+### Do Sourcegraph employees have access to my source code?
+
+Customer source code is stored in an isolated GCP project dedicated to the customer, and the data is [encrypted at rest](https://cloud.google.com/docs/security/encryption/default-encryption). Sourcegraph employees do not have access to customer data, and it always requires an audit-logged approval to obtain permissions. Learn more from our compliance report from [Security Portal](https://security.sourcegraph.com/).
+
+### How to protect access to Sourcegraph Cloud instances?
+
+Sourcegraph supports most well-known [identity providers](../admin/auth/index.md) and integrates with customers’ existing Single Sign-On (SSO) solutions. Experimental support for [SCIM](../admin/scim.md) is also available for Azure AD and Okta.
+
+Optionally, access to Cloud instances can be restricted to a list of IP addresses and ranges customers provide.
+
+### How do you detect malicious activity in Sourcegraph Cloud instances?
+
+All Sourcegraph employee access to the instance and underlying infrastructure is audit-logged and continuously analyzed for unexpected behavior. All logs from Sourcegraph Cloud instances are ingested in a SIEM and alerts managed by our Security team.
+
+Sourcegraph Cloud instances have intrusion detection capabilities through [Falco](https://falco.org/), a runtime security tool, to monitor behavior within the server.
+
+### What are uptime guarantees?
+
+Sourcegraph Cloud offers a 99.5% uptime guarantee. Learn more from our [SLA](../sla/index.md#sourcegraph-cloud-sla-managed-instance).
+
+### What is the latency of Sourcegraph Cloud?
+
+Sourcegraph measures latency internally for each service, but because of the variability in response times incurred by a search product, these metrics are not meaningful when aggregated into a single "network latency" figure. Because Sourcegraph’s services operate transactionally across several platforms, latency has proven to be too broad a number that averages out many disconnected performance factors to be useful or meaningful for our customers.
+
+The below are for example purposes only:
+
+In the case of things like Code Search, latency is directly correlated with user input / shape of the query, ex. on our public [sourcegraph.com](https://sourcegraph.com/search) instance:
+
+- searching for “squirrel” in the [sourcegraph/sourcegraph](https://sourcegraph.com/github.com/sourcegraph/sourcegraph) repo takes 30ms and returns 163 results
+- searching for “squirrel” in all OSS repos, but only requesting 1000 matches takes 540ms
+- searching for all matches of “squirrel” in all OSS repos returns 1.7million results in 30000ms
+- In the case of other features, latency of Sourcegraph directly depends on latency / uptime / rate-limits of customer managed systems, ex. for:
+- repo syncing (depends on code-host system)
+- user account syncing (depends on Identity Provider)
+- permission syncing (depends on Identity Provider / Code Host / customer calling our Explicit Permissions API)
+
+### How to connect Sourcegraph Cloud instances to on-prem resources?
+
+Sourcegraph Cloud can securely connect to customer-owned resources on cloud provider platforms or on-prem data centers, such as GitHub Enterprise server in a private network on GCP and Artifact Registry on AWS. Learn more from [Private Connectivity](#private-connectivity).
+
+### How often do Sourcegraph Cloud instances receive updates?
+
+The exact cadence depends on the product release schedule. Sourcegraph Cloud instances receive timely upgrades whenever a new release is available, and there is a need for emergency security patches. Learn more about our [release schedule](https://handbook.sourcegraph.com/departments/cloud/technical-docs/#release-process). The schedule is for information only, and it is subject to change anytime.
+
+### What audit logs are available?
+
+Sourcegraph Cloud instances retain critical audit logs for 30 days by default. Logs are available upon request. For enterprise customers, we can also accommodate for extended retention periods.

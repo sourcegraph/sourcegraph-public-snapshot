@@ -6,14 +6,11 @@ import (
 	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestOffsetBasedCursorSlice(t *testing.T) {
 	slice := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-
-	int2 := 2
-	string1 := "1"
-	string8 := "8"
 
 	testCases := []struct {
 		name string
@@ -22,29 +19,29 @@ func TestOffsetBasedCursorSlice(t *testing.T) {
 	}{
 		{
 			"first page",
-			&database.PaginationArgs{First: &int2},
+			&database.PaginationArgs{First: pointers.Ptr(2)},
 			autogold.Expect([]int{1, 2}),
 		},
 		{
 			"next page",
-			&database.PaginationArgs{First: &int2, After: &string1},
+			&database.PaginationArgs{First: pointers.Ptr(2), After: []any{1}},
 			autogold.Expect([]int{3, 4}),
 		},
 		{
 			"last page",
-			&database.PaginationArgs{Last: &int2},
+			&database.PaginationArgs{Last: pointers.Ptr(2)},
 			autogold.Expect([]int{9, 10}),
 		},
 		{
 			"previous page",
-			&database.PaginationArgs{Last: &int2, Before: &string8},
+			&database.PaginationArgs{Last: pointers.Ptr(2), Before: []any{8}},
 			autogold.Expect([]int{7, 8}),
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result, _, err := OffsetBasedCursorSlice(slice, tc.args)
+			result, _, err := offsetBasedCursorSlice(slice, tc.args)
 			if err != nil {
 				t.Fatal(err)
 			}

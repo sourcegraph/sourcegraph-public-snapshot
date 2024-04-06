@@ -110,24 +110,24 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
 
     return (
         <section {...attributes}>
-            <header className={styles.header}>
-                <H2 className="m-0">Group results by</H2>
-                <Button
-                    variant="secondary"
-                    outline={true}
-                    aria-label="Close aggregation full UI mode"
-                    onClick={handleCollapseClick}
-                >
-                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiArrowCollapse} />
-                    Collapse
-                </Button>
-            </header>
-
-            <span className="text-muted">
-                Aggregation is based on results with no count limitation (<Code>count:all</Code>).
-            </span>
-
             <Card as={CardBody} className={styles.card}>
+                <header className={styles.header}>
+                    <H2 className="m-0">Group results by</H2>
+                    <Button
+                        variant="secondary"
+                        outline={true}
+                        aria-label="Close aggregation full UI mode"
+                        onClick={handleCollapseClick}
+                    >
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiArrowCollapse} />
+                        Collapse
+                    </Button>
+                </header>
+
+                <span className="mb-3 text-muted">
+                    Aggregation is based on results with no count limitation (<Code>count:all</Code>).
+                </span>
+
                 <div className={styles.controls}>
                     <AggregationModeControls
                         loading={loading}

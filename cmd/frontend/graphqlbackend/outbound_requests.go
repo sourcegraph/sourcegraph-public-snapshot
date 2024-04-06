@@ -7,8 +7,14 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -59,6 +65,13 @@ func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundReq
 		after = ""
 	}
 
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+		// Log an even when Outbound requests are viewed
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+		}
+	}
 	return &outboundRequestConnectionResolver{
 		first: args.First,
 		after: after,
@@ -75,6 +88,14 @@ func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID)
 	err := relay.UnmarshalSpec(id, &key)
 	if err != nil {
 		return nil, err
+	}
+
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+		// Log an even when Outbound requests are viewed
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOutboundReqViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", graphql.ID(key)); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+		}
 	}
 	item, _ := httpcli.GetOutboundRequestLogItem(key)
 	return &OutboundRequestResolver{req: item}, nil

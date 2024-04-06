@@ -33,7 +33,6 @@ import (
 	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -151,15 +150,7 @@ func TestGitHubHandler(t *testing.T) {
 	server := httptest.NewServer(internalgrpc.MultiplexHandlers(gs, mux))
 	defer server.Close()
 
-	cf := httpcli.NewExternalClientFactory()
-	opts := []httpcli.Opt{}
-	doer, err := cf.Doer(opts...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	repoupdater.DefaultClient = repoupdater.NewClient(server.URL)
-	repoupdater.DefaultClient.HTTPClient = doer
 
 	payload, err := os.ReadFile(filepath.Join("testdata", "github-push.json"))
 	if err != nil {

@@ -24,7 +24,7 @@ Here is a simplified list of the key parameters to tune when scaling Sourcegraph
 
 Notes:
 
-- If your change requires restarting `gitserver` pods and they are rescheduled to other nodes, they may go offline briefly (showing a `Multi-Attach` error). This is due to volume detach/reattach. [Contact us](https://about.sourcegraph.com/contact/) for mitigation steps depending on your cloud provider.
+- If your change requires restarting `gitserver` pods and they are rescheduled to other nodes, they may go offline briefly (showing a `Multi-Attach` error). This is due to volume detach/reattach. [Contact us](https://sourcegraph.com/contact/) for mitigation steps depending on your cloud provider.
 - See the docs to understand each service's role:
   - [Sourcegraph Architecture Overview](../../../dev/background-information/architecture/index.md)
   - [Scaling Overview per Service](../scale.md)

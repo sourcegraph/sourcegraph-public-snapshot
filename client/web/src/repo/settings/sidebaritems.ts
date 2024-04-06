@@ -15,6 +15,16 @@ export const settingsGroup = {
             exact: true,
             label: 'Search Indexing',
         },
+        {
+            to: '/logs',
+            exact: true,
+            label: 'Logs',
+        },
+        {
+            to: '/permissions',
+            exact: true,
+            label: 'Repo Permissions',
+        },
     ],
 }
 

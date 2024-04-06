@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 )
 
 func TestNotNoisey(t *testing.T) {

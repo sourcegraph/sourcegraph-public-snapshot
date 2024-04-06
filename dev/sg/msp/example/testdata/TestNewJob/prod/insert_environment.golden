@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=../../schema/service.schema.json
+service:
+  kind: job
+  id: msp-example
+  name: Msp Example
+  owners:
+    - core-services
+  # TODO: Write a simple description of what this service is for and what it does.
+  description: "TODO"
+build:
+  # TODO: Configure the correct image for your job here. If you use a private
+  # registry like us.gcr.io or Artifact Registry, access will automatically be
+  # granted for your job to pull the correct image.
+  image: us.gcr.io/sourcegraph-dev/msp-example
+  # TODO: Configure where the source code for your job lives here.
+  source:
+    repo: github.com/sourcegraph/sourcegraph
+    dir: cmd/msp-example
+environments:
+  - id: prod
+    projectID: msp-example-prod-xxxx
+    # TODO: We initially provision in 'test' to make it easy to access the project
+    # during setup. Once done, you should change this to 'external' or 'internal'.
+    category: test
+    # Specify a strategy for updating the image.
+    deploy:
+      type: manual
+      manual:
+        tag: insiders
+    # Specify the schedule at which to run your job.
+    schedule:
+      cron: 0 * * * *
+      deadline: 600 # 10 minutes
+    # Specify environment configuration your service needs to operate.
+    env:
+      SRC_LOG_LEVEL: info
+      SRC_LOG_FORMAT: json_gcp
+    # Specify the resources your job gets.
+    instances:
+      resources:
+        cpu: 1
+        memory: 1Gi
+  - id: second
+    projectID: msp-example-second-xxxx
+    # TODO: We initially provision in 'test' to make it easy to access the project
+    # during setup. Once done, you should change this to 'external' or 'internal'.
+    category: test
+    # TODO: Fill out the rest of your configuration here!
+    # ...

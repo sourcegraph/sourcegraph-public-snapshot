@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/log"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/pointer"
 
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient/queue"
@@ -19,11 +18,11 @@ import (
 	apiworker "github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	executorutil "github.com/sourcegraph/sourcegraph/internal/executor/util"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func newQueueTelemetryOptions(ctx context.Context, runner util.CmdRunner, useFirecracker bool, logger log.Logger) queue.TelemetryOptions {
@@ -40,7 +39,7 @@ func newQueueTelemetryOptions(ctx context.Context, runner util.CmdRunner, useFir
 		logger.Error("Failed to get git version", log.Error(err))
 	}
 
-	if !config.IsKubernetes() && !deploy.IsApp() {
+	if !config.IsKubernetes() {
 		t.SrcCliVersion, err = util.GetSrcVersion(ctx, runner)
 		if err != nil {
 			logger.Error("Failed to get src-cli version", log.Error(err))
@@ -84,6 +83,7 @@ func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOpt
 
 		NodeExporterEndpoint:               c.NodeExporterURL,
 		DockerRegistryNodeExporterEndpoint: c.DockerRegistryNodeExporterURL,
+		EnableJobAuditLogging:              c.EnableJobAuditLogging,
 	}
 }
 
@@ -205,14 +205,14 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 	}
 	var runAsUser *int64
 	if c.KubernetesSecurityContextRunAsUser > 0 {
-		runAsUser = pointer.Int64(int64(c.KubernetesSecurityContextRunAsUser))
+		runAsUser = pointers.Ptr(int64(c.KubernetesSecurityContextRunAsUser))
 	}
 	var runAsGroup *int64
 	if c.KubernetesSecurityContextRunAsGroup > 0 {
-		runAsGroup = pointer.Int64(int64(c.KubernetesSecurityContextRunAsGroup))
+		runAsGroup = pointers.Ptr(int64(c.KubernetesSecurityContextRunAsGroup))
 	}
-	fsGroup := pointer.Int64(int64(c.KubernetesSecurityContextFSGroup))
-	deadline := pointer.Int64(int64(c.KubernetesJobDeadline))
+	fsGroup := pointers.Ptr(int64(c.KubernetesSecurityContextFSGroup))
+	deadline := pointers.Ptr(int64(c.KubernetesJobDeadline))
 
 	var imagePullSecrets []corev1.LocalObjectReference
 	if c.KubernetesImagePullSecrets != "" {

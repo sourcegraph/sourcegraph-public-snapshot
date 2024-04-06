@@ -146,8 +146,20 @@ describe('GlobalNavbar', () => {
             expect(active).toEqual('true')
         })
 
-        test('is not highlighted on notebook page', async () => {
+        test('is highlighted on notebook page', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/id')
+            await driver.page.waitForSelector('[data-test-id="/search"]')
+            await driver.page.waitForSelector('[data-test-active="true"]')
+
+            const active = await driver.page.evaluate(() =>
+                document.querySelector('[data-test-id="/search"]')?.getAttribute('data-test-active')
+            )
+
+            expect(active).toEqual('true')
+        })
+
+        test('is not highlighted on insights page', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/id')
             await driver.page.waitForSelector('[data-test-id="/search"]')
             await driver.page.waitForSelector('[data-test-active="false"]')
 

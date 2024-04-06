@@ -92,6 +92,7 @@ func (r *productLicense) Info() (*graphqlbackend.ProductLicenseInfo, error) {
 	}
 	hashedKeyValue := conf.HashedLicenseKeyForAnalytics(r.v.LicenseKey)
 	return &graphqlbackend.ProductLicenseInfo{
+		Plan:                          info.Plan(),
 		TagsValue:                     info.Tags,
 		UserCountValue:                info.UserCount,
 		ExpiresAtValue:                info.ExpiresAt,
@@ -160,7 +161,7 @@ func (r ProductSubscriptionLicensingResolver) GenerateProductLicenseForSubscript
 
 func (r ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Context, args *graphqlbackend.ProductLicensesArgs) (graphqlbackend.ProductLicenseConnection, error) {
 	// 🚨 SECURITY: Only site admins may list product licenses.
-	if _, err := serviceAccountOrSiteAdmin(ctx, r.DB, true); err != nil {
+	if _, err := hasRBACPermsOrSiteAdmin(ctx, r.DB, true); err != nil {
 		return nil, err
 	}
 

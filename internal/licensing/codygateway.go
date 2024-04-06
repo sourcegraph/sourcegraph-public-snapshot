@@ -1,6 +1,8 @@
 package licensing
 
-import "golang.org/x/exp/slices"
+import (
+	"slices"
+)
 
 // CodyGatewayRateLimit indicates rate limits for Sourcegraph's managed Cody Gateway service.
 //
@@ -15,7 +17,7 @@ type CodyGatewayRateLimit struct {
 }
 
 // NewCodyGatewayChatRateLimit applies default Cody Gateway access based on the plan.
-func NewCodyGatewayChatRateLimit(plan Plan, userCount *int, licenseTags []string) CodyGatewayRateLimit {
+func NewCodyGatewayChatRateLimit(plan Plan, userCount *int) CodyGatewayRateLimit {
 	uc := 0
 	if userCount != nil {
 		uc = *userCount
@@ -23,10 +25,21 @@ func NewCodyGatewayChatRateLimit(plan Plan, userCount *int, licenseTags []string
 	if uc < 1 {
 		uc = 1
 	}
-	// Switch on GPT models by default if the customer license has the GPT tag.
-	models := []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
-	if slices.Contains(licenseTags, GPTLLMAccessTag) {
-		models = append(models, "openai/gpt-4", "openai/gpt-3.5-turbo")
+	models := []string{
+		"anthropic/claude-v1",
+		"anthropic/claude-2",
+		"anthropic/claude-2.0",
+		"anthropic/claude-2.1",
+		"anthropic/claude-instant-v1",
+		"anthropic/claude-instant-1",
+		"anthropic/claude-instant-1.2",
+		"anthropic/claude-3-sonnet-20240229",
+		"anthropic/claude-3-opus-20240229",
+		"anthropic/claude-3-haiku-20240307",
+
+		"openai/gpt-3.5-turbo",
+		"openai/gpt-4",
+		"openai/gpt-4-turbo-preview",
 	}
 	switch plan {
 	// TODO: This is just an example for now.
@@ -57,8 +70,13 @@ func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string
 	if uc < 1 {
 		uc = 1
 	}
+	models := []string{
+		"anthropic/claude-instant-v1",
+		"anthropic/claude-instant-1",
+		"anthropic/claude-instant-1.2",
+		"fireworks/starcoder",
+	}
 	// Switch on GPT models by default if the customer license has the GPT tag.
-	models := []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
 	if slices.Contains(licenseTags, GPTLLMAccessTag) {
 		models = append(models, "openai/gpt-3.5-turbo")
 	}
@@ -76,7 +94,7 @@ func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string
 	default:
 		return CodyGatewayRateLimit{
 			AllowedModels:   models,
-			Limit:           int64(100 * uc),
+			Limit:           int64(1000 * uc),
 			IntervalSeconds: 60 * 60 * 24, // day
 		}
 	}

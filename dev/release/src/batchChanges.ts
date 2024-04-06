@@ -133,7 +133,7 @@ export async function addToBatchChange(
 }
 
 /**
- * Subset of batch change spec: https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference
+ * Subset of batch change spec: https://sourcegraph.com/docs/batch_changes/references/batch_spec_yaml_reference
  */
 interface BatchChangeSpec {
     name: string

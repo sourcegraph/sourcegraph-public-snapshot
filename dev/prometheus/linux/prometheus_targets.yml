@@ -78,3 +78,7 @@
   targets:
     # telemetry gateway
     - 127.0.0.1:6080
+- labels:
+    job: msp-example
+  targets:
+    -  127.0.0.1:9080

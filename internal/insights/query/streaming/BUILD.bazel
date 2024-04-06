@@ -24,6 +24,7 @@ go_library(
         "//internal/search/streaming/http",
         "//internal/trace",
         "//internal/types",
+        "//lib/pointers",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
     ],

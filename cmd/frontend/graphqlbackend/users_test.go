@@ -11,11 +11,11 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -262,14 +262,7 @@ type usersQueryTest struct {
 
 func runUsersQuery(t *testing.T, schema *graphql.Schema, want usersQueryTest) {
 	t.Helper()
-
-	if want.dotcom {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		t.Cleanup(func() {
-			envvar.MockSourcegraphDotComMode(orig)
-		})
-	}
+	dotcom.MockSourcegraphDotComMode(t, want.dotcom)
 
 	type node struct {
 		Username string `json:"username"`
@@ -377,6 +370,8 @@ func TestUsers_InactiveSince(t *testing.T) {
 			Name:      "testevent",
 			Source:    "test",
 		}
+
+		//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 		if err := db.EventLogs().Insert(ctx, event); err != nil {
 			t.Fatal(err)
 		}

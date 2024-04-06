@@ -3,6 +3,7 @@ import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 
 import type { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
@@ -64,7 +65,6 @@ const additionalProps = {
     } as AuthenticatedUser,
     toggleCodeMonitorEnabled: sinon.fake(),
     settingsCascade: EMPTY_SETTINGS_CASCADE,
-    isCodyApp: false,
 }
 
 const additionalPropsShortList = {
@@ -87,7 +87,11 @@ const siteAdminProps = {
 }
 
 export const LessThan10Results: StoryFn = () => (
-    <WebStory>{props => <CodeMonitoringPage {...props} {...additionalPropsShortList} />}</WebStory>
+    <WebStory>
+        {props => (
+            <CodeMonitoringPage {...props} {...additionalPropsShortList} telemetryRecorder={noOpTelemetryRecorder} />
+        )}
+    </WebStory>
 )
 
 LessThan10Results.storyName = 'Code monitoring list page - less than 10 results'
@@ -99,7 +103,11 @@ LessThan10Results.parameters = {
 }
 
 export const MoreThan10Results: StoryFn = () => (
-    <WebStory>{props => <CodeMonitoringPage {...props} {...additionalPropsLongList} />}</WebStory>
+    <WebStory>
+        {props => (
+            <CodeMonitoringPage {...props} {...additionalPropsLongList} telemetryRecorder={noOpTelemetryRecorder} />
+        )}
+    </WebStory>
 )
 
 MoreThan10Results.storyName = 'Code monitoring list page - more than 10 results'
@@ -111,7 +119,15 @@ MoreThan10Results.parameters = {
 }
 
 export const PageLoading: StoryFn = () => (
-    <WebStory>{props => <CodeMonitoringPage {...props} {...additionalPropsAlwaysLoading} />}</WebStory>
+    <WebStory>
+        {props => (
+            <CodeMonitoringPage
+                {...props}
+                {...additionalPropsAlwaysLoading}
+                telemetryRecorder={noOpTelemetryRecorder}
+            />
+        )}
+    </WebStory>
 )
 
 PageLoading.storyName = 'Code monitoring list page - loading'
@@ -123,7 +139,11 @@ PageLoading.parameters = {
 }
 
 export const ListPageEmptyShowGettingStarted: StoryFn = () => (
-    <WebStory>{props => <CodeMonitoringPage {...props} {...additionalPropsEmptyList} />}</WebStory>
+    <WebStory>
+        {props => (
+            <CodeMonitoringPage {...props} {...additionalPropsEmptyList} telemetryRecorder={noOpTelemetryRecorder} />
+        )}
+    </WebStory>
 )
 
 ListPageEmptyShowGettingStarted.storyName = 'Code monitoring list page - empty, show getting started'
@@ -136,7 +156,14 @@ ListPageEmptyShowGettingStarted.parameters = {
 
 export const ListPageUnauthenticatedShowGettingStarted: StoryFn = () => (
     <WebStory initialEntries={['/code-monitoring']}>
-        {props => <CodeMonitoringPage {...props} {...additionalProps} authenticatedUser={null} />}
+        {props => (
+            <CodeMonitoringPage
+                {...props}
+                {...additionalProps}
+                authenticatedUser={null}
+                telemetryRecorder={noOpTelemetryRecorder}
+            />
+        )}
     </WebStory>
 )
 
@@ -145,7 +172,14 @@ ListPageUnauthenticatedShowGettingStarted.storyName =
 
 export const EmptyListPage: StoryFn = () => (
     <WebStory initialEntries={['/code-monitoring/getting-started']}>
-        {props => <CodeMonitoringPage {...props} {...additionalPropsEmptyList} testForceTab="list" />}
+        {props => (
+            <CodeMonitoringPage
+                {...props}
+                {...additionalPropsEmptyList}
+                telemetryRecorder={noOpTelemetryRecorder}
+                testForceTab="list"
+            />
+        )}
     </WebStory>
 )
 
@@ -160,7 +194,13 @@ EmptyListPage.parameters = {
 export const EmptyListPageUnauthenticated: StoryFn = () => (
     <WebStory initialEntries={['/code-monitoring/getting-started']}>
         {props => (
-            <CodeMonitoringPage {...props} {...additionalPropsEmptyList} authenticatedUser={null} testForceTab="list" />
+            <CodeMonitoringPage
+                {...props}
+                {...additionalPropsEmptyList}
+                authenticatedUser={null}
+                telemetryRecorder={noOpTelemetryRecorder}
+                testForceTab="list"
+            />
         )}
     </WebStory>
 )
@@ -175,7 +215,14 @@ EmptyListPageUnauthenticated.parameters = {
 
 export const SiteAdminUser: StoryFn = () => (
     <WebStory initialEntries={['/code-monitoring']}>
-        {props => <CodeMonitoringPage {...props} {...siteAdminProps} testForceTab="list" />}
+        {props => (
+            <CodeMonitoringPage
+                {...props}
+                {...siteAdminProps}
+                telemetryRecorder={noOpTelemetryRecorder}
+                testForceTab="list"
+            />
+        )}
     </WebStory>
 )
 

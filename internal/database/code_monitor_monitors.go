@@ -141,15 +141,21 @@ type ListMonitorsOpts struct {
 	UserID *int32
 	After  *int64
 	First  *int
+	// If true, we will filter out monitors that are associated with a user that has
+	// been soft-deleted.
+	SkipOrphaned bool
 }
 
 func (o ListMonitorsOpts) Conds() *sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if o.UserID != nil {
-		conds = append(conds, sqlf.Sprintf("namespace_user_id = %s", *o.UserID))
+		conds = append(conds, sqlf.Sprintf("cm_monitors.namespace_user_id = %s", *o.UserID))
 	}
 	if o.After != nil {
-		conds = append(conds, sqlf.Sprintf("id > %s", *o.After))
+		conds = append(conds, sqlf.Sprintf("cm_monitors.id > %s", *o.After))
+	}
+	if o.SkipOrphaned {
+		conds = append(conds, sqlf.Sprintf("users.deleted_at IS NULL"))
 	}
 	return sqlf.Join(conds, "AND")
 }
@@ -164,6 +170,8 @@ func (o ListMonitorsOpts) Limit() *sqlf.Query {
 const monitorsFmtStr = `
 SELECT %s -- monitorColumns
 FROM cm_monitors
+JOIN users
+ON cm_monitors.created_by = users.id
 WHERE %s
 ORDER BY id ASC
 LIMIT %s
@@ -205,17 +213,14 @@ func (s *codeMonitorStore) GetMonitor(ctx context.Context, monitorID int64) (*Mo
 const totalCountMonitorsFmtStr = `
 SELECT COUNT(*)
 FROM cm_monitors
-%s
+JOIN users
+ON cm_monitors.created_by = users.id
+WHERE %s
 `
 
-func (s *codeMonitorStore) CountMonitors(ctx context.Context, userID *int32) (int32, error) {
+func (s *codeMonitorStore) CountMonitors(ctx context.Context, opts ListMonitorsOpts) (int32, error) {
 	var count int32
-	var query *sqlf.Query
-	if userID != nil {
-		query = sqlf.Sprintf(totalCountMonitorsFmtStr, sqlf.Sprintf("WHERE namespace_user_id = %s", *userID))
-	} else {
-		query = sqlf.Sprintf(totalCountMonitorsFmtStr, sqlf.Sprintf(""))
-	}
+	query := sqlf.Sprintf(totalCountMonitorsFmtStr, opts.Conds())
 	err := s.QueryRow(ctx, query).Scan(&count)
 	return count, err
 }

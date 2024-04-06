@@ -11,12 +11,20 @@ import (
 	"strings"
 	"testing"
 
-	"golang.org/x/sync/semaphore"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"golang.org/x/time/rate"
 
 	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
 
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
+	common "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -25,7 +33,6 @@ import (
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -73,25 +80,46 @@ func InitGitserver() {
 	})
 	db.ReposFunc.SetDefaultReturn(r)
 
-	s := server.Server{
-		Logger:         sglog.Scoped("server"),
-		ObservationCtx: &observation.TestContext,
-		ReposDir:       filepath.Join(root, "repos"),
-		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
-			return filepath.Join(root, "remotes", string(name)), nil
+	fs := gitserverfs.New(&observation.TestContext, filepath.Join(root, "repos"))
+	require.NoError(&t, fs.Initialize())
+	getRemoteURLFunc := func(_ context.Context, name api.RepoName) (string, error) { //nolint:unparam // context is unused but required by the interface, error is not used in this test
+		return filepath.Join(root, "remotes", string(name)), nil
+	}
+
+	s := server.NewServer(&server.ServerOpts{
+		Logger: sglog.Scoped("server"),
+		FS:     fs,
+		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			return gitcli.NewBackend(logtest.Scoped(&t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 		},
+		GetRemoteURLFunc: getRemoteURLFunc,
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-			return vcssyncer.NewGitRepoSyncer(logger, wrexec.NewNoOpRecordingCommandFactory()), nil
+			getRemoteURLSource := func(ctx context.Context, name api.RepoName) (vcssyncer.RemoteURLSource, error) {
+				return vcssyncer.RemoteURLSourceFunc(func(ctx context.Context) (*vcs.URL, error) {
+					raw, err := getRemoteURLFunc(ctx, name)
+					if err != nil {
+						return nil, errors.Wrapf(err, "failed to get remote URL for %s", name)
+					}
+
+					u, err := vcs.ParseURL(raw)
+					if err != nil {
+						return nil, errors.Wrapf(err, "failed to parse remote URL %q", raw)
+					}
+
+					return u, nil
+				}), nil
+			}
+
+			return vcssyncer.NewGitRepoSyncer(logger, wrexec.NewNoOpRecordingCommandFactory(), getRemoteURLSource), nil
 		},
-		GlobalBatchLogSemaphore: semaphore.NewWeighted(32),
 		DB:                      db,
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		Locker:                  server.NewRepositoryLocker(),
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(100, 10)),
-	}
+	})
 
 	grpcServer := defaults.NewServer(logger)
-	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: &s})
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 
 	srv := &http.Server{
@@ -105,7 +133,7 @@ func InitGitserver() {
 
 	serverAddress := l.Addr().String()
 	source := gitserver.NewTestClientSource(&t, []string{serverAddress})
-	testGitserverClient = gitserver.NewTestClient(&t).WithDoer(httpcli.InternalDoer).WithClientSource(source)
+	testGitserverClient = gitserver.NewTestClient(&t).WithClientSource(source)
 	GitserverAddresses = []string{serverAddress}
 }
 
@@ -115,7 +143,7 @@ func MakeGitRepository(t testing.TB, cmds ...string) api.RepoName {
 	t.Helper()
 	dir := InitGitRepository(t, cmds...)
 	repo := api.RepoName(filepath.Base(dir))
-	if resp, err := testGitserverClient.RequestRepoUpdate(context.Background(), repo, 0); err != nil {
+	if resp, err := testGitserverClient.RequestRepoUpdate(context.Background(), repo); err != nil {
 		t.Fatal(err)
 	} else if resp.Error != "" {
 		t.Fatal(resp.Error)
@@ -158,4 +186,37 @@ func GitCommand(dir, name string, args ...string) *exec.Cmd {
 		"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z",
 	)
 	return c
+}
+
+func createSimpleGitRepo(t *testing.T, root string) string {
+	t.Helper()
+	dir := filepath.Join(root, "remotes", "simple")
+
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, cmd := range []string{
+		"git init",
+		"mkdir dir1",
+		"echo -n infile1 > dir1/file1",
+		"touch --date=2006-01-02T15:04:05Z dir1 dir1/file1 || touch -t 200601021704.05 dir1 dir1/file1",
+		"git add dir1/file1",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_AUTHOR_DATE=2006-01-02T15:04:05Z GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"echo -n infile2 > 'file 2'",
+		"touch --date=2014-05-06T19:20:21Z 'file 2' || touch -t 201405062120.21 'file 2'",
+		"git add 'file 2'",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_AUTHOR_DATE=2006-01-02T15:04:05Z GIT_COMMITTER_DATE=2014-05-06T19:20:21Z git commit -m commit2 --author='a <a@a.com>' --date 2014-05-06T19:20:21Z",
+		"git branch test-ref HEAD~1",
+		"git branch test-nested-ref test-ref",
+	} {
+		c := exec.Command("bash", "-c", `GIT_CONFIG_GLOBAL="" GIT_CONFIG_SYSTEM="" `+cmd)
+		c.Dir = dir
+		out, err := c.CombinedOutput()
+		if err != nil {
+			t.Fatalf("Command %q failed. Output was:\n\n%s", cmd, out)
+		}
+	}
+
+	return dir
 }

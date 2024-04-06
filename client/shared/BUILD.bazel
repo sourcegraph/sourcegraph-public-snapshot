@@ -1,14 +1,11 @@
-load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
-load("//client/shared/dev:generate_schema.bzl", "generate_schema")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
+load("//client/shared/dev:generate_schema.bzl", "generate_schema")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
-load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
-
-# TODO(bazel): storybook build
-# gazelle:exclude **/*.story.{ts,tsx}
+load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 # gazelle:js_resolve ../graphql-operations //client/shared:graphql_operations
@@ -17,20 +14,6 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 npm_link_all_packages(name = "node_modules")
 
 eslint_config_and_lint_root()
-
-# Temporary ESLint target to lint stories. This will be removed once we have a
-# custom gazelle targets. E.g., `gazelle:custom_js_files stories src/**/*.story.tsx`
-eslint_test_with_types(
-    name = "stories_eslint",
-    srcs = glob([
-        "src/**/*.story.tsx",
-        "src/**/*.fixtures.ts",
-    ]),
-    config = ":eslint_config",
-    deps = [
-        "//:node_modules/@types/node",
-    ],
-)
 
 ts_config(
     name = "tsconfig",
@@ -81,7 +64,7 @@ ts_project(
     ],
 )
 
-js_library(
+copy_to_bin(
     name = "graphql_operations_files",
     # Keep in sync with glob in client/shared/dev/generateGraphQlOperations.js
     srcs = glob(
@@ -120,6 +103,11 @@ generate_schema(
     out = "src/schema/batch_spec.schema.d.ts",
 )
 
+generate_schema(
+    name = "opencodegraph",
+    out = "src/schema/opencodegraph.schema.d.ts",
+)
+
 ts_project(
     name = "shared_lib",
     srcs = [
@@ -155,7 +143,6 @@ ts_project(
         "src/api/extension/util.ts",
         "src/api/extension/utils/ReferenceCounter.ts",
         "src/api/extension/worker.ts",
-        "src/api/features.ts",
         "src/api/sharedEventLogger.ts",
         "src/api/textDocumentTypes.ts",
         "src/api/util.ts",
@@ -221,15 +208,11 @@ ts_project(
         "src/components/VirtualList.tsx",
         "src/components/icons.tsx",
         "src/components/languageIcons.tsx",
-        "src/components/ranking/LineRanking.ts",
         "src/components/ranking/PerFileResultRanking.ts",
-        "src/components/ranking/PerFileResultRankingTestHelpers.ts",
-        "src/components/ranking/ZoektRanking.ts",
         "src/components/utils/size.ts",
         "src/contributions/contributions.ts",
         "src/deprecated-theme-utils.ts",
         "src/extensions/controller.ts",
-        "src/extensions/createNoopLoadedController.ts",
         "src/extensions/createSyncLoadedController.ts",
         "src/extensions/extension.ts",
         "src/extensions/extensionManifest.ts",
@@ -317,6 +300,7 @@ ts_project(
         "src/telemetry/index.ts",
         "src/telemetry/telemetryService.ts",
         "src/theme.ts",
+        "src/theme-types.ts",
         "src/tracking/event-log-creators.ts",
         "src/tracking/utm.ts",
         "src/types/core-js/configurator.d.ts",
@@ -429,8 +413,6 @@ ts_project(
         "src/components/Path.test.tsx",
         "src/components/RepoLink.test.tsx",
         "src/components/UserAvatar.test.tsx",
-        "src/components/ranking/LineRanking.test.tsx",
-        "src/components/ranking/ZoektRanking.test.tsx",
         "src/contributions/contributions.test.ts",
         "src/extensions/extension.test.ts",
         "src/hover/HoverOverlay.test.tsx",
@@ -524,5 +506,24 @@ vitest_test(
         ":module_styles",
         ":shared_tests",
         ":snapshots",
+    ],
+)
+
+ts_project(
+    name = "stories",
+    srcs = [
+        "src/actions/ActionItem.story.tsx",
+        "src/symbols/SymbolTag.story.tsx",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":graphql_operations",
+        ":node_modules/@sourcegraph/common",
+        ":node_modules/@sourcegraph/wildcard",
+        ":shared_lib",
+        "//:node_modules/@storybook/addon-actions",
+        "//:node_modules/@storybook/react",
+        "//:node_modules/@types/history",
+        "//:node_modules/history",
     ],
 )

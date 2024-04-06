@@ -1,9 +1,10 @@
 import { writable, type Readable } from 'svelte/store'
 
-import { goto } from '$app/navigation'
 import { SearchPatternType } from '$lib/graphql-operations'
-import { buildSearchURLQuery, type SettingsCascade } from '$lib/shared'
-import { defaultSearchModeFromSettings } from '$lib/web'
+import { buildSearchURLQuery, type Settings } from '$lib/shared'
+import { defaultSearchModeFromSettings, defaultPatternTypeFromSettings } from '$lib/web'
+
+import { USE_CLIENT_CACHE_QUERY_PARAMETER } from './constants'
 
 // Defined in @sourcegraph/shared/src/search/searchQueryState.tsx
 export enum SearchMode {
@@ -14,28 +15,28 @@ export enum SearchMode {
 type Update<T> = T | ((value: T) => T)
 
 interface Options {
-    caseSensitive: boolean
-    regularExpression: boolean
-    patternType: SearchPatternType
-    searchMode: SearchMode
-    query: string
-    searchContext: string
+    readonly caseSensitive: boolean
+    readonly regularExpression: boolean
+    readonly patternType: SearchPatternType
+    readonly searchMode: SearchMode
+    readonly query: string
+    readonly searchContext: string
 }
 
 type QuerySettings = Pick<
-    SettingsCascade['final'],
+    Settings,
     'search.defaultCaseSensitive' | 'search.defaultPatternType' | 'search.defaultMode'
 > | null
 export type QueryOptions = Pick<Options, 'patternType' | 'caseSensitive' | 'searchMode' | 'searchContext'>
 
 export class QueryState {
     private defaultCaseSensitive = false
-    private defaultPatternType = SearchPatternType.standard
-    private defaultSearchMode = SearchMode.SmartSearch
+    private defaultPatternType = SearchPatternType.keyword
+    private defaultSearchMode = SearchMode.Precise
     private defaultQuery = ''
     private defaultSearchContext = 'global'
 
-    private constructor(private options: Partial<Options>, public settings: QuerySettings) {}
+    private constructor(public readonly options: Partial<Options>, public settings: QuerySettings) {}
 
     public static init(options: Partial<Options>, settings: QuerySettings): QueryState {
         return new QueryState(options, settings)
@@ -48,7 +49,7 @@ export class QueryState {
     public get patternType(): SearchPatternType {
         return (
             this.options.patternType ??
-            (this.settings?.['search.defaultPatternType'] as SearchPatternType) ??
+            (this.settings ? defaultPatternTypeFromSettings({ final: this.settings, subjects: [] }) : null) ??
             this.defaultPatternType
         )
     }
@@ -134,23 +135,32 @@ export function queryStateStore(initial: Partial<Options> = {}, settings: QueryS
             update(state => state.setMode(mode))
         },
         set(options: Partial<Options>) {
-            update(state => QueryState.init(options, state.settings))
+            update(state => QueryState.init({ ...state.options, ...options }, state.settings))
         },
     }
 }
 
-export function submitSearch(
-    queryState: Pick<QueryState, 'searchMode' | 'query' | 'caseSensitive' | 'patternType' | 'searchContext'>
-): void {
-    const searchQueryParameter = buildSearchURLQuery(
+/**
+ * getQueryURL builds a /search URL from the given query state.
+ * If enforceCache is true the in-memory query cache will be used when available.
+ *
+ * @param queryState The query state to build the URL from.
+ * @param enforceCache Whether to enforce the use of the in-memory query cache.
+ */
+export function getQueryURL(
+    queryState: Pick<QueryState, 'searchMode' | 'query' | 'caseSensitive' | 'patternType' | 'searchContext'>,
+    enforceCache = false
+): URL {
+    let url = new URL('/search', location.href)
+    url.search = buildSearchURLQuery(
         queryState.query,
         queryState.patternType,
         queryState.caseSensitive,
         queryState.searchContext,
         queryState.searchMode
     )
-
-    // no-void conflicts with no-floating-promises
-    // eslint-disable-next-line no-void
-    void goto('/search?' + searchQueryParameter)
+    if (enforceCache) {
+        url.searchParams.append(USE_CLIENT_CACHE_QUERY_PARAMETER, '')
+    }
+    return url
 }

@@ -3,10 +3,14 @@ package azureopenai
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
+	"os"
 	"strings"
 	"sync"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -14,6 +18,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/modeltransformations"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// HTTP proxy value to be used for id token requests to Azure
+// This value will only used when using an access token is not provided
+// and it will only apply to requests made to the Azure authentication endpoint
+// not other requests such as to the OpenAI API
+var authProxyURL = os.Getenv("CODY_AZURE_OPENAI_IDENTITY_HTTP_PROXY")
 
 // We want to reuse the client because when using the DefaultAzureCredential
 // it will acquire a short lived token and reusing the client
@@ -45,20 +55,40 @@ func GetAPIClient(endpoint, accessToken string) (EmbeddingsClient, error) {
 	defer apiClient.mu.Unlock()
 	var err error
 	if accessToken != "" {
-		credential, credErr := azopenai.NewKeyCredential(accessToken)
-		if credErr != nil {
-			return nil, credErr
-		}
+		credential := azcore.NewKeyCredential(accessToken)
 		apiClient.client, err = azopenai.NewClientWithKeyCredential(endpoint, credential, nil)
 	} else {
-		credential, credErr := azidentity.NewDefaultAzureCredential(nil)
+		var opts *azidentity.DefaultAzureCredentialOptions
+		opts, err = getCredentialOptions()
+		if err != nil {
+			return nil, err
+		}
+		credential, credErr := azidentity.NewDefaultAzureCredential(opts)
 		if credErr != nil {
 			return nil, credErr
 		}
+		apiClient.endpoint = endpoint
 		apiClient.client, err = azopenai.NewClient(endpoint, credential, nil)
 	}
 	return apiClient.client, err
+}
 
+func getCredentialOptions() (*azidentity.DefaultAzureCredentialOptions, error) {
+	// if there is no proxy we don't need any options
+	if authProxyURL == "" {
+		return nil, nil
+	}
+
+	proxyUrl, err := url.Parse(authProxyURL)
+	if err != nil {
+		return nil, err
+	}
+	proxiedClient := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyUrl)}}
+	return &azidentity.DefaultAzureCredentialOptions{
+		ClientOptions: azcore.ClientOptions{
+			Transport: proxiedClient,
+		},
+	}, nil
 }
 
 func NewClient(getClient GetEmbeddingsAPIClientFunc, config *conftypes.EmbeddingsConfig) (*azureOpenaiEmbeddingsClient, error) {
@@ -140,12 +170,11 @@ func (c *azureOpenaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts [
 }
 
 func (c *azureOpenaiEmbeddingsClient) requestSingleEmbeddingWithRetryOnNull(ctx context.Context, input string, retries int) (*azopenai.GetEmbeddingsResponse, error) {
-	for i := 0; i < retries; i++ {
+	for range retries {
 		response, err := c.client.GetEmbeddings(ctx, azopenai.EmbeddingsOptions{
-			Input:      []string{input},
-			Deployment: c.model,
+			Input:          []string{input},
+			DeploymentName: &c.model,
 		}, nil)
-
 		if err != nil {
 			return nil, err
 		}

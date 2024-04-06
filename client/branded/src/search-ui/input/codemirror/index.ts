@@ -33,6 +33,12 @@ export const changeListener = (callback: (value: string) => void): Extension =>
 
 interface CreateDefaultSuggestionsOptions extends Omit<DefaultSuggestionSourcesOptions, 'fetchSuggestions'> {
     fetchSuggestions: (query: string) => Observable<SearchMatch[]>
+    /**
+     * If enabled, pressing Enter will navigate to the URL associated with the
+     * selected suggestion, if available. In this case `navigate` must be provided as well.
+     * Defaults to false.
+     */
+    enableJumpToSuggestion?: boolean
     navigate?: NavigateFunction
 }
 
@@ -46,6 +52,7 @@ export const createDefaultSuggestions = ({
     disableFilterCompletion,
     disableSymbolCompletion,
     navigate,
+    enableJumpToSuggestion = false,
     showWhenEmpty,
 }: CreateDefaultSuggestionsOptions): Extension => [
     searchQueryAutocompletion(
@@ -56,6 +63,7 @@ export const createDefaultSuggestions = ({
             disableFilterCompletion,
             showWhenEmpty,
         }),
+        enableJumpToSuggestion,
         navigate
     ),
     loadingIndicator(),

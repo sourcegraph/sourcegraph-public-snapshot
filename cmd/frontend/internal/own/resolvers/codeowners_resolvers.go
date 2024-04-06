@@ -7,7 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -155,9 +156,11 @@ func (r *ownResolver) DeleteCodeownersFiles(ctx context.Context, args *graphqlba
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+// TODO: Use EventRecorder from internal/telemetryrecorder instead.
 func (r *ownResolver) logBackendEvent(ctx context.Context, eventName string) {
 	a := actor.FromContext(ctx)
 	if a.IsAuthenticated() && !a.IsMockUser() {
+		//lint:ignore SA1019 existing usage of deprecated functionality.
 		if err := usagestats.LogBackendEvent(
 			r.db,
 			a.UID,
@@ -311,7 +314,7 @@ func (r *codeownersIngestedFileConnectionResolver) PageInfo(ctx context.Context)
 }
 
 func isIngestionAvailable() error {
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		return errors.New("codeownership ingestion is not available on sourcegraph.com")
 	}
 	return nil

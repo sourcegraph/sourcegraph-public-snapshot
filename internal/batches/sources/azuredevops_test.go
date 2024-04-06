@@ -24,7 +24,7 @@ var (
 	testProjectName           = "testproject"
 	testOrgName               = "testorg"
 	testPRID                  = "42"
-	testRepository            = azuredevops.Repository{ID: "testrepoid", Name: testRepoName, Project: azuredevops.Project{ID: "testprojectid", Name: testProjectName}, APIURL: fmt.Sprintf("https://dev.azure.com/%s/%s/_git/%s", testOrgName, testProjectName, testRepoName), CloneURL: fmt.Sprintf("https://dev.azure.com/%s/%s/_git/%s", testOrgName, testProjectName, testRepoName)}
+	testRepository            = azuredevops.Repository{ID: "testrepoid", Name: testRepoName, Project: azuredevops.Project{ID: "testprojectid", Name: testProjectName}, APIURL: fmt.Sprintf("https://dev.azure.com/%s/%s/_git/%s", testOrgName, testProjectName, testRepoName), RemoteURL: fmt.Sprintf("https://dev.azure.com/%s/%s/_git/%s", testOrgName, testProjectName, testRepoName)}
 	testCommonPullRequestArgs = azuredevops.PullRequestCommonArgs{Org: testOrgName, Project: testProjectName, RepoNameOrID: testRepoName, PullRequestID: testPRID}
 	testOrgProjectRepoArgs    = azuredevops.OrgProjectRepoArgs{Org: testOrgName, Project: testProjectName, RepoNameOrID: testRepoName}
 )

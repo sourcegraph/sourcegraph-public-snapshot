@@ -2,22 +2,43 @@ package graphqlbackend
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func copyPtr[T any](n *T) *T {
+	if n == nil {
+		return nil
+	}
+
+	c := *n
+	return &c
+}
+
+// Clone (aka deepcopy) returns a new PaginationArgs object with the same values
+// as "p".
+func clonePaginationArgs(p *database.PaginationArgs) *database.PaginationArgs {
+	return &database.PaginationArgs{
+		First:     copyPtr(p.First),
+		Last:      copyPtr(p.Last),
+		After:     p.After,
+		Before:    p.Before,
+		OrderBy:   p.OrderBy,
+		Ascending: p.Ascending,
+	}
+}
 
 type SiteConfigurationChangeConnectionStore struct {
 	db database.DB
 }
 
-func (s *SiteConfigurationChangeConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (s *SiteConfigurationChangeConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
 	count, err := s.db.Conf().GetSiteConfigCount(ctx)
-	c := int32(count)
-	return &c, err
+	return int32(count), err
 }
 
 func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*SiteConfigurationChangeResolver, error) {
@@ -28,11 +49,9 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Contex
 	// NOTE: Do not modify "args" in-place because it is used by the caller of ComputeNodes to
 	// determine next/previous page. Instead, dereference the values from args first (if
 	// they're non-nil) and then assign them address of the new variables.
-	paginationArgs := args.Clone()
-	isModifiedPaginationArgs, err := modifyArgs(paginationArgs)
-	if err != nil {
-		return []*SiteConfigurationChangeResolver{}, err
-	}
+	paginationArgs := clonePaginationArgs(args)
+
+	isModifiedPaginationArgs := modifyArgs(paginationArgs)
 
 	history, err := s.db.Conf().ListSiteConfigs(ctx, paginationArgs)
 	if err != nil {
@@ -67,40 +86,34 @@ func (s *SiteConfigurationChangeConnectionStore) MarshalCursor(node *SiteConfigu
 	return &cursor, nil
 }
 
-func (s *SiteConfigurationChangeConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	var id int
+func (s *SiteConfigurationChangeConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
+	var id int32
 	err := relay.UnmarshalSpec(graphql.ID(cursor), &id)
 	if err != nil {
 		return nil, err
 	}
 
-	idStr := strconv.Itoa(id)
-	return &idStr, err
+	return []any{id}, nil
 }
 
 // modifyArgs will fetch one more than the originally requested number of items because we need one
 // older item to get the diff of the oldes item in the list.
 //
 // A separate function so that this can be tested in isolation.
-func modifyArgs(args *database.PaginationArgs) (bool, error) {
+func modifyArgs(args *database.PaginationArgs) bool {
 	var modified bool
 	if args.First != nil {
 		*args.First += 1
 		modified = true
-	} else if args.Last != nil && args.Before != nil {
-		before, err := strconv.Atoi(*args.Before)
-		if err != nil {
-			return false, err
-		}
-
-		if before > 0 {
+	} else if args.Last != nil && len(args.Before) > 0 {
+		if args.Before[0].(int32) > 0 {
 			modified = true
 			*args.Last += 1
-			*args.Before = strconv.Itoa(before - 1)
+			args.Before[0] = args.Before[0].(int32) - 1
 		}
 	}
 
-	return modified, nil
+	return modified
 }
 
 func generateResolversForFirst(history []*database.SiteConfig, db database.DB) []*SiteConfigurationChangeResolver {
@@ -113,7 +126,7 @@ func generateResolversForFirst(history []*database.SiteConfig, db database.DB) [
 	resolvers := []*SiteConfigurationChangeResolver{}
 	totalFetched := len(history)
 
-	for i := 0; i < totalFetched; i++ {
+	for i := range totalFetched {
 		var previousSiteConfig *database.SiteConfig
 		if i < totalFetched-1 {
 			previousSiteConfig = history[i+1]
@@ -139,7 +152,7 @@ func generateResolversForLast(history []*database.SiteConfig, db database.DB) []
 	resolvers := []*SiteConfigurationChangeResolver{}
 	totalFetched := len(history)
 
-	for i := 0; i < totalFetched; i++ {
+	for i := range totalFetched {
 		var previousSiteConfig *database.SiteConfig
 		if i > 0 {
 			previousSiteConfig = history[i-1]

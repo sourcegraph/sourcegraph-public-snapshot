@@ -3,6 +3,7 @@ package perforce
 import (
 	"context"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -95,7 +96,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 
 	emailSet := make(map[string]struct{}, len(verifiedEmails))
 	for _, email := range verifiedEmails {
-		emailSet[email] = struct{}{}
+		emailSet[strings.ToLower(email)] = struct{}{}
 	}
 
 	users, err := p.gitserverClient.PerforceUsers(ctx, protocol.PerforceConnectionDetails{
@@ -111,12 +112,13 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 		if p4User.Email == "" || p4User.Username == "" {
 			continue
 		}
+		p4Email := strings.ToLower(p4User.Email)
 
-		if _, ok := emailSet[p4User.Email]; ok {
+		if _, ok := emailSet[p4Email]; ok {
 			accountData, err := jsoniter.Marshal(
 				perforce.AccountData{
 					Username: p4User.Username,
-					Email:    p4User.Email,
+					Email:    p4Email,
 				},
 			)
 			if err != nil {
@@ -128,7 +130,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 				AccountSpec: extsvc.AccountSpec{
 					ServiceType: p.codeHost.ServiceType,
 					ServiceID:   p.codeHost.ServiceID,
-					AccountID:   p4User.Email,
+					AccountID:   p4Email,
 				},
 				AccountData: extsvc.AccountData{
 					Data: extsvc.NewUnencryptedData(accountData),

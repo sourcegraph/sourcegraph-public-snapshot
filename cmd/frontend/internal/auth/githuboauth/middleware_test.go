@@ -49,7 +49,7 @@ func TestMiddleware(t *testing.T) {
 	providers.MockProviders = []providers.Provider{mockGitHubCom.Provider}
 	defer func() { providers.MockProviders = nil }()
 
-	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response {
+	doRequest := func(method, urlStr, body string, state string, cookies []*http.Cookie, authed bool) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
 		for _, cookie := range cookies {
 			req.AddCookie(cookie)
@@ -59,6 +59,7 @@ func TestMiddleware(t *testing.T) {
 			req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: mockUserID}))
 		}
 		respRecorder := httptest.NewRecorder()
+		session.SetData(respRecorder, req, "oauthState", state)
 		authedHandler.ServeHTTP(respRecorder, req)
 		return respRecorder.Result()
 	}
@@ -66,13 +67,13 @@ func TestMiddleware(t *testing.T) {
 	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg sign-in", func(t *testing.T) {
 		cookie := &http.Cookie{Name: auth.SignOutCookie, Value: "true"}
 
-		resp := doRequest("GET", "http://example.com/", "", []*http.Cookie{cookie}, false)
+		resp := doRequest("GET", "http://example.com/", "", "", []*http.Cookie{cookie}, false)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
 	})
 	t.Run("unauthenticated homepage visit, no sign-out cookie -> github oauth flow", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/", "", nil, false)
+		resp := doRequest("GET", "http://example.com/", "", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -88,7 +89,7 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("unauthenticated subpage visit -> github oauth flow", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/page", "", nil, false)
+		resp := doRequest("GET", "http://example.com/page", "", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -109,7 +110,7 @@ func TestMiddleware(t *testing.T) {
 	providers.MockProviders = []providers.Provider{mockGHE.Provider, mockGitHubCom.Provider}
 
 	t.Run("unauthenticated API request -> pass through", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.api/foo", "", nil, false)
+		resp := doRequest("GET", "http://example.com/.api/foo", "", "", nil, false)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -122,7 +123,7 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("login -> github auth flow (github.com)", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/github/login?pc="+mockGitHubCom.Provider.ConfigID().ID, "", nil, false)
+		resp := doRequest("GET", "http://example.com/.auth/github/login?pc="+mockGitHubCom.Provider.ConfigID().ID, "", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -155,7 +156,7 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("login -> github auth flow (GitHub enterprise)", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/github/login?pc="+mockGHE.Provider.ConfigID().ID, "", nil, false)
+		resp := doRequest("GET", "http://example.com/.auth/github/login?pc="+mockGHE.Provider.ConfigID().ID, "", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -188,7 +189,7 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("login -> github auth flow with redirect param", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/github/login?pc="+mockGitHubCom.Provider.ConfigID().ID+"&redirect=%2Fpage", "", nil, false)
+		resp := doRequest("GET", "http://example.com/.auth/github/login?pc="+mockGitHubCom.Provider.ConfigID().ID+"&redirect=%2Fpage", "", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -229,8 +230,7 @@ func TestMiddleware(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		callbackCookies := []*http.Cookie{oauth.NewCookie(getStateConfig(), encodedState)}
-		resp := doRequest("GET", "http://example.com/.auth/github/callback?code=the-oauth-code&state="+encodedState, "", callbackCookies, false)
+		resp := doRequest("GET", "http://example.com/.auth/github/callback?code=the-oauth-code&state="+encodedState, "", encodedState, nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -248,8 +248,7 @@ func TestMiddleware(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		callbackCookies := []*http.Cookie{oauth.NewCookie(getStateConfig(), encodedState)}
-		resp := doRequest("GET", "http://example.com/.auth/github/callback?code=the-oauth-code&state="+encodedState, "", callbackCookies, false)
+		resp := doRequest("GET", "http://example.com/.auth/github/callback?code=the-oauth-code&state="+encodedState, "", encodedState, nil, false)
 		if want := http.StatusBadRequest; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -259,7 +258,7 @@ func TestMiddleware(t *testing.T) {
 		mockGitHubCom.lastCallbackRequestURL = nil
 	})
 	t.Run("authenticated app request", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/", "", nil, true)
+		resp := doRequest("GET", "http://example.com/", "", "", nil, true)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -272,7 +271,7 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("authenticated API request", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.api/foo", "", nil, true)
+		resp := doRequest("GET", "http://example.com/.api/foo", "", "", nil, true)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}

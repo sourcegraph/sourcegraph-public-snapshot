@@ -19,7 +19,7 @@ Sourcegraph code search helps developers perform these tasks more quickly and ef
 ## Recommended
 
 <div>
-  <a class="cloud-cta" href="https://about.sourcegraph.com/get-started?t=enterprise" target="_blank" rel="noopener noreferrer">
+  <a class="cloud-cta" href="https://sourcegraph.com/get-started?t=enterprise" target="_blank" rel="noopener noreferrer">
     <div class="cloud-cta-copy">
       <h2>Get Sourcegraph on your code.</h2>
       <h3>A single-tenant instance managed by Sourcegraph.</h3>

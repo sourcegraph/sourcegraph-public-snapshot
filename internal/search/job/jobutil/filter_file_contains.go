@@ -3,15 +3,16 @@ package jobutil
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
 	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -93,14 +94,14 @@ func (j *fileContainsFilterJob) Run(ctx context.Context, clients job.RuntimeClie
 	defer func() { finish(alert, err) }()
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		event = j.filterEvent(ctx, clients.SearcherURLs, event)
+		event = j.filterEvent(ctx, clients.SearcherURLs, clients.SearcherGRPCConnectionCache, event)
 		stream.Send(event)
 	})
 
 	return j.child.Run(ctx, clients, filteredStream)
 }
 
-func (j *fileContainsFilterJob) filterEvent(ctx context.Context, searcherURLs *endpoint.Map, event streaming.SearchEvent) streaming.SearchEvent {
+func (j *fileContainsFilterJob) filterEvent(ctx context.Context, searcherURLs *endpoint.Map, searcherGRPCConnectionCache *defaults.ConnectionCache, event streaming.SearchEvent) streaming.SearchEvent {
 	// Don't filter out files with zero chunks because if the file contained
 	// a result, we still want to return a match for the file even if it
 	// has no matched ranges left.
@@ -110,7 +111,7 @@ func (j *fileContainsFilterJob) filterEvent(ctx context.Context, searcherURLs *e
 		case *result.FileMatch:
 			filtered = append(filtered, j.filterFileMatch(v))
 		case *result.CommitMatch:
-			cm := j.filterCommitMatch(ctx, searcherURLs, v)
+			cm := j.filterCommitMatch(ctx, searcherURLs, searcherGRPCConnectionCache, v)
 			if cm != nil {
 				filtered = append(filtered, cm)
 			}
@@ -159,7 +160,7 @@ func matchesAny(val string, matchers []*regexp.Regexp) bool {
 	return false
 }
 
-func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherURLs *endpoint.Map, cm *result.CommitMatch) result.Match {
+func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherURLs *endpoint.Map, searcherGRPCConnectionCache *defaults.ConnectionCache, cm *result.CommitMatch) result.Match {
 	// Skip any commit matches -- we only handle diff matches
 	if cm.DiffPreview == nil {
 		return nil
@@ -172,30 +173,32 @@ func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherU
 
 	// For each pattern specified by file:contains.content(), run a search at
 	// the commit to ensure that the file does, in fact, contain that content.
-	// We cannot do this all at once because searcher does not support complex patterns.
-	// Additionally, we cannot do this in advance because we don't know which commit
-	// we are searching at until we get a result.
+	// We cannot do this in advance because we don't know which commit we are
+	// searching at until we get a result.
+	//
+	// Note: now that searcher supports 'or' patterns, we could combine this into a single query.
 	matchedFileCounts := make(map[string]int)
 	for _, includePattern := range j.includePatterns {
 		patternInfo := search.TextPatternInfo{
-			Pattern:               includePattern,
+			Query: &protocol.PatternNode{
+				Value:    includePattern,
+				IsRegExp: true,
+			},
 			IsCaseSensitive:       j.caseSensitive,
-			IsRegExp:              true,
 			FileMatchLimit:        99999999,
 			Index:                 query.No,
-			IncludePatterns:       []string{query.UnionRegExps(fileNames)},
+			IncludePaths:          []string{query.UnionRegExps(fileNames)},
 			PatternMatchesContent: true,
 		}
 
-		onMatch := func(fms []*protocol.FileMatch) {
-			for _, fm := range fms {
-				matchedFileCounts[fm.Path] += 1
-			}
+		onMatch := func(fm *protocol.FileMatch) {
+			matchedFileCounts[fm.Path] += 1
 		}
 
 		_, err := searcher.Search(
 			ctx,
 			searcherURLs,
+			searcherGRPCConnectionCache,
 			cm.Repo.Name,
 			cm.Repo.ID,
 			"",
@@ -204,6 +207,7 @@ func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherU
 			&patternInfo,
 			time.Hour,
 			search.Features{},
+			0, // we don't care about the actual content, so don't fetch extra lines
 			onMatch,
 		)
 		if err != nil {
@@ -217,8 +221,10 @@ func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherU
 
 func (j *fileContainsFilterJob) removeUnmatchedFileDiffs(cm *result.CommitMatch, matchedFileCounts map[string]int) result.Match {
 	// Ensure the matched ranges are sorted by start offset
-	slices.SortFunc(cm.DiffPreview.MatchedRanges, func(a, b result.Range) bool {
-		return a.Start.Offset < b.End.Offset
+	slices.SortFunc(cm.DiffPreview.MatchedRanges, func(a, b result.Range) int {
+		// TODO(keegancsmith) I changed this from b.End to b.Start since that
+		// matches the comment above.
+		return a.Start.Compare(b.Start)
 	})
 
 	// Convert each file diff to a string so we know how much we are removing if we drop that file

@@ -1,4 +1,6 @@
-// NOTE(naman): Remember to add events to allow list: https://docs.sourcegraph.com/dev/background-information/data-usage-pipeline#allow-list
+import type { AuthProvider } from '../jscontext'
+
+// NOTE(naman): Remember to add events to allow list: https://sourcegraph.com/docs/dev/background-information/data-usage-pipeline#allow-list
 export const enum EventName {
     CODY_CHAT_PAGE_VIEWED = 'web:codyChat:pageViewed',
     CODY_CHAT_SUBMIT = 'web:codyChat:submit',
@@ -19,7 +21,7 @@ export const enum EventName {
 
     CODY_EDITOR_WIDGET_VIEWED = 'web:codyEditorWidget:viewed',
     CODY_SIDEBAR_CHAT_OPENED = 'web:codySidebar:chatOpened',
-    CODY_SIGNUP = 'CodySignup',
+    CODY_SIGNUP_CTA_CLICK = 'CodySignUpCTAClick',
     CODY_CHAT_DOWNLOAD_VSCODE = 'web:codyChat:downloadVSCodeCTA',
     CODY_CHAT_GET_EDITOR_EXTENSION = 'web:codyChat:getEditorExtensionCTA',
     CODY_CHAT_TRY_ON_PUBLIC_CODE = 'web:codyChat:tryOnPublicCodeCTA',
@@ -31,14 +33,45 @@ export const enum EventName {
     TRY_CODY_WEB_ONBOARDING_DISPLAYED = 'TryCodyWebOnboardingDisplayed',
     TRY_CODY_SIGNUP_INITIATED = 'CodySignUpInitiated',
     SPEAK_TO_AN_ENGINEER_CTA = 'SpeakToACodyEngineerCTA',
-    SIGNUP_INITIATED = 'SignupInitiated',
+    AUTH_INITIATED = 'AuthInitiated',
+    SIGNUP_COMPLETED = 'web:auth:signUpCompleted',
+    SINGIN_COMPLETED = 'web:auth:signInCompleted',
 
     JOIN_IDE_WAITLIST = 'JoinIDEWaitlist',
     DOWNLOAD_IDE = 'DownloadIDE',
     DOWNLOAD_APP = 'DownloadApp',
+
+    CODY_EDITOR_SETUP_VIEWED = 'CodyEditorSetUpViewed',
+    CODY_EDITOR_SETUP_OPEN_MARKETPLACE = 'CodyEditorSetUpOpenMarketplace',
+    CODY_EDITOR_FEATURES_VIEWED = 'CodyEditorFeaturesViewed',
+    CODY_MANAGEMENT_PAGE_VIEWED = 'CodyManageViewed',
+    CODY_SUBSCRIPTION_PAGE_VIEWED = 'CodyPlanSelectionViewed',
+    CODY_SUBSCRIPTION_PLAN_CLICKED = 'CodyPlanSelectionClicked',
+    CODY_SUBSCRIPTION_PLAN_CONFIRMED = 'CodyPlanSelectionConfirmed',
+    CODY_SUBSCRIPTION_ADD_CREDIT_CARD_CLICKED = 'CodyAddCreditCard',
+    CODY_MANAGE_SUBSCRIPTION_CLICKED = 'CodyManageSubscriptionClicked',
+    CODY_ONBOARDING_WELCOME_VIEWED = 'CodyWelcomeViewed',
+    CODY_ONBOARDING_PURPOSE_VIEWED = 'CodyUseCaseViewed',
+    CODY_ONBOARDING_PURPOSE_SELECTED = 'CodyUseCaseSelected',
+    CODY_ONBOARDING_CHOOSE_EDITOR_VIEWED = 'CodyEditorViewed',
+    CODY_ONBOARDING_CHOOSE_EDITOR_SKIPPED = 'CodyEditorSkipped',
+    CODY_ONBOARDING_CHOOSE_EDITOR_SELECTED = 'CodyEditorSelected',
 }
 
 export const enum EventLocation {
     NAV_BAR = 'NavBar',
     CHAT_RESPONSE = 'ChatResponse',
+}
+
+export const V2AuthProviderTypes: { [k in AuthProvider['serviceType']]: number } = {
+    github: 0,
+    gitlab: 1,
+    bitbucketCloud: 2,
+    'http-header': 3,
+    openidconnect: 4,
+    'sourcegraph-operator': 5,
+    saml: 6,
+    builtin: 7,
+    gerrit: 8,
+    azuredevops: 9,
 }

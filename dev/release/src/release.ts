@@ -55,7 +55,6 @@ import {
     bakeSrcCliSteps,
     batchChangesInAppChangelog,
     combyReplace,
-    indexerUpdate,
 } from './static-updates'
 import {
     backportStatus,
@@ -77,12 +76,11 @@ import {
     releaseBlockerUri,
     retryInput,
     timezoneLink,
-    updateUpgradeGuides,
+    updateDocsUpgradeGuides,
     validateNoOpenBackports,
     validateNoReleaseBlockers,
     verifyWithInput,
     type ReleaseTag,
-    updateMigratorBazelOuts,
     getContainerRegistryCredential,
 } from './util'
 
@@ -706,21 +704,6 @@ cc @${release.captainGitHubUsername}
                             : defaultPRMessage,
                         title: defaultPRMessage,
                         edits: [
-                            // Update references to Sourcegraph versions in docs
-                            `${sed} -i -E 's/version \`${versionRegex}\`/version \`${release.version.version}\`/g' doc/index.md`,
-                            // Update sourcegraph/server:VERSION everywhere except changelog
-                            `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version.version}/g' {} +`,
-                            // Update Sourcegraph versions in installation guides
-                            `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version.version}"/g' {} +`,
-                            `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E 's/--version ${versionRegex}/--version ${release.version.version}/g' {} +`,
-                            `${sed} -i -E 's/${versionRegex}/${release.version.version}/g' ./doc/admin/executors/deploy_executors_kubernetes.md`,
-                            // Update fork variables in installation guides
-                            `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version.version}'/g" {} +`,
-
-                            notPatchRelease
-                                ? `comby -in-place '{{$previousReleaseRevspec := ":[1]"}} {{$previousReleaseVersion := ":[2]"}} {{$currentReleaseRevspec := ":[3]"}} {{$currentReleaseVersion := ":[4]"}}' '{{$previousReleaseRevspec := ":[3]"}} {{$previousReleaseVersion := ":[4]"}} {{$currentReleaseRevspec := "v${release.version.version}"}} {{$currentReleaseVersion := "${release.version.major}.${release.version.minor}"}}' doc/_resources/templates/document.html`
-                                : `comby -in-place 'currentReleaseRevspec := ":[1]"' 'currentReleaseRevspec := "v${release.version.version}"' doc/_resources/templates/document.html`,
-
                             // Update references to Sourcegraph deployment versions
                             `comby -in-place 'latestReleaseKubernetesBuild = newPingResponse(":[1]")' "latestReleaseKubernetesBuild = newPingResponse(\\"${release.version.version}\\")" internal/updatecheck/handler.go`,
                             `comby -in-place 'latestReleaseDockerServerImageBuild = newPingResponse(":[1]")' "latestReleaseDockerServerImageBuild = newPingResponse(\\"${release.version.version}\\")" internal/updatecheck/handler.go`,
@@ -730,8 +713,6 @@ cc @${release.captainGitHubUsername}
                             notPatchRelease
                                 ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version.version}"' dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
-                            updateUpgradeGuides(release.previous.version, release.version.version),
-                            updateMigratorBazelOuts(release.version.version),
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
@@ -744,6 +725,28 @@ cc @${release.captainGitHubUsername}
                                 return items
                             })()
                         ),
+                    },
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'docs',
+                        base: 'main',
+                        head: `publish-${release.version.version}`,
+                        commitMessage: notPatchRelease
+                            ? `draft sourcegraph@${release.version.version} release`
+                            : defaultPRMessage,
+                        title: defaultPRMessage,
+                        edits: [
+                            // Update sourcegraph/server:VERSION everywhere except changelog
+                            `find . -type f -name '*.mdx' ! -name 'doc/CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version.version}/g' {} +`,
+                            // Update Sourcegraph versions in installation guides
+                            `find ./docs/admin/deploy/ -type f -name '*.mdx' -exec ${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version.version}"/g' {} +`,
+                            `find ./docs/admin/deploy/ -type f -name '*.mdx' -exec ${sed} -i -E 's/--version ${versionRegex}/--version ${release.version.version}/g' {} +`,
+                            // Update fork variables in installation guides
+                            `find ./docs/admin/deploy/ -type f -name '*.mdx' -exec ${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version.version}'/g" {} +`,
+
+                            updateDocsUpgradeGuides(release.previous.version, release.version.version),
+                        ],
+                        ...prBodyAndDraftState([]),
                     },
                     {
                         owner: 'sourcegraph',
@@ -1073,7 +1076,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
     },
     {
         id: 'release:deactivate-release',
-        description: 'Activate a feature release',
+        description: 'De-activate a feature release',
         run: async config => {
             await verifyWithInput('Are you sure you want to deactivate all releases?')
             deactivateAllReleases(config)
@@ -1106,7 +1109,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                     version,
                     'internal/database/migration/shared/data/cmd/generator/consts.go'
                 ),
-                'cd internal/database/migration/shared && go run ./data/cmd/generator --write-frozen=false',
+                `bazel run //dev:write_all_generated`,
             ]
             const srcCliSteps = await bakeSrcCliSteps(config)
 
@@ -1114,14 +1117,12 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 ...multiVersionSteps,
                 ...srcCliSteps,
                 ...batchChangesInAppChangelog(new SemVer(release.version.version).inc('minor'), true), // in the next main branch this will reflect the guessed next version
-                indexerUpdate(),
             ]
 
             const releaseBranchEdits: Edit[] = [
                 ...multiVersionSteps,
                 ...srcCliSteps,
                 ...batchChangesInAppChangelog(release.version, false),
-                indexerUpdate(),
             ]
 
             const prDetails = {
@@ -1131,7 +1132,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             }
 
             const sets = await createChangesets({
-                requiredCommands: ['comby', 'go'],
+                requiredCommands: ['comby', 'go', 'bazel'],
                 changes: [
                     {
                         ...prDetails,
@@ -1354,7 +1355,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         description: 'Test update the upgrade guides',
         argNames: ['previous', 'next', 'dir'],
         run: (config, previous, next, dir) => {
-            updateUpgradeGuides(previous, next)(dir)
+            updateDocsUpgradeGuides(previous, next)(dir)
         },
     },
     {

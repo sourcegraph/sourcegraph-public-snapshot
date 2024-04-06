@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -34,8 +33,6 @@ func InitBackgroundJobs(
 	bstore := store.New(db, observationCtx, key)
 
 	syncRegistry := syncer.NewSyncRegistry(ctx, observationCtx, bstore, cf)
-
-	go goroutine.MonitorBackgroundRoutines(ctx, syncRegistry)
 
 	return syncRegistry
 }

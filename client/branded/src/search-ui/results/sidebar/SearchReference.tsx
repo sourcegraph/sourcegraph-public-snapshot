@@ -248,7 +248,7 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         field: FilterType.rev,
         commonRank: 20,
         description:
-            'Search a revision instead of the default branch. `rev:` can only be used in conjunction with `repo:` and may not be used more than once. See our [revision syntax documentation](https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions) to learn more.',
+            'Search a revision instead of the default branch. `rev:` can only be used in conjunction with `repo:` and may not be used more than once. See our [revision syntax documentation](https://sourcegraph.com/docs/code_search/reference/queries#repository-revisions) to learn more.',
     },
     {
         ...createQueryExampleFromString('{result-types}'),
@@ -265,7 +265,7 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
 - \`select:content\`
 - \`select:symbol.symboltype\`
 
-See [language definition](https://docs.sourcegraph.com/code_search/reference/language#select) for more information on possible values.`,
+See [language definition](https://sourcegraph.com/docs/code_search/reference/language#select) for more information on possible values.`,
         examples: ['fmt.Errorf select:repo', 'select:commit.diff.added //TODO', 'select:file.directory'],
     },
     {

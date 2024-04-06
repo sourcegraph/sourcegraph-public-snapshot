@@ -47,13 +47,12 @@ func TestGitTree_History(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_AUTHOR_DATE=2006-01-02T15:04:05Z GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	repoName := gitserver.MakeGitRepository(t, commands...)
+	oid := api.CommitID("1110324b03e4dc5e98b2543498f44ca269d66d4c")
 
 	ctx := context.Background()
-	gs := gitserver.NewTestClient(t)
+	gs := gitserver.NewMockClientFrom(gitserver.NewTestClient(t))
+	gs.ResolveRevisionFunc.SetDefaultReturn(oid, nil)
 	db := dbmocks.NewMockDB()
-
-	oid, err := gs.ResolveRevision(ctx, repoName, "HEAD", gitserver.ResolveRevisionOptions{})
-	require.NoError(t, err)
 
 	rr := NewRepositoryResolver(db, gs, &types.Repo{Name: repoName})
 	gcr := NewGitCommitResolver(db, gs, rr, oid, nil)
@@ -506,8 +505,8 @@ func testGitTree(t *testing.T, db *dbmocks.MockDB, tests []*Test) {
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.ReposFunc.SetDefaultReturn(repos)
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		assert.Equal(t, api.RepoID(2), repo.ID)
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
+		assert.Equal(t, api.RepoName("github.com/gorilla/mux"), repo)
 		assert.Equal(t, exampleCommitSHA1, rev)
 		return exampleCommitSHA1, nil
 	}

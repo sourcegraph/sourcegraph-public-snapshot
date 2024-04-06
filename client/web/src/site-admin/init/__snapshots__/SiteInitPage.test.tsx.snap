@@ -154,7 +154,7 @@ exports[`SiteInitPage > normal 1`] = `
               By signing up, you agree to our 
               <a
                 class="anchorLink"
-                href="https://about.sourcegraph.com/terms"
+                href="https://sourcegraph.com/terms"
                 rel="noopener"
                 target="_blank"
               >
@@ -163,7 +163,7 @@ exports[`SiteInitPage > normal 1`] = `
                and 
               <a
                 class="anchorLink"
-                href="https://about.sourcegraph.com/privacy"
+                href="https://sourcegraph.com/privacy"
                 rel="noopener"
                 target="_blank"
               >

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/log/logtest"
 	"golang.org/x/oauth2"
 
@@ -20,7 +21,6 @@ func newOauthProvider(oauth2Config oauth2.Config) *oauth.Provider {
 		ProviderOp: oauth.ProviderOp{
 			AuthPrefix:   "/.auth/azuredevops",
 			OAuth2Config: func() oauth2.Config { return oauth2Config },
-			StateConfig:  oauth.GetStateConfig(stateCookie),
 			ServiceID:    "https://dev.azure.com/",
 			ServiceType:  extsvc.TypeAzureDevOps,
 		},
@@ -266,7 +266,7 @@ func TestParseConfig(t *testing.T) {
 			if diff := cmp.Diff(tc.wantProblems, gotProblems.Messages()); diff != "" {
 				t.Errorf("mismatched problems (-want,+got):\n%s", diff)
 			}
-			if diff := cmp.Diff(wantConfigs, gotConfigs); diff != "" {
+			if diff := cmp.Diff(wantConfigs, gotConfigs, cmpopts.IgnoreUnexported(oauth2.Config{})); diff != "" {
 				t.Errorf("mismatched configs (-want,+got):\n%s", diff)
 			}
 		})

@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
@@ -24,8 +23,8 @@ import (
 var (
 	envGitServiceMaxEgressBytesPerSecond = env.Get(
 		"SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND",
-		"1000000000",
-		"Git service egress rate limit in bytes per second (-1 = no limit, default = 1Gbps)")
+		"10000000000",
+		"Git service egress rate limit in bytes per second (-1 = no limit, default = 10Gbps)")
 
 	// gitServiceMaxEgressBytesPerSecond must be retrieved by getGitServiceMaxEgressBytesPerSecond,
 	// which parses envGitServiceMaxEgressBytesPerSecond once and logs any error encountered
@@ -41,7 +40,7 @@ func getGitServiceMaxEgressBytesPerSecond(logger log.Logger) int64 {
 		var err error
 		gitServiceMaxEgressBytesPerSecond, err = strconv.ParseInt(envGitServiceMaxEgressBytesPerSecond, 10, 64)
 		if err != nil {
-			gitServiceMaxEgressBytesPerSecond = 1000 * 1000 * 1000 // 1Gbps
+			gitServiceMaxEgressBytesPerSecond = 10 * 1000 * 1000 * 1000 // 1G0bps
 			logger.Error("failed parsing SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND, defaulting to 1Gbps",
 				log.Int64("bps", gitServiceMaxEgressBytesPerSecond),
 				log.Error(err))
@@ -72,11 +71,11 @@ func flowrateWriter(logger log.Logger, w io.Writer) io.Writer {
 }
 
 func (s *Server) gitServiceHandler() *gitservice.Handler {
-	logger := s.Logger.Scoped("gitServiceHandler")
+	logger := s.logger.Scoped("gitServiceHandler")
 
 	return &gitservice.Handler{
 		Dir: func(d string) string {
-			return string(gitserverfs.RepoDirFromName(s.ReposDir, api.RepoName(d)))
+			return string(s.fs.RepoDir(api.RepoName(d)))
 		},
 
 		ErrorHook: func(err error, stderr string) {

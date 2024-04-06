@@ -45,7 +45,7 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 			wantErr: false,
 		},
 		"real feature, disabled": {
-			feature: string(licensing.FeatureMonitoring),
+			feature: string(licensing.FeatureCodeSearch),
 			mock:    buildMock(&licensing.FeatureBatchChanges{}),
 			want:    false,
 			wantErr: false,
@@ -63,7 +63,7 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 			wantErr: false,
 		},
 		"error from check": {
-			feature: string(licensing.FeatureMonitoring),
+			feature: string(licensing.FeatureCodeSearch),
 			mock: func(feature licensing.Feature) error {
 				return errors.New("this is a different error")
 			},

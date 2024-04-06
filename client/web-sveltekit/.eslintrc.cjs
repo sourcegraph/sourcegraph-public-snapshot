@@ -4,6 +4,8 @@ module.exports = {
     extends: ['../../.eslintrc.js', 'plugin:storybook/recommended'],
     parserOptions: {
         ...baseConfig.parserOptions,
+        // This is set in the root config but doesn't work with Svelte components
+        EXPERIMENTAL_useProjectService: false,
         project: [__dirname + '/tsconfig.json', __dirname + '/src/**/tsconfig.json'],
     },
     plugins: [...baseConfig.plugins, 'svelte3'],

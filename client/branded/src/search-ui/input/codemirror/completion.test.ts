@@ -1,8 +1,8 @@
 import type { Completion } from '@codemirror/autocomplete'
 import { describe, expect, test } from 'vitest'
 
+import { POPULAR_LANGUAGES } from '@sourcegraph/common'
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
-import { POPULAR_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
 import { type ScanResult, scanSearchQuery, type ScanSuccess } from '@sourcegraph/shared/src/search/query/scanner'
 import type { Token } from '@sourcegraph/shared/src/search/query/token'
 import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'

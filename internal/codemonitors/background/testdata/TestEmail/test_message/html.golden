@@ -36,6 +36,6 @@ for a code monitoring result.</pre>
       security, Sourcegraph limits what information is contained in this
       notification.
     </p>
-    <img src="https://about.sourcegraph.com/sourcegraph-logo-small.png" width="106" height="20" alt="Sourcegraph logo" />
+    <img src="https://sourcegraph.com/sourcegraph-logo-small.png" width="106" height="20" alt="Sourcegraph logo" />
   </body>
 </html>

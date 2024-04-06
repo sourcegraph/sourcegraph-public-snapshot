@@ -33,8 +33,8 @@ func NewCompletionsResolver(db database.DB, logger log.Logger) graphqlbackend.Co
 }
 
 func (c *completionsResolver) Completions(ctx context.Context, args graphqlbackend.CompletionsArgs) (_ string, err error) {
-	if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
-		return "", errors.New("cody experimental feature flag is not enabled for current user")
+	if isEnabled, reason := cody.IsCodyEnabled(ctx, c.db); !isEnabled {
+		return "", errors.Newf("cody is not enabled: %s", reason)
 	}
 
 	if err := cody.CheckVerifiedEmailRequirement(ctx, c.db, c.logger); err != nil {
@@ -74,10 +74,13 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", err
 	}
 
+	// GraphQL API is considered a legacy API
+	version := types.CompletionsVersionLegacy
+
 	params := convertParams(args)
 	// No way to configure the model through the request, we hard code to chat.
 	params.Model = chatModel
-	resp, err := client.Complete(ctx, types.CompletionsFeatureChat, params)
+	resp, err := client.Complete(ctx, types.CompletionsFeatureChat, version, params, c.logger)
 	if err != nil {
 		return "", errors.Wrap(err, "client.Complete")
 	}

@@ -10,3 +10,9 @@ jobs:
       - uses: docker://sourcegraph/tracking-issue:latest
         env:
           GITHUB_TOKEN: ${{ secrets.TRACKING_ISSUE_SYNCER_TOKEN_DEVX_BOT }}
+
+  report_failure:
+    needs: sync-tracking-issues
+    if: ${{ failure() }}
+    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@main
+    secrets: inherit

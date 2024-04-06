@@ -19,6 +19,34 @@
       "format": "uri",
       "examples": ["https://dev.azure.com"]
     },
+    "rateLimit": {
+      "description": "Rate limit applied when making background API requests.",
+      "title": "AzureDevOpsRateLimit",
+      "type": "object",
+      "required": ["enabled", "requestsPerHour"],
+      "properties": {
+        "enabled": {
+          "description": "true if rate limiting is enabled.",
+          "type": "boolean",
+          "default": false
+        },
+        "requestsPerHour": {
+          "description": "Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.",
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "default": {
+        "enabled": false,
+        "requestsPerHour": 0
+      }
+    },
+    "gitURLType": {
+      "description": "The type of Git URLs to use for cloning and fetching Git repositories.\n\nIf \"http\", Sourcegraph will access repositories using Git URLs of the form http(s)://dev.azure.com/myrepo.git.\n\nIf \"ssh\", Sourcegraph will access repositories using Git URLs of the form git@ssh.dev.azure.com:v3/myrepo. See the documentation for how to provide SSH private keys and known_hosts: https://sourcegraph.com/docs/admin/repo/auth.",
+      "type": "string",
+      "enum": ["http", "ssh"],
+      "default": "http"
+    },
     "enforcePermissions": {
       "description": "A flag to enforce Azure DevOps repository access permissions",
       "type": "boolean",

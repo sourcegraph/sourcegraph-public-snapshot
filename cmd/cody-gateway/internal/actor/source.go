@@ -7,13 +7,13 @@ import (
 
 	"github.com/go-redsync/redsync/v4"
 	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/sourcegraph/log"
-
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -44,11 +44,27 @@ type Source interface {
 	Get(ctx context.Context, token string) (*Actor, error)
 }
 
+// ErrActorRecentlyUpdated can be used to indicate that an actor cannot be
+// updated because it was already updated more recently than allowed by a
+// Source implementation.
+type ErrActorRecentlyUpdated struct {
+	RetryAt time.Time
+}
+
+func (e ErrActorRecentlyUpdated) Error() string {
+	return fmt.Sprintf("actor was recently updated - try again in %s",
+		time.Until(e.RetryAt).Truncate(time.Second).String())
+}
+
+func IsErrActorRecentlyUpdated(err error) bool { return errors.As(err, &ErrActorRecentlyUpdated{}) }
+
 type SourceUpdater interface {
 	Source
 	// Update updates the given actor's state, though the implementation may
 	// decide not to do so every time.
-	Update(ctx context.Context, actor *Actor)
+	//
+	// Error can be ErrActorRecentlyUpdated if the actor was updated too recently.
+	Update(ctx context.Context, actor *Actor) error
 }
 
 type SourceSyncer interface {
@@ -297,10 +313,25 @@ func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 
 			return err
 		}
-		// We've succesfully extended the lock, continue!
+		// We've successfully extended the lock, continue!
 		span.SetAttributes(attribute.Bool("lock.extended", true))
 	}
 
 	handleLogger.Info("Running sources sync")
 	return s.sources.SyncAll(ctx, handleLogger)
 }
+
+type FakeSource struct {
+	SourceName codygateway.ActorSource
+}
+
+func (m FakeSource) Name() string {
+	return string(m.SourceName)
+}
+
+func (m FakeSource) Get(_ context.Context, _ string) (*Actor, error) {
+	// TODO implement me
+	panic("implement me")
+}
+
+var _ Source = FakeSource{}

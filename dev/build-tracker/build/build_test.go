@@ -125,7 +125,7 @@ func TestBuildFailedJobs(t *testing.T) {
 	buildState := "done"
 	pipeline := "bobheadxi"
 	exitCode := 1
-	jobState := JobFinishedState
+	jobState := JobFailedState
 	eventFailed := func(name string, buildNumber int) *Event {
 		return &Event{
 			Name:     EventJobFinished,

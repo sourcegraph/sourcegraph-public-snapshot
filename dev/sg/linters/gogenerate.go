@@ -2,7 +2,6 @@ package linters
 
 import (
 	"context"
-	"os"
 	"strings"
 
 	"github.com/sourcegraph/run"
@@ -33,12 +32,7 @@ var goGenerateLinter = &linter{
 		if err != nil && strings.TrimSpace(diffOutput) != "" {
 			out.WriteWarningf("Uncommitted changes found after running go generate:")
 			out.Write(strings.TrimSpace(diffOutput))
-			// Reset repo state
-			if os.Getenv("CI") == "true" {
-				root.Run(run.Bash(ctx, "git add . && git reset HEAD --hard")).Wait()
-			} else {
-				out.WriteWarningf("Generated changes are left in the tree, skipping reseting state because not in CI")
-			}
+			out.WriteWarningf("Generated changes are left in the tree")
 		}
 
 		return err

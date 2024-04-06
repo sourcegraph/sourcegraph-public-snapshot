@@ -3,19 +3,14 @@ import React, { useCallback, useEffect } from 'react'
 import { mdiClose, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import {
-    type QueryState,
-    type SearchContextProps,
-    SearchMode,
-    type SubmitSearchParameters,
-} from '@sourcegraph/shared/src/search'
+import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { NoResultsSectionID as SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Icon, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { QueryExamples } from '../components/QueryExamples'
-import { SmartSearchPreview } from '../components/SmartSearchPreview'
 
 import { AnnotatedSearchInput } from './AnnotatedSearchExample'
 
@@ -52,13 +47,8 @@ const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>
 interface NoResultsPageProps extends TelemetryProps, Pick<SearchContextProps, 'searchContextsEnabled'> {
     isSourcegraphDotCom: boolean
     showSearchContext: boolean
+    queryExamplesPatternType: SearchPatternType
     showQueryExamples?: boolean
-    setQueryState?: (query: QueryState) => void
-    searchMode?: SearchMode
-    setSearchMode?: (mode: SearchMode) => void
-    submitSearch?: (parameters: SubmitSearchParameters) => void
-    searchQueryFromURL?: string
-    caseSensitive?: boolean
     selectedSearchContextSpec?: string
 }
 
@@ -68,13 +58,8 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
     isSourcegraphDotCom,
     showSearchContext,
     showQueryExamples,
-    setQueryState,
-    searchMode,
-    setSearchMode,
-    submitSearch,
-    caseSensitive,
-    searchQueryFromURL,
     selectedSearchContextSpec,
+    queryExamplesPatternType,
 }) => {
     const [hiddenSectionIDs, setHiddenSectionIds] = useTemporarySetting('search.hiddenNoResultsSections')
 
@@ -94,20 +79,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
     return (
         <div className={styles.root}>
-            {searchMode !== SearchMode.SmartSearch &&
-                setSearchMode &&
-                submitSearch &&
-                typeof caseSensitive === 'boolean' &&
-                searchQueryFromURL && (
-                    <SmartSearchPreview
-                        setSearchMode={setSearchMode}
-                        submitSearch={submitSearch}
-                        caseSensitive={caseSensitive}
-                        searchQueryFromURL={searchQueryFromURL}
-                    />
-                )}
-
-            {showQueryExamples && setQueryState && (
+            {showQueryExamples && (
                 <>
                     <H3 as={H2}>Search basics</H3>
                     <div className={styles.queryExamplesContainer}>
@@ -115,6 +87,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             telemetryService={telemetryService}
                             isSourcegraphDotCom={isSourcegraphDotCom}
+                            patternType={queryExamplesPatternType}
                         />
                     </div>
                 </>
@@ -135,7 +108,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                             <Link
                                 onClick={() => telemetryService.log('NoResultsMore', { link: 'Docs' })}
                                 target="blank"
-                                to="https://docs.sourcegraph.com/"
+                                to="https://sourcegraph.com/docs/"
                             >
                                 Sourcegraph Docs <Icon svgPath={mdiOpenInNew} aria-label="Open in a new tab" />
                             </Link>

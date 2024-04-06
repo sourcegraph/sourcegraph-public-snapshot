@@ -18,6 +18,49 @@ In addition, there is one more field for configuring which repositories are mirr
 - [`teams`](bitbucket_cloud.md#configuration)<br>A list of teams (workspaces) that the configured user has access to whose repositories should be synced.
 - [`exclude`](bitbucket_cloud.md#configuration)<br>A list of repositories to exclude, which takes precedence over the `teams` field.
 
+## Configuration options
+
+Bitbucket Cloud code host connections can be configured with either a username and app password combination, or with workspace access tokens.
+
+### Username and app password
+
+1. Visit your [Bitbucket account settings page](https://bitbucket.org/account/settings).
+2. Navigate to **App passwords**.
+3. Select **Create app password**.
+4. Give your app password a label.
+5. Select the `Projects: Read` permission. `Repositories: Read` should automatically be selected.
+6. Press **Create**.
+
+Use the newly created app password and your username to configure the Bitbucket Cloud connection:
+
+```json
+{
+  "url": "https://bitbucket.org",
+  "username": "USERNAME",
+  "appPassword": "<PASSWORD>",
+  // ... other settings
+}
+```
+
+### Workspace access token
+
+1. Visit the Bitbucket Cloud workspace settings page of the workspace you want to create an access token for.
+2. Navigate to **Security > Access tokens**.
+3. Press **Create workspace access token**.
+4. Give your access token a name.
+5. Select the `Projects: Read` permission. `Repositories: Read` should automatically be selected.
+6. Press **Create**.
+
+Use the newly created access token to configure the Bitbucket Cloud connection:
+
+```json
+{
+  "url": "https://bitbucket.org",
+  "accessToken": "ACCESS_TOKEN",
+  // ... other settings
+}
+```
+
 ### HTTPS cloning
 
 Sourcegraph clones repositories from your Bitbucket Cloud via HTTP(S), using the [`username`](bitbucket_cloud.md#configuration) and [`appPassword`](bitbucket_cloud.md#configuration) required fields you provide in the configuration.

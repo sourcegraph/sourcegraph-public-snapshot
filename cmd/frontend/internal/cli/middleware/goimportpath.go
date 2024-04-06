@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"html/template"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"net/http"
 	"path"
 	"strings"

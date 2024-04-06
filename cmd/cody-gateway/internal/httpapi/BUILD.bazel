@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -5,6 +6,7 @@ go_library(
     srcs = [
         "diagnostics.go",
         "handler.go",
+        "maintenance.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi",
     visibility = ["//cmd/cody-gateway:__subpackages__"],
@@ -12,21 +14,26 @@ go_library(
         "//cmd/cody-gateway/internal/actor",
         "//cmd/cody-gateway/internal/auth",
         "//cmd/cody-gateway/internal/events",
+        "//cmd/cody-gateway/internal/httpapi/attribution",
         "//cmd/cody-gateway/internal/httpapi/completions",
         "//cmd/cody-gateway/internal/httpapi/embeddings",
         "//cmd/cody-gateway/internal/httpapi/featurelimiter",
+        "//cmd/cody-gateway/internal/httpapi/overhead",
         "//cmd/cody-gateway/internal/httpapi/requestlogger",
         "//cmd/cody-gateway/internal/limiter",
         "//cmd/cody-gateway/internal/notify",
         "//cmd/cody-gateway/internal/response",
+        "//cmd/cody-gateway/shared/config",
         "//internal/authbearer",
         "//internal/httpcli",
         "//internal/instrumentation",
         "//internal/redispool",
+        "//internal/sams",
         "//internal/trace",
         "//internal/version",
         "//lib/errors",
         "@com_github_gorilla_mux//:mux",
+        "@com_github_khan_genqlient//graphql",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//hook",
         "@com_github_sourcegraph_log//output",
@@ -34,5 +41,21 @@ go_library(
         "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel_metric//:metric",
+        "@org_golang_x_oauth2//clientcredentials",
+    ],
+)
+
+go_test(
+    name = "httpapi_test",
+    srcs = ["maintenance_test.go"],
+    embed = [":httpapi"],
+    deps = [
+        "//cmd/cody-gateway/shared/config",
+        "//internal/redispool",
+        "//internal/sams",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

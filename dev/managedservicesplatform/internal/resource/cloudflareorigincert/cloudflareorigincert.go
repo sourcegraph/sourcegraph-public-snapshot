@@ -36,11 +36,11 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 
 				PrivateKey: &gsmsecret.Get(scope, id.Group("secret-origin-private-key"), gsmsecret.DataConfig{
 					Secret:    googlesecretsmanager.SecretSourcegraphWildcardKey,
-					ProjectID: googlesecretsmanager.ProjectID,
+					ProjectID: googlesecretsmanager.SharedSecretsProjectID,
 				}).Value,
 				Certificate: &gsmsecret.Get(scope, id.Group("secret-origin-cert"), gsmsecret.DataConfig{
 					Secret:    googlesecretsmanager.SecretSourcegraphWildcardCert,
-					ProjectID: googlesecretsmanager.ProjectID,
+					ProjectID: googlesecretsmanager.SharedSecretsProjectID,
 				}).Value,
 
 				Lifecycle: &cdktf.TerraformResourceLifecycle{
