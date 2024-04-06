@@ -2,7 +2,7 @@
 import 'dart:math';
 
 // Classes and Objects
-class Person {
+sealed class Person {
   String name;
   int age;
 
@@ -12,6 +12,7 @@ class Person {
     print("Hello, my name is $name and I'm $age years old.");
   }
 }
+
 
 // Enums
 enum Status { active, inactive, suspended }
@@ -74,6 +75,10 @@ void main() {
   fetchData().then((value) => print(value));
 
   printData();
+}
+
+(String, int) userInfo(Map<String, dynamic> json) {
+  return (json['name'] as String, json['height'] as int);
 }
 
 // Async Programming (Future)

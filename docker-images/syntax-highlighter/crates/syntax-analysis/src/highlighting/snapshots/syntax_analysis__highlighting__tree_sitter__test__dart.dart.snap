@@ -13,9 +13,10 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   
   // Classes and Objects
 //^^^^^^^^^^^^^^^^^^^^^^ Comment
-  class Person {
-//^^^^^ Keyword
-//      ^^^^^^ IdentifierType
+  sealed class Person {
+//^^^^^^ Keyword
+//       ^^^^^ Keyword
+//             ^^^^^^ IdentifierType
     String name;
 //  ^^^^^^ IdentifierType
 //         ^^^^ IdentifierAttribute
@@ -47,6 +48,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                                            ^ PunctuationDelimiter
     }
   }
+  
   
   // Enums
 //^^^^^^^^ Comment
@@ -324,6 +326,24 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
     printData();
 //  ^^^^^^^^^ IdentifierFunction
 //             ^ PunctuationDelimiter
+  }
+  
+  (String, int) userInfo(Map<String, dynamic> json) {
+//       ^ PunctuationDelimiter
+//         ^^^ IdentifierConstant
+//                          ^ IdentifierOperator
+//                                 ^ PunctuationDelimiter
+//                                   ^^^^^^^ Identifier
+//                                          ^ IdentifierOperator
+    return (json['name'] as String, json['height'] as int);
+//  ^^^^^^ Keyword
+//                       ^^ Keyword
+//                          ^^^^^^ IdentifierConstant
+//                                ^ PunctuationDelimiter
+//                                  ^^^^ IdentifierConstant
+//                                                 ^^ Keyword
+//                                                    ^^^ IdentifierBuiltinType
+//                                                        ^ PunctuationDelimiter
   }
   
   // Async Programming (Future)
