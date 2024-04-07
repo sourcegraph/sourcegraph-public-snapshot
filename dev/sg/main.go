@@ -390,8 +390,6 @@ func watchConfig(ctx context.Context) (<-chan *sgconf.Config, error) {
 				close(output)
 				return
 			case <-updates:
-				var conf *sgconf.Config
-
 				conf, err = sgconf.GetUnbuffered(configFile, configOverwriteFile, disableOverwrite)
 				if err != nil {
 					std.Out.WriteWarningf("Failed to reload configuration: %s", err)

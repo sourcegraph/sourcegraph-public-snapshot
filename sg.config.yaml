@@ -136,16 +136,6 @@ env:
   EXTSVC_CONFIG_ALLOW_EDITS: true
 
 commands:
-  toy:
-    cmd: |
-      echo starting
-      sleep 10000
-    install: |
-      echo "going to install"
-      # sleep 5
-      # exit 1
-      exit 0
-
   server:
     description: Run an all-in-one sourcegraph/server image
     cmd: ./dev/run-server-image.sh
@@ -1359,15 +1349,6 @@ commandsets:
     env:
       DISABLE_CODE_INSIGHTS_HISTORICAL: false
       DISABLE_CODE_INSIGHTS: false
-
-  simple:
-    checks:
-      - dev-private
-    commands:
-      - caddy
-      - toy
-    bazelCommands:
-      - blobstore
 
   enterprise-e2e:
     <<: *enterprise_set
