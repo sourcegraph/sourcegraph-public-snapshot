@@ -1,7 +1,6 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import type { PathMatch } from '$lib/shared'
 
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
@@ -13,7 +12,6 @@
 </script>
 
 <SearchResult>
-    <CodeHostIcon slot="icon" repository={result.repository} />
     <FileSearchResultHeader slot="title" {result} />
     <svelte:fragment slot="info">
         {#if result.repoStars}

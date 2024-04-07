@@ -1,5 +1,5 @@
 <script lang="ts" context="module">
-    import { mdiBitbucket, mdiGithub, mdiGitlab } from '@mdi/js'
+    import { mdiBitbucket, mdiGithub, mdiGitlab, mdiSourceRepository } from '@mdi/js'
 
     const iconMap: { [key: string]: string } = {
         'github.com': mdiGithub,
@@ -16,7 +16,7 @@
     export let disableTooltip: boolean = false
 
     $: hostName = repository.split('/')[0]
-    $: svgPath = iconMap[hostName]
+    $: svgPath = iconMap[hostName] ?? mdiSourceRepository
 </script>
 
 {#if svgPath}

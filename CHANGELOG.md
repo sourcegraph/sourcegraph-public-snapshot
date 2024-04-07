@@ -13,7 +13,13 @@ All notable changes to Sourcegraph are documented in this file.
 
 <!-- START CHANGELOG -->
 
-## Unreleased (Monthly Release - April 5th, 2024)
+## Unreleased
+
+- Added syntax highlighting for the [PKl](https://pkl-lang.org/) configuration language. [#61478](https://github.com/sourcegraph/sourcegraph/pull/61478)
+
+## Unreleased (April Patch Release - 22nd April, 2024)
+
+## 5.3.9104
 
 ### Added
 
@@ -32,6 +38,7 @@ All notable changes to Sourcegraph are documented in this file.
 - GitHub apps installation records will only be deleted from the database if the GitHub App has been uninstalled or if the GitHub app has been deleted. [#60460](https://github.com/sourcegraph/sourcegraph/pull/60460)
 - The Anthropic provider for Cody has been updated to use the messages API which includes support for Claude 3 models. This is applicable to both BYOK and Cody Gateway users. The messages API does not support model identifiers which only set a major model version such as: `claude-2`, `claude-instant-v1` and `claude-instant-1`. Default values have been updated to `claude-2.0` and `claude-instant-1.2`, any legacy models identifiers in the site config will be set to the corresponding default previously mentioned. [#60953](https://github.com/sourcegraph/sourcegraph/pull/60953) [#61324](https://github.com/sourcegraph/sourcegraph/pull/61324)
 - The AWS Bedrock provider for Cody has been updated to use Anthropic's Messages API, bringing support for Claude 3 models. [#61347](https://github.com/sourcegraph/sourcegraph/pull/61347)
+- Notices configured in the site config now allow for specifying a style or color. [#61338](https://github.com/sourcegraph/sourcegraph/pull/61338)
 
 ### Fixed
 
@@ -41,7 +48,10 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where repositories with a name ending in `.git` failed to clone. [#60627](https://github.com/sourcegraph/sourcegraph/pull/60627)
 - Fixed an issue where Sourcegraph could lose track of repositories on gitserver, leaving behind unnecessary data and inconsistent clone status in the UI. [#60627](https://github.com/sourcegraph/sourcegraph/pull/60627)
 - The "Commits" button in repository and folder pages links to commits in the current revision instead of in the default branch. [#61408](https://github.com/sourcegraph/sourcegraph/pull/61408)
+- Fixed an issue where code insights queries would fail if there are more than 65535 restricted repositories and regular expressions. [#61580](https://github.com/sourcegraph/sourcegraph/pull/61580)
 - The "Commits" button in repository and folder pages uses Perforce language and links to `/-/changelists` for Perforce depots when the experimental feature `perforceChangelistMapping` is enabled. [#61408](https://github.com/sourcegraph/sourcegraph/pull/61408)
+- Selecting "View blame prior to this change" on a file that was moved will now correctly navigate to the old file location at the specified commit. [#61577](https://github.com/sourcegraph/sourcegraph/pull/61577)
+- Git blame performance on large files with a large number of commits has been drastically improved. [#61577](https://github.com/sourcegraph/sourcegraph/pull/61577)
 - Code Insights now properly ignores search API alerts, which previously would have led to a code insight error. [#61431](https://github.com/sourcegraph/sourcegraph/pull/61431)
 
 ## 5.3.3

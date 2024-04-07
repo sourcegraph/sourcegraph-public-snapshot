@@ -28,6 +28,10 @@ type Config struct {
 	OtelSDKDisabled bool
 }
 
+// meter should be used for instrumenting the OpenTelemetry SDK with metrics,
+// as the SDK provides none by default.
+var meter = otel.GetMeterProvider().Meter("msp/runtime/opentelemetry")
+
 // Init initializes OpenTelemetry integrations. If config.GCPProjectID is set,
 // all OpenTelemetry integrations will point to a GCP exporter - otherwise, a
 // local dev default is chosen:
@@ -44,18 +48,20 @@ func Init(ctx context.Context, logger log.Logger, config Config, r log.Resource)
 	otel.SetTextMapPropagator(defaultPropagator())
 
 	// Set logging hooks.
+	skippedLogger := logger.AddCallerSkip(1)
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
-		if config.GCPProjectID != "" {
-			logger.Error("OpenTelemetry error", log.Error(err))
-		} else {
-			logger.Warn("OpenTelemetry error", log.Error(err))
-		}
+		// Don't surface as error logs, as a lot of errors are transient and/or
+		// noisy - instead, rely on metrics through custom instrumentation, as
+		// the SDK generally provides non by default.
+		skippedLogger.Warn("OpenTelemetry error", log.Error(err))
 	}))
 	if config.GCPProjectID != "" {
+		// Set up an internal logger as well in production to capture internal
+		// OTEL diagnostics.
 		otel.SetLogger(
 			// logr library levels are annoying to deal with, so we just use
 			// a single level (info), as it's all diagnostics output to us anyway.
-			logr.New(stdr.New(std.NewLogger(logger, log.LevelInfo)).GetSink()),
+			logr.New(stdr.New(std.NewLogger(skippedLogger.AddCallerSkip(1), log.LevelInfo)).GetSink()),
 		)
 	}
 
@@ -64,12 +70,12 @@ func Init(ctx context.Context, logger log.Logger, config Config, r log.Resource)
 		return nil, errors.Wrap(err, "init resource")
 	}
 
-	shutdownTracing, err := maybeEnableTracing(ctx, logger.Scoped("tracing"), config, res)
+	shutdownTracing, err := configureTracing(ctx, logger.Scoped("tracing"), config, res)
 	if err != nil {
 		return nil, errors.Wrap(err, "enable tracing")
 	}
 
-	shutdownMetrics, err := maybeEnableMetrics(ctx, logger.Scoped("metrics"), config, res)
+	shutdownMetrics, err := configureMetrics(ctx, logger.Scoped("metrics"), config, res)
 	if err != nil {
 		return nil, errors.Wrap(err, "enable metrics")
 	}
