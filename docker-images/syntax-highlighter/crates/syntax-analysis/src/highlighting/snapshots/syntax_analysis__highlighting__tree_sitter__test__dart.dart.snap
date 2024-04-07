@@ -5,10 +5,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   // Libraries and Imports
 //^^^^^^^^^^^^^^^^^^^^^^^^ Comment
   import 'dart:math';
-//^^^^^^ IdentifierType
-//        ^^^^ Identifier
-//            ^ IdentifierOperator
-//             ^^^^ Identifier
+//^^^^^^ Keyword
+//       ^^^^^^^^^^^ StringLiteral
 //                  ^ PunctuationDelimiter
   
   // Classes and Objects
@@ -19,32 +17,34 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //             ^^^^^^ IdentifierType
     String name;
 //  ^^^^^^ IdentifierType
-//         ^^^^ IdentifierAttribute
+//         ^^^^ Identifier
 //             ^ PunctuationDelimiter
     int age;
-//  ^^^ IdentifierBuiltinType
-//      ^^^ IdentifierAttribute
+//  ^^^ IdentifierType
+//      ^^^ Identifier
 //         ^ PunctuationDelimiter
   
     Person(this.name, this.age);
 //  ^^^^^^ IdentifierType
-//         ^^^^ Keyword
+//         ^^^^ IdentifierBuiltin
 //             ^ PunctuationDelimiter
-//              ^^^^ IdentifierParameter
+//              ^^^^ Identifier
 //                  ^ PunctuationDelimiter
-//                    ^^^^ Keyword
+//                    ^^^^ IdentifierBuiltin
 //                        ^ PunctuationDelimiter
-//                         ^^^ IdentifierParameter
+//                         ^^^ Identifier
 //                             ^ PunctuationDelimiter
   
     void sayHello() {
-//  ^^^^ IdentifierBuiltin
+//  ^^^^ Keyword
 //       ^^^^^^^^ IdentifierFunction
       print("Hello, my name is $name and I'm $age years old.");
 //    ^^^^^ IdentifierFunction
-//          ^ StringLiteral
-//           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
-//                                                          ^ StringLiteral
+//          ^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                              ^^^^ Identifier
+//                                  ^^^^^^^^^ StringLiteral
+//                                            ^^^ Identifier
+//                                               ^^^^^^^^^^^^ StringLiteral
 //                                                            ^ PunctuationDelimiter
     }
   }
@@ -62,31 +62,33 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                ^^^^^^^^^ IdentifierConstant
   
   void main() {
+//^^^^ Keyword
+//     ^^^^ IdentifierFunction
     // Variables and Data Types
 //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
     int age = 30;
-//  ^^^ IdentifierConstant
+//  ^^^ IdentifierType
+//      ^^^ Identifier
 //          ^ IdentifierOperator
 //            ^^ NumericLiteral
 //              ^ PunctuationDelimiter
     double pi = 3.14;
-//  ^^^^^^ IdentifierBuiltinType
+//  ^^^^^^ IdentifierType
 //         ^^ Identifier
 //            ^ IdentifierOperator
 //              ^^^^ NumericLiteral
 //                  ^ PunctuationDelimiter
     String name = "John Doe";
+//  ^^^^^^ IdentifierType
 //         ^^^^ Identifier
 //              ^ IdentifierOperator
-//                ^ StringLiteral
-//                 ^^^^^^^^ StringLiteral
-//                         ^ StringLiteral
+//                ^^^^^^^^^^ StringLiteral
 //                          ^ PunctuationDelimiter
     bool isStudent = true;
-//  ^^^^ IdentifierBuiltinType
+//  ^^^^ IdentifierType
 //       ^^^^^^^^^ Identifier
 //                 ^ IdentifierOperator
-//                   ^^^^ IdentifierBuiltin
+//                   ^^^^ Keyword
 //                       ^ PunctuationDelimiter
   
     // Conditional Statements
@@ -98,45 +100,42 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //            ^^ NumericLiteral
       print("You are an adult");
 //    ^^^^^ IdentifierFunction
-//          ^ StringLiteral
-//           ^^^^^^^^^^^^^^^^ StringLiteral
-//                           ^ StringLiteral
+//          ^^^^^^^^^^^^^^^^^^ StringLiteral
 //                             ^ PunctuationDelimiter
     } else {
+//    ^^^^ Keyword
       print("You are a minor");
 //    ^^^^^ IdentifierFunction
-//          ^ StringLiteral
-//           ^^^^^^^^^^^^^^^ StringLiteral
-//                          ^ StringLiteral
+//          ^^^^^^^^^^^^^^^^^ StringLiteral
 //                            ^ PunctuationDelimiter
     }
   
     // Loops
 //  ^^^^^^^^ Comment
     for (int i = 0; i < 5; i++) {
-//  ^^^ IdentifierFunction
-//       ^^^ IdentifierBuiltinType
+//  ^^^ Keyword
+//       ^^^ IdentifierType
 //           ^ Identifier
 //             ^ IdentifierOperator
 //               ^ NumericLiteral
 //                ^ PunctuationDelimiter
+//                  ^ Identifier
 //                    ^ IdentifierOperator
 //                      ^ NumericLiteral
 //                       ^ PunctuationDelimiter
+//                         ^ Identifier
 //                          ^^ IdentifierOperator
       print("Count: $i");
 //    ^^^^^ IdentifierFunction
-//          ^ StringLiteral
-//           ^^^^^^^^^ StringLiteral
+//          ^^^^^^^^ StringLiteral
+//                   ^ Identifier
 //                    ^ StringLiteral
 //                      ^ PunctuationDelimiter
     }
   
     List<String> fruits = ['apple', 'banana', 'cherry'];
-//  ^^^^ Identifier
-//      ^ IdentifierOperator
-//       ^^^^^^ Identifier
-//             ^ IdentifierOperator
+//  ^^^^ IdentifierType
+//       ^^^^^^ IdentifierType
 //               ^^^^^^ Identifier
 //                      ^ IdentifierOperator
 //                         ^^^^^^^ StringLiteral
@@ -147,13 +146,14 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                                     ^ PunctuationDelimiter
     for (String fruit in fruits) {
 //  ^^^ Keyword
-//       ^^^^^^ Identifier
+//       ^^^^^^ IdentifierType
 //              ^^^^^ Identifier
 //                    ^^ Keyword
+//                       ^^^^^^ Identifier
       print("Fruit: $fruit");
 //    ^^^^^ IdentifierFunction
-//          ^ StringLiteral
-//           ^^^^^^^^^^^^^ StringLiteral
+//          ^^^^^^^^ StringLiteral
+//                   ^^^^^ Identifier
 //                        ^ StringLiteral
 //                          ^ PunctuationDelimiter
     }
@@ -161,14 +161,14 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
     // Functions
 //  ^^^^^^^^^^^^ Comment
     int add(int a, int b) {
+//  ^^^ IdentifierType
 //      ^^^ IdentifierFunction
-//          ^^^ IdentifierBuiltinType
-//              ^ Identifier
+//          ^^^ IdentifierType
 //               ^ PunctuationDelimiter
-//                 ^^^ IdentifierBuiltinType
-//                     ^ Identifier
+//                 ^^^ IdentifierType
       return a + b;
-//    ^^^^^^ Identifier
+//    ^^^^^^ Keyword
+//           ^ Identifier
 //             ^ IdentifierOperator
 //               ^ Identifier
 //                ^ PunctuationDelimiter
@@ -176,18 +176,21 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   
     print("Sum: ${add(5, 3)}");
 //  ^^^^^ IdentifierFunction
-//        ^ StringLiteral
-//         ^^^^^^^^^^^^^^^^^ StringLiteral
+//        ^^^^^^ StringLiteral
+//                ^^^ IdentifierFunction
+//                    ^ NumericLiteral
+//                     ^ PunctuationDelimiter
+//                      ^ StringLiteral
+//                       ^ NumericLiteral
 //                          ^ StringLiteral
 //                            ^ PunctuationDelimiter
   
     final person = Person("Alice", 25);
+//  ^^^^^ Keyword
 //        ^^^^^^ Identifier
 //               ^ IdentifierOperator
-//                 ^^^^^^ IdentifierFunction
-//                        ^ StringLiteral
-//                         ^^^^^ StringLiteral
-//                              ^ StringLiteral
+//                 ^^^^^^ IdentifierType
+//                        ^^^^^^^ StringLiteral
 //                               ^ PunctuationDelimiter
 //                                 ^^ NumericLiteral
 //                                    ^ PunctuationDelimiter
@@ -203,9 +206,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //  ^^^ Keyword
 //      ^^^^^^^ Identifier
 //              ^ IdentifierOperator
-//                ^ IdentifierOperator
-//                 ^^^ IdentifierBuiltinType
-//                    ^ IdentifierOperator
+//                 ^^^ IdentifierType
 //                      ^ NumericLiteral
 //                       ^ PunctuationDelimiter
 //                         ^ NumericLiteral
@@ -225,24 +226,18 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   
     Map<String, String> capitals = {'USA': 'Washington, D.C.', 'France': 'Paris'};
 //  ^^^ IdentifierType
-//     ^ IdentifierOperator
 //      ^^^^^^ IdentifierType
 //            ^ PunctuationDelimiter
 //              ^^^^^^ IdentifierType
-//                    ^ IdentifierOperator
 //                      ^^^^^^^^ Identifier
 //                               ^ IdentifierOperator
 //                                  ^^^^^ StringLiteral
 //                                       ^ IdentifierOperator
-//                                          ^^^^^^^^^^ Identifier
-//                                                    ^ PunctuationDelimiter
-//                                                      ^ Identifier
-//                                                       ^ PunctuationDelimiter
-//                                                        ^ IdentifierAttribute
-//                                                         ^ PunctuationDelimiter
+//                                         ^^^^^^^^^^^^^^^^^^ StringLiteral
 //                                                           ^ PunctuationDelimiter
 //                                                             ^^^^^^^^ StringLiteral
 //                                                                     ^ IdentifierOperator
+//                                                                       ^^^^^^^ StringLiteral
 //                                                                               ^ PunctuationDelimiter
     capitals['Germany'] = 'Berlin';
 //  ^^^^^^^^ Identifier
@@ -256,58 +251,57 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
     try {
 //  ^^^ Keyword
       int result = 12 ~/ 0;
-//    ^^^ IdentifierBuiltinType
+//    ^^^ IdentifierType
 //        ^^^^^^ Identifier
 //               ^ IdentifierOperator
 //                 ^^ NumericLiteral
-//                    ^ IdentifierOperator
-//                     ^ IdentifierOperator
 //                       ^ NumericLiteral
 //                        ^ PunctuationDelimiter
       print("Result: $result");
 //    ^^^^^ IdentifierFunction
-//          ^ StringLiteral
-//           ^^^^^^^^^^^^^^^ StringLiteral
+//          ^^^^^^^^^ StringLiteral
+//                    ^^^^^^ Identifier
 //                          ^ StringLiteral
 //                            ^ PunctuationDelimiter
     } catch (e) {
-//    ^^^^^ IdentifierFunction
+//    ^^^^^ Keyword
 //           ^ Identifier
       print("Error: $e");
 //    ^^^^^ IdentifierFunction
-//          ^ StringLiteral
-//           ^^^^^^^^^ StringLiteral
+//          ^^^^^^^^ StringLiteral
+//                   ^ Identifier
 //                    ^ StringLiteral
 //                      ^ PunctuationDelimiter
     }
   
     Status userStatus = Status.active;
+//  ^^^^^^ IdentifierType
 //         ^^^^^^^^^^ Identifier
 //                    ^ IdentifierOperator
-//                      ^^^^^^ Identifier
+//                      ^^^^^^ IdentifierType
 //                            ^ PunctuationDelimiter
-//                             ^^^^^^ IdentifierAttribute
+//                             ^^^^^^ Identifier
 //                                   ^ PunctuationDelimiter
     print("User Status: $userStatus");
 //  ^^^^^ IdentifierFunction
-//        ^ StringLiteral
-//         ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//        ^^^^^^^^^^^^^^ StringLiteral
+//                       ^^^^^^^^^^ Identifier
 //                                 ^ StringLiteral
 //                                   ^ PunctuationDelimiter
   
     int random = Random().nextInt(100);
-//  ^^^ IdentifierBuiltinType
+//  ^^^ IdentifierType
 //      ^^^^^^ Identifier
 //             ^ IdentifierOperator
-//               ^^^^^^ IdentifierFunction
+//               ^^^^^^ IdentifierType
 //                       ^ PunctuationDelimiter
-//                        ^^^^^^^ IdentifierFunction
+//                        ^^^^^^^ Identifier
 //                                ^^^ NumericLiteral
 //                                    ^ PunctuationDelimiter
     print("Random Number: $random");
 //  ^^^^^ IdentifierFunction
-//        ^ StringLiteral
-//         ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//        ^^^^^^^^^^^^^^^^ StringLiteral
+//                         ^^^^^^ Identifier
 //                               ^ StringLiteral
 //                                 ^ PunctuationDelimiter
   
@@ -315,10 +309,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //  ^^^^^^^^^ IdentifierFunction
 //             ^ PunctuationDelimiter
 //              ^^^^ IdentifierFunction
-//                    ^^^^^ IdentifierParameter
-//                          ^ Identifier
+//                    ^^^^^ Identifier
 //                           ^^ IdentifierOperator
-//                             ^ Identifier
 //                              ^^^^^ IdentifierFunction
 //                                    ^^^^^ Identifier
 //                                           ^ PunctuationDelimiter
@@ -329,47 +321,55 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   }
   
   (String, int) userInfo(Map<String, dynamic> json) {
+// ^^^^^^ IdentifierType
 //       ^ PunctuationDelimiter
-//         ^^^ IdentifierConstant
-//                          ^ IdentifierOperator
+//         ^^^ IdentifierType
+//              ^^^^^^^^ IdentifierFunction
+//                       ^^^ IdentifierType
+//                           ^^^^^^ IdentifierType
 //                                 ^ PunctuationDelimiter
-//                                   ^^^^^^^ Identifier
-//                                          ^ IdentifierOperator
+//                                   ^^^^^^^ IdentifierType
     return (json['name'] as String, json['height'] as int);
 //  ^^^^^^ Keyword
+//          ^^^^ Identifier
+//               ^^^^^^ StringLiteral
 //                       ^^ Keyword
-//                          ^^^^^^ IdentifierConstant
+//                          ^^^^^^ IdentifierType
 //                                ^ PunctuationDelimiter
-//                                  ^^^^ IdentifierConstant
+//                                  ^^^^ Identifier
+//                                       ^^^^^^^^ StringLiteral
 //                                                 ^^ Keyword
-//                                                    ^^^ IdentifierBuiltinType
+//                                                    ^^^ IdentifierType
 //                                                        ^ PunctuationDelimiter
   }
   
   // Async Programming (Future)
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
   Future<String> fetchData() {
-//      ^ IdentifierOperator
-//             ^ IdentifierOperator
+//^^^^^^ IdentifierType
+//       ^^^^^^ IdentifierType
+//               ^^^^^^^^^ IdentifierFunction
     return Future.delayed(Duration(seconds: 2), () => "Data loaded");
 //  ^^^^^^ Keyword
+//         ^^^^^^ IdentifierType
 //               ^ PunctuationDelimiter
+//                ^^^^^^^ Identifier
+//                        ^^^^^^^^ IdentifierType
 //                                        ^ IdentifierOperator
 //                                          ^ NumericLiteral
 //                                            ^ PunctuationDelimiter
 //                                                 ^^ IdentifierOperator
-//                                                    ^ StringLiteral
-//                                                          ^^^^^^ IdentifierConstant
-//                                                                ^ StringLiteral
+//                                                    ^^^^^^^^^^^^^ StringLiteral
 //                                                                  ^ PunctuationDelimiter
   }
   
   // Async Programming (Async/Await)
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
   Future<void> printData() async {
-//      ^ IdentifierOperator
-//       ^^^^ IdentifierBuiltin
-//           ^ IdentifierOperator
+//^^^^^^ IdentifierType
+//       ^^^^ Keyword
+//             ^^^^^^^^^ IdentifierFunction
+//                         ^^^^^ Keyword
     String data = await fetchData();
 //  ^^^^^^ IdentifierType
 //         ^^^^ Identifier

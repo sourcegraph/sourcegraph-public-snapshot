@@ -66,7 +66,7 @@ impl ParserId {
             "c" => Some(ParserId::C),
             "cpp" => Some(ParserId::Cpp),
             "c_sharp" => Some(ParserId::C_Sharp),
-            "dart" => Some(ParserId::C_Sharp),
+            "dart" => Some(ParserId::Dart),
             "go" => Some(ParserId::Go),
             "java" => Some(ParserId::Java),
             "javascript" => Some(ParserId::Javascript),
