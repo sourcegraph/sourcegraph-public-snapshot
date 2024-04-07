@@ -35,7 +35,7 @@ type ReposService interface {
 	ListIndexable(ctx context.Context) ([]types.MinimalRepo, error)
 	GetInventory(ctx context.Context, repoName api.RepoName, commitID api.CommitID, forceEnhancedLanguageDetection bool) (*inventory.Inventory, error)
 	DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) error
-	RequestRepositoryClone(ctx context.Context, repoID api.RepoID) error
+	RequestRepositoryUpdate(ctx context.Context, repoID api.RepoID) error
 	ResolveRev(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error)
 }
 
@@ -300,21 +300,21 @@ func (s *repos) DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID)
 	return err
 }
 
-func (s *repos) RequestRepositoryClone(ctx context.Context, repoID api.RepoID) (err error) {
+func (s *repos) RequestRepositoryUpdate(ctx context.Context, repoID api.RepoID) (err error) {
 	repo, err := s.Get(ctx, repoID)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
 	}
 
-	ctx, done := startTrace(ctx, "RequestRepositoryClone", repoID, &err)
+	ctx, done := startTrace(ctx, "RequestRepositoryUpdate", repoID, &err)
 	defer done()
 
-	resp, err := s.gitserverClient.RequestRepoClone(ctx, repo.Name)
+	resp, err := s.gitserverClient.RequestRepoUpdate(ctx, repo.Name)
 	if err != nil {
 		return err
 	}
 	if resp.Error != "" {
-		return errors.Newf("requesting clone for repo ID %d failed: %s", repoID, resp.Error)
+		return errors.Newf("requesting update for repo ID %d failed: %s", repoID, resp.Error)
 	}
 
 	return nil
