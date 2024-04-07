@@ -20,7 +20,7 @@ tree-sitter-ruby = "0.20.0"
 tree-sitter-rust = "0.20.3"
 tree-sitter-typescript = "0.20.2"
 
-tree-sitter-dart = { git = "https://github.com/UserNobody14/tree-sitter-dart", rev = "7861a4889e7682af453afa4811ae85b1d7a6e415" }
+tree-sitter-dart = { git = "https://github.com/UserNobody14/tree-sitter-dart", rev = "923fbe0d3e62340ea78422551166ce946bc05222" }
 tree-sitter-jsonnet = { git = "https://github.com/sourcegraph/tree-sitter-jsonnet", rev = "009e6f06266f46ae07077dd6c8026ded56ab7dd8" }
 tree-sitter-kotlin = { git = "https://github.com/fwcd/tree-sitter-kotlin", rev = "100d79fd96b56a1b99099a8d2f3c114b8687acfb" }
 tree-sitter-matlab = { git = "https://github.com/acristoffers/tree-sitter-matlab", rev = "6071891a8c39600203eba20513666cf93b4d650a" }

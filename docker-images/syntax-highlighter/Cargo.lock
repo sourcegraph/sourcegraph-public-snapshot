@@ -2481,7 +2481,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-dart"
 version = "0.0.1"
-source = "git+https://github.com/UserNobody14/tree-sitter-dart?rev=7861a4889e7682af453afa4811ae85b1d7a6e415#7861a4889e7682af453afa4811ae85b1d7a6e415"
+source = "git+https://github.com/UserNobody14/tree-sitter-dart?rev=923fbe0d3e62340ea78422551166ce946bc05222#923fbe0d3e62340ea78422551166ce946bc05222"
 dependencies = [
  "cc",
  "tree-sitter",

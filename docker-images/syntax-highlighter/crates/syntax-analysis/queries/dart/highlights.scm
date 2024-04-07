@@ -107,7 +107,7 @@
 (type_identifier) @type
 
 ; Enums
-; ----------------------
+; -------------------
 (enum_declaration
   name: (identifier) @type)
 (enum_constant
