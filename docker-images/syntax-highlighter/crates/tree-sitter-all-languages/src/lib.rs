@@ -38,7 +38,7 @@ impl ParserId {
             ParserId::C => tree_sitter_c::language(),
             ParserId::Cpp => tree_sitter_cpp::language(),
             ParserId::C_Sharp => tree_sitter_c_sharp::language(),
-            ParserId::Dart => tree_sitter_c_sharp::language(),
+            ParserId::Dart => tree_sitter_dart::language(),
             ParserId::Go => tree_sitter_go::language(),
             ParserId::Java => tree_sitter_java::language(),
             ParserId::Javascript => tree_sitter_javascript::language(),
