@@ -1,7 +1,8 @@
-import type { FC } from 'react'
+import { useEffect, type FC } from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { H2, Text, ButtonLink, Link, Icon } from '@sourcegraph/wildcard'
 
@@ -13,6 +14,8 @@ import { IntegrationsIcon } from './IntegrationsIcon'
 import { SearchExample } from './SearchExample'
 
 import styles from './SearchUpsellPage.module.scss'
+
+interface Props extends TelemetryV2Props {}
 
 interface SearchFeature {
     title: string
@@ -35,7 +38,9 @@ const searchFeatures: SearchFeature[] = [
     },
 ]
 
-export const SearchUpsellPage: FC = () => {
+export const SearchUpsellPage: FC<Props> = ({ telemetryRecorder }) => {
+    useEffect(() => telemetryRecorder.recordEvent('searchUpsell', 'view'), [telemetryRecorder])
+
     const isLightTheme = useIsLightTheme()
     const contactSalesLink = 'https://sourcegraph.com/contact/request-info'
     const findOutMoreLink = 'https://sourcegraph.com/code-search'

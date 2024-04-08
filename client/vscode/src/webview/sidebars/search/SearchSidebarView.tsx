@@ -148,7 +148,7 @@ export const SearchSidebarView: FC<SearchSidebarViewProps> = React.memo(function
     )
 
     const onDynamicFilterClicked = useCallback(
-        (value: string, kind?: string) => {
+        (value: string, kind?: Filter['kind']) => {
             platformContext.telemetryService.log('DynamicFilterClicked', { search_filter: { kind } })
             handleSidebarSearchSubmit([{ type: 'toggleSubquery', value }])
         },

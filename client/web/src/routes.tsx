@@ -465,7 +465,7 @@ function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Eleme
 function SearchPageOrUpsellPage(props: LegacyLayoutRouteContext): JSX.Element {
     const { isCodeSearchEnabled } = props.licenseFeatures
     if (!isCodeSearchEnabled) {
-        return <SearchUpsellPage />
+        return <SearchUpsellPage telemetryRecorder={props.platformContext.telemetryRecorder} />
     }
     return <SearchPageWrapper {...props} />
 }

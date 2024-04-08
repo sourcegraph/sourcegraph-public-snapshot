@@ -103,6 +103,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         options,
         streamSearch,
         telemetryService,
+        telemetryRecorder: platformContext.telemetryRecorder,
     })
 
     const { logSearchResultClicked } = useStreamingSearchPings({
@@ -110,6 +111,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         isSourcegraphDotCom,
         results,
         isAuauthenticated: !!authenticatedUser,
+        telemetryRecorder: platformContext.telemetryRecorder,
     })
 
     useEffect(() => {
@@ -128,7 +130,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const onExpandAllResultsToggle = useCallback(() => {
         setAllExpanded(oldValue => !oldValue)
         telemetryService.log(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
-    }, [allExpanded, telemetryService])
+        platformContext.telemetryRecorder.recordEvent('search.allResults', allExpanded ? 'expand' : 'collapse')
+    }, [allExpanded, telemetryService, platformContext.telemetryRecorder])
 
     useEffect(() => {
         setAllExpanded(false) // Reset expanded state when new search is started
@@ -154,16 +157,18 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         ...location,
                         search: updatedSearchQuery || location.search,
                     },
+                    telemetryRecorder: platformContext.telemetryRecorder,
                 },
                 updates
             )
         },
-        [submitQuerySearch, props.selectedSearchContextSpec, navigate, location]
+        [submitQuerySearch, props.selectedSearchContextSpec, navigate, location, platformContext.telemetryRecorder]
     )
 
     const onSearchAgain = useCallback(
         (additionalFilters: string[]) => {
             telemetryService.log('SearchSkippedResultsAgainClicked')
+            platformContext.telemetryRecorder.recordEvent('search.skippedResultsSearchAgain', 'click')
 
             const { selectedSearchContextSpec } = props
             submitSearch({
@@ -174,9 +179,19 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 patternType,
                 query: applyAdditionalFilters(submittedURLQuery, additionalFilters),
                 source: 'excludedResults',
+                telemetryRecorder: platformContext.telemetryRecorder,
             })
         },
-        [telemetryService, props, navigate, location, caseSensitive, patternType, submittedURLQuery]
+        [
+            telemetryService,
+            props,
+            navigate,
+            location,
+            caseSensitive,
+            patternType,
+            submittedURLQuery,
+            platformContext.telemetryRecorder,
+        ]
     )
 
     /**
@@ -198,6 +213,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             patternType,
             query,
             source: 'nav',
+            telemetryRecorder: platformContext.telemetryRecorder,
         })
     }
 
@@ -211,6 +227,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             patternType: SearchPatternType.standard,
             query: submittedURLQuery,
             source: 'smartSearchDisabled',
+            telemetryRecorder: platformContext.telemetryRecorder,
         })
     }, [caseSensitive, location, navigate, props, submittedURLQuery])
 
@@ -229,6 +246,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 patternType: newPatternType,
                 query: submittedURLQuery,
                 source: 'nav',
+                telemetryRecorder: platformContext.telemetryRecorder,
             })
         },
         [caseSensitive, location, navigate, props, submittedURLQuery]
