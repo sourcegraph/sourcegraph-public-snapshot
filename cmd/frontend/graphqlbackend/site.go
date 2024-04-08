@@ -661,7 +661,7 @@ func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 }
 
 type codyContextFiltersResolver struct {
-	config schema.SiteConfiguration
+	ccf *schema.CodyContextFilters
 }
 
 type codyContextFilterItemResolver struct {
@@ -673,14 +673,14 @@ func (r *codyContextFilterItemResolver) RepoNamePattern() string {
 }
 
 func (c *codyContextFiltersResolver) Include() *[]*codyContextFilterItemResolver {
-	return c.resolvers(c.config.CodyContextFilters.Include)
+	return resolveFilterItems(c.ccf.Include)
 }
 
 func (c *codyContextFiltersResolver) Exclude() *[]*codyContextFilterItemResolver {
-	return c.resolvers(c.config.CodyContextFilters.Exclude)
+	return resolveFilterItems(c.ccf.Exclude)
 }
 
-func (c *codyContextFiltersResolver) resolvers(items []*schema.CodyContextFilterItem) *[]*codyContextFilterItemResolver {
+func resolveFilterItems(items []*schema.CodyContextFilterItem) *[]*codyContextFilterItemResolver {
 	var r []*codyContextFilterItemResolver
 	for _, f := range items {
 		r = append(r, &codyContextFilterItemResolver{f})
@@ -689,7 +689,11 @@ func (c *codyContextFiltersResolver) resolvers(items []*schema.CodyContextFilter
 }
 
 func (r *siteResolver) CodyContextFilters() *codyContextFiltersResolver {
-	return &codyContextFiltersResolver{config: conf.Get().SiteConfig()}
+	ccf := conf.Get().SiteConfig().CodyContextFilters
+	if ccf == nil {
+		return nil
+	}
+	return &codyContextFiltersResolver{ccf}
 }
 
 func allowEdit(before, after string, allowlist []string) ([]string, bool) {
