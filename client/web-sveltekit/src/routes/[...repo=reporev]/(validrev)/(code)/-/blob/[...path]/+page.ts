@@ -1,15 +1,44 @@
+import { Observable, concatMap, from, map } from 'rxjs'
+
+import { fetchBlameHunksMemoized, type BlameHunkData } from '@sourcegraph/web/src/repo/blame/shared'
+
 import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
-import { BlobDiffQuery, BlobPageQuery, BlobSyntaxHighlightQuery } from './page.gql'
+import { BlobPageExternalURLs, BlobDiffQuery, BlobPageQuery, BlobSyntaxHighlightQuery } from './page.gql'
 
 export const load: PageLoad = ({ parent, params, url }) => {
     const revisionToCompare = url.searchParams.get('rev')
     const client = getGraphQLClient()
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
     const resolvedRevision = resolveRevision(parent, revision)
+    const isBlame = url.searchParams.get('view') === 'blame'
+
+    var blameData: Observable<BlameHunkData> | undefined = undefined
+    if (isBlame) {
+        const externalURLs = client
+            .query(BlobPageExternalURLs, { repoName })
+            .then(mapOrThrow(result => result.data?.repository?.externalURLs))
+
+        const blameHunks = from(resolvedRevision).pipe(
+            concatMap(resolvedRevision =>
+                fetchBlameHunksMemoized({ repoName, revision: resolvedRevision, filePath: params.path })
+            )
+        )
+
+        blameData = from(externalURLs).pipe(
+            concatMap(externalURLs =>
+                blameHunks.pipe(
+                    map(blameHunks => ({
+                        externalURLs,
+                        current: blameHunks,
+                    }))
+                )
+            )
+        )
+    }
 
     return {
         graphQLClient: client,
@@ -45,5 +74,6 @@ export const load: PageLoad = ({ parent, params, url }) => {
                       .then(mapOrThrow(result => result.data?.repository?.commit?.diff.fileDiffs.nodes[0] ?? null)),
               }
             : null,
+        blameData,
     }
 }

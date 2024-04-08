@@ -2,8 +2,9 @@
 
 <script lang="ts">
     import { mdiFileEyeOutline, mdiMapSearch, mdiWrap, mdiWrapDisabled } from '@mdi/js'
+    import { capitalize } from 'lodash'
     import { from } from 'rxjs'
-    import { toViewMode, ViewMode } from './util'
+    import { writable } from 'svelte/store'
 
     import { goto } from '$app/navigation'
     import { page } from '$app/stores'
@@ -15,18 +16,17 @@
     import { createBlobDataHandler } from '$lib/repo/blob'
     import FileDiff from '$lib/repo/FileDiff.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
+    import FileIcon from '$lib/repo/FileIcon.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createCodeIntelAPI } from '$lib/shared'
+    import { formatBytes } from '$lib/utils'
     import { Alert, MenuButton, MenuLink } from '$lib/wildcard'
     import markdownStyles from '$lib/wildcard/Markdown.module.scss'
 
     import type { PageData } from './$types'
-    import FileIcon from '$lib/repo/FileIcon.svelte'
-    import { formatBytes } from '$lib/utils'
     import FileViewModeSwitcher from './FileViewModeSwitcher.svelte'
-    import { capitalize } from 'lodash'
     import OpenInCodeHostAction from './OpenInCodeHostAction.svelte'
-    import { writable } from 'svelte/store'
+    import { toViewMode, ViewMode } from './util'
 
     export let data: PageData
 
@@ -42,6 +42,7 @@
         filePath,
         settings,
         graphQLClient,
+        blameData,
     } = data)
     $: viewMode = toViewMode($page.url.searchParams.get('view'))
     $: combinedBlobData.set(data.blob, data.highlights)
@@ -61,6 +62,8 @@
         selectedPosition = SourcegraphURL.from($page.url).lineRange
     }
 
+    $: showBlame = viewMode === ViewMode.Blame
+
     function changeViewMode({ detail: viewMode }: { detail: ViewMode }) {
         switch (viewMode) {
             case ViewMode.Code: {
@@ -74,7 +77,9 @@
                 break
             }
             case ViewMode.Blame:
-                // TODO: Implement
+                const url = SourcegraphURL.from($page.url)
+                url.setSearchParameter('view', 'blame')
+                goto(url.toString(), { replaceState: true, keepFocus: true })
                 break
             case ViewMode.Default:
                 goto(SourcegraphURL.from($page.url).deleteSearchParameter('view').toString(), {
@@ -127,7 +132,9 @@
         <FileViewModeSwitcher
             aria-label="View mode"
             value={viewMode}
-            options={isFormatted ? [ViewMode.Default, ViewMode.Code] : [ViewMode.Default]}
+            options={isFormatted
+                ? [ViewMode.Default, ViewMode.Code, ViewMode.Blame]
+                : [ViewMode.Default, ViewMode.Blame]}
             on:change={changeViewMode}
         >
             <svelte:fragment slot="label" let:value>
@@ -158,7 +165,7 @@
             {/if}
         {/await}
     {:else if blob}
-        {#if blob.richHTML && !showRaw}
+        {#if blob.richHTML && !showRaw && !showBlame}
             <div class={`rich ${markdownStyles.markdown}`}>
                 {@html blob.richHTML}
             </div>
@@ -171,6 +178,8 @@
                     repoName: repoName,
                     filePath,
                 }}
+                {showBlame}
+                blameData={$blameData}
                 {highlights}
                 wrapLines={$lineWrap}
                 selectedLines={selectedPosition?.line ? selectedPosition : null}
