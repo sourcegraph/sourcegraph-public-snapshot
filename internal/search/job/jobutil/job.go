@@ -408,12 +408,16 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 				Features:        *searchInputs.Features,
 			}
 
-			addJob(&structural.SearchJob{
+			structuralSearchJob := &structural.SearchJob{
 				SearcherArgs:     searcherArgs,
 				UseIndex:         f.Index(),
 				ContainsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
-				RepoOpts:         repoOptions,
 				BatchRetry:       searchInputs.Protocol == search.Batch,
+			}
+
+			addJob(&repoPagerJob{
+				child:    &reposPartialJob{structuralSearchJob},
+				repoOpts: repoOptions,
 			})
 		}
 
