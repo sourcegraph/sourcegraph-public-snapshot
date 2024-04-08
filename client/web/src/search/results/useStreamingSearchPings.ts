@@ -140,7 +140,7 @@ export function useStreamingSearchPings(props: useStreamingSearchPingsProps): St
                 type,
                 resultsLength,
             })
-            telemetryRecorder.recordEvent('search.result', 'click', {
+            telemetryRecorder.recordEvent('search.result.area', 'click', {
                 metadata: {
                     index,
                     resultsLength,

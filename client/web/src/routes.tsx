@@ -251,7 +251,12 @@ export const routes: RouteObject[] = [
         path: PageRoutes.SearchConsole,
         element: (
             <LegacyRoute
-                render={props => <SearchConsolePageOrRedirect {...props} />}
+                render={props => (
+                    <SearchConsolePageOrRedirect
+                        {...props}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
+                    />
+                )}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />
         ),

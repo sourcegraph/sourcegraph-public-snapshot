@@ -1,4 +1,4 @@
-import { useEffect, type FC } from 'react'
+import { useEffect, type FC, useCallback } from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 
@@ -40,6 +40,14 @@ const searchFeatures: SearchFeature[] = [
 
 export const SearchUpsellPage: FC<Props> = ({ telemetryRecorder }) => {
     useEffect(() => telemetryRecorder.recordEvent('searchUpsell', 'view'), [telemetryRecorder])
+    const onClickExpertCTA = useCallback(
+        () => telemetryRecorder.recordEvent('searchUpsell.talkToAnExpertCTA', 'click'),
+        [telemetryRecorder]
+    )
+    const onClickFindOutMoreCTA = useCallback(
+        () => telemetryRecorder.recordEvent('searchUpsell.findOutMoreCTA', 'click'),
+        [telemetryRecorder]
+    )
 
     const isLightTheme = useIsLightTheme()
     const contactSalesLink = 'https://sourcegraph.com/contact/request-info'
@@ -64,6 +72,7 @@ export const SearchUpsellPage: FC<Props> = ({ telemetryRecorder }) => {
                         className="py-2 px-3 rounded mr-4"
                         target="_blank"
                         rel="noreferrer"
+                        onClick={onClickExpertCTA}
                     >
                         Talk to a product expert
                     </ButtonLink>
@@ -74,6 +83,7 @@ export const SearchUpsellPage: FC<Props> = ({ telemetryRecorder }) => {
                         className="py-2 px-3 rounded"
                         target="_blank"
                         rel="noreferrer"
+                        onClick={onClickFindOutMoreCTA}
                     >
                         Find out more
                     </ButtonLink>

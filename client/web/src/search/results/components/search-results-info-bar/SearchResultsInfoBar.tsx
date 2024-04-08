@@ -436,6 +436,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                     query={query}
                     authenticatedUser={authenticatedUser}
                     onDidCancel={onSaveQueryModalClose}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
             {showCsvExportModal && (

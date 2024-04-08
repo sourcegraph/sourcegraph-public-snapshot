@@ -401,7 +401,7 @@ const FilePreviewPanel: FC<FilePreviewPanelProps> = props => {
 
     useEffect(() => {
         telemetryService.logViewEvent('SearchFilePreview')
-        telemetryRecorder.recordEvent('search.filePreviePanel', 'view')
+        telemetryRecorder.recordEvent('search.filePreview', 'view')
     }, [telemetryService, telemetryRecorder])
 
     return (

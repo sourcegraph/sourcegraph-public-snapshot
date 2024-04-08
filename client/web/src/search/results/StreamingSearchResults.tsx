@@ -129,8 +129,11 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
     const onExpandAllResultsToggle = useCallback(() => {
         setAllExpanded(oldValue => !oldValue)
-        telemetryService.log(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
-        platformContext.telemetryRecorder.recordEvent('search.allResults', allExpanded ? 'expand' : 'collapse')
+        platformContext.telemetryRecorder.recordEvent(
+            'search.resultsInfoBar.allResults',
+            !allExpanded ? 'expand' : 'collapse'
+        )
+        telemetryService.log(!allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
     }, [allExpanded, telemetryService, platformContext.telemetryRecorder])
 
     useEffect(() => {
@@ -168,7 +171,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const onSearchAgain = useCallback(
         (additionalFilters: string[]) => {
             telemetryService.log('SearchSkippedResultsAgainClicked')
-            platformContext.telemetryRecorder.recordEvent('search.skippedResultsSearchAgain', 'click')
+            platformContext.telemetryRecorder.recordEvent('search.resultsInfoBar.skippedResultsSearchAgain', 'click')
 
             const { selectedSearchContextSpec } = props
             submitSearch({
