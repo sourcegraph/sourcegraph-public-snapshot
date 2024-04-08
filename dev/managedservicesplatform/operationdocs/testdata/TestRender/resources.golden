@@ -31,6 +31,7 @@ If you need assistance with MSP infrastructure, reach out to the [Core Services]
 |---------------------|-----------------------------------------------------------------------------------------------------------------------------------|
 | Project ID          | [`msp-testbed-test-77589aae45d0`](https://console.cloud.google.com/run?project=msp-testbed-test-77589aae45d0)                     |
 | Category            | **test**                                                                                                                          |
+| Deployment type     | `subscription`                                                                                                                    |
 | Resources           | [test Redis](#test-redis), [test PostgreSQL instance](#test-postgresql-instance), [test BigQuery dataset](#test-bigquery-dataset) |
 | Slack notifications | [#alerts-msp-testbed-test](https://sourcegraph.slack.com/archives/alerts-msp-testbed-test)                                        |
 | Alerts              | [GCP monitoring](https://console.cloud.google.com/monitoring/alerting?project=msp-testbed-test-77589aae45d0)                      |

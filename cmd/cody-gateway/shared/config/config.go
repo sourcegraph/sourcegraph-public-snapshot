@@ -99,7 +99,7 @@ type OpenAIConfig struct {
 }
 
 type SourcegraphConfig struct {
-	TritonURL string
+	EmbeddingsAPIURL string
 }
 
 // FlaggingConfig defines common parameters for filtering and flagging requests,
@@ -245,7 +245,7 @@ func (c *Config) Load() {
 	c.Fireworks.StarcoderCommunitySingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_COMMUNITY_SINGLE_TENANT_PERCENT", "0", "The percentage of community traffic for Starcoder to be redirected to the single-tenant deployment.")
 	c.Fireworks.StarcoderEnterpriseSingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_ENTERPRISE_SINGLE_TENANT_PERCENT", "100", "The percentage of Enterprise traffic for Starcoder to be redirected to the single-tenant deployment.")
 
-	c.AllowedEmbeddingsModels = splitMaybe(c.Get("CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS", strings.Join([]string{string(embeddings.ModelNameOpenAIAda), string(embeddings.ModelNameSourcegraphTriton)}, ","), "The models allowed for embeddings generation."))
+	c.AllowedEmbeddingsModels = splitMaybe(c.Get("CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS", strings.Join([]string{string(embeddings.ModelNameOpenAIAda), string(embeddings.ModelNameSourcegraphSTMultiQA)}, ","), "The models allowed for embeddings generation."))
 	if len(c.AllowedEmbeddingsModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for embeddings generation"))
 	}
@@ -279,7 +279,7 @@ func (c *Config) Load() {
 
 	c.Attribution.Enabled = c.GetBool("CODY_GATEWAY_ENABLE_ATTRIBUTION_SEARCH", "false", "Whether attribution search endpoint is available.")
 
-	c.Sourcegraph.TritonURL = c.Get("CODY_GATEWAY_SOURCEGRAPH_TRITON_URL", "https://embeddings-triton-direct.sgdev.org/v2/models/ensemble_model/infer", "URL of the Triton server.")
+	c.Sourcegraph.EmbeddingsAPIURL = c.Get("CODY_GATEWAY_SOURCEGRAPH_EMBEDDINGS_API_URL", "https://embeddings.sourcegraph.com/v2/models/st-multi-qa-mpnet-base-dot-v1/infer", "URL of the Triton server.")
 
 	c.SAMSClientConfig.URL = c.GetOptional("SAMS_URL", "SAMS service endpoint")
 	c.SAMSClientConfig.ClientID = c.GetOptional("SAMS_CLIENT_ID", "SAMS OAuth client ID")

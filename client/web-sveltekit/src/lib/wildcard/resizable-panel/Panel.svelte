@@ -17,6 +17,7 @@
     onDestroy(
         registerPanel({
             id: panelId,
+            idFromProps: id,
             order,
             constraints: { defaultSize, minSize, maxSize },
             getPanelElement: () => panelElement,
