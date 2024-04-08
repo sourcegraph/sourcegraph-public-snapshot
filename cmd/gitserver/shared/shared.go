@@ -156,7 +156,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf.Repos, recordingConf.IgnoredGitCommands), recordingConf.Size)
 	})
 
-	gitserver.RegisterMetrics(observationCtx, db)
+	internal.RegisterEchoMetric(logger.Scoped("echoMetricReporter"))
 
 	handler := internal.NewHTTPHandler(logger, fs)
 	handler = actor.HTTPMiddleware(logger, handler)

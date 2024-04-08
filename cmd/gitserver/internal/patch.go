@@ -387,8 +387,6 @@ func (s *Server) repoRemoteRefs(ctx context.Context, remoteURL *vcs.URL, repoNam
 }
 
 func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchCommit string, remoteURL *vcs.URL, tmpGitPathEnv, altObjectsEnv string) (string, error) {
-
-	repo := string(req.Repo)
 	baseCommit := string(req.BaseCommit)
 
 	p4home, err := s.fs.P4HomeDir()
@@ -411,7 +409,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 
 	logger := s.logger.Scoped("shelveChangelist").
 		With(
-			log.String("repo", repo),
+			log.String("repo", string(req.Repo)),
 			log.String("baseCommit", baseCommit),
 			log.String("patchCommit", patchCommit),
 			log.String("targetRef", req.TargetRef),

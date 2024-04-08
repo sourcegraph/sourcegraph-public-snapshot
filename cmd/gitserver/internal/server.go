@@ -1054,3 +1054,7 @@ func setLastChanged(logger log.Logger, dir common.GitDir) error {
 
 	return nil
 }
+
+func (s *Server) SearchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
+	return searchWithObservability(ctx, s.logger, s.fs.RepoDir(args.Repo), tr, args, onMatch)
+}
