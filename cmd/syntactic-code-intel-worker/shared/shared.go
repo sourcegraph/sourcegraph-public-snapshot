@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -26,14 +27,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		log.String("path to scip-syntax CLI", config.IndexingWorkerConfig.CliPath),
 		log.String("API address", config.ListenAddress))
 
-	db := mustInitializeDB(observationCtx, "syntactic-code-intel-indexer")
-
-	workerStore, err := NewStore(observationCtx, db)
+	jobStore, err := jobstore.NewStore(observationCtx, "syntactic-code-intel-indexer")
 	if err != nil {
 		return errors.Wrap(err, "initializing worker store")
 	}
 
-	indexingWorker := NewIndexingWorker(ctx, observationCtx, workerStore, *config.IndexingWorkerConfig)
+	indexingWorker := NewIndexingWorker(ctx, observationCtx, jobStore, *config.IndexingWorkerConfig)
 
 	// Initialize health server
 	server := httpserver.NewFromAddr(config.ListenAddress, &http.Server{
