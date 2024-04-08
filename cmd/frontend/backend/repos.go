@@ -336,7 +336,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo api.RepoName, rev string) (
 	ctx, done := startTrace(ctx, "ResolveRev", map[string]any{"repo": repo, "rev": rev}, &err)
 	defer done()
 
-	return s.gitserverClient.ResolveRevision(ctx, repo, rev, gitserver.ResolveRevisionOptions{})
+	return s.gitserverClient.ResolveRevision(ctx, repo, rev, gitserver.ResolveRevisionOptions{EnsureRevision: true})
 }
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
