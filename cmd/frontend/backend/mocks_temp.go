@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
+	inventory "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
-	inventory "github.com/sourcegraph/sourcegraph/internal/inventory"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
