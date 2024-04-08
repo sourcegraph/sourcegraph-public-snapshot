@@ -31,8 +31,4 @@ go_binary(
     name = "ghe-feeder",
     embed = [":ghe-feeder_lib"],
     visibility = ["//:__subpackages__"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
 )

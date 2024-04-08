@@ -28,7 +28,7 @@ import { getBlameRecencyColor } from '../blameRecency'
  * Unlike {@link BlameHunkData} which is a list of unordered hunks, this
  * structure provides a line number -> blame hunk index for fast access.
  */
-interface IndexedBlameHunkData extends Pick<BlameHunkData, 'firstCommitDate' | 'externalURLs'> {
+interface IndexedBlameHunkData extends Pick<BlameHunkData, 'externalURLs'> {
     lines: BlameHunk[]
 }
 
@@ -245,7 +245,6 @@ const blameDataFacet = Facet.define<BlameHunkData, IndexedBlameHunkData>({
         }
         return {
             lines,
-            firstCommitDate: value.firstCommitDate,
             externalURLs: value.externalURLs,
         }
     },
@@ -253,7 +252,7 @@ const blameDataFacet = Facet.define<BlameHunkData, IndexedBlameHunkData>({
 
 class RecencyMarker extends GutterMarker {
     // hunk can be undefined if when the data is not available yet
-    constructor(private line: number, private hunk?: BlameHunk) {
+    constructor(private line: number, private hunk?: BlameHunk, private darkTheme?: boolean | null | undefined) {
         super()
     }
 
@@ -261,18 +260,17 @@ class RecencyMarker extends GutterMarker {
         // Only consider two markers with the same line equal if
         // hunk data is available. Otherwise the marker won't be
         // update/recreated as new data becomes available.
-        return this.line === other.line && !!this.hunk && !!other.hunk
+        return this.line === other.line && this.darkTheme === other.darkTheme && !!this.hunk && !!other.hunk
     }
 
-    public toDOM(view: EditorView): Node {
+    public toDOM(_view: EditorView): Node {
         const dom = document.createElement('div')
         dom.className = 'sg-recency-marker'
-        const { firstCommitDate } = view.state.facet(blameDataFacet)
         if (this.hunk) {
             if (this.hunk.startLine === this.line) {
                 dom.classList.add('border-top')
             }
-            dom.style.backgroundColor = getBlameRecencyColor(new Date(this.hunk.author.date), firstCommitDate)
+            dom.style.backgroundColor = getBlameRecencyColor(new Date(this.hunk.author.date), !this.darkTheme)
         }
         return dom
     }
@@ -288,10 +286,13 @@ const blameGutter: Extension = [
         lineMarker(view, line) {
             const lineNumber = view.state.doc.lineAt(line.from).number
             const hunks = view.state.facet(blameDataFacet).lines
-            return new RecencyMarker(lineNumber, hunks[lineNumber])
+            return new RecencyMarker(lineNumber, hunks[lineNumber], view.state.facet(EditorView.darkTheme))
         },
         lineMarkerChange(update) {
-            return update.state.facet(blameDataFacet) !== update.startState.facet(blameDataFacet)
+            return (
+                update.state.facet(blameDataFacet) !== update.startState.facet(blameDataFacet) ||
+                update.state.facet(EditorView.darkTheme) !== update.startState.facet(EditorView.darkTheme)
+            )
         },
     }),
 

@@ -1,8 +1,5 @@
 <article data-testid="search-result">
     <div class="header">
-        <div class="icon">
-            <slot name="icon" />
-        </div>
         <div class="title">
             <slot name="title" />
         </div>
@@ -43,18 +40,12 @@
         border-bottom: 1px solid var(--border-color);
     }
 
-    .icon {
-        display: flex;
-        align-items: center;
-        flex-shrink: 0;
-        --color: var(--text-muted);
-    }
-
     .title {
         flex: 1 1 auto;
         overflow: hidden;
         display: flex;
         flex-wrap: wrap;
+        align-items: baseline;
 
         // .title-inner
         overflow-wrap: anywhere;

@@ -187,6 +187,17 @@ func TestCache_KeyTTL(t *testing.T) {
 		t.Fatal("KeyTTL after setting invalid ttl should have found nothing")
 	}
 }
+func TestNewWithRedisStore(t *testing.T) {
+	SetupForTest(t)
+
+	// Create a Cache instance using NewWithRedisStore
+	c := NewWithRedisStore("test_prefix")
+
+	// Assert that the storeType field is RedisStore, indicating it uses the Redis store
+	if c.storeType != RedisStore {
+		t.Errorf("Expected storeType to be RedisStore, got %v", c.storeType)
+	}
+}
 
 func TestCache_SetWithTTL(t *testing.T) {
 	SetupForTest(t)

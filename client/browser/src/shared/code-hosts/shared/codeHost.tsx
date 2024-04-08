@@ -19,6 +19,7 @@ import {
     BehaviorSubject,
     fromEvent,
     lastValueFrom,
+    throwError,
 } from 'rxjs'
 import {
     catchError,
@@ -33,8 +34,7 @@ import {
     tap,
     startWith,
     distinctUntilChanged,
-    retryWhen,
-    mapTo,
+    retry,
     take,
 } from 'rxjs/operators'
 
@@ -56,7 +56,6 @@ import {
     registerHighlightContributions,
     isExternalLink,
     type LineOrPositionOrRange,
-    lprToSelectionsZeroIndexed,
 } from '@sourcegraph/common'
 import type { WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
@@ -82,9 +81,8 @@ import {
     type RepoSpec,
     type ResolvedRevisionSpec,
     type RevisionSpec,
-    toRootURI,
-    toURIWithPath,
     type ViewStateSpec,
+    makeRepoGitURI,
 } from '@sourcegraph/shared/src/util/url'
 
 import { background } from '../../../browser-extension/web-extension-api/runtime'
@@ -114,6 +112,7 @@ import { NotAuthenticatedError, RepoURLParseError } from './errors'
 import { initializeExtensions } from './extensions'
 import { SignInButton } from './SignInButton'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
+import { lprToSelectionsZeroIndexed } from './util/selections'
 import {
     type ViewOnSourcegraphButtonClassProps,
     ViewOnSourcegraphButton,
@@ -680,7 +679,7 @@ const isSafeToContinueCodeIntel = async ({
             // Show "Configure Sourcegraph" button
             console.warn('Repository is not cloned.', error)
 
-            const settingsURL = await observeUserSettingsURL(requestGraphQL).toPromise()
+            const settingsURL = await lastValueFrom(observeUserSettingsURL(requestGraphQL), { defaultValue: undefined })
 
             if (rawRepoName && settingsURL) {
                 render(
@@ -817,7 +816,7 @@ export async function handleCodeHost({
             switchMap(([, { rawRepoName, revision }]) =>
                 resolveRevision({ repoName: rawRepoName, revision, requestGraphQL }).pipe(
                     retryWhenCloneInProgressError(),
-                    mapTo(true),
+                    map(() => true),
                     startWith(undefined)
                 )
             ),
@@ -944,17 +943,9 @@ export async function handleCodeHost({
                     },
                 }),
                 // Retry auth errors after the user closed a sign-in tab
-                retryWhen(errors =>
-                    errors.pipe(
-                        // Don't swallow non-auth errors
-                        tap(error => {
-                            if (!isHTTPAuthError(error)) {
-                                throw error
-                            }
-                        }),
-                        switchMap(() => signInCloses)
-                    )
-                ),
+                retry({
+                    delay: error => (isHTTPAuthError(error) ? signInCloses : throwError(() => error)),
+                }),
                 catchError(error => {
                     // Log errors but don't break the handling of other code views
                     console.error('Could not resolve file info for code view', error)
@@ -1032,9 +1023,14 @@ export async function handleCodeHost({
                 } = codeViewEvent
 
                 const initializeModelAndViewerForFileInfo = async (
-                    fileInfo: FileInfoWithContent & FileInfoWithRepoName
+                    fileInfo: FileInfoWithContent
                 ): Promise<CodeEditorWithPartialModel> => {
-                    const uri = toURIWithPath(fileInfo)
+                    const uri = makeRepoGitURI({
+                        repoName: fileInfo.repoName,
+                        commitID: fileInfo.commitID,
+                        revision: fileInfo.revision,
+                        filePath: fileInfo.filePath,
+                    })
 
                     // Model
                     const languageId = getModeFromPath(fileInfo.filePath)
@@ -1052,7 +1048,11 @@ export async function handleCodeHost({
 
                     const extensionHostAPI = await extensionsController.extHostAPI
 
-                    const rootURI = toRootURI(fileInfo)
+                    const rootURI = makeRepoGitURI({
+                        repoName: fileInfo.repoName,
+                        commitID: fileInfo.commitID,
+                        revision: fileInfo.revision,
+                    })
                     const [, viewerId] = await Promise.all([
                         // Only add the model if it doesn't exist
                         // (there may be several code views on the page pointing to the same model)

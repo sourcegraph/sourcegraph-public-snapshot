@@ -2,6 +2,7 @@ import type { MockedProviderProps } from '@apollo/client/testing'
 import { cleanup, fireEvent, within, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { type RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
@@ -27,7 +28,7 @@ describe('SurveyPage', () => {
     const renderSurveyPage = ({ mocks, routerProps }: RenderSurveyPageParameters) =>
         renderWithBrandedContext(
             <MockedTestProvider mocks={mocks}>
-                <SurveyPage authenticatedUser={null} />
+                <SurveyPage authenticatedUser={null} telemetryRecorder={noOpTelemetryRecorder} />
             </MockedTestProvider>,
             {
                 path: '/survey/:score?',

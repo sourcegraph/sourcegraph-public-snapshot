@@ -1,10 +1,96 @@
-import { dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
-
 import { generate, type CodegenConfig } from '@graphql-codegen/cli'
 import type { Plugin } from 'vite'
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
+const codgegenConfig: CodegenConfig = {
+    hooks: {
+        // This hook removes the 'import type * as Types from ...' import from generated files if it's not used.
+        // The near-operation-file preset generates this import for every file, even if it's not used. This
+        // generally is not a problem, but the issue is reported by `pnpm check`.
+        // See https://github.com/dotansimha/graphql-code-generator/issues/4900
+        beforeOneFileWrite(_path, content) {
+            if (/^import type \* as Types from/m.test(content) && !/Types(\[|\.)/.test(content)) {
+                return content.replace(/^import type \* as Types from .+$/m, '').trimStart()
+            }
+            return content
+        },
+    },
+    generates: {
+        // Legacy graphql-operations.ts file that is still used by some components.
+        './src/lib/graphql-operations.ts': {
+            documents: [
+                'src/{lib,routes}/**/*.ts',
+                '!src/lib/graphql-{operations,types,type-mocks}.ts',
+                '!src/**/*.gql.ts',
+            ],
+            config: {
+                onlyOperationTypes: true,
+                enumValues: '$lib/graphql-types',
+            },
+            plugins: ['typescript', 'typescript-operations'],
+        },
+        'src/lib/graphql-types.ts': {
+            plugins: ['typescript'],
+        },
+        'src/testing/graphql-type-mocks.ts': {
+            documents: [
+                'src/{lib,routes}/**/*.(ts|gql)',
+                '!src/lib/graphql-{operations,types,type-mocks}.ts',
+                '!src/**/*.gql.ts',
+            ],
+            config: {
+                typesImport: '$lib/graphql-types',
+                onlyOperationTypes: true,
+            },
+            plugins: [`typescript`, `typescript-operations`, `./dev/graphql-type-mocks.cjs`],
+        },
+        'src/': {
+            documents: ['src/**/*.gql', '!src/**/*.gql.ts'],
+            preset: 'near-operation-file',
+            presetConfig: {
+                baseTypesPath: 'lib/graphql-types',
+                extension: '.gql.ts',
+            },
+            config: {
+                useTypeImports: true,
+                documentVariableSuffix: '', // The default is 'Document'
+            },
+            plugins: ['typescript-operations', 'typed-document-node'],
+        },
+    },
+    schema: '../../cmd/frontend/graphqlbackend/*.graphql',
+    errorsOnly: true,
+    config: {
+        // https://the-guild.dev/graphql/codegen/plugins/typescript/typescript-operations#config-api-reference
+        arrayInputCoercion: false,
+        preResolveTypes: true,
+        operationResultSuffix: 'Result',
+        omitOperationSuffix: true,
+        namingConvention: {
+            typeNames: 'keep',
+            enumValues: 'keep',
+            transformUnderscore: true,
+        },
+        declarationKind: 'interface',
+        avoidOptionals: {
+            field: true,
+            inputValue: false,
+            object: true,
+        },
+        scalars: {
+            DateTime: 'string',
+            JSON: 'object',
+            JSONValue: 'unknown',
+            GitObjectID: 'string',
+            JSONCString: 'string',
+            PublishedValue: "boolean | 'draft'",
+            BigInt: 'string',
+        },
+    },
+}
+
+export function codegen(): Promise<void> {
+    return generate(codgegenConfig, true)
+}
 
 /**
  * Vite plugin for generating TypeScript types for GraphQL.
@@ -13,93 +99,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
  * watch mode when documents are defined separately for every generated file.
  */
 export default function graphqlCodegen(): Plugin {
-    const codgegenConfig: CodegenConfig = {
-        hooks: {
-            // This hook removes the 'import type * as Types from ...' import from generated files if it's not used.
-            // The near-operation-file preset generates this import for every file, even if it's not used. This
-            // generally is not a problem, but the issue is reported by `pnpm check`.
-            // See https://github.com/dotansimha/graphql-code-generator/issues/4900
-            beforeOneFileWrite(_path, content) {
-                if (/^import type \* as Types from/m.test(content) && !/Types(\[|\.)/.test(content)) {
-                    return content.replace(/^import type \* as Types from .+$/m, '').trimStart()
-                }
-                return content
-            },
-        },
-        generates: {
-            // Legacy graphql-operations.ts file that is still used by some components.
-            './src/lib/graphql-operations.ts': {
-                documents: [
-                    'src/{lib,routes}/**/*.ts',
-                    '!src/lib/graphql-{operations,types,type-mocks}.ts',
-                    '!src/**/*.gql.ts',
-                ],
-                config: {
-                    onlyOperationTypes: true,
-                    enumValues: '$lib/graphql-types',
-                },
-                plugins: ['typescript', 'typescript-operations'],
-            },
-            'src/lib/graphql-types.ts': {
-                plugins: ['typescript'],
-            },
-            'src/testing/graphql-type-mocks.ts': {
-                documents: [
-                    'src/{lib,routes}/**/*.(ts|gql)',
-                    '!src/lib/graphql-{operations,types,type-mocks}.ts',
-                    '!src/**/*.gql.ts',
-                ],
-                config: {
-                    typesImport: '$lib/graphql-types',
-                    onlyOperationTypes: true,
-                },
-                plugins: [`typescript`, `typescript-operations`, `${__dirname}/graphql-type-mocks.cjs`],
-            },
-            'src/': {
-                documents: ['src/**/*.gql', '!src/**/*.gql.ts'],
-                preset: 'near-operation-file',
-                presetConfig: {
-                    baseTypesPath: 'lib/graphql-types',
-                    extension: '.gql.ts',
-                },
-                config: {
-                    useTypeImports: true,
-                    documentVariableSuffix: '', // The default is 'Document'
-                },
-                plugins: ['typescript-operations', 'typed-document-node'],
-            },
-        },
-        schema: '../../cmd/frontend/graphqlbackend/*.graphql',
-        errorsOnly: true,
-        config: {
-            // https://the-guild.dev/graphql/codegen/plugins/typescript/typescript-operations#config-api-reference
-            arrayInputCoercion: false,
-            preResolveTypes: true,
-            operationResultSuffix: 'Result',
-            omitOperationSuffix: true,
-            namingConvention: {
-                typeNames: 'keep',
-                enumValues: 'keep',
-                transformUnderscore: true,
-            },
-            declarationKind: 'interface',
-            avoidOptionals: {
-                field: true,
-                inputValue: false,
-                object: true,
-            },
-            scalars: {
-                DateTime: 'string',
-                JSON: 'object',
-                JSONValue: 'unknown',
-                GitObjectID: 'string',
-                JSONCString: 'string',
-                PublishedValue: "boolean | 'draft'",
-                BigInt: 'string',
-            },
-        },
-    }
-
     async function codegen(): Promise<void> {
         try {
             await generate(codgegenConfig, true)

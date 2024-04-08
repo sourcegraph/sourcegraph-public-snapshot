@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/backport"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -33,15 +32,11 @@ var backportCommand = &cli.Command{
 		prNumber := pullRequestIDFlag.Get(cmd)
 		releaseBranch := releaseBranchFlag.Get(cmd)
 
-		rb, err := semver.NewVersion(releaseBranch)
+		_, err := semver.NewVersion(releaseBranch)
 		if err != nil {
 			return err
 		}
 
-		// release branch is usually in the format <MAJOR>.<MINOR>
-		if rb.Patch() != 0 {
-			return errors.New("invalid release branch name")
-		}
 		std.Out.WriteLine(output.Styledf(output.StylePending, "Backporting commits from main to release branch %q for PR %d...", releaseBranch, prNumber))
 		return backport.Run(cmd, prNumber, releaseBranch)
 	},
