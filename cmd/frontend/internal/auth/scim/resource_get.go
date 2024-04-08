@@ -7,7 +7,7 @@ import (
 	scimerrors "github.com/elimity-com/scim/errors"
 	"github.com/elimity-com/scim/schema"
 
-	"github.com/sourcegraph/sourcegraph/internal/scim/filter"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/scim/filter"
 )
 
 // Get returns the resource corresponding with the given identifier.
