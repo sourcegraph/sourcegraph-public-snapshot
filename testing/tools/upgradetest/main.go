@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -44,10 +45,9 @@ func main() {
 						Usage:   "Select an already released version as the target version for the test suite.",
 					},
 					&cli.StringFlag{
-						Name:        "target-registry",
-						DefaultText: "sourcegraph/",
-						Usage:       "Registry host and path to pull the targeted version from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
-						Value:       "",
+						Name:  "target-registry",
+						Usage: "Registry host and path to pull the targeted version from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value: "sourcegraph/",
 					},
 					&cli.StringFlag{
 						Name:  "from-registry",
@@ -103,7 +103,7 @@ func main() {
 					var targetMigratorImage string
 					switch {
 					case ctx.Value(postReleaseKey{}) != "":
-						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), ctx.Value(postReleaseKey{}))
+						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), strings.TrimPrefix(ctx.Value(postReleaseKey{}).(string), "v"))
 					case ctx.Value(stampVersionKey{}) != "":
 						targetMigratorImage = fmt.Sprintf("migrator:candidate stamped as %s", ctx.Value(stampVersionKey{}))
 					default:
@@ -158,9 +158,6 @@ func main() {
 								result := standardUpgradeTest(ctx, version.Version, targetVersion, latestStableVersion)
 								result.Runtime = time.Since(start)
 								results.AddStdTest(result)
-								if len(result.Errors) > 0 {
-									return result.Errors[0]
-								}
 								return nil
 							})
 						case "mvu":
@@ -170,9 +167,6 @@ func main() {
 								result := multiversionUpgradeTest(ctx, version.Version, targetVersion, latestStableVersion)
 								result.Runtime = time.Since(start)
 								results.AddMVUTest(result)
-								if len(result.Errors) > 0 {
-									return result.Errors[0]
-								}
 								return nil
 							})
 						case "auto":
@@ -182,9 +176,6 @@ func main() {
 								result := autoUpgradeTest(ctx, version.Version, targetVersion, latestStableVersion)
 								result.Runtime = time.Since(start)
 								results.AddAutoTest(result)
-								if len(result.Errors) > 0 {
-									return result.Errors[0]
-								}
 								return nil
 							})
 						}
@@ -260,7 +251,7 @@ func main() {
 					var targetMigratorImage string
 					switch {
 					case ctx.Value(postReleaseKey{}) != "":
-						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), ctx.Value(postReleaseKey{}))
+						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), strings.TrimPrefix(ctx.Value(postReleaseKey{}).(string), "v"))
 					case ctx.Value(stampVersionKey{}) != "":
 						targetMigratorImage = fmt.Sprintf("migrator:candidate stamped as %s", ctx.Value(stampVersionKey{}))
 					default:
@@ -369,7 +360,7 @@ func main() {
 					var targetMigratorImage string
 					switch {
 					case ctx.Value(postReleaseKey{}) != "":
-						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), ctx.Value(postReleaseKey{}))
+						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), strings.TrimPrefix(ctx.Value(postReleaseKey{}).(string), "v"))
 					case ctx.Value(stampVersionKey{}) != "":
 						targetMigratorImage = fmt.Sprintf("migrator:candidate stamped as %s", ctx.Value(stampVersionKey{}))
 					default:
@@ -476,7 +467,7 @@ func main() {
 					var targetMigratorImage string
 					switch {
 					case ctx.Value(postReleaseKey{}) != "":
-						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), ctx.Value(postReleaseKey{}))
+						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), strings.TrimPrefix(ctx.Value(postReleaseKey{}).(string), "v"))
 					case ctx.Value(stampVersionKey{}) != "":
 						targetMigratorImage = fmt.Sprintf("migrator:candidate stamped as %s", ctx.Value(stampVersionKey{}))
 					default:

@@ -518,8 +518,7 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	if auto {
 		envString = append(envString, "-e", "SRC_AUTOUPGRADE=true")
 	}
-	// ERROR
-	// {"SeverityText":"FATAL","Timestamp":1706224238009644720,"InstrumentationScope":"sourcegraph","Caller":"svcmain/svcmain.go:167","Function":"github.com/sourcegraph/sourcegraph/internal/service/svcmain.run.func1","Body":"failed to start service","Resource":{"service.name":"frontend","service.version":"0.0.0+dev","service.instance.id":"79a3e3ca0bfc"},"Attributes":{"service":"frontend","error":"failed to connect to frontend database: database schema out of date"}}
+
 	cmdString := []string{
 		"--network", networkName,
 		fmt.Sprintf("%s:%s", image, version),
@@ -531,7 +530,6 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	errChan := make(chan error)
 	go func() {
 		if _, err := run.Cmd(ctx, cmdString...).Run().String(); err != nil {
-			fmt.Println("🚨 failed to start frontend: ", err)
 			errChan <- err
 		}
 	}()

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Masterminds/semver"
 
@@ -14,7 +15,7 @@ import (
 // standardUpgradeTest initializes Sourcegraph's dbs and runs a standard upgrade
 // i.e. an upgrade test between some last minor version and the current release candidate
 func standardUpgradeTest(ctx context.Context, initVersion, targetVersion, latestStableVersion *semver.Version) Test {
-	postRelease := ctx.Value(postReleaseKey{}).(string)
+	postRelease := strings.TrimPrefix(ctx.Value(postReleaseKey{}).(string), "v") // Post release version string
 
 	//start test env
 	test, networkName, dbs, cleanup, err := setupTestEnv(ctx, "standard", initVersion)
@@ -87,7 +88,7 @@ func standardUpgradeTest(ctx context.Context, initVersion, targetVersion, latest
 // multiversionUpgradeTest tests the migrator upgrade command,
 // initializing the three main dbs and conducting an upgrade to the release candidate version
 func multiversionUpgradeTest(ctx context.Context, initVersion, targetVersion, latestStableVersion *semver.Version) Test {
-	postRelease := ctx.Value(postReleaseKey{}).(string) // Post release version string
+	postRelease := strings.TrimPrefix(ctx.Value(postReleaseKey{}).(string), "v") // Post release version string
 
 	//start test env
 	test, networkName, dbs, cleanup, err := setupTestEnv(ctx, "multiversion", initVersion)
@@ -178,7 +179,7 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, targetVersion, la
 // Without this in place autoupgrade fails and exits while trying to make an oobmigration comparison here: https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/internal/cli/autoupgrade.go?L67-76
 // {"SeverityText":"WARN","Timestamp":1706721478276103721,"InstrumentationScope":"frontend","Caller":"cli/autoupgrade.go:73","Function":"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli.tryAutoUpgrade","Body":"unexpected string for desired instance schema version, skipping auto-upgrade","Resource":{"service.name":"frontend","service.version":"devVersion","service.instance.id":"487754e1c54a"},"Attributes":{"version":"devVersion"}}
 func autoUpgradeTest(ctx context.Context, initVersion, targetVersion, latestStableVersion *semver.Version) Test {
-	postRelease := ctx.Value(postReleaseKey{}).(string) // Post release version string
+	postRelease := strings.TrimPrefix(ctx.Value(postReleaseKey{}).(string), "v") // Post release version string
 
 	//start test env
 	test, networkName, dbs, cleanup, err := setupTestEnv(ctx, "auto", initVersion)
