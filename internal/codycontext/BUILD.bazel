@@ -4,7 +4,10 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "codycontext",
     srcs = [
+        "cache.go",
         "context.go",
+        "dotcom.go",
+        "enterprise.go",
         "filter.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codycontext",
@@ -15,6 +18,7 @@ go_library(
         "//internal/cody",
         "//internal/conf",
         "//internal/database",
+        "//internal/dotcom",
         "//internal/embeddings",
         "//internal/embeddings/db",
         "//internal/embeddings/embed",
@@ -29,6 +33,7 @@ go_library(
         "//internal/types",
         "//lib/errors",
         "//lib/pointers",
+        "//schema",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_hashicorp_golang_lru_v2//:golang-lru",
         "@com_github_sourcegraph_conc//pool",
