@@ -90,7 +90,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// Setup our server megastruct.
 	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
-	cloneQueue := server.NewCloneQueue(observationCtx, list.New())
 	locker := server.NewRepositoryLocker()
 	hostname := config.ExternalAddress
 	gitserver := server.NewServer(&server.ServerOpts{
@@ -135,7 +134,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		FS:                      fs,
 		Hostname:                hostname,
 		DB:                      db,
-		CloneQueue:              cloneQueue,
 		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 		RecordingCommandFactory: recordingCommandFactory,
 		Locker:                  locker,
@@ -174,7 +172,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		httpserver.NewFromAddr(config.ListenAddress, &http.Server{
 			Handler: handler,
 		}),
-		gitserver.NewClonePipeline(logger, cloneQueue),
 		server.NewRepoStateSyncer(
 			ctx,
 			logger,
