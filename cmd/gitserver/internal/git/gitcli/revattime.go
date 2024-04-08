@@ -34,7 +34,7 @@ func (g *gitCLIBackend) RevAtTime(ctx context.Context, spec string, t time.Time)
 	r, err := g.NewCommand(ctx, WithArguments(
 		"log",
 		"--format=format:%H", // only hash
-		"--first-parent",     // children before parents, but otherwise sort by date
+		"--first-parent",     // linearize history
 		fmt.Sprintf("--before=%d", t.Unix()),
 		"--max-count=1", // only one commit
 		spec,
