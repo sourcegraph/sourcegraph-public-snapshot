@@ -82,49 +82,49 @@ func TestGetConfigurationPolicies(t *testing.T) {
 	}
 
 	var (
-		True  = true
-		False = false
+		trueValue  = true
+		falseValue = false
 	)
 
 	type testCase struct {
 		repositoryID         int
 		term                 string
 		forDataRetention     *bool
-		forIndexing          *bool
+		forPreciseIndexing   *bool
 		forSyntacticIndexing *bool
 		forEmbeddings        *bool
 		protected            *bool
 		expectedIDs          []int
 	}
 	testCases := []testCase{
-		{forEmbeddings: &False, expectedIDs: []int{101, 102, 103, 104, 105, 106, 107, 108, 109, 111}}, // Any flags; all policies
-		{forEmbeddings: &False, protected: &True, expectedIDs: []int{101, 102, 103, 111}},             // Only protected
-		{forEmbeddings: &False, protected: &False, expectedIDs: []int{104, 105, 106, 107, 108, 109}},  // Only un-protected
+		{forEmbeddings: &falseValue, expectedIDs: []int{101, 102, 103, 104, 105, 106, 107, 108, 109, 111}},     // Any flags; all policies
+		{forEmbeddings: &falseValue, protected: &trueValue, expectedIDs: []int{101, 102, 103, 111}},            // Only protected
+		{forEmbeddings: &falseValue, protected: &falseValue, expectedIDs: []int{104, 105, 106, 107, 108, 109}}, // Only un-protected
 
-		{forEmbeddings: &False, repositoryID: 41, expectedIDs: []int{104, 105, 106, 107}},      // Any flags; matches repo by patterns
-		{forEmbeddings: &False, repositoryID: 42, expectedIDs: []int{101, 102, 104, 105, 109}}, // Any flags; matches repo by assignment and pattern
-		{forEmbeddings: &False, repositoryID: 43, expectedIDs: []int{103, 104, 105, 111}},      // Any flags; matches repo by assignment
-		{forEmbeddings: &False, repositoryID: 44, expectedIDs: []int{104, 105}},                // Any flags; no matches by repo
+		{forEmbeddings: &falseValue, repositoryID: 41, expectedIDs: []int{104, 105, 106, 107}},      // Any flags; matches repo by patterns
+		{forEmbeddings: &falseValue, repositoryID: 42, expectedIDs: []int{101, 102, 104, 105, 109}}, // Any flags; matches repo by assignment and pattern
+		{forEmbeddings: &falseValue, repositoryID: 43, expectedIDs: []int{103, 104, 105, 111}},      // Any flags; matches repo by assignment
+		{forEmbeddings: &falseValue, repositoryID: 44, expectedIDs: []int{104, 105}},                // Any flags; no matches by repo
 
-		{forEmbeddings: &False, forDataRetention: &True, expectedIDs: []int{102, 104, 106, 108}},         // For data retention; all policies
-		{forEmbeddings: &False, forDataRetention: &True, repositoryID: 41, expectedIDs: []int{104, 106}}, // For data retention; matches repo by patterns
-		{forEmbeddings: &False, forDataRetention: &True, repositoryID: 42, expectedIDs: []int{102, 104}}, // For data retention; matches repo by assignment and pattern
-		{forEmbeddings: &False, forDataRetention: &True, repositoryID: 43, expectedIDs: []int{104}},      // For data retention; matches repo by assignment
-		{forEmbeddings: &False, forDataRetention: &True, repositoryID: 44, expectedIDs: []int{104}},      // For data retention; no matches by repo
+		{forEmbeddings: &falseValue, forDataRetention: &trueValue, expectedIDs: []int{102, 104, 106, 108}},         // For data retention; all policies
+		{forEmbeddings: &falseValue, forDataRetention: &trueValue, repositoryID: 41, expectedIDs: []int{104, 106}}, // For data retention; matches repo by patterns
+		{forEmbeddings: &falseValue, forDataRetention: &trueValue, repositoryID: 42, expectedIDs: []int{102, 104}}, // For data retention; matches repo by assignment and pattern
+		{forEmbeddings: &falseValue, forDataRetention: &trueValue, repositoryID: 43, expectedIDs: []int{104}},      // For data retention; matches repo by assignment
+		{forEmbeddings: &falseValue, forDataRetention: &trueValue, repositoryID: 44, expectedIDs: []int{104}},      // For data retention; no matches by repo
 
-		{forEmbeddings: &False, forIndexing: &True, expectedIDs: []int{101, 103, 105, 107, 109}},         // For indexing; all policies
-		{forEmbeddings: &False, forIndexing: &True, repositoryID: 41, expectedIDs: []int{105, 107}},      // For indexing; matches repo by patterns
-		{forEmbeddings: &False, forIndexing: &True, repositoryID: 42, expectedIDs: []int{101, 105, 109}}, // For indexing; matches repo by assignment and pattern
-		{forEmbeddings: &False, forIndexing: &True, repositoryID: 43, expectedIDs: []int{103, 105}},      // For indexing; matches repo by assignment
-		{forEmbeddings: &False, forIndexing: &True, repositoryID: 44, expectedIDs: []int{105}},           // For indexing; no matches by repo
+		{forEmbeddings: &falseValue, forPreciseIndexing: &trueValue, expectedIDs: []int{101, 103, 105, 107, 109}},         // For indexing; all policies
+		{forEmbeddings: &falseValue, forPreciseIndexing: &trueValue, repositoryID: 41, expectedIDs: []int{105, 107}},      // For indexing; matches repo by patterns
+		{forEmbeddings: &falseValue, forPreciseIndexing: &trueValue, repositoryID: 42, expectedIDs: []int{101, 105, 109}}, // For indexing; matches repo by assignment and pattern
+		{forEmbeddings: &falseValue, forPreciseIndexing: &trueValue, repositoryID: 43, expectedIDs: []int{103, 105}},      // For indexing; matches repo by assignment
+		{forEmbeddings: &falseValue, forPreciseIndexing: &trueValue, repositoryID: 44, expectedIDs: []int{105}},           // For indexing; no matches by repo
 
-		{forSyntacticIndexing: &True, expectedIDs: []int{102, 104, 105, 106, 108, 111}},    // For syntactic indexing; all policies
-		{forSyntacticIndexing: &True, repositoryID: 41, expectedIDs: []int{104, 105, 106}}, // For syntactic indexing; matches repo by patterns
-		{forSyntacticIndexing: &True, repositoryID: 42, expectedIDs: []int{102, 104, 105}}, // For syntactic indexing; matches repo by assignment and pattern
-		{forSyntacticIndexing: &True, repositoryID: 43, expectedIDs: []int{104, 105, 111}}, // For syntactic indexing; matches repo by assignment
-		{forSyntacticIndexing: &True, repositoryID: 44, expectedIDs: []int{104, 105}},      // For syntactic indexing; no matches by repo
+		{forSyntacticIndexing: &trueValue, expectedIDs: []int{102, 104, 105, 106, 108, 111}},    // For syntactic indexing; all policies
+		{forSyntacticIndexing: &trueValue, repositoryID: 41, expectedIDs: []int{104, 105, 106}}, // For syntactic indexing; matches repo by patterns
+		{forSyntacticIndexing: &trueValue, repositoryID: 42, expectedIDs: []int{102, 104, 105}}, // For syntactic indexing; matches repo by assignment and pattern
+		{forSyntacticIndexing: &trueValue, repositoryID: 43, expectedIDs: []int{104, 105, 111}}, // For syntactic indexing; matches repo by assignment
+		{forSyntacticIndexing: &trueValue, repositoryID: 44, expectedIDs: []int{104, 105}},      // For syntactic indexing; no matches by repo
 
-		{forDataRetention: &False, forIndexing: &False, forEmbeddings: &True, expectedIDs: []int{110}}, // For embeddings
+		{forDataRetention: &falseValue, forPreciseIndexing: &falseValue, forEmbeddings: &trueValue, expectedIDs: []int{110}}, // For embeddings
 
 		{term: "bc", expectedIDs: []int{101, 103, 104, 105, 106, 108, 111}}, // Searches by name (multiple substring matches)
 		{term: "abcd", expectedIDs: []int{}},                                // Searches by name (no matches)
@@ -138,7 +138,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 			// without formatBoolOption the strings for those bool pointers end up looking like `0xc000010b4f`
 			// which only helps differentiate between empty value and non-empty
 			formatBoolOption(testCase.forDataRetention),
-			formatBoolOption(testCase.forIndexing),
+			formatBoolOption(testCase.forPreciseIndexing),
 			formatBoolOption(testCase.forSyntacticIndexing),
 			formatBoolOption(testCase.forEmbeddings),
 			formatBoolOption(testCase.protected),
@@ -150,7 +150,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 				RepositoryID:         testCase.repositoryID,
 				Term:                 testCase.term,
 				ForDataRetention:     testCase.forDataRetention,
-				ForIndexing:          testCase.forIndexing,
+				ForPreciseIndexing:   testCase.forPreciseIndexing,
 				ForSyntacticIndexing: testCase.forSyntacticIndexing,
 				ForEmbeddings:        testCase.forEmbeddings,
 				Protected:            testCase.protected,
@@ -294,5 +294,4 @@ func formatBoolOption(opt *bool) string {
 	} else {
 		return "false"
 	}
-
 }

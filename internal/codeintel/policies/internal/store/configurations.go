@@ -28,8 +28,8 @@ func (s *store) GetConfigurationPolicies(ctx context.Context, opts shared.GetCon
 	if opts.ForDataRetention != nil {
 		attrs = append(attrs, attribute.Bool("forDataRetention", *opts.ForDataRetention))
 	}
-	if opts.ForIndexing != nil {
-		attrs = append(attrs, attribute.Bool("forIndexing", *opts.ForIndexing))
+	if opts.ForPreciseIndexing != nil {
+		attrs = append(attrs, attribute.Bool("forPreciseIndexing", *opts.ForPreciseIndexing))
 	}
 	if opts.ForSyntacticIndexing != nil {
 		attrs = append(attrs, attribute.Bool("forSyntacticIndexing", *opts.ForSyntacticIndexing))
@@ -82,8 +82,8 @@ func (s *store) GetConfigurationPolicies(ctx context.Context, opts shared.GetCon
 			conds = append(conds, sqlf.Sprintf("NOT p.retention_enabled"))
 		}
 	}
-	if opts.ForIndexing != nil {
-		if *opts.ForIndexing {
+	if opts.ForPreciseIndexing != nil {
+		if *opts.ForPreciseIndexing {
 			conds = append(conds, sqlf.Sprintf("p.indexing_enabled"))
 		} else {
 			conds = append(conds, sqlf.Sprintf("NOT p.indexing_enabled"))
