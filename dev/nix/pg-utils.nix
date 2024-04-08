@@ -6,6 +6,7 @@
 , path
 , substituteAll
 , darwin
+, gnugrep
 , patchelf
 }:
 stdenv.mkDerivation rec {
@@ -27,7 +28,22 @@ stdenv.mkDerivation rec {
     pkg-config
   ];
 
-  # needed in order for libpq to be statically linked
+  # needed in order for libpq to be statically linked.
+  # results in the following diff:
+  # 277c277
+  # < .PHONY: all-lib all-static-lib all-shared-lib
+  # ---
+  # > .PHONY: all-lib all-static-lib
+  # 279c279
+  # < all-lib: all-shared-lib
+  # ---
+  # > all-lib:
+  # 445,446c445,446
+  # < .PHONY: install-lib install-lib-static install-lib-shared installdirs-lib
+  # < install-lib: install-lib-shared
+  # ---
+  # > .PHONY: install-lib install-lib-static  installdirs-lib
+  # > install-lib:
   postPatch = ''
     sed -r 's/^(.*all-lib.*[ \t:])[a-z0-9-]+shared\S*/\1/' -i src/Makefile.shlib
   '';
@@ -35,10 +51,17 @@ stdenv.mkDerivation rec {
   # for some reason, `make -C src/bin` wasnt being stable for me, but the install variant was,
   # so we essentially do that building in the installing phase instead.
   dontBuild = true;
-  doCheck = false;
 
   installPhase = ''
     make -C src/bin install
+  '';
+
+  # guard against dynamically linking against anything besides libc
+  doInstallCheck = true;
+  installCheckPhase = ''
+    ${patchelf}/bin/patchelf --print-needed $out/bin/pg_dump | \
+      ${gnugrep}/bin/grep -v 'libc.so.6' && echo 'unexpected dynamic library dependency found, only libc is expected' && exit 1 \
+      || exit 0
   '';
 
   # update linker to not point to the nix one, but to one that will work on
