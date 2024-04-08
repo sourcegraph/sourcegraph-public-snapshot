@@ -4,8 +4,8 @@ extend type Query {
     """
     completions(input: CompletionsInput!, fast: Boolean = false): String!
         @deprecated(
-            reason: "Consumers should use non graphql endpoints when communicating the completions endpoint. Those endpoints can be found in this file -> https://sourcegraph.com/github.com/sourcegraph/cody/-/blob/vscode/src/services/AuthProvider.ts"
-        )
+            reason: "GraphQL API for completions is deprecated and will be removed in the future"
+    )
 }
 
 """
