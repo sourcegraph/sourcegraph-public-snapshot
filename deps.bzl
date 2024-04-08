@@ -4461,13 +4461,6 @@ def go_dependencies():
         version = "v0.1.1-0.20220428063043-89078438f170",
     )
     go_repository(
-        name = "com_github_pandatix_go_cvss",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/pandatix/go-cvss",
-        sum = "h1:9441i+Sn/P/TP9kNBl3kI7mwYtNYFr1eN8JdsiybiMM=",
-        version = "v0.5.2",
-    )
-    go_repository(
         name = "com_github_pascaldekloe_goe",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/pascaldekloe/goe",
