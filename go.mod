@@ -295,6 +295,7 @@ require (
 	go.opentelemetry.io/otel/exporters/prometheus v0.46.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20240125205218-1f4bbc51befe
 	gorm.io/gorm v1.25.5
+	sigs.k8s.io/controller-runtime v0.17.3
 )
 
 require (
