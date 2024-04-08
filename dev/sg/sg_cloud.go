@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"go/version"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,17 +10,20 @@ import (
 	"strings"
 	"time"
 
+	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 var cloudCommand = &cli.Command{
@@ -76,6 +78,16 @@ var cloudCommand = &cli.Command{
 	},
 }
 
+func determineVersion(build *buildkite.Build, tag string) string {
+	return images.BranchImageTag(
+		time.Now(),
+		pointers.DerefZero(build.Commit),
+		pointers.DerefZero(build.Number),
+		pointers.DerefZero(build.Branch),
+		tag,
+	)
+}
+
 func deployCloudEphemeral(ctx *cli.Context) error {
 	tag := ctx.String("tag")
 	branch := ctx.String("branch")
@@ -85,19 +97,28 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	}
 	// Check that branch has been pushed
 	// offer to push branch
+	//
+	// 1. kick of a build so that we can get the images
+	// 2. Once the build is kicked off we will need the build number so taht we can generate the version locally
 	client, err := bk.NewClient(ctx.Context, std.Out)
 	build, err := client.TriggerBuild(ctx.Context, "sourcegraph", branch, commit, bk.WithEnvVar("CLOUD_EPHEMERAL", "true"))
 	if err != nil {
 		return err
 	}
 
-	version := ""
-	if tag != "" {
-		version := images.BranchImageTag(time.Now())
+	_ = determineVersion(build, tag)
+
+	cloudClient, err := cloud.NewClient(ctx.Context, cloud.APIEndpoint)
+	if err != nil {
+		return err
 	}
 
-	// 1. kick of a build so that we can get the images
-	// 2. Once the build is kicked off we will need the build number so taht we can generate the version locally
+	inst, err := cloudClient.ListInstances(ctx.Context)
+	if err != nil {
+		return err
+	}
+
+	std.Out.Writef("Found %d instances\n", len(inst))
 	// 3. Once we have the version we can kick off the cloud deploy so that it can start provisioning the environment
 
 	return nil
