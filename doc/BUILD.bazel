@@ -25,8 +25,8 @@ sh_binary(
     args = ["$(location //dev/tools:docsite)"],
     data = [
         "//dev/tools:docsite",
-        "//doc/cli/references:doc_files",
         "//doc/admin/observability:doc_files",
+        "//doc/cli/references:doc_files",
     ] + glob(
         ["**/*"],
         ["test.sh"],
