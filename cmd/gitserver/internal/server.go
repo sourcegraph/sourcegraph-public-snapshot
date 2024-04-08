@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -21,7 +20,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
@@ -209,32 +207,6 @@ type Server struct {
 type locks struct {
 	once *sync.Once  // consolidates multiple waiting updates
 	mu   *sync.Mutex // prevents updates running in parallel
-}
-
-// Handler returns the http.Handler that should be used to serve requests.
-func (s *Server) Handler() http.Handler {
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-
-	// This endpoint allows us to expose gitserver itself as a "git service"
-	// (ETOOMANYGITS!) that allows other services to run commands like "git fetch"
-	// directly against a gitserver replica and treat it as a git remote.
-	//
-	// Example use case for this is a repo migration from one replica to another during
-	// scaling events and the new destination gitserver replica can directly clone from
-	// the gitserver replica which hosts the repository currently.
-	mux.HandleFunc("/git/", trace.WithRouteName("git", accesslog.HTTPMiddleware(
-		s.logger.Scoped("git.accesslog"),
-		conf.DefaultClient(),
-		func(rw http.ResponseWriter, r *http.Request) {
-			http.StripPrefix("/git", s.gitServiceHandler()).ServeHTTP(rw, r)
-		},
-	)))
-
-	return mux
 }
 
 // Stop cancels the running background jobs and returns when done.

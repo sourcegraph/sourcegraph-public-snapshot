@@ -3,6 +3,7 @@ package inttests
 import (
 	"container/list"
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
@@ -98,7 +99,7 @@ func TestClone(t *testing.T) {
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
 	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
 
-	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
+	handler := internalgrpc.MultiplexHandlers(grpcServer, http.NotFoundHandler())
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
 
@@ -213,7 +214,7 @@ func TestClone_Fail(t *testing.T) {
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
 	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
 
-	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
+	handler := internalgrpc.MultiplexHandlers(grpcServer, http.NotFoundHandler())
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
 
