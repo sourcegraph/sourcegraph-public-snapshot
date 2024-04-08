@@ -39,16 +39,8 @@ export interface SearchFiltersPanelProps extends TelemetryProps, TelemetryV2Prop
  * as it is, use consumer agnostic NewSearchFilters component instead.
  */
 export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
-    const {
-        query,
-        filters,
-        withCountAllFilter,
-        isFilterLoadingComplete,
-        className,
-        onQueryChange,
-        telemetryService,
-        telemetryRecorder,
-    } = props
+    const { query, filters, withCountAllFilter, isFilterLoadingComplete, className, onQueryChange, telemetryService } =
+        props
 
     const { isOpen, setFiltersPanel } = useSearchFiltersStore()
     const uiMode = useSearchFiltersPanelUIMode()

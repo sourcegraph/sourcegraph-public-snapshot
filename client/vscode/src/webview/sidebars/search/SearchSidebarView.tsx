@@ -28,6 +28,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { type Filter, LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Code, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
@@ -141,6 +142,7 @@ export const SearchSidebarView: FC<SearchSidebarViewProps> = React.memo(function
                     historyOrNavigate: navigate,
                     location,
                     source: 'filter',
+                    telemetryRecorder: noOpTelemetryRecorder,
                 },
                 updates
             ),
