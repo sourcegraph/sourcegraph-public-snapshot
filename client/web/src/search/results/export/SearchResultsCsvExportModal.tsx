@@ -95,6 +95,7 @@ export const SearchResultsCsvExportModal: React.FunctionComponent<SearchResultsC
         results,
         shouldRerunSearch,
         telemetryService,
+        telemetryRecorder,
         onClose,
     ])
 

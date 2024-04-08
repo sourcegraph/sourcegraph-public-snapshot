@@ -175,15 +175,18 @@ export const V2SearchInput: FC<PropsWithChildren<V2SearchInputProps>> = ({
                     source,
                 })
                 switch (action.type) {
-                    case 'command':
+                    case 'command': {
                         telemetryRecorder.recordEvent('search.input.command', 'select')
                         break
-                    case 'completion':
+                    }
+                    case 'completion': {
                         telemetryRecorder.recordEvent('search.input.completion', 'select')
                         break
-                    case 'goto':
+                    }
+                    case 'goto': {
                         telemetryRecorder.recordEvent('search.input.goto', 'select')
                         break
+                    }
                 }
             }),
             Prec.low(

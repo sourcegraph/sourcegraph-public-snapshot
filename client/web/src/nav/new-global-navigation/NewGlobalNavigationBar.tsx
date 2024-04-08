@@ -204,7 +204,7 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
                 source: 'nav',
                 historyOrNavigate: navigate,
                 selectedSearchContextSpec,
-                telemetryRecorder: telemetryRecorder,
+                telemetryRecorder,
                 ...parameters,
             })
         },

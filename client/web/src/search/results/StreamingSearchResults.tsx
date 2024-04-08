@@ -232,7 +232,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             source: 'smartSearchDisabled',
             telemetryRecorder: platformContext.telemetryRecorder,
         })
-    }, [caseSensitive, location, navigate, props, submittedURLQuery])
+    }, [caseSensitive, location, navigate, props, submittedURLQuery, platformContext.telemetryRecorder])
 
     const onTogglePatternType = useCallback(
         (patternType: SearchPatternType) => {
