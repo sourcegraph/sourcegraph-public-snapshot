@@ -16,6 +16,6 @@ go_library(
         "//internal/observation",
         "//internal/service",
         "@com_github_sourcegraph_log//:log",
-        "@io_k8s_sigs_controller_runtime//:go_default_library",
+        "@io_k8s_sigs_controller_runtime//:controller-runtime",
     ],
 )
