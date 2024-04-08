@@ -14,7 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
 )
 
 func TestIsFlaggedAnthropicRequest(t *testing.T) {
@@ -37,7 +37,7 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 		RequestBlockingEnabled:         true,
 		AllowedPromptPatterns:          []string{strings.ToLower(validPreamble)},
 	}
-	tk, err := tokenizer.NewAnthropicClaudeTokenizer()
+	tk, err := tokenizer.NewTokenizer(tokenizer.AnthropicModel)
 	require.NoError(t, err)
 
 	// Helper function for calling the AnthropicHandlerMethod's shouldFlagRequest, using the supplied
@@ -135,7 +135,7 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 }
 
 func TestAnthropicRequestJSON(t *testing.T) {
-	tk, err := tokenizer.NewAnthropicClaudeTokenizer()
+	tk, err := tokenizer.NewTokenizer(tokenizer.AnthropicModel)
 	require.NoError(t, err)
 
 	ar := anthropicRequest{Prompt: "Hello world"}
@@ -152,7 +152,7 @@ func TestAnthropicRequestJSON(t *testing.T) {
 }
 
 func TestAnthropicRequestGetPromptTokenCount(t *testing.T) {
-	tk, err := tokenizer.NewAnthropicClaudeTokenizer()
+	tk, err := tokenizer.NewTokenizer(tokenizer.AnthropicModel)
 	require.NoError(t, err)
 
 	originalRequest := anthropicRequest{Prompt: "Hello world"}

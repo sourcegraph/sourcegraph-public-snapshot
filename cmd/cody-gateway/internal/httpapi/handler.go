@@ -195,16 +195,6 @@ func NewHandler(
 			"/embeddings",
 			attributesOpenAIEmbeddings,
 			embeddingsHandler)
-
-		if config.Sourcegraph.UnlimitedEmbeddings {
-			// Register an endpoint for Triton embeddings that does not implement rate limiting.
-			unlimitedHandler := embeddings.NewUnlimitedHandler(logger, eventLogger, factoryMap, []string{string(embeddings.ModelNameSourcegraphSTMultiQA)})
-			registerStandardEndpoint(
-				"v1.embeddings-unlimited",
-				"/embeddings-unlimited",
-				attributesOpenAIEmbeddings,
-				unlimitedHandler)
-		}
 	}
 
 	if config.Fireworks.AccessToken == "" {

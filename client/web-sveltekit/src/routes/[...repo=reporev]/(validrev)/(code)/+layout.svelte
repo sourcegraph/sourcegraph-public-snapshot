@@ -160,10 +160,8 @@
                     {/key}
                 </TabPanel>
             </Tabs>
-            {#if lastCommit}
+            {#if lastCommit && selectedTab === null}
                 <LastCommit {lastCommit} />
-            {:else}
-                <LoadingSpinner inline />
             {/if}
         </div>
     </div>
@@ -218,8 +216,10 @@
         flex-flow: row nowrap;
         justify-content: space-between;
         padding-right: 0.5rem;
+        max-width: 100%;
 
         :global(.tabs) {
+            flex-grow: 1;
             height: 100%;
             max-height: 100%;
         }

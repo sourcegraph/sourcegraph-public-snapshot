@@ -6,7 +6,13 @@
 
     import type { HighlightedFileResult, HighlightedFileVariables } from '$lib/graphql-operations'
     import { queryStateStore } from '$lib/search/state'
-    import { TemporarySettingsStorage, type ContentMatch, type PathMatch, type SearchMatch, type SymbolMatch } from '$lib/shared'
+    import {
+        TemporarySettingsStorage,
+        type ContentMatch,
+        type PathMatch,
+        type SearchMatch,
+        type SymbolMatch,
+    } from '$lib/shared'
     import { KEY, type SourcegraphContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
     import {
@@ -42,7 +48,6 @@
             },
         },
     }
-
 
     // TS complains about up MockSuitFunctions which is not relevant here
     // @ts-ignore

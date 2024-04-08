@@ -350,10 +350,10 @@ func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {
 	// To provide some context variety, we just use the top-ranked
 	// chunk (the first chunk) from each file
 
-	// 4 lines of leading context, clamped to zero
-	startLine := max(0, fm.ChunkMatches[0].ContentStart.Line-4)
+	// 5 lines of leading context, clamped to zero
+	startLine := max(0, fm.ChunkMatches[0].ContentStart.Line-5)
 	// depend on content fetching to trim to the end of the file
-	endLine := startLine + 8
+	endLine := startLine + 20
 
 	return []FileChunkContext{{
 		RepoName:  fm.Repo.Name,

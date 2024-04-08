@@ -431,9 +431,9 @@ func TestServerNotify(t *testing.T) {
 	logger := logtest.NoOp(t)
 
 	conf := config.Config{
-		BuildkiteToken: os.Getenv("BUILDKITE_WEBHOOK_TOKEN"),
-		SlackToken:     os.Getenv("SLACK_TOKEN"),
-		SlackChannel:   os.Getenv("SLACK_CHANNEL"),
+		BuildkiteWebhookToken: os.Getenv("BUILDKITE_WEBHOOK_TOKEN"),
+		SlackToken:            os.Getenv("SLACK_TOKEN"),
+		SlackChannel:          os.Getenv("SLACK_CHANNEL"),
 	}
 
 	server := NewServer(":8080", logger, conf)
