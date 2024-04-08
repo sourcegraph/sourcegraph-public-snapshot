@@ -1,42 +1,44 @@
-import subYears from 'date-fns/subYears'
+import { interpolatePurples } from 'd3-scale-chromatic'
 
-// We use an exponential scale to get more diverse colors for more recent changes.
-//
-// The values are sampled from the following function:
-//   y=0.005*1.7^x
-const STEPS = [0.008, 0.0144, 0.0245, 0.0417, 0.0709, 0.1206, 0.2051, 0.3487, 0.5929, 1]
+// MIDPOINT is the duration for which the scale function returns the midpoint color (0.5)
+// The closer the midpoint is to "now", the more pronounced the color difference for
+// recent commits. I.e. more recent commits will be easier to distinguish from each other
+// than older commits.
+// Conversely, if the midpoint is further back in time, the color difference for recent
+// commits is less pronounced.
+// Another factor is the granularity of time. If the scale is in hours, the color difference
+// for commits from the last few days is more pronounced than if the scale is in months.
 
-const COLORS = [
-    'var(--blame-recency-0)',
-    'var(--blame-recency-1)',
-    'var(--blame-recency-2)',
-    'var(--blame-recency-3)',
-    'var(--blame-recency-4)',
-    'var(--blame-recency-5)',
-    'var(--blame-recency-6)',
-    'var(--blame-recency-7)',
-    'var(--blame-recency-8)',
-    'var(--blame-recency-9)',
-]
-const ONE_YEAR_AGO = subYears(Date.now(), 1).getTime()
-const THREE_YEARS_AGO = subYears(Date.now(), 3).getTime()
+const MIDPOINT = 6 * 30 * 24 // 6 months in hours
+const MILLIS_IN_HOUR = 1000 * 60 * 60
 
-export function getBlameRecencyColor(commit: Date | undefined, firstCommitDate: Date | undefined): string {
-    if (!commit) {
-        return COLORS[0]
+/**
+ * Get the color for the recency of a commit. The color is interpolated between
+ * light grey and purple, with grey being the oldest and purple being the most recent.
+ * The "direction" of color can be reversed, so that the most recent commits are light
+ * and the oldest are dark (e.g. for dark mode).
+ *
+ * @param commitDate The date of the commit
+ * @param lightToDark If true, the most recent commits will be light and the oldest dark. Default is false.
+ * @returns The color for the recency of the commit. It's an `rgb(...)` CSS color string.
+ */
+export function getBlameRecencyColor(commitDate: Date | undefined, lightToDark = false): string {
+    if (!commitDate) {
+        return 'var(--gray-04)'
     }
 
-    // We create a recency range depending on the repo creation date. If the
-    // repo is newer than a year, we use the last year so that we don't have a
-    // scale that is too sensible.
-    const now = Date.now()
-    const start = Math.min(firstCommitDate ? firstCommitDate.getTime() : THREE_YEARS_AGO, ONE_YEAR_AGO)
+    const age = (Date.now() - commitDate.getTime()) / MILLIS_IN_HOUR
 
-    // Get a value between [0, 1] that represents the recency of the commit in a linear scale
-    const recency = Math.min(Math.max((now - commit.getTime()) / (now - start), 0), 1)
+    // Get a value between [0, 1) that represents the recency of the commit
+    // (0 is most recent, 1 is least recent)
+    let recency = age / (age + MIDPOINT)
 
-    // Map from the linear scale to the exponential scale
-    const index = STEPS.findIndex(step => recency <= step)
+    // The color scheme goes from light (0) to dark (1), but unless lightToDark is true,
+    // we want the most recent commits to be dark and the oldest to be light. Therefore
+    // we simply invert the recency value.
+    if (!lightToDark) {
+        recency = 1 - recency
+    }
 
-    return COLORS[index]
+    return interpolatePurples(recency)
 }

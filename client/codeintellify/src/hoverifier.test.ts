@@ -1,8 +1,8 @@
 import { isEqual } from 'lodash'
-import { EMPTY, NEVER, of, Subject, Subscription } from 'rxjs'
-import { delay, distinctUntilChanged, filter, first, map, takeWhile } from 'rxjs/operators'
+import { EMPTY, firstValueFrom, lastValueFrom, NEVER, of, Subject, Subscription } from 'rxjs'
+import { delay, distinctUntilChanged, filter, map, takeWhile } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
-import { afterAll, afterEach, beforeAll, describe, it, expect } from 'vitest'
+import { afterEach, beforeEach, describe, it, expect } from 'vitest'
 
 import { isDefined } from '@sourcegraph/common'
 import type { Range } from '@sourcegraph/extension-api-types'
@@ -27,17 +27,18 @@ import {
 import { dispatchMouseEventAtPositionImpure } from './testutils/mouse'
 
 describe('Hoverifier', () => {
-    const dom = new DOM()
-    afterAll(dom.cleanup)
-
+    let dom: DOM
     let testcases: CodeViewProps[] = []
-    beforeAll(() => {
+
+    beforeEach(() => {
+        dom = new DOM()
         testcases = dom.createCodeViews()
     })
 
     let subscriptions = new Subscription()
 
     afterEach(() => {
+        dom.cleanup()
         subscriptions.unsubscribe()
         subscriptions = new Subscription()
     })
@@ -193,12 +194,7 @@ describe('Hoverifier', () => {
                 character: 6,
             })
 
-            await hoverifier.hoverStateUpdates
-                .pipe(
-                    filter(state => !!state.hoverOverlayProps),
-                    first()
-                )
-                .toPromise()
+            await firstValueFrom(hoverifier.hoverStateUpdates.pipe(filter(state => !!state.hoverOverlayProps)))
 
             await new Promise(resolve => setTimeout(resolve, 200))
 
@@ -243,9 +239,10 @@ describe('Hoverifier', () => {
 
         // Click https://sourcegraph.sgdev.org/github.com/gorilla/mux@cb4698366aa625048f3b815af6a0dea8aef9280a/-/blob/mux.go#L5:9
         // and wait for the hovered token to be defined.
-        const hasHoveredToken = hoverifier.hoverStateUpdates
-            .pipe(takeWhile(({ hoveredTokenElement }) => !isDefined(hoveredTokenElement)))
-            .toPromise()
+        const hasHoveredToken = lastValueFrom(
+            hoverifier.hoverStateUpdates.pipe(takeWhile(({ hoveredTokenElement }) => !isDefined(hoveredTokenElement))),
+            { defaultValue: null }
+        )
         dispatchMouseEventAtPositionImpure('click', gitHubCodeView, {
             line: 5,
             character: 9,
@@ -253,9 +250,10 @@ describe('Hoverifier', () => {
         await hasHoveredToken
 
         // Scroll down: the hover overlay should get hidden.
-        const hoverIsHidden = hoverifier.hoverStateUpdates
-            .pipe(takeWhile(({ hoverOverlayProps }) => isDefined(hoverOverlayProps)))
-            .toPromise()
+        const hoverIsHidden = lastValueFrom(
+            hoverifier.hoverStateUpdates.pipe(takeWhile(({ hoverOverlayProps }) => isDefined(hoverOverlayProps))),
+            { defaultValue: null }
+        )
         gitHubCodeView.getCodeElementFromLineNumber(gitHubCodeView.codeView, 2)!.scrollIntoView({ behavior: 'smooth' })
         await hoverIsHidden
     })
@@ -563,12 +561,7 @@ describe('Hoverifier', () => {
                     character: 6,
                 })
 
-                await hoverifier.hoverStateUpdates
-                    .pipe(
-                        filter(state => !!state.hoverOverlayProps),
-                        first()
-                    )
-                    .toPromise()
+                await firstValueFrom(hoverifier.hoverStateUpdates.pipe(filter(state => !!state.hoverOverlayProps)))
 
                 codeViewSubscription.unsubscribe()
 
@@ -611,12 +604,7 @@ describe('Hoverifier', () => {
                     character: 6,
                 })
 
-                await hoverifier.hoverStateUpdates
-                    .pipe(
-                        filter(state => !!state.hoverOverlayProps),
-                        first()
-                    )
-                    .toPromise()
+                await firstValueFrom(hoverifier.hoverStateUpdates.pipe(filter(state => !!state.hoverOverlayProps)))
 
                 codeViewSubscription.unsubscribe()
 

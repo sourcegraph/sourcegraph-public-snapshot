@@ -4,11 +4,11 @@ import (
 	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 
 	"github.com/go-enry/go-enry/v2"
-	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/zoektquery"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	zoekt "github.com/sourcegraph/zoekt/query"
@@ -60,14 +60,14 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 	// TODO PathPatternsAreCaseSensitive
 	// TODO whitespace in file path patterns?
 	for _, i := range filesInclude {
-		q, err := FileRe(i, isCaseSensitive)
+		q, err := zoektquery.FileRe(i, isCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
 		and = append(and, q)
 	}
 	if len(filesExclude) > 0 {
-		q, err := FileRe(query.UnionRegExps(filesExclude), isCaseSensitive)
+		q, err := zoektquery.FileRe(query.UnionRegExps(filesExclude), isCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
@@ -115,53 +115,6 @@ func QueryForFileContentArgs(opt query.RepoHasFileContentArgs, caseSensitive boo
 	return q
 }
 
-func toZoektPatternNew(expression query.Node, isCaseSensitive, patternMatchesContent, patternMatchesPath bool, typ search.IndexedRequestType) (zoekt.Q, error) {
-	q, err := zoekt.Parse(query.StringHuman([]query.Node{expression}))
-	if err != nil {
-		return nil, err
-	}
-	fileNameOnly := patternMatchesPath && !patternMatchesContent
-	contentOnly := !patternMatchesPath && patternMatchesContent
-
-	// Enforce fileNameOnly and contentOnly
-	q = zoekt.Map(q, func(r zoekt.Q) zoekt.Q {
-		if s, ok := r.(*zoekt.Regexp); ok {
-			s.CaseSensitive = isCaseSensitive
-			s.Content = contentOnly
-			s.FileName = fileNameOnly
-		}
-		if s, ok := r.(*zoekt.Substring); ok {
-			s.CaseSensitive = isCaseSensitive
-			s.Content = contentOnly
-			s.FileName = fileNameOnly
-		}
-		return r
-	})
-
-	// Need to expand the content atoms before applying zoekt.Symbol. This is
-	// so we keep the non-symbol logic of matching filename or symbol.
-	q = zoekt.Map(q, zoekt.ExpandFileContent)
-
-	// If type symbol wrap all content atoms with zoekt.Symbol.
-	if typ == search.SymbolRequest {
-		q = zoekt.Map(q, func(q zoekt.Q) zoekt.Q {
-			switch s := q.(type) {
-			case *zoekt.Substring:
-				if s.Content {
-					return &zoekt.Symbol{Expr: s}
-				}
-			case *zoekt.Regexp:
-				if s.Content {
-					return &zoekt.Symbol{Expr: s}
-				}
-			}
-			return q
-		})
-	}
-
-	return zoekt.Simplify(q), nil
-}
-
 func toZoektPattern(
 	expression query.Node, isCaseSensitive, patternMatchesContent, patternMatchesPath bool, typ search.IndexedRequestType) (zoekt.Q, error) {
 	var fold func(node query.Node) (zoekt.Q, error)
@@ -192,12 +145,7 @@ func toZoektPattern(
 			fileNameOnly := patternMatchesPath && !patternMatchesContent
 			contentOnly := !patternMatchesPath && patternMatchesContent
 
-			pattern := n.Value
-			if n.Annotation.Labels.IsSet(query.Literal) {
-				pattern = regexp.QuoteMeta(pattern)
-			}
-
-			q, err = parseRe(pattern, fileNameOnly, contentOnly, isCaseSensitive)
+			q, err = zoektquery.ParseRe(n.RegExpPattern(), fileNameOnly, contentOnly, isCaseSensitive)
 			if err != nil {
 				return nil, err
 			}

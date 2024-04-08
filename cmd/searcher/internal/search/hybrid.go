@@ -87,7 +87,7 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 	// actually searching since the index may update. If the index changes,
 	// which files we search need to change. As such we keep retrying until we
 	// know we have had a consistent list and search on zoekt.
-	for try := 0; try < 5; try++ {
+	for try := range 5 {
 		logger := rootLogger.With(log.Int("try", try))
 
 		indexed, ok, err := zoektIndexedCommit(ctx, client, p.Repo)
@@ -212,6 +212,7 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 
 			sender.Send(protocol.FileMatch{
 				Path:         fm.FileName,
+				Language:     fm.Language,
 				ChunkMatches: zoektChunkMatches(fm.ChunkMatches),
 			})
 		}
@@ -272,7 +273,7 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 		parts = append(parts, q)
 	}
 
-	for _, pat := range p.IncludePatterns {
+	for _, pat := range p.IncludePaths {
 		re, err := syntax.Parse(pat, syntax.Perl)
 		if err != nil {
 			return nil, err
@@ -284,8 +285,8 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 		})
 	}
 
-	if p.ExcludePattern != "" {
-		re, err := syntax.Parse(p.ExcludePattern, syntax.Perl)
+	if p.ExcludePaths != "" {
+		re, err := syntax.Parse(p.ExcludePaths, syntax.Perl)
 		if err != nil {
 			return nil, err
 		}
@@ -293,6 +294,18 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 			Regexp:        re,
 			FileName:      true,
 			CaseSensitive: p.PathPatternsAreCaseSensitive,
+		}})
+	}
+
+	for _, lang := range p.IncludeLangs {
+		parts = append(parts, &zoektquery.Language{
+			Language: lang,
+		})
+	}
+
+	for _, lang := range p.ExcludeLangs {
+		parts = append(parts, &zoektquery.Not{Child: &zoektquery.Language{
+			Language: lang,
 		}})
 	}
 

@@ -1,5 +1,7 @@
 import React, { useState, useCallback } from 'react'
 
+import { lastValueFrom } from 'rxjs'
+
 import { logger } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
 import { Text } from '@sourcegraph/wildcard'
@@ -130,7 +132,6 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
         ([user]: SiteUser[]) => {
             if (confirm('Are you sure you want to promote the selected user to site admin?')) {
                 setUserIsSiteAdmin(user.id, true)
-                    .toPromise()
                     .then(
                         createOnSuccess(
                             <Text as="span">
@@ -184,7 +185,6 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
         ([user]: SiteUser[]) => {
             if (confirm('Are you sure you want to revoke the selected user from site admin?')) {
                 setUserIsSiteAdmin(user.id, false)
-                    .toPromise()
                     .then(
                         createOnSuccess(
                             <Text as="span">
@@ -202,8 +202,7 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
     const handleResetUserPassword = useCallback(
         ([user]: SiteUser[]) => {
             if (confirm('Are you sure you want to reset the selected user password?')) {
-                randomizeUserPassword(user.id)
-                    .toPromise()
+                lastValueFrom(randomizeUserPassword(user.id))
                     .then(({ resetPasswordURL, emailSent }) => {
                         if (resetPasswordURL === null || emailSent) {
                             createOnSuccess(

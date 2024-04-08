@@ -5,11 +5,11 @@ import type * as esbuild from 'esbuild'
 
 import { ROOT_PATH, STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 import {
-    RXJS_RESOLUTIONS,
-    buildTimerPlugin,
-    monacoPlugin,
-    packageResolutionPlugin,
     stylePlugin,
+    packageResolutionPlugin,
+    monacoPlugin,
+    buildTimerPlugin,
+    workerPlugin,
 } from '@sourcegraph/build-config/src/esbuild/plugins'
 import { MONACO_LANGUAGES_AND_FEATURES } from '@sourcegraph/build-config/src/monaco-editor'
 
@@ -17,6 +17,7 @@ import type { EnvironmentConfig } from '../utils'
 
 import { manifestPlugin } from './manifestPlugin'
 import { mathjaxPlugin } from './mathjaxPlugin'
+import { WEB_BUILD_MANIFEST_FILENAME, webManifestBuilder } from './webmanifest'
 
 /**
  * Creates esbuild build options for the client/web app.
@@ -43,11 +44,14 @@ export function esbuildBuildOptions(ENVIRONMENT_CONFIG: EnvironmentConfig): esbu
         outdir: STATIC_ASSETS_PATH,
         plugins: [
             stylePlugin,
-            manifestPlugin,
             mathjaxPlugin,
+            manifestPlugin({
+                manifestFilename: WEB_BUILD_MANIFEST_FILENAME,
+                builder: webManifestBuilder,
+            }),
+            workerPlugin,
             packageResolutionPlugin({
                 path: require.resolve('path-browserify'),
-                ...RXJS_RESOLUTIONS,
                 ...(ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_OMIT_SLOW_DEPS
                     ? {
                           // Monaco

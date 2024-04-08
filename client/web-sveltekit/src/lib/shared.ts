@@ -2,12 +2,8 @@
 
 export type { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
 
-export {
-    parseRepoRevision,
-    parseQueryAndHash,
-    buildSearchURLQuery,
-    makeRepoURI,
-} from '@sourcegraph/shared/src/util/url'
+export { parseRepoRevision, buildSearchURLQuery, makeRepoGitURI } from '@sourcegraph/shared/src/util/url'
+
 export {
     isCloneInProgressErrorLike,
     isRepoSeeOtherErrorLike,
@@ -26,6 +22,7 @@ export {
     getFileMatchUrl,
     getRepositoryUrl,
     aggregateStreamingSearch,
+    emptyAggregateResults,
     LATEST_VERSION,
     type AggregateStreamingSearchResults,
     type StreamSearchOptions,
@@ -46,6 +43,7 @@ export {
     type Progress,
     type Range,
     type Filter,
+    type SearchEvent,
 } from '@sourcegraph/shared/src/search/stream'
 export {
     type MatchItem,
@@ -72,6 +70,7 @@ export { createCodeIntelAPI, type CodeIntelAPI } from '@sourcegraph/shared/src/c
 export { getModeFromPath } from '@sourcegraph/shared/src/languages'
 export type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 export { repositoryInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
+export { ThemeSetting, Theme } from '@sourcegraph/shared/src/theme-types'
 
 // Copies of non-reusable code
 

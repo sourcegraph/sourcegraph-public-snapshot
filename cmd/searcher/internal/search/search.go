@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	// numWorkers is how many concurrent readerGreps run in the case of
+	// numWorkers is how many concurrent goroutines run in the case of
 	// regexSearch, and the number of parallel workers in the case of
 	// structuralSearch.
 	numWorkers = 8
@@ -53,6 +53,11 @@ type Service struct {
 	// single call to git archive. This mainly needs to be less than ARG_MAX
 	// for the exec.Command on gitserver.
 	MaxTotalPathsLength int
+
+	// DisableHybridSearch disables hybrid search, which means searcher will not
+	// call out to Zoekt to offload part of the search workload. This is useful for
+	// troubleshooting, for example if searcher causes a high load on Zoekt.
+	DisableHybridSearch bool
 }
 
 func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
@@ -65,7 +70,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		p.Commit.Attr(),
 		attribute.String("url", p.URL),
 		attribute.String("query", p.Query.String()),
-		attribute.StringSlice("languages", p.Languages),
+		attribute.StringSlice("languages", p.IncludeLangs),
 		attribute.Bool("isCaseSensitive", p.IsCaseSensitive),
 		attribute.Bool("pathPatternsAreCaseSensitive", p.PathPatternsAreCaseSensitive),
 		attribute.Int("limit", p.Limit),
@@ -101,7 +106,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 			log.String("commit", string(p.Commit)),
 			log.String("query", p.String()),
 			log.Bool("isStructuralPat", p.IsStructuralPat),
-			log.Strings("languages", p.Languages),
+			log.Strings("languages", p.IncludeLangs),
 			log.Bool("isCaseSensitive", p.IsCaseSensitive),
 			log.Bool("patternMatchesContent", p.PatternMatchesContent),
 			log.Bool("patternMatchesPath", p.PatternMatchesPath),
@@ -136,32 +141,35 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		return badRequestError{err.Error()}
 	}
 
+	lm := toLangMatcher(&p.PatternInfo)
 	pm, err := toPathMatcher(&p.PatternInfo)
 	if err != nil {
 		return badRequestError{err.Error()}
 	}
 
-	logger := logWithTrace(ctx, s.Log).Scoped("hybrid").With(
-		log.String("repo", string(p.Repo)),
-		log.String("commit", string(p.Commit)),
-	)
-
 	var paths []string
-	unsearched, ok, err := s.hybrid(ctx, logger, p, sender)
-	if err != nil {
-		// error logging is done inside of s.hybrid so we just return
-		// error here.
-		return errors.Wrap(err, "hybrid search failed")
-	}
-	if !ok {
-		logger.Debug("hybrid search is falling back to normal unindexed search")
-	} else {
-		// now we only need to search unsearched
-		if len(unsearched) == 0 {
-			// indexed search did it all
-			return nil
+	if !s.DisableHybridSearch {
+		logger := logWithTrace(ctx, s.Log).Scoped("hybrid").With(
+			log.String("repo", string(p.Repo)),
+			log.String("commit", string(p.Commit)),
+		)
+
+		unsearched, ok, err := s.hybrid(ctx, logger, p, sender)
+		if err != nil {
+			// error logging is done inside of s.hybrid so we just return
+			// error here.
+			return errors.Wrap(err, "hybrid search failed")
 		}
-		paths = unsearched
+		if !ok {
+			logger.Debug("hybrid search is falling back to normal unindexed search")
+		} else {
+			// now we only need to search unsearched
+			if len(unsearched) == 0 {
+				// indexed search did it all
+				return nil
+			}
+			paths = unsearched
+		}
 	}
 
 	_, zf, err := s.getZipFile(ctx, tr, p, paths)
@@ -170,7 +178,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	}
 	defer zf.Close()
 
-	return regexSearch(ctx, rm, pm, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsCaseSensitive, sender, p.NumContextLines)
+	return regexSearch(ctx, rm, pm, lm, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsCaseSensitive, sender, p.NumContextLines)
 }
 
 func (s *Service) getZipFile(ctx context.Context, tr trace.Trace, p *protocol.Request, paths []string) (string, *zipFile, error) {
@@ -209,7 +217,8 @@ func validateParams(r *protocol.Request) error {
 	}
 
 	if p, ok := r.Query.(*protocol.PatternNode); ok {
-		if p.Value == "" && r.ExcludePattern == "" && len(r.IncludePatterns) == 0 {
+		if p.Value == "" && r.ExcludePaths == "" && len(r.IncludePaths) == 0 &&
+			len(r.IncludeLangs) == 0 && len(r.ExcludeLangs) == 0 {
 			return errors.New("At least one of pattern and include/exclude patterns must be non-empty")
 		}
 	}

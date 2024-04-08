@@ -11,10 +11,14 @@ import (
 //   - For some extensions which are overwhelmingly used by a certain file type
 //     in practice, such as '.ts', '.md' and '.yaml', it returns ambiguous results.
 //   - It does not provide any information about binary files.
+//   - Some languages are not supported by enry yet (e.g. Pkl)
 func getLanguagesByExtension(path string) (candidates []string, isLikelyBinaryFile bool) {
 	ext := filepath.Ext(path)
 	if ext == "" {
 		return nil, false
+	}
+	if lang, ok := unsupportedByEnryExtensionsMap[ext]; ok {
+		return []string{lang}, false
 	}
 	if _, ok := commonBinaryFileExtensions[ext[1:]]; ok {
 		return nil, true
@@ -56,6 +60,11 @@ var overrideAmbiguousExtensionsMap = map[string]string{
 	// ".yml" is not included here in parallel to ".yaml"
 	// as it is the first extension for 'YAML' and not the first
 	// for other variants of YAML, hence only 'YAML' is picked by enry.
+}
+
+var unsupportedByEnryExtensionsMap = map[string]string{
+	// Pkl Configuration Language (https://pkl-lang.org/)
+	".pkl": "Pkl",
 }
 
 // Source: https://github.com/sindresorhus/binary-extensions/blob/main/binary-extensions.json

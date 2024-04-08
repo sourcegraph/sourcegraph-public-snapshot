@@ -66,14 +66,15 @@ func newBitbucketServerSource(logger log.Logger, svc *types.ExternalService, c *
 
 	var ex repoExcluder
 	for _, r := range c.Exclude {
-		rule := ex.AddRule()
-		rule.
+		rule := NewRule().
 			Exact(r.Name).
 			Pattern(r.Pattern)
 
 		if r.Id != 0 {
 			rule.Exact(strconv.Itoa(r.Id))
 		}
+
+		ex.AddRule(rule)
 	}
 	if err := ex.RuleErrors(); err != nil {
 		return nil, err
@@ -279,7 +280,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 		}
 
 		wg.Add(1)
-		go func(q string) {
+		go func() {
 			defer wg.Done()
 
 			next := &bitbucketserver.PageToken{Limit: 1000}
@@ -293,7 +294,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 				ch <- batch{repos: repos}
 				next = page
 			}
-		}(q)
+		}()
 	}
 
 	for _, q := range s.config.ProjectKeys {

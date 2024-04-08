@@ -1,10 +1,12 @@
 import { forwardRef, type HTMLAttributes, useContext, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
+import { lastValueFrom } from 'rxjs'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { isDefined } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, useDebounce, useDeepMemo, Text } from '@sourcegraph/wildcard'
 
@@ -36,13 +38,13 @@ import {
 
 import styles from './BackendInsight.module.scss'
 
-interface BackendInsightProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
+interface BackendInsightProps extends TelemetryProps, TelemetryV2Props, HTMLAttributes<HTMLElement> {
     insight: BackendInsight
     resizing?: boolean
 }
 
 export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((props, ref) => {
-    const { telemetryService, insight, resizing, children, className, ...attributes } = props
+    const { telemetryService, telemetryRecorder, insight, resizing, children, className, ...attributes } = props
 
     const { currentDashboard } = useContext(InsightContext)
     const { updateInsight } = useContext(CodeInsightsBackendContext)
@@ -119,9 +121,12 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
     async function handleFilterSave(filters: InsightFilters): Promise<void> {
         const insightWithNewFilters = { ...insight, filters }
 
-        await updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }).toPromise()
+        await lastValueFrom(updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }), {
+            defaultValue: undefined,
+        })
 
         telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
+        telemetryRecorder.recordEvent('insights.searchBasedfilter', 'update', { metadata: { location: 0 } })
         setOriginalInsightFilters(filters)
         setIsFiltersOpen(false)
     }
@@ -137,12 +142,14 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
         })
 
         telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
+        telemetryRecorder.recordEvent('insights.createFromFilter.searchBased', 'submit', { metadata: { location: 0 } })
         setOriginalInsightFilters(filters)
         setIsFiltersOpen(false)
     }
 
     const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
         telemetryService,
+        telemetryRecorder,
         insightType: getTrackingTypeByInsightType(insight.type),
     })
 
@@ -204,6 +211,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                             currentDashboard={currentDashboard}
                             zeroYAxisMin={zeroYAxisMin}
                             onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
+                            telemetryRecorder={telemetryRecorder}
                         />
                     </>
                 )}

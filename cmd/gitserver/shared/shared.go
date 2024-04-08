@@ -10,8 +10,9 @@ import (
 	"net/http"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 
 	"github.com/sourcegraph/log"
 	"google.golang.org/grpc"
@@ -67,7 +68,8 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	// Prepare the file system.
-	if err := gitserverfs.InitGitserverFileSystem(logger, config.ReposDir); err != nil {
+	fs := gitserverfs.New(observationCtx, config.ReposDir)
+	if err := fs.Initialize(); err != nil {
 		return err
 	}
 
@@ -92,8 +94,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	locker := server.NewRepositoryLocker()
 	hostname := config.ExternalAddress
 	gitserver := server.NewServer(&server.ServerOpts{
-		Logger:   logger,
-		ReposDir: config.ReposDir,
+		Logger: logger,
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			return git.NewObservableBackend(gitcli.NewBackend(logger, recordingCommandFactory, dir, repoName))
 		},
@@ -106,12 +107,32 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 				RepoStore:               db.Repos(),
 				DepsSvc:                 dependencies.NewService(observationCtx, db),
 				Repo:                    repo,
-				ReposDir:                config.ReposDir,
 				CoursierCacheDir:        config.CoursierCacheDir,
 				RecordingCommandFactory: recordingCommandFactory,
 				Logger:                  logger,
+				FS:                      fs,
+				GetRemoteURLSource: func(ctx context.Context, repo api.RepoName) (vcssyncer.RemoteURLSource, error) {
+					return vcssyncer.RemoteURLSourceFunc(func(ctx context.Context) (*vcs.URL, error) {
+						rawURL, err := getRemoteURLFunc(ctx, logger, db, repo)
+						if err != nil {
+							return nil, errors.Wrapf(err, "getting remote URL for %q", repo)
+
+						}
+
+						u, err := vcs.ParseURL(rawURL)
+						if err != nil {
+							// TODO@ggilmore: Note that we can't redact the URL here because we can't
+							// parse it to know where the sensitive information is.
+							return nil, errors.Wrapf(err, "parsing remote URL %q", rawURL)
+						}
+
+						return u, nil
+
+					}), nil
+				},
 			})
 		},
+		FS:                      fs,
 		Hostname:                hostname,
 		DB:                      db,
 		CloneQueue:              cloneQueue,
@@ -160,34 +181,25 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			db,
 			locker,
 			hostname,
-			config.ReposDir,
+			fs,
 			config.SyncRepoStateInterval,
 			config.SyncRepoStateBatchSize,
 			config.SyncRepoStateUpdatePerSecond,
 		),
-	}
-
-	if runtime.GOOS == "windows" {
-		// See https://github.com/sourcegraph/sourcegraph/issues/54317 for details.
-		logger.Warn("Janitor is disabled on windows")
-	} else {
-		routines = append(
-			routines,
-			server.NewJanitor(
-				ctx,
-				server.JanitorConfig{
-					ShardID:                        hostname,
-					JanitorInterval:                config.JanitorInterval,
-					ReposDir:                       config.ReposDir,
-					DesiredPercentFree:             config.JanitorReposDesiredPercentFree,
-					DisableDeleteReposOnWrongShard: config.JanitorDisableDeleteReposOnWrongShard,
-				},
-				db,
-				recordingCommandFactory,
-				gitserver.CloneRepo,
-				logger,
-			),
-		)
+		server.NewJanitor(
+			ctx,
+			server.JanitorConfig{
+				ShardID:                        hostname,
+				JanitorInterval:                config.JanitorInterval,
+				DesiredPercentFree:             config.JanitorReposDesiredPercentFree,
+				DisableDeleteReposOnWrongShard: config.JanitorDisableDeleteReposOnWrongShard,
+			},
+			db,
+			fs,
+			recordingCommandFactory,
+			gitserver.CloneRepo,
+			logger,
+		),
 	}
 
 	// Register recorder in all routines that support it.

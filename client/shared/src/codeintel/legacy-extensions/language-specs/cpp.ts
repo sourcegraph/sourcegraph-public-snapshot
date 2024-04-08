@@ -43,6 +43,7 @@ export const cppSpec: LanguageSpec = {
         'hh',
         'h',
         'hpp',
+        'hxx',
         'ino', // Arduino
         'm', // Objective-C
         'pc', // Pro-C by Oracle RDBMS

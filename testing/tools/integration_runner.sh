@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -eu
 
 DB_STARTUP_TIMEOUT="${DB_STARTUP_TIMEOUT:-10s}"
 
@@ -64,7 +64,7 @@ function generate_unique_container_name() {
   if command -v openssl &>/dev/null; then
     ident="$(openssl rand -hex 12)"
   elif command -v hexdump &>/dev/null; then
-    ident="$(dd if=/dev/urandom bs=12 count=1 2>/dev/null | hexdump -e '24/1 "%02x"')"
+    ident="$(dd if=/dev/urandom bs=24 count=1 2>/dev/null | hexdump -e '24/1 "%02x"')"
   else
     echo "⚠️ Missing openssl or hexdump. Unable to generate unique id"
     echo "👉 Aborting."

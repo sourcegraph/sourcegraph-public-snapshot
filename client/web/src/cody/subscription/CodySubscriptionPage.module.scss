@@ -17,6 +17,10 @@
     font-size: 1.25rem;
 }
 
+.overflow-visible {
+    overflow: visible;
+}
+
 .ide-name {
     font-size: 1rem;
 }
@@ -36,10 +40,6 @@
     :global(.theme-dark) & {
         color: #ffffff;
     }
-}
-
-.pro-pricing {
-    text-decoration: line-through;
 }
 
 .upgrade-modal {

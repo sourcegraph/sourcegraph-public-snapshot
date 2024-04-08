@@ -18,16 +18,19 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/siteid"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -72,7 +75,7 @@ func IsPending() bool {
 
 func logFuncFrom(logger log.Logger) func(string, ...log.Field) {
 	logFunc := logger.Debug
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		logFunc = logger.Warn
 	}
 
@@ -356,8 +359,8 @@ func getAndMarshalCodeHostVersionsJSON(_ context.Context, _ database.DB) (_ json
 	return json.Marshal(v)
 }
 
-func getAndMarshalCodyUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalCodyUsageJSON")(&err)
+func getAndMarshalCodyUsage2JSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCodyUsage2JSON")(&err)
 
 	codyUsage, err := usagestats.GetAggregatedCodyStats(ctx, db)
 	if err != nil {
@@ -387,6 +390,44 @@ func getAndMarshalRepoMetadataUsageJSON(ctx context.Context, db database.DB) (_ 
 	}
 
 	return json.Marshal(repoMetadataUsage)
+}
+
+func getLLMUsageData(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	Manager := tokenusage.NewManager()
+	err = storeTokenUsageinDbBeforeRedisSync(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	usageData, err := Manager.RetrieveAndResetTokenUsageData()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(usageData)
+}
+
+// Stores in postgres right before the reset of the tokens to zero
+func storeTokenUsageinDbBeforeRedisSync(ctx context.Context, db database.DB) error {
+	recorder := telemetryrecorder.New(db)
+	tokenManager := tokenusage.NewManager()
+	tokenUsageData, err := tokenManager.FetchTokenUsageDataForAnalysis()
+	if err != nil {
+		return err
+	}
+	convertedTokenUsageData := make(telemetry.EventMetadata)
+	for key, value := range tokenUsageData {
+		castedKey := telemetry.ConstString(key) // Cast the key to telemetry.ConstString
+		convertedTokenUsageData[castedKey] = value
+	}
+
+	// This extra variable helps demarcate that this was the final fetch and sync before the redis was reset
+	convertedTokenUsageData["FinalFetchAndSync"] = 1.0
+
+	if err := recorder.Record(ctx, "cody.llmTokenCounter", "record", &telemetry.EventParameters{
+		Metadata: convertedTokenUsageData,
+	}); err != nil {
+		return err
+	}
+	return nil
 }
 
 func getDependencyVersions(ctx context.Context, db database.DB, logger log.Logger) (json.RawMessage, error) {
@@ -466,7 +507,7 @@ func getAndMarshalOwnUsageJSON(ctx context.Context, db database.DB) (json.RawMes
 func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Reader, error) {
 	scopedLog := logger.Scoped("telemetry")
 	logFunc := scopedLog.Debug
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		logFunc = scopedLog.Warn
 	}
 	// Used for cases where large pings objects might otherwise fail silently.
@@ -497,9 +538,10 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		CodeHostIntegrationUsage:      []byte("{}"),
 		IDEExtensionsUsage:            []byte("{}"),
 		MigratedExtensionsUsage:       []byte("{}"),
-		CodyUsage:                     []byte("{}"),
+		CodyUsage2:                    []byte("{}"),
 		CodyProviders:                 []byte("{}"),
 		RepoMetadataUsage:             []byte("{}"),
+		LlmUsage:                      []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx, db)
@@ -560,7 +602,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		logFunc("getAndMarshalBatchChangesUsageJSON failed", log.Error(err))
 	}
 	// We don't bother doing this on Sourcegraph.com as it is expensive and not needed.
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
 		if err != nil {
 			logFunc("getAndMarshalGrowthStatisticsJSON failed", log.Error(err))
@@ -632,7 +674,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	}
 
 	// We don't bother doing this on Sourcegraph.com as it is expensive and not needed.
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		r.MigratedExtensionsUsage, err = getAndMarshalMigratedExtensionsUsageJSON(ctx, db)
 		if err != nil {
 			logFunc("getAndMarshalMigratedExtensionsUsageJSON failed", log.Error(err))
@@ -654,7 +696,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		logFunc("ownUsage failed", log.Error(err))
 	}
 
-	r.CodyUsage, err = getAndMarshalCodyUsageJSON(ctx, db)
+	r.CodyUsage2, err = getAndMarshalCodyUsage2JSON(ctx, db)
 	if err != nil {
 		logFunc("codyUsage failed", log.Error(err))
 	}
@@ -668,7 +710,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	if err != nil {
 		logFunc("repoMetadataUsage failed", log.Error(err))
 	}
-
+	r.LlmUsage, err = getLLMUsageData(ctx, db)
 	r.HasExtURL = conf.UsingExternalURL()
 	r.BuiltinSignupAllowed = conf.IsBuiltinSignupAllowed()
 	r.AccessRequestEnabled = conf.IsAccessRequestEnabled()
@@ -689,7 +731,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	}()
 
 	// We don't bother doing these on Sourcegraph.com as they are expensive and not needed.
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

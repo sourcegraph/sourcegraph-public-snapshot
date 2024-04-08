@@ -161,6 +161,7 @@ lazy_static::lazy_static! {
             (Matlab, "matlab"),
             (Nickel, "nickel"),
             (Perl, "perl"),
+            (Pkl, "pkl"),
             (Pod, "pod"),
             (Python, "python"),
             (Ruby, "ruby"),
@@ -404,6 +405,7 @@ mod test {
     use super::*;
     use crate::highlighting::FileInfo;
     use crate::snapshot::{self, dump_document_with_config};
+    use if_chain::if_chain;
 
     fn snapshot_treesitter_syntax_kinds(doc: &Document, source: &str) -> String {
         dump_document_with_config(
@@ -429,6 +431,33 @@ mod test {
             },
         )
         .expect("dump document")
+    }
+
+    fn get_language_for_test(filepath: &std::path::Path, contents: &str) -> TreeSitterLanguageName {
+        let language_from_syntect = crate::highlighting::test::SYNTAX_SET
+            .with(|syntax_set| {
+                FileInfo::new(filepath.to_string_lossy().as_ref(), contents, None)
+                    .determine_language(syntax_set)
+            })
+            .unwrap();
+
+        // If we can't determine language from Syntect, determine from path just for the test
+        // This is only needed for test, since when running in production, we
+        // will always have the language passed in
+
+        // Remove me once let-chains are stabilized
+        // (https://github.com/rust-lang/rust/issues/53667)
+        if_chain! {
+            if language_from_syntect.raw.is_empty()
+                || language_from_syntect.raw.to_lowercase() == "plain text";
+            if let Some(extension) = filepath.extension();
+            if let Some(parser_id) = ParserId::from_file_extension(extension.to_str().unwrap());
+            then {
+                return TreeSitterLanguageName::new(parser_id.name());
+            }
+        }
+
+        language_from_syntect
     }
 
     #[test]
@@ -484,12 +513,7 @@ SELECT * FROM my_table
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
 
-            let language = &crate::highlighting::test::SYNTAX_SET
-                .with(|syntax_set| {
-                    FileInfo::new(filepath.to_string_lossy().as_ref(), &contents, None)
-                        .determine_language(syntax_set)
-                })
-                .unwrap();
+            let language = get_language_for_test(&filepath, &contents);
 
             let document = language.highlight_document(&contents, true).unwrap();
             // TODO: I'm not sure if there's a better way to run the snapshots without
@@ -536,12 +560,7 @@ SELECT * FROM my_table
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
 
-            let language = crate::highlighting::test::SYNTAX_SET
-                .with(|syntax_set| {
-                    FileInfo::new(filepath.to_string_lossy().as_ref(), &contents, None)
-                        .determine_language(syntax_set)
-                })
-                .unwrap();
+            let language = get_language_for_test(&filepath, &contents);
 
             let document = language.highlight_document(&contents, true).unwrap();
 

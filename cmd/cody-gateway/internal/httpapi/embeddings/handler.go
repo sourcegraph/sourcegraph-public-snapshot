@@ -10,9 +10,10 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead"
 	"go.opentelemetry.io/otel/attribute"
 	oteltrace "go.opentelemetry.io/otel/trace"
+
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"

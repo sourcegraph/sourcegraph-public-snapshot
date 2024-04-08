@@ -21,7 +21,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache"
@@ -34,6 +33,7 @@ import (
 	confProto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -172,7 +172,7 @@ func NewHandler(
 	m.Path("/completions/stream").Methods("POST").Handler(handlers.NewChatCompletionsStreamHandler())
 	m.Path("/completions/code").Methods("POST").Handler(handlers.NewCodeCompletionsHandler())
 
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		m.Path("/license/check").Methods("POST").Name("dotcom.license.check").Handler(handlers.NewDotcomLicenseCheckHandler())
 
 		updatecheckHandler, err := updatecheck.ForwardHandler()
@@ -222,6 +222,7 @@ func NewHandler(
 	// add above repo paths.
 	repo := m.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/shield").Methods("GET").Handler(jsonHandler(serveRepoShield()))
+	repo.Path("/refresh").Methods("POST").Handler(jsonHandler(serveRepoRefresh(db)))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
@@ -262,14 +263,14 @@ func RegisterInternalServices(
 		WriteErrBody: true,
 	})
 
-	// zoekt-indexserver endpoints
-	gsClient := gitserver.NewClient("http.zoektindexerserver")
+	gsClient := gitserver.NewClient("http.internalapi")
 
+	// zoekt-indexserver endpoints
 	indexer := &searchIndexerServer{
 		db:              db,
 		logger:          logger.Scoped("searchIndexerServer"),
-		gitserverClient: gsClient,
-		ListIndexable:   backend.NewRepos(logger, db, gsClient).ListIndexable,
+		gitserverClient: gsClient.Scoped("zoektindexerserver"),
+		ListIndexable:   backend.NewRepos(logger, db, gsClient.Scoped("zoektindexerserver")).ListIndexable,
 		RepoStore:       db.Repos(),
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
@@ -279,12 +280,9 @@ func RegisterInternalServices(
 		MinLastChangedDisabled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
 	}
 
-	gitService := &gitServiceHandler{Gitserver: gsClient}
+	gitService := &gitServiceHandler{Gitserver: gsClient.Scoped("gitservice")}
 	m.Path("/git/{RepoName:.*}/info/refs").Methods("GET").Name(gitInfoRefs).Handler(trace.Route(handler(gitService.serveInfoRefs())))
 	m.Path("/git/{RepoName:.*}/git-upload-pack").Methods("GET", "POST").Name(gitUploadPack).Handler(trace.Route(handler(gitService.serveGitUploadPack())))
-
-	// TODO: Can be removed after 5.3 is cut.
-	m.Path("/configuration").Methods("POST").Handler(trace.Route(handler(serveConfiguration)))
 
 	m.Path("/lsif/upload").Methods("POST").Handler(trace.Route(newCodeIntelUploadHandler(false)))
 	m.Path("/scip/upload").Methods("POST").Handler(trace.Route(newCodeIntelUploadHandler(false)))
@@ -375,5 +373,5 @@ var noopHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 
 var lsifDeprecationHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("Sourcegraph v4.5+ no longer accepts LSIF uploads. The Sourcegraph CLI v4.4.2+ will translate LSIF to SCIP prior to uploading. Please check the version of the CLI utility used to upload this artifact."))
+	_, _ = w.Write([]byte("Sourcegraph v4.5+ no longer accepts LSIF uploads. The Sourcegraph CLI v4.4.2+ will translate LSIF to SCIP prior to uploading. Please check the version of the CLI utility used to upload this artifact."))
 })

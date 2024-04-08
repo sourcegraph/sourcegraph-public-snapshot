@@ -151,7 +151,7 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 					return errors.Newf("exactly 2 arguments required, '<service ID>' and '<env ID>' - " +
 						" this command is for adding an environment to an existing service, did you mean to use 'sg msp init' instead?")
 				}
-				svc, err := useServiceArgument(c)
+				svc, err := useServiceArgument(c, false) // we're expecting a second argument
 				if err != nil {
 					return err
 				}
@@ -200,10 +200,10 @@ Supports completions on services and environments.`,
 			UsageText: `
 # generate single env for a single service
 sg msp generate <service> <env>
-# generate all envs across all services
-sg msp generate -all
 # generate all envs for a single service
 sg msp generate -all <service>
+# generate all envs across all services
+sg msp generate -all
 			`,
 			Before: msprepo.UseManagedServicesRepo,
 			Flags: []cli.Flag{
@@ -229,22 +229,32 @@ sg msp generate -all <service>
 					std.Out.WriteSuggestionf("Using stable generate - tfvars will not be updated.")
 				}
 
-				// Generate specific service
-				if serviceID := c.Args().First(); serviceID == "" && !generateAll {
-					return errors.New("first argument service ID is required without the '-all' flag")
-				} else if serviceID != "" {
-					targetEnv := c.Args().Get(1)
-					if targetEnv == "" && !generateAll {
-						return errors.New("second argument environment ID is required without the '-all' flag")
+				// Generate a specific service environment if '-all' is not provided
+				if !generateAll {
+					std.Out.WriteNoticef("Generating a specific service environment...")
+					svc, env, err := useServiceAndEnvironmentArguments(c, true)
+					if err != nil {
+						return err
 					}
-
-					return generateTerraform(serviceID, generateTerraformOptions{
-						targetEnv:      targetEnv,
+					return generateTerraform(svc, generateTerraformOptions{
+						targetEnv:      env.ID,
 						stableGenerate: stableGenerate,
 					})
 				}
 
-				// Generate all services
+				// 1+ argument indicates we are generating all envs for a single service
+				if c.Args().Len() > 0 {
+					std.Out.WriteNoticef("Generating all environments for a specific service...")
+					svc, err := useServiceArgument(c, true) // error if additional arguments are provided
+					if err != nil {
+						return err
+					}
+					return generateTerraform(svc, generateTerraformOptions{
+						stableGenerate: stableGenerate,
+					})
+				}
+
+				// Otherwise, generate all environments for all services
 				serviceIDs, err := msprepo.ListServices()
 				if err != nil {
 					return errors.Wrap(err, "list services")
@@ -253,7 +263,11 @@ sg msp generate -all <service>
 					return errors.New("no services found")
 				}
 				for _, serviceID := range serviceIDs {
-					if err := generateTerraform(serviceID, generateTerraformOptions{
+					s, err := spec.Open(msprepo.ServiceYAMLPath(serviceID))
+					if err != nil {
+						return err
+					}
+					if err := generateTerraform(s, generateTerraformOptions{
 						stableGenerate: stableGenerate,
 					}); err != nil {
 						return errors.Wrap(err, serviceID)
@@ -279,7 +293,7 @@ sg msp generate -all <service>
 				},
 			},
 			Action: func(c *cli.Context) error {
-				svc, err := useServiceArgument(c)
+				svc, err := useServiceArgument(c, true)
 				if err != nil {
 					return err
 				}
@@ -405,7 +419,7 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 			},
 			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 			Action: func(c *cli.Context) error {
-				svc, env, err := useServiceAndEnvironmentArguments(c)
+				svc, env, err := useServiceAndEnvironmentArguments(c, true)
 				if err != nil {
 					return err
 				}
@@ -465,7 +479,7 @@ full access, use the '-write-access' flag.
 					},
 					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 					Action: func(c *cli.Context) error {
-						_, env, err := useServiceAndEnvironmentArguments(c)
+						svc, env, err := useServiceAndEnvironmentArguments(c, true)
 						if err != nil {
 							return err
 						}
@@ -519,7 +533,8 @@ full access, use the '-write-access' flag.
 						proxy, err := cloudsqlproxy.NewCloudSQLProxy(
 							connectionName,
 							serviceAccountEmail,
-							proxyPort)
+							proxyPort,
+							svc.Service.GetGoLink(env.ID))
 						if err != nil {
 							return err
 						}
@@ -573,7 +588,7 @@ sg msp tfc view <service> <environment>
 								terraformcloud.MSPWorkspaceTag))
 						}
 
-						service, err := useServiceArgument(c)
+						service, err := useServiceArgument(c, false)
 						if err != nil {
 							return err
 						}
@@ -618,11 +633,6 @@ Supports completions on services and environments.`,
 					},
 					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 					Action: func(c *cli.Context) error {
-						service, err := useServiceArgument(c)
-						if err != nil {
-							return err
-						}
-
 						secretStore, err := secrets.FromContext(c.Context)
 						if err != nil {
 							return err
@@ -650,23 +660,26 @@ Supports completions on services and environments.`,
 							return errors.Wrap(err, "init Terraform Cloud client")
 						}
 
-						if targetEnv := c.Args().Get(1); targetEnv != "" {
-							env := service.GetEnvironment(targetEnv)
-							if env == nil {
-								return errors.Newf("environment %q not found in service spec", targetEnv)
+						// If we are not syncing all environments for a service,
+						// then we are syncing a specific service environment.
+						if !c.Bool("all") {
+							std.Out.WriteNoticef("Syncing a specific service environment...")
+							svc, env, err := useServiceAndEnvironmentArguments(c, true)
+							if err != nil {
+								return err
 							}
+							return syncEnvironmentWorkspaces(c, tfcClient, svc.Service, *env)
+						}
 
-							if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, *env); err != nil {
+						// Otherwise, we are syncing all environments for a service.
+						std.Out.WriteNoticef("Syncing all environments for a specific service ...")
+						svc, err := useServiceArgument(c, true)
+						if err != nil {
+							return err
+						}
+						for _, env := range svc.Environments {
+							if err := syncEnvironmentWorkspaces(c, tfcClient, svc.Service, env); err != nil {
 								return errors.Wrapf(err, "sync env %q", env.ID)
-							}
-						} else {
-							if targetEnv == "" && !c.Bool("all") {
-								return errors.New("second argument environment ID is required without the '-all' flag")
-							}
-							for _, env := range service.Environments {
-								if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, env); err != nil {
-									return errors.Wrapf(err, "sync env %q", env.ID)
-								}
 							}
 						}
 
@@ -689,7 +702,7 @@ Supports completions on services and environments.`,
 						},
 					),
 					Action: func(c *cli.Context) error {
-						service, env, err := useServiceAndEnvironmentArguments(c)
+						service, env, err := useServiceAndEnvironmentArguments(c, false)
 						if err != nil {
 							return err
 						}

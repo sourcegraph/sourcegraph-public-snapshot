@@ -8,7 +8,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -30,7 +30,7 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 		return nil, err
 	}
 	// 🚨 SECURITY: Only org members can get org details on Cloud
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		hasAccess := func() error {
 			if auth.CheckOrgAccess(ctx, r.db, org.ID) == nil {
 				return nil
@@ -100,7 +100,7 @@ func OrgByIDInt32(ctx context.Context, db database.DB, orgID int32) (*OrgResolve
 func orgByIDInt32WithForcedAccess(ctx context.Context, db database.DB, orgID int32, forceAccess bool) (*OrgResolver, error) {
 	// 🚨 SECURITY: Only org members can get org details on Cloud
 	//              And all invited users by email
-	if !forceAccess && envvar.SourcegraphDotComMode() {
+	if !forceAccess && dotcom.SourcegraphDotComMode() {
 		err := auth.CheckOrgAccess(ctx, db, orgID)
 		if err != nil {
 			hasAccess := false
@@ -337,7 +337,7 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 		}
 	}
 	// Write the org_id into orgs open beta stats table on Cloud
-	if envvar.SourcegraphDotComMode() && args.StatsID != nil {
+	if dotcom.SourcegraphDotComMode() && args.StatsID != nil {
 		// we do not throw errors here as this is best effort
 		err = r.db.Orgs().UpdateOrgsOpenBetaStats(ctx, *args.StatsID, newOrg.ID)
 		if err != nil {
@@ -444,7 +444,7 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 	}
 
 	// 🚨 SECURITY: Do not allow direct add on Cloud unless the site admin is a member of the org
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		if err := auth.CheckOrgAccess(ctx, r.db, orgID); err != nil {
 			return nil, errors.Errorf("Must be a member of the organization to add members", err)
 		}

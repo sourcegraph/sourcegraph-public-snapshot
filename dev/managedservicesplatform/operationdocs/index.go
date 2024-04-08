@@ -46,10 +46,12 @@ func RenderIndexPage(services []*spec.Spec, opts Options) string {
 	opts.AddDocumentComment(md)
 
 	generalGuidanceLink, generalGuidance := markdown.HeadingLinkf("General guidance")
-	md.Paragraphf(`These pages contain generated operational guidance for the infrastructure of %s services.
-This includes information about each service, configured environments, Entitle requests, common tasks, monitoring, etc.
+	md.Paragraphf(`These pages contain generated operational guidance for the infrastructure of the %d %s services (across %d environments) currently in operation at Sourcegraph.
+This includes information about each service, configured environments, Entitle requests, common tasks, monitoring, custom documentation provided by service operators, and so on.
 In addition to service-specific guidance, %s is also available.`,
+		len(services),
 		markdown.Link("Managed Services Platform (MSP)", relativePathToMSPPage),
+		specSet(services).countEnvironments(),
 		generalGuidanceLink)
 
 	md.Paragraphf(`MSP is owned by %s, but individual teams are responsible for the services they operate on the platform.`,
@@ -139,3 +141,11 @@ func (s specSet) Less(i, j int) bool {
 	return s[i].Service.ID < s[j].Service.ID
 }
 func (s specSet) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+func (s specSet) countEnvironments() int {
+	var environments int
+	for _, sp := range s {
+		environments += len(sp.Environments)
+	}
+	return environments
+}

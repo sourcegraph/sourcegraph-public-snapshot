@@ -2,11 +2,12 @@ package api
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/dustin/go-humanize"
 	"go.opentelemetry.io/otel/attribute"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -23,6 +24,12 @@ import (
 
 const searchTimeout = 60 * time.Second
 
+type limitHitError struct {
+	description string
+}
+
+func (e *limitHitError) Error() string { return e.description }
+
 func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWriter writer.CachedDatabaseWriter, db database.DB) types.SearchFunc {
 	operations := sharedobservability.NewOperations(observationCtx)
 
@@ -34,8 +41,10 @@ func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWri
 			attribute.Bool("isRegExp", args.IsRegExp),
 			attribute.Bool("isCaseSensitive", args.IsCaseSensitive),
 			attribute.Int("numIncludePatterns", len(args.IncludePatterns)),
-			attribute.String("includePatterns", strings.Join(args.IncludePatterns, ":")),
+			attribute.StringSlice("includePatterns", args.IncludePatterns),
 			attribute.String("excludePattern", args.ExcludePattern),
+			attribute.StringSlice("includeLangs", args.IncludeLangs),
+			attribute.StringSlice("excludeLangs", args.ExcludeLangs),
 			attribute.Int("first", args.First),
 			attribute.Float64("timeoutSeconds", args.Timeout.Seconds()),
 		}})
@@ -87,8 +96,13 @@ func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWri
 
 		var res result.Symbols
 		err = store.WithSQLiteStore(observationCtx, dbFile, func(db store.Store) (err error) {
-			if res, err = db.Search(ctx, args); err != nil {
+			var limitHit bool
+			if res, limitHit, err = db.Search(ctx, args); err != nil {
 				return errors.Wrap(err, "store.Search")
+			}
+			if limitHit {
+				p := message.NewPrinter(language.English)
+				return &limitHitError{description: p.Sprintf("unindexed symbol search out of bounds. Expected args.First to be within [0, %d], got %d", store.MaxSymbolLimit, args.First)}
 			}
 
 			return nil
