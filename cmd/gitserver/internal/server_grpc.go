@@ -23,10 +23,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -35,7 +37,6 @@ import (
 type service interface {
 	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchReader io.Reader) protocol.CreateCommitFromPatchResponse
 	LogIfCorrupt(context.Context, api.RepoName, error)
-	MaybeStartClone(ctx context.Context, repo api.RepoName) (cloned bool, status CloneStatus, _ error)
 	IsRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error)
 	RepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
 	SearchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error)
@@ -147,7 +148,7 @@ func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 	repoDir := gs.fs.RepoDir(repoName)
 	backend := gs.getBackendFunc(repoDir, repoName)
 
-	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return err
 	}
 
@@ -265,7 +266,7 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 	repoName := api.RepoName(req.GetRepo())
 	repoDir := gs.fs.RepoDir(repoName)
 
-	if err := gs.maybeStartClone(ss.Context(), repoName); err != nil {
+	if err := gs.checkRepoExists(ss.Context(), repoName); err != nil {
 		return err
 	}
 
@@ -390,7 +391,7 @@ func (gs *grpcServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 
 	repoName := api.RepoName(req.GetRepo())
 
-	if err := gs.maybeStartClone(ss.Context(), repoName); err != nil {
+	if err := gs.checkRepoExists(ss.Context(), repoName); err != nil {
 		return err
 	}
 
@@ -779,7 +780,7 @@ func (gs *grpcServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 	repoName := api.RepoName(req.GetRepoName())
 	repoDir := gs.fs.RepoDir(repoName)
 
-	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return nil, err
 	}
 
@@ -827,7 +828,7 @@ func (gs *grpcServer) GetCommit(ctx context.Context, req *proto.GetCommitRequest
 	repoName := api.RepoName(req.GetRepoName())
 	repoDir := gs.fs.RepoDir(repoName)
 
-	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return nil, err
 	}
 
@@ -902,7 +903,7 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 	repoName := api.RepoName(req.GetRepoName())
 	repoDir := gs.fs.RepoDir(repoName)
 
-	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return err
 	}
 
@@ -1001,7 +1002,7 @@ func (gs *grpcServer) DefaultBranch(ctx context.Context, req *proto.DefaultBranc
 	repoName := api.RepoName(req.GetRepoName())
 	repoDir := gs.fs.RepoDir(repoName)
 
-	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return nil, err
 	}
 
@@ -1062,7 +1063,7 @@ func (gs *grpcServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverSer
 	repoName := api.RepoName(req.GetRepoName())
 	repoDir := gs.fs.RepoDir(repoName)
 
-	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return err
 	}
 
@@ -1141,7 +1142,7 @@ func (gs *grpcServer) ResolveRevision(ctx context.Context, req *proto.ResolveRev
 	repoName := api.RepoName(req.GetRepoName())
 	repoDir := gs.fs.RepoDir(repoName)
 
-	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return nil, err
 	}
 
@@ -1185,17 +1186,37 @@ func (gs *grpcServer) ResolveRevision(ctx context.Context, req *proto.ResolveRev
 	}, nil
 }
 
-func (gs *grpcServer) maybeStartClone(ctx context.Context, repo api.RepoName) error {
-	cloned, state, err := gs.svc.MaybeStartClone(ctx, repo)
+// checkRepoExists checks if a given repository is cloned on disk, and returns an
+// error otherwise.
+// On Sourcegraph.com, not all repos are managed by the scheduler. We thus
+// need to enqueue a manual update of a repo that is visited but not cloned to
+// ensure it is cloned and managed.
+func (gs *grpcServer) checkRepoExists(ctx context.Context, repo api.RepoName) error {
+	cloned, err := gs.fs.RepoCloned(repo)
 	if err != nil {
-		return status.New(codes.Internal, "failed to check if repo is cloned").Err()
+		return status.New(codes.Internal, errors.Wrap(err, "failed to check if repo is cloned").Error()).Err()
 	}
 
 	if cloned {
 		return nil
 	}
 
-	return newRepoNotFoundError(repo, state.CloneInProgress, state.CloneProgress)
+	// On sourcegraph.com, not all repos are managed by the scheduler. We thus
+	// need to enqueue a manual clone of a repo that is visited but not cloned.
+	if dotcom.SourcegraphDotComMode() {
+		if conf.Get().DisableAutoGitUpdates {
+			gs.logger.Debug("not cloning on demand as DisableAutoGitUpdates is set")
+		} else {
+			_, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repo)
+			if err != nil {
+				return errors.Wrap(err, "failed to enqueue repo clone")
+			}
+		}
+	}
+
+	cloneProgress, cloneInProgress := gs.locker.Status(repo)
+
+	return newRepoNotFoundError(repo, cloneInProgress, cloneProgress)
 }
 
 func hasAccessToCommit(ctx context.Context, repoName api.RepoName, files []string, checker authz.SubRepoPermissionChecker) (bool, error) {

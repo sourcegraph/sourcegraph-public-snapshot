@@ -115,7 +115,7 @@ func TestExecRequest(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	gr := dbmocks.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
-	fs := gitserverfs.New(observation.TestContextTB(t), t.TempDir())
+	fs := gitserverfs.NewMockFSFrom(gitserverfs.New(&observation.TestContext, t.TempDir()))
 	require.NoError(t, fs.Initialize())
 	s := NewServer(&ServerOpts{
 		Logger: logtest.Scoped(t),
@@ -177,15 +177,14 @@ func TestExecRequest(t *testing.T) {
 	})
 
 	gs := NewGRPCServer(s)
-	svc := NewMockServiceFrom(s)
-	svc.MaybeStartCloneFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName) (bool, CloneStatus, error) {
+	fs.RepoClonedFunc.SetDefaultHook(func(repo api.RepoName) (bool, error) {
 		if repo == "github.com/gorilla/mux" || repo == "my-mux" {
-			return true, CloneStatus{}, nil
+			return true, nil
 		}
-		cloneProgress, err := s.CloneRepo(ctx, repo, CloneOptions{})
-		return false, CloneStatus{CloneProgress: cloneProgress, CloneInProgress: err != nil}, nil
+		_, err := s.CloneRepo(context.Background(), repo, CloneOptions{})
+		require.NoError(t, err)
+		return false, nil
 	})
-	gs.(*grpcServer).svc = svc
 
 	vcssyncer.TestGitRepoExists = func(ctx context.Context, repoName api.RepoName) error {
 		if strings.Contains(string(repoName), "nicksnyder/go-i18n") {
