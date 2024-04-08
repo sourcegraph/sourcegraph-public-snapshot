@@ -14,7 +14,7 @@ sh_test(
         ["test.sh"],
     ),
     tags = [
-        "manual",  # TODO(JH): temp, QA'ing things
+        "manual",  # TODO(JH): remove this test once we've fully switched to a new solution for the dev docs.
         "requires-network",
     ],
 )
@@ -26,6 +26,7 @@ sh_binary(
     data = [
         "//dev/tools:docsite",
         "//doc/cli/references:doc_files",
+        "//doc/admin/observability:doc_files",
     ] + glob(
         ["**/*"],
         ["test.sh"],
