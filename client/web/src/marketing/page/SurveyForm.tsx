@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useMutation, gql } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, LoadingSpinner, Label, Text, Form } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -13,7 +14,7 @@ import { SurveyUseCaseForm } from '../components/SurveyUseCaseForm'
 
 import styles from './SurveyPage.module.scss'
 
-interface SurveyFormProps {
+interface SurveyFormProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     score?: number
 }
@@ -37,6 +38,7 @@ export interface SurveyFormLocationState {
 export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyFormProps>> = ({
     authenticatedUser,
     score,
+    telemetryRecorder,
 }) => {
     const navigate = useNavigate()
     const [email, setEmail] = useState('')
@@ -78,6 +80,7 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
         }
 
         eventLogger.log('SurveySubmitted')
+        telemetryRecorder.recordEvent('surveyNPS', 'submit')
 
         await submitSurvey({
             variables: {
@@ -101,7 +104,12 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
             <Label id="survey-form-scores" className={styles.label}>
                 How likely is it that you would recommend Sourcegraph to a friend?
             </Label>
-            <SurveyRatingRadio ariaLabelledby="survey-form-scores" onChange={handleScoreChange} score={score} />
+            <SurveyRatingRadio
+                ariaLabelledby="survey-form-scores"
+                onChange={handleScoreChange}
+                score={score}
+                telemetryRecorder={telemetryRecorder}
+            />
             <SurveyUseCaseForm
                 className="my-2"
                 authenticatedUser={authenticatedUser}

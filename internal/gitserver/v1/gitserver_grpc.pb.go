@@ -71,6 +71,9 @@ type GitserverServiceClient interface {
 	// If the given treeish does not exist, an error with a RevisionNotFoundPayload
 	// is returned.
 	//
+	// If the given paths are not found in the given treeish, an error with a FileNotFoundPayload
+	// is returned.
+	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error)
@@ -99,6 +102,8 @@ type GitserverServiceClient interface {
 	// if subrepo permissions are enabled for the repo. If access is denied, an error
 	// with a UnauthorizedPayload in the details is returned.
 	//
+	// If the given path is not found, an error with a FileNotFoundPayload is returned.
+	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	Blame(ctx context.Context, in *BlameRequest, opts ...grpc.CallOption) (GitserverService_BlameClient, error)
@@ -114,6 +119,8 @@ type GitserverServiceClient interface {
 	// with a UnauthorizedPayload in the details is returned.
 	// If the path points to a submodule, no error is returned and an empty file is
 	// streamed back.
+	//
+	// If the given path is not found, an error with a FileNotFoundPayload is returned.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
@@ -147,9 +154,31 @@ type GitserverServiceClient interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	ResolveRevision(ctx context.Context, in *ResolveRevisionRequest, opts ...grpc.CallOption) (*ResolveRevisionResponse, error)
-	// Stat returns a FileInfo describing the named file at commit.
+	// Stat returns a FileInfo describing the named file descriptor at the given commit.
+	// Stat supports submodules, symlinks, directories and files.
+	//
+	// If the commit does not exist, an error with RevisionNotFoundPayload is
+	// returned.
+	//
+	// If the given path is not found, an error with a FileNotFoundPayload is returned.
+	// If subrepo permissions are enabled and the file is not visible to the actor,
+	// an error with a FileNotFoundPayload is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
 	Stat(ctx context.Context, in *StatRequest, opts ...grpc.CallOption) (*StatResponse, error)
-	// ReadDir returns a list of FileInfos describing the files in the directory.
+	// ReadDir returns a list of FileInfos describing the files and subdirectories
+	// in the given directory.
+	//
+	// If the commit does not exist, an error with RevisionNotFoundPayload is
+	// returned.
+	//
+	// If the given path is not found, an error with a FileNotFoundPayload is returned.
+	// If subrepo permissions are enabled and certain file descriptors are not visible
+	// to the actor, they are omitted.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
 	ReadDir(ctx context.Context, in *ReadDirRequest, opts ...grpc.CallOption) (GitserverService_ReadDirClient, error)
 }
 
@@ -598,6 +627,9 @@ type GitserverServiceServer interface {
 	// If the given treeish does not exist, an error with a RevisionNotFoundPayload
 	// is returned.
 	//
+	// If the given paths are not found in the given treeish, an error with a FileNotFoundPayload
+	// is returned.
+	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	Archive(*ArchiveRequest, GitserverService_ArchiveServer) error
@@ -626,6 +658,8 @@ type GitserverServiceServer interface {
 	// if subrepo permissions are enabled for the repo. If access is denied, an error
 	// with a UnauthorizedPayload in the details is returned.
 	//
+	// If the given path is not found, an error with a FileNotFoundPayload is returned.
+	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	Blame(*BlameRequest, GitserverService_BlameServer) error
@@ -641,6 +675,8 @@ type GitserverServiceServer interface {
 	// with a UnauthorizedPayload in the details is returned.
 	// If the path points to a submodule, no error is returned and an empty file is
 	// streamed back.
+	//
+	// If the given path is not found, an error with a FileNotFoundPayload is returned.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
@@ -674,9 +710,31 @@ type GitserverServiceServer interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	ResolveRevision(context.Context, *ResolveRevisionRequest) (*ResolveRevisionResponse, error)
-	// Stat returns a FileInfo describing the named file at commit.
+	// Stat returns a FileInfo describing the named file descriptor at the given commit.
+	// Stat supports submodules, symlinks, directories and files.
+	//
+	// If the commit does not exist, an error with RevisionNotFoundPayload is
+	// returned.
+	//
+	// If the given path is not found, an error with a FileNotFoundPayload is returned.
+	// If subrepo permissions are enabled and the file is not visible to the actor,
+	// an error with a FileNotFoundPayload is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
 	Stat(context.Context, *StatRequest) (*StatResponse, error)
-	// ReadDir returns a list of FileInfos describing the files in the directory.
+	// ReadDir returns a list of FileInfos describing the files and subdirectories
+	// in the given directory.
+	//
+	// If the commit does not exist, an error with RevisionNotFoundPayload is
+	// returned.
+	//
+	// If the given path is not found, an error with a FileNotFoundPayload is returned.
+	// If subrepo permissions are enabled and certain file descriptors are not visible
+	// to the actor, they are omitted.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
 	ReadDir(*ReadDirRequest, GitserverService_ReadDirServer) error
 	mustEmbedUnimplementedGitserverServiceServer()
 }

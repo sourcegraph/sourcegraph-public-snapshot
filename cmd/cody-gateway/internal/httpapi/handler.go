@@ -56,7 +56,7 @@ func NewHandler(
 	rs limiter.RedisStore,
 	httpClient httpcli.Doer,
 	authr *auth.Authenticator,
-	promptRecorder completions.PromptRecorder,
+	flaggedPromptRecorder completions.PromptRecorder,
 	config *Config,
 	dotcomClient graphql.Client,
 ) (http.Handler, error) {
@@ -125,7 +125,7 @@ func NewHandler(
 			config.RateLimitNotifier,
 			httpClient,
 			config.Anthropic,
-			promptRecorder,
+			flaggedPromptRecorder,
 			config.AutoFlushStreamingResponses)
 		if err != nil {
 			return nil, errors.Wrap(err, "init Anthropic handler")
@@ -143,7 +143,7 @@ func NewHandler(
 			config.RateLimitNotifier,
 			httpClient,
 			config.Anthropic,
-			promptRecorder,
+			flaggedPromptRecorder,
 			config.AutoFlushStreamingResponses)
 		if err != nil {
 			return nil, errors.Wrap(err, "init anthropicMessages handler")
@@ -165,6 +165,7 @@ func NewHandler(
 			config.RateLimitNotifier,
 			httpClient,
 			config.OpenAI,
+			flaggedPromptRecorder,
 			config.AutoFlushStreamingResponses)
 		registerStandardEndpoint(
 			"v1.completions.openai",
@@ -175,8 +176,8 @@ func NewHandler(
 		registerSimpleGETEndpoint("v1.embeddings.models", "/embeddings/models", embeddings.NewListHandler())
 
 		factoryMap := embeddings.ModelFactoryMap{
-			embeddings.ModelNameOpenAIAda:         embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
-			embeddings.ModelNameSourcegraphTriton: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.TritonURL),
+			embeddings.ModelNameOpenAIAda:            embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
+			embeddings.ModelNameSourcegraphSTMultiQA: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.EmbeddingsAPIURL),
 		}
 		embeddingsHandler := embeddings.NewHandler(
 			logger,
@@ -194,16 +195,6 @@ func NewHandler(
 			"/embeddings",
 			attributesOpenAIEmbeddings,
 			embeddingsHandler)
-
-		if config.Sourcegraph.UnlimitedEmbeddings {
-			// Register an endpoint for Triton embeddings that does not implement rate limiting.
-			unlimitedHandler := embeddings.NewUnlimitedHandler(logger, eventLogger, factoryMap, []string{string(embeddings.ModelNameSourcegraphTriton)})
-			registerStandardEndpoint(
-				"v1.embeddings-unlimited",
-				"/embeddings-unlimited",
-				attributesOpenAIEmbeddings,
-				unlimitedHandler)
-		}
 	}
 
 	if config.Fireworks.AccessToken == "" {
@@ -216,6 +207,7 @@ func NewHandler(
 			config.RateLimitNotifier,
 			httpClient,
 			config.Fireworks,
+			flaggedPromptRecorder,
 			config.AutoFlushStreamingResponses)
 		registerStandardEndpoint(
 			"v1.completions.fireworks",
@@ -271,10 +263,4 @@ func gaugeHandler(counter metric.Int64UpDownCounter, attrs attribute.Set, handle
 		// Background context when done, since request may be cancelled.
 		counter.Add(context.Background(), -1, metric.WithAttributeSet(attrs))
 	})
-}
-
-type CompletionsConfig struct {
-	logger      log.Logger
-	eventLogger events.Logger
-	rs          limiter.RedisStore
 }

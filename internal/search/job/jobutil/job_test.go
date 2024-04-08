@@ -241,7 +241,7 @@ func TestNewPlanJob(t *testing.T) {
               (repoScope . [(and branch="HEAD" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)])
               (includePrivate . true)
               (globalZoektQueryRegexps . [(?i)(?-s:ok.*?ok)])
-              (query . regex:"(?-s:ok.*?ok)")
+              (query . regex:"ok(?-s:.)*?ok")
               (type . text))
             (REPOSEARCH
               (repoOpts.repoFilters . [(?:ok).*?(?:ok)])
@@ -386,7 +386,7 @@ func TestNewPlanJob(t *testing.T) {
             (repoScope . [(and branch="HEAD" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)])
             (includePrivate . true)
             (globalZoektQueryRegexps . [(?i)(?-s:foo.*?@bar)])
-            (query . regex:"(?-s:foo.*?@bar)")
+            (query . regex:"foo(?-s:.)*?@bar")
             (type . text))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))
@@ -880,7 +880,7 @@ func TestNewPlanJob(t *testing.T) {
               (repoScope . [(and branch="HEAD" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)])
               (includePrivate . true)
               (globalZoektQueryRegexps . [(?i)(?-s:a.*b)])
-              (query . regex:"(?-s:a.*b)")
+              (query . regex:"a(?-s:.)*b")
               (type . text))
             REPOSCOMPUTEEXCLUDED
             NOOP))))))
@@ -915,7 +915,7 @@ func TestNewPlanJob(t *testing.T) {
                   (fileMatchLimit . 10000)
                   (select . )
                   (zoektQueryRegexps . [(?i)(?-s:a.*b)])
-                  (query . regex:"(?-s:a.*b)")
+                  (query . regex:"a(?-s:.)*b")
                   (type . text))))
             (REPOPAGER
               (containsRefGlobs . false)

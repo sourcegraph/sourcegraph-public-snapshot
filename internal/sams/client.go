@@ -8,9 +8,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Scope string
@@ -43,6 +44,8 @@ type TokenIntrospection struct {
 	Expiration int64 `json:"exp"`
 }
 
+// Client defines a basic SAMS client for verifying access tokens. All uses should
+// be replaced by the proper sourcegraph-accounts-sdk-go client.
 type Client interface {
 	IntrospectToken(ctx context.Context, token string) (*TokenIntrospection, error)
 }
@@ -72,7 +75,7 @@ func (c *samsClient) IntrospectToken(ctx context.Context, token string) (*TokenI
 	httpClient := oauth2.NewClient(ctx, c.tokenSource)
 	response, err := httpClient.Do(request)
 	if err != nil {
-		return nil, errors.Wrap(err, "calling SSC")
+		return nil, errors.Wrap(err, "introspecting SAMS token")
 	}
 
 	defer response.Body.Close()
@@ -95,6 +98,11 @@ func (c *samsClient) IntrospectToken(ctx context.Context, token string) (*TokenI
 }
 
 func NewClient(samsServer string, clientCredentialsConfig clientcredentials.Config) Client {
+	// Provide a default value for the required TokenURL field, in case the caller forgot to set it.
+	if clientCredentialsConfig.TokenURL == "" {
+		clientCredentialsConfig.TokenURL = fmt.Sprintf("%s/oauth/token", samsServer)
+	}
+
 	return &samsClient{
 		server:                  samsServer,
 		clientCredentialsConfig: clientCredentialsConfig,

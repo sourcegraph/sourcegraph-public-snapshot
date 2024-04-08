@@ -28,7 +28,9 @@
     import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { getQueryURL, type QueryStateStore } from '$lib/search/state'
-    import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
+    import PanelGroup from '$lib/wildcard/resizable-panel/PanelGroup.svelte'
+    import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
+    import PanelResizeHandle from '$lib/wildcard/resizable-panel/PanelResizeHandle.svelte'
     import {
         type AggregateStreamingSearchResults,
         type PathMatch,
@@ -58,10 +60,7 @@
     }
 
     let resultContainer: HTMLElement | null = null
-
     const recentSearches = createRecentSearchesStore()
-    const filtersSidebarPosition = getSeparatorPosition('search-results-sidebar', 0.2)
-    const previewSidebarPosition = getSeparatorPosition('preview-sidebar', 0.2)
 
     $: state = $stream.state // 'loading', 'error', 'complete'
     $: results = $stream.results
@@ -131,41 +130,51 @@
 </div>
 
 <div class="search-results">
-    <div style:width={`clamp(14rem, ${$filtersSidebarPosition * 100}%, 35%)`}>
-        <DynamicFiltersSidebar {selectedFilters} streamFilters={$stream.filters} searchQuery={queryFromURL} {state} />
-    </div>
-    <Separator currentPosition={filtersSidebarPosition} />
-    <div class="results">
-        <aside class="actions">
-            <StreamingProgress {state} progress={$stream.progress} on:submit={onResubmitQuery} />
-        </aside>
-        <div class="result-list" bind:this={resultContainer}>
-            <ol>
-                {#each resultsToShow as result, i}
-                    {@const component = getSearchResultComponent(result)}
-                    {#if i === resultsToShow.length - 1}
-                        <li use:observeIntersection on:intersecting={loadMore}>
-                            <svelte:component this={component} {result} />
-                        </li>
-                    {:else}
-                        <li><svelte:component this={component} {result} /></li>
+    <PanelGroup id="search-results-panels">
+        <Panel id="search-results-filters" order={1} defaultSize={25} maxSize={35} minSize={15}>
+            <DynamicFiltersSidebar
+                {selectedFilters}
+                streamFilters={$stream.filters}
+                searchQuery={queryFromURL}
+                {state}
+            />
+        </Panel>
+        <PanelResizeHandle />
+        <Panel id="search-results-content" order={2} minSize={35}>
+            <div class="results">
+                <aside class="actions">
+                    <StreamingProgress {state} progress={$stream.progress} on:submit={onResubmitQuery} />
+                </aside>
+                <div class="result-list" bind:this={resultContainer}>
+                    <ol>
+                        {#each resultsToShow as result, i}
+                            {@const component = getSearchResultComponent(result)}
+                            {#if i === resultsToShow.length - 1}
+                                <li use:observeIntersection on:intersecting={loadMore}>
+                                    <svelte:component this={component} {result} />
+                                </li>
+                            {:else}
+                                <li><svelte:component this={component} {result} /></li>
+                            {/if}
+                        {/each}
+                    </ol>
+                    {#if resultsToShow.length === 0 && state !== 'loading'}
+                        <div class="no-result">
+                            <Icon svgPath={mdiCloseOctagonOutline} />
+                            <p>No results found</p>
+                        </div>
                     {/if}
-                {/each}
-            </ol>
-            {#if resultsToShow.length === 0 && state !== 'loading'}
-                <div class="no-result">
-                    <Icon svgPath={mdiCloseOctagonOutline} />
-                    <p>No results found</p>
                 </div>
-            {/if}
-        </div>
-    </div>
-    {#if $previewResult}
-        <Separator currentPosition={previewSidebarPosition} />
-        <div style:width={`clamp(10rem, ${100 - $previewSidebarPosition * 100}%, 50%)`}>
-            <PreviewPanel result={$previewResult} />
-        </div>
-    {/if}
+            </div>
+        </Panel>
+
+        {#if $previewResult}
+            <PanelResizeHandle />
+            <Panel id="search-results-file-preview" order={3} minSize={30}>
+                <PreviewPanel result={$previewResult} />
+            </Panel>
+        {/if}
+    </PanelGroup>
 </div>
 
 <style lang="scss">
@@ -180,7 +189,8 @@
     .search-results {
         display: flex;
         flex: 1;
-        overflow: hidden;
+        overflow: auto;
+
         // Isolate everything in search results so they won't be displayed over
         // the search suggestions. Previously, hovering over separator would
         // overlap the suggestions panel.
@@ -189,7 +199,8 @@
 
     .results {
         flex: 1;
-        overflow: hidden;
+        height: 100%;
+        overflow: auto;
         min-height: 0;
         display: flex;
         flex-direction: column;

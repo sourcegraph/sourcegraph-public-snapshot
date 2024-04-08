@@ -15,18 +15,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// PromptRecorder implementations should save select completions prompts for
-// a short amount of time for security review.
-type PromptRecorder interface {
-	Record(ctx context.Context, prompt string) error
-}
 
 func NewAnthropicHandler(
 	baseLogger log.Logger,
@@ -39,7 +33,7 @@ func NewAnthropicHandler(
 	autoFlushStreamingResponses bool,
 ) (http.Handler, error) {
 	// Tokenizer only needs to be initialized once, and can be shared globally.
-	anthropicTokenizer, err := tokenizer.NewAnthropicClaudeTokenizer()
+	anthropicTokenizer, err := tokenizer.NewTokenizer(tokenizer.AnthropicModel)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +46,8 @@ func NewAnthropicHandler(
 		httpClient,
 		string(conftypes.CompletionsProviderNameAnthropic),
 		config.AllowedModels,
-		&AnthropicHandlerMethods{config: config, anthropicTokenizer: anthropicTokenizer, promptRecorder: promptRecorder},
+		&AnthropicHandlerMethods{config: config, anthropicTokenizer: anthropicTokenizer},
+		promptRecorder,
 
 		// Anthropic primarily uses concurrent requests to rate-limit spikes
 		// in requests, so set a default retry-after that is likely to be
@@ -100,7 +95,7 @@ type anthropicTokenCount struct {
 
 // GetPromptTokenCount computes the token count of the prompt exactly once using
 // the given tokenizer. It is not concurrency-safe.
-func (ar *anthropicRequest) GetPromptTokenCount(tk *tokenizer.Tokenizer) (int, error) {
+func (ar *anthropicRequest) GetPromptTokenCount(tk tokenizer.Tokenizer) (int, error) {
 	if ar.promptTokens == nil {
 		tokens, err := tk.Tokenize(ar.Prompt)
 		ar.promptTokens = &anthropicTokenCount{
@@ -122,7 +117,7 @@ type anthropicResponse struct {
 }
 
 type AnthropicHandlerMethods struct {
-	anthropicTokenizer *tokenizer.Tokenizer
+	anthropicTokenizer tokenizer.Tokenizer
 	promptRecorder     PromptRecorder
 	config             config.AnthropicConfig
 }
@@ -149,16 +144,6 @@ func (a *AnthropicHandlerMethods) shouldFlagRequest(ctx context.Context, logger 
 	)
 	if err != nil {
 		return nil, err
-	}
-
-	if result.IsFlagged() {
-		// Record flagged prompts. The prompt recorder's implementation has a short TTL for
-		// this data, but is made available to troubleshoot ongoing abuse waves. This does
-		// incur some additional latency, but so this isn't going to make things meaningfully worse
-		// since flagged abuse requests take longer to process on the LLM-provider side.
-		if err := a.promptRecorder.Record(ctx, ar.BuildPrompt()); err != nil {
-			logger.Warn("failed to record flagged prompt", log.Error(err))
-		}
 	}
 	return result, nil
 }

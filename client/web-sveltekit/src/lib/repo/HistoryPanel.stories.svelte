@@ -4,6 +4,13 @@
     import HistoryPanel from './HistoryPanel.svelte'
     export const meta = {
         component: HistoryPanel,
+        parameters: {
+            sveltekit_experimental: {
+                stores: {
+                    page: {},
+                },
+            },
+        },
     }
 </script>
 

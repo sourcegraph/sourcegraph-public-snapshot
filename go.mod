@@ -1,8 +1,6 @@
 module github.com/sourcegraph/sourcegraph
 
-go 1.22
-
-toolchain go1.22.1
+go 1.22.1
 
 // Permanent replace directives
 // ============================
@@ -182,7 +180,7 @@ require (
 	github.com/sourcegraph/log v0.0.0-20231018134238-fbadff7458bb
 	github.com/sourcegraph/run v0.12.0
 	github.com/sourcegraph/sourcegraph/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/temoto/robotstxt v1.1.2
 	github.com/throttled/throttled/v2 v2.12.0
 	github.com/tidwall/gjson v1.14.0
@@ -202,31 +200,31 @@ require (
 	go.opentelemetry.io/collector/exporter/otlphttpexporter v0.92.0
 	go.opentelemetry.io/collector/receiver v0.92.0
 	go.opentelemetry.io/collector/receiver/otlpreceiver v0.92.0
-	go.opentelemetry.io/contrib/detectors/gcp v1.22.0
+	go.opentelemetry.io/contrib/detectors/gcp v1.24.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.46.1
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.47.0
-	go.opentelemetry.io/contrib/propagators/jaeger v1.22.0
-	go.opentelemetry.io/contrib/propagators/ot v1.22.0
-	go.opentelemetry.io/otel v1.22.0
+	go.opentelemetry.io/contrib/propagators/jaeger v1.24.0
+	go.opentelemetry.io/contrib/propagators/ot v1.24.0
+	go.opentelemetry.io/otel v1.24.0
 	go.opentelemetry.io/otel/bridge/opentracing v1.22.0 // indirect
 	go.opentelemetry.io/otel/exporters/jaeger v1.17.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.22.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.22.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.24.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.24.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.22.0
-	go.opentelemetry.io/otel/metric v1.22.0
-	go.opentelemetry.io/otel/sdk v1.22.0
-	go.opentelemetry.io/otel/sdk/metric v1.22.0
-	go.opentelemetry.io/otel/trace v1.22.0
+	go.opentelemetry.io/otel/metric v1.24.0
+	go.opentelemetry.io/otel/sdk v1.24.0
+	go.opentelemetry.io/otel/sdk/metric v1.24.0
+	go.opentelemetry.io/otel/trace v1.24.0
 	go.opentelemetry.io/proto/otlp v1.1.0
 	go.uber.org/atomic v1.11.0
 	go.uber.org/automaxprocs v1.5.2
 	go.uber.org/ratelimit v0.2.0
 	go.uber.org/zap v1.26.0
-	golang.org/x/crypto v0.20.0
-	golang.org/x/net v0.21.0
-	golang.org/x/oauth2 v0.16.0
+	golang.org/x/crypto v0.21.0
+	golang.org/x/net v0.22.0
+	golang.org/x/oauth2 v0.18.0
 	golang.org/x/sync v0.6.0
-	golang.org/x/sys v0.17.0
+	golang.org/x/sys v0.18.0
 	golang.org/x/time v0.5.0
 	golang.org/x/tools v0.18.0
 	gonum.org/v1/gonum v0.13.0
@@ -285,7 +283,8 @@ require (
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/slack v0.0.0-20240103014439-025608ddf849
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe v0.0.0-20231218231056-4749baca142f
 	github.com/sourcegraph/scip v0.3.3
-	github.com/sourcegraph/sourcegraph/lib v0.0.0-20231122233253-1f857814717c
+	github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240401190202-87f6c282658b
+	github.com/sourcegraph/sourcegraph/lib v0.0.0-20240315183013-b2b134e08ada
 	github.com/sourcegraph/sourcegraph/lib/managedservicesplatform v0.0.0-00010101000000-000000000000
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-00010101000000-000000000000
 	github.com/vektah/gqlparser/v2 v2.4.5
@@ -293,7 +292,7 @@ require (
 	go.opentelemetry.io/collector/config/confighttp v0.92.0
 	go.opentelemetry.io/collector/config/configtelemetry v0.92.0
 	go.opentelemetry.io/collector/config/configtls v0.92.0
-	go.opentelemetry.io/otel/exporters/prometheus v0.44.1-0.20231201153405-6027c1ae76f2
+	go.opentelemetry.io/otel/exporters/prometheus v0.46.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20240125205218-1f4bbc51befe
 	gorm.io/gorm v1.25.5
 )
@@ -302,6 +301,7 @@ require (
 	cloud.google.com/go/cloudsqlconn v1.5.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.4-0.20230617002413-005d2dfb6b68 // indirect
 	cloud.google.com/go/trace v1.10.4 // indirect
+	connectrpc.com/connect v1.16.0 // indirect
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.2 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.1.1 // indirect
@@ -566,12 +566,12 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.22
 	github.com/pandatix/go-cvss v0.5.2
-	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
+	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/profile v1.7.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/pquerna/cachecontrol v0.1.0 // indirect
-	github.com/prometheus/client_model v0.5.0
+	github.com/prometheus/client_model v0.6.0
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
@@ -585,10 +585,10 @@ require (
 	github.com/scim2/filter-parser/v2 v2.2.0
 	github.com/sourcegraph/conc v0.3.1-0.20240108182409-4afefce20f9b
 	github.com/sourcegraph/mountinfo v0.0.0-20240201124957-b314c0befab1
-	github.com/sourcegraph/zoekt v0.0.0-20240327102325-8cf8887a903a
+	github.com/sourcegraph/zoekt v0.0.0-20240402071238-c39011a14191
 	github.com/spf13/cobra v1.8.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
@@ -610,11 +610,11 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
 	golang.org/x/mod v0.15.0
-	golang.org/x/term v0.17.0 // indirect
+	golang.org/x/term v0.18.0 // indirect
 	golang.org/x/text v0.14.0
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/grpc v1.61.0
+	google.golang.org/grpc v1.61.1
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
