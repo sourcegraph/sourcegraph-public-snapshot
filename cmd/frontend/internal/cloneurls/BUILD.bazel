@@ -4,7 +4,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "cloneurls",
     srcs = ["clone_urls.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/cloneurls",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
