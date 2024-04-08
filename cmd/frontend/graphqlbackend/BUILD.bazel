@@ -260,6 +260,7 @@ go_library(
         "//internal/conf/conftypes",
         "//internal/conf/deploy",
         "//internal/conf/reposource",
+        "//internal/conf/validation",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/migration",
