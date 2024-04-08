@@ -9,7 +9,7 @@ type safeCache[K comparable, V any] struct {
 }
 
 func newSafeCache[K comparable, V any](maxSize int) safeCache[K, V] {
-	c, _ := lru.New[K, V](128)
+	c, _ := lru.New[K, V](maxSize)
 	return safeCache[K, V]{cache: c}
 }
 
