@@ -409,15 +409,15 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 			}
 
 			structuralSearchJob := &structural.SearchJob{
-				SearcherArgs:     searcherArgs,
-				UseIndex:         f.Index(),
-				ContainsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
-				BatchRetry:       searchInputs.Protocol == search.Batch,
+				SearcherArgs: searcherArgs,
+				UseIndex:     f.Index(),
+				BatchRetry:   searchInputs.Protocol == search.Batch,
 			}
 
 			addJob(&repoPagerJob{
-				child:    &reposPartialJob{structuralSearchJob},
-				repoOpts: repoOptions,
+				child:            &reposPartialJob{structuralSearchJob},
+				repoOpts:         repoOptions,
+				containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 			})
 		}
 

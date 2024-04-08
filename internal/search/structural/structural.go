@@ -157,10 +157,9 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 }
 
 type SearchJob struct {
-	SearcherArgs     *search.SearcherParameters
-	UseIndex         query.YesNoOnly
-	ContainsRefGlobs bool
-	BatchRetry       bool
+	SearcherArgs *search.SearcherParameters
+	UseIndex     query.YesNoOnly
+	BatchRetry   bool
 
 	Indexed   *zoektutil.IndexedRepoRevs
 	Unindexed []*search.RepositoryRevisions
@@ -187,7 +186,6 @@ func (s *SearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	case job.VerbosityMax:
 		res = append(res,
 			attribute.Bool("useFullDeadline", s.SearcherArgs.UseFullDeadline),
-			attribute.Bool("containsRefGlobs", s.ContainsRefGlobs),
 			attribute.String("useIndex", string(s.UseIndex)),
 		)
 		fallthrough

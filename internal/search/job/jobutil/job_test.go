@@ -1106,7 +1106,6 @@ func TestNewPlanJob(t *testing.T) {
             (PARTIALREPOS
               (STRUCTURALSEARCH
                 (useFullDeadline . true)
-                (containsRefGlobs . false)
                 (useIndex . yes)
                 (patternInfo.query . "(:[_])")
                 (patternInfo.isStructural . true)
