@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu -o pipefail
+set -exu -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
@@ -29,8 +29,8 @@ Built from Buildkite run [#${BUILDKITE_BUILD_NUMBER}](https://buildkite.com/sour
 
 # Commit changes to dev/oci-deps.bzl
 # Delete branch if it exists; catch status code if not
-git branch -D "${BRANCH_NAME}" || :
-git checkout -b "${BRANCH_NAME}"
+git branch -D "${BRANCH_NAME}" || true
+git switch -c "${BRANCH_NAME}"
 git add dev/oci_deps.bzl
 git commit -m "Auto-update Wolfi base image hashes at ${TIMESTAMP}"
 git push --force -u origin "${BRANCH_NAME}"

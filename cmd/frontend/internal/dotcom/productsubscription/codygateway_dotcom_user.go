@@ -199,7 +199,7 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 	intervalSeconds := int32(math.MaxInt32)
 
 	// Apply self-serve limits if available
-	cfg := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	cfg := conf.Get().SiteConfig().Embeddings
 	if cfg != nil {
 		user, err := db.Users().GetByID(ctx, userID)
 		if err != nil {
@@ -229,7 +229,7 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 	}
 
 	return licensing.CodyGatewayRateLimit{
-		AllowedModels:   []string{"openai/text-embedding-ada-002", "sourcegraph/triton"},
+		AllowedModels:   []string{"openai/text-embedding-ada-002", "sourcegraph/st-multi-qa-mpnet-base-dot-v1"},
 		Limit:           limit,
 		IntervalSeconds: intervalSeconds,
 	}, nil

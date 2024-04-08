@@ -23,10 +23,6 @@ go_binary(
     name = "frontend",
     embed = [":frontend_lib"],
     visibility = ["//visibility:public"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
 )
 
 pkg_tar(
@@ -69,6 +65,7 @@ oci_tarball(
     name = "image_tarball",
     image = ":image",
     repo_tags = ["frontend:candidate"],
+    visibility = ["//testing/tools/upgradetest:__pkg__"],
 )
 
 container_structure_test(

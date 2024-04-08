@@ -16,7 +16,7 @@ If you need assistance with MSP infrastructure, reach out to the [Core Services]
 
 |   PROPERTY   |                                                             DETAILS                                                              |
 |--------------|----------------------------------------------------------------------------------------------------------------------------------|
-| Service ID   | [`msp-testbed`](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/service.yaml)                     |
+| Service ID   | `msp-testbed` ([specification](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/service.yaml))     |
 | Owners       |                                                                                                                                  |
 | Service kind | Cloud Run service                                                                                                                |
 | Environments | [test](#test)                                                                                                                    |

@@ -2,18 +2,17 @@ package gitcli
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (g *gitCLIBackend) Blame(ctx context.Context, startCommit api.CommitID, path string, opt git.BlameOptions) (git.BlameHunkReader, error) {
@@ -53,158 +52,134 @@ type blameHunkReader struct {
 	sc *bufio.Scanner
 
 	cur *gitdomain.Hunk
-
-	// commits stores previously seen commits, so new hunks
-	// whose annotations are abbreviated by git can still be
-	// filled by the correct data even if the hunk entry doesn't
-	// repeat them.
-	commits map[api.CommitID]*gitdomain.Hunk
 }
 
 func newBlameHunkReader(rc io.ReadCloser) git.BlameHunkReader {
 	return &blameHunkReader{
-		rc:      rc,
-		sc:      bufio.NewScanner(rc),
-		commits: make(map[api.CommitID]*gitdomain.Hunk),
+		rc:  rc,
+		sc:  bufio.NewScanner(rc),
+		cur: &gitdomain.Hunk{},
 	}
 }
 
-// Read returns a slice of hunks, along with a done boolean indicating if there
-// is more to read. After the last hunk has been returned, Read() will return
-// an io.EOF error on success.
-func (br *blameHunkReader) Read() (_ *gitdomain.Hunk, err error) {
-	for {
-		// Do we have more to read?
-		if !br.sc.Scan() {
-			if br.cur != nil {
-				if h, ok := br.commits[br.cur.CommitID]; ok {
-					br.cur.CommitID = h.CommitID
-					br.cur.Author = h.Author
-					br.cur.Message = h.Message
-				}
-				// If we have an ongoing entry, return it
-				res := br.cur
-				br.cur = nil
-				return res, nil
-			}
-			// Return the scanner error if ther was one
-			if err := br.sc.Err(); err != nil {
-				return nil, err
-			}
-			// Otherwise, return the sentinel io.EOF
-			return nil, io.EOF
-		}
+// copyHunk creates a copy of the hunk, including any fields that are
+// references.
+func copyHunk(h *gitdomain.Hunk) *gitdomain.Hunk {
+	dup := *h
+	if h.PreviousCommit != nil {
+		previousCommit := *h.PreviousCommit
+		dup.PreviousCommit = &previousCommit
+	}
+	return &dup
+}
 
-		// Read line from git blame, in porcelain format
-		line := br.sc.Text()
-		annotation, fields := splitLine(line)
-
-		// On the first read, we have no hunk and the first thing we read is an entry.
-		if br.cur == nil {
-			br.cur, err = parseEntry(annotation, fields)
-			if err != nil {
-				return nil, err
-			}
-			continue
-		}
-
-		// After that, we're either reading extras, or a new entry.
-		ok, err := parseExtra(br.cur, annotation, fields)
+// Read returns the next blame hunk.
+func (br *blameHunkReader) Read() (*gitdomain.Hunk, error) {
+	// Blame hunks follow a structured output, starting with the
+	// hunk header: <commit hash> <original file start line> <current file start line> <number of lines>
+	// followed by the hunk body.
+	// The hunk body is a list of lines in the format: <field name> <field value>
+	// A hunk body terminates with the filename field.
+	// If a hunk is part of the same commit as a previous hunk, only
+	// the difference in fields is returned, so the previous commit
+	// should be cached until a new commit is encountered.
+	for br.sc.Scan() {
+		// First parse the hunk header.
+		err := parseHeader(br.cur, br.sc.Bytes())
 		if err != nil {
 			return nil, err
 		}
 
-		// If we've finished reading extras, we're looking at a new entry.
-		if !ok {
-			if h, ok := br.commits[br.cur.CommitID]; ok {
-				br.cur.CommitID = h.CommitID
-				br.cur.Author = h.Author
-				br.cur.Message = h.Message
-			} else {
-				br.commits[br.cur.CommitID] = br.cur
-			}
-
-			res := br.cur
-
-			br.cur, err = parseEntry(annotation, fields)
+		// After that, we're reading the hunk body.
+		for br.sc.Scan() {
+			annotation, fields, _ := bytes.Cut(br.sc.Bytes(), []byte(" "))
+			done, err := parseBody(br.cur, annotation, fields)
 			if err != nil {
 				return nil, err
 			}
 
-			return res, nil
+			// If we've finished reading the body we can return the hunk.
+			if done {
+				// Copy the hunk before returning
+				return copyHunk(br.cur), nil
+			}
 		}
 	}
+
+	// Return the scanner error if there was one
+	if err := br.sc.Err(); err != nil {
+		return nil, err
+	}
+
+	// Otherwise, return the sentinel io.EOF
+	return nil, io.EOF
 }
 
 func (br *blameHunkReader) Close() error {
 	return br.rc.Close()
 }
 
-// parseEntry turns a `67b7b725a7ff913da520b997d71c840230351e30 10 20 1` line from
-// git blame into a hunk.
-func parseEntry(rev string, content string) (*gitdomain.Hunk, error) {
-	fields := strings.Split(content, " ")
-	if len(fields) != 3 {
-		return nil, errors.Errorf("Expected at least 4 parts to hunkHeader, but got: '%s %s'", rev, content)
+// parseHeader reads a `67b7b725a7ff913da520b997d71c840230351e30 10 20 1` line from
+// git blame and updates the provided hunk. If the commit ID is
+// different from the current one, the hunk is reset.
+func parseHeader(hunk *gitdomain.Hunk, line []byte) error {
+	fields := bytes.SplitN(line, []byte(" "), 4)
+
+	resultLine, err := strconv.Atoi(string(fields[2]))
+	if err != nil {
+		return err
+	}
+	numLines, err := strconv.Atoi(string(fields[3]))
+	if err != nil {
+		return err
 	}
 
-	resultLine, err := strconv.Atoi(fields[1])
-	if err != nil {
-		return nil, err
+	if string(hunk.CommitID) != string(fields[0]) {
+		// Start of a new commit, reset all the fields.
+		*hunk = gitdomain.Hunk{CommitID: api.CommitID(fields[0])}
 	}
-	numLines, _ := strconv.Atoi(fields[2])
-	if err != nil {
-		return nil, err
-	}
+	hunk.StartLine = uint32(resultLine)
+	hunk.EndLine = uint32(resultLine + numLines)
 
-	return &gitdomain.Hunk{
-		CommitID:  api.CommitID(rev),
-		StartLine: uint32(resultLine),
-		EndLine:   uint32(resultLine + numLines),
-	}, nil
+	return nil
 }
 
-// parseExtra updates a hunk with data parsed from the other annotations such as `author ...`,
+func unquotedStringFromBytes(s []byte) string {
+	str := string(s)
+	unquotedString, err := strconv.Unquote(str)
+	if err != nil {
+		return str
+	}
+	return unquotedString
+}
+
+// parseBody updates a hunk with data parsed from the other annotations such as `author ...`,
 // `summary ...`.
-func parseExtra(hunk *gitdomain.Hunk, annotation string, content string) (ok bool, err error) {
-	ok = true
-	switch annotation {
+func parseBody(hunk *gitdomain.Hunk, annotation []byte, content []byte) (done bool, err error) {
+	switch string(annotation) {
 	case "author":
-		hunk.Author.Name = content
+		hunk.Author.Name = string(content)
 	case "author-mail":
-		if len(content) >= 2 && content[0] == '<' && content[len(content)-1] == '>' {
-			hunk.Author.Email = content[1 : len(content)-1]
-		}
+		hunk.Author.Email = string(bytes.Trim(content, "<>"))
 	case "author-time":
 		var t int64
-		t, err = strconv.ParseInt(content, 10, 64)
-		hunk.Author.Date = time.Unix(t, 0).UTC()
-	case "author-tz":
-		// do nothing
-	case "committer", "committer-mail", "committer-tz", "committer-time":
-	case "summary":
-		hunk.Message = content
-	case "filename":
-		hunk.Filename = content
-	case "previous":
-	case "boundary":
-	default:
-		// If it doesn't look like an entry, it's probably an unhandled git blame
-		// annotation.
-		if len(annotation) != 40 && len(strings.Split(content, " ")) != 3 {
-			err = errors.Newf("unhandled git blame annotation: %s")
+		t, err = strconv.ParseInt(string(content), 10, 64)
+		if err != nil {
+			return false, err
 		}
-		ok = false
+		hunk.Author.Date = time.Unix(t, 0).UTC()
+	case "summary":
+		hunk.Message = string(content)
+	case "previous":
+		commitID, filename, _ := bytes.Cut(content, []byte(" "))
+		hunk.PreviousCommit = &gitdomain.PreviousCommit{
+			CommitID: api.CommitID(commitID),
+			Filename: unquotedStringFromBytes(filename),
+		}
+	case "filename":
+		hunk.Filename = unquotedStringFromBytes(content)
+		// filename designates the end of a hunk body
+		return true, nil
 	}
-	return
-}
-
-// splitLine splits a scanned line and returns the annotation along
-// with the content, if any.
-func splitLine(line string) (annotation string, content string) {
-	annotation, content, found := strings.Cut(line, " ")
-	if found {
-		return annotation, content
-	}
-	return line, ""
+	return false, nil
 }

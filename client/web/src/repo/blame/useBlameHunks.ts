@@ -8,11 +8,11 @@ import { catchError, map, throttleTime } from 'rxjs/operators'
 
 import { type ErrorLike, memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
+import { makeRepoGitURI } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
-import type { ExternalServiceKind, FirstCommitDateResult, FirstCommitDateVariables } from '../../graphql-operations'
+import type { ExternalRepoURLsResult, ExternalRepoURLsVariables, ExternalServiceKind } from '../../graphql-operations'
 
 import { useBlameVisibility } from './useBlameVisibility'
 
@@ -31,6 +31,7 @@ export interface BlameHunk {
     endLine: number
     message: string
     rev: string
+    filename: string
     author: {
         date: string
         person: {
@@ -49,9 +50,10 @@ export interface BlameHunk {
     }
     commit: {
         url: string
-        parents: {
-            oid: string
-        }[]
+        previous: {
+            rev: string
+            filename: string
+        } | null
     }
     displayInfo: BlameHunkDisplayInfo
 }
@@ -59,7 +61,6 @@ export interface BlameHunk {
 export interface BlameHunkData {
     current: BlameHunk[] | undefined
     externalURLs: { url: string; serviceKind: ExternalServiceKind | null }[] | undefined
-    firstCommitDate: Date | undefined
 }
 
 interface RawStreamHunk {
@@ -69,7 +70,10 @@ interface RawStreamHunk {
         Date: string
     }
     commit: {
-        parents: string[]
+        previous: {
+            commitID: string
+            filename: string
+        } | null
         url: string
     }
     commitID: string
@@ -105,10 +109,8 @@ const fetchBlameViaStreaming = memoizeObservable(
         revision: string
         filePath: string
         sourcegraphURL: string
-    }): Observable<BlameHunkData | ErrorLike> =>
-        new Observable<BlameHunkData | ErrorLike>(subscriber => {
-            let didEmitFirstCommitDate = false
-            let firstCommitDate: Date | undefined
+    }): Observable<BlameHunkData> =>
+        new Observable<BlameHunkData>(subscriber => {
             let externalURLs: BlameHunkData['externalURLs']
 
             const assembledHunks: BlameHunk[] = []
@@ -116,7 +118,6 @@ const fetchBlameViaStreaming = memoizeObservable(
 
             Promise.all([
                 fetchRepositoryData(repoName).then(res => {
-                    firstCommitDate = res.firstCommitDate
                     externalURLs = res.externalURLs
                 }),
                 fetchEventSource(`/.api/blame${repoAndRevisionPath}/stream/${filePath}`, {
@@ -141,6 +142,7 @@ const fetchBlameViaStreaming = memoizeObservable(
                                     endLine: rawHunk.endLine,
                                     message: rawHunk.message,
                                     rev: rawHunk.commitID,
+                                    filename: rawHunk.filename,
                                     author: {
                                         date: rawHunk.author.Date,
                                         person: {
@@ -152,17 +154,17 @@ const fetchBlameViaStreaming = memoizeObservable(
                                     },
                                     commit: {
                                         url: rawHunk.commit.url,
-                                        parents: rawHunk.commit.parents
-                                            ? rawHunk.commit.parents.map(oid => ({ oid }))
-                                            : [],
+                                        previous: rawHunk.commit.previous
+                                            ? {
+                                                  rev: rawHunk.commit.previous.commitID,
+                                                  filename: rawHunk.commit.previous.filename,
+                                              }
+                                            : null,
                                     },
                                 }
                                 assembledHunks.push(addDisplayInfoForHunk(hunk, sourcegraphURL))
                             }
-                            if (firstCommitDate !== undefined) {
-                                didEmitFirstCommitDate = true
-                            }
-                            subscriber.next({ current: assembledHunks, externalURLs, firstCommitDate })
+                            subscriber.next({ current: assembledHunks, externalURLs })
                         }
                     },
                     onerror(event) {
@@ -173,11 +175,6 @@ const fetchBlameViaStreaming = memoizeObservable(
                 }),
             ]).then(
                 () => {
-                    // This case can happen when the event source yields before the commit date is resolved
-                    if (!didEmitFirstCommitDate) {
-                        subscriber.next({ current: assembledHunks, externalURLs, firstCommitDate })
-                    }
-
                     subscriber.complete()
                 },
                 error => subscriber.error(error)
@@ -188,20 +185,15 @@ const fetchBlameViaStreaming = memoizeObservable(
                 throttleTime(1000, undefined, { leading: true, trailing: true }),
                 catchError(error => of(error))
             ),
-    makeRepoURI
+    makeRepoGitURI
 )
 
 async function fetchRepositoryData(repoName: string): Promise<Omit<BlameHunkData, 'current'>> {
     return lastValueFrom(
-        requestGraphQL<FirstCommitDateResult, FirstCommitDateVariables>(
+        requestGraphQL<ExternalRepoURLsResult, ExternalRepoURLsVariables>(
             gql`
-                query FirstCommitDate($repo: String!) {
+                query ExternalRepoURLs($repo: String!) {
                     repository(name: $repo) {
-                        firstEverCommit {
-                            author {
-                                date
-                            }
-                        }
                         externalURLs {
                             url
                             serviceKind
@@ -212,13 +204,9 @@ async function fetchRepositoryData(repoName: string): Promise<Omit<BlameHunkData
             { repo: repoName }
         ).pipe(
             map(dataOrThrowErrors),
-            map(({ repository }) => {
-                const firstCommitDate = repository?.firstEverCommit?.author?.date
-                return {
-                    externalURLs: repository?.externalURLs,
-                    firstCommitDate: firstCommitDate ? new Date(firstCommitDate) : undefined,
-                }
-            })
+            map(({ repository }) => ({
+                externalURLs: repository?.externalURLs,
+            }))
         )
     )
 }
@@ -277,12 +265,12 @@ export const useBlameHunks = (
             () =>
                 shouldFetchBlame
                     ? fetchBlameViaStreaming({ revision, repoName, filePath, sourcegraphURL })
-                    : of({ current: undefined, externalURLs: undefined, firstCommitDate: undefined }),
+                    : of({ current: undefined, externalURLs: undefined }),
             [shouldFetchBlame, revision, repoName, filePath, sourcegraphURL]
         )
     )
 
-    return hunks || { current: undefined, externalURLs: undefined, firstCommitDate: undefined }
+    return hunks || { current: undefined, externalURLs: undefined }
 }
 
 const ONE_MONTH = 30 * 24 * 60 * 60 * 1000

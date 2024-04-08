@@ -13,7 +13,13 @@ All notable changes to Sourcegraph are documented in this file.
 
 <!-- START CHANGELOG -->
 
-## Unreleased (Monthly Release - April 5th, 2024)
+## Unreleased
+
+- Added syntax highlighting for the [PKl](https://pkl-lang.org/) configuration language. [#61478](https://github.com/sourcegraph/sourcegraph/pull/61478)
+
+## Unreleased (April Patch Release - 22nd April, 2024)
+
+## 5.3.9104
 
 ### Added
 
@@ -22,18 +28,31 @@ All notable changes to Sourcegraph are documented in this file.
 - Added the GraphQL query `User.evaluateFeatureFlag` to show if a feature flag is enabled or disabled for a user. [#60828](https://github.com/sourcegraph/sourcegraph/pull/60828)
 - Search Jobs now supports diff, commit and path searches. Before, only file searches were supported. [#60883](https://github.com/sourcegraph/sourcegraph/pull/60883)
 - Auth providers now support a `noSignIn` option that, when set to true, will hide the auth provider from the sign in page, but still allow users to connect the external account from their Account Security page for permissions syncing. [#60722](https://github.com/sourcegraph/sourcegraph/pull/60722)
+- Added a "Commits" button to the folders in repos that shows commits for the items in that folder. [#60909](https://github.com/sourcegraph/sourcegraph/pull/60909)
+- The frontend Grafana dashboard has a new Prometheus metric that tracks the rate of requests that Sourcegraph issues to external services. [#61348](https://github.com/sourcegraph/sourcegraph/pull/61348)
+- Added support for the `gitURLType` setting for Gerrit, Sourcegraph now supports cloning from Gerrit via SSH. Note: Not on Cloud yet, like for all code hosts. [#61537](https://github.com/sourcegraph/sourcegraph/pull/61537)
+- Support for OpenAI chat models for enterprise customers. [#61539](https://github.com/sourcegraph/sourcegraph/pull/61539)
 
 ### Changed
 
 - GitHub apps installation records will only be deleted from the database if the GitHub App has been uninstalled or if the GitHub app has been deleted. [#60460](https://github.com/sourcegraph/sourcegraph/pull/60460)
 - The Anthropic provider for Cody has been updated to use the messages API which includes support for Claude 3 models. This is applicable to both BYOK and Cody Gateway users. The messages API does not support model identifiers which only set a major model version such as: `claude-2`, `claude-instant-v1` and `claude-instant-1`. Default values have been updated to `claude-2.0` and `claude-instant-1.2`, any legacy models identifiers in the site config will be set to the corresponding default previously mentioned. [#60953](https://github.com/sourcegraph/sourcegraph/pull/60953) [#61324](https://github.com/sourcegraph/sourcegraph/pull/61324)
 - The AWS Bedrock provider for Cody has been updated to use Anthropic's Messages API, bringing support for Claude 3 models. [#61347](https://github.com/sourcegraph/sourcegraph/pull/61347)
+- Notices configured in the site config now allow for specifying a style or color. [#61338](https://github.com/sourcegraph/sourcegraph/pull/61338)
 
 ### Fixed
 
 - Code Monitors now properly ignores monitors associated with soft-deleted users, which previously would have led to an error on the overview page. [#60405](https://github.com/sourcegraph/sourcegraph/pull/60405)
 - Fixed a bug where clicking "Exclude Repo" on Azure DevOps or Gerrit repositories would not work. [#60509](https://github.com/sourcegraph/sourcegraph/pull/60509)
 - Links in codeintel popovers respect the revision from the URL. [#60545](https://github.com/sourcegraph/sourcegraph/pull/60545)
+- Fixed an issue where repositories with a name ending in `.git` failed to clone. [#60627](https://github.com/sourcegraph/sourcegraph/pull/60627)
+- Fixed an issue where Sourcegraph could lose track of repositories on gitserver, leaving behind unnecessary data and inconsistent clone status in the UI. [#60627](https://github.com/sourcegraph/sourcegraph/pull/60627)
+- The "Commits" button in repository and folder pages links to commits in the current revision instead of in the default branch. [#61408](https://github.com/sourcegraph/sourcegraph/pull/61408)
+- Fixed an issue where code insights queries would fail if there are more than 65535 restricted repositories and regular expressions. [#61580](https://github.com/sourcegraph/sourcegraph/pull/61580)
+- The "Commits" button in repository and folder pages uses Perforce language and links to `/-/changelists` for Perforce depots when the experimental feature `perforceChangelistMapping` is enabled. [#61408](https://github.com/sourcegraph/sourcegraph/pull/61408)
+- Selecting "View blame prior to this change" on a file that was moved will now correctly navigate to the old file location at the specified commit. [#61577](https://github.com/sourcegraph/sourcegraph/pull/61577)
+- Git blame performance on large files with a large number of commits has been drastically improved. [#61577](https://github.com/sourcegraph/sourcegraph/pull/61577)
+- Code Insights now properly ignores search API alerts, which previously would have led to a code insight error. [#61431](https://github.com/sourcegraph/sourcegraph/pull/61431)
 
 ## 5.3.3
 
@@ -4210,7 +4229,7 @@ See the changelog entries for 3.0.0 beta releases and our [3.0](https://docs.sou
 ### Added
 
 - More detailed progress information is displayed on pages that are waiting for repositories to clone.
-- Admins can now see charts with daily, weekly, and monthly unique user counts by visiting the site-admin Analytics page.
+- Admins can now see charts with daily, weekly, and monthly unique user counts by visiting the site-admin Analytics page.
 - Admins can now host and see results from Sourcegraph user satisfaction surveys locally by setting the `"experimentalFeatures": { "hostSurveysLocally": "enabled"}` site config option. This feature will be enabled for all instances once stable.
 - Access tokens are now supported for all authentication providers (including OpenID Connect and SAML, which were previously not supported).
 - The new `motd` setting (in global, organization, and user settings) displays specified messages at the top of all pages.
