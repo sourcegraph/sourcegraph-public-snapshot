@@ -23,7 +23,7 @@ If you need assistance with MSP infrastructure, reach out to the [Core Services]
 | Docker image | `us.gcr.io/sourcegraph-dev/msp-example`                                                                                          |
 | Source code  | [`github.com/sourcegraph/sourcegraph` - `cmd/msp-example`](https://github.com/sourcegraph/sourcegraph/tree/HEAD/cmd/msp-example) |
 
-## Rollout
+## Rollouts
 
 |     PROPERTY      |                                                                                   DETAILS                                                                                   |
 |-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -42,7 +42,7 @@ Promotion of a release to the next stage in the pipeline must be done manually u
 |---------------------|---------------------------------------------------------------------------------------------------------------|
 | Project ID          | [`msp-testbed-test-77589aae45d0`](https://console.cloud.google.com/run?project=msp-testbed-test-77589aae45d0) |
 | Category            | **test**                                                                                                      |
-| Deployment Type     | `rollout`                                                                                                     |
+| Deployment type     | `rollout`                                                                                                     |
 | Resources           |                                                                                                               |
 | Slack notifications | [#alerts-msp-testbed-test](https://sourcegraph.slack.com/archives/alerts-msp-testbed-test)                    |
 | Alerts              | [GCP monitoring](https://console.cloud.google.com/monitoring/alerting?project=msp-testbed-test-77589aae45d0)  |
@@ -105,7 +105,7 @@ sg msp tfc view msp-testbed test
 |---------------------|--------------------------------------------------------------------------------------------------------|
 | Project ID          | [`msp-testbed-robert-7be9`](https://console.cloud.google.com/run?project=msp-testbed-robert-7be9)      |
 | Category            | **test**                                                                                               |
-| Deployment Type     | `rollout`                                                                                              |
+| Deployment type     | `rollout`                                                                                              |
 | Resources           |                                                                                                        |
 | Slack notifications | [#alerts-msp-testbed-robert](https://sourcegraph.slack.com/archives/alerts-msp-testbed-robert)         |
 | Alerts              | [GCP monitoring](https://console.cloud.google.com/monitoring/alerting?project=msp-testbed-robert-7be9) |
