@@ -435,6 +435,7 @@ func generateSquashedUpMigration(database db.Database, postgresDSN string, skipD
 	args := []string{
 		"--schema-only",
 		"--no-owner",
+		"--verbose",
 	}
 	for _, tableName := range excludeTables {
 		args = append(args, "--exclude-table", tableName)

@@ -36,7 +36,7 @@ type cmdInRootErr struct {
 }
 
 func (e cmdInRootErr) Error() string {
-	return fmt.Sprintf("'%s' failed: %s", strings.Join(e.args, " "), e.output)
+	return fmt.Sprintf("'%s' failed: err = %q, output = %q", strings.Join(e.args, " "), e.err.Error(), e.output)
 }
 
 func (e cmdInRootErr) ErrorWithoutOutput() string {
