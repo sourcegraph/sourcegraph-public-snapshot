@@ -125,7 +125,7 @@ This service is operated on the %s.`,
 	}
 
 	if s.Rollout != nil {
-		md.Headingf(2, "Rollout")
+		md.Headingf(2, "Rollouts")
 		region := "us-central1"
 		var rolloutDetails [][]string
 		// Get final stage to generate pipeline url
