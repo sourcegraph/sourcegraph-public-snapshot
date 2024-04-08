@@ -56,6 +56,7 @@ go_test(
         "object_test.go",
         "odb_test.go",
         "resolverevision_test.go",
+        "revattime_test.go",
         "util_test.go",
     ],
     embed = [":gitcli"],

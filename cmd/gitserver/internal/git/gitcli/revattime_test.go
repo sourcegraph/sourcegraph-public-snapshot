@@ -3,131 +3,99 @@ package gitcli
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestGitCLIBackend_RevAtTime(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("resolves", func(t *testing.T) {
-		// Prepare repo state:
+	t.Run("basic", func(t *testing.T) {
 		backend := BackendWithRepoCommands(t,
 			"echo line1 > f",
 			"git add f",
-			"git commit -m foo --author='Foo Author <foo@sourcegraph.com>'",
+			// 1ba45c7103f4df182d7ce361567c61308ebae8ed
+			"GIT_COMMITTER_DATE='2021-01-01T00:00:00' git commit -m foo",
 			"git tag testbase",
+
 			"git checkout -b b2",
 			"echo line2 >> f",
 			"git add f",
-			"git commit -m foo --author='Foo Author <foo@sourcegraph.com>'",
+			// 51bb862781503cde4634c75144e3939c1561761b
+			"GIT_COMMITTER_DATE='2022-01-01T00:00:00' git commit -m bar",
+
 			"git checkout master",
 			"echo line3 > h",
 			"git add h",
-			"git commit -m qux --author='Foo Author <foo@sourcegraph.com>'",
+			// d00ae3010469c160d508f932afa58ca7c690abbb
+			"GIT_COMMITTER_DATE='2023-01-01T00:00:00' git commit -m qux",
 			"git tag v1.0.0",
-			"echo $(git cat-file commit f372e36a91bc35e5d99df8be435bdcb1f0660bc5) > /tmp/catfile.test",
+
+			// 47e7692f76bd092c3408c49362c65ff2e1c5eb79
+			"GIT_COMMITTER_DATE='2024-01-01T00:00:00' git merge b2",
 		)
 
-		commit, err := backend.ResolveRevision(ctx, "HEAD")
+		// Target the first commit on master
+		commit, err := backend.RevAtTime(ctx, "HEAD", time.Date(2021, 6, 1, 0, 0, 0, 0, time.UTC))
 		require.NoError(t, err)
-		require.Equal(t, api.CommitID("f372e36a91bc35e5d99df8be435bdcb1f0660bc5"), commit)
-		// @ is an alias for HEAD.
-		commit, err = backend.ResolveRevision(ctx, "@")
+		require.Equal(t, api.CommitID("1ba45c7103f4df182d7ce361567c61308ebae8ed"), commit)
+
+		// Target the second commit on master
+		commit, err = backend.RevAtTime(ctx, "HEAD", time.Date(2023, 6, 1, 0, 0, 0, 0, time.UTC))
 		require.NoError(t, err)
-		require.Equal(t, api.CommitID("f372e36a91bc35e5d99df8be435bdcb1f0660bc5"), commit)
+		require.Equal(t, api.CommitID("d00ae3010469c160d508f932afa58ca7c690abbb"), commit)
 
-		// Empty resolves HEAD, too:
-		commit, err = backend.ResolveRevision(ctx, "")
+		// A date before the first commit returns an empty string
+		commit, err = backend.RevAtTime(ctx, "HEAD", time.Date(1996, 6, 28, 0, 0, 0, 0, time.UTC))
 		require.NoError(t, err)
-		require.Equal(t, api.CommitID("f372e36a91bc35e5d99df8be435bdcb1f0660bc5"), commit)
+		require.Equal(t, api.CommitID(""), commit)
 
-		// Resolve commit:
-		commit, err = backend.ResolveRevision(ctx, "f372e36a91bc35e5d99df8be435bdcb1f0660bc5")
+		// If we traversed merged branches, this would target d5fe. Since we use --first-parent,
+		// this targets the root commit.
+		commit, err = backend.RevAtTime(ctx, "HEAD", time.Date(2022, 6, 1, 0, 0, 0, 0, time.UTC))
 		require.NoError(t, err)
-		require.Equal(t, api.CommitID("f372e36a91bc35e5d99df8be435bdcb1f0660bc5"), commit)
-		// Unknown commit:
-		_, err = backend.ResolveRevision(ctx, "dfcb84e522cab3c0b307a70917604c6d3da00dc8")
-		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.Equal(t, api.CommitID("1ba45c7103f4df182d7ce361567c61308ebae8ed"), commit)
 
-		// Resolve abbrev commit:
-		commit, err = backend.ResolveRevision(ctx, "f372e36")
+		// If we target the b2 branch specifically though, that's on the --first-parent history
+		commit, err = backend.RevAtTime(ctx, "b2", time.Date(2022, 6, 1, 0, 0, 0, 0, time.UTC))
 		require.NoError(t, err)
-		require.Equal(t, api.CommitID("f372e36a91bc35e5d99df8be435bdcb1f0660bc5"), commit)
-		// Unknown abbrev commit:
-		_, err = backend.ResolveRevision(ctx, "dfcb84e5")
-		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.Equal(t, api.CommitID("51bb862781503cde4634c75144e3939c1561761b"), commit)
 
-		// Resolve ref:
-		commit, err = backend.ResolveRevision(ctx, "refs/heads/master")
+		// Targeting in the future is fine
+		commit, err = backend.RevAtTime(ctx, "master", time.Date(2048, 6, 1, 0, 0, 0, 0, time.UTC))
 		require.NoError(t, err)
-		require.Equal(t, api.CommitID("f372e36a91bc35e5d99df8be435bdcb1f0660bc5"), commit)
-		commit, err = backend.ResolveRevision(ctx, "heads/master")
-		require.NoError(t, err)
-		require.Equal(t, api.CommitID("f372e36a91bc35e5d99df8be435bdcb1f0660bc5"), commit)
-		commit, err = backend.ResolveRevision(ctx, "master")
-		require.NoError(t, err)
-		require.Equal(t, api.CommitID("f372e36a91bc35e5d99df8be435bdcb1f0660bc5"), commit)
-		commit, err = backend.ResolveRevision(ctx, "v1.0.0")
-		require.NoError(t, err)
-		require.Equal(t, api.CommitID("f372e36a91bc35e5d99df8be435bdcb1f0660bc5"), commit)
-
-		// Unknown ref:
-		_, err = backend.ResolveRevision(ctx, "refs/heads/notfound")
-		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
-		_, err = backend.ResolveRevision(ctx, "notfound")
-		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
-
-		// Resolve object that is not a commit: (this is the tree object of f372e36a91bc35e5d99df8be435bdcb1f0660bc5)
-		_, err = backend.ResolveRevision(ctx, "92cb0143f5166452f2d45ed974a818749bc4a13f")
-		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
-
-		// :file1 gets the object ID of the file called file1 at HEAD.
-		// We don't allow that, since it leaks the existence of the file.
-		_, err = backend.ResolveRevision(ctx, ":file1")
-		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
-
-		// HEAD:file1 gets the object ID of the file called file1 at HEAD.
-		// We don't allow that, since it leaks the existence of the file.
-		_, err = backend.ResolveRevision(ctx, "HEAD:file1")
-		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
-
-		// :/foo gets a commit by commit message, but we don't want that.
-		_, err = backend.ResolveRevision(ctx, ":/foo")
-		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
-		// HEAD^{/foo} is the same as the above.
-		// TODO: This currently passes, but it shouldn't need to.
-		// _, err = backend.ResolveRevision(ctx, "HEAD^{/foo}")
-		// require.Error(t, err)
-		// require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
-
-		// Ranges:
-		commit, err = backend.ResolveRevision(ctx, "master..b2")
-		require.NoError(t, err)
-		require.Equal(t, api.CommitID("a8994413dc8109087150c7932b162a4713e6d59a"), commit)
-		// Not found range:
-		_, err = backend.ResolveRevision(ctx, "master..notfound")
-		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.Equal(t, api.CommitID("47e7692f76bd092c3408c49362c65ff2e1c5eb79"), commit)
 	})
 
-	t.Run("HEAD in empty repo", func(t *testing.T) {
-		backend := BackendWithRepoCommands(t)
+	t.Run("out of order commit date", func(t *testing.T) {
+		backend := BackendWithRepoCommands(t,
+			"echo line1 > f",
+			"git add f",
+			// 42b1f173d788ad508388cb97f645a733d314d004
+			"GIT_COMMITTER_DATE='2022-01-01T00:00:00' git commit -m foo",
+			"git tag testbase",
 
-		_, err := backend.ResolveRevision(ctx, "HEAD")
-		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+			"echo line2 >> f",
+			"git add f",
+			// 442e6591b3940bdf66be81afcba2906ea5dde703
+			"GIT_COMMITTER_DATE='2021-01-01T00:00:00' git commit -m bar",
+		)
+
+		// It's not possible to target the root commit because the commit on top of it
+		// will always be returned first since it has an earlier committer date.
+		commit, err := backend.RevAtTime(ctx, "HEAD", time.Date(2022, 6, 1, 0, 0, 0, 0, time.UTC))
+		require.NoError(t, err)
+		require.Equal(t, api.CommitID("442e6591b3940bdf66be81afcba2906ea5dde703"), commit)
+
+		commit, err = backend.RevAtTime(ctx, "HEAD", time.Date(2021, 6, 1, 0, 0, 0, 0, time.UTC))
+		require.NoError(t, err)
+		require.Equal(t, api.CommitID("442e6591b3940bdf66be81afcba2906ea5dde703"), commit)
+
+		commit, err = backend.RevAtTime(ctx, "HEAD", time.Date(2020, 6, 1, 0, 0, 0, 0, time.UTC))
+		require.NoError(t, err)
+		require.Equal(t, api.CommitID(""), commit)
 	})
 }
