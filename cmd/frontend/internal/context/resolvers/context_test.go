@@ -214,7 +214,7 @@ func TestContextResolver(t *testing.T) {
 		mockEmbeddingsClient,
 		mockSearchClient,
 		nil,
-		codycontext.NewCodyIgnoreFilter(mockGitserver),
+		codycontext.NewRepoContentFilter(mockGitserver),
 	)
 
 	resolver := NewResolver(
