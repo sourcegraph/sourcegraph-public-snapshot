@@ -33,11 +33,12 @@ type gitRepoSyncer struct {
 func NewGitRepoSyncer(
 	logger log.Logger,
 	r *wrexec.RecordingCommandFactory,
-	getRemoteURLSource func(ctx context.Context, name api.RepoName) (RemoteURLSource, error)) *gitRepoSyncer {
-	return &gitRepoSyncer{
+	getRemoteURLSource func(ctx context.Context, name api.RepoName) (RemoteURLSource, error)) VCSSyncer {
+	s := &gitRepoSyncer{
 		logger:                  logger.Scoped("GitRepoSyncer"),
 		recordingCommandFactory: r,
 		getRemoteURLSource:      getRemoteURLSource}
+	return newInstrumentedSyncer(s)
 }
 
 func (s *gitRepoSyncer) Type() string {
