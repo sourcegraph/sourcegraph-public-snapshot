@@ -179,6 +179,7 @@ func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 	// First, extract prompt usage details from the request.
 	promptUsage.characters = len(reqBody.Prompt)
 	promptUsage.tokens, err = reqBody.GetPromptTokenCount(a.anthropicTokenizer)
+	promptUsage.tokenizerTokens = promptUsage.tokens
 	if err != nil {
 		logger.Error("failed to count tokens in Anthropic response", log.Error(err))
 	}
@@ -198,6 +199,7 @@ func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 			logger.Error("failed to count tokens in Anthropic response", log.Error(err))
 		} else {
 			completionUsage.tokens = len(tokens)
+			completionUsage.tokenizerTokens = completionUsage.tokens
 		}
 		return promptUsage, completionUsage
 	}
@@ -234,5 +236,6 @@ func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 	} else {
 		completionUsage.tokens = len(tokens)
 	}
+	completionUsage.tokenizerTokens = completionUsage.tokens
 	return promptUsage, completionUsage
 }
