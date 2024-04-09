@@ -312,4 +312,21 @@ func (r *errorTranslatingReadDirClient) Recv() (*proto.ReadDirResponse, error) {
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 
+func (r *errorTranslatingClient) ReadDirPatterns(ctx context.Context, in *proto.ReadDirPatternsRequest, opts ...grpc.CallOption) (proto.GitserverService_ReadDirPatternsClient, error) {
+	cc, err := r.base.ReadDirPatterns(ctx, in, opts...)
+	if err != nil {
+		return nil, convertGRPCErrorToGitDomainError(err)
+	}
+	return &errorTranslatingReadDirPatternsClient{cc}, nil
+}
+
+type errorTranslatingReadDirPatternsClient struct {
+	proto.GitserverService_ReadDirPatternsClient
+}
+
+func (r *errorTranslatingReadDirPatternsClient) Recv() (*proto.ReadDirPatternsResponse, error) {
+	res, err := r.GitserverService_ReadDirPatternsClient.Recv()
+	return res, convertGRPCErrorToGitDomainError(err)
+}
+
 var _ proto.GitserverServiceClient = &errorTranslatingClient{}

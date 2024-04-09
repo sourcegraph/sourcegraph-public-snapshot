@@ -1218,7 +1218,7 @@ func (gs *grpcServer) Stat(ctx context.Context, req *proto.StatRequest) (*proto.
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
+	repoDir := gs.fs.RepoDir(repoName)
 
 	if err := gs.maybeStartClone(ctx, repoName); err != nil {
 		return nil, err
@@ -1324,7 +1324,7 @@ func (gs *grpcServer) ReadDir(req *proto.ReadDirRequest, ss proto.GitserverServi
 	}
 
 	repoName := api.RepoName(req.GetRepoName())
-	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
+	repoDir := gs.fs.RepoDir(repoName)
 
 	if err := gs.maybeStartClone(ctx, repoName); err != nil {
 		return err

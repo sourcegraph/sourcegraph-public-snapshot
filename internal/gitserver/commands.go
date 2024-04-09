@@ -481,6 +481,63 @@ func (c *clientImplementor) ReadDir(ctx context.Context, repo api.RepoName, comm
 	}
 }
 
+func pathspecsToStrings(pathspecs []gitdomain.Pathspec) []string {
+	var strings []string
+	for _, pathspec := range pathspecs {
+		strings = append(strings, string(pathspec))
+	}
+	return strings
+}
+
+func pathspecsToBytes(pathspecs []gitdomain.Pathspec) [][]byte {
+	var s [][]byte
+	for _, pathspec := range pathspecs {
+		s = append(s, []byte(pathspec))
+	}
+	return s
+}
+
+func (c *clientImplementor) ReadDirPatterns(ctx context.Context, repo api.RepoName, commit api.CommitID, pathspecs []gitdomain.Pathspec) (_ []fs.FileInfo, err error) {
+	ctx, _, endObservation := c.operations.readDirPatterns.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			commit.Attr(),
+			attribute.StringSlice("pathspecs", pathspecsToStrings(pathspecs)),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := client.ReadDirPatterns(ctx, &proto.ReadDirPatternsRequest{
+		RepoName:  string(repo),
+		CommitSha: string(commit),
+		Pathspecs: pathspecsToBytes(pathspecs),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	fis := []fs.FileInfo{}
+
+	for {
+		chunk, err := res.Recv()
+		if err == io.EOF {
+			return fis, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		for _, fi := range chunk.GetFileInfo() {
+			fis = append(fis, fileInfoFromProto(fi))
+		}
+	}
+}
+
 type objectInfo gitdomain.OID
 
 func (oid objectInfo) OID() gitdomain.OID { return gitdomain.OID(oid) }

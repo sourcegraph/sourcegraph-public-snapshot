@@ -384,6 +384,10 @@ type Client interface {
 	// ReadDir reads the contents of the named directory at commit.
 	ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)
 
+	// ReadDirPatterns returns FileInfo for all files and directories matching the
+	// given pathspecs in the given commit.
+	ReadDirPatterns(ctx context.Context, repo api.RepoName, commit api.CommitID, pathspecs []gitdomain.Pathspec) ([]fs.FileInfo, error)
+
 	// NewFileReader returns an io.ReadCloser reading from the named file at commit.
 	// The caller should always close the reader after use.
 	//

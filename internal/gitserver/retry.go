@@ -170,4 +170,9 @@ func (r *automaticRetryClient) ReadDir(ctx context.Context, in *proto.ReadDirReq
 	return r.base.ReadDir(ctx, in, opts...)
 }
 
+func (r *automaticRetryClient) ReadDirPatterns(ctx context.Context, in *proto.ReadDirPatternsRequest, opts ...grpc.CallOption) (proto.GitserverService_ReadDirPatternsClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.ReadDirPatterns(ctx, in, opts...)
+}
+
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

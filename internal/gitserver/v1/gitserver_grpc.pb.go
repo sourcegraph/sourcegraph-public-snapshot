@@ -47,6 +47,7 @@ const (
 	GitserverService_ResolveRevision_FullMethodName             = "/gitserver.v1.GitserverService/ResolveRevision"
 	GitserverService_Stat_FullMethodName                        = "/gitserver.v1.GitserverService/Stat"
 	GitserverService_ReadDir_FullMethodName                     = "/gitserver.v1.GitserverService/ReadDir"
+	GitserverService_ReadDirPatterns_FullMethodName             = "/gitserver.v1.GitserverService/ReadDirPatterns"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -180,6 +181,19 @@ type GitserverServiceClient interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	ReadDir(ctx context.Context, in *ReadDirRequest, opts ...grpc.CallOption) (GitserverService_ReadDirClient, error)
+	// ReadDirPatterns returns a list of FileInfos describing the files and subdirectories
+	// matching the given pathspecs.
+	// https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
+	//
+	// If the commit does not exist, an error with RevisionNotFoundPayload is
+	// returned.
+	//
+	// If subrepo permissions are enabled and certain file descriptors are not visible
+	// to the actor, they are omitted.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	ReadDirPatterns(ctx context.Context, in *ReadDirPatternsRequest, opts ...grpc.CallOption) (GitserverService_ReadDirPatternsClient, error)
 }
 
 type gitserverServiceClient struct {
@@ -605,6 +619,38 @@ func (x *gitserverServiceReadDirClient) Recv() (*ReadDirResponse, error) {
 	return m, nil
 }
 
+func (c *gitserverServiceClient) ReadDirPatterns(ctx context.Context, in *ReadDirPatternsRequest, opts ...grpc.CallOption) (GitserverService_ReadDirPatternsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[7], GitserverService_ReadDirPatterns_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &gitserverServiceReadDirPatternsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type GitserverService_ReadDirPatternsClient interface {
+	Recv() (*ReadDirPatternsResponse, error)
+	grpc.ClientStream
+}
+
+type gitserverServiceReadDirPatternsClient struct {
+	grpc.ClientStream
+}
+
+func (x *gitserverServiceReadDirPatternsClient) Recv() (*ReadDirPatternsResponse, error) {
+	m := new(ReadDirPatternsResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
@@ -736,6 +782,19 @@ type GitserverServiceServer interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	ReadDir(*ReadDirRequest, GitserverService_ReadDirServer) error
+	// ReadDirPatterns returns a list of FileInfos describing the files and subdirectories
+	// matching the given pathspecs.
+	// https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
+	//
+	// If the commit does not exist, an error with RevisionNotFoundPayload is
+	// returned.
+	//
+	// If subrepo permissions are enabled and certain file descriptors are not visible
+	// to the actor, they are omitted.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	ReadDirPatterns(*ReadDirPatternsRequest, GitserverService_ReadDirPatternsServer) error
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -826,6 +885,9 @@ func (UnimplementedGitserverServiceServer) Stat(context.Context, *StatRequest) (
 }
 func (UnimplementedGitserverServiceServer) ReadDir(*ReadDirRequest, GitserverService_ReadDirServer) error {
 	return status.Errorf(codes.Unimplemented, "method ReadDir not implemented")
+}
+func (UnimplementedGitserverServiceServer) ReadDirPatterns(*ReadDirPatternsRequest, GitserverService_ReadDirPatternsServer) error {
+	return status.Errorf(codes.Unimplemented, "method ReadDirPatterns not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -1370,6 +1432,27 @@ func (x *gitserverServiceReadDirServer) Send(m *ReadDirResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _GitserverService_ReadDirPatterns_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ReadDirPatternsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GitserverServiceServer).ReadDirPatterns(m, &gitserverServiceReadDirPatternsServer{stream})
+}
+
+type GitserverService_ReadDirPatternsServer interface {
+	Send(*ReadDirPatternsResponse) error
+	grpc.ServerStream
+}
+
+type gitserverServiceReadDirPatternsServer struct {
+	grpc.ServerStream
+}
+
+func (x *gitserverServiceReadDirPatternsServer) Send(m *ReadDirPatternsResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1496,6 +1579,11 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "ReadDir",
 			Handler:       _GitserverService_ReadDir_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ReadDirPatterns",
+			Handler:       _GitserverService_ReadDirPatterns_Handler,
 			ServerStreams: true,
 		},
 	},

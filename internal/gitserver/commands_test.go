@@ -714,6 +714,8 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 	})
 }
 
+var nonExistentCommitID = api.CommitID(strings.Repeat("a", 40))
+
 func TestRepository_Commits(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()

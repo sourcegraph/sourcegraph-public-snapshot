@@ -226,7 +226,7 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		for _, d := range dirnames {
 			its, err := h.gitserverClient.ReadDir(ctx, repo.Name, api.CommitID(upload.Commit), d, false)
 			if err != nil {
-				return nil, errors.Wrap(err, "gitserverClient.DirectoryChildren")
+				return nil, errors.Wrap(err, "gitserverClient.ReadDir")
 			}
 			for _, it := range its {
 				if it.IsDir() {

@@ -185,6 +185,21 @@ service GitserverService {
   rpc ReadDir(ReadDirRequest) returns (stream ReadDirResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // ReadDirPatterns returns a list of FileInfos describing the files and subdirectories
+  // matching the given pathspecs.
+  // https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
+  //
+	// If the commit does not exist, an error with RevisionNotFoundPayload is
+  // returned.
+  //
+  // If subrepo permissions are enabled and certain file descriptors are not visible
+  // to the actor, they are omitted.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a RepoNotFoundPayload in the details.
+  rpc ReadDirPatterns(ReadDirPatternsRequest) returns (stream ReadDirPatternsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message StatRequest {
@@ -214,6 +229,20 @@ message ReadDirRequest {
 }
 
 message ReadDirResponse {
+  repeated FileInfo file_info = 1;
+}
+
+message ReadDirPatternsRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // The commit at which we want to read the directory.
+  string commit_sha = 3;
+  // The pathspecs for the files to read.
+  repeated bytes pathspecs = 4;
+}
+
+message ReadDirPatternsResponse {
   repeated FileInfo file_info = 1;
 }
 

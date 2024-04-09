@@ -47,6 +47,7 @@ func pathspecLiteral(s string) string { return ":(literal)" + s }
 
 func (g *gitCLIBackend) verifyPaths(ctx context.Context, treeish string, paths []string) error {
 	args := []string{"ls-tree", "-z", "--name-only", treeish, "--"}
+	// TODO: Why don't we need to use literal here?
 	args = append(args, paths...)
 	r, err := g.NewCommand(ctx, WithArguments(args...))
 	if err != nil {

@@ -275,7 +275,9 @@ func (g *gitCLIBackend) lsTree(ctx context.Context, commit api.CommitID, path st
 		args = append(args, "-r", "-t") // -t: Show tree entries even when going to recurse them.
 	}
 	if path != "" {
-		args = append(args, "--", filepath.ToSlash(path))
+		// Note: We need to use :(literal) here to prevent glob expansion which
+		// would lead to incorrect results.
+		args = append(args, "--", ":(literal)"+filepath.ToSlash(path))
 	}
 
 	r, err := g.NewCommand(ctx, WithArguments(args...))
