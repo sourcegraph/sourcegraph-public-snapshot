@@ -45,7 +45,10 @@ go_library(
 
 go_test(
     name = "codycontext_test",
-    srcs = ["dotcom_test.go"],
+    srcs = [
+        "dotcom_test.go",
+        "enterprise_test.go",
+    ],
     embed = [":codycontext"],
     deps = [
         "//internal/api",
