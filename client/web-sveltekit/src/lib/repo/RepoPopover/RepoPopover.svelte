@@ -11,6 +11,7 @@ For example:
 </Popover>
 -->
 <script lang="ts">
+<<<<<<< HEAD
     import { capitalize } from 'lodash'
 
     import Avatar from '$lib/Avatar.svelte'
@@ -25,6 +26,13 @@ For example:
     export let repo: RepoPopoverFields
     export let withHeader = false
 
+=======
+    import { mdiSourceMerge, mdiStarOutline } from '@mdi/js'
+
+    import Icon from '$lib/Icon.svelte'
+
+    export let name: string = 'jasonhawkharris'
+>>>>>>> b70e29725a0 (stats and license info)
     const CENTER_DOT = '\u00B7' // interpunct
 
     function truncateCommitNumber(numStr: string, length: number) {
@@ -61,6 +69,7 @@ For example:
     {/if}
 
     <div class="description-and-tags">
+<<<<<<< HEAD
         <div class="description">{repo.description}</div>
         <div class="tags">
             {#if repo.tags.nodes.length > 0}
@@ -68,6 +77,14 @@ For example:
                     <div class="tag"><small>{tag.name}</small></div>
                 {/each}
             {/if}
+=======
+        <div class="description">Code AI Platform with Code Search & Cody</div>
+        <div class="tags">
+            <div class="tag"><small>open-source</small></div>
+            <div class="tag"><small>code-search</small></div>
+            <div class="tag"><small>sourcegraph</small></div>
+            <div class="tag"><small>code-intelligence</small></div>
+>>>>>>> b70e29725a0 (stats and license info)
         </div>
     </div>
 
