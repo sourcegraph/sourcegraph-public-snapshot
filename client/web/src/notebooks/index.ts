@@ -10,6 +10,14 @@ import type { HighlightLineRange, SymbolKind } from '../graphql-operations'
 // When adding a new block type, make sure to track its usage in internal/usagestats/notebooks.go.
 export type BlockType = 'md' | 'query' | 'file' | 'compute' | 'symbol'
 
+export const V2BlockTypes: { [key in BlockType]: number } = {
+    md: 1,
+    query: 2,
+    file: 3,
+    compute: 4,
+    symbol: 5,
+}
+
 interface BaseBlock<I, O> {
     id: string
     type: BlockType
