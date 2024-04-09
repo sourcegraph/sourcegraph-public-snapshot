@@ -323,9 +323,10 @@ For example:
                 margin-right: 1rem;
             }
 
+            /* see note above about forks and license
             .license {
                 align-self: center;
-            }
+            } */
         }
     }
 </style>
