@@ -152,5 +152,6 @@
     .content {
         flex: 1;
         min-height: 0;
+        background-color: var(--code-bg);
     }
 </style>

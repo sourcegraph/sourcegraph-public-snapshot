@@ -53,6 +53,8 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
     useEffect(() => {
         if (authenticatedUser) {
             navigate(`/cody/manage${search || ''}`)
+        } else {
+            window.location.href = '/cody'
         }
     }, [authenticatedUser, navigate, search])
 

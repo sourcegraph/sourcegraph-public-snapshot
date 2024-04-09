@@ -11,11 +11,12 @@ import (
 )
 
 // constString effectively requires strings to be statically defined constants.
-type constString string
+type ConstString string
 
 // EventMetadata is secure, PII-free metadata that can be attached to events.
-// Keys must be const strings.
-type EventMetadata map[constString]float64
+// Keys must be const strings, to avoid the accidental addition of sensitive
+// metadata.
+type EventMetadata map[ConstString]float64
 
 // Bool returns 1 for true and 0 for false, for use in EventMetadata's
 // restricted int64 values.
@@ -32,6 +33,18 @@ func Number[T interface {
 		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
 }](value T) float64 {
 	return float64(value)
+}
+
+// MergeMetadata merges a set of EventMetadata into a single one, with later
+// EventMetadata taking precedence over earlier ones if there is a key conflict.
+func MergeMetadata(mds ...EventMetadata) EventMetadata {
+	merged := make(EventMetadata, len(mds))
+	for _, md := range mds {
+		for k, v := range md {
+			merged[k] = v
+		}
+	}
+	return merged
 }
 
 // EventBillingMetadata records metadata that attributes the event to product

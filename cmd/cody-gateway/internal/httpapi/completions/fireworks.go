@@ -30,6 +30,7 @@ func NewFireworksHandler(
 	rateLimitNotifier notify.RateLimitNotifier,
 	httpClient httpcli.Doer,
 	config config.FireworksConfig,
+	promptRecorder PromptRecorder,
 	autoFlushStreamingResponses bool,
 ) http.Handler {
 	return makeUpstreamHandler[fireworksRequest](
@@ -45,6 +46,7 @@ func NewFireworksHandler(
 			eventLogger: eventLogger,
 			config:      config,
 		},
+		promptRecorder,
 		// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
 		// do any retries
 		30, // seconds
@@ -176,7 +178,9 @@ func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 	// For now, just count character usage, and set token counts to
 	// -1 as sentinel values.
 	promptUsage.tokens = -1
+	promptUsage.tokenizerTokens = -1
 	completionUsage.tokens = -1
+	completionUsage.tokenizerTokens = -1
 
 	dec := fireworks.NewDecoder(r)
 	// Consume all the messages, but we only care about the last completion data.

@@ -78,7 +78,6 @@ var SourcegraphDockerImages = append(append(SourcegraphDockerImagesTestDeps, Dep
 // base deployment, nor do they require a special bazel toolchain ie: musl
 var SourcegraphDockerImagesMisc = []string{
 	"batcheshelper",
-	"blobstore2",
 	"bundled-executor",
 	"dind",
 	"embeddings",
@@ -121,7 +120,6 @@ var DeploySourcegraphDockerImages = []string{
 	"postgres_exporter",
 	"precise-code-intel-worker",
 	"prometheus",
-	"prometheus-gcp",
 	"qdrant",
 	"redis-cache",
 	"redis-store",

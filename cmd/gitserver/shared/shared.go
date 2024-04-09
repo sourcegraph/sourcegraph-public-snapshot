@@ -7,11 +7,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"net/http"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 
 	"github.com/sourcegraph/log"
 	"google.golang.org/grpc"
@@ -67,7 +68,8 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	// Prepare the file system.
-	if err := gitserverfs.InitGitserverFileSystem(logger, config.ReposDir); err != nil {
+	fs := gitserverfs.New(observationCtx, config.ReposDir)
+	if err := fs.Initialize(); err != nil {
 		return err
 	}
 
@@ -92,13 +94,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	locker := server.NewRepositoryLocker()
 	hostname := config.ExternalAddress
 	gitserver := server.NewServer(&server.ServerOpts{
-		Logger:   logger,
-		ReposDir: config.ReposDir,
+		Logger: logger,
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			return git.NewObservableBackend(gitcli.NewBackend(logger, recordingCommandFactory, dir, repoName))
 		},
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
-			return getRemoteURLFunc(ctx, logger, db, repo)
+			return getRemoteURLFunc(ctx, db, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (vcssyncer.VCSSyncer, error) {
 			return vcssyncer.NewVCSSyncer(ctx, &vcssyncer.NewVCSSyncerOpts{
@@ -106,13 +107,13 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 				RepoStore:               db.Repos(),
 				DepsSvc:                 dependencies.NewService(observationCtx, db),
 				Repo:                    repo,
-				ReposDir:                config.ReposDir,
 				CoursierCacheDir:        config.CoursierCacheDir,
 				RecordingCommandFactory: recordingCommandFactory,
 				Logger:                  logger,
+				FS:                      fs,
 				GetRemoteURLSource: func(ctx context.Context, repo api.RepoName) (vcssyncer.RemoteURLSource, error) {
 					return vcssyncer.RemoteURLSourceFunc(func(ctx context.Context) (*vcs.URL, error) {
-						rawURL, err := getRemoteURLFunc(ctx, logger, db, repo)
+						rawURL, err := getRemoteURLFunc(ctx, db, repo)
 						if err != nil {
 							return nil, errors.Wrapf(err, "getting remote URL for %q", repo)
 
@@ -128,10 +129,10 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 						return u, nil
 
 					}), nil
-
 				},
 			})
 		},
+		FS:                      fs,
 		Hostname:                hostname,
 		DB:                      db,
 		CloneQueue:              cloneQueue,
@@ -180,7 +181,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			db,
 			locker,
 			hostname,
-			config.ReposDir,
+			fs,
 			config.SyncRepoStateInterval,
 			config.SyncRepoStateBatchSize,
 			config.SyncRepoStateUpdatePerSecond,
@@ -190,11 +191,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			server.JanitorConfig{
 				ShardID:                        hostname,
 				JanitorInterval:                config.JanitorInterval,
-				ReposDir:                       config.ReposDir,
 				DesiredPercentFree:             config.JanitorReposDesiredPercentFree,
 				DisableDeleteReposOnWrongShard: config.JanitorDisableDeleteReposOnWrongShard,
 			},
 			db,
+			fs,
 			recordingCommandFactory,
 			gitserver.CloneRepo,
 			logger,
@@ -275,7 +276,6 @@ func getDB(observationCtx *observation.Context) (*sql.DB, error) {
 // cloning successfully.
 func getRemoteURLFunc(
 	ctx context.Context,
-	logger log.Logger,
 	db database.DB,
 	repo api.RepoName,
 ) (string, error) {
@@ -292,7 +292,7 @@ func getRemoteURLFunc(
 			return "", err
 		}
 
-		return cloneurl.ForEncryptableConfig(ctx, logger.Scoped("repos.CloneURL"), db, svc.Kind, svc.Config, r)
+		return cloneurl.ForEncryptableConfig(ctx, db, svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
 }

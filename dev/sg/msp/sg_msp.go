@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -87,10 +88,15 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 			},
 			Before: msprepo.UseManagedServicesRepo,
 			Action: func(c *cli.Context) error {
-				if c.Args().Len() != 1 {
-					return errors.New("exactly 1 argument required: service ID")
+				if c.Args().Len() > 1 {
+					return errors.New("exactly 1 argument allowed: the desired service ID, or no arguments to use interactive setup")
 				}
 
+				// Track if no args were provided at all to guide interactive
+				// setup features
+				fullyInteractive := c.Args().Len() == 0
+
+				// Collect required inputs
 				template := example.Template{
 					ID:    c.Args().First(),
 					Name:  c.String("name"),
@@ -99,9 +105,62 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 
 					ProjectIDSuffixLength: c.Int("project-id-suffix-length"),
 				}
+				if template.ID == "" {
+					std.Out.Write("Please provide an all-lowercase, dash-delimited, machine-friendly identifier for your new service, e.g. 'my-service'.")
+					ok, err := std.PromptAndScan(std.Out, "Service ID:", &template.ID)
+					if err != nil {
+						return err
+					} else if !ok {
+						return errors.New("response is required")
+					}
+				}
+				if allServices, err := msprepo.ListServices(); err != nil {
+					return errors.Wrap(err, "checking existing services")
+				} else if slices.Contains(allServices, template.ID) {
+					return errors.Newf("service with ID %q already exists", template.ID)
+				}
+				if template.Name == "" {
+					std.Out.Write("Please provide a human-readable name for your new service, e.g. 'My Service'.")
+					// optional, we can automatically generate one
+					if _, err := std.PromptAndScan(std.Out, "Service name (optional):", &template.Name); err != nil {
+						return err
+					}
+				}
+				if template.Owner == "" {
+					std.Out.Write("Please provide the name of the Opsgenie team that owns this new service - this MUST be an existing team listed in https://sourcegraph.app.opsgenie.com/teams/list")
+					ok, err := std.PromptAndScan(std.Out, "Service owner:", &template.Owner)
+					if err != nil {
+						return err
+					} else if !ok {
+						return errors.New("response is required")
+					}
+				}
+				if fullyInteractive && !c.IsSet("dev") { // ask only in interactive setup
+					std.Out.Write("We are going to scaffold an initial environment for your service - do you want to start with a 'dev' environment?")
+					std.Out.WriteSuggestionf("You can scaffold additional environments later using 'sg msp init-env %s'.", template.ID)
+					var dev string
+					ok, err := std.PromptAndScan(std.Out, "Start with a 'dev' environment (y/N):", &dev)
+					if err != nil {
+						return err
+					} else if !ok {
+						return errors.New("response is required")
+					}
+					template.Dev = strings.EqualFold(dev, "y")
+				}
+
+				var kind = c.String("kind")
+				if fullyInteractive && !c.IsSet("kind") { // ask only in interactive setup
+					std.Out.Write("MSP supports long-running services, or cron jobs.")
+					ok, err := std.PromptAndScan(std.Out, "Service kind (one of: 'service', 'job'):", &kind)
+					if err != nil {
+						return err
+					} else if !ok {
+						return errors.New("response is required")
+					}
+				}
 
 				var exampleSpec []byte
-				switch c.String("kind") {
+				switch kind {
 				case "service":
 					var err error
 					exampleSpec, err = example.NewService(template)
@@ -115,10 +174,10 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 						return errors.Wrap(err, "example.NewJob")
 					}
 				default:
-					return errors.Newf("unsupported service kind: %q", c.String("kind"))
+					return errors.Newf("unsupported service kind: %q", kind)
 				}
 
-				outputPath := msprepo.ServiceYAMLPath(c.Args().First())
+				outputPath := msprepo.ServiceYAMLPath(template.ID)
 
 				_ = os.MkdirAll(filepath.Dir(outputPath), 0o755)
 				if err := os.WriteFile(outputPath, exampleSpec, 0o644); err != nil {
@@ -127,6 +186,10 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 
 				std.Out.WriteSuccessf("Rendered %s template spec in %s",
 					c.String("kind"), outputPath)
+
+				std.Out.WriteSuggestionf("Take a look at the spec to see what you can change! "+
+					"When you are done, run 'sg msp generate -all %s' to render the required manifests and assets, and open a pull request for Core Services review.",
+					template.ID)
 				return nil
 			},
 		},
@@ -147,17 +210,26 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 				return ss
 			}),
 			Action: func(c *cli.Context) error {
-				if c.Args().Len() != 2 {
-					return errors.Newf("exactly 2 arguments required, '<service ID>' and '<env ID>' - " +
-						" this command is for adding an environment to an existing service, did you mean to use 'sg msp init' instead?")
-				}
-				svc, err := useServiceArgument(c, true)
+				svc, err := useServiceArgument(c, false) // we're expecting a potential second argument
 				if err != nil {
-					return err
+					// A bad argument suggests a user misunderstanding of this
+					// command, so provide a hint with the error
+					return errors.Wrap(err,
+						"this command is for adding an environment to an existing service, did you mean to use 'sg msp init' instead?")
 				}
-				envID := c.Args().Get(1) // we already validate 2 arguments
+
+				envID := c.Args().Get(1)
+				if envID == "" {
+					std.Out.Write("Please provide an all-lowercase, dash-delimited, machine-friendly identifier for your new environment, e.g. 'dev' or 'prod'.")
+					ok, err := std.PromptAndScan(std.Out, "Environment ID:", &envID)
+					if err != nil {
+						return err
+					} else if !ok {
+						return errors.New("response is required")
+					}
+				}
 				if existing := svc.GetEnvironment(envID); existing != nil {
-					return errors.Newf("environment %q already exists", envID)
+					return errors.Newf("environment %q already exists for service %q", envID, svc.Service.ID)
 				}
 
 				envNode, err := example.NewEnvironment(example.EnvironmentTemplate{
@@ -200,10 +272,10 @@ Supports completions on services and environments.`,
 			UsageText: `
 # generate single env for a single service
 sg msp generate <service> <env>
-# generate all envs across all services
-sg msp generate -all
 # generate all envs for a single service
 sg msp generate -all <service>
+# generate all envs across all services
+sg msp generate -all
 			`,
 			Before: msprepo.UseManagedServicesRepo,
 			Flags: []cli.Flag{
@@ -229,22 +301,32 @@ sg msp generate -all <service>
 					std.Out.WriteSuggestionf("Using stable generate - tfvars will not be updated.")
 				}
 
-				// Generate specific service
-				if serviceID := c.Args().First(); serviceID == "" && !generateAll {
-					return errors.New("first argument service ID is required without the '-all' flag")
-				} else if serviceID != "" {
-					targetEnv := c.Args().Get(1)
-					if targetEnv == "" && !generateAll {
-						return errors.New("second argument environment ID is required without the '-all' flag")
+				// Generate a specific service environment if '-all' is not provided
+				if !generateAll {
+					std.Out.WriteNoticef("Generating a specific service environment...")
+					svc, env, err := useServiceAndEnvironmentArguments(c, true)
+					if err != nil {
+						return err
 					}
-
-					return generateTerraform(serviceID, generateTerraformOptions{
-						targetEnv:      targetEnv,
+					return generateTerraform(svc, generateTerraformOptions{
+						targetEnv:      env.ID,
 						stableGenerate: stableGenerate,
 					})
 				}
 
-				// Generate all services
+				// 1+ argument indicates we are generating all envs for a single service
+				if c.Args().Len() > 0 {
+					std.Out.WriteNoticef("Generating all environments for a specific service...")
+					svc, err := useServiceArgument(c, true) // error if additional arguments are provided
+					if err != nil {
+						return err
+					}
+					return generateTerraform(svc, generateTerraformOptions{
+						stableGenerate: stableGenerate,
+					})
+				}
+
+				// Otherwise, generate all environments for all services
 				serviceIDs, err := msprepo.ListServices()
 				if err != nil {
 					return errors.Wrap(err, "list services")
@@ -253,7 +335,11 @@ sg msp generate -all <service>
 					return errors.New("no services found")
 				}
 				for _, serviceID := range serviceIDs {
-					if err := generateTerraform(serviceID, generateTerraformOptions{
+					s, err := spec.Open(msprepo.ServiceYAMLPath(serviceID))
+					if err != nil {
+						return err
+					}
+					if err := generateTerraform(s, generateTerraformOptions{
 						stableGenerate: stableGenerate,
 					}); err != nil {
 						return errors.Wrap(err, serviceID)
@@ -619,11 +705,6 @@ Supports completions on services and environments.`,
 					},
 					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 					Action: func(c *cli.Context) error {
-						service, err := useServiceArgument(c, false)
-						if err != nil {
-							return err
-						}
-
 						secretStore, err := secrets.FromContext(c.Context)
 						if err != nil {
 							return err
@@ -651,23 +732,26 @@ Supports completions on services and environments.`,
 							return errors.Wrap(err, "init Terraform Cloud client")
 						}
 
-						if targetEnv := c.Args().Get(1); targetEnv != "" {
-							env := service.GetEnvironment(targetEnv)
-							if env == nil {
-								return errors.Newf("environment %q not found in service spec", targetEnv)
+						// If we are not syncing all environments for a service,
+						// then we are syncing a specific service environment.
+						if !c.Bool("all") {
+							std.Out.WriteNoticef("Syncing a specific service environment...")
+							svc, env, err := useServiceAndEnvironmentArguments(c, true)
+							if err != nil {
+								return err
 							}
+							return syncEnvironmentWorkspaces(c, tfcClient, svc.Service, *env)
+						}
 
-							if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, *env); err != nil {
+						// Otherwise, we are syncing all environments for a service.
+						std.Out.WriteNoticef("Syncing all environments for a specific service ...")
+						svc, err := useServiceArgument(c, true)
+						if err != nil {
+							return err
+						}
+						for _, env := range svc.Environments {
+							if err := syncEnvironmentWorkspaces(c, tfcClient, svc.Service, env); err != nil {
 								return errors.Wrapf(err, "sync env %q", env.ID)
-							}
-						} else {
-							if targetEnv == "" && !c.Bool("all") {
-								return errors.New("second argument environment ID is required without the '-all' flag")
-							}
-							for _, env := range service.Environments {
-								if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, env); err != nil {
-									return errors.Wrapf(err, "sync env %q", env.ID)
-								}
 							}
 						}
 

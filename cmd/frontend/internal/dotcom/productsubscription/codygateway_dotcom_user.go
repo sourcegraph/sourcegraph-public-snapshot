@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -198,7 +199,7 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 	intervalSeconds := int32(math.MaxInt32)
 
 	// Apply self-serve limits if available
-	cfg := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	cfg := conf.Get().SiteConfig().Embeddings
 	if cfg != nil {
 		user, err := db.Users().GetByID(ctx, userID)
 		if err != nil {
@@ -228,7 +229,7 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 	}
 
 	return licensing.CodyGatewayRateLimit{
-		AllowedModels:   []string{"openai/text-embedding-ada-002", "sourcegraph/triton"},
+		AllowedModels:   []string{"openai/text-embedding-ada-002", "sourcegraph/st-multi-qa-mpnet-base-dot-v1"},
 		Limit:           limit,
 		IntervalSeconds: intervalSeconds,
 	}, nil
@@ -348,7 +349,8 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 
 		if !isProUser {
 			return []string{
-				"anthropic/claude-3-haiku-20240307",
+				"anthropic/" + anthropic.Claude3Haiku,
+				"anthropic/" + anthropic.Claude3Sonnet,
 				// Remove after the Claude 3 rollout is complete
 				"anthropic/claude-2.0",
 				"anthropic/claude-instant-v1",
@@ -358,9 +360,9 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 		}
 
 		return []string{
-			"anthropic/claude-3-sonnet-20240229",
-			"anthropic/claude-3-opus-20240229",
-			"anthropic/claude-3-haiku-20240307",
+			"anthropic/" + anthropic.Claude3Haiku,
+			"anthropic/" + anthropic.Claude3Sonnet,
+			"anthropic/" + anthropic.Claude3Opus,
 			"fireworks/" + fireworks.Mixtral8x7bInstruct,
 			"openai/gpt-3.5-turbo",
 			"openai/gpt-4-1106-preview",
@@ -377,7 +379,7 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 		}
 	case types.CompletionsFeatureCode:
 		return []string{
-			"anthropic/claude-3-haiku-20240307",
+			"anthropic/" + anthropic.Claude3Haiku,
 			"anthropic/claude-instant-v1",
 			"anthropic/claude-instant-1",
 			"anthropic/claude-instant-1.2-cyan",

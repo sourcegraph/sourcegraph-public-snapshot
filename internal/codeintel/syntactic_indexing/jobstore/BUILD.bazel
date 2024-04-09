@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "jobstore",
+    srcs = [
+        "job.go",
+        "store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/authz",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database/basestore",
+        "//internal/database/connections/live",
+        "//internal/database/dbutil",
+        "//internal/observation",
+        "//internal/workerutil",
+        "//internal/workerutil/dbworker/store",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "jobstore_test",
+    srcs = [
+        "store_helpers_test.go",
+        "store_test.go",
+    ],
+    embed = [":jobstore"],
+    tags = ["requires-network"],
+    deps = [
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/observation",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_stretchr_testify//require",
+    ],
+)

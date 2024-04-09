@@ -369,6 +369,8 @@ type BitbucketCloudConnection struct {
 	GitURLType string `json:"gitURLType,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to Bitbucket Cloud.
 	RateLimit *BitbucketCloudRateLimit `json:"rateLimit,omitempty"`
+	// Repos description: An array of repository "projectKey/repositorySlug" strings specifying repositories to mirror on Sourcegraph.
+	Repos []string `json:"repos,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Cloud repository.
 	//
 	//  - "{host}" is replaced with the Bitbucket Cloud URL's host (such as bitbucket.org),  and "{nameWithOwner}" is replaced with the Bitbucket Cloud repository's "owner/path" (such as "myorg/myrepo").
@@ -631,10 +633,12 @@ type Completions struct {
 	// AccessToken description: The access token used to authenticate with the external completions provider. If using the default provider 'sourcegraph', and if 'licenseKey' is set, a default access token is generated.
 	AccessToken string `json:"accessToken,omitempty"`
 	// ChatModel description: The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.
+	//  NOTE: The Anthropic messages API does not support model names like claude-2 or claude-instant-1 where only the major version is specified as they are retired. We recommed using a specific model identifier as specified here https://docs.anthropic.com/claude/docs/models-overview#model-comparison
 	ChatModel string `json:"chatModel,omitempty"`
 	// ChatModelMaxTokens description: The maximum number of tokens to use as client when talking to chatModel. If not set, clients need to set their own limit.
 	ChatModelMaxTokens int `json:"chatModelMaxTokens,omitempty"`
 	// CompletionModel description: The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.
+	//  NOTE: The Anthropic messages API does not support model names like claude-2 or claude-instant-1 where only the major version is specified as they are retired. We recommed using a specific model identifier as specified here https://docs.anthropic.com/claude/docs/models-overview#model-comparison
 	CompletionModel string `json:"completionModel,omitempty"`
 	// CompletionModelMaxTokens description: The maximum number of tokens to use as client when talking to completionModel. If not set, clients need to set their own limit.
 	CompletionModelMaxTokens int `json:"completionModelMaxTokens,omitempty"`
@@ -643,6 +647,7 @@ type Completions struct {
 	// Endpoint description: The endpoint under which to reach the provider. Currently only used for provider types "sourcegraph", "openai" and "anthropic". The default values are "https://cody-gateway.sourcegraph.com", "https://api.openai.com/v1/chat/completions", and "https://api.anthropic.com/v1/messages" for Sourcegraph, OpenAI, and Anthropic, respectively.
 	Endpoint string `json:"endpoint,omitempty"`
 	// FastChatModel description: The model used for fast chat completions.
+	//  NOTE: The Anthropic messages API does not support model names like claude-2 or claude-instant-1 where only the major version is specified as they are retired. We recommed using a specific model identifier as specified here https://docs.anthropic.com/claude/docs/models-overview#model-comparison
 	FastChatModel string `json:"fastChatModel,omitempty"`
 	// FastChatModelMaxTokens description: The maximum number of tokens to use as client when talking to fastChatModel. If not set, clients need to set their own limit.
 	FastChatModelMaxTokens int `json:"fastChatModelMaxTokens,omitempty"`
@@ -1156,13 +1161,19 @@ type GerritConnection struct {
 	//
 	// Supports excluding by name ({"name": "owner/name"})
 	Exclude []*ExcludedGerritProject `json:"exclude,omitempty"`
+	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this Gerrit instance.
+	//
+	// If "http", Sourcegraph will access Gerrit repositories using Git URLs of the form http(s)://gerrit.example.com/a/myteam/myproject.git (using https: if the Gerrit instance uses HTTPS).
+	//
+	// If "ssh", Sourcegraph will access Gerrit repositories using Git URLs of the form git@gerrit.example.com:myteam/myproject.git. The exact hostname and port will be fetched from /ssh_info. See the documentation for how to provide SSH private keys and known_hosts: https://sourcegraph.com/docs/admin/repo/auth.
+	GitURLType string `json:"gitURLType,omitempty"`
 	// Password description: The password associated with the Gerrit username used for authentication.
 	Password string `json:"password"`
 	// Projects description: An array of project strings specifying which Gerrit projects to mirror on Sourcegraph. If empty, all projects will be mirrored.
 	Projects []string `json:"projects,omitempty"`
 	// Url description: URL of a Gerrit instance, such as https://gerrit.example.com.
 	Url string `json:"url"`
-	// Username description: A username for authentication withe the Gerrit code host.
+	// Username description: A username for authentication with the Gerrit code host.
 	Username string `json:"username"`
 }
 
@@ -1644,6 +1655,9 @@ type Notice struct {
 	Location string `json:"location"`
 	// Message description: The message to display. Markdown formatting is supported.
 	Message string `json:"message"`
+	// StyleOverrides description: Overrides for the notice's default style. You probably want to use notice 'variant' setting instead.
+	StyleOverrides *StyleOverrides `json:"styleOverrides,omitempty"`
+	Variant        string          `json:"variant,omitempty"`
 }
 type Notifications struct {
 	// Key description: e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.
@@ -2573,8 +2587,10 @@ type SettingsExperimentalFeatures struct {
 	// ShowMultilineSearchConsole description: Enables the multiline search console at search/console
 	ShowMultilineSearchConsole *bool `json:"showMultilineSearchConsole,omitempty"`
 	// SymbolKindTags description: Show the initial letter of the symbol kind instead of icons.
-	SymbolKindTags bool           `json:"symbolKindTags,omitempty"`
-	Additional     map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
+	SymbolKindTags bool `json:"symbolKindTags,omitempty"`
+	// SyntacticIndexing description: Whether syntactic indexing is enabled
+	SyntacticIndexing bool           `json:"syntacticIndexing,omitempty"`
+	Additional        map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
 }
 
 func (v SettingsExperimentalFeatures) MarshalJSON() ([]byte, error) {
@@ -2635,6 +2651,7 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "showCodeMonitoringLogs")
 	delete(m, "showMultilineSearchConsole")
 	delete(m, "symbolKindTags")
+	delete(m, "syntacticIndexing")
 	if len(m) > 0 {
 		v.Additional = make(map[string]any, len(m))
 	}
@@ -3168,6 +3185,16 @@ type Step struct {
 	Outputs map[string]OutputVariable `json:"outputs,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 	Run string `json:"run"`
+}
+
+// StyleOverrides description: Overrides for the notice's default style. You probably want to use notice 'variant' setting instead.
+type StyleOverrides struct {
+	// BackgroundColor description: The hex code of the background color for this notice.
+	BackgroundColor string `json:"backgroundColor,omitempty"`
+	// TextCentered description: Whether the notice text should be centered.
+	TextCentered bool `json:"textCentered,omitempty"`
+	// TextColor description: The hex code of the text color for this notice.
+	TextColor string `json:"textColor,omitempty"`
 }
 type SubRepoPermissions struct {
 	// Enabled description: Enables sub-repo permission checking

@@ -29,6 +29,7 @@ func NewOpenAIHandler(
 	rateLimitNotifier notify.RateLimitNotifier,
 	httpClient httpcli.Doer,
 	config config.OpenAIConfig,
+	promptRecorder PromptRecorder,
 	autoFlushStreamingResponses bool,
 ) http.Handler {
 	return makeUpstreamHandler[openaiRequest](
@@ -40,6 +41,7 @@ func NewOpenAIHandler(
 		string(conftypes.CompletionsProviderNameOpenAI),
 		config.AllowedModels,
 		&OpenAIHandlerMethods{config: config},
+		promptRecorder,
 
 		// OpenAI primarily uses tokens-per-minute ("TPM") to rate-limit spikes
 		// in requests, so set a very high retry-after to discourage Sourcegraph
@@ -165,6 +167,9 @@ func (*OpenAIHandlerMethods) parseResponseAndUsage(logger log.Logger, body opena
 		promptUsage.characters += len(m.Content)
 	}
 
+	// Setting a default -1 value so that in case of errors the tokenizer computed tokens don't impact the data
+	promptUsage.tokenizerTokens = -1
+	completionUsage.tokenizerTokens = -1
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
 	if !body.Stream {

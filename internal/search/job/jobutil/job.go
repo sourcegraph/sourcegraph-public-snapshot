@@ -138,8 +138,6 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 					})
 				}
 
-				// searcher to use full deadline if timeout: set or we are not batch.
-
 				searcherJob := NewTextSearchJob(b, inputs, resultTypes, repoOptions)
 				addJob(searcherJob)
 			}

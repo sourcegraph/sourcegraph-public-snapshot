@@ -67,8 +67,9 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 			Network:     network.Id(),
 			IpCidrRange: pointers.Ptr(subnetworkIPCIDRRange),
 
-			// Security requirements
-			PrivateIpGoogleAccess: false,
+			// Allow usage of private Google access: https://cloud.google.com/vpc/docs/private-google-access
+			PrivateIpGoogleAccess: true,
+
 			//checkov:skip=CKV_GCP_76: Enable dual-stack support for subnetworks is destrutive and require re-creating the subnet and all dependent resources (e.g. NEG)
 			PrivateIpv6GoogleAccess: pointers.Ptr("DISABLE_GOOGLE_ACCESS"),
 			// Checkov requirement: https://docs.bridgecrew.io/docs/bc_gcp_logging_1

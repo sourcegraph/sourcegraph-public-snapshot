@@ -9,7 +9,7 @@
         const names = name.split(' ')
         const initials = names.map(name => name.charAt(0).toLowerCase())
         if (initials.length > 1) {
-            return `${initials[0]}${initials[initials.length - 1]}`
+            return `${initials[0]}${initials[initials.length - 1].toUpperCase()}`
         }
         return initials[0]
     }
@@ -40,8 +40,21 @@
 {/if}
 
 <style lang="scss">
+    span {
+        z-index: 1;
+        color: var(--white);
+        font-size: calc(var(--size) * 0.5);
+    }
+
     img,
     div {
+        --min-size: 1rem;
+        --size: var(--avatar-size, var(--icon-inline-size, var(--min-size)));
+
+        min-width: var(--min-size);
+        min-height: var(--min-size);
+        width: var(--size);
+        height: var(--size);
         isolation: isolate;
         display: inline-flex;
         border-radius: 50%;
@@ -49,12 +62,8 @@
         color: var(--color-bg-1);
         align-items: center;
         justify-content: center;
-        min-width: 1.5rem;
-        min-height: 1.5rem;
         position: relative;
         background: linear-gradient(to bottom, var(--logo-purple), var(--logo-orange));
-        width: var(--avatar-size, var(--icon-inline-size));
-        height: var(--avatar-size, var(--icon-inline-size));
     }
 
     div::after {
@@ -67,10 +76,5 @@
         border-radius: 50%;
         background: linear-gradient(to right, var(--logo-purple), var(--logo-blue));
         mask-image: linear-gradient(to bottom, #000000, transparent);
-    }
-
-    span {
-        z-index: 1;
-        color: var(--white);
     }
 </style>
