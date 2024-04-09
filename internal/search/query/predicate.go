@@ -626,7 +626,7 @@ type RevAtTimePredicate struct {
 func (f *RevAtTimePredicate) Unmarshal(params string, negated bool) error {
 	elems := strings.Split(params, ",")
 	if len(elems) == 1 {
-		t, err := ParseGitDate(elems[0], time.Now)
+		t, err := ParseGitDate(strings.TrimSpace(elems[0]), time.Now)
 		if err != nil {
 			return err
 		}
@@ -634,7 +634,7 @@ func (f *RevAtTimePredicate) Unmarshal(params string, negated bool) error {
 		f.RevSpec = "HEAD"
 		return nil
 	} else if len(elems) == 2 {
-		t, err := ParseGitDate(elems[0], time.Now)
+		t, err := ParseGitDate(strings.TrimSpace(elems[0]), time.Now)
 		if err != nil {
 			return err
 		}
