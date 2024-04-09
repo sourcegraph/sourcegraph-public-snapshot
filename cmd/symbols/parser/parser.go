@@ -115,6 +115,12 @@ func (p *parser) Parse(ctx context.Context, args search.SymbolsParameters, paths
 					break
 				}
 
+				// Drain channel if our context has been canceled. Otherwise
+				// we just logspam on handleParseRequest.
+				if ctx.Err() != nil {
+					continue
+				}
+
 				atomic.AddUint32(&totalRequests, 1)
 				if err := p.handleParseRequest(ctx, symbolOrErrors, parseRequestOrError.ParseRequest, &totalSymbols); err != nil {
 					log15.Error("error handling parse request", "error", err, "path", parseRequestOrError.ParseRequest.Path)
