@@ -255,4 +255,48 @@ For example:
         align-items: center;
         padding: 0.75rem;
     }
+
+    .last-commit {
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: space-between;
+        padding: 0.5rem 0rem;
+
+        border-bottom: 1px solid var(--border-color);
+
+        .title {
+            color: var(--text-muted);
+        }
+
+        .subject-and-commit {
+            display: flex;
+            flex-flow: row nowrap;
+            align-items: center;
+
+            .subject {
+                color: var(--text-body);
+                margin-right: 0.5rem;
+            }
+
+            .commit-number {
+                color: var(--text-muted);
+            }
+        }
+
+        .author-and-time {
+            display: flex;
+            flex-flow: row nowrap;
+            justify-content: flex-end;
+            color: var(--text-muted);
+
+            .author {
+                margin-right: 0.5rem;
+                color: var(--text-muted);
+            }
+
+            .separator {
+                margin-right: 0.5rem;
+            }
+        }
+    }
 </style>
