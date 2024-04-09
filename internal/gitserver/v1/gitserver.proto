@@ -156,9 +156,9 @@ service GitserverService {
     option idempotency_level = IDEMPOTENT;
   }
   // Stat returns a FileInfo describing the named file descriptor at the given commit.
-	// Stat supports submodules, symlinks, directories and files.
+  // Stat supports submodules, symlinks, directories and files.
   //
-	// If the commit does not exist, an error with RevisionNotFoundPayload is
+  // If the commit does not exist, an error with RevisionNotFoundPayload is
   // returned.
   //
   // If the given path is not found, an error with a FileNotFoundPayload is returned.
@@ -173,7 +173,7 @@ service GitserverService {
   // ReadDir returns a list of FileInfos describing the files and subdirectories
   // in the given directory.
   //
-	// If the commit does not exist, an error with RevisionNotFoundPayload is
+  // If the commit does not exist, an error with RevisionNotFoundPayload is
   // returned.
   //
   // If the given path is not found, an error with a FileNotFoundPayload is returned.
@@ -189,7 +189,7 @@ service GitserverService {
   // matching the given pathspecs.
   // https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
   //
-	// If the commit does not exist, an error with RevisionNotFoundPayload is
+  // If the commit does not exist, an error with RevisionNotFoundPayload is
   // returned.
   //
   // If subrepo permissions are enabled and certain file descriptors are not visible
@@ -248,12 +248,12 @@ message ReadDirPatternsResponse {
 
 message GitSubmodule {
   // URL is the submodule repository clone URL.
-	string url = 1;
-	// Path is the path of the submodule relative to the repository root.
+  string url = 1;
+  // Path is the path of the submodule relative to the repository root.
   bytes path = 2;
-	// CommitSHA is the pinned commit ID of the submodule (in the submodule repository's
+  // CommitSHA is the pinned commit ID of the submodule (in the submodule repository's
   // commit ID space).
-	string commit_sha = 3;
+  string commit_sha = 3;
 }
 
 message FileInfo {
