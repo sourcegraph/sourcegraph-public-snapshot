@@ -7549,7 +7549,7 @@ type Site implements SettingsSubject {
     """
     Rules defining the repositories that will never be shared by Cody with third-party LLM providers.
     """
-    codyContextFilters: CodyContextFilters!
+    codyContextFilters: CodyContextFilters
 }
 
 """
