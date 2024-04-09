@@ -303,7 +303,7 @@ func TestNewEnterpriseFilter(t *testing.T) {
 			wantChunks: []FileChunkContext{
 				{
 					RepoName: "github.com/docker/compose",
-					RepoID:   2,
+					RepoID:   4,
 					Path:     "/file4.go",
 				},
 			},
