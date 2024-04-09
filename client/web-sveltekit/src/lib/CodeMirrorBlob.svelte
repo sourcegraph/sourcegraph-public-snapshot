@@ -44,7 +44,6 @@
             fontSize: 'var(--code-font-size)',
         },
         '.cm-content': {
-            backgroundColor: 'var(--code-bg)',
             '&:focus-visible': {
                 outline: 'none',
                 boxShadow: 'none',
