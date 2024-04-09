@@ -672,26 +672,29 @@ func (r *codyContextFilterItemResolver) RepoNamePattern() string {
 	return r.f.RepoNamePattern
 }
 
-func (c *codyContextFiltersResolver) Include() *[]*codyContextFilterItemResolver {
+func (c *codyContextFiltersResolver) Include() []*codyContextFilterItemResolver {
 	return resolveFilterItems(c.ccf.Include)
 }
 
-func (c *codyContextFiltersResolver) Exclude() *[]*codyContextFilterItemResolver {
+func (c *codyContextFiltersResolver) Exclude() []*codyContextFilterItemResolver {
 	return resolveFilterItems(c.ccf.Exclude)
 }
 
-func resolveFilterItems(items []*schema.CodyContextFilterItem) *[]*codyContextFilterItemResolver {
+func resolveFilterItems(items []*schema.CodyContextFilterItem) []*codyContextFilterItemResolver {
 	var r []*codyContextFilterItemResolver
 	for _, f := range items {
 		r = append(r, &codyContextFilterItemResolver{f})
 	}
-	return &r
+	return r
 }
 
 func (r *siteResolver) CodyContextFilters() *codyContextFiltersResolver {
 	ccf := conf.Get().SiteConfig().CodyContextFilters
 	if ccf == nil {
-		return nil
+		ccf = &schema.CodyContextFilters{
+			Include: []*schema.CodyContextFilterItem{},
+			Exclude: []*schema.CodyContextFilterItem{},
+		}
 	}
 	return &codyContextFiltersResolver{ccf}
 }

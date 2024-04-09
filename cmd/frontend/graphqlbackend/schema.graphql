@@ -7266,12 +7266,12 @@ type CodyContextFilters {
     If defined, only repositories matching these rules will be considered for sharing.
     If not defined, all repositories may be shared.
     """
-    include: [CodyContextFilterItem]
+    include: [CodyContextFilterItem!]!
     """
     List of rules specifying repositories that Cody should excluded from context in requests to third-party LLMs.
     These rules are applied only to repositories matching the include rules.
     """
-    exclude: [CodyContextFilterItem]
+    exclude: [CodyContextFilterItem!]!
 }
 
 """
@@ -7549,7 +7549,7 @@ type Site implements SettingsSubject {
     """
     Rules defining the repositories that will never be shared by Cody with third-party LLM providers.
     """
-    codyContextFilters: CodyContextFilters
+    codyContextFilters: CodyContextFilters!
 }
 
 """
