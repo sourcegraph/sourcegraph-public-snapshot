@@ -1,18 +1,29 @@
 <script lang="ts">
-    import { mdiSourceMerge, mdiStarOutline } from '@mdi/js'
+    import { mdiStarOutline } from '@mdi/js'
+    import { formatDistanceToNow } from 'date-fns'
 
     import Icon from '$lib/Icon.svelte'
 
-    let tags = ['open-source', 'code-search', 'sourcegraph', 'code-intelligence']
-    let description = 'Code AI Platform with Code Search & Cody'
-    let subject = 'This is a commit message, and it can be very long and contain all sorts of unicode characters.'
-    let commitNumber = '#89886'
-    let author = 'jasonhawkharris'
-    let commitDate = '1 hour ago'
-    let lang = 'Go'
-    let commits = '1.2'
-    let stars = '9.2'
-    let license = 'MIT'
+    import { RepoPopoverFields } from './RepoPopover.gql'
+
+    export let repo: RepoPopoverFields
+
+    let tags = repo.tags.nodes
+    let description = repo.description
+    let subject = repo.commit?.subject
+    let commitNumber = repo.commit?.abbreviatedOID
+    let author = repo.commit?.author.person.name
+    let commitDate = repo.commit?.author.date
+    let lang = repo.commit?.repository?.language
+    let stars = repo.stars.toString()
+    let url = repo.commit?.canonicalURL
+    /*
+    We don't have forks or license information yet.
+    We can add them later.
+    */
+    // let forks
+    // let license
+    $: console.log(repo)
 
     const CENTER_DOT = '\u00B7' // interpunct
 </script>
@@ -21,9 +32,11 @@
     <div class="description-and-tags">
         <div class="description">{description}</div>
         <div class="tags">
-            {#each tags as tag}
-                <div class="tag"><small>{tag}</small></div>
-            {/each}
+            {#if tags.length > 0}
+                {#each tags as tag}
+                    <div class="tag"><small>{tag.name}</small></div>
+                {/each}
+            {/if}
         </div>
     </div>
     <div class="divider" />
@@ -36,9 +49,11 @@
                 <div class="subject">
                     <small>{subject}</small>
                 </div>
-                <div class="commit-number">
-                    <small>{commitNumber}</small>
-                </div>
+                {#if commitNumber}
+                    <div class="commit-number">
+                        <a href={url}><small>{commitNumber}</small></a>
+                    </div>
+                {/if}
             </div>
             <div class="author-and-time">
                 <div class="author">
@@ -46,7 +61,12 @@
                     <small>{author}</small>
                 </div>
                 <div class="separator">{CENTER_DOT}</div>
-                <div class="commit-date"><small>{commitDate}</small></div>
+
+                {#if commitDate}
+                    <div class="commit-date">
+                        <small>{formatDistanceToNow(commitDate, { addSuffix: false })}</small>
+                    </div>
+                {/if}
             </div>
         </div>
     </div>
@@ -54,10 +74,11 @@
     <div class="repo-stats">
         <div class="stats">
             <div class="stat"><small>{lang}</small></div>
-            <div class="stat"><Icon svgPath={mdiSourceMerge} size={14} /><small>{commits}k</small></div>
-            <div class="stat"><Icon svgPath={mdiStarOutline} size={14} /><small>{stars}k</small></div>
+            <!-- We don't have forks or license information yet. -->
+            <!--div class="stat"><Icon svgPath={mdiSourceMerge} size={14} /><small>{commits}k</small></div-->
         </div>
-        <div class="license"><small>{license}</small></div>
+        <!--div class="license"><small>{license}</small></div-->
+        <div class="stat"><Icon svgPath={mdiStarOutline} size={18} /><small>{stars}k</small></div>
     </div>
 </div>
 
@@ -174,9 +195,10 @@
                 margin-right: 1rem;
             }
 
+            /* see note above about forks and license
             .license {
                 align-self: center;
-            }
+            } */
         }
     }
 </style>

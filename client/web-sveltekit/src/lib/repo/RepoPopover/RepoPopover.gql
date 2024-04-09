@@ -1,0 +1,26 @@
+fragment RepoPopoverFields on Repository {
+  description
+  stars
+  tags {
+    nodes {
+      name
+    }
+  }
+
+  commit(rev: "HEAD") {
+    id
+    subject
+    abbreviatedOID
+    canonicalURL
+    author {
+      date
+      person {
+        ...Avatar_Person
+      }
+    }
+
+    repository {
+      language
+    }
+  }
+}
