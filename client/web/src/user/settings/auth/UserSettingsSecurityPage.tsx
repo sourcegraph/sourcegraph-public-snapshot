@@ -46,7 +46,7 @@ type ServiceType = AuthProvider['serviceType']
 export type ExternalAccountsByType = Partial<Record<ServiceType, UserExternalAccount>>
 export type AuthProvidersByBaseURL = Partial<Record<string, AuthProvider>>
 
-interface UserExternalAccountsResult {
+export interface UserExternalAccountsResult {
     user: {
         externalAccounts: {
             nodes: UserExternalAccount[]

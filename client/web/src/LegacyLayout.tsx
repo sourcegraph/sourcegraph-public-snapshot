@@ -18,6 +18,7 @@ import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/Keyboa
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { useUserHistory } from './components/useUserHistory'
 import { GlobalContributions } from './contributions'
+import { ExternalAccountsModal } from './external-account-modal/ExternalAccountsModal'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { useHandleSubmitFeedback } from './hooks'
@@ -46,6 +47,8 @@ export interface LegacyLayoutProps
  * https://github.com/sourcegraph/sourcegraph/issues/36251
  */
 const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighting'
+
+const EXTERNAL_ACCOUNTS_DISMISSED_KEY = 'user.externalaccounts.dismissed'
 
 export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const location = useLocation()
@@ -87,7 +90,17 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isSetupWizardPage = location.pathname.startsWith(PageRoutes.SetupWizard)
 
     const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
+    const [isExternalAccountsModalVisible, setExternalAccountsModalVisible] = useState(true)
     const userHistory = useUserHistory(props.authenticatedUser?.id, isRepositoryRelatedPage)
+
+    const shouldShowExternalAccountsModal = localStorage.getItem(EXTERNAL_ACCOUNTS_DISMISSED_KEY) === null
+
+    const dismissExternalAccountsModal = function(): void {
+        if (confirm('You can always connect external accounts in your account security settings.')) {
+            setExternalAccountsModalVisible(false)
+            localStorage.setItem(EXTERNAL_ACCOUNTS_DISMISSED_KEY, 'true')
+        }
+    }
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(location.pathname)
@@ -209,9 +222,9 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     authenticatedUser={
                         props.authenticatedUser
                             ? {
-                                  username: props.authenticatedUser.username || '',
-                                  email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
-                              }
+                                username: props.authenticatedUser.username || '',
+                                email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
+                            }
                             : null
                     }
                     onClose={() => setFeedbackModalOpen(false)}
@@ -270,6 +283,15 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     telemetryRecorder={props.platformContext.telemetryRecorder}
                     location={location}
                     userHistory={userHistory}
+                />
+            )}
+            {props.authenticatedUser && shouldShowExternalAccountsModal && (
+                <ExternalAccountsModal
+                    context={window.context}
+                    authenticatedUser={props.authenticatedUser}
+                    isVisible={isExternalAccountsModalVisible}
+                    setVisible={setExternalAccountsModalVisible}
+                    onDismiss={dismissExternalAccountsModal}
                 />
             )}
             {showDeveloperDialog && <LazyDeveloperDialog />}
