@@ -260,21 +260,25 @@ For example:
         display: flex;
         flex-flow: row nowrap;
         justify-content: space-between;
-        padding: 0rem 0.75rem;
         margin-top: 0.5rem;
+        padding: 0rem 0.75rem;
 
         .title {
             color: var(--text-muted);
         }
 
         .subject-and-commit {
+            align-items: center;
             display: flex;
             flex-flow: row nowrap;
-            align-items: center;
 
             .subject {
                 color: var(--text-body);
                 margin-right: 0.5rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                width: 150px;
             }
 
             .commit-number {
@@ -283,14 +287,14 @@ For example:
         }
 
         .author-and-time {
+            color: var(--text-muted);
             display: flex;
             flex-flow: row nowrap;
             justify-content: flex-end;
-            color: var(--text-muted);
 
             .author {
-                margin-right: 0.5rem;
                 color: var(--text-muted);
+                margin-right: 0.5rem;
             }
 
             .separator {
@@ -300,22 +304,23 @@ For example:
     }
 
     .repo-stats {
-        padding: 0rem 0.75rem;
-        margin-top: 0.5rem;
-        margin-bottom: 0.5rem;
+        color: var(--text-muted);
         display: flex;
         flex-flow: row nowrap;
         justify-content: space-between;
-        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+        margin-top: 0.5rem;
+        padding: 0rem 0.75rem;
 
         .stats {
-            font-size: 1rem;
-            padding: 0rem;
             display: flex;
             flex-flow: row nowrap;
+            font-size: 1rem;
+            padding: 0rem;
+
             .stat {
-                margin-right: 1rem;
                 align-self: center;
+                margin-right: 1rem;
             }
 
             .license {
