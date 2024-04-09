@@ -1,6 +1,6 @@
 # Because we have a bunch of ${} in there, which clash with the interpolation for "".format(...),
 # it's simpler to have this in a var and inject it as is, rather than having to escape everything.
-CMD_PREAMBLE = """set -ex
+CMD_PREAMBLE = """set -e
 
 export HOME=$(pwd)
 export SG_FORCE_REPO_ROOT=$(pwd)
@@ -41,9 +41,17 @@ fi
 # Dumping the schema requires running the squash operation first, as it reuses the database, so we do all of those operations
 # in a single step.
 def _generate_schemas_impl(ctx):
-    pgutils_path = ":".join([f.path.rpartition("/")[0] for f in ctx.attr._pg_utils[DefaultInfo].default_runfiles.files.to_list()])
+    # for every entry in pgutils filegroup, there's two files:
+    # - one in external e.g. external/createdb-linux-amd64/file/downloaded
+    # - one in output base e.g. bazel-out/k8-opt-exec-ST-13d3ddad9198/bin/dev/tools/createdb
+    # only the one in output base can be picked up by-name in PATH, so we need to filter out the ones in external.
+    pgutils_path = ":".join([
+        f.path.rpartition("/")[0]
+        for f in ctx.attr._pg_utils[DefaultInfo].default_runfiles.files.to_list()
+        if not f.path.startswith("external")
+    ])
 
-    runfiles = depset(direct = ctx.attr._sg[DefaultInfo].default_runfiles.files.to_list() + ctx.attr._pg_utils[DefaultInfo].files.to_list())
+    runfiles = depset(direct = ctx.attr._sg[DefaultInfo].default_runfiles.files.to_list() + ctx.attr._pg_utils[DefaultInfo].default_runfiles.files.to_list())
 
     ctx.actions.run_shell(
         inputs = ctx.files.srcs,
@@ -64,6 +72,9 @@ def _generate_schemas_impl(ctx):
         env = {
             # needed because of https://github.com/golang/go/issues/53962
             "GODEBUG": "execerrdot=0",
+            # blank out PATH so that we don't pick up host binaries if we end up using more than what
+            # //dev:pg_utils filegroup provides.
+            "PATH": "",
         },
         command = """{cmd_preamble}
 
