@@ -6,6 +6,7 @@
 , path
 , substituteAll
 , darwin
+, coreutils
 , gnugrep
 , patchelf
 }:
@@ -24,9 +25,7 @@ stdenv.mkDerivation rec {
 
   LC_ALL = "C";
 
-  nativeBuildInputs = [
-    pkg-config
-  ];
+  nativeBuildInputs = [ pkg-config ];
 
   # needed in order for libpq to be statically linked.
   # results in the following diff:
@@ -56,21 +55,23 @@ stdenv.mkDerivation rec {
     make -C src/bin install
   '';
 
-  # guard against dynamically linking against anything besides libc
+  # guard against dynamically linking against anything (besides libSystem on macOS)
   doInstallCheck = true;
-  installCheckPhase = ''
-    ${patchelf}/bin/patchelf --print-needed $out/bin/pg_dump | \
-      ${gnugrep}/bin/grep -v 'libc.so.6' && echo 'unexpected dynamic library dependency found, only libc is expected' && exit 1 \
-      || exit 0
-  '';
-
-  # update linker to not point to the nix one, but to one that will work on
-  # most other distros such as Ubuntu
-  postFixup = lib.optionalString stdenv.isLinux ''
-    for bin in $out/bin/*; do
-      ${patchelf}/bin/patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 "$bin"
-    done
-  '';
+  installCheckPhase =
+    if stdenv.isLinux then ''
+      patchelf --print-needed $out/bin/pg_dump \
+        && echo 'unexpected dynamic library dependency found, binary should be static' && exit 1 \
+        || exit 0
+    '' else ''
+      otool -L $out/bin/pg_dump | tail -n +2 | grep -v libSystem \
+        && echo 'unexpected dynamic library dependency found, binary should be static (besides libSystem.B.dylib)' && exit 1 \
+        || exit 0
+    '';
+  installCheckInputs = [
+    patchelf
+    coreutils
+    gnugrep
+  ] ++ lib.optionals stdenv.isDarwin [ darwin.cctools ];
 
   # Want the minimal amount of things involved, so we don't have to deal with
   # statically linking them all. We'll discover which we need as time goes on : )

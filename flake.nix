@@ -43,7 +43,10 @@
             # doesnt need the same stability as those above
             nodejs-20_x = pkgs.callPackage ./dev/nix/nodejs.nix { };
             bazel_7 = nixpkgs-bazel.legacyPackages.${system}.callPackage ./dev/nix/bazel.nix { };
-            pg-utils = pkgs.callPackage ./dev/nix/pg-utils.nix { };
+            pg-utils = (if pkgs.hostPlatform.isMacOS then pkgs.callPackage else pkgs.pkgsStatic.callPackage) ./dev/nix/pg-utils.nix {
+              # tzdata fails to build on pkgsStatic, and pkgsMusl isnt supported on macos
+              tzdata = if pkgs.hostPlatform.isMacOS then pkgs.tzdata else pkgs.pkgsMusl.tzdata;
+            };
           };
 
           # We use pkgsShell (not pkgsAll) intentionally to avoid doing extra work of
