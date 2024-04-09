@@ -255,7 +255,6 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 		if err == nil {
 			completionUsage.tokenizerTokens = len(completionUsageTokens)
 		}
-		completionUsage.tokenizerTokens = len(completionUsageTokens)
 		// Extract prompt usage data from the response
 		completionUsage.tokens = res.Usage.OutputTokens
 		promptUsage.tokens = res.Usage.InputTokens
