@@ -39,8 +39,11 @@
 </div>
 
 <style lang="scss">
-    div {
-        color: var(--text-color);
-        font-weight: bold;
+    .container {
+        min-width: 350px;
+        max-width: 400px;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 1rem;
     }
 </style>
