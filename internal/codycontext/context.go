@@ -3,7 +3,6 @@ package codycontext
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -268,8 +267,8 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		regexEscapedRepoNames[i] = regexp.QuoteMeta(string(repo.Name))
 	}
 
-	textQuery := fmt.Sprintf(`repo:^%s$ %s content:%s`, query.UnionRegExps(regexEscapedRepoNames), textFileFilter, strconv.Quote(args.Query))
-	codeQuery := fmt.Sprintf(`repo:^%s$ -%s content:%s`, query.UnionRegExps(regexEscapedRepoNames), textFileFilter, strconv.Quote(args.Query))
+	textQuery := fmt.Sprintf(`repo:^%s$ type:file type:path %s %s`, query.UnionRegExps(regexEscapedRepoNames), textFileFilter, args.Query)
+	codeQuery := fmt.Sprintf(`repo:^%s$ type:file type:path -%s %s`, query.UnionRegExps(regexEscapedRepoNames), textFileFilter, args.Query)
 
 	doSearch := func(ctx context.Context, query string, limit int) ([]FileChunkContext, error) {
 		if limit == 0 {
@@ -344,7 +343,15 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 
 func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {
 	if len(fm.ChunkMatches) == 0 {
-		return nil
+		// If this is a filename-only match, we return the first 20 lines of the file.
+		return []FileChunkContext{{
+			RepoName:  fm.Repo.Name,
+			RepoID:    fm.Repo.ID,
+			CommitID:  fm.CommitID,
+			Path:      fm.Path,
+			StartLine: 0,
+			EndLine:   20,
+		}}
 	}
 
 	// To provide some context variety, we just use the top-ranked
