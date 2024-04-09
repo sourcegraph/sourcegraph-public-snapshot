@@ -17,7 +17,6 @@
             <div class="tag"><small>code-intelligence</small></div>
         </div>
     </div>
-    <!-- TODO: add divider-->
     <div class="divider" />
     <div class="last-commit">
         <div class="title">
@@ -42,7 +41,6 @@
             </div>
         </div>
     </div>
-    <!-- TODO: add divider-->
     <div class="divider" />
     <div class="repo-stats">
         <div class="stats">
@@ -50,46 +48,42 @@
             <div class="stat"><Icon svgPath={mdiSourceMerge} size={14} /><small>1.7k</small></div>
             <div class="stat"><Icon svgPath={mdiStarOutline} size={14} /><small>9.2k</small></div>
         </div>
-        <div class="license"><small>Unknown License</small></div>
+        <div class="license"><small>MIT</small></div>
     </div>
 </div>
 
 <style lang="scss">
-    /* * {
-        border: 1px dotted gray;
-    } */
     .container {
         border-radius: 6px;
         border: 1px solid var(--border-color);
-        min-width: 400;
-        max-width: fit-content;
+        min-width: 480px;
+        max-width: 520px;
         padding: 0;
     }
 
     .divider {
         width: 100%;
         border-bottom: 1px solid var(--border-color);
-        padding: 0;
+        padding: 0.5rem 0.75rem;
     }
 
     .description-and-tags {
-        padding: 0.75rem;
+        padding: 0rem 0.75rem;
+        margin-top: 0.5rem;
 
         .description {
             font-size: 1rem;
             padding: 0rem;
         }
 
-        // @TODO: @jason fix wrapping behavior (spacing between wrapped lines)
         .tags {
             align-items: flex-start;
             display: flex;
             flex-flow: row wrap;
+            gap: 0.5rem 0rem;
             align-content: space-around;
             justify-content: flex-start;
-            margin: 0.5rem 0rem 0.5rem 0rem;
-            padding: 0rem;
-            line-height: 0.5rem;
+            margin-top: 0.5rem;
         }
 
         .tag {
@@ -108,7 +102,8 @@
         display: flex;
         flex-flow: row nowrap;
         justify-content: space-between;
-        padding: 0.75rem;
+        padding: 0rem 0.75rem;
+        margin-top: 0.5rem;
 
         .title {
             color: var(--text-muted);
@@ -147,7 +142,9 @@
     }
 
     .repo-stats {
-        padding: 0.75rem;
+        padding: 0rem 0.75rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
         display: flex;
         flex-flow: row nowrap;
         justify-content: space-between;
