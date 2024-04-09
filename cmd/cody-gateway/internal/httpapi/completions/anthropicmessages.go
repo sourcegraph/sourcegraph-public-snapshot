@@ -298,7 +298,6 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 		if err == nil {
 			completionUsage.tokenizerTokens = len(completionUsageTokens)
 		}
-		completionUsage.tokenizerTokens = len(completionUsageTokens)
 	}
 	if err := dec.Err(); err != nil {
 		logger.Error("failed to decode Anthropic streaming response", log.Error(err))
