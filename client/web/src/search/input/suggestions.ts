@@ -925,12 +925,12 @@ function createCaches({ authenticatedUser, graphqlQuery }: SuggestionsSourceConf
             dataCacheKey: (parsedQuery, position) =>
                 parsedQuery
                     ? buildSuggestionQuery(
-                        parsedQuery,
-                        { start: position, end: position },
-                        node =>
-                            isNonEmptyParameter(node) &&
-                            resolveFilterMemoized(node.field)?.type === FilterType.context
-                    )
+                          parsedQuery,
+                          { start: position, end: position },
+                          node =>
+                              isNonEmptyParameter(node) &&
+                              resolveFilterMemoized(node.field)?.type === FilterType.context
+                      )
                     : '',
             queryKey: (value, dataCacheKey = '') => `${dataCacheKey} type:repo count:50 repo:${value}`,
             async query(query) {
@@ -988,10 +988,10 @@ function createCaches({ authenticatedUser, graphqlQuery }: SuggestionsSourceConf
             dataCacheKey: (parsedQuery, position) =>
                 parsedQuery
                     ? buildSuggestionQuery(
-                        parsedQuery,
-                        { start: position, end: position },
-                        node => isNonEmptyParameter(node) && containsFilterType(fileFilters, node.field)
-                    )
+                          parsedQuery,
+                          { start: position, end: position },
+                          node => isNonEmptyParameter(node) && containsFilterType(fileFilters, node.field)
+                      )
                     : '',
             queryKey: (value, dataCacheKey = '') => `${dataCacheKey} type:file count:50 file:${value}`,
             async query(query) {
@@ -1024,10 +1024,10 @@ function createCaches({ authenticatedUser, graphqlQuery }: SuggestionsSourceConf
             dataCacheKey: (parsedQuery, position) =>
                 parsedQuery
                     ? buildSuggestionQuery(
-                        parsedQuery,
-                        { start: position, end: position },
-                        node => isNonEmptyParameter(node) && containsFilterType(symbolFilters, node.field)
-                    )
+                          parsedQuery,
+                          { start: position, end: position },
+                          node => isNonEmptyParameter(node) && containsFilterType(symbolFilters, node.field)
+                      )
                     : '',
             queryKey: (value, dataCacheKey = '') => `${dataCacheKey} type:symbol count:50 ${value}`,
             async query(query) {
