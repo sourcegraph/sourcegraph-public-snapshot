@@ -24,13 +24,32 @@ func SignContainerImages() func(*bk.Pipeline) {
 		opts := []bk.StepOpt{
 			bk.Cmd(cmd),
 			bk.Agent("queue", AspectWorkflows.QueueDefault),
-			bk.DependsOn("bazel-push-images"),
+			bk.DependsOn("simulate-push-images"), // TODO: bazel-push-images
 			bk.Key("sign-container-images"),
 			bk.SoftFail(222),
 		}
 
 		pipeline.AddStep(
 			"Container signing",
+			opts...,
+		)
+	}
+}
+
+// Placeholder pipeline step to simulate pushing images to a registry
+func SimulatePushImages() func(*bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		cmd := "./dev/ci/scripts/signing/simulate-push-images.sh"
+		opts := []bk.StepOpt{
+			bk.Cmd(cmd),
+			bk.Agent("queue", AspectWorkflows.QueueDefault),
+			bk.Key("simulate-push-images"),
+			bk.SoftFail(222),
+			bk.ArtifactPaths("./pushed-images.txt"),
+		}
+
+		pipeline.AddStep(
+			"Simulate push images",
 			opts...,
 		)
 	}

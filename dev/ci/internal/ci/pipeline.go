@@ -159,6 +159,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			))
 		}
 
+		// Container Signing
+		// TODO: Remove from PR pipeline
+		ops.Append(SimulatePushImages())
+		ops.Append(SignContainerImages())
+
 	case runtype.BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
