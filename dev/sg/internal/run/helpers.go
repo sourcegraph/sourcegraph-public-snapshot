@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -58,6 +59,17 @@ func InRoot(cmd *exec.Cmd) (string, error) {
 	}
 
 	return string(out), nil
+}
+
+func SplitOutputInRoot(cmd *exec.Cmd, stdout, stderr io.Writer) error {
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		return err
+	}
+	cmd.Dir = repoRoot
+	return cmd.Run()
 }
 
 func BashInRoot(ctx context.Context, cmd string, env []string) (string, error) {
