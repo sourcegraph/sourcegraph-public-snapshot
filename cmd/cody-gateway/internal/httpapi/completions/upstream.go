@@ -37,6 +37,8 @@ type usageStats struct {
 	characters int
 	// tokens is the number of tokens consumed in the input or response.
 	tokens int
+	// tokenizerTokens is the number of tokens computed by the tokenizer.
+	tokenizerTokens int
 }
 
 // Hop-by-Hop headers that should not be copied when proxying upstream requests
@@ -326,10 +328,12 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				requestMetadata = events.MergeMaps(requestMetadata, getFlaggingMetadata(flaggingResult, act))
 			}
 			usageData := map[string]any{
-				"prompt_character_count":     promptUsage.characters,
-				"prompt_token_count":         promptUsage.tokens,
-				"completion_character_count": completionUsage.characters,
-				"completion_token_count":     completionUsage.tokens,
+				"prompt_character_count":           promptUsage.characters,
+				"prompt_token_count":               promptUsage.tokens,
+				"prompt_tokenizer_token_count":     promptUsage.tokenizerTokens,
+				"completion_character_count":       completionUsage.characters,
+				"completion_token_count":           completionUsage.tokens,
+				"completion_tokenizer_token_count": completionUsage.tokenizerTokens,
 			}
 			for k, v := range usageData {
 				// Drop usage fields that are invalid/unimplemented. All
