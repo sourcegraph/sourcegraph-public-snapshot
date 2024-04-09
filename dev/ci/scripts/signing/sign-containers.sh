@@ -6,6 +6,7 @@ echo "Placeholder for signing containers..."
 
 which buildkite-agent
 
+mkdir -p tmp/
 buildkite-agent artifact download pushed-images.txt tmp/ --step simulate-push-images
 
 ls -al tmp/
