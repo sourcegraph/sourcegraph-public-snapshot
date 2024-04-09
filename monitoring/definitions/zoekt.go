@@ -16,6 +16,9 @@ func Zoekt() *monitoring.Dashboard {
 		webserverContainerName   = "zoekt-webserver"
 		bundledContainerName     = "indexed-search"
 		grpcServiceName          = "zoekt.webserver.v1.WebserverService"
+
+		indexServerJob = "indexed-search-indexer"
+		webserverJob   = "indexed-search"
 	)
 
 	grpcMethodVariable := shared.GRPCMethodVariable("zoekt_webserver", grpcServiceName)
@@ -1127,6 +1130,9 @@ func Zoekt() *monitoring.Dashboard {
 			shared.NewProvisioningIndicatorsGroup(webserverContainerName, monitoring.ObservableOwnerSearchCore, &shared.ContainerProvisioningIndicatorsGroupOptions{
 				CustomTitle: fmt.Sprintf("[%s] %s", webserverContainerName, shared.TitleProvisioningIndicators),
 			}),
+
+			shared.NewGolangMonitoringGroup(indexServerJob, monitoring.ObservableOwnerSearchCore, &shared.GolangMonitoringOptions{ContainerNameInTitle: true}),
+			shared.NewGolangMonitoringGroup(webserverJob, monitoring.ObservableOwnerSearchCore, &shared.GolangMonitoringOptions{ContainerNameInTitle: true}),
 
 			// Note:
 			// We show pod availability here for both the webserver and indexserver as they are bundled together.
