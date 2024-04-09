@@ -9,7 +9,7 @@
 </script>
 
 <script lang="ts">
-    let name = 'Pete'
+    let name = 'pete.roth06'
 </script>
 
 <Story name="Default">

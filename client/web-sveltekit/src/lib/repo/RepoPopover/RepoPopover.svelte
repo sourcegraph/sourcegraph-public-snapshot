@@ -1,5 +1,5 @@
 <script lang="ts">
-    export let name: string = 'Jason'
+    export let name: string = 'jasonhawkharris'
     const CENTER_DOT = '\u00B7' // interpunct
 </script>
 
@@ -15,9 +15,11 @@
     </div>
     <!-- TODO: add divider-->
     <div class="last-commit">
-        <div><small>Last Commit</small></div>
+        <div class="title">
+            <small>Last Commit</small>
+        </div>
         <div class="commit-info">
-            <div class="subject">
+            <div class="subject-and-commit">
                 <div class="subject">
                     <small>This is a commit message</small>
                 </div>
@@ -27,7 +29,7 @@
             </div>
             <div class="author-and-time">
                 <div class="author">
-                <!-- TODO:@jason add avatar -->
+                    <!-- TODO:@jason add avatar -->
                     <small>{name}</small>
                 </div>
                 <div class="separator">{CENTER_DOT}</div>
@@ -53,14 +55,8 @@
         border-radius: 10px;
         border: 1px solid var(--border-color);
         min-width: 350px;
-        max-width: fit-content;
+        max-width: fit-content; //400px;
         padding: 1rem;
-    }
-
-    .last-commit {
-        display: flex;
-        flex-flow: row nowrap;
-        justify-content: space-between;
     }
 
     .description-and-tags {
@@ -75,14 +71,17 @@
             padding: 0rem;
         }
 
+        // @TODO: @jason fix wrapping behavior (spacing between wrapped lines)
         .tags {
             align-items: flex-start;
             display: flex;
-            flex-flow: row nowrap;
+            flex-flow: row wrap;
+            align-content: space-around;
             justify-content: flex-start;
             list-style-type: none;
             margin: 0.5rem 0rem 0.5rem 0rem;
             padding: 0rem;
+            line-height: 0.5rem;
         }
 
         .tag {
@@ -94,6 +93,50 @@
             justify-self: center;
             margin-right: 0.5rem;
             padding: 0rem 0.5rem;
+        }
+    }
+
+    .last-commit {
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: space-between;
+        padding: 0.5rem 0rem;
+
+        border-bottom: 1px solid var(--border-color);
+
+        .title {
+            color: var(--text-muted);
+        }
+
+        .subject-and-commit {
+            display: flex;
+            flex-flow: row nowrap;
+            align-items: center;
+
+            .subject {
+                color: var(--text-body);
+                margin-right: 0.5rem;
+            }
+
+            .commit-number {
+                color: var(--text-muted);
+            }
+        }
+
+        .author-and-time {
+            display: flex;
+            flex-flow: row nowrap;
+            justify-content: flex-end;
+            color: var(--text-muted);
+
+            .author {
+                margin-right: 0.5rem;
+                color: var(--text-muted);
+            }
+
+            .separator {
+                margin-right: 0.5rem;
+            }
         }
     }
 </style>
