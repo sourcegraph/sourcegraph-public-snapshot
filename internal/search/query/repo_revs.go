@@ -54,6 +54,9 @@ func (r1 RevisionSpecifier) Compare(r2 RevisionSpecifier) int {
 	if v := cmp.Compare(r1.RefGlob, r2.RefGlob); v != 0 {
 		return v
 	}
+	if v := cmp.Compare(r1.RevAtTime.String(), r2.RevAtTime.String()); v != 0 {
+		return v
+	}
 	return cmp.Compare(r1.ExcludeRefGlob, r2.ExcludeRefGlob)
 }
 
