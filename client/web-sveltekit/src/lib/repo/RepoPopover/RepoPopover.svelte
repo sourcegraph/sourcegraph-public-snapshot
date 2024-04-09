@@ -18,6 +18,7 @@
         </div>
     </div>
     <!-- TODO: add divider-->
+    <div class="divider" />
     <div class="last-commit">
         <div class="title">
             <small>Last Commit</small>
@@ -42,54 +43,37 @@
         </div>
     </div>
     <!-- TODO: add divider-->
+    <div class="divider" />
     <div class="repo-stats">
         <div class="stats">
             <div class="stat"><small>Go</small></div>
             <div class="stat"><Icon svgPath={mdiSourceMerge} size={14} /><small>1.7k</small></div>
             <div class="stat"><Icon svgPath={mdiStarOutline} size={14} /><small>9.2k</small></div>
         </div>
-        <div class="license"><small>MIT</small></div>
+        <div class="license"><small>Unknown License</small></div>
     </div>
 </div>
 
 <style lang="scss">
+    /* * {
+        border: 1px dotted gray;
+    } */
     .container {
         border-radius: 6px;
         border: 1px solid var(--border-color);
-        min-width: 50px;
-        max-width: fit-content; //400px;
-        padding: 0.75rem;
-        min-height: fit-content;
+        min-width: 400;
+        max-width: fit-content;
+        padding: 0;
     }
 
-    .repo-stats {
-        padding: 0.5rem 0rem 0rem 0rem;
-        display: flex;
-        flex-flow: row nowrap;
-        justify-content: space-between;
-        color: var(--text-muted);
-
-        .stats {
-            font-size: 1rem;
-            padding: 0rem;
-            display: flex;
-            flex-flow: row nowrap;
-            .stat {
-                margin-right: 1rem;
-                align-self: center;
-            }
-
-            .license {
-                align-self: center;
-            }
-        }
+    .divider {
+        width: 100%;
+        border-bottom: 1px solid var(--border-color);
+        padding: 0;
     }
 
     .description-and-tags {
-        border-bottom: 1px solid var(--border-color);
-        // lists have default margin/padding, so we need to override it
-        margin: 0rem;
-        padding: 0rem 0rem 0.5rem 0rem;
+        padding: 0.75rem;
 
         .description {
             font-size: 1rem;
@@ -124,9 +108,7 @@
         display: flex;
         flex-flow: row nowrap;
         justify-content: space-between;
-        padding: 0.5rem 0rem;
-
-        border-bottom: 1px solid var(--border-color);
+        padding: 0.75rem;
 
         .title {
             color: var(--text-muted);
@@ -160,6 +142,29 @@
 
             .separator {
                 margin-right: 0.5rem;
+            }
+        }
+    }
+
+    .repo-stats {
+        padding: 0.75rem;
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: space-between;
+        color: var(--text-muted);
+
+        .stats {
+            font-size: 1rem;
+            padding: 0rem;
+            display: flex;
+            flex-flow: row nowrap;
+            .stat {
+                margin-right: 1rem;
+                align-self: center;
+            }
+
+            .license {
+                align-self: center;
             }
         }
     }
