@@ -8,7 +8,7 @@ CTAGS_VERSION = "6.0.0.2783f009"
 PACKER_VERSION = "1.8.3"
 P4_FUSION_VERSION = "v1.13.2-sg.04a293a"
 GH_VERSION = "2.45.0"
-PGUTILS_VERSION = "1fcc1f0e"
+PGUTILS_VERSION = "ad082497"
 
 GH_BUILDFILE = """
 filegroup(
@@ -197,63 +197,63 @@ def tool_deps():
     http_file(
         name = "pg_dump-linux-amd64",
         url = "https://storage.googleapis.com/pg-utils/x86_64-linux/dist/pg_dump.{0}".format(PGUTILS_VERSION),
-        sha256 = "e63bcd5bdff1baaa256fa6e7aefe118b4f4bbb586f1abf9337c1342f321377a0",
+        sha256 = "fdf416c349a1cada342d0a8738fd8413066203ad66324ca5da504a0f4d628bb5",
         executable = True,
     )
 
     http_file(
         name = "pg_dump-darwin-amd64",
         url = "https://storage.googleapis.com/pg-utils/x86_64-darwin/dist/pg_dump.{0}".format(PGUTILS_VERSION),
-        sha256 = "b341b1eae33b83efdfbfc8b68b4b7c6b079d87c50fda6a7ee5921e1f052edff5",
+        sha256 = "f16b24d798f3c25f0bf268172be21a03aa11ccd0bf436fc00d680da7f35d4303",
         executable = True,
     )
 
     http_file(
         name = "pg_dump-darwin-arm64",
         url = "https://storage.googleapis.com/pg-utils/aarch64-darwin/dist/pg_dump.{0}".format(PGUTILS_VERSION),
-        sha256 = "617bc19ec8b0b49eb065dd3237b4251d3fb721b958952da7d27f15584284ffbf",
+        sha256 = "d142961bdf84e87c14b55b6dabc4311b8f44483c8d31d39f37dc81cf8b456cc7",
         executable = True,
     )
 
     http_file(
         name = "dropdb-linux-amd64",
         url = "https://storage.googleapis.com/pg-utils/x86_64-linux/dist/dropdb.{0}".format(PGUTILS_VERSION),
-        sha256 = "6910837b72ce764397f0da3c136fa9f107f0d7bf9a64270940843698057501a9",
+        sha256 = "445ee469a26e4486c0765876eb8a7c04fd71ee1c2221430b42436323b30f3ca4",
         executable = True,
     )
 
     http_file(
         name = "dropdb-darwin-amd64",
         url = "https://storage.googleapis.com/pg-utils/x86_64-darwin/dist/dropdb.{0}".format(PGUTILS_VERSION),
-        sha256 = "350a160439835f70e86e97da7837d4634cb190ddcc4c82fbc0ba117fdaf5ac8f",
+        sha256 = "c614403a788298a28b9d7042ebba0628024ec93d9443fd2467bfc496a5fd51da",
         executable = True,
     )
 
     http_file(
         name = "dropdb-darwin-arm64",
         url = "https://storage.googleapis.com/pg-utils/aarch64-darwin/dist/dropdb.{0}".format(PGUTILS_VERSION),
-        sha256 = "e5e91e5544bfde70d4eac30b2ffc1b1f72d088a3bca2cd532dfce7ea95f068f8",
+        sha256 = "4e4a92cbcd2e5d804b8fa5402488c4521fbc927059baf43e6f1e639834400c0e",
         executable = True,
     )
 
     http_file(
         name = "createdb-linux-amd64",
         url = "https://storage.googleapis.com/pg-utils/x86_64-linux/dist/createdb.{0}".format(PGUTILS_VERSION),
-        sha256 = "4c9184619107c0f1f7484d4e62e6a15193eff812a719464eecfcf1a21d121b28",
+        sha256 = "55b22dec6f24dc38bd16e7f727479ce493fdfb91a226901531b57387089c2843",
         executable = True,
     )
 
     http_file(
         name = "createdb-darwin-amd64",
         url = "https://storage.googleapis.com/pg-utils/x86_64-darwin/dist/createdb.{0}".format(PGUTILS_VERSION),
-        sha256 = "38e8ee471b1c5360987fc7de006030f979195af8a97cda076e215b707fff25f2",
+        sha256 = "d2acf9a9e20c3967cb4a8a1a50fccbff8ae6d01f30a34913acef7035822bea89",
         executable = True,
     )
 
     http_file(
         name = "createdb-darwin-arm64",
         url = "https://storage.googleapis.com/pg-utils/aarch64-darwin/dist/createdb.{0}".format(PGUTILS_VERSION),
-        sha256 = "2b7d63d1cd8e5847f1f7f259023828eba6ec613b581f951e2032c30829dc640e",
+        sha256 = "e6e5ee13fb2f1e4a55dffb282e5021d5486008ab74cd4f39c944439ed0e7765f",
         executable = True,
     )
 
