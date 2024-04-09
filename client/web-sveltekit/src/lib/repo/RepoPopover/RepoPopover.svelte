@@ -1,4 +1,8 @@
 <script lang="ts">
+    import { mdiSourceMerge, mdiStarOutline } from '@mdi/js'
+
+    import Icon from '$lib/Icon.svelte'
+
     export let name: string = 'jasonhawkharris'
     const CENTER_DOT = '\u00B7' // interpunct
 </script>
@@ -6,12 +10,12 @@
 <div class="container">
     <div class="description-and-tags">
         <div class="description">Code AI Platform with Code Search & Cody</div>
-        <ul class="tags">
-            <li class="tag"><small>open-source</small></li>
-            <li class="tag"><small>code-search</small></li>
-            <li class="tag"><small>sourcegraph</small></li>
-            <li class="tag"><small>code-intelligence</small></li>
-        </ul>
+        <div class="tags">
+            <div class="tag"><small>open-source</small></div>
+            <div class="tag"><small>code-search</small></div>
+            <div class="tag"><small>sourcegraph</small></div>
+            <div class="tag"><small>code-intelligence</small></div>
+        </div>
     </div>
     <!-- TODO: add divider-->
     <div class="last-commit">
@@ -39,29 +43,50 @@
     </div>
     <!-- TODO: add divider-->
     <div class="repo-stats">
-        <div class="stats-list">
-            <ul class="stats">
-                <li class="stat">Go</li>
-                <li class="stat">Commits</li>
-                <li class="stat">Stars</li>
-            </ul>
+        <div class="stats">
+            <div class="stat"><small>Go</small></div>
+            <div class="stat"><Icon svgPath={mdiSourceMerge} size={14} /><small>1.7k</small></div>
+            <div class="stat"><Icon svgPath={mdiStarOutline} size={14} /><small>9.2k</small></div>
         </div>
-        <div class="license">MIT</div>
+        <div class="license"><small>MIT</small></div>
     </div>
 </div>
 
 <style lang="scss">
     .container {
-        border-radius: 10px;
+        border-radius: 6px;
         border: 1px solid var(--border-color);
-        min-width: 350px;
+        min-width: 50px;
         max-width: fit-content; //400px;
-        padding: 1rem;
+        padding: 0.75rem;
+        min-height: fit-content;
+    }
+
+    .repo-stats {
+        padding: 0.5rem 0rem 0rem 0rem;
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: space-between;
+        color: var(--text-muted);
+
+        .stats {
+            font-size: 1rem;
+            padding: 0rem;
+            display: flex;
+            flex-flow: row nowrap;
+            .stat {
+                margin-right: 1rem;
+                align-self: center;
+            }
+
+            .license {
+                align-self: center;
+            }
+        }
     }
 
     .description-and-tags {
         border-bottom: 1px solid var(--border-color);
-        overflow: visible;
         // lists have default margin/padding, so we need to override it
         margin: 0rem;
         padding: 0rem 0rem 0.5rem 0rem;
@@ -78,7 +103,6 @@
             flex-flow: row wrap;
             align-content: space-around;
             justify-content: flex-start;
-            list-style-type: none;
             margin: 0.5rem 0rem 0.5rem 0rem;
             padding: 0rem;
             line-height: 0.5rem;
