@@ -54,10 +54,10 @@
 
 <style lang="scss">
     .container {
-        border-radius: 6px;
+        border-radius: var(--popover-border-radius);
         border: 1px solid var(--border-color);
-        min-width: 480px;
-        max-width: 520px;
+        min-width: 400px;
+        max-width: 500px;
         padding: 0;
     }
 
@@ -94,7 +94,7 @@
             font-family: var(--monospace-font-family);
             justify-self: center;
             margin-right: 0.5rem;
-            padding: 0rem 0.5rem;
+            padding: 0rem 0.25rem;
         }
     }
 
