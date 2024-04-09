@@ -260,7 +260,8 @@ For example:
         display: flex;
         flex-flow: row nowrap;
         justify-content: space-between;
-        padding: 0.75rem;
+        padding: 0rem 0.75rem;
+        margin-top: 0.5rem;
 
         .title {
             color: var(--text-muted);
@@ -299,7 +300,9 @@ For example:
     }
 
     .repo-stats {
-        padding: 0.75rem;
+        padding: 0rem 0.75rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
         display: flex;
         flex-flow: row nowrap;
         justify-content: space-between;
