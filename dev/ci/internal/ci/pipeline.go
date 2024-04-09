@@ -354,6 +354,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		publishOps.Append(bazelPushImagesFinal(c))
 		ops.Merge(publishOps)
 
+		// Signing
+		// TODO: if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease, runtype.InternalRelease) {
+		publishOps.Append(SignContainerImages())
+
 		if c.RunType.Is(runtype.InternalRelease) {
 			releaseOps := operations.NewNamedSet("Release")
 			releaseOps.Append(
