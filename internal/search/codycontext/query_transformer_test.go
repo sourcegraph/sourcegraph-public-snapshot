@@ -50,32 +50,32 @@ func TestQueryStringToKeywordQuery(t *testing.T) {
 	}{
 		{
 			query:        "context:global abc",
-			wantQuery:    autogold.Expect("type:file context:global abc"),
+			wantQuery:    autogold.Expect("context:global abc"),
 			wantPatterns: autogold.Expect([]string{"abc"}),
 		},
 		{
 			query:        "abc def",
-			wantQuery:    autogold.Expect("type:file (abc OR def)"),
+			wantQuery:    autogold.Expect("(abc OR def)"),
 			wantPatterns: autogold.Expect([]string{"abc", "def"}),
 		},
 		{
 			query:        "context:global lang:Go how to unzip file",
-			wantQuery:    autogold.Expect("type:file context:global lang:Go (unzip OR file)"),
+			wantQuery:    autogold.Expect("context:global lang:Go (unzip OR file)"),
 			wantPatterns: autogold.Expect([]string{"unzip", "file"}),
 		},
 		{
 			query:        "K MEANS CLUSTERING in python",
-			wantQuery:    autogold.Expect("type:file (cluster OR python)"),
+			wantQuery:    autogold.Expect("(cluster OR python)"),
 			wantPatterns: autogold.Expect([]string{"cluster", "python"}),
 		},
 		{
 			query:        "context:global the who",
-			wantQuery:    autogold.Expect("type:file context:global"),
+			wantQuery:    autogold.Expect("context:global"),
 			wantPatterns: autogold.Expect([]string{}),
 		},
 		{
 			query:     `outer content:"inner {with} (special) ^characters$ and keywords like file or repo"`,
-			wantQuery: autogold.Expect("type:file (special OR ^characters$ OR keyword OR file OR repo OR outer)"),
+			wantQuery: autogold.Expect("(special OR ^characters$ OR keyword OR file OR repo OR outer)"),
 			wantPatterns: autogold.Expect([]string{
 				"special", "^characters$", "keyword", "file",
 				"repo",
