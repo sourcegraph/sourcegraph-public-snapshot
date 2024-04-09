@@ -39,7 +39,7 @@ func TestNewFilter(t *testing.T) {
 		client := gitserver.NewMockClient()
 		client.GetDefaultBranchFunc.SetDefaultReturn("main", api.CommitID("abc123"), nil)
 		client.NewFileReaderFunc.SetDefaultReturn(nil, os.ErrNotExist)
-		f := NewCodyIgnoreFilter(client)
+		f := newDotcomFilter(client)
 
 		chunks := []FileChunkContext{
 			{
@@ -68,7 +68,7 @@ func TestNewFilter(t *testing.T) {
 			return nil, os.ErrNotExist
 		})
 
-		f := NewCodyIgnoreFilter(client)
+		f := newDotcomFilter(client)
 
 		chunks := []FileChunkContext{
 			{
@@ -112,7 +112,7 @@ func TestNewFilter(t *testing.T) {
 				return nil, os.ErrNotExist
 			}
 		})
-		f := NewCodyIgnoreFilter(client)
+		f := newDotcomFilter(client)
 
 		chunks := []FileChunkContext{
 			{
@@ -154,7 +154,7 @@ func TestNewFilter(t *testing.T) {
 			return nil, nil
 		})
 
-		f := NewCodyIgnoreFilter(client)
+		f := newDotcomFilter(client)
 		filterableRepos, _ := f.GetFilter(repos, logger)
 		require.Len(t, filterableRepos, 0)
 	})
@@ -167,7 +167,7 @@ func TestNewFilter(t *testing.T) {
 			return nil, nil
 		})
 
-		f := NewCodyIgnoreFilter(client)
+		f := newDotcomFilter(client)
 		filterableRepos, _ := f.GetFilter(repos, logger)
 		require.Len(t, filterableRepos, 0)
 	})
@@ -179,7 +179,7 @@ func TestNewFilter(t *testing.T) {
 			return nil, errors.New("fail")
 		})
 
-		f := NewCodyIgnoreFilter(client)
+		f := newDotcomFilter(client)
 		filterableRepos, _ := f.GetFilter(repos, logger)
 		require.Len(t, filterableRepos, 0)
 	})
@@ -188,7 +188,7 @@ func TestNewFilter(t *testing.T) {
 		client := gitserver.NewMockClient()
 		client.GetDefaultBranchFunc.SetDefaultReturn("main", api.CommitID("abc123"), nil)
 		client.NewFileReaderFunc.SetDefaultReturn(io.NopCloser(strings.NewReader("**/file1.go")), nil)
-		f := NewCodyIgnoreFilter(client)
+		f := newDotcomFilter(client)
 
 		chunks := []FileChunkContext{
 			{
@@ -239,7 +239,7 @@ func TestFilterDisabled(t *testing.T) {
 			return nil, errors.New("should not be called")
 		})
 
-		f := NewCodyIgnoreFilter(client)
+		f := newDotcomFilter(client)
 
 		chunks := []FileChunkContext{
 			{
