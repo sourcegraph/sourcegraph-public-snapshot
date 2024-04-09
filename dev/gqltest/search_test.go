@@ -215,6 +215,10 @@ func testSearchClient(t *testing.T, client searchClient) {
 	})
 
 	t.Run("repo at time", func(t *testing.T) {
+		// Surprisingly, our repo GraphQL resolver for a search result is just
+		// a repo, which does not expose its rev, so GraphQL does not work for this test.
+		doSkip(t, skipGraphQL)
+
 		t.Run("HEAD", func(t *testing.T) {
 			results, err := client.SearchRepositories("repo:^github.com/sgtest/go-diff$ rev:at.time(2018-01-01)")
 			if err != nil {

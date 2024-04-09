@@ -639,7 +639,7 @@ func (f *RevAtTimePredicate) Unmarshal(params string, negated bool) error {
 			return err
 		}
 		f.Timestamp = t
-		f.RevSpec = elems[1]
+		f.RevSpec = strings.TrimSpace(elems[1])
 		return nil
 	} else {
 		return errors.New("unexpected number of arguments to rev:at.time()")
