@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeglobaladdress"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computenetwork"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesubnetwork"
@@ -53,7 +54,8 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 		ByteLength: 4,
 		Keepers: map[string]*string{
 			// Range change requires recreation of the subnetwork, so we need
-			// to change the randomized suffix.
+			// to change the randomized suffix to avoid a conflict and respect
+			// CreateBeforeDestroy
 			"ipcidrrange": pointers.Ptr(subnetworkIPCIDRRange),
 		},
 	})
@@ -77,6 +79,11 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 				AggregationInterval: pointers.Ptr("INTERVAL_10_MIN"),
 				FlowSampling:        pointers.Float64(0.5),
 				Metadata:            pointers.Ptr("INCLUDE_ALL_METADATA"),
+			},
+
+			Lifecycle: &cdktf.TerraformResourceLifecycle{
+				// Recreation also requires rename of randomized subnetworkName.
+				CreateBeforeDestroy: pointers.Ptr(true),
 			},
 		},
 	)
