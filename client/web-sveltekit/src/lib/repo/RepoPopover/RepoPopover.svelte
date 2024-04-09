@@ -3,18 +3,27 @@
 
     import Icon from '$lib/Icon.svelte'
 
-    export let name: string = 'jasonhawkharris'
+    let tags = ['open-source', 'code-search', 'sourcegraph', 'code-intelligence']
+    let description = 'Code AI Platform with Code Search & Cody'
+    let subject = 'This is a commit message, and it can be very long and contain all sorts of unicode characters.'
+    let commitNumber = '#89886'
+    let author = 'jasonhawkharris'
+    let commitDate = '1 hour ago'
+    let lang = 'Go'
+    let commits = '1.2'
+    let stars = '9.2'
+    let license = 'MIT'
+
     const CENTER_DOT = '\u00B7' // interpunct
 </script>
 
 <div class="container">
     <div class="description-and-tags">
-        <div class="description">Code AI Platform with Code Search & Cody</div>
+        <div class="description">{description}</div>
         <div class="tags">
-            <div class="tag"><small>open-source</small></div>
-            <div class="tag"><small>code-search</small></div>
-            <div class="tag"><small>sourcegraph</small></div>
-            <div class="tag"><small>code-intelligence</small></div>
+            {#each tags as tag}
+                <div class="tag"><small>{tag}</small></div>
+            {/each}
         </div>
     </div>
     <div class="divider" />
@@ -25,30 +34,30 @@
         <div class="commit-info">
             <div class="subject-and-commit">
                 <div class="subject">
-                    <small>This is a commit message</small>
+                    <small>{subject}</small>
                 </div>
                 <div class="commit-number">
-                    <small>#89886</small>
+                    <small>{commitNumber}</small>
                 </div>
             </div>
             <div class="author-and-time">
                 <div class="author">
                     <!-- TODO:@jason add avatar -->
-                    <small>{name}</small>
+                    <small>{author}</small>
                 </div>
                 <div class="separator">{CENTER_DOT}</div>
-                <div class="commit-date"><small>1 hour ago</small></div>
+                <div class="commit-date"><small>{commitDate}</small></div>
             </div>
         </div>
     </div>
     <div class="divider" />
     <div class="repo-stats">
         <div class="stats">
-            <div class="stat"><small>Go</small></div>
-            <div class="stat"><Icon svgPath={mdiSourceMerge} size={14} /><small>1.7k</small></div>
-            <div class="stat"><Icon svgPath={mdiStarOutline} size={14} /><small>9.2k</small></div>
+            <div class="stat"><small>{lang}</small></div>
+            <div class="stat"><Icon svgPath={mdiSourceMerge} size={14} /><small>{commits}k</small></div>
+            <div class="stat"><Icon svgPath={mdiStarOutline} size={14} /><small>{stars}k</small></div>
         </div>
-        <div class="license"><small>MIT</small></div>
+        <div class="license"><small>{license}</small></div>
     </div>
 </div>
 
@@ -62,14 +71,14 @@
     }
 
     .divider {
-        width: 100%;
         border-bottom: 1px solid var(--border-color);
         padding: 0.5rem 0.75rem;
+        width: 100%;
     }
 
     .description-and-tags {
-        padding: 0rem 0.75rem;
         margin-top: 0.5rem;
+        padding: 0rem 0.75rem;
 
         .description {
             font-size: 1rem;
@@ -77,11 +86,11 @@
         }
 
         .tags {
+            align-content: space-around;
             align-items: flex-start;
             display: flex;
             flex-flow: row wrap;
             gap: 0.5rem 0rem;
-            align-content: space-around;
             justify-content: flex-start;
             margin-top: 0.5rem;
         }
@@ -102,21 +111,25 @@
         display: flex;
         flex-flow: row nowrap;
         justify-content: space-between;
-        padding: 0rem 0.75rem;
         margin-top: 0.5rem;
+        padding: 0rem 0.75rem;
 
         .title {
             color: var(--text-muted);
         }
 
         .subject-and-commit {
+            align-items: center;
             display: flex;
             flex-flow: row nowrap;
-            align-items: center;
 
             .subject {
                 color: var(--text-body);
                 margin-right: 0.5rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                width: 150px;
             }
 
             .commit-number {
@@ -125,14 +138,14 @@
         }
 
         .author-and-time {
+            color: var(--text-muted);
             display: flex;
             flex-flow: row nowrap;
             justify-content: flex-end;
-            color: var(--text-muted);
 
             .author {
-                margin-right: 0.5rem;
                 color: var(--text-muted);
+                margin-right: 0.5rem;
             }
 
             .separator {
@@ -142,22 +155,23 @@
     }
 
     .repo-stats {
-        padding: 0rem 0.75rem;
-        margin-top: 0.5rem;
-        margin-bottom: 0.5rem;
+        color: var(--text-muted);
         display: flex;
         flex-flow: row nowrap;
         justify-content: space-between;
-        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+        margin-top: 0.5rem;
+        padding: 0rem 0.75rem;
 
         .stats {
-            font-size: 1rem;
-            padding: 0rem;
             display: flex;
             flex-flow: row nowrap;
+            font-size: 1rem;
+            padding: 0rem;
+
             .stat {
-                margin-right: 1rem;
                 align-self: center;
+                margin-right: 1rem;
             }
 
             .license {
