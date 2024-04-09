@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { mdiFileDocumentOutline, mdiFolderOutline, mdiMapSearch } from '@mdi/js'
+    import { mdiMapSearch } from '@mdi/js'
 
     import Icon from '$lib/Icon.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
@@ -12,6 +12,7 @@
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { Alert } from '$lib/wildcard'
     import type { TreeEntryWithCommitInfo } from '$lib/repo/FileTable.gql'
+    import Actions from '$lib/repo/Actions.svelte'
 
     export let data: PageData
 
@@ -25,9 +26,12 @@
 </svelte:head>
 
 <FileHeader>
-    <Icon slot="icon" svgPath={mdiFolderOutline} />
     <svelte:fragment slot="actions">
-        <Permalink commitID={data.resolvedRevision.commitID} />
+        <div class="actions">
+            <Actions>
+                <Permalink commitID={data.resolvedRevision.commitID} />
+            </Actions>
+        </div>
     </svelte:fragment>
 </FileHeader>
 
@@ -67,8 +71,6 @@
     {#await data.readme then readme}
         {#if readme}
             <h4 class="header">
-                <Icon svgPath={mdiFileDocumentOutline} />
-                &nbsp;
                 {readme.name}
             </h4>
             <div class="readme">
@@ -93,7 +95,6 @@
         top: 2.8rem;
         padding: 0.5rem;
         border-bottom: 1px solid var(--border-color);
-        border-top: 1px solid var(--border-color);
         margin: 0;
     }
 
@@ -113,5 +114,9 @@
         border-radius: 50%;
         padding: 1.5rem;
         margin: 1rem;
+    }
+
+    .actions {
+        margin-left: auto;
     }
 </style>

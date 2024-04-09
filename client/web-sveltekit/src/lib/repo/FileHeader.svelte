@@ -13,39 +13,40 @@
         <SidebarToggleButton />
     </div>
     <h2>
-        <span class="icon">
-            <slot name="icon" />&nbsp;
-        </span>
-        <span>
-            {#each breadcrumbs as [name, path], index}
+        {#each breadcrumbs as [name, path], index}
+            <!--
+                This space is necessary to enable wrapping of each breadcrumb
+                if there is not enough space.
+            -->
+            {' '}
+            <span class:last={index === breadcrumbs.length - 1}>
                 {#if index > 0}
                     /
                 {/if}
-                <span class:last={index === breadcrumbs.length - 1}>
-                    {#if path}
-                        <a href={path}>{name}</a>
-                    {:else}
-                        {name}
-                    {/if}
-                </span>
-            {/each}
-        </span>
+                {#if path}
+                    <a href={path}>{name}</a>
+                {:else}
+                    <slot name="icon" />
+                    {name}
+                {/if}
+            </span>
+        {/each}
     </h2>
-    <div class="actions">
-        <slot name="actions" />
-    </div>
+    <slot name="actions" />
 </div>
 
 <style lang="scss">
     .header {
         display: flex;
-        align-items: center;
-        padding: 0.5rem;
+        align-items: baseline;
+        padding: 0.25rem 0.5rem;
         border-bottom: 1px solid var(--border-color);
         position: sticky;
         top: 0px;
         background-color: var(--color-bg-1);
         z-index: 1;
+        container: fileheader / inline-size;
+        gap: 0.5rem;
     }
 
     .toggle-wrapper {
@@ -62,23 +63,22 @@
     }
 
     h2 {
-        display: flex;
-        align-items: center;
-        font-weight: normal;
-        font-size: 1rem;
+        font-weight: 400;
+        font-size: var(--code-font-size);
+        font-family: var(--code-font-family);
         margin: 0;
+
+        a {
+            color: var(--body-color);
+        }
+
+        span {
+            white-space: nowrap;
+        }
 
         .last {
             font-weight: bold;
         }
-
-        .icon {
-            flex-shrink: 0;
-        }
-    }
-
-    .actions {
-        margin-left: auto;
     }
 
     a {

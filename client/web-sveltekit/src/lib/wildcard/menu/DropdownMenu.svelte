@@ -16,15 +16,15 @@
 <script lang="ts">
     import { createDropdownMenu } from '@melt-ui/svelte'
     import type { HTMLButtonAttributes } from 'svelte/elements'
-    import type { Writable } from 'svelte/store'
+    import { writable, type Writable } from 'svelte/store'
 
-    interface $$Props extends HTMLButtonAttributes {
-        open: Writable<boolean>
+    type $$Props = {
+        open?: Writable<boolean>
         triggerButtonClass: string
-    }
+    } & HTMLButtonAttributes
 
-    export let open: Writable<boolean>
     export let triggerButtonClass: string
+    export let open: Writable<boolean> = writable(false)
 
     const {
         elements: { menu, item, trigger, separator },
@@ -59,12 +59,19 @@
         padding: 0.25rem 0;
 
         :global([role^='menuitem']) {
+            all: unset;
             cursor: pointer;
             display: block;
+            box-sizing: border-box;
             width: 100%;
             padding: var(--dropdown-item-padding);
             white-space: nowrap;
             color: var(--dropdown-link-hover-color);
+
+            &:disabled {
+                color: var(--text-muted);
+                cursor: not-allowed;
+            }
 
             &:hover,
             &:focus {

@@ -17,6 +17,70 @@ import * as uuid from 'uuid'
 import { highlightNode } from '$lib/common'
 
 /**
+ * Finds the previous sibling element that matches the provided selector. Can optionally wrap around.
+ *
+ * @param element The element to start the search from.
+ * @param selector The selector to match the sibling against.
+ * @param wrap Whether to wrap around to the last sibling if no match is found.
+ * @returns The previous sibling element that matches the selector, or null if no match is found.
+ */
+export function previousSibling<T extends Element>(element: Element, selector: string, wrap = false): T | null {
+    let sibling = element.previousElementSibling
+    while (true) {
+        while (sibling) {
+            if (sibling.matches(selector)) {
+                return sibling as T
+            }
+
+            // Prevents infinite loop when wrapping around
+            if (sibling === element) {
+                return null
+            }
+
+            sibling = sibling.previousElementSibling
+        }
+
+        if (wrap) {
+            sibling = element.parentElement?.lastElementChild ?? null
+        } else {
+            return null
+        }
+    }
+}
+
+/**
+ * Finds the next sibling element that matches the provided selector. Can optionally wrap around.
+ *
+ * @param element The element to start the search from.
+ * @param selector The selector to match the sibling against.
+ * @param wrap Whether to wrap around to the first sibling if no match is found.
+ * @returns The next sibling element that matches the selector, or null if no match is found.
+ */
+export function nextSibling<T extends Element>(element: Element, selector: string, wrap = false): T | null {
+    let sibling = element.nextElementSibling
+    while (true) {
+        while (sibling) {
+            if (sibling.matches(selector)) {
+                return sibling as T
+            }
+
+            // Prevents infinite loop when wrapping around
+            if (sibling === element) {
+                return null
+            }
+
+            sibling = sibling.nextElementSibling
+        }
+
+        if (wrap) {
+            sibling = element.parentElement?.firstElementChild ?? null
+        } else {
+            return null
+        }
+    }
+}
+
+/**
  * Returns a unique ID to be used with accessible elements.
  * Generates stable IDs in tests.
  */
