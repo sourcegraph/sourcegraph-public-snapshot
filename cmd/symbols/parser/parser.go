@@ -84,15 +84,12 @@ func (p *parser) Parse(ctx context.Context, args search.SymbolsParameters, paths
 	}()
 
 	var (
-		wg                          sync.WaitGroup                                         // concurrency control
-		parseRequests               = make(chan fetcher.ParseRequest, p.requestBufferSize) // buffered requests
-		symbolOrErrors              = make(chan SymbolOrError)                             // parsed responses
-		totalRequests, totalSymbols uint32                                                 // stats
+		wg                          sync.WaitGroup             // concurrency control
+		symbolOrErrors              = make(chan SymbolOrError) // parsed responses
+		totalRequests, totalSymbols uint32                     // stats
 	)
 
 	defer func() {
-		close(parseRequests)
-
 		go func() {
 			defer func() {
 				endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
