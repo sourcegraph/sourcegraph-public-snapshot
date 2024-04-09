@@ -188,6 +188,7 @@ func main() {
 					// This is where we do the majority of our printing to stdout.
 					results.OrderByVersion()
 					results.PrintSimpleResults()
+					results.DisplayErrors()
 
 					return nil
 				},

@@ -221,6 +221,39 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 	test.AddLog(fmt.Sprintf("Upgrading from version (%s) to release candidate.", initVersion))
 	test.AddLog("-- 🏗️  setting up test environment")
 
+	// Pull images from registry if -from-registry is set
+	if ctx.Value(fromRegistryKey{}).(string) != "sourcegraph/" {
+		test.AddLog(fmt.Sprintf("🐋 pulling -from-registry images from %s", ctx.Value(fromRegistryKey{}).(string)))
+		out, err := run.Cmd(ctx, "docker", "image", "pull", fmt.Sprintf("%sfrontend:%s", ctx.Value(fromRegistryKey{}).(string), initVersion.String())).Run().String()
+		test.AddLog(out)
+		if err != nil {
+			test.AddError(errors.Newf("🚨 failed to pull images from -from-registry: %s", err))
+		}
+		fmt.Println(out)
+		out, err = run.Cmd(ctx, "docker", "image", "pull", fmt.Sprintf("%smigrator:%s", ctx.Value(fromRegistryKey{}).(string), initVersion.String())).Run().String()
+		test.AddLog(out)
+		if err != nil {
+			test.AddError(errors.Newf("🚨 failed to pull images from -from-registry: %s", err))
+		}
+		fmt.Println(out)
+	}
+
+	// Pull images from registry if -target-registry is set
+	if ctx.Value(targetRegistryKey{}).(string) != "sourcegraph/" {
+		test.AddLog(fmt.Sprintf("🐋 pulling -target-registry images from %s", ctx.Value(targetRegistryKey{}).(string)))
+		out, err := run.Cmd(ctx, "docker", "image", "pull", fmt.Sprintf("%sfrontend:%s", ctx.Value(targetRegistryKey{}).(string), initVersion.String())).Run().String()
+		test.AddLog(out)
+		if err != nil {
+			test.AddError(errors.Newf("🚨 failed to pull images from -target-registry: %s", err))
+		}
+		out, err = run.Cmd(ctx, "docker", "image", "pull", fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}).(string), initVersion.String())).Run().String()
+		test.AddLog(out)
+		if err != nil {
+			test.AddError(errors.Newf("🚨 failed to pull images from -target-registry: %s", err))
+		}
+		fmt.Println(out)
+	}
+
 	// Create a docker network for testing
 	//
 	// Docker bridge networks take up a lot of the docker daemons available port allocation. We run only a limited amount of test parallelization to get around this.
@@ -526,6 +559,7 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	baseString = append(baseString, envString...)
 	cmdString = append(baseString, cmdString...)
 
+	// TODO: Improve log aggregation of frontend container runs
 	// Start the frontend container in goroutine to get logs
 	errChan := make(chan error)
 	go func() {
