@@ -43,6 +43,7 @@
             author: {
                 date: new Date().toISOString(),
                 person: {
+                    __typename: 'Person',
                     displayName: `${faker.person.firstName()} ${faker.person.lastName()}`,
                     avatarURL: faker.internet.avatar(),
                     name: faker.internet.userName(),
