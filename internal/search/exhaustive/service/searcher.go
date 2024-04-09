@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -31,10 +30,6 @@ func FromSearchClient(client client.SearchClient) NewSearcher {
 		// We run queries on searcher only which makes it easier to control limits. Low
 		// latency is not a priority of Search Jobs.
 		q = "index:no " + q
-
-		if strings.Contains(strings.ToLower(q), "patterntype:structural") {
-			return nil, errors.New("Structural search is not supported in Search Jobs")
-		}
 
 		inputs, err := client.Plan(
 			ctx,

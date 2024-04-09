@@ -30,14 +30,16 @@ func TestNewExhaustive(t *testing.T) {
 	}
 
 	cases := []struct {
-		Name      string
-		Query     string
-		WantPager autogold.Value
-		WantJob   autogold.Value
+		Name       string
+		Query      string
+		WantPager  autogold.Value
+		WantJob    autogold.Value
+		SearchType query.SearchType
 	}{
 		{
-			Name:  "case sensitive lang match",
-			Query: `type:file index:no lang:cpp content case:yes`,
+			Name:       "case sensitive lang match",
+			Query:      `type:file index:no lang:cpp content case:yes`,
+			SearchType: query.SearchTypeLiteral,
 			WantPager: autogold.Expect(`
 (REPOPAGER
   (containsRefGlobs . false)
@@ -60,8 +62,9 @@ func TestNewExhaustive(t *testing.T) {
 `),
 		},
 		{
-			Name:  "glob",
-			Query: `type:file index:no repo:foo rev:*refs/heads/dev* content`,
+			Name:       "glob",
+			Query:      `type:file index:no repo:foo rev:*refs/heads/dev* content`,
+			SearchType: query.SearchTypeLiteral,
 			WantPager: autogold.Expect(`
 (REPOPAGER
   (containsRefGlobs . true)
@@ -85,8 +88,9 @@ func TestNewExhaustive(t *testing.T) {
 `),
 		},
 		{
-			Name:  "only pattern",
-			Query: "type:file index:no content",
+			Name:       "only pattern",
+			Query:      "type:file index:no content",
+			SearchType: query.SearchTypeLiteral,
 			WantPager: autogold.Expect(`
 (REPOPAGER
   (containsRefGlobs . false)
@@ -109,8 +113,9 @@ func TestNewExhaustive(t *testing.T) {
 `),
 		},
 		{
-			Name:  "keyword search",
-			Query: "type:file index:no foo bar baz patterntype:keyword",
+			Name:       "keyword search",
+			Query:      "type:file index:no foo bar baz patterntype:keyword",
+			SearchType: query.SearchTypeLiteral,
 			WantPager: autogold.Expect(`
 (REPOPAGER
   (containsRefGlobs . false)
@@ -133,8 +138,9 @@ func TestNewExhaustive(t *testing.T) {
 `),
 		},
 		{
-			Name:  "boolean query",
-			Query: "type:file index:no (foo OR bar) AND baz patterntype:keyword",
+			Name:       "boolean query",
+			Query:      "type:file index:no (foo OR bar) AND baz patterntype:keyword",
+			SearchType: query.SearchTypeLiteral,
 			WantPager: autogold.Expect(`
 (REPOPAGER
   (containsRefGlobs . false)
@@ -157,8 +163,9 @@ func TestNewExhaustive(t *testing.T) {
 `),
 		},
 		{
-			Name:  "regexp",
-			Query: "type:file index:no foo.*bar patterntype:regexp",
+			Name:       "regexp",
+			Query:      "type:file index:no foo.*bar patterntype:regexp",
+			SearchType: query.SearchTypeRegex,
 			WantPager: autogold.Expect(`
 (REPOPAGER
   (containsRefGlobs . false)
@@ -166,7 +173,7 @@ func TestNewExhaustive(t *testing.T) {
   (PARTIALREPOS
     (SEARCHERTEXTSEARCH
       (useFullDeadline . true)
-      (patternInfo . TextPatternInfo{"foo.*bar",nopath,filematchlimit:1000000})
+      (patternInfo . TextPatternInfo{/foo.*bar/,nopath,filematchlimit:1000000})
       (numRepos . 0)
       (pathRegexps . [])
       (indexed . false))))
@@ -174,15 +181,16 @@ func TestNewExhaustive(t *testing.T) {
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
   (useFullDeadline . true)
-  (patternInfo . TextPatternInfo{"foo.*bar",nopath,filematchlimit:1000000})
+  (patternInfo . TextPatternInfo{/foo.*bar/,nopath,filematchlimit:1000000})
   (numRepos . 1)
   (pathRegexps . [])
   (indexed . false))
 `),
 		},
 		{
-			Name:  "repo:has.file predicate",
-			Query: "type:file index:no foo repo:has.file(go.mod)",
+			Name:       "repo:has.file predicate",
+			Query:      "type:file index:no foo repo:has.file(go.mod)",
+			SearchType: query.SearchTypeLiteral,
 			WantPager: autogold.Expect(`
 (REPOPAGER
   (containsRefGlobs . false)
@@ -206,8 +214,9 @@ func TestNewExhaustive(t *testing.T) {
 `),
 		},
 		{
-			Name:  "repo:has.meta predicate",
-			Query: "type:file index:no foo repo:has.meta(cognition)",
+			Name:       "repo:has.meta predicate",
+			Query:      "type:file index:no foo repo:has.meta(cognition)",
+			SearchType: query.SearchTypeLiteral,
 			WantPager: autogold.Expect(`
 (REPOPAGER
   (containsRefGlobs . false)
@@ -231,8 +240,9 @@ func TestNewExhaustive(t *testing.T) {
 `),
 		},
 		{
-			Name:  "type:diff author:alice",
-			Query: "index:no type:diff author:alice",
+			Name:       "type:diff author:alice",
+			Query:      "index:no type:diff author:alice",
+			SearchType: query.SearchTypeLiteral,
 			WantPager: autogold.Expect(`
 (REPOPAGER
   (containsRefGlobs . false)
@@ -254,8 +264,9 @@ func TestNewExhaustive(t *testing.T) {
 `),
 		},
 		{
-			Name:  "type:commit author:alice",
-			Query: "index:no type:commit author:alice",
+			Name:       "type:commit author:alice",
+			Query:      "index:no type:commit author:alice",
+			SearchType: query.SearchTypeLiteral,
 			WantPager: autogold.Expect(`
 (REPOPAGER
   (containsRefGlobs . false)
@@ -277,8 +288,9 @@ func TestNewExhaustive(t *testing.T) {
 `),
 		},
 		{
-			Name:  "type:path f:search.go",
-			Query: "index:no type:path f:search.go",
+			Name:       "type:path f:search.go",
+			Query:      "index:no type:path f:search.go",
+			SearchType: query.SearchTypeLiteral,
 			WantPager: autogold.Expect(`
 (REPOPAGER
   (containsRefGlobs . false)
@@ -300,19 +312,45 @@ func TestNewExhaustive(t *testing.T) {
   (indexed . false))
 `),
 		},
+		{
+			Name:       "patternType:structural if ... else ...",
+			Query:      "index:no patterntype:structural if ... else ...",
+			SearchType: query.SearchTypeStructural,
+			WantPager: autogold.Expect(`
+(REPOPAGER
+  (containsRefGlobs . false)
+  (repoOpts.useIndex . no)
+  (PARTIALREPOS
+    (STRUCTURALSEARCH
+      (useFullDeadline . true)
+      (useIndex . no)
+      (patternInfo.query . "if :[_] else :[_]")
+      (patternInfo.isStructural . true)
+      (patternInfo.fileMatchLimit . 1000000)
+      (patternInfo.index . no))))
+`),
+			WantJob: autogold.Expect(`
+(STRUCTURALSEARCH
+  (useFullDeadline . true)
+  (useIndex . no)
+  (patternInfo.query . "if :[_] else :[_]")
+  (patternInfo.isStructural . true)
+  (patternInfo.fileMatchLimit . 1000000)
+  (patternInfo.index . no))
+`),
+		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
-			searchType := query.SearchTypeLiteral
-			plan, err := query.Pipeline(query.Init(tc.Query, searchType))
+			plan, err := query.Pipeline(query.Init(tc.Query, tc.SearchType))
 			require.NoError(t, err)
 
 			inputs := &search.Inputs{
 				Plan:         plan,
 				Query:        plan.ToQ(),
 				UserSettings: &schema.Settings{},
-				PatternType:  searchType,
+				PatternType:  tc.SearchType,
 				Protocol:     search.Exhaustive,
 				Features:     &search.Features{},
 			}
@@ -335,40 +373,38 @@ func sPrintSexpMax(j job.Describer) string {
 // have to worry about valid queries we don't want to process for now.
 func TestNewExhaustive_negative(t *testing.T) {
 	tc := []struct {
-		query              string
-		isPatterntypeRegex bool
+		query      string
+		searchType query.SearchType
 	}{
 		// multiple jobs needed
-		{query: `type:file index:no (repo:repo1 or repo:repo2) content`},
+		{query: `type:file index:no (repo:repo1 or repo:repo2) content`, searchType: query.SearchTypeLiteral},
 		// catch-all regex
-		{query: `type:file index:no r:.* .*`, isPatterntypeRegex: true},
-		{query: `type:file index:no r:repo .*`, isPatterntypeRegex: true},
+		{query: `type:file index:no r:.* .*`, searchType: query.SearchTypeRegex},
+		{query: `type:file index:no r:repo .*`, searchType: query.SearchTypeRegex},
 		// file predicates
-		{query: `type:file index:no file:has.content(content)`},
-		{query: `type:file index:no file:has.owner(owner)`},
-		{query: `type:file index:no file:contains.content(content)`},
-		{query: `type:file index:no file:has.contributor(contributor)`},
+		{query: `type:file index:no file:has.content(content)`, searchType: query.SearchTypeLiteral},
+		{query: `type:file index:no file:has.owner(owner)`, searchType: query.SearchTypeLiteral},
+		{query: `type:file index:no file:contains.content(content)`, searchType: query.SearchTypeLiteral},
+		{query: `type:file index:no file:has.contributor(contributor)`, searchType: query.SearchTypeLiteral},
 		// unsupported types
-		{query: `index:no type:repo`},
-		{query: `index:no type:symbol`},
-		{query: `index:no foo select:file.owners`},
+		{query: `index:no type:repo`, searchType: query.SearchTypeLiteral},
+		{query: `index:no type:symbol`, searchType: query.SearchTypeLiteral},
+		{query: `index:no foo select:file.owners`, searchType: query.SearchTypeLiteral},
+		// structural search with AND/OR
+		{query: `index:no patterntype:structural if ... OR switch ... `, searchType: query.SearchTypeStructural},
+		{query: `index:no patterntype:structural if ... AND switch ... `, searchType: query.SearchTypeStructural},
 	}
 
 	for _, c := range tc {
 		t.Run("", func(t *testing.T) {
-			patternType := query.SearchTypeStandard
-			if c.isPatterntypeRegex {
-				patternType = query.SearchTypeRegex
-			}
-
-			plan, err := query.Pipeline(query.Init(c.query, patternType))
+			plan, err := query.Pipeline(query.Init(c.query, c.searchType))
 			require.NoError(t, err)
 
 			inputs := &search.Inputs{
 				Plan:         plan,
 				Query:        plan.ToQ(),
 				UserSettings: &schema.Settings{},
-				PatternType:  patternType,
+				PatternType:  c.searchType,
 				Protocol:     search.Exhaustive,
 				Features:     &search.Features{},
 			}

@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
@@ -23,7 +24,7 @@ type Exhaustive struct {
 }
 
 const (
-	exhaustiveSupportedResultTypes = result.TypeCommit | result.TypeDiff | result.TypeFile | result.TypePath
+	exhaustiveSupportedResultTypes = result.TypeCommit | result.TypeDiff | result.TypeFile | result.TypePath | result.TypeStructural
 	exhaustiveDefaultResultTypes   = result.TypeFile | result.TypePath
 )
 
@@ -93,6 +94,29 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 			}
 	} else if resultTypes.Has(result.TypeFile | result.TypePath) {
 		planJob = NewTextSearchJob(b, inputs, resultTypes, repoOptions)
+	} else if resultTypes.Has(result.TypeStructural) {
+		pattern, ok := b.Pattern.(query.Pattern)
+		if !ok {
+			return Exhaustive{}, errors.Errorf("Search Jobs doesn't support structural search patterns with AND/OR")
+		}
+
+		f := query.Flat{Parameters: b.Parameters, Pattern: &pattern}
+		patternInfo := toTextPatternInfo(f.ToBasic(), resultTypes, inputs.Features, inputs.DefaultLimit())
+		searcherArgs := &search.SearcherParameters{
+			PatternInfo:     patternInfo,
+			UseFullDeadline: true,
+			Features:        *inputs.Features,
+		}
+		structuralSearchJob := &structural.SearchJob{
+			SearcherArgs: searcherArgs,
+			UseIndex:     f.Index(),
+		}
+		planJob =
+			&repoPagerJob{
+				child:            &reposPartialJob{structuralSearchJob},
+				repoOpts:         repoOptions,
+				containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
+			}
 	} else {
 		// This should never happen because we checked for supported types above.
 		return Exhaustive{}, errors.Errorf("internal error: unsupported result types %v", resultTypes)
