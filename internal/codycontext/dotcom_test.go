@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewFilter(t *testing.T) {
+func TestNewDotcomFilter(t *testing.T) {
 	repos := []types.RepoIDName{
 		{ID: 1, Name: "repo1"},
 		{ID: 2, Name: "repo2"},
@@ -217,7 +217,7 @@ func TestNewFilter(t *testing.T) {
 	})
 }
 
-func TestFilterDisabled(t *testing.T) {
+func TestDotcomFilterDisabled(t *testing.T) {
 	repos := []types.RepoIDName{
 		{ID: 1, Name: "repo1"},
 		{ID: 2, Name: "repo2"},

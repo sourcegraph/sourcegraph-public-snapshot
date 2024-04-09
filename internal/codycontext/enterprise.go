@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"slices"
 )
 
 type enterpriseRepoFilter struct {
@@ -29,7 +30,12 @@ func newEnterpriseFilter() RepoContentFilter {
 }
 
 // GetFilter returns the list of repos that can be filtered based on the Cody context filter value in the site config.
-func (f *enterpriseRepoFilter) GetFilter(repos []types.RepoIDName, logger log.Logger) ([]types.RepoIDName, FileChunkFilterFunc) {
+func (f *enterpriseRepoFilter) GetFilter(repos []types.RepoIDName, _ log.Logger) ([]types.RepoIDName, FileChunkFilterFunc) {
+	if f.ccf == nil {
+		return repos, func(fcc []FileChunkContext) []FileChunkContext {
+			return fcc
+		}
+	}
 	allowedRepos := make([]types.RepoIDName, 0, len(repos))
 	for _, repo := range repos {
 		if f.isRepoAllowed(repo.Name) {
@@ -37,7 +43,14 @@ func (f *enterpriseRepoFilter) GetFilter(repos []types.RepoIDName, logger log.Lo
 		}
 	}
 	return allowedRepos, func(fcc []FileChunkContext) []FileChunkContext {
-		return fcc
+		filtered := make([]FileChunkContext, 0, len(fcc))
+		for _, fc := range fcc {
+			isFromAllowedRepo := slices.ContainsFunc(allowedRepos, func(r types.RepoIDName) bool { return r.Name == fc.RepoName })
+			if isFromAllowedRepo {
+				filtered = append(filtered, fc)
+			}
+		}
+		return filtered
 	}
 }
 
