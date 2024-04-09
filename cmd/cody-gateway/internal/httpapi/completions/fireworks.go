@@ -178,7 +178,9 @@ func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 	// For now, just count character usage, and set token counts to
 	// -1 as sentinel values.
 	promptUsage.tokens = -1
+	promptUsage.tokenizerTokens = -1
 	completionUsage.tokens = -1
+	completionUsage.tokenizerTokens = -1
 
 	dec := fireworks.NewDecoder(r)
 	// Consume all the messages, but we only care about the last completion data.
