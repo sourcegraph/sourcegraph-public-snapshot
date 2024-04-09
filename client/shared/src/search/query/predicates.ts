@@ -256,10 +256,10 @@ export const predicateCompletion = (field: FilterType): Completion[] => {
         return [
             {
                 label: 'at.time(...)',
-                insertText: 'at.time(${1}, ${2})',
+                insertText: 'at.time(${1:1 year ago})',
                 asSnippet: true,
                 description:
-                    'Search repos at a specific time in history. Optionally specify a rev name other than HEAD to search in the history from that rev.',
+                    'Search repos at a specific time in history. Optionally, a base revision can be specified as a second parameter like rev:at.time(yesterday, my-branch)',
             },
         ]
     }
