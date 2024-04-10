@@ -1,3 +1,15 @@
+<!--
+This Component should be instantiated inside of a Popover component.
+
+For example:
+
+<Popover ...>
+    [trigger button ...]
+    <div slot="content">
+        <RepoPopover ... />
+    </div>
+</Popover>
+-->
 <script lang="ts">
     import {
         mdiAws,
@@ -74,7 +86,8 @@
     {#if withHeader}
         <div class="header">
             <div class="icon-name-access">
-                <Icon svgPath={mdiGitlab} />
+                <!-- @TODO: We need to use our customer's logo here, not the code host's -->
+                <!--Icon svgPath={mdiGitlab} /-->
                 <h4 class="repo-name">{name}</h4>
                 <div class="access">
                     <small>{isPrivate ? 'Private' : 'Public'}</small>
