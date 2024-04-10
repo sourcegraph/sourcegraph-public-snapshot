@@ -175,7 +175,7 @@ test.describe('file header', () => {
 
     test('meta data', async ({ page }) => {
         await page.goto(url)
-        await expect(page.getByText('12.06 KB')).toBeVisible()
+        await expect(page.getByText('12.35 KB')).toBeVisible()
         await expect(page.getByText('42 lines')).toBeVisible()
     })
 })

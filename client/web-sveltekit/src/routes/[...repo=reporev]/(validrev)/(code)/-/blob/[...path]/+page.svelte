@@ -27,7 +27,6 @@
     import { capitalize } from 'lodash'
     import OpenInCodeHostAction from './OpenInCodeHostAction.svelte'
     import { writable } from 'svelte/store'
-    import Actions from '$lib/repo/Actions.svelte'
 
     export let data: PageData
 
@@ -63,7 +62,6 @@
     }
 
     function changeViewMode({ detail: viewMode }: { detail: ViewMode }) {
-        console.log('changeViewMode', viewMode)
         switch (viewMode) {
             case ViewMode.Code: {
                 const url = SourcegraphURL.from($page.url)
@@ -92,37 +90,39 @@
     <title>{filePath} - {data.displayRepoName} - Sourcegraph</title>
 </svelte:head>
 
-<FileHeader>
-    <FileIcon slot="icon" file={blob} inline />
-    <svelte:fragment slot="actions">
-        {#if data.compare}
+<!-- Note: Splitting this at this level is not great but Svelte doesn't allow to conditionally render slots (yet) -->
+{#if data.compare}
+    <FileHeader>
+        <FileIcon slot="icon" file={blob} inline />
+        <svelte:fragment slot="actions">
             <span>{data.compare.revisionToCompare}</span>
-        {:else}
-            <div class="actions">
-                <Actions>
-                    {#if blob}
-                        <OpenInCodeHostAction data={blob} />
-                    {/if}
-                    <Permalink {commitID} />
-                    <svelte:fragment slot="menu">
-                        <MenuLink href="{repoURL}/-/raw/{filePath}" target="_blank">
-                            <Icon svgPath={mdiFileEyeOutline} inline /> View raw
-                        </MenuLink>
-                        <MenuButton
-                            on:click={() => lineWrap.update(wrap => !wrap)}
-                            disabled={viewMode === ViewMode.Default && isFormatted}
-                        >
-                            <Icon svgPath={$lineWrap ? mdiWrap : mdiWrapDisabled} inline />
-                            {$lineWrap ? 'Disable' : 'Enable'} wrapping long lines
-                        </MenuButton>
-                    </svelte:fragment>
-                </Actions>
-            </div>
-        {/if}
-    </svelte:fragment>
-</FileHeader>
+        </svelte:fragment>
+    </FileHeader>
+{:else}
+    <FileHeader>
+        <FileIcon slot="icon" file={blob} inline />
+        <svelte:fragment slot="actions">
+            {#if blob}
+                <OpenInCodeHostAction data={blob} />
+            {/if}
+            <Permalink {commitID} />
+        </svelte:fragment>
+        <svelte:fragment slot="actionmenu">
+            <MenuLink href="{repoURL}/-/raw/{filePath}" target="_blank">
+                <Icon svgPath={mdiFileEyeOutline} inline /> View raw
+            </MenuLink>
+            <MenuButton
+                on:click={() => lineWrap.update(wrap => !wrap)}
+                disabled={viewMode === ViewMode.Default && isFormatted}
+            >
+                <Icon svgPath={$lineWrap ? mdiWrap : mdiWrapDisabled} inline />
+                {$lineWrap ? 'Disable' : 'Enable'} wrapping long lines
+            </MenuButton>
+        </svelte:fragment>
+    </FileHeader>
+{/if}
 
-{#if !blobPending && blob && !blob.binary}
+{#if !blobPending && blob && !blob.binary && !data.compare}
     <div class="file-info">
         <FileViewModeSwitcher
             aria-label="View mode"

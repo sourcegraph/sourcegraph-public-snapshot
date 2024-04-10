@@ -12,7 +12,6 @@
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { Alert } from '$lib/wildcard'
     import type { TreeEntryWithCommitInfo } from '$lib/repo/FileTable.gql'
-    import Actions from '$lib/repo/Actions.svelte'
 
     export let data: PageData
 
@@ -27,11 +26,7 @@
 
 <FileHeader>
     <svelte:fragment slot="actions">
-        <div class="actions">
-            <Actions>
-                <Permalink commitID={data.resolvedRevision.commitID} />
-            </Actions>
-        </div>
+        <Permalink commitID={data.resolvedRevision.commitID} />
     </svelte:fragment>
 </FileHeader>
 
@@ -114,9 +109,5 @@
         border-radius: 50%;
         padding: 1.5rem;
         margin: 1rem;
-    }
-
-    .actions {
-        margin-left: auto;
     }
 </style>

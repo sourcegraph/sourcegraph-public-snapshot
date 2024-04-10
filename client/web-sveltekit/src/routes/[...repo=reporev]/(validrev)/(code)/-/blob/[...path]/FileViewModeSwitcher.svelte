@@ -25,16 +25,16 @@
 
     function handleKeydown(event: KeyboardEvent) {
         const target = event.currentTarget as HTMLElement
-        let newTarget: HTMLElement | null = null
+        let newTarget: Element | null = null
 
         switch (event.key) {
             case 'ArrowUp':
             case 'ArrowLeft':
-                newTarget = previousSibling<HTMLLabelElement>(target, '[role="radio"]', true)
+                newTarget = previousSibling(target, '[role="radio"]', true)
                 break
             case 'ArrowDown':
             case 'ArrowRight':
-                newTarget = nextSibling<HTMLLabelElement>(target, '[role="radio"]', true)
+                newTarget = nextSibling(target, '[role="radio"]', true)
                 break
             case ' ':
             case 'Enter':
@@ -43,17 +43,17 @@
         }
 
         if (newTarget) {
-            newTarget.focus()
-            value = newTarget.dataset.value as T
+            ;(newTarget as HTMLElement).focus()
+            value = (newTarget as HTMLElement).dataset.value as T
             dispatch('change', value)
         }
     }
 </script>
 
-<ul role="radiogroup" {...$$restProps} tabindex="-1">
+<div role="radiogroup" {...$$restProps} tabindex="-1">
     {#each options as option}
         {@const checked = option === value}
-        <li
+        <span
             role="radio"
             aria-checked={checked}
             aria-labelledby="{id}-{option}-label"
@@ -65,16 +65,11 @@
             <span id="{id}-{option}-label">
                 <slot name="label" value={option}>{option}</slot>
             </span>
-        </li>
+        </span>
     {/each}
-</ul>
+</div>
 
 <style lang="scss">
-    ul {
-        all: unset;
-        list-style: none;
-    }
-
     [role='radiogroup'] {
         --border-radius: 0.5rem;
         --border-width: 1px;

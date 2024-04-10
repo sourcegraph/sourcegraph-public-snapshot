@@ -1,11 +1,11 @@
-const BYTES_IN_KB = 1024
+const BYTES_IN_KB = 1000
 const LOG_BYTES_IN_KB = Math.log(BYTES_IN_KB)
 const UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
 
 /**
  * Formates a number of bytes into a human readable string.
  *
- * Example: `formatBytes(1024)` returns `'1.00 KB'`.
+ * Example: `formatBytes(1000)` returns `'1.00 KB'`.
  *
  * @param bytes The number of bytes to format.
  * @returns The human readable string.
