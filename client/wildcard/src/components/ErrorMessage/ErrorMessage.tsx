@@ -2,9 +2,10 @@ import React from 'react'
 
 import { upperFirst } from 'lodash'
 
-import { asError, renderMarkdown } from '@sourcegraph/common'
+import { renderMarkdown } from '@sourcegraph/common'
 
 import { Markdown } from '../Markdown'
+import { asError } from '../../utils'
 
 export const renderError = (error: unknown): string =>
     renderMarkdown(upperFirst((asError(error).message || 'Unknown Error').replaceAll('\t', '')), { breaks: true })

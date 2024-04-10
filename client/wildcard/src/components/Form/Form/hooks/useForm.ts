@@ -15,7 +15,7 @@ import {
 import { debounce, type DebouncedFunc, isFunction } from 'lodash'
 import { noop } from 'rxjs'
 
-import { asError } from '@sourcegraph/common'
+import { asError } from '../../../../utils'
 
 import { useDeepMemo } from '../../../../hooks'
 

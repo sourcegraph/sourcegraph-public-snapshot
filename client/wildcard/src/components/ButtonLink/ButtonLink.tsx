@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { Key } from 'ts-key-enum'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { isDefined } from '@sourcegraph/common'
+import { isDefined } from '../../utils'
 
 import type { ForwardReferenceComponent } from '../../types'
 import { Button, type ButtonProps } from '../Button'
