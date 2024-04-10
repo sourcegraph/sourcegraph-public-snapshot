@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { mdiStarOutline } from '@mdi/js'
+    import { mdiGithub, mdiStarOutline } from '@mdi/js'
     import { formatDistanceToNow } from 'date-fns'
 
     import Avatar from '$lib/Avatar.svelte'
@@ -7,6 +7,7 @@
     import Popover from '$lib/Popover.svelte'
     import Button from '$lib/wildcard/Button.svelte'
 
+    import RepoMenu from './RepoMenu.svelte'
     import { RepoPopoverFields } from './RepoPopover.gql'
 
     export let repo: RepoPopoverFields
@@ -24,6 +25,7 @@
     let stars = repo.stars
     let url = repo.commit?.canonicalURL
     let avatar = repo.commit?.author.person
+    let codeHostIcon = mdiGithub
 
     /*
     We don't have forks or license information yet.
@@ -43,7 +45,7 @@
     <Button variant="secondary" size="sm" outline>
         <svelte:fragment slot="custom" let:buttonClass>
             <button use:registerTrigger class="{buttonClass} progress-button" on:click={() => toggle()}>
-                <div>{name}</div>
+                <RepoMenu {name} {codeHostIcon} />
             </button>
         </svelte:fragment>
     </Button>
