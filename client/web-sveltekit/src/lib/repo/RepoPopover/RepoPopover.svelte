@@ -260,32 +260,36 @@ For example:
 
     .last-commit {
         display: flex;
-        flex-flow: row nowrap;
+        flex-flow: column nowrap;
         justify-content: space-between;
         margin-top: 0.5rem;
         padding: 0rem 0.75rem;
 
-        .title {
-            color: var(--text-muted);
-        }
-
-        .subject-and-commit {
-            align-items: center;
+        .title-and-commit {
             display: flex;
             flex-flow: row nowrap;
-            justify-content: flex-end;
-            width: 200px;
+            justify-content: space-between;
 
-            .subject {
-                color: var(--text-body);
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                margin-right: 0.25rem;
+            .title {
+                color: var(--text-muted);
             }
 
-            .commit-number {
-                color: var(--text-muted);
+            .commit-and-number {
+                display: flex;
+                flex-flow: row nowrap;
+                width: 200px;
+
+                .commit {
+                    color: var(--text-body);
+                    margin-right: 0.25rem;
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                    white-space: nowrap;
+                }
+
+                .number {
+                    color: var(--text-muted);
+                }
             }
         }
 
@@ -313,6 +317,7 @@ For example:
         display: flex;
         flex-flow: row nowrap;
         justify-content: space-between;
+        align-items: center;
         margin-bottom: 0.5rem;
         margin-top: 0.5rem;
         padding: 0rem 0.75rem;
@@ -320,6 +325,7 @@ For example:
         .stats {
             display: flex;
             flex-flow: row nowrap;
+            align-content: center;
             font-size: 1rem;
             padding: 0rem;
 
