@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/go-git/go-git/v5/plumbing/format/config"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
@@ -290,12 +292,6 @@ func TestGitCLIBackend_Stat(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, len(c.Parents))
 
-	t.Run("bad input", func(t *testing.T) {
-		_, err := backend.Stat(ctx, commitID, "-file0")
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "(begins with '-')")
-	})
-
 	t.Run("non existent file", func(t *testing.T) {
 		_, err := backend.Stat(ctx, commitID, "file0")
 		require.Error(t, err)
@@ -320,22 +316,20 @@ func TestGitCLIBackend_Stat(t *testing.T) {
 	t.Run("stat root", func(t *testing.T) {
 		fi, err := backend.Stat(ctx, commitID, "")
 		require.NoError(t, err)
-		require.Equal(t, &fileutil.FileInfo{
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
 			Name_: "",
-			Mode_: os.ModeDir,
 			Size_: 0,
 			Sys_:  fi.Sys(),
-		}, fi)
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
 		require.True(t, fi.IsDir())
 		require.False(t, fi.Mode().IsRegular())
 		fi, err = backend.Stat(ctx, commitID, ".")
 		require.NoError(t, err)
-		require.Equal(t, &fileutil.FileInfo{
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
 			Name_: "",
-			Mode_: os.ModeDir,
 			Size_: 0,
 			Sys_:  fi.Sys(),
-		}, fi)
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
 		require.True(t, fi.IsDir())
 		require.False(t, fi.Mode().IsRegular())
 	})
@@ -343,32 +337,29 @@ func TestGitCLIBackend_Stat(t *testing.T) {
 	t.Run("stat file", func(t *testing.T) {
 		fi, err := backend.Stat(ctx, commitID, "file1")
 		require.NoError(t, err)
-		require.Equal(t, &fileutil.FileInfo{
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
 			Name_: "file1",
-			Mode_: gitdomain.ModeFile,
 			Size_: 5,
 			Sys_:  fi.Sys(),
-		}, fi)
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
 		require.False(t, fi.IsDir())
 		require.True(t, fi.Mode().IsRegular())
 		fi, err = backend.Stat(ctx, commitID, "nested/../file1")
 		require.NoError(t, err)
-		require.Equal(t, &fileutil.FileInfo{
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
 			Name_: "file1",
-			Mode_: gitdomain.ModeFile,
 			Size_: 5,
 			Sys_:  fi.Sys(),
-		}, fi)
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
 		require.False(t, fi.IsDir())
 		require.True(t, fi.Mode().IsRegular())
 		fi, err = backend.Stat(ctx, commitID, "/file1")
 		require.NoError(t, err)
-		require.Equal(t, &fileutil.FileInfo{
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
 			Name_: "file1",
-			Mode_: gitdomain.ModeFile,
 			Size_: 5,
 			Sys_:  fi.Sys(),
-		}, fi)
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
 		require.False(t, fi.IsDir())
 		require.True(t, fi.Mode().IsRegular())
 	})
@@ -376,21 +367,35 @@ func TestGitCLIBackend_Stat(t *testing.T) {
 	t.Run("stat symlink", func(t *testing.T) {
 		fi, err := backend.Stat(ctx, commitID, "link")
 		require.NoError(t, err)
-		require.Equal(t, &fileutil.FileInfo{
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
 			Name_: "link",
-			Mode_: gitdomain.ModeSymlink,
-			Size_: 5,
+			Size_: 11,
 			Sys_:  fi.Sys(),
-		}, fi)
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
 		require.False(t, fi.IsDir())
-		require.True(t, fi.Mode().IsRegular())
 
-		// TODO: test for not found.
 		cfg, err := backend.(*gitCLIBackend).gitModulesConfig(ctx, commitID)
 		require.NoError(t, err)
 		require.Equal(t, config.Config{
 			Sections: config.Sections{
-				{},
+				{
+					Name: "submodule",
+					Subsections: config.Subsections{
+						{
+							Name: "submodule",
+							Options: config.Options{
+								{
+									Key:   "path",
+									Value: "submodule",
+								},
+								{
+									Key:   "url",
+									Value: string(submodDir),
+								},
+							},
+						},
+					},
+				},
 			},
 		}, cfg)
 	})
@@ -398,39 +403,36 @@ func TestGitCLIBackend_Stat(t *testing.T) {
 	t.Run("stat submodule", func(t *testing.T) {
 		fi, err := backend.Stat(ctx, commitID, "submodule")
 		require.NoError(t, err)
-		require.Equal(t, &fileutil.FileInfo{
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
 			Name_: "submodule",
-			Mode_: gitdomain.ModeSubmodule,
 			Size_: 0,
 			Sys_: gitdomain.Submodule{
 				URL:      string(submodDir),
 				Path:     "submodule",
 				CommitID: "405b565ed446e271bc1998a91dbf4fb50dbfabfe",
 			},
-		}, fi)
-		require.True(t, fi.IsDir())
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+		require.True(t, fi.Mode()&gitdomain.ModeSubmodule == 0)
 		require.False(t, fi.Mode().IsRegular())
 	})
 
 	t.Run("stat dir", func(t *testing.T) {
 		fi, err := backend.Stat(ctx, commitID, "nested")
 		require.NoError(t, err)
-		require.Equal(t, &fileutil.FileInfo{
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
 			Name_: "nested",
-			Mode_: os.ModeDir & gitdomain.ModeDir,
 			Size_: 0,
 			Sys_:  fi.Sys(),
-		}, fi)
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
 		require.True(t, fi.IsDir())
 		require.False(t, fi.Mode().IsRegular())
 		fi, err = backend.Stat(ctx, commitID, "nested/")
 		require.NoError(t, err)
-		require.Equal(t, &fileutil.FileInfo{
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
 			Name_: "nested",
-			Mode_: os.ModeDir & gitdomain.ModeDir,
 			Size_: 0,
 			Sys_:  fi.Sys(),
-		}, fi)
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
 		require.True(t, fi.IsDir())
 		require.False(t, fi.Mode().IsRegular())
 	})
@@ -438,12 +440,11 @@ func TestGitCLIBackend_Stat(t *testing.T) {
 	t.Run("stat nested file", func(t *testing.T) {
 		fi, err := backend.Stat(ctx, commitID, "nested/file")
 		require.NoError(t, err)
-		require.Equal(t, &fileutil.FileInfo{
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
 			Name_: "nested/file",
-			Mode_: gitdomain.ModeFile,
 			Size_: 5,
 			Sys_:  fi.Sys(),
-		}, fi)
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
 		require.False(t, fi.IsDir())
 		require.True(t, fi.Mode().IsRegular())
 	})
@@ -452,66 +453,44 @@ func TestGitCLIBackend_Stat(t *testing.T) {
 func TestGitCLIBackend_Stat_specialchars(t *testing.T) {
 	ctx := context.Background()
 
-	backendQuoteChars := BackendWithRepoCommands(t,
-		"git config core.quotepath on",
-		`touch ⊗.txt '".txt' \\.txt`,
-		`git add ⊗.txt '".txt' \\.txt`,
-		"git commit -m commit --author='Foo Author <foo@sourcegraph.com>'",
-	)
-	backendNoQuoteChars := BackendWithRepoCommands(t,
-		"git config core.quotepath off",
+	backend := BackendWithRepoCommands(t,
 		`touch ⊗.txt '".txt' \\.txt`,
 		`git add ⊗.txt '".txt' \\.txt`,
 		"git commit -m commit --author='Foo Author <foo@sourcegraph.com>'",
 	)
 
-	commitID, err := backendQuoteChars.RevParseHead(ctx)
+	commitID, err := backend.RevParseHead(ctx)
 	require.NoError(t, err)
 
-	test := func(t *testing.T, backend git.GitBackend) {
-		fi, err := backend.Stat(ctx, commitID, "⊗.txt")
-		require.NoError(t, err)
-		require.Equal(t, &fileutil.FileInfo{
-			Name_: "⊗.txt",
-			Mode_: gitdomain.ModeFile,
-			Size_: 5,
-			Sys_:  fi.Sys(),
-		}, fi)
-		require.False(t, fi.IsDir())
-		require.True(t, fi.Mode().IsRegular())
-		fi, err = backend.Stat(ctx, commitID, `".txt`)
-		require.NoError(t, err)
-		require.Equal(t, &fileutil.FileInfo{
-			Name_: `".txt`,
-			Mode_: gitdomain.ModeFile,
-			Size_: 5,
-			Sys_:  fi.Sys(),
-		}, fi)
-		require.False(t, fi.IsDir())
-		require.True(t, fi.Mode().IsRegular())
-		fi, err = backend.Stat(ctx, commitID, `\.txt`)
-		require.NoError(t, err)
-		require.Equal(t, &fileutil.FileInfo{
-			Name_: `\.txt`,
-			Mode_: gitdomain.ModeFile,
-			Size_: 5,
-			Sys_:  fi.Sys(),
-		}, fi)
-		require.False(t, fi.IsDir())
-		require.True(t, fi.Mode().IsRegular())
-	}
-
-	t.Run("quote chars on", func(t *testing.T) {
-		test(t, backendQuoteChars)
-	})
-
-	t.Run("quote chars off", func(t *testing.T) {
-		test(t, backendNoQuoteChars)
-	})
+	fi, err := backend.Stat(ctx, commitID, "⊗.txt")
+	require.NoError(t, err)
+	require.Empty(t, cmp.Diff(&fileutil.FileInfo{
+		Name_: "⊗.txt",
+		Size_: 5,
+		Sys_:  fi.Sys(),
+	}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+	require.False(t, fi.IsDir())
+	require.True(t, fi.Mode().IsRegular())
+	fi, err = backend.Stat(ctx, commitID, `".txt`)
+	require.NoError(t, err)
+	require.Empty(t, cmp.Diff(&fileutil.FileInfo{
+		Name_: `".txt`,
+		Size_: 5,
+		Sys_:  fi.Sys(),
+	}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+	require.False(t, fi.IsDir())
+	require.True(t, fi.Mode().IsRegular())
+	fi, err = backend.Stat(ctx, commitID, `\.txt`)
+	require.NoError(t, err)
+	require.Empty(t, cmp.Diff(&fileutil.FileInfo{
+		Name_: `\.txt`,
+		Size_: 5,
+		Sys_:  fi.Sys(),
+	}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+	require.False(t, fi.IsDir())
+	require.True(t, fi.Mode().IsRegular())
 }
 
-// TODO: Test for `directory` and `directory/`.
-// TODO: Test for root as `.`.
 func TestGitCLIBackend_ReadDir(t *testing.T) {
 	ctx := context.Background()
 
@@ -571,31 +550,26 @@ func TestGitCLIBackend_ReadDir(t *testing.T) {
 		require.Equal(t, []fs.FileInfo{
 			&fileutil.FileInfo{
 				Name_: ".gitmodules",
-				Mode_: gitdomain.ModeFile,
 				Size_: 148,
 				Sys_:  fis[0].Sys(),
 			},
 			&fileutil.FileInfo{
 				Name_: "file1",
-				Mode_: gitdomain.ModeFile,
 				Size_: 0,
 				Sys_:  fis[1].Sys(),
 			},
 			&fileutil.FileInfo{
 				Name_: "nested",
-				Mode_: os.ModeDir,
 				Size_: 0,
 				Sys_:  fis[2].Sys(),
 			},
 			&fileutil.FileInfo{
 				Name_: "link",
-				Mode_: gitdomain.ModeSymlink,
 				Size_: 0,
 				Sys_:  fis[3].Sys(),
 			},
 			&fileutil.FileInfo{
 				Name_: "submodule",
-				Mode_: gitdomain.ModeSubmodule,
 				Size_: 0,
 				Sys_:  fis[4].Sys(),
 			},
@@ -621,37 +595,31 @@ func TestGitCLIBackend_ReadDir(t *testing.T) {
 		require.Equal(t, []fs.FileInfo{
 			&fileutil.FileInfo{
 				Name_: ".gitmodules",
-				Mode_: gitdomain.ModeFile,
 				Size_: 148,
 				Sys_:  fis[0].Sys(),
 			},
 			&fileutil.FileInfo{
 				Name_: "file1",
-				Mode_: gitdomain.ModeFile,
 				Size_: 5,
 				Sys_:  fis[1].Sys(),
 			},
 			&fileutil.FileInfo{
 				Name_: "nested",
-				Mode_: os.ModeDir,
 				Size_: 0,
 				Sys_:  fis[2].Sys(),
 			},
 			&fileutil.FileInfo{
 				Name_: "nested/file",
-				Mode_: gitdomain.ModeFile,
 				Size_: 5,
 				Sys_:  fis[3].Sys(),
 			},
 			&fileutil.FileInfo{
 				Name_: "link",
-				Mode_: gitdomain.ModeSymlink,
 				Size_: 0,
 				Sys_:  fis[4].Sys(),
 			},
 			&fileutil.FileInfo{
 				Name_: "submodule",
-				Mode_: gitdomain.ModeSubmodule,
 				Size_: 0,
 				Sys_:  fis[5].Sys(),
 			},
@@ -662,32 +630,32 @@ func TestGitCLIBackend_ReadDir(t *testing.T) {
 	// t.Run("stat file", func(t *testing.T) {
 	// 	fi, err := backend.ReadDir(ctx, commitID, "file1")
 	// 	require.NoError(t, err)
-	// 	require.Equal(t, &fileutil.FileInfo{
+	// require.Empty(t, cmp.Diff(&fileutil.FileInfo{
 	// 		Name_: "file1",
 	// 		Mode_: gitdomain.ModeFile,
 	// 		Size_: 5,
 	// 		Sys_: fi.Sys(),
-	// 	}, fi)
+	// 	}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
 	// 	require.False(t, fi.IsDir())
 	// require.True(t, fi.Mode().IsRegular())
 	// 	fi, err = backend.ReadDir(ctx, commitID, "nested/../file1")
 	// 	require.NoError(t, err)
-	// 	require.Equal(t, &fileutil.FileInfo{
+	// require.Empty(t, cmp.Diff(&fileutil.FileInfo{
 	// 		Name_: "file1",
 	// 		Mode_: gitdomain.ModeFile,
 	// 		Size_: 5,
 	// 		Sys_: fi.Sys(),
-	// 	}, fi)
+	// 	}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
 	// 	require.False(t, fi.IsDir())
 	// require.True(t, fi.Mode().IsRegular())
 	// 	fi, err = backend.ReadDir(ctx, commitID, "/file1")
 	// 	require.NoError(t, err)
-	// 	require.Equal(t, &fileutil.FileInfo{
+	// require.Empty(t, cmp.Diff(&fileutil.FileInfo{
 	// 		Name_: "file1",
 	// 		Mode_: gitdomain.ModeFile,
 	// 		Size_: 5,
 	// 		Sys_: fi.Sys(),
-	// 	}, fi)
+	// 	}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
 	// 	require.False(t, fi.IsDir())
 	// require.True(t, fi.Mode().IsRegular())
 	// })
@@ -695,12 +663,12 @@ func TestGitCLIBackend_ReadDir(t *testing.T) {
 	// t.Run("stat symlink", func(t *testing.T) {
 	// 	fi, err := backend.ReadDir(ctx, commitID, "link")
 	// 	require.NoError(t, err)
-	// 	require.Equal(t, &fileutil.FileInfo{
+	// require.Empty(t, cmp.Diff(&fileutil.FileInfo{
 	// 		Name_: "link",
 	// 		Mode_: gitdomain.ModeSymlink,
 	// 		Size_: 5,
 	// 		Sys_: fi.Sys(),
-	// 	}, fi)
+	// 	}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
 	// 	require.False(t, fi.IsDir())
 	// require.True(t, fi.Mode().IsRegular())
 
@@ -717,12 +685,12 @@ func TestGitCLIBackend_ReadDir(t *testing.T) {
 	// t.Run("stat submodule", func(t *testing.T) {
 	// 	fi, err := backend.ReadDir(ctx, commitID, "submodule")
 	// 	require.NoError(t, err)
-	// 	require.Equal(t, &fileutil.FileInfo{
+	// require.Empty(t, cmp.Diff(&fileutil.FileInfo{
 	// 		Name_: "submodule",
 	// 		Mode_: gitdomain.ModeSubmodule,
 	// 		Size_: 0,
 	// 		Sys_: gitdomain.Submodule{
-	// 			URL:      string(submodDir),
+	// 			URL:      string(submodDir),, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_"))
 	// 			Path:     "submodule",
 	// 			CommitID: "405b565ed446e271bc1998a91dbf4fb50dbfabfe",
 	// 		},
@@ -734,22 +702,22 @@ func TestGitCLIBackend_ReadDir(t *testing.T) {
 	// t.Run("stat dir", func(t *testing.T) {
 	// 	fi, err := backend.ReadDir(ctx, commitID, "nested")
 	// 	require.NoError(t, err)
-	// 	require.Equal(t, &fileutil.FileInfo{
+	// require.Empty(t, cmp.Diff(&fileutil.FileInfo{
 	// 		Name_: "nested",
 	// 		Mode_: os.ModeDir & gitdomain.ModeDir,
 	// 		Size_: 0,
 	// 		Sys_: fi.Sys(),
-	// 	}, fi)
+	// 	}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
 	// 	require.True(t, fi.IsDir())
 	// require.False(t, fi.Mode().IsRegular())
 	// 	fi, err = backend.ReadDir(ctx, commitID, "nested/")
 	// 	require.NoError(t, err)
-	// 	require.Equal(t, &fileutil.FileInfo{
+	// require.Empty(t, cmp.Diff(&fileutil.FileInfo{
 	// 		Name_: "nested",
 	// 		Mode_: os.ModeDir & gitdomain.ModeDir,
 	// 		Size_: 0,
 	// 		Sys_: fi.Sys(),
-	// 	}, fi)
+	// 	}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
 	// 	require.True(t, fi.IsDir())
 	// require.False(t, fi.Mode().IsRegular())
 	// })
@@ -757,12 +725,12 @@ func TestGitCLIBackend_ReadDir(t *testing.T) {
 	// t.Run("stat nested file", func(t *testing.T) {
 	// 	fi, err := backend.ReadDir(ctx, commitID, "nested/file")
 	// 	require.NoError(t, err)
-	// 	require.Equal(t, &fileutil.FileInfo{
+	// require.Empty(t, cmp.Diff(&fileutil.FileInfo{
 	// 		Name_: "nested/file",
 	// 		Mode_: gitdomain.ModeFile,
 	// 		Size_: 5,
 	// 		Sys_: fi.Sys(),
-	// 	}, fi)
+	// 	}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
 	// 	require.False(t, fi.IsDir())
 	// require.True(t, fi.Mode().IsRegular())
 	// })

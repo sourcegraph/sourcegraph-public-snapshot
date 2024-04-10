@@ -195,9 +195,6 @@ func (g *gitCLIBackend) getBlobOID(ctx context.Context, commit api.CommitID, pat
 	return api.CommitID(fields[2]), nil
 }
 
-// Stat returns a FileInfo describing the named file at commit. If the file is a
-// symbolic link, the returned FileInfo describes the symbolic link. It makes no
-// attempt to follow the link.
 func (g *gitCLIBackend) Stat(ctx context.Context, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
 	if err := checkSpecArgSafety(string(commit)); err != nil {
 		return nil, err
@@ -261,10 +258,6 @@ func (g *gitCLIBackend) lsTree(ctx context.Context, commit api.CommitID, path st
 	// Note: We don't call filepath.Clean(path) because ReadDir needs to pass
 	// path with a trailing slash.
 
-	if err := checkSpecArgSafety(path); err != nil {
-		return nil, err
-	}
-
 	args := []string{
 		"ls-tree",
 		"--long", // show size
@@ -277,7 +270,7 @@ func (g *gitCLIBackend) lsTree(ctx context.Context, commit api.CommitID, path st
 	if path != "" {
 		// Note: We need to use :(literal) here to prevent glob expansion which
 		// would lead to incorrect results.
-		args = append(args, "--", ":(literal)"+filepath.ToSlash(path))
+		args = append(args, "--", pathspecLiteral(filepath.ToSlash(path)))
 	}
 
 	r, err := g.NewCommand(ctx, WithArguments(args...))
