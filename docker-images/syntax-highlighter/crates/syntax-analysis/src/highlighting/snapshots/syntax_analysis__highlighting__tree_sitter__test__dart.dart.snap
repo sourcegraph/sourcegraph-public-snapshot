@@ -4,6 +4,15 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
   // Libraries and Imports
 //^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  library some.lib.here;
+//^^^^^^^ Keyword
+//        ^^^^ Identifier
+//            ^ PunctuationDelimiter
+//             ^^^ Identifier
+//                ^ PunctuationDelimiter
+//                 ^^^^ Identifier
+//                     ^ PunctuationDelimiter
+  
   import 'dart:math';
 //^^^^^^ Keyword
 //       ^^^^^^^^^^^ StringLiteral
@@ -16,11 +25,11 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //       ^^^^^ Keyword
 //             ^^^^^^ IdentifierType
     String name;
-//  ^^^^^^ IdentifierType
+//  ^^^^^^ IdentifierBuiltinType
 //         ^^^^ Identifier
 //             ^ PunctuationDelimiter
     int age;
-//  ^^^ IdentifierType
+//  ^^^ IdentifierBuiltinType
 //      ^^^ Identifier
 //         ^ PunctuationDelimiter
   
@@ -67,25 +76,25 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
     // Variables and Data Types
 //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
     int age = 30;
-//  ^^^ IdentifierType
+//  ^^^ IdentifierBuiltinType
 //      ^^^ Identifier
 //          ^ IdentifierOperator
 //            ^^ NumericLiteral
 //              ^ PunctuationDelimiter
     double pi = 3.14;
-//  ^^^^^^ IdentifierType
+//  ^^^^^^ IdentifierBuiltinType
 //         ^^ Identifier
 //            ^ IdentifierOperator
 //              ^^^^ NumericLiteral
 //                  ^ PunctuationDelimiter
     String name = "John Doe";
-//  ^^^^^^ IdentifierType
+//  ^^^^^^ IdentifierBuiltinType
 //         ^^^^ Identifier
 //              ^ IdentifierOperator
 //                ^^^^^^^^^^ StringLiteral
 //                          ^ PunctuationDelimiter
     bool isStudent = true;
-//  ^^^^ IdentifierType
+//  ^^^^ IdentifierBuiltinType
 //       ^^^^^^^^^ Identifier
 //                 ^ IdentifierOperator
 //                   ^^^^ Keyword
@@ -114,7 +123,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //  ^^^^^^^^ Comment
     for (int i = 0; i < 5; i++) {
 //  ^^^ Keyword
-//       ^^^ IdentifierType
+//       ^^^ IdentifierBuiltinType
 //           ^ Identifier
 //             ^ IdentifierOperator
 //               ^ NumericLiteral
@@ -134,8 +143,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
     }
   
     List<String> fruits = ['apple', 'banana', 'cherry'];
-//  ^^^^ IdentifierType
-//       ^^^^^^ IdentifierType
+//  ^^^^ IdentifierBuiltinType
+//       ^^^^^^ IdentifierBuiltinType
 //               ^^^^^^ Identifier
 //                      ^ IdentifierOperator
 //                         ^^^^^^^ StringLiteral
@@ -146,7 +155,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                                     ^ PunctuationDelimiter
     for (String fruit in fruits) {
 //  ^^^ Keyword
-//       ^^^^^^ IdentifierType
+//       ^^^^^^ IdentifierBuiltinType
 //              ^^^^^ Identifier
 //                    ^^ Keyword
 //                       ^^^^^^ Identifier
@@ -161,11 +170,13 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
     // Functions
 //  ^^^^^^^^^^^^ Comment
     int add(int a, int b) {
-//  ^^^ IdentifierType
+//  ^^^ IdentifierBuiltinType
 //      ^^^ IdentifierFunction
-//          ^^^ IdentifierType
+//          ^^^ IdentifierBuiltinType
+//              ^ IdentifierParameter
 //               ^ PunctuationDelimiter
-//                 ^^^ IdentifierType
+//                 ^^^ IdentifierBuiltinType
+//                     ^ IdentifierParameter
       return a + b;
 //    ^^^^^^ Keyword
 //           ^ Identifier
@@ -206,7 +217,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //  ^^^ Keyword
 //      ^^^^^^^ Identifier
 //              ^ IdentifierOperator
-//                 ^^^ IdentifierType
+//                 ^^^ IdentifierBuiltinType
 //                      ^ NumericLiteral
 //                       ^ PunctuationDelimiter
 //                         ^ NumericLiteral
@@ -225,10 +236,10 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                ^ PunctuationDelimiter
   
     Map<String, String> capitals = {'USA': 'Washington, D.C.', 'France': 'Paris'};
-//  ^^^ IdentifierType
-//      ^^^^^^ IdentifierType
+//  ^^^ IdentifierBuiltinType
+//      ^^^^^^ IdentifierBuiltinType
 //            ^ PunctuationDelimiter
-//              ^^^^^^ IdentifierType
+//              ^^^^^^ IdentifierBuiltinType
 //                      ^^^^^^^^ Identifier
 //                               ^ IdentifierOperator
 //                                  ^^^^^ StringLiteral
@@ -251,10 +262,11 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
     try {
 //  ^^^ Keyword
       int result = 12 ~/ 0;
-//    ^^^ IdentifierType
+//    ^^^ IdentifierBuiltinType
 //        ^^^^^^ Identifier
 //               ^ IdentifierOperator
 //                 ^^ NumericLiteral
+//                    ^^ IdentifierOperator
 //                       ^ NumericLiteral
 //                        ^ PunctuationDelimiter
       print("Result: $result");
@@ -290,7 +302,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                   ^ PunctuationDelimiter
   
     int random = Random().nextInt(100);
-//  ^^^ IdentifierType
+//  ^^^ IdentifierBuiltinType
 //      ^^^^^^ Identifier
 //             ^ IdentifierOperator
 //               ^^^^^^ IdentifierType
@@ -321,25 +333,26 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   }
   
   (String, int) userInfo(Map<String, dynamic> json) {
-// ^^^^^^ IdentifierType
+// ^^^^^^ IdentifierBuiltinType
 //       ^ PunctuationDelimiter
-//         ^^^ IdentifierType
+//         ^^^ IdentifierBuiltinType
 //              ^^^^^^^^ IdentifierFunction
-//                       ^^^ IdentifierType
-//                           ^^^^^^ IdentifierType
+//                       ^^^ IdentifierBuiltinType
+//                           ^^^^^^ IdentifierBuiltinType
 //                                 ^ PunctuationDelimiter
 //                                   ^^^^^^^ IdentifierType
+//                                            ^^^^ IdentifierParameter
     return (json['name'] as String, json['height'] as int);
 //  ^^^^^^ Keyword
 //          ^^^^ Identifier
 //               ^^^^^^ StringLiteral
 //                       ^^ Keyword
-//                          ^^^^^^ IdentifierType
+//                          ^^^^^^ IdentifierBuiltinType
 //                                ^ PunctuationDelimiter
 //                                  ^^^^ Identifier
 //                                       ^^^^^^^^ StringLiteral
 //                                                 ^^ Keyword
-//                                                    ^^^ IdentifierType
+//                                                    ^^^ IdentifierBuiltinType
 //                                                        ^ PunctuationDelimiter
   }
   
@@ -347,7 +360,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
   Future<String> fetchData() {
 //^^^^^^ IdentifierType
-//       ^^^^^^ IdentifierType
+//       ^^^^^^ IdentifierBuiltinType
 //               ^^^^^^^^^ IdentifierFunction
     return Future.delayed(Duration(seconds: 2), () => "Data loaded");
 //  ^^^^^^ Keyword
@@ -355,6 +368,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //               ^ PunctuationDelimiter
 //                ^^^^^^^ Identifier
 //                        ^^^^^^^^ IdentifierType
+//                                 ^^^^^^^ IdentifierParameter
 //                                        ^ IdentifierOperator
 //                                          ^ NumericLiteral
 //                                            ^ PunctuationDelimiter
@@ -371,7 +385,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //             ^^^^^^^^^ IdentifierFunction
 //                         ^^^^^ Keyword
     String data = await fetchData();
-//  ^^^^^^ IdentifierType
+//  ^^^^^^ IdentifierBuiltinType
 //         ^^^^ Identifier
 //              ^ IdentifierOperator
 //                ^^^^^ Keyword

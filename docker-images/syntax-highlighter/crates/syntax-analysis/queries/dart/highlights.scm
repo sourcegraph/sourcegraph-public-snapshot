@@ -61,6 +61,7 @@
  ">="
  "<="
  "||"
+ "~/"
  (increment_operator)
  (is_operator)
  (prefix_operator)
@@ -168,6 +169,7 @@
     ; (hex_floating_point_literal)
 ] @number
 
+(string_literal) @string
 (symbol_literal (identifier) @constant) @constant
 (true) @boolean
 (false) @boolean
