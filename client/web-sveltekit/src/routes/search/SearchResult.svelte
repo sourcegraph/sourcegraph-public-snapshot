@@ -45,7 +45,7 @@
         overflow: hidden;
         display: flex;
         flex-wrap: wrap;
-        align-items: center;
+        align-items: baseline;
 
         // .title-inner
         overflow-wrap: anywhere;
