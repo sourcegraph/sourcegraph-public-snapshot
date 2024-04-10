@@ -252,7 +252,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 telemetryRecorder: platformContext.telemetryRecorder,
             })
         },
-        [caseSensitive, location, navigate, props, submittedURLQuery]
+        [caseSensitive, location, navigate, props, submittedURLQuery, platformContext.telemetryRecorder]
     )
 
     const hasResultsToAggregate = results?.state === 'complete' ? (results?.results.length ?? 0) > 0 : true
