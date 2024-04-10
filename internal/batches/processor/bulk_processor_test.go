@@ -64,7 +64,7 @@ func TestBulkProcessor(t *testing.T) {
 	sqlDB := dbtest.NewDB(t)
 	tx := dbtest.NewTx(t, sqlDB)
 	db := database.NewDB(logger, sqlDB)
-	bstore := store.New(database.NewDBWith(logger, basestore.NewWithHandle(basestore.NewHandleWithTx(tx, sql.TxOptions{}))), &observation.TestContext, nil)
+	bstore := store.New(database.NewDBWith(logger, basestore.NewWithHandle(basestore.NewHandleWithTx(tx, sql.TxOptions{}))), observation.TestContextTB(t), nil)
 	wstore := database.OutboundWebhookJobsWith(bstore, nil)
 
 	user := bt.CreateTestUser(t, db, true)

@@ -27,7 +27,7 @@ func TestUploadExpirer(t *testing.T) {
 	policySvc := setupMockPolicyService()
 	policyMatcher := testUploadExpirerMockPolicyMatcher()
 	repoStore := defaultMockRepoStore()
-	expirationMetrics := NewExpirationMetrics(&observation.TestContext)
+	expirationMetrics := NewExpirationMetrics(observation.TestContextTB(t))
 
 	uploadExpirer := &expirer{
 		store:         uploadSvc,

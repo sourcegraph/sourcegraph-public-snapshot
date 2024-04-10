@@ -15,7 +15,7 @@ func TestDerivativeGraphKey(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	if _, _, err := DerivativeGraphKey(ctx, store); err != nil {
 		t.Fatalf("unexpected error: %s", err)

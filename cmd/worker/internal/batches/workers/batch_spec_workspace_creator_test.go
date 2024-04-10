@@ -38,7 +38,7 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 
 	user := bt.CreateTestUser(t, db, true)
 
-	s := store.New(db, &observation.TestContext, nil)
+	s := store.New(db, observation.TestContextTB(t), nil)
 
 	batchSpec, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpecYAML)
 	if err != nil {
@@ -196,7 +196,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	s := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	s := store.NewWithClock(db, observation.TestContextTB(t), nil, clock)
 
 	creator := &batchSpecWorkspaceCreator{store: s, logger: logtest.Scoped(t)}
 
@@ -809,7 +809,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Importing(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	s := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	s := store.NewWithClock(db, observation.TestContextTB(t), nil, clock)
 
 	testSpecYAML := `
 name: my-unique-name
@@ -867,7 +867,7 @@ func TestBatchSpecWorkspaceCreatorProcess_NoDiff(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	s := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	s := store.NewWithClock(db, observation.TestContextTB(t), nil, clock)
 
 	testSpecYAML := `
 name: my-unique-name
@@ -925,7 +925,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Secrets(t *testing.T) {
 
 	repos, _ := bt.CreateTestRepos(t, ctx, db, 4)
 
-	s := store.New(db, &observation.TestContext, nil)
+	s := store.New(db, observation.TestContextTB(t), nil)
 
 	secret := &database.ExecutorSecret{
 		Key:       "FOO",

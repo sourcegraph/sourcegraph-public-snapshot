@@ -72,7 +72,7 @@ UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 		t.Fatalf("unexpected error while inserting test data: %s", err)
 	}
 
-	fs := gitserverfs.New(&observation.TestContext, root)
+	fs := gitserverfs.New(observation.TestContextTB(t), root)
 	require.NoError(t, fs.Initialize())
 	cleanupRepos(
 		actor.WithInternalActor(context.Background()),
@@ -136,7 +136,7 @@ func TestCleanupInactive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fs := gitserverfs.New(&observation.TestContext, root)
+	fs := gitserverfs.New(observation.TestContextTB(t), root)
 	require.NoError(t, fs.Initialize())
 
 	cleanupRepos(
@@ -178,7 +178,7 @@ func TestCleanupWrongShard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		fs := gitserverfs.New(&observation.TestContext, root)
+		fs := gitserverfs.New(observation.TestContextTB(t), root)
 		require.NoError(t, fs.Initialize())
 
 		cleanupRepos(
@@ -218,7 +218,7 @@ func TestCleanupWrongShard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		fs := gitserverfs.New(&observation.TestContext, root)
+		fs := gitserverfs.New(observation.TestContextTB(t), root)
 		require.NoError(t, fs.Initialize())
 
 		cleanupRepos(
@@ -258,7 +258,7 @@ func TestCleanupWrongShard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		fs := gitserverfs.New(&observation.TestContext, root)
+		fs := gitserverfs.New(observation.TestContextTB(t), root)
 		require.NoError(t, fs.Initialize())
 
 		cleanupRepos(
@@ -334,7 +334,7 @@ func TestGitGCAuto(t *testing.T) {
 		t.Fatalf("expected git to report objects but none found")
 	}
 
-	fs := gitserverfs.New(&observation.TestContext, root)
+	fs := gitserverfs.New(observation.TestContextTB(t), root)
 	require.NoError(t, fs.Initialize())
 
 	cleanupRepos(
@@ -464,7 +464,7 @@ func TestCleanupExpired(t *testing.T) {
 		return "done", nil
 	}
 
-	fs := gitserverfs.New(&observation.TestContext, root)
+	fs := gitserverfs.New(observation.TestContextTB(t), root)
 	require.NoError(t, fs.Initialize())
 
 	cleanupRepos(
@@ -531,7 +531,7 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 		root := t.TempDir()
 		repoExists, repoNotExists := initRepos(root)
 
-		fs := gitserverfs.New(&observation.TestContext, root)
+		fs := gitserverfs.New(observation.TestContextTB(t), root)
 		require.NoError(t, fs.Initialize())
 
 		cleanupRepos(
@@ -563,7 +563,7 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 		root := t.TempDir()
 		repoExists, repoNotExists := initRepos(root)
 
-		fs := gitserverfs.New(&observation.TestContext, root)
+		fs := gitserverfs.New(observation.TestContextTB(t), root)
 		require.NoError(t, fs.Initialize())
 
 		cleanupRepos(
@@ -718,7 +718,7 @@ func TestCleanupOldLocks(t *testing.T) {
 		}
 	}
 
-	fs := gitserverfs.New(&observation.TestContext, root)
+	fs := gitserverfs.New(observation.TestContextTB(t), root)
 	require.NoError(t, fs.Initialize())
 
 	cleanupRepos(
@@ -885,7 +885,7 @@ func isEmptyDir(path string) (bool, error) {
 func TestFreeUpSpace(t *testing.T) {
 	logger := logtest.Scoped(t)
 	root := t.TempDir()
-	fs := gitserverfs.New(&observation.TestContext, root)
+	fs := gitserverfs.New(observation.TestContextTB(t), root)
 	require.NoError(t, fs.Initialize())
 	t.Run("no error if no space requested and no repos", func(t *testing.T) {
 		if err := freeUpSpace(context.Background(), logger, newMockedGitserverDB(), fs, "test-gitserver", &fakeDiskUsage{}, 10, 0); err != nil {

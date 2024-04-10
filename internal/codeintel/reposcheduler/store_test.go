@@ -237,7 +237,7 @@ func testPreciseStoreWithoutConfigurationPolicies(t *testing.T, db database.DB) 
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
-	return NewPreciseStore(&observation.TestContext, db)
+	return NewPreciseStore(observation.TestContextTB(t), db)
 }
 
 func testSyntacticStoreWithoutConfigurationPolicies(t *testing.T, db database.DB) RepositorySchedulingStore {
@@ -245,7 +245,7 @@ func testSyntacticStoreWithoutConfigurationPolicies(t *testing.T, db database.DB
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
-	return NewSyntacticStore(&observation.TestContext, db)
+	return NewSyntacticStore(observation.TestContextTB(t), db)
 }
 
 func assertRepoList(t *testing.T, store RepositorySchedulingStore, batchOptions RepositoryBatchOptions, now time.Time, want []int) {

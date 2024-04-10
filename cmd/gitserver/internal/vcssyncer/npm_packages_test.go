@@ -121,7 +121,7 @@ func TestNpmCloneCommand(t *testing.T) {
 
 	depsSvc := dependencies.TestService(database.NewDB(logger, dbtest.NewDB(t)))
 
-	fs := gitserverfs.New(&observation.TestContext, dir)
+	fs := gitserverfs.New(observation.TestContextTB(t), dir)
 	require.NoError(t, fs.Initialize())
 
 	s := NewNpmPackagesSyncer(
