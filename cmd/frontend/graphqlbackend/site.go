@@ -681,8 +681,15 @@ func (c *codyContextFiltersResolver) Raw() (*string, error) {
 	return &str, nil
 }
 
-func (r *siteResolver) CodyContextFilters(_ context.Context, _ CodyContextFiltersArgs) *codyContextFiltersResolver {
-	return &codyContextFiltersResolver{ccf: conf.Get().SiteConfig().CodyContextFilters}
+func (r *siteResolver) CodyContextFilters(_ context.Context, args *CodyContextFiltersArgs) (*codyContextFiltersResolver, error) {
+	v := args.Version
+	if v < 1 {
+		return nil, errors.New("invalid version number")
+	}
+	if v != 1 {
+		return nil, errors.New("version is not supported")
+	}
+	return &codyContextFiltersResolver{ccf: conf.Get().SiteConfig().CodyContextFilters}, nil
 }
 
 func allowEdit(before, after string, allowlist []string) ([]string, bool) {
