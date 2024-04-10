@@ -80,6 +80,7 @@
     "fzf": "^0.5.2",
     "highlight.js": "^10.0.0",
     "hotkeys-js": "^3.13.7",
+    "numeral": "^2.0.6",
     "prismjs": "^1.29.0",
     "ts-key-enum": "^2.0.12",
     "wonka": "^6.3.4"

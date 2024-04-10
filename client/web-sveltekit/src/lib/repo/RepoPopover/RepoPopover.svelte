@@ -23,6 +23,7 @@ For example:
     import { RepoPopoverFields } from './RepoPopover.gql'
 
     export let repo: RepoPopoverFields
+<<<<<<< HEAD
     export let withHeader = false
 
     const CENTER_DOT = '\u00B7' // interpunct
