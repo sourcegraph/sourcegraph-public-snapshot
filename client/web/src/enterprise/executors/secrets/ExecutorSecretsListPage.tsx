@@ -146,18 +146,18 @@ const ExecutorSecretsListPage: FC<ExecutorSecretsListPageProps> = ({
             telemetryRecorder.recordEvent(`${areaType}.executors.addSecret`, 'click')
             setShowAddModal(true)
         },
-        [telemetryRecorder]
+        [areaType, telemetryRecorder]
     )
 
     const closeModal = useCallback(() => {
         telemetryRecorder.recordEvent(`${areaType}.executors.addSecret`, 'cancel')
         setShowAddModal(false)
-    }, [telemetryRecorder])
+    }, [areaType, telemetryRecorder])
     const afterAction = useCallback(() => {
         telemetryRecorder.recordEvent(`${areaType}.executors.addSecret`, 'submit')
         setShowAddModal(false)
         refetchAll()
-    }, [refetchAll, telemetryRecorder])
+    }, [areaType, refetchAll, telemetryRecorder])
 
     return (
         <>

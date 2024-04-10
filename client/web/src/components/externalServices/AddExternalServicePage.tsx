@@ -68,7 +68,7 @@ export const AddExternalServicePage: FC<Props> = ({
         telemetryRecorder.recordEvent('admin.codeHostConnections.add', 'view', {
             metadata: { kind: v2ExternalServiceKinds[externalService.kind] },
         })
-    }, [telemetryService, telemetryRecorder])
+    }, [telemetryService, telemetryRecorder, externalService.kind])
 
     useEffect(() => {
         setConfig(externalService.defaultConfig)

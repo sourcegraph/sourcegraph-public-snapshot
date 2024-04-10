@@ -188,7 +188,7 @@ export const AnalyticsCodeIntelPage: React.FC<Props> = ({ telemetryRecorder }) =
             telemetryRecorder,
         }
 
-        return [stats, legends, calculatorProps, telemetryRecorder]
+        return [stats, legends, calculatorProps]
     }, [
         data,
         dateRange.value,
@@ -197,6 +197,7 @@ export const AnalyticsCodeIntelPage: React.FC<Props> = ({ telemetryRecorder }) =
         kindToMinPerItem.crossRepo,
         kindToMinPerItem.inApp,
         kindToMinPerItem.precise,
+        telemetryRecorder,
     ])
 
     if (error) {
