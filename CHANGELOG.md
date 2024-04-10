@@ -14,6 +14,17 @@ All notable changes to Sourcegraph are documented in this file.
 <!-- START CHANGELOG -->
 
 ## Unreleased (Monthly Release - April 5th, 2024)
+## Unreleased
+
+- Added syntax highlighting for the [PKl](https://pkl-lang.org/) configuration language. [#61478](https://github.com/sourcegraph/sourcegraph/pull/61478)
+
+### Fixed
+
+- Updated the Docker-in-Docker image to 26.0.0 to resolve several vulnerabilities. [#61735](https://github.com/sourcegraph/sourcegraph/pull/61735)
+
+## Unreleased (April Patch Release - 22nd April, 2024)
+
+## 5.3.9104
 
 ### Added
 
