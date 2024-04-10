@@ -1,6 +1,7 @@
 <script lang="ts">
     import { mdiGithub, mdiStarOutline } from '@mdi/js'
     import { formatDistanceToNow } from 'date-fns'
+    import { truncate } from 'lodash'
 
     import Avatar from '$lib/Avatar.svelte'
     import Icon from '$lib/Icon.svelte'
@@ -62,22 +63,29 @@
         </div>
         <div class="divider" />
         <div class="last-commit">
-            <div class="title">
-                <small>Last Commit</small>
-            </div>
-            <div class="commit-info">
-                <div class="subject-and-commit">
-                    <div class="subject">
-                        <!-- TODO: @jason something strange happens when text-overflow is set to ellipsis.
-                it looks like the text cuts off when the ellipses isn't needed and it adds extra padding. -->
-                        <small>{subject}<small /></small>
+            <div class="title-and-commit">
+                <div class="title">
+                    <small>Last Commit</small>
+                </div>
+                <div class="commit-and-number">
+                    <div class="commit">
+                        <!--
+                        Since the popover has a fixed width, we use the lodash
+                        truncate() function to truncate the subject to 30 characters.
+                        We do this instead of using text-overflow: ellipsis because
+                        this adds some unwanted padding to the end of the string,
+                        which requires a hacky, less maintanable workaround in the CSS.
+                        -->
+                        <small>{truncate(subject, { length: 30 })}<small /></small>
                     </div>
                     {#if commitNumber}
-                        <div class="commit-number">
+                        <div class="number">
                             <a href={url}><small>{commitNumber}</small></a>
                         </div>
                     {/if}
                 </div>
+            </div>
+            <div class="commit-info">
                 <div class="author-and-time">
                     {#if avatar}
                         <Avatar {avatar} --avatar-size="1.0rem" />
@@ -104,8 +112,8 @@
             </div>
             <!--div class="license"><small>{license}</small></div-->
             <div class="stat">
-                <Icon svgPath={mdiStarOutline} size={18} style="margin-right: 0.15rem;" />
-                <small>{formatNumber(stars)} </small>
+                <Icon svgPath={mdiStarOutline} size={16} style="margin-right: 0.15rem;" />
+                <small>{formatNumber(stars)}</small>
             </div>
         </div>
     </div>
@@ -114,7 +122,7 @@
 <style lang="scss">
     .container {
         border-radius: var(--popover-border-radius);
-        border: 1px solid var(--border-color);
+        border: 0rem solid var(--border-color);
         width: 400px;
         padding: 0;
     }
@@ -145,45 +153,48 @@
         }
 
         .tag {
-            align-self: center;
+            text-align: center;
             background-color: var(--subtle-bg);
             border-radius: 1rem;
             color: var(--primary);
             font-family: var(--monospace-font-family);
-            // justify-self: center;
             margin-right: 0.5rem;
-            padding: 0rem 0.25rem;
+            padding: 0rem 0.5rem;
         }
     }
 
     .last-commit {
         display: flex;
-        flex-flow: row nowrap;
+        flex-flow: column nowrap;
         justify-content: space-between;
         margin-top: 0.5rem;
         padding: 0rem 0.75rem;
 
-        .title {
-            color: var(--text-muted);
-        }
-
-        .subject-and-commit {
-            align-items: center;
+        .title-and-commit {
             display: flex;
             flex-flow: row nowrap;
-            justify-content: flex-end;
-            width: 200px;
+            justify-content: space-between;
 
-            .subject {
-                color: var(--text-body);
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                margin-right: 0.25rem;
+            .title {
+                color: var(--text-muted);
             }
 
-            .commit-number {
-                color: var(--text-muted);
+            .commit-and-number {
+                display: flex;
+                flex-flow: row nowrap;
+                width: 200px;
+
+                .commit {
+                    color: var(--text-body);
+                    margin-right: 0.25rem;
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                    white-space: nowrap;
+                }
+
+                .number {
+                    color: var(--text-muted);
+                }
             }
         }
 
@@ -211,6 +222,7 @@
         display: flex;
         flex-flow: row nowrap;
         justify-content: space-between;
+        align-items: center;
         margin-bottom: 0.5rem;
         margin-top: 0.5rem;
         padding: 0rem 0.75rem;
@@ -218,6 +230,7 @@
         .stats {
             display: flex;
             flex-flow: row nowrap;
+            align-content: center;
             font-size: 1rem;
             padding: 0rem;
 
