@@ -15,10 +15,7 @@
     import Avatar from '$lib/Avatar.svelte'
     import { ExternalServiceKind } from '$lib/graphql-types'
     import Icon from '$lib/Icon.svelte'
-    import Popover from '$lib/Popover.svelte'
-    import Button from '$lib/wildcard/Button.svelte'
 
-    import RepoMenu from './RepoMenu.svelte'
     import { RepoPopoverFields, CodeHostFields } from './RepoPopover.gql'
 
     export let repo: RepoPopoverFields
@@ -72,98 +69,90 @@
     }
 </script>
 
-<Popover let:registerTrigger let:toggle placement="bottom-start">
-    <Button variant="secondary" size="sm" outline>
-        <svelte:fragment slot="custom" let:buttonClass>
-            <button use:registerTrigger class="{buttonClass} progress-button" on:click={() => toggle()}>
-                <RepoMenu {name} {codeHostIcon} />
-            </button>
-        </svelte:fragment>
-    </Button>
-    <div slot="content" class="container">
-        {#if withHeader}
-            <div class="header">
-                <div class="icon-name-access">
-                    <Icon svgPath={mdiGitlab} />
-                    <h4 class="repo-name">{name}</h4>
-                    <div class="access">
-                        <small>{isPrivate ? 'Private' : 'Public'}</small>
-                    </div>
-                </div>
-                <div class="code-host">
-                    <Icon svgPath={codeHostIcon} --color="var(--text-body)" --size={24} />
-                    <div><small>{capitalize(codeHostKind)}</small></div>
+<div class="container">
+    {#if withHeader}
+        <div class="header">
+            <div class="icon-name-access">
+                <Icon svgPath={mdiGitlab} />
+                <h4 class="repo-name">{name}</h4>
+                <div class="access">
+                    <small>{isPrivate ? 'Private' : 'Public'}</small>
                 </div>
             </div>
-            <div class="divider" />
-        {/if}
-        <div class="description-and-tags">
-            <div class="description">{description}</div>
-            <div class="tags">
-                {#if tags.length > 0}
-                    {#each tags as tag}
-                        <div class="tag"><small>{tag.name}</small></div>
-                    {/each}
-                {/if}
+            <div class="code-host">
+                <Icon svgPath={codeHostIcon} --color="var(--text-body)" --size={24} />
+                <div><small>{capitalize(codeHostKind)}</small></div>
             </div>
         </div>
         <div class="divider" />
-        <div class="last-commit">
-            <div class="title-and-commit">
-                <div class="title">
-                    <small>Last Commit</small>
-                </div>
-                <div class="commit-and-number">
-                    <div class="commit">
-                        <!--
+    {/if}
+    <div class="description-and-tags">
+        <div class="description">{description}</div>
+        <div class="tags">
+            {#if tags.length > 0}
+                {#each tags as tag}
+                    <div class="tag"><small>{tag.name}</small></div>
+                {/each}
+            {/if}
+        </div>
+    </div>
+    <div class="divider" />
+    <div class="last-commit">
+        <div class="title-and-commit">
+            <div class="title">
+                <small>Last Commit</small>
+            </div>
+            <div class="commit-and-number">
+                <div class="commit">
+                    <!--
                         Since the popover has a fixed width, we use the lodash
                         truncate() function to truncate the subject to 30 characters.
                         We do this instead of using text-overflow: ellipsis because
                         this adds some unwanted padding to the end of the string,
                         which requires a hacky, less maintanable workaround in the CSS.
                         -->
-                        <small>{truncate(subject, { length: 30 })}<small /></small>
-                    </div>
-                    {#if commitNumber}
-                        <div class="number">
-                            <a href={url}><small>{commitNumber}</small></a>
-                        </div>
-                    {/if}
+                    <small>{truncate(subject, { length: 30 })}<small /></small>
                 </div>
-            </div>
-            <div class="commit-info">
-                <div class="author-and-time">
-                    {#if avatar}
-                        <Avatar {avatar} --avatar-size="1.0rem" />
-                    {/if}
-                    <div class="author">
-                        <small>{author}</small>
+                {#if commitNumber}
+                    <div class="number">
+                        <a href={url}><small>{commitNumber}</small></a>
                     </div>
-                    <div class="separator">{CENTER_DOT}</div>
-
-                    {#if commitDate}
-                        <div class="commit-date">
-                            <small>{formatDistanceToNow(commitDate, { addSuffix: false })}</small>
-                        </div>
-                    {/if}
-                </div>
+                {/if}
             </div>
         </div>
-        <div class="divider" />
-        <div class="repo-stats">
-            <div class="stats">
-                <div class="stat"><small>{lang}</small></div>
-            </div>
-            <div class="stat">
-                <Icon svgPath={mdiStarOutline} size={16} style="margin-right: 0.15rem;" />
-                <small>{formatNumber(stars)}</small>
+        <div class="commit-info">
+            <div class="author-and-time">
+                {#if avatar}
+                    <Avatar {avatar} --avatar-size="1.0rem" />
+                {/if}
+                <div class="author">
+                    <small>{author}</small>
+                </div>
+                <div class="separator">{CENTER_DOT}</div>
+
+                {#if commitDate}
+                    <div class="commit-date">
+                        <small>{formatDistanceToNow(commitDate, { addSuffix: false })}</small>
+                    </div>
+                {/if}
             </div>
         </div>
     </div>
-</Popover>
+    <div class="divider" />
+    <div class="repo-stats">
+        <div class="stats">
+            <div class="stat"><small>{lang}</small></div>
+        </div>
+        <div class="stat">
+            <Icon svgPath={mdiStarOutline} size={16} style="margin-right: 0.15rem;" />
+            <small>{formatNumber(stars)}</small>
+        </div>
+    </div>
+</div>
 
 <style lang="scss">
     .container {
+        border: 1px solid var(--border-color);
         border-radius: var(--popover-border-radius);
         width: 400px;
         // ensures the dividers extend to the edge of the popover.
