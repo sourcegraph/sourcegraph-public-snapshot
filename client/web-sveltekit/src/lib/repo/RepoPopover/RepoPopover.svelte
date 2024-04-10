@@ -31,7 +31,6 @@
     let commitNumber = repo.commit?.abbreviatedOID
     let author = repo.commit?.author.person.name
     let commitDate = repo.commit?.author.date
-    let url = repo.commit?.canonicalURL
     let avatar = repo.commit?.author.person
 
     let lang = repo.commit?.repository?.language
@@ -115,7 +114,7 @@
                 </div>
                 {#if commitNumber}
                     <div class="number">
-                        <a href={url}><small>{commitNumber}</small></a>
+                        <small>{commitNumber}</small>
                     </div>
                 {/if}
             </div>
