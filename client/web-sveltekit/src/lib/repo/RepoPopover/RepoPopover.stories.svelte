@@ -14,6 +14,7 @@
 <script lang="ts">
     faker.seed(1)
     let repo: RepoPopoverFields = {
+        name: `${faker.lorem.word()}/${faker.lorem.word()}`,
         description: faker.lorem.sentence(),
         stars: faker.datatype.number(),
         tags: {

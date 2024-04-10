@@ -4,6 +4,8 @@
 
     import Avatar from '$lib/Avatar.svelte'
     import Icon from '$lib/Icon.svelte'
+    import Popover from '$lib/Popover.svelte'
+    import Button from '$lib/wildcard/Button.svelte'
 
     import { RepoPopoverFields } from './RepoPopover.gql'
 
@@ -11,6 +13,7 @@
 
     const CENTER_DOT = '\u00B7' // interpunct
 
+    let name = repo.name
     let tags = repo.tags.nodes
     let description = repo.description
     let subject = repo.commit?.subject
@@ -18,7 +21,7 @@
     let author = repo.commit?.author.person.name
     let commitDate = repo.commit?.author.date
     let lang = repo.commit?.repository?.language
-    let stars = repo.stars.toString()
+    let stars = repo.stars
     let url = repo.commit?.canonicalURL
     let avatar = repo.commit?.author.person
 
@@ -36,66 +39,75 @@
     }
 </script>
 
-<div class="container">
-    <div class="description-and-tags">
-        <div class="description">{description}</div>
-        <div class="tags">
-            {#if tags.length > 0}
-                {#each tags as tag}
-                    <div class="tag"><small>{tag.name}</small></div>
-                {/each}
-            {/if}
+<Popover let:registerTrigger let:toggle placement="bottom-start">
+    <Button variant="secondary" size="sm" outline>
+        <svelte:fragment slot="custom" let:buttonClass>
+            <button use:registerTrigger class="{buttonClass} progress-button" on:click={() => toggle()}>
+                <div>{name}</div>
+            </button>
+        </svelte:fragment>
+    </Button>
+    <div slot="content" class="container">
+        <div class="description-and-tags">
+            <div class="description">{description}</div>
+            <div class="tags">
+                {#if tags.length > 0}
+                    {#each tags as tag}
+                        <div class="tag"><small>{tag.name}</small></div>
+                    {/each}
+                {/if}
+            </div>
         </div>
-    </div>
-    <div class="divider" />
-    <div class="last-commit">
-        <div class="title">
-            <small>Last Commit</small>
-        </div>
-        <div class="commit-info">
-            <div class="subject-and-commit">
-                <div class="subject">
-                    <!-- TODO: @jason something strange happens when text-overflow is set to ellipsis.
+        <div class="divider" />
+        <div class="last-commit">
+            <div class="title">
+                <small>Last Commit</small>
+            </div>
+            <div class="commit-info">
+                <div class="subject-and-commit">
+                    <div class="subject">
+                        <!-- TODO: @jason something strange happens when text-overflow is set to ellipsis.
                 it looks like the text cuts off when the ellipses isn't needed and it adds extra padding. -->
-                    <small>{subject}<small /></small>
-                </div>
-                {#if commitNumber}
-                    <div class="commit-number">
-                        <a href={url}><small>{commitNumber}</small></a>
+                        <small>{subject}<small /></small>
                     </div>
-                {/if}
-            </div>
-            <div class="author-and-time">
-                {#if avatar}
-                    <Avatar {avatar} --avatar-size="1.0rem" />
-                {/if}
-                <div class="author">
-                    <small>{author}</small>
+                    {#if commitNumber}
+                        <div class="commit-number">
+                            <a href={url}><small>{commitNumber}</small></a>
+                        </div>
+                    {/if}
                 </div>
-                <div class="separator">{CENTER_DOT}</div>
+                <div class="author-and-time">
+                    {#if avatar}
+                        <Avatar {avatar} --avatar-size="1.0rem" />
+                    {/if}
+                    <div class="author">
+                        <small>{author}</small>
+                    </div>
+                    <div class="separator">{CENTER_DOT}</div>
 
-                {#if commitDate}
-                    <div class="commit-date">
-                        <small>{formatDistanceToNow(commitDate, { addSuffix: true })}</small>
-                    </div>
-                {/if}
+                    {#if commitDate}
+                        <div class="commit-date">
+                            <small>{formatDistanceToNow(commitDate, { addSuffix: true })}</small>
+                        </div>
+                    {/if}
+                </div>
+            </div>
+        </div>
+        <div class="divider" />
+        <div class="repo-stats">
+            <div class="stats">
+                <div class="stat"><small>{lang}</small></div>
+                <!-- We don't have forks or license information yet. -->
+                <!--div class="stat"><Icon svgPath={mdiSourceMerge} size={14} /><small>{commits}k</small></div-->
+            </div>
+            <!--div class="license"><small>{license}</small></div-->
+            <div class="stat">
+                <Icon svgPath={mdiStarOutline} size={18} style="margin-right: 0.15rem;" />
+                <small>{formatNumber(stars)} </small>
             </div>
         </div>
     </div>
-    <div class="divider" />
-    <div class="repo-stats">
-        <div class="stats">
-            <div class="stat"><small>{lang}</small></div>
-            <!-- We don't have forks or license information yet. -->
-            <!--div class="stat"><Icon svgPath={mdiSourceMerge} size={14} /><small>{commits}k</small></div-->
-        </div>
-        <!--div class="license"><small>{license}</small></div-->
-        <div class="stat">
-            <Icon svgPath={mdiStarOutline} size={18} style="margin-right: 0.15rem;" />
-            <small>{formatNumber(Number(stars))} </small>
-        </div>
-    </div>
-</div>
+</Popover>
 
 <style lang="scss">
     .container {
@@ -136,7 +148,7 @@
             border-radius: 1rem;
             color: var(--primary);
             font-family: var(--monospace-font-family);
-            justify-self: center;
+            // justify-self: center;
             margin-right: 0.5rem;
             padding: 0rem 0.25rem;
         }

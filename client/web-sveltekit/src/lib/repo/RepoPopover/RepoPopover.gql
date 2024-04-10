@@ -1,4 +1,5 @@
 fragment RepoPopoverFields on Repository {
+    name
   description
   stars
   tags {
