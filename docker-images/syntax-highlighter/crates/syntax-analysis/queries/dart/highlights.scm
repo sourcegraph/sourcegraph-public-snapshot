@@ -78,6 +78,9 @@
 
 ; Types
 ; --------------------
+((type_identifier) @type.builtin
+  (#match? @type.builtin "^(int|double|String|bool|List|Set|Map|Runes|Symbol)$"))
+(type_identifier) @type
 (class_definition
   name: (identifier) @type)
 (constructor_signature
