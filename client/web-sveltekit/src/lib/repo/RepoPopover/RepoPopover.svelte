@@ -2,6 +2,7 @@
     import { mdiStarOutline } from '@mdi/js'
     import { formatDistanceToNow } from 'date-fns'
 
+    import Avatar from '$lib/Avatar.svelte'
     import Icon from '$lib/Icon.svelte'
 
     import { RepoPopoverFields } from './RepoPopover.gql'
@@ -17,6 +18,8 @@
     let lang = repo.commit?.repository?.language
     let stars = repo.stars.toString()
     let url = repo.commit?.canonicalURL
+    let avatar = repo.commit?.author.person
+
     /*
     We don't have forks or license information yet.
     We can add them later.
@@ -47,7 +50,9 @@
         <div class="commit-info">
             <div class="subject-and-commit">
                 <div class="subject">
-                    <small>{subject}</small>
+                    <!-- TODO: @jason something strange happens when text-overflow is set to ellipsis.
+                it looks like the text cuts off when the ellipses isn't needed and it adds extra padding. -->
+                    <small>{subject}<small /></small>
                 </div>
                 {#if commitNumber}
                     <div class="commit-number">
@@ -56,6 +61,7 @@
                 {/if}
             </div>
             <div class="author-and-time">
+                <Avatar {avatar} --avatar-size="1.0rem" />
                 <div class="author">
                     <!-- TODO:@jason add avatar -->
                     <small>{author}</small>
@@ -64,7 +70,7 @@
 
                 {#if commitDate}
                     <div class="commit-date">
-                        <small>{formatDistanceToNow(commitDate, { addSuffix: false })}</small>
+                        <small>{formatDistanceToNow(commitDate, { addSuffix: true })}</small>
                     </div>
                 {/if}
             </div>
@@ -86,8 +92,7 @@
     .container {
         border-radius: var(--popover-border-radius);
         border: 1px solid var(--border-color);
-        min-width: 400px;
-        max-width: 500px;
+        width: 400px;
         padding: 0;
     }
 
@@ -143,14 +148,15 @@
             align-items: center;
             display: flex;
             flex-flow: row nowrap;
+            justify-content: flex-end;
+            width: 200px;
 
             .subject {
                 color: var(--text-body);
-                margin-right: 0.5rem;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
-                width: 150px;
+                margin-right: 0.25rem;
             }
 
             .commit-number {
@@ -163,10 +169,12 @@
             display: flex;
             flex-flow: row nowrap;
             justify-content: flex-end;
+            align-items: center;
 
             .author {
                 color: var(--text-muted);
                 margin-right: 0.5rem;
+                margin-left: 0.5rem;
             }
 
             .separator {
