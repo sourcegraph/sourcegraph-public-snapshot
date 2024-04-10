@@ -86,7 +86,9 @@ For example:
                 text-overflow: ellipsis.
                 -->
                 <div class="subject">
-                    <small>{subject}</small>
+                    <!-- TODO: @jason something strange happens when text-overflow is set to ellipsis.
+                it looks like the text cuts off when the ellipses isn't needed and it adds extra padding. -->
+                    <small>{subject}<small /></small>
                 </div>
                 {#if commitSHA}
                     <div class="commit-number">
@@ -271,14 +273,15 @@ For example:
             align-items: center;
             display: flex;
             flex-flow: row nowrap;
+            justify-content: flex-end;
+            width: 200px;
 
             .subject {
                 color: var(--text-body);
-                margin-right: 0.5rem;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
-                width: 150px;
+                margin-right: 0.25rem;
             }
 
             .commit-number {
@@ -291,10 +294,12 @@ For example:
             display: flex;
             flex-flow: row nowrap;
             justify-content: flex-end;
+            align-items: center;
 
             .author {
                 color: var(--text-muted);
                 margin-right: 0.5rem;
+                margin-left: 0.5rem;
             }
 
             .separator {
