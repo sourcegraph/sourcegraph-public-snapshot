@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"testing/quick"
@@ -24,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -81,10 +83,6 @@ UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 		fs,
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
-		func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
-			// Don't actually attempt clones.
-			return "", nil
-		},
 		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 		false,
 	)
@@ -146,9 +144,6 @@ func TestCleanupInactive(t *testing.T) {
 		fs,
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
-		func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
-			return "", nil
-		},
 		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 		false,
 	)
@@ -188,9 +183,6 @@ func TestCleanupWrongShard(t *testing.T) {
 			fs,
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"does-not-exist",
-			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
-				return "", nil
-			},
 			gitserver.GitserverAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}},
 			false,
 		)
@@ -228,9 +220,6 @@ func TestCleanupWrongShard(t *testing.T) {
 			fs,
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"gitserver-0",
-			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
-				return "", nil
-			},
 			gitserver.GitserverAddresses{Addresses: []string{"gitserver-0.cluster.local:3178", "gitserver-1.cluster.local:3178"}},
 			false,
 		)
@@ -268,10 +257,6 @@ func TestCleanupWrongShard(t *testing.T) {
 			fs,
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"gitserver-0",
-			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
-				t.Fatal("clone called")
-				return "", nil
-			},
 			gitserver.GitserverAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}},
 			true,
 		)
@@ -344,9 +329,6 @@ func TestGitGCAuto(t *testing.T) {
 		fs,
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
-		func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
-			return "", nil
-		},
 		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 		false,
 	)
@@ -357,25 +339,30 @@ func TestGitGCAuto(t *testing.T) {
 	}
 }
 
-func TestCleanupExpired(t *testing.T) {
+func TestCleanupBroken(t *testing.T) {
+	conf.Mock(&conf.Unified{})
+	t.Cleanup(func() {
+		conf.Mock(nil)
+	})
+
+	// Don't attempt to run GC.
+	gitGCMode = gitGCModeGitAutoGC
+
 	ctx := context.Background()
 	root := t.TempDir()
 
-	repoNew := path.Join(root, "repo-new", ".git")
 	repoOld := path.Join(root, "repo-old", ".git")
 	repoGCNew := path.Join(root, "repo-gc-new", ".git")
 	repoGCOld := path.Join(root, "repo-gc-old", ".git")
-	repoBoom := path.Join(root, "repo-boom", ".git")
 	repoCorrupt := path.Join(root, "repo-corrupt", ".git")
 	repoNonBare := path.Join(root, "repo-non-bare", ".git")
-	repoPerforce := path.Join(root, "repo-perforce", ".git")
 	repoPerforceGCOld := path.Join(root, "repo-perforce-gc-old", ".git")
 	remote := path.Join(root, "remote", ".git")
 	for _, gitDirPath := range []string{
-		repoNew, repoOld,
+		repoOld,
 		repoGCNew, repoGCOld,
-		repoBoom, repoCorrupt,
-		repoPerforce, repoPerforceGCOld,
+		repoCorrupt,
+		repoPerforceGCOld,
 		remote,
 	} {
 		cmd := exec.Command("git", "--bare", "init", gitDirPath)
@@ -388,42 +375,17 @@ func TestCleanupExpired(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	modTime := func(path string) time.Time {
-		t.Helper()
-		fi, err := os.Stat(filepath.Join(path, "HEAD"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		return fi.ModTime()
-	}
-	recloneTime := func(path string) time.Time {
-		t.Helper()
-
-		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(path), "git")
-
-		ts, err := getRecloneTime(ctx, cli.Config(), common.GitDir(path))
-		if err != nil {
-			t.Fatal(err)
-		}
-		return ts
-	}
-
 	writeFile(t, filepath.Join(repoGCNew, "gc.log"), []byte("warning: There are too many unreachable loose objects; run 'git prune' to remove them."))
 	writeFile(t, filepath.Join(repoGCOld, "gc.log"), []byte("warning: There are too many unreachable loose objects; run 'git prune' to remove them."))
 
 	for gitDirPath, delta := range map[string]time.Duration{
-		repoOld:           2 * repoTTL,
 		repoGCOld:         2 * repoTTLGC,
-		repoBoom:          2 * repoTTL,
 		repoCorrupt:       repoTTLGC / 2, // should only trigger corrupt, not old
-		repoPerforce:      2 * repoTTL,
 		repoPerforceGCOld: 2 * repoTTLGC,
 	} {
 		ts := time.Now().Add(-delta)
 		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(gitDirPath), "git")
-		if err := setRecloneTime(ctx, cli.Config(), common.GitDir(gitDirPath), ts); err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, cli.Config().Set(ctx, gitConfigGCFailed, strconv.Itoa(int(ts.Unix()))))
 		if err := os.Chtimes(filepath.Join(gitDirPath, "HEAD"), ts, ts); err != nil {
 			t.Fatal(err)
 		}
@@ -435,37 +397,23 @@ func TestCleanupExpired(t *testing.T) {
 		}
 	}
 	{
-		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(repoPerforce), "perforce")
-		if err := git.SetRepositoryType(ctx, cli.Config(), "perforce"); err != nil {
-			t.Fatal(err)
-		}
-	}
-	{
 		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(repoPerforceGCOld), "perforce")
 		if err := git.SetRepositoryType(ctx, cli.Config(), "perforce"); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	now := time.Now()
-	repoBoomTime := modTime(repoBoom)
-	repoBoomRecloneTime := recloneTime(repoBoom)
-
 	if _, err := os.Stat(repoNonBare); err != nil {
 		t.Fatal(err)
 	}
 
-	calledClone := []api.RepoName{}
-	cloneRepo := func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
-		if repo == "repo-boom" {
-			return "", errors.New("boom")
-		}
-		calledClone = append(calledClone, repo)
-		return "done", nil
-	}
-
-	fs := gitserverfs.New(observation.TestContextTB(t), root)
+	fs := gitserverfs.NewMockFSFrom(gitserverfs.New(&observation.TestContext, root))
 	require.NoError(t, fs.Initialize())
+	calledRemove := []api.RepoName{}
+	fs.RemoveRepoFunc.SetDefaultHook(func(repo api.RepoName) error {
+		calledRemove = append(calledRemove, repo)
+		return nil
+	})
 
 	cleanupRepos(
 		context.Background(),
@@ -474,27 +422,11 @@ func TestCleanupExpired(t *testing.T) {
 		fs,
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
-		cloneRepo,
 		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 		false,
 	)
 
-	// repos that fail to clone need to have recloneTime updated
-	if repoBoomTime.Before(modTime(repoBoom)) {
-		t.Fatal("expected repoBoom to fail to re-clone due to hardcoding getRemoteURL failure")
-	}
-	if !repoBoomRecloneTime.Before(recloneTime(repoBoom)) {
-		t.Error("expected repoBoom reclone time to be updated")
-	}
-	if !now.After(recloneTime(repoBoom)) {
-		t.Error("expected repoBoom reclone time to be updated to not now")
-	}
-
-	if _, err := os.Stat(repoNonBare); err == nil {
-		t.Fatal("non-bare repo was not removed")
-	}
-
-	require.Equal(t, []api.RepoName{"repo-corrupt", "repo-gc-old", "repo-old"}, calledClone)
+	require.Equal(t, []api.RepoName{"repo-corrupt", "repo-gc-old", "repo-non-bare"}, calledRemove)
 }
 
 func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
@@ -541,9 +473,6 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 			fs,
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"test-gitserver",
-			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
-				return "", nil
-			},
 			gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 			false,
 		)
@@ -573,9 +502,6 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 			fs,
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"test-gitserver",
-			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
-				return "", nil
-			},
 			gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 			false,
 		)
@@ -728,9 +654,6 @@ func TestCleanupOldLocks(t *testing.T) {
 		fs,
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
-		func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
-			return "", nil
-		},
 		gitserver.GitserverAddresses{Addresses: []string{"gitserver-0"}},
 		false,
 	)
