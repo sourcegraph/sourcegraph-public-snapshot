@@ -8,5 +8,5 @@ import (
 
 func main() {
 	sanitycheck.Pass()
-	svcmain.SingleServiceMain(shared.Service)
+	svcmain.SingleServiceMainWithoutConf(shared.Service, svcmain.OutOfBandConfiguration{})
 }
