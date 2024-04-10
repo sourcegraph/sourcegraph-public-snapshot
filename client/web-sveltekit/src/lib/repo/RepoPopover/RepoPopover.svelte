@@ -1,17 +1,29 @@
 <script lang="ts">
-    import { mdiGithub, mdiStarOutline } from '@mdi/js'
+    import {
+        mdiAws,
+        mdiBitbucket,
+        mdiGit,
+        mdiGithub,
+        mdiGitlab,
+        mdiMicrosoftAzureDevops,
+        mdiSourceMerge,
+        mdiStarOutline,
+    } from '@mdi/js'
     import { formatDistanceToNow } from 'date-fns'
-    import { truncate } from 'lodash'
+    import { capitalize, truncate } from 'lodash'
 
     import Avatar from '$lib/Avatar.svelte'
+    import { ExternalServiceKind } from '$lib/graphql-types'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
     import Button from '$lib/wildcard/Button.svelte'
 
     import RepoMenu from './RepoMenu.svelte'
-    import { RepoPopoverFields } from './RepoPopover.gql'
+    import { RepoPopoverFields, CodeHostFields } from './RepoPopover.gql'
 
     export let repo: RepoPopoverFields
+    export let codeHost: CodeHostFields
+    export let withHeader: Boolean = false
 
     const CENTER_DOT = '\u00B7' // interpunct
 
@@ -22,23 +34,41 @@
     let commitNumber = repo.commit?.abbreviatedOID
     let author = repo.commit?.author.person.name
     let commitDate = repo.commit?.author.date
-    let lang = repo.commit?.repository?.language
-    let stars = repo.stars
     let url = repo.commit?.canonicalURL
     let avatar = repo.commit?.author.person
-    let codeHostIcon = mdiGithub
 
-    /*
-    We don't have forks or license information yet.
-    We can add them later.
-    */
-    // let forks
-    // let license
+    let lang = repo.commit?.repository?.language
+    let stars = repo.stars
+    let isPrivate = repo.isPrivate
+    let codeHostKind = codeHost.kind
+    let codeHostIcon = getCodeHostIcon(codeHostKind)
+
     function formatNumber(num: number): string {
         if (num >= 1000) {
             return (num / 1000).toFixed(1) + 'K'
         }
         return num.toString()
+    }
+
+    function getCodeHostIcon(kind: ExternalServiceKind): string {
+        switch (kind) {
+            case ExternalServiceKind.GITHUB:
+                return mdiGithub
+            case ExternalServiceKind.GITLAB:
+                return mdiGitlab
+            case ExternalServiceKind.BITBUCKETSERVER:
+                return mdiBitbucket
+            case ExternalServiceKind.BITBUCKETCLOUD:
+                return mdiBitbucket
+            case ExternalServiceKind.GITOLITE:
+                return mdiGit
+            case ExternalServiceKind.AZUREDEVOPS:
+                return mdiMicrosoftAzureDevops
+            case ExternalServiceKind.AWSCODECOMMIT:
+                return mdiAws
+            default:
+                return mdiSourceMerge
+        }
     }
 </script>
 
@@ -51,6 +81,22 @@
         </svelte:fragment>
     </Button>
     <div slot="content" class="container">
+        {#if withHeader}
+            <div class="header">
+                <div class="icon-name-access">
+                    <Icon svgPath={mdiGitlab} />
+                    <h4 class="repo-name">{name}</h4>
+                    <div class="access">
+                        <small>{isPrivate ? 'Private' : 'Public'}</small>
+                    </div>
+                </div>
+                <div class="code-host">
+                    <Icon svgPath={codeHostIcon} --color="var(--text-body)" --size={24} />
+                    <div><small>{capitalize(codeHostKind)}</small></div>
+                </div>
+            </div>
+            <div class="divider" />
+        {/if}
         <div class="description-and-tags">
             <div class="description">{description}</div>
             <div class="tags">
@@ -97,7 +143,7 @@
 
                     {#if commitDate}
                         <div class="commit-date">
-                            <small>{formatDistanceToNow(commitDate, { addSuffix: true })}</small>
+                            <small>{formatDistanceToNow(commitDate, { addSuffix: false })}</small>
                         </div>
                     {/if}
                 </div>
@@ -107,10 +153,7 @@
         <div class="repo-stats">
             <div class="stats">
                 <div class="stat"><small>{lang}</small></div>
-                <!-- We don't have forks or license information yet. -->
-                <!--div class="stat"><Icon svgPath={mdiSourceMerge} size={14} /><small>{commits}k</small></div-->
             </div>
-            <!--div class="license"><small>{license}</small></div-->
             <div class="stat">
                 <Icon svgPath={mdiStarOutline} size={16} style="margin-right: 0.15rem;" />
                 <small>{formatNumber(stars)}</small>
@@ -122,20 +165,59 @@
 <style lang="scss">
     .container {
         border-radius: var(--popover-border-radius);
-        border: 0rem solid var(--border-color);
         width: 400px;
+        // ensures the dividers extend to the edge of the popover.
         padding: 0;
+    }
+
+    .header {
+        display: flex;
+        flex-flow: row-nowrap;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        background-color: var(--subtle-bg);
+
+        .icon-name-access {
+            display: flex;
+            flex-flow: row-nowrap;
+            justify-content: space-evenly;
+            align-items: center;
+            width: fit-content;
+
+            .repo-name {
+                color: var(--text-body);
+                margin: 0rem 0.5rem;
+            }
+
+            .access {
+                border: 1px solid var(--text-muted);
+                color: var(--text-muted);
+                padding: 0rem 0.5rem;
+                border-radius: 1rem;
+            }
+        }
+        .code-host {
+            display: flex;
+            flex-flow: row nowrap;
+            justify-content: flex-end;
+            align-items: center;
+
+            div {
+                color: var(--text-muted);
+                margin-left: 0.25rem;
+            }
+        }
     }
 
     .divider {
         border-bottom: 1px solid var(--border-color);
-        padding: 0.5rem 0.75rem;
         width: 100%;
     }
 
     .description-and-tags {
-        margin-top: 0.5rem;
-        padding: 0rem 0.75rem;
+        // border: 1px dotted white;
+        padding: 0.75rem;
 
         .description {
             font-size: 1rem;
@@ -167,8 +249,7 @@
         display: flex;
         flex-flow: column nowrap;
         justify-content: space-between;
-        margin-top: 0.5rem;
-        padding: 0rem 0.75rem;
+        padding: 0.75rem;
 
         .title-and-commit {
             display: flex;
@@ -238,11 +319,6 @@
                 align-self: center;
                 margin-right: 1rem;
             }
-
-            /* see note above about forks and license
-            .license {
-                align-self: center;
-            } */
         }
     }
 </style>
