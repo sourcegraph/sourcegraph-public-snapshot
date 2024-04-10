@@ -111,7 +111,6 @@ func (f *dotcomRepoFilter) getFilter(repos []types.RepoIDName, logger log.Logger
 // for the given repositories.
 func newDotcomFilter(client gitserver.Client) RepoContentFilter {
 	enabled := isEnabled(conf.Get())
-	//c, _ := lru.New[repoRevision, ignore.Matcher](128)
 	ignoreFilter := &dotcomRepoFilter{
 		cache:   newSafeCache[repoRevision, ignore.Matcher](128),
 		client:  client,
