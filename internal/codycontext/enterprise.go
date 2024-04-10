@@ -8,11 +8,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"slices"
+	"sync"
 )
+
+const allowByDefault = true
 
 type enterpriseRepoFilter struct {
 	cache safeCache[api.RepoName, bool]
 	ccf   *schema.CodyContextFilters
+	mu    sync.RWMutex
 }
 
 // newEnterpriseFilter creates a new RepoContentFilter that filters out
@@ -23,6 +27,8 @@ func newEnterpriseFilter() RepoContentFilter {
 		ccf:   conf.Get().SiteConfiguration.CodyContextFilters,
 	}
 	go conf.Watch(func() {
+		filter.mu.Lock()
+		defer filter.mu.Unlock()
 		filter.cache.Clear()
 		filter.ccf = conf.Get().SiteConfiguration.CodyContextFilters
 	})
@@ -31,11 +37,6 @@ func newEnterpriseFilter() RepoContentFilter {
 
 // GetFilter returns the list of repos that can be filtered based on the Cody context filter value in the site config.
 func (f *enterpriseRepoFilter) GetFilter(repos []types.RepoIDName, _ log.Logger) ([]types.RepoIDName, FileChunkFilterFunc) {
-	if f.ccf == nil {
-		return repos, func(fcc []FileChunkContext) []FileChunkContext {
-			return fcc
-		}
-	}
 	allowedRepos := make([]types.RepoIDName, 0, len(repos))
 	for _, repo := range repos {
 		if f.isRepoAllowed(repo.Name) {
@@ -61,7 +62,13 @@ func (f *enterpriseRepoFilter) isRepoAllowed(repoName api.RepoName) bool {
 		return cached
 	}
 
-	allowed := true
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	if f.ccf == nil {
+		return allowByDefault
+	}
+
+	allowed := allowByDefault
 
 	if len(f.ccf.Include) > 0 {
 		for _, p := range f.ccf.Include {
