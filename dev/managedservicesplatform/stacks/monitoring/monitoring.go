@@ -5,7 +5,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"golang.org/x/exp/maps"
 
@@ -415,7 +414,11 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		createNobl9Project(stack, id.Group("nobl9"), vars)
 	}
 
-	spew.Dump(alertGroups)
+	// Create a dashboard containing all MSP alerts
+	err = createMonitoringDashboard(stack, id.Group("dashboard"), vars, alertGroups)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create dashboard")
+	}
 
 	return &CrossStackOutput{}, nil
 }
