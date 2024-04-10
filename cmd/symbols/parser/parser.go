@@ -84,15 +84,12 @@ func (p *parser) Parse(ctx context.Context, args search.SymbolsParameters, paths
 	}()
 
 	var (
-		wg                          sync.WaitGroup                                         // concurrency control
-		parseRequests               = make(chan fetcher.ParseRequest, p.requestBufferSize) // buffered requests
-		symbolOrErrors              = make(chan SymbolOrError)                             // parsed responses
-		totalRequests, totalSymbols uint32                                                 // stats
+		wg                          sync.WaitGroup             // concurrency control
+		symbolOrErrors              = make(chan SymbolOrError) // parsed responses
+		totalRequests, totalSymbols uint32                     // stats
 	)
 
 	defer func() {
-		close(parseRequests)
-
 		go func() {
 			defer func() {
 				endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
@@ -167,11 +164,19 @@ func (p *parser) handleParseRequest(
 		if err == nil {
 			p.parserPool.Done(parser, source)
 		} else {
-			// Close parser and return nil to pool, indicating that the next receiver should create a new parser
-			log15.Error("Closing failed parser", "error", err)
+			// If we are canceled we still kill the parser just in case, but
+			// we do not record as failure nor logspam since this is a more
+			// expected case.
+			if errors.Is(err, context.Canceled) {
+				p.operations.parseCanceled.Inc()
+			} else {
+				p.operations.parseFailed.Inc()
+				log15.Error("Closing failed parser", "error", err)
+			}
+			// Close parser and return nil to pool, indicating that the next
+			// receiver should create a new parser
 			parser.Close()
 			p.parserPool.Done(nil, source)
-			p.operations.parseFailed.Inc()
 		}
 	}()
 

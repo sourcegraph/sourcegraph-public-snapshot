@@ -26,7 +26,7 @@ func TestSnapshotForDocument(t *testing.T) {
 	mockGitserverClient := gitserver.NewMockClient()
 
 	// Init service
-	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	mockUploadSvc.GetCompletedUploadsByIDsFunc.SetDefaultReturn([]shared.CompletedUpload{{}}, nil)
 	mockRepoStore.GetFunc.SetDefaultReturn(&types.Repo{}, nil)

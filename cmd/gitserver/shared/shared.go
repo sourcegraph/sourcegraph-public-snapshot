@@ -197,7 +197,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			db,
 			fs,
 			recordingCommandFactory,
-			gitserver.CloneRepo,
 			logger,
 		),
 	}

@@ -24,7 +24,7 @@ func TestCoordinateAndSummaries(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := dbtest.NewDB(t)
-	store := New(&observation.TestContext, database.NewDB(logger, db))
+	store := New(observation.TestContextTB(t), database.NewDB(logger, db))
 
 	now1 := timeutil.Now().UTC()
 	now2 := now1.Add(time.Hour * 2)

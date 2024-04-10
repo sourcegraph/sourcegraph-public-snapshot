@@ -24,7 +24,7 @@ func TestIndexingWorkerStore(t *testing.T) {
 		so it's important that we use the real Postgres in this test to prevent
 		schema/implementation drift.
 	*/
-	observationContext := &observation.TestContext
+	observationContext := observation.TestContextTB(t)
 	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(observationContext.Logger, sqlDB)
 

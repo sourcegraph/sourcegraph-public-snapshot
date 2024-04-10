@@ -39,7 +39,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 
 	userID := bt.CreateTestUser(t, db, false).ID
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	// Create a batch spec for the target batch change.
 	oldBatchSpec := &btypes.BatchSpec{
@@ -270,7 +270,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 
 	userID := bt.CreateTestUser(t, db, false).ID
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 	esStore := database.ExternalServicesWith(logger, bstore)
 	repoStore := database.ReposWith(logger, bstore)
 
