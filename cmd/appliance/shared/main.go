@@ -22,6 +22,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{})
 	if err != nil {
 		logger.Fatal("unable to start manager", log.Error(err))
+		return err
 	}
 
 	// Mark health server as ready
@@ -30,6 +31,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	logger.Info("starting manager")
 	if err := mgr.Start(shutdownOnSignal(ctx)); err != nil {
 		logger.Fatal("problem running manager", log.Error(err))
+		return err
 	}
 
 	return nil
