@@ -151,6 +151,9 @@ func (s Spec) Validate() []error {
 			if e.Instances.Scaling != nil {
 				errs = append(errs, errors.New("'environments.instances.scaling' not supported for 'kind: job'"))
 			}
+			if pointers.DerefZero(e.PrivateNetworkingSpec).PrivateAccessServer != nil {
+				errs = append(errs, errors.New("'environments.privateNetworking.privateAccessServer' not supported for 'kind: job'"))
+			}
 		}
 	}
 	if s.Service.Kind.Is(ServiceKindService) {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/privatenetwork"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -18,6 +19,7 @@ import (
 type Config struct {
 	ProjectID      string
 	PrivateNetwork privatenetwork.Output
+	Spec           spec.EnvironmentPrivateGoogleAccessSpec
 }
 
 type Output struct{}
@@ -37,7 +39,15 @@ const privateGoogleIPCIDR = "199.36.153.8/30"
 // This should only be created once, hence why it does not have accept
 // a resourceid.ID
 func New(scope constructs.Construct, config Config) (*Output, error) {
-	id := resourceid.New("privateclient") // top-level because this resource is a singleton
+	id := resourceid.New("privategoogleaccess") // top-level because this resource is a singleton
+
+	var domains []privateGoogleAccessDomain
+	if pointers.DerefZero(config.Spec.CloudRunApps) {
+		domains = append(domains, privateGoogleAccessDomain{
+			id:     "cloudrun",
+			domain: "run.app",
+		})
+	}
 
 	// See the following guides for how all this works:
 	// - https://cloud.google.com/vpc/docs/configure-private-google-access#config-domain
@@ -53,12 +63,7 @@ func New(scope constructs.Construct, config Config) (*Output, error) {
 	// Only add *.run.app for now, but structure to enable other domains:
 	// - https://cloud.google.com/vpc/docs/configure-private-google-access#domain-options
 	// - https://github.com/sourcegraph/managed-services/issues/1093
-	for _, pga := range []privateGoogleAccessDomain{
-		{
-			id:     "private-run-app",
-			domain: "run.app",
-		},
-	} {
+	for _, pga := range domains {
 		id := id.Group(pga.id)
 		dnsName := fmt.Sprintf("%s.", pga.domain)
 

@@ -468,8 +468,10 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		"Cloud Run resource name")
 	locals.Add("cloud_run_location", *cloudRunResource.Location(),
 		"Cloud Run resource location")
-	locals.Add("image_tag", *imageTag.StringValue,
-		"Resolved tag of service image to deploy")
+	if uriProvider, ok := cloudRunResource.(interface{ Uri() *string }); ok {
+		locals.Add("cloud_run_internal_url", *uriProvider.Uri(),
+			"Cloud Run app internal URL")
+	}
 	return &CrossStackOutput{
 		DiagnosticsSecret:  diagnosticsSecret,
 		RedisInstanceID:    redisInstanceID,
