@@ -117,7 +117,7 @@ func newDotcomFilter(client gitserver.Client) RepoContentFilter {
 		enabled: enabled,
 	}
 
-	go conf.Watch(func() {
+	conf.Watch(func() {
 		ignoreFilter.SetEnabled(isEnabled(conf.Get()))
 	})
 

@@ -26,7 +26,7 @@ func newEnterpriseFilter() RepoContentFilter {
 		cache: newSafeCache[api.RepoName, bool](128),
 		ccf:   conf.Get().SiteConfiguration.CodyContextFilters,
 	}
-	go conf.Watch(func() {
+	conf.Watch(func() {
 		filter.mu.Lock()
 		defer filter.mu.Unlock()
 		filter.cache.Clear()
