@@ -27,15 +27,9 @@
     let name = repo.name
     let tags = repo.tags.nodes
     let description = repo.description
-    let subject = repo.commit?.subject
-    let commitNumber = repo.commit?.abbreviatedOID
-    let author = repo.commit?.author.person.name
-    let commitDate = repo.commit?.author.date
-    let avatar = repo.commit?.author.person
-
-    let lang = repo.commit?.repository?.language
     let stars = repo.stars
     let isPrivate = repo.isPrivate
+
     let codeHostKind = codeHost.kind
     let codeHostIcon = getCodeHostIcon(codeHostKind)
 
@@ -66,6 +60,14 @@
                 return mdiSourceMerge
         }
     }
+
+    $: commit = repo.commit
+    $: subject = commit?.subject
+    $: commitNumber = commit?.abbreviatedOID
+    $: author = commit?.author.person.name
+    $: commitDate = commit?.author.date
+    $: avatar = commit?.author.person
+    $: lang = commit?.repository?.language
 </script>
 
 <div class="container">

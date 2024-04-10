@@ -1,30 +1,30 @@
 fragment RepoPopoverFields on Repository {
     name
-  description
-  stars
-  tags {
-    nodes {
-      name
-    }
-  }
-  isPrivate
-
-  commit(rev: "HEAD") {
-    id
-    subject
-    abbreviatedOID
-    canonicalURL
-    author {
-      date
-      person {
-        ...Avatar_Person
-      }
+    description
+    stars
+    isPrivate
+    tags {
+        nodes {
+            name
+        }
     }
 
-    repository {
-      language
+    commit(rev: "HEAD") {
+        id
+        subject
+        abbreviatedOID
+        canonicalURL
+        author {
+            date
+            person {
+                ...Avatar_Person
+            }
+        }
+
+        repository {
+            language
+        }
     }
-  }
 }
 
 fragment CodeHostFields on CodeHost {
