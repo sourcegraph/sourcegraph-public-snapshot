@@ -1,4 +1,6 @@
 // Libraries and Imports
+library some.lib.here;
+
 import 'dart:math';
 
 // Classes and Objects

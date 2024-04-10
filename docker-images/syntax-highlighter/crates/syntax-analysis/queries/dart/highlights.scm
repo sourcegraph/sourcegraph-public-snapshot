@@ -1,9 +1,5 @@
-(dotted_identifier_list) @string
-
 ; Methods
 ; --------------------
-(super) @function
-
 (function_expression_body
   (identifier) @function)
 
@@ -86,9 +82,6 @@
   name: (identifier) @type)
 (constructor_signature
   name: (identifier) @type)
-;; TODO: does not work
-;(type_identifier
-  ;(identifier) @type)
 (scoped_identifier
   scope: (identifier) @type)
 (function_signature
@@ -103,8 +96,6 @@
   scope: (identifier) @type
   name: (identifier) @type)
  (#match? @type "^[a-zA-Z]"))
-
-(type_identifier) @type
 
 ; Enums
 ; -------------------
@@ -158,10 +149,10 @@
 ; Parameters
 ; --------------------
 (formal_parameter
-    name: (identifier) @parameter)
+    name: (identifier) @identifier.parameter)
 
 (named_argument
-  (label (identifier) @parameter))
+  (label (identifier) @identifier.parameter))
 
 ; Literals
 ; --------------------
@@ -174,8 +165,7 @@
     ; (hex_floating_point_literal)
 ] @number
 
-(symbol_literal) @symbol
-(string_literal) @string
+(symbol_literal (identifier) @constant) @constant
 (true) @boolean
 (false) @boolean
 (null_literal) @constant.builtin
@@ -187,7 +177,7 @@
 ; --------------------
 [
     (assert_builtin)
-    (break_statement)
+    (break_builtin)
     (const_builtin)
     (part_of_builtin)
     (rethrow_builtin)
@@ -257,6 +247,3 @@
 
 ; Variable
 (identifier) @variable
-
-; Error
-(ERROR) @error
