@@ -9,6 +9,8 @@
 
     export let repo: RepoPopoverFields
 
+    const CENTER_DOT = '\u00B7' // interpunct
+
     let tags = repo.tags.nodes
     let description = repo.description
     let subject = repo.commit?.subject
@@ -26,9 +28,12 @@
     */
     // let forks
     // let license
-    $: console.log(repo)
-
-    const CENTER_DOT = '\u00B7' // interpunct
+    function formatNumber(num: number): string {
+        if (num >= 1000) {
+            return (num / 1000).toFixed(1) + 'K'
+        }
+        return num.toString()
+    }
 </script>
 
 <div class="container">
@@ -61,9 +66,10 @@
                 {/if}
             </div>
             <div class="author-and-time">
-                <Avatar {avatar} --avatar-size="1.0rem" />
+                {#if avatar}
+                    <Avatar {avatar} --avatar-size="1.0rem" />
+                {/if}
                 <div class="author">
-                    <!-- TODO:@jason add avatar -->
                     <small>{author}</small>
                 </div>
                 <div class="separator">{CENTER_DOT}</div>
@@ -84,7 +90,10 @@
             <!--div class="stat"><Icon svgPath={mdiSourceMerge} size={14} /><small>{commits}k</small></div-->
         </div>
         <!--div class="license"><small>{license}</small></div-->
-        <div class="stat"><Icon svgPath={mdiStarOutline} size={18} /><small>{stars}k</small></div>
+        <div class="stat">
+            <Icon svgPath={mdiStarOutline} size={18} style="margin-right: 0.15rem;" />
+            <small>{formatNumber(Number(stars))} </small>
+        </div>
     </div>
 </div>
 
