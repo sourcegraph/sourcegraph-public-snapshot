@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { mdiFileDocumentOutline, mdiFolderOutline, mdiMapSearch } from '@mdi/js'
+    import { mdiMapSearch } from '@mdi/js'
 
     import Icon from '$lib/Icon.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
@@ -25,7 +25,6 @@
 </svelte:head>
 
 <FileHeader>
-    <Icon slot="icon" svgPath={mdiFolderOutline} />
     <svelte:fragment slot="actions">
         <Permalink commitID={data.resolvedRevision.commitID} />
     </svelte:fragment>
@@ -67,8 +66,6 @@
     {#await data.readme then readme}
         {#if readme}
             <h4 class="header">
-                <Icon svgPath={mdiFileDocumentOutline} />
-                &nbsp;
                 {readme.name}
             </h4>
             <div class="readme">
@@ -93,7 +90,6 @@
         top: 2.8rem;
         padding: 0.5rem;
         border-bottom: 1px solid var(--border-color);
-        border-top: 1px solid var(--border-color);
         margin: 0;
     }
 

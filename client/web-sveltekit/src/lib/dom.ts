@@ -17,6 +17,70 @@ import * as uuid from 'uuid'
 import { highlightNode } from '$lib/common'
 
 /**
+ * Finds the previous sibling element that matches the provided selector. Can optionally wrap around.
+ *
+ * @param element The element to start the search from.
+ * @param selector The selector to match the sibling against.
+ * @param wrap Whether to wrap around to the last sibling if no match is found.
+ * @returns The previous sibling element that matches the selector, or null if no match is found.
+ */
+export function previousSibling(element: Element, selector: string, wrap = false): Element | null {
+    let sibling = element.previousElementSibling
+    while (true) {
+        while (sibling) {
+            if (sibling.matches(selector)) {
+                return sibling
+            }
+
+            // Prevents infinite loop when wrapping around
+            if (sibling === element) {
+                return null
+            }
+
+            sibling = sibling.previousElementSibling
+        }
+
+        if (wrap) {
+            sibling = element.parentElement?.lastElementChild ?? null
+        } else {
+            return null
+        }
+    }
+}
+
+/**
+ * Finds the next sibling element that matches the provided selector. Can optionally wrap around.
+ *
+ * @param element The element to start the search from.
+ * @param selector The selector to match the sibling against.
+ * @param wrap Whether to wrap around to the first sibling if no match is found.
+ * @returns The next sibling element that matches the selector, or null if no match is found.
+ */
+export function nextSibling(element: Element, selector: string, wrap = false): Element | null {
+    let sibling = element.nextElementSibling
+    while (true) {
+        while (sibling) {
+            if (sibling.matches(selector)) {
+                return sibling
+            }
+
+            // Prevents infinite loop when wrapping around
+            if (sibling === element) {
+                return null
+            }
+
+            sibling = sibling.nextElementSibling
+        }
+
+        if (wrap) {
+            sibling = element.parentElement?.firstElementChild ?? null
+        } else {
+            return null
+        }
+    }
+}
+
+/**
  * Returns a unique ID to be used with accessible elements.
  * Generates stable IDs in tests.
  */
@@ -244,6 +308,90 @@ export const portal: Action<HTMLElement> = target => {
     return {
         destroy() {
             target.parentElement?.removeChild(target)
+        },
+    }
+}
+
+/**
+ * An action that messures the width of the element and adds the provided CSS class when the
+ * content overflows (and vice versa). The assumption is that the CSS class will hide some elements
+ * when the content overflows, therefore changing the size of the element. It's the responsibility
+ * of the caller to ensure that the element is styled accordingly.
+ *
+ * However, there are situations where the "overflowing size" cannot be properly determined. In this
+ * case a "measure" CSS class can be provided, which should ensure that the element is rendered in a
+ * way that all of its content is visible. The action will measure the size of the element with and
+ * without the class applied.
+ *
+ * If `measureClass` is not provided, the action will use `scrollWidth` to determine the size of the
+ * content.
+ *
+ * Using this action should not cause any content flashes because the calculation is done synchronously
+ * before painting.
+ *
+ * @param target The element to measure.
+ * @param className The CSS class to add when the content overflows.
+ * @param measureClass The CSS class to apply for measuring the size of the content.
+ * @returns An action that updates the overflow state of the element.
+ */
+export const overflow: Action<HTMLElement, { class: string; measureClass?: string }> = (
+    target,
+    { class: className, measureClass }
+) => {
+    let ignoreResizeEvent = false
+
+    const observer = new ResizeObserver(() => {
+        if (!ignoreResizeEvent) {
+            update()
+        }
+    })
+
+    // Actions don't provide an API to be notified when the subtree changes so we have to handle this ourselves.
+    const mutationObserver = new MutationObserver(() => {
+        update()
+    })
+
+    function update(): void {
+        // Ignore resize events triggered by this action. It's possible that ResizeObserver
+        // already handles this but we want to be sure.
+        ignoreResizeEvent = true
+
+        target.classList.remove(className)
+
+        // Default to scrollWidth to determine whether the content overflows.
+        let fullWidth = target.scrollWidth
+
+        // This doesn't work in all situations (e.g. flex: 1 and overflow:hidden),
+        // so this is a fallback to the clientWidth.
+        if (measureClass) {
+            target.classList.add(measureClass)
+            fullWidth = target.scrollWidth
+            target.classList.remove(measureClass)
+        }
+
+        const overflows = fullWidth > target.clientWidth
+
+        if (overflows) {
+            target.classList.add(className)
+        }
+
+        ignoreResizeEvent = false
+    }
+
+    update()
+
+    observer.observe(target)
+    mutationObserver.observe(target, { childList: true, subtree: true })
+
+    return {
+        update(parameter) {
+            target.classList.remove(className)
+            className = parameter.class
+            update()
+        },
+        destroy() {
+            observer.disconnect()
+            mutationObserver.disconnect()
         },
     }
 }
