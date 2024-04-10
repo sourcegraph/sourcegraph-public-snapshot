@@ -81,7 +81,7 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 			"anthropic/" + anthropic.Claude3Opus,
 			"fireworks/" + fireworks.Mixtral8x7bInstruct,
 			"openai/gpt-3.5-turbo",
-			"openai/gpt-4-1106-preview",
+			"openai/gpt-4-turbo",
 			"openai/gpt-4-turbo-preview",
 
 			// Remove after the Claude 3 rollout is complete
