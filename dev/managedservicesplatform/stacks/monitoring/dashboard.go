@@ -52,8 +52,23 @@ func createMonitoringDashboard(stack cdktf.TerraformStack,
 	vars Variables,
 	alertGroups map[string][]monitoringalertpolicy.MonitoringAlertPolicy,
 ) error {
+	dashboard := generateDashboard(vars.Service.ID, vars.EnvironmentID, alertGroups)
+
+	dashboardJSON, err := json.Marshal(dashboard)
+	if err != nil {
+		return err
+	}
+
+	_ = monitoringdashboard.NewMonitoringDashboard(stack, id.TerraformID("dashboard"), &monitoringdashboard.MonitoringDashboardConfig{
+		DashboardJson: pointers.Ptr(string(dashboardJSON)),
+	})
+
+	return nil
+}
+
+func generateDashboard(serviceID, envID string, alertGroups map[string][]monitoringalertpolicy.MonitoringAlertPolicy) dashboard {
 	dashboard := dashboard{
-		DisplayName: fmt.Sprintf("MSP Alerts - %s-%s", vars.Service.ID, vars.EnvironmentID),
+		DisplayName: fmt.Sprintf("MSP Alerts - %s-%s", serviceID, envID),
 		MosaicLayout: mosaicLayout{
 			Columns: dashboardColumns,
 		},
@@ -91,7 +106,7 @@ func createMonitoringDashboard(stack cdktf.TerraformStack,
 		}
 
 		// Use integer division to calculate the height of the section
-		sectionHeight := (len(alerts) + 1) * widgetHeight / 2
+		sectionHeight := (len(alerts) + 1) / 2 * widgetHeight
 
 		// Add the section
 		tiles = append(tiles, tile{
@@ -108,15 +123,5 @@ func createMonitoringDashboard(stack cdktf.TerraformStack,
 	}
 
 	dashboard.MosaicLayout.Tiles = tiles
-
-	dashboardJSON, err := json.Marshal(dashboard)
-	if err != nil {
-		return err
-	}
-
-	_ = monitoringdashboard.NewMonitoringDashboard(stack, id.TerraformID("dashboard"), &monitoringdashboard.MonitoringDashboardConfig{
-		DashboardJson: pointers.Ptr(string(dashboardJSON)),
-	})
-
-	return nil
+	return dashboard
 }
