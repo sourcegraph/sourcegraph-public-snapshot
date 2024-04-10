@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/guardrails"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
@@ -239,7 +240,19 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 
 		// Isolate writing events.
 		var mu sync.Mutex
-		writeEvent := func(name string, data any) error {
+		writeEvent := func(name string, data any) (err error) {
+			// Attribution search is currently panicing. The main hypothesis
+			// is calling writeEvent on a finished request in the case of an
+			// error. Rather than panicing the whole process we convert it
+			// into an error which will get logged.
+			//
+			// https://github.com/sourcegraph/sourcegraph/issues/60439
+			defer func() {
+				if rec := recover(); rec != nil {
+					err = errors.WithStack(errors.Errorf("recovered panic in completions writeEvent: %v", rec))
+				}
+			}()
+
 			mu.Lock()
 			defer mu.Unlock()
 			if ev := eventWriter(); ev != nil {
