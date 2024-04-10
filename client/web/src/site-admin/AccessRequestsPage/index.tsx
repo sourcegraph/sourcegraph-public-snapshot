@@ -7,6 +7,7 @@ import { capitalize } from 'lodash'
 
 import { pluralize } from '@sourcegraph/common'
 import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Card, Text, Alert, PageSwitcher, Link, Select, Button, Badge, Tooltip } from '@sourcegraph/wildcard'
 
@@ -183,10 +184,13 @@ const AccessRequestStatusPicker: React.FunctionComponent<{
 
 const FIRST_COUNT = 25
 
-export const AccessRequestsPage: React.FunctionComponent = () => {
+interface Props extends TelemetryV2Props {}
+
+export const AccessRequestsPage: React.FunctionComponent<Props> = ({ telemetryRecorder }) => {
     useEffect(() => {
         EVENT_LOGGER.logPageView('AccessRequestsPage')
-    }, [])
+        telemetryRecorder.recordEvent('admin.accessRequests', 'view')
+    }, [telemetryRecorder])
     const [error, setError] = useState<Error | null>(null)
 
     const [status, setStatus] = useURLSyncedString('status', AccessRequestStatus.PENDING)
@@ -220,6 +224,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                 return
             }
             EVENT_LOGGER.log('AccessRequestRejected', { id })
+            telemetryRecorder.recordEvent('admin.accessRequest', 'reject')
             rejectAccessRequest({
                 variables: {
                     id,
@@ -232,7 +237,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                     console.error(error)
                 })
         },
-        [refetch, rejectAccessRequest]
+        [refetch, rejectAccessRequest, telemetryRecorder]
     )
 
     const [lastApprovedUser, setLastApprovedUser] = useState<{
@@ -257,6 +262,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                 return
             }
             EVENT_LOGGER.log('AccessRequestApproved', { id })
+            telemetryRecorder.recordEvent('admin.accessRequest', 'approve')
             async function createUserAndApproveRequest(): Promise<void> {
                 const username = await generateUsername(name)
                 const { data } = await createUser({
@@ -289,7 +295,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                 console.error(error)
             })
         },
-        [generateUsername, createUser, approveAccessRequest, refetch]
+        [generateUsername, createUser, approveAccessRequest, refetch, telemetryRecorder]
     )
 
     const hasRemainingSeats = useHasRemainingSeats()

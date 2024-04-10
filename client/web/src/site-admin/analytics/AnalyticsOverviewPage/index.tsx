@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { format } from 'date-fns'
 
 import { useQuery } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { AnchorLink, Card, H2, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
@@ -23,17 +24,18 @@ import { Sidebar } from './Sidebar'
 
 import styles from './index.module.scss'
 
-interface Props {}
+interface Props extends TelemetryV2Props {}
 
-export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
-    const { dateRange } = useChartFilters({ name: 'Overview' })
+export const AnalyticsOverviewPage: React.FunctionComponent<Props> = ({ telemetryRecorder }) => {
+    const { dateRange } = useChartFilters({ name: 'Overview', telemetryRecorder })
     const { data, error, loading } = useQuery<OverviewStatisticsResult, OverviewStatisticsVariables>(
         OVERVIEW_STATISTICS,
         {}
     )
     useEffect(() => {
         EVENT_LOGGER.logPageView('AdminAnalyticsOverview')
-    }, [])
+        telemetryRecorder.recordEvent('admin.analytics.overview', 'view')
+    }, [telemetryRecorder])
 
     const userStatisticsItems = useMemo(() => {
         if (!data) {
