@@ -8,7 +8,6 @@ export const FEATURE_FLAGS = [
     'admin-onboarding',
     'auditlog-expansion',
     'blob-page-switch-areas-shortcuts',
-    'clone-progress-logging',
     'cody-chat-mock-test',
     'cody-web-search',
     'contrast-compliant-syntax-highlighting',

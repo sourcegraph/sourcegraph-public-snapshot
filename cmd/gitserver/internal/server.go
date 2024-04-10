@@ -12,7 +12,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -20,7 +19,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/sync/errgroup"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
 
@@ -36,7 +34,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -800,7 +797,7 @@ func (s *Server) doClone(
 	// produced, the ideal solution would be that readCloneProgress stores it in
 	// chunks.
 	output := &linebasedBufferedWriter{}
-	eg := readCloneProgress(s.db, logger, lock, io.TeeReader(progressReader, output), repo)
+	eg := readCloneProgress(logger, lock, io.TeeReader(progressReader, output), repo)
 
 	cloneTimeout := conf.GitLongCommandTimeout()
 	cloneCtx, cancel := context.WithTimeout(ctx, cloneTimeout)
@@ -966,15 +963,9 @@ func postRepoFetchActions(
 }
 
 // readCloneProgress scans the reader and saves the most recent line of output
-// as the lock status, writes to a log file if siteConfig.cloneProgressLog is
-// enabled, and optionally to the database when the feature flag `clone-progress-logging`
+// as the lock status, and optionally writes to a log file if siteConfig.cloneProgressLog
 // is enabled.
-func readCloneProgress(db database.DB, logger log.Logger, lock RepositoryLock, pr io.Reader, repo api.RepoName) *errgroup.Group {
-	// Use a background context to ensure we still update the DB even if we
-	// time out. IE we intentionally don't take an input ctx.
-	ctx := featureflag.WithFlags(context.Background(), db.FeatureFlags())
-	enableExperimentalDBCloneProgress := featureflag.FromContext(ctx).GetBoolOr("clone-progress-logging", false)
-
+func readCloneProgress(logger log.Logger, lock RepositoryLock, pr io.Reader, repo api.RepoName) *errgroup.Group {
 	var logFile *os.File
 
 	if conf.Get().CloneProgressLog {
@@ -988,12 +979,10 @@ func readCloneProgress(db database.DB, logger log.Logger, lock RepositoryLock, p
 		}
 	}
 
-	dbWritesLimiter := rate.NewLimiter(rate.Limit(1.0), 1)
 	scan := bufio.NewScanner(pr)
 	scan.Split(scanCRLF)
-	store := db.GitserverRepos()
 
-	eg, ctx := errgroup.WithContext(ctx)
+	var eg errgroup.Group
 	eg.Go(func() error {
 		for scan.Scan() {
 			progress := scan.Text()
@@ -1004,16 +993,6 @@ func readCloneProgress(db database.DB, logger log.Logger, lock RepositoryLock, p
 				// are issues
 				_, _ = fmt.Fprintln(logFile, progress)
 			}
-			// Only write to the database persisted status if line indicates progress
-			// which is recognized by presence of a '%'. We filter these writes not to waste
-			// rate-limit tokens on log lines that would not be relevant to the user.
-			if enableExperimentalDBCloneProgress {
-				if strings.Contains(progress, "%") && dbWritesLimiter.Allow() {
-					if err := store.SetCloningProgress(ctx, repo, progress); err != nil {
-						logger.Error("error updating cloning progress in the db", log.Error(err))
-					}
-				}
-			}
 		}
 		if err := scan.Err(); err != nil {
 			return err
@@ -1022,7 +1001,7 @@ func readCloneProgress(db database.DB, logger log.Logger, lock RepositoryLock, p
 		return nil
 	})
 
-	return eg
+	return &eg
 }
 
 // scanCRLF is similar to bufio.ScanLines except it splits on both '\r' and '\n'

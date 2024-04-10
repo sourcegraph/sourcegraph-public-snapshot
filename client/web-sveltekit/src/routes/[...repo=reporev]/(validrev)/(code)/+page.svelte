@@ -1,7 +1,4 @@
 <script lang="ts">
-    import { mdiFileDocumentOutline } from '@mdi/js'
-
-    import Icon from '$lib/Icon.svelte'
     import Readme from '$lib/repo/Readme.svelte'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
@@ -21,8 +18,6 @@
         <SidebarToggleButton />
     </div>
     {#if $readme.value}
-        <Icon svgPath={mdiFileDocumentOutline} />
-        &nbsp;
         {$readme.value.name}
     {:else if !$readme.pending}
         Description
