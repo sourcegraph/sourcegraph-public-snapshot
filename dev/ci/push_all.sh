@@ -6,7 +6,7 @@ echo "~~~ :aspect: :stethoscope: Agent Health check"
 /etc/aspect/workflows/bin/agent_health_check
 
 aspectRC="/tmp/aspect-generated.bazelrc"
-rosetta bazelrc > "$aspectRC"
+rosetta bazelrc >"$aspectRC"
 bazelrc=(--bazelrc="$aspectRC" --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
 
 function preview_tags() {
@@ -88,6 +88,11 @@ prod_registries=(
   "$PROD_REGISTRY"
 )
 
+additional_prod_registry=${ADDITIONAL_PROD_REGISTRY:-""}
+if [ -n "$additional_prod_registry" ]; then
+  prod_registries+=("$additional_prod_registry")
+fi
+
 date_fragment="$(date +%Y-%m-%d)"
 
 dev_tags=(
@@ -111,7 +116,7 @@ elif [[ "$BUILDKITE_BRANCH" =~ ^main$ ]] || [[ "$BUILDKITE_BRANCH" =~ ^docker-im
   dev_tags+=("insiders")
   prod_tags+=("insiders")
   push_prod=true
-elif [[ "$BUILDKITE_BRANCH" =~ ^main-dry-run/.*  ]]; then
+elif [[ "$BUILDKITE_BRANCH" =~ ^main-dry-run/.* ]]; then
   # We only push on internal registries on a main-dry-run.
   dev_tags+=("insiders")
   prod_tags+=("insiders")
@@ -143,11 +148,10 @@ if [ -n "$CANDIDATE_ONLY" ]; then
   push_prod=false
 fi
 
-
 # Posting the preamble for image pushes.
-echo -e "### ${BUILDKITE_LABEL}" > ./annotations/pushed_images.md
+echo -e "### ${BUILDKITE_LABEL}" >./annotations/pushed_images.md
 echo -e "<details><summary>Click to expand table</summary><table>\n" >>./annotations/pushed_images.md
-echo -e "<tr><th>Name</th><th>Registries</th><th>Tags</th></tr>\n" >> ./annotations/pushed_images.md
+echo -e "<tr><th>Name</th><th>Registries</th><th>Tags</th></tr>\n" >>./annotations/pushed_images.md
 
 preview_tags "${dev_registries[*]}" "${dev_tags[*]}"
 if $push_prod; then

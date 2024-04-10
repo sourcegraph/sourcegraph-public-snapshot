@@ -17,6 +17,9 @@ const (
 	// SourcegraphDockerPublishRegistry is a public registry for final images, and does not require authentication to pull from.
 	// TODO RFC795: safeguard
 	SourcegraphDockerPublishRegistry = "index.docker.io/sourcegraph"
+	// SourcegraphArtifactRegistryPublicRegistry is a public registry for storing public images.
+	// It is a migitation for the upcoming Docker Hub rate limits on GCP starting July 15, 2024
+	SourcegraphArtifactRegistryPublicRegistry = "us-docker.pkg.dev/sourcegraph-public-images/sourcegraph-public-images"
 	// SourcegraphInternalReleaseRegistry is a private registry storing internal releases.
 	SourcegraphInternalReleaseRegistry = "us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal"
 	// SourcegraphPublicReleaseRegistry is a currently private registry for storing public releases.
