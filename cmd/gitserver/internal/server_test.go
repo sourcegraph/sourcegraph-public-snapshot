@@ -115,7 +115,7 @@ func TestExecRequest(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	gr := dbmocks.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
-	fs := gitserverfs.New(&observation.TestContext, t.TempDir())
+	fs := gitserverfs.New(observation.TestContextTB(t), t.TempDir())
 	require.NoError(t, fs.Initialize())
 	s := NewServer(&ServerOpts{
 		Logger: logtest.Scoped(t),
@@ -1148,7 +1148,7 @@ func TestServer_IsRepoCloneable_InternalActor(t *testing.T) {
 
 	isCloneableCalled := false
 
-	fs := gitserverfs.New(&observation.TestContext, t.TempDir())
+	fs := gitserverfs.New(observation.TestContextTB(t), t.TempDir())
 	require.NoError(t, fs.Initialize())
 
 	s := NewServer(&ServerOpts{

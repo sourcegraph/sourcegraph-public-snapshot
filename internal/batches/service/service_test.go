@@ -46,7 +46,7 @@ func TestServicePermissionLevels(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
-	s := store.New(db, &observation.TestContext, nil)
+	s := store.New(db, observation.TestContextTB(t), nil)
 	svc := New(s)
 
 	admin := bt.CreateTestUser(t, db, true)
@@ -306,7 +306,7 @@ func TestService(t *testing.T) {
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 
-	s := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	s := store.NewWithClock(db, observation.TestContextTB(t), nil, clock)
 	rs, _ := bt.CreateTestRepos(t, ctx, db, 4)
 
 	fakeSource := &stesting.FakeChangesetSource{}

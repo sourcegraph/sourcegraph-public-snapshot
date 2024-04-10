@@ -24,7 +24,7 @@ func TestVulnerabilityMatchByID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	setupReferences(t, db)
 
@@ -59,7 +59,7 @@ func TestGetVulnerabilityMatches(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	/*
 	 * Setup references is inserting seven (7) total references.
@@ -200,7 +200,7 @@ func TestGetVulberabilityMatchesCountByRepository(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	/*
 	 * Setup references is inserting seven (7) total references.
@@ -272,7 +272,7 @@ func TestGetVulnerabilityMatchesSummaryCount(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 	handle := basestore.NewWithHandle(db.Handle())
 
 	/* Insert uploads for four (4) repositories */

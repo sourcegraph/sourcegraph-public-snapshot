@@ -54,5 +54,5 @@ func testService(t *testing.T, repositoryContents map[string]string) *Service {
 		return unpacktest.CreateTarArchive(t, files), nil
 	})
 
-	return newService(&observation.TestContext, sandboxService, gitService, ratelimit.NewInstrumentedLimiter("TestInference", rate.NewLimiter(rate.Limit(100), 1)), 100, 1024*1024)
+	return newService(observation.TestContextTB(t), sandboxService, gitService, ratelimit.NewInstrumentedLimiter("TestInference", rate.NewLimiter(rate.Limit(100), 1)), 100, 1024*1024)
 }

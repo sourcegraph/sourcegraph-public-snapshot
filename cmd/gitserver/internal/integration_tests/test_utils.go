@@ -80,7 +80,7 @@ func InitGitserver() {
 	})
 	db.ReposFunc.SetDefaultReturn(r)
 
-	fs := gitserverfs.New(&observation.TestContext, filepath.Join(root, "repos"))
+	fs := gitserverfs.New(observation.TestContextTB(&t), filepath.Join(root, "repos"))
 	require.NoError(&t, fs.Initialize())
 	getRemoteURLFunc := func(_ context.Context, name api.RepoName) (string, error) { //nolint:unparam // context is unused but required by the interface, error is not used in this test
 		return filepath.Join(root, "remotes", string(name)), nil

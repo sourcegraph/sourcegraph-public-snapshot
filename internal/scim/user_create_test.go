@@ -42,7 +42,7 @@ func TestUserResourceHandler_Create(t *testing.T) {
 			5: {makeEmail(5, "e@example.com", true, true)},
 			6: {makeEmail(6, "f@example.com", true, true), makeEmail(6, "ff@example.com", false, true)},
 		})
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	userResourceHandler := NewUserResourceHandler(context.Background(), observation.TestContextTB(t), db)
 	testCases := []struct {
 		name       string
 		username   string

@@ -21,7 +21,7 @@ func TestUserResourceHandler_Get(t *testing.T) {
 		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Middle Last"}, Emails: []string{"b@example.com"}},
 	},
 		map[int32][]*database.UserEmail{})
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	userResourceHandler := NewUserResourceHandler(context.Background(), observation.TestContextTB(t), db)
 	user1, err := userResourceHandler.Get(&http.Request{}, "1")
 	if err != nil {
 		t.Fatal(err)
@@ -77,7 +77,7 @@ func TestUserResourceHandler_GetAll(t *testing.T) {
 		{name: "filter: AND", count: 999, startIndex: 1, filter: "(userName eq \"user3\") AND (displayName eq \"First Last\")", wantTotalResults: 1, wantResults: 1, wantFirstID: 3},
 	}
 
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	userResourceHandler := NewUserResourceHandler(context.Background(), observation.TestContextTB(t), db)
 	for _, c := range cases {
 		t.Run("TestUserResourceHandler_GetAll "+c.name, func(t *testing.T) {
 			var params scim.ListRequestParams
