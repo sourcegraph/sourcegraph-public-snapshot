@@ -166,6 +166,46 @@ For example:
         }
     }
 
+    .header {
+        display: flex;
+        flex-flow: row-nowrap;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        background-color: var(--subtle-bg);
+
+        .icon-name-access {
+            display: flex;
+            flex-flow: row-nowrap;
+            justify-content: space-evenly;
+            align-items: center;
+            width: fit-content;
+
+            .repo-name {
+                color: var(--text-body);
+                margin: 0rem 0.5rem;
+            }
+
+            .access {
+                border: 1px solid var(--text-muted);
+                color: var(--text-muted);
+                padding: 0rem 0.5rem;
+                border-radius: 1rem;
+            }
+        }
+        .code-host {
+            display: flex;
+            flex-flow: row nowrap;
+            justify-content: flex-end;
+            align-items: center;
+
+            div {
+                color: var(--text-muted);
+                margin-left: 0.25rem;
+            }
+        }
+    }
+
     .divider {
         border-bottom: 1px solid var(--border-color);
         width: 100%;
@@ -262,8 +302,7 @@ For example:
         display: flex;
         flex-flow: column nowrap;
         justify-content: space-between;
-        margin-top: 0.5rem;
-        padding: 0rem 0.75rem;
+        padding: 0.75rem;
 
         .title-and-commit {
             display: flex;
@@ -333,11 +372,6 @@ For example:
                 align-self: center;
                 margin-right: 1rem;
             }
-
-            /* see note above about forks and license
-            .license {
-                align-self: center;
-            } */
         }
     }
 </style>

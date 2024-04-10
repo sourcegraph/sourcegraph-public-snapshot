@@ -29,3 +29,7 @@ fragment RepoPopoverFields on Repository {
         }
     }
 }
+
+fragment CodeHostFields on CodeHost {
+    kind
+}
