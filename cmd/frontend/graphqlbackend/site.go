@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"os"
 	"strconv"
@@ -660,43 +661,28 @@ func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 	return nil
 }
 
+type CodyContextFiltersArgs struct {
+	Version int32
+}
+
 type codyContextFiltersResolver struct {
 	ccf *schema.CodyContextFilters
 }
 
-type codyContextFilterItemResolver struct {
-	f *schema.CodyContextFilterItem
-}
-
-func (r *codyContextFilterItemResolver) RepoNamePattern() string {
-	return r.f.RepoNamePattern
-}
-
-func (c *codyContextFiltersResolver) Include() []*codyContextFilterItemResolver {
-	return resolveFilterItems(c.ccf.Include)
-}
-
-func (c *codyContextFiltersResolver) Exclude() []*codyContextFilterItemResolver {
-	return resolveFilterItems(c.ccf.Exclude)
-}
-
-func resolveFilterItems(items []*schema.CodyContextFilterItem) []*codyContextFilterItemResolver {
-	var r []*codyContextFilterItemResolver
-	for _, f := range items {
-		r = append(r, &codyContextFilterItemResolver{f})
+func (c *codyContextFiltersResolver) Raw() (*string, error) {
+	if c.ccf == nil {
+		return nil, nil
 	}
-	return r
+	marshaled, err := json.Marshal(c.ccf)
+	if err != nil {
+		return nil, err
+	}
+	str := string(marshaled)
+	return &str, nil
 }
 
-func (r *siteResolver) CodyContextFilters() *codyContextFiltersResolver {
-	ccf := conf.Get().SiteConfig().CodyContextFilters
-	if ccf == nil {
-		ccf = &schema.CodyContextFilters{
-			Include: []*schema.CodyContextFilterItem{},
-			Exclude: []*schema.CodyContextFilterItem{},
-		}
-	}
-	return &codyContextFiltersResolver{ccf}
+func (r *siteResolver) CodyContextFilters(_ context.Context, _ CodyContextFiltersArgs) *codyContextFiltersResolver {
+	return &codyContextFiltersResolver{ccf: conf.Get().SiteConfig().CodyContextFilters}
 }
 
 func allowEdit(before, after string, allowlist []string) ([]string, bool) {
