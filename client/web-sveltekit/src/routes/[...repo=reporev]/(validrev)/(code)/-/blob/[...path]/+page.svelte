@@ -27,7 +27,7 @@
     import { capitalize } from 'lodash'
     import OpenInCodeHostAction from './OpenInCodeHostAction.svelte'
     import { writable } from 'svelte/store'
-    import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte';
+    import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
 
     export let data: PageData
 
@@ -103,13 +103,11 @@
     <FileHeader>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
-            <OpenInEditor settings={{
-                openInEditor: {
-                    // todo: figure out where we can get the settings from
-                    editorIds: ["vscode"],
-                    "projectPaths.default": "/Users/michael/WebstormProjects"
-                }
-            }} sourcegraphURL="sourcegraph.com" />
+            {#await data.externalServiceType}
+                <OpenInEditor />
+            {:then externalServiceType}
+                <OpenInEditor {externalServiceType} />
+            {/await}
             {#if blob}
                 <OpenInCodeHostAction data={blob} />
             {/if}

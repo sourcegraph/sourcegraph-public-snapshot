@@ -3,7 +3,7 @@ import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
-import { BlobDiffQuery, BlobPageQuery, BlobSyntaxHighlightQuery } from './page.gql'
+import { BlobDiffQuery, BlobPageQuery, BlobSyntaxHighlightQuery, RepoInfoQuery } from './page.gql'
 
 export const load: PageLoad = ({ parent, params, url }) => {
     const revisionToCompare = url.searchParams.get('rev')
@@ -45,5 +45,8 @@ export const load: PageLoad = ({ parent, params, url }) => {
                       .then(mapOrThrow(result => result.data?.repository?.commit?.diff.fileDiffs.nodes[0] ?? null)),
               }
             : null,
+        externalServiceType: client
+            .query(RepoInfoQuery, { repoName })
+            .then(mapOrThrow(result => result.data?.repository?.externalRepository?.serviceType)),
     }
 }

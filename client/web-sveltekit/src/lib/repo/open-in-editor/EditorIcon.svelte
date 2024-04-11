@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type {Editor} from '$lib/repo/open-in-editor/editors';
+    import type { Editor } from '$lib/repo/open-in-editor/editors'
 
     export let editor: Editor
 
@@ -7,5 +7,5 @@
 </script>
 
 {#if editor}
-    <img class:icon-inline={true} height={24} width={24} src={svg} alt={editor.name}/>
+    <img class:icon-inline={true} height={24} width={24} src={svg} alt={editor.name} />
 {/if}

@@ -1,53 +1,52 @@
 <script lang="ts">
-    import type {Settings} from '$root/client/shared/src/schema/settings.schema'
-    import {buildEditorUrl, buildRepoBaseNameAndPath} from './build-url';
-    import {parseBrowserRepoURL} from '$lib/utils/url';
-    import type {EditorSettings} from './editor-settings';
-    import {getEditor} from './editors';
-    import {getEditorSettingsErrorMessage} from './build-url';
-    import Tooltip from '$lib/Tooltip.svelte';
-    import EditorIcon from '$lib/repo/open-in-editor/EditorIcon.svelte';
+    import { buildEditorUrl, buildRepoBaseNameAndPath } from './build-url'
+    import { parseBrowserRepoURL } from '$lib/utils/url'
+    import type { EditorSettings } from './editor-settings'
+    import { getEditor } from './editors'
+    import { getEditorSettingsErrorMessage } from './build-url'
+    import Tooltip from '$lib/Tooltip.svelte'
+    import EditorIcon from '$lib/repo/open-in-editor/EditorIcon.svelte'
+    import { settings } from '$lib/stores'
+    import { page } from '$app/stores'
+    import { SourcegraphURL } from '$lib/common'
 
-    export let settings: Settings;
-    export let externalServiceType: string = "";
-    export let sourcegraphURL: string;
+    export let externalServiceType: string = ''
 
-    const editorSettingsErrorMessage = getEditorSettingsErrorMessage(
-        settings?.openInEditor,
-        sourcegraphURL
-    )
-    const editorIds = (settings?.openInEditor as EditorSettings | undefined)?.editorIds ?? []
+    let openInEditor = $settings?.openInEditor
+    let sourcegraphURL: string = SourcegraphURL.from($page.url).toString()
+
+    const editorSettingsErrorMessage = getEditorSettingsErrorMessage(openInEditor, sourcegraphURL)
+    const editorIds = (openInEditor as EditorSettings | undefined)?.editorIds ?? []
     const editors = !editorSettingsErrorMessage ? editorIds.map(getEditor) : undefined
 
-    const {repoName, filePath, position, range} = parseBrowserRepoURL(window.location.href)
-    const start = position || range?.start;
+    const { repoName, filePath, position, range } = parseBrowserRepoURL(window.location.href)
+    const start = position || range?.start
 </script>
 
 {#if editors}
     {#each editors as e, i}
         {#if e}
             <Tooltip tooltip={`Open in ${e.name}`}>
-                <a href={buildEditorUrl(
+                <a
+                    href={buildEditorUrl(
                         buildRepoBaseNameAndPath(repoName, externalServiceType, filePath),
                         start,
-                        settings.openInEditor,
+                        openInEditor,
                         sourcegraphURL,
                         i
                     ).toString()}
-                   target="_blank" rel="noopener noreferrer">
-                <EditorIcon editor={e} />
-                    <span data-action-label>
-                        Editor
-                    </span>
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    <EditorIcon editor={e} />
+                    <span data-action-label> Editor </span>
                 </a>
             </Tooltip>
         {/if}
     {/each}
 {:else if editorSettingsErrorMessage}
     <Tooltip tooltip={editorSettingsErrorMessage}>
-        <span data-action-label>
-            Editor
-        </span>
+        <span data-action-label> Editor </span>
     </Tooltip>
 {/if}
 
