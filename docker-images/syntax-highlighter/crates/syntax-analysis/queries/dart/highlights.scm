@@ -170,7 +170,7 @@
 (symbol_literal (identifier) @constant) @constant
 (true) @boolean
 (false) @boolean
-(null_literal) @constant.builtin
+(null_literal) @constant.null
 
 (documentation_comment) @comment
 (comment) @comment
