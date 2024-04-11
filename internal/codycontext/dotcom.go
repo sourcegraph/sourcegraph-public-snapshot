@@ -7,6 +7,7 @@ import (
 	"os"
 	"sync"
 
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt/ignore"
 
@@ -31,7 +32,7 @@ type repoRevision struct {
 }
 
 type dotcomRepoFilter struct {
-	cache  safeCache[repoRevision, ignore.Matcher]
+	cache  *lru.Cache[repoRevision, ignore.Matcher]
 	client gitserver.Client
 
 	mu      sync.RWMutex
@@ -111,8 +112,10 @@ func (f *dotcomRepoFilter) getFilter(repos []types.RepoIDName, logger log.Logger
 // for the given repositories.
 func newDotcomFilter(client gitserver.Client) RepoContentFilter {
 	enabled := isEnabled(conf.Get())
+	// ignore error since it only happens if cache size is not positive
+	cache, _ := lru.New[repoRevision, ignore.Matcher](128)
 	ignoreFilter := &dotcomRepoFilter{
-		cache:   newSafeCache[repoRevision, ignore.Matcher](128),
+		cache:   cache,
 		client:  client,
 		enabled: enabled,
 	}
@@ -131,7 +134,7 @@ func isEnabled(c *conf.Unified) bool {
 	return false
 }
 
-func getIgnoreMatcher(ctx context.Context, cache safeCache[repoRevision, ignore.Matcher], client gitserver.Client, repo types.RepoIDName, commit api.CommitID) (*ignore.Matcher, error) {
+func getIgnoreMatcher(ctx context.Context, cache *lru.Cache[repoRevision, ignore.Matcher], client gitserver.Client, repo types.RepoIDName, commit api.CommitID) (*ignore.Matcher, error) {
 	cached, ok := cache.Get(repoRevision{Repo: repo, Commit: commit})
 	if ok {
 		return &cached, nil

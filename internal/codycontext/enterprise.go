@@ -126,7 +126,7 @@ func parseCodyContextFilters(ccf *schema.CodyContextFilters) (filtersConfig, err
 		exclude = append(exclude, filterItem{RepoNamePattern: re})
 	}
 
-	// ignore error since it only happens if cache size is not positive.
+	// ignore error since it only happens if cache size is not positive
 	cache, _ := lru.New[api.RepoName, bool](128)
 
 	return filtersConfig{
