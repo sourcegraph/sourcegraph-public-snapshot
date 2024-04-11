@@ -2,7 +2,6 @@
 
 echo STABLE_VERSION "$VERSION"
 echo VERSION_TIMESTAMP "$(date +%s)"
-echo VERSION_TIMESTAMP_RFC3339 "$(date --iso-8601=s)"
 
 # Unstable Buildkite env vars
 echo "BUILDKITE $BUILDKITE"
