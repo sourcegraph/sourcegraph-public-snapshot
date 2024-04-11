@@ -32,10 +32,9 @@ type repoRevision struct {
 }
 
 type dotcomRepoFilter struct {
-	cache  *lru.Cache[repoRevision, ignore.Matcher]
-	client gitserver.Client
-
 	mu      sync.RWMutex
+	cache   *lru.Cache[repoRevision, ignore.Matcher]
+	client  gitserver.Client
 	enabled bool
 }
 
