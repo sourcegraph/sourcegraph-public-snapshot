@@ -184,7 +184,6 @@ For example:
                 color: var(--text-body);
                 // only needed when icon is present
                 margin: 0rem 0.5rem 0rem 0rem;
-                // border: 1px dotted black;
             }
 
             .access {
@@ -320,7 +319,7 @@ For example:
                 flex-flow: row nowrap;
                 align-items: center;
                 justify-content: flex-end;
-                width: 200px;
+                width: 275px;
 
                 .commit {
                     color: var(--text-body);
@@ -361,9 +360,7 @@ For example:
         flex-flow: row nowrap;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.5rem;
-        margin-top: 0.5rem;
-        padding: 0rem 0.75rem;
+        padding: 0.75rem;
 
         .stats {
             display: flex;
