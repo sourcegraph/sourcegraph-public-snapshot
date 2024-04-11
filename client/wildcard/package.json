@@ -13,9 +13,11 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@sourcegraph/testing": "workspace:*"
+    "@sourcegraph/testing": "workspace:*",
+    "@types/highlight.js": "^9.12.4"
   },
   "dependencies": {
-    "@sourcegraph/common": "workspace:*"
+    "@sourcegraph/common": "workspace:*",
+    "highlight.js": "^10.7.3"
   }
 }

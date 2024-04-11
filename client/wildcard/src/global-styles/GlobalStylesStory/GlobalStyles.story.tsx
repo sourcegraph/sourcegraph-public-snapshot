@@ -7,7 +7,7 @@ import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import '@storybook/addon-designs'
 
-import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
+import { highlightCodeSafe, registerHighlightContributions } from '../../utils'
 
 import { TextArea, Button, Link, Select, Checkbox, Input, Text, Code, H1, H2, H3, H4, Form } from '../../components'
 import { BrandedStory } from '../../stories'

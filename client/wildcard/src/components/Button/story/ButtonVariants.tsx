@@ -4,7 +4,7 @@ import { startCase } from 'lodash'
 
 import '@storybook/addon-designs'
 
-import { logger } from '@sourcegraph/common'
+import { logger } from '../../../utils'
 
 import { Icon } from '../../Icon'
 import { Button, type ButtonProps } from '../Button'
