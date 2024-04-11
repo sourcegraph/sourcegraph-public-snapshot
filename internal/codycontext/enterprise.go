@@ -28,9 +28,9 @@ type filtersConfig struct {
 }
 
 type enterpriseRepoFilter struct {
-	mu                   sync.RWMutex
-	ccf                  filtersConfig
-	invalidConfiguration bool
+	mu            sync.RWMutex
+	ccf           filtersConfig
+	isConfigValid bool
 }
 
 // newEnterpriseFilter creates a new RepoContentFilter that filters out
@@ -47,7 +47,7 @@ func newEnterpriseFilter(logger log.Logger) (RepoContentFilter, error) {
 	conf.Watch(func() {
 		err := f.configure()
 		if err != nil {
-			logger.Error("failed to configure filter. defaulting to ignoring all context. Please fix cody.contextFilters in site configuration.", log.Error(err))
+			logger.Error("Failed to configure filter. Defaulting to ignoring all context. Please fix cody.contextFilters in site configuration.", log.Error(err))
 		}
 	})
 	return f, nil
@@ -56,7 +56,7 @@ func newEnterpriseFilter(logger log.Logger) (RepoContentFilter, error) {
 func (f *enterpriseRepoFilter) getFiltersConfig() (_ filtersConfig, ok bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	return f.ccf, !f.invalidConfiguration
+	return f.ccf, f.isConfigValid
 }
 
 // GetFilter returns the list of repos that can be filtered based on the Cody context filter value in the site config.
@@ -93,12 +93,12 @@ func (f *enterpriseRepoFilter) configure() error {
 	defer f.mu.Unlock()
 
 	if err != nil {
-		f.invalidConfiguration = true
+		f.isConfigValid = false
 		return err
 	}
 
 	f.ccf = ccf
-	f.invalidConfiguration = false
+	f.isConfigValid = true
 
 	return nil
 }
