@@ -72,7 +72,7 @@ For example:
     $: codeHostIcon = getCodeHostIcon(codeHostKind)
 </script>
 
-<div class="container">
+<div class="root">
     {#if withHeader}
         <div class="header">
             <div class="icon-name-access">
@@ -155,12 +155,10 @@ For example:
 </div>
 
 <style lang="scss">
-    .container {
+    .root {
         border: 1px solid var(--border-color);
         border-radius: var(--popover-border-radius);
         width: 400px;
-        // ensures the dividers extend to the edge of the popover.
-        padding: 0;
     }
 
     .header {
