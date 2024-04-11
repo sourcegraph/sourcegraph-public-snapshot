@@ -5,7 +5,6 @@ import (
 	"os"
 	"sync"
 
-	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt/ignore"
 
@@ -31,7 +30,6 @@ type repoRevision struct {
 
 type dotcomRepoFilter struct {
 	mu      sync.RWMutex
-	cache   *lru.Cache[repoRevision, ignore.Matcher]
 	client  gitserver.Client
 	enabled bool
 }
@@ -78,7 +76,7 @@ func (f *dotcomRepoFilter) getFilter(repos []types.RepoIDName, logger log.Logger
 			logger.Info("repoContextFilter: empty repo removing", log.Int32("repo", int32(repo.ID)))
 			continue
 		}
-		matcher, err := getIgnoreMatcher(ctx, f.cache, f.client, repo, commit)
+		matcher, err := getIgnoreMatcher(ctx, f.client, repo, commit)
 		if err != nil {
 			logger.Warn("repoContextFilter: unable to process ignore file", log.Int32("repo", int32(repo.ID)), log.Error(err))
 			continue
@@ -109,10 +107,7 @@ func (f *dotcomRepoFilter) getFilter(repos []types.RepoIDName, logger log.Logger
 // for the given repositories.
 func newDotcomFilter(client gitserver.Client) RepoContentFilter {
 	enabled := isEnabled(conf.Get())
-	// ignore error since it only happens if cache size is not positive
-	cache, _ := lru.New[repoRevision, ignore.Matcher](128)
 	ignoreFilter := &dotcomRepoFilter{
-		cache:   cache,
 		client:  client,
 		enabled: enabled,
 	}
@@ -131,12 +126,7 @@ func isEnabled(c *conf.Unified) bool {
 	return false
 }
 
-func getIgnoreMatcher(ctx context.Context, cache *lru.Cache[repoRevision, ignore.Matcher], client gitserver.Client, repo types.RepoIDName, commit api.CommitID) (*ignore.Matcher, error) {
-	cached, ok := cache.Get(repoRevision{Repo: repo, Commit: commit})
-	if ok {
-		return &cached, nil
-	}
-
+func getIgnoreMatcher(ctx context.Context, client gitserver.Client, repo types.RepoIDName, commit api.CommitID) (*ignore.Matcher, error) {
 	fr, err := client.NewFileReader(
 		ctx,
 		repo.Name,
@@ -146,7 +136,6 @@ func getIgnoreMatcher(ctx context.Context, cache *lru.Cache[repoRevision, ignore
 	if err != nil {
 		// We do not ignore anything if the ignore file does not exist.
 		if os.IsNotExist(err) {
-			cache.Add(repoRevision{Repo: repo, Commit: commit}, emptyMatcher)
 			return &emptyMatcher, nil
 		}
 		return nil, err
@@ -156,6 +145,5 @@ func getIgnoreMatcher(ctx context.Context, cache *lru.Cache[repoRevision, ignore
 	if err != nil {
 		return nil, err
 	}
-	cache.Add(repoRevision{Repo: repo, Commit: commit}, *ig)
 	return ig, nil
 }

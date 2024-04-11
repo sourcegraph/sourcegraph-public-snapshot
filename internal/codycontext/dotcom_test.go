@@ -183,38 +183,6 @@ func TestNewDotcomFilter(t *testing.T) {
 		filterableRepos, _, _ := f.GetFilter(repos, logger)
 		require.Len(t, filterableRepos, 0)
 	})
-
-	t.Run("uses cache", func(t *testing.T) {
-		client := gitserver.NewMockClient()
-		client.GetDefaultBranchFunc.SetDefaultReturn("main", api.CommitID("abc123"), nil)
-		client.NewFileReaderFunc.SetDefaultReturn(io.NopCloser(strings.NewReader("**/file1.go")), nil)
-		f := newDotcomFilter(client)
-
-		chunks := []FileChunkContext{
-			{
-				RepoName: "repo1",
-				RepoID:   1,
-				Path:     "/file1.go",
-			},
-			{
-				RepoName: "repo2",
-				RepoID:   2,
-				Path:     "/file2.go",
-			},
-		}
-		// simulate 1st call
-		_, filter, _ := f.GetFilter(repos, logger)
-		filtered := filter(chunks)
-		require.Equal(t, 1, len(filtered))
-
-		//simulate 2nd call
-		_, filter2, _ := f.GetFilter(repos, logger)
-		filtered2 := filter2(chunks)
-		require.Equal(t, 1, len(filtered2))
-
-		// This should be called once for each repo
-		require.Equal(t, len(client.NewFileReaderFunc.History()), 2)
-	})
 }
 
 func TestDotcomFilterDisabled(t *testing.T) {
