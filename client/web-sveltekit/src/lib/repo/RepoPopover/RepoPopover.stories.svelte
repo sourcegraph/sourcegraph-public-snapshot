@@ -6,8 +6,6 @@
 
     import RepoPopover from './RepoPopover.svelte'
 
-    let withHeader = true
-
     export const meta = {
         component: RepoPopover,
     }

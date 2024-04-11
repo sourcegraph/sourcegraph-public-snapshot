@@ -300,6 +300,53 @@ For example:
 
     .last-commit {
         display: flex;
+        flex-flow: row nowrap;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 0.75rem;
+
+        .heading {
+            color: var(--text-muted);
+        }
+
+        .commit-info {
+            display: flex;
+            flex-flow: column nowrap;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 0.25rem 0rem;
+
+            .commit {
+                display: flex;
+                flex-flow: row nowrap;
+                justify-content: flex-end;
+                align-items: center;
+                gap: 0.25rem 0rem;
+                width: 250px;
+
+                .subject {
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    color: var(--text-body);
+                }
+
+                .commit-number {
+                    color: var(--text-muted);
+                    align-self: center;
+                }
+            }
+
+            .author {
+                display: flex;
+                flex-flow: row nowrap;
+                color: var(--text-muted);
+                gap: 0.5rem 0.25rem;
+            }
+        }
+    }
+    /* .last-commit {
+        display: flex;
         flex-flow: column nowrap;
         justify-content: space-between;
         padding: 0.75rem;
@@ -310,7 +357,7 @@ For example:
             justify-content: space-between;
             align-items: center;
 
-            .title {
+            .heading {
                 color: var(--text-muted);
             }
 
@@ -333,9 +380,9 @@ For example:
                     color: var(--text-muted);
                 }
             }
-        }
+        } */
 
-        .author-and-time {
+    /* .author-and-time {
             color: var(--text-muted);
             display: flex;
             flex-flow: row nowrap;
@@ -352,9 +399,9 @@ For example:
                 margin-right: 0.5rem;
             }
         }
-    }
+    } */
 
-    .repo-stats {
+    .footer {
         color: var(--text-muted);
         display: flex;
         flex-flow: row nowrap;
