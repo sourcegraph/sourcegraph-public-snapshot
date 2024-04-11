@@ -3,6 +3,13 @@ fragment RepoPopoverFields on Repository {
     description
     stars
     isPrivate
+    language
+    externalServices {
+        totalCount
+        nodes {
+            kind
+        }
+    }
     tags {
         nodes {
             name
@@ -20,13 +27,5 @@ fragment RepoPopoverFields on Repository {
                 ...Avatar_Person
             }
         }
-
-        repository {
-            language
-        }
     }
-}
-
-fragment CodeHostFields on CodeHost {
-    kind
 }

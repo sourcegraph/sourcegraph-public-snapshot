@@ -28,22 +28,12 @@ For example:
     import { ExternalServiceKind } from '$lib/graphql-types'
     import Icon from '$lib/Icon.svelte'
 
-    import { RepoPopoverFields, CodeHostFields } from './RepoPopover.gql'
+    import { RepoPopoverFields } from './RepoPopover.gql'
 
     export let repo: RepoPopoverFields
-    export let codeHost: CodeHostFields
     export let withHeader: Boolean = false
 
     const CENTER_DOT = '\u00B7' // interpunct
-
-    let name = repo.name
-    let tags = repo.tags.nodes
-    let description = repo.description
-    let stars = repo.stars
-    let isPrivate = repo.isPrivate
-
-    let codeHostKind = codeHost.kind
-    let codeHostIcon = getCodeHostIcon(codeHostKind)
 
     function formatNumber(num: number): string {
         if (num >= 1000) {
@@ -73,13 +63,13 @@ For example:
         }
     }
 
-    $: commit = repo.commit
-    $: subject = commit?.subject
-    $: commitNumber = commit?.abbreviatedOID
-    $: author = commit?.author.person.name
-    $: commitDate = commit?.author.date
-    $: avatar = commit?.author.person
-    $: lang = commit?.repository?.language
+    $: subject = repo.commit?.subject
+    $: commitNumber = repo.commit?.abbreviatedOID
+    $: author = repo.commit?.author.person.name
+    $: commitDate = repo.commit?.author.date
+    $: avatar = repo.commit?.author.person
+    $: codeHostKind = repo.externalServices.nodes[0].kind
+    $: codeHostIcon = getCodeHostIcon(codeHostKind)
 </script>
 
 <div class="container">
@@ -88,9 +78,9 @@ For example:
             <div class="icon-name-access">
                 <!-- @TODO: We need to use our customer's logo here, not the code host's -->
                 <!--Icon svgPath={mdiGitlab} /-->
-                <h4 class="repo-name">{name}</h4>
+                <h4 class="repo-name">{repo.name}</h4>
                 <div class="access">
-                    <small>{isPrivate ? 'Private' : 'Public'}</small>
+                    <small>{repo.isPrivate ? 'Private' : 'Public'}</small>
                 </div>
             </div>
             <div class="code-host">
@@ -101,10 +91,10 @@ For example:
         <div class="divider" />
     {/if}
     <div class="description-and-tags">
-        <div class="description">{description}</div>
+        <div class="description">{repo.description}</div>
         <div class="tags">
-            {#if tags.length > 0}
-                {#each tags as tag}
+            {#if repo.tags.nodes.length > 0}
+                {#each repo.tags.nodes as tag}
                     <div class="tag"><small>{tag.name}</small></div>
                 {/each}
             {/if}
@@ -155,11 +145,11 @@ For example:
     <div class="divider" />
     <div class="repo-stats">
         <div class="stats">
-            <div class="stat"><small>{lang}</small></div>
+            <div class="stat"><small>{repo.language}</small></div>
         </div>
         <div class="stat">
             <Icon svgPath={mdiStarOutline} size={16} style="margin-right: 0.15rem;" />
-            <small>{formatNumber(stars)}</small>
+            <small>{formatNumber(repo.stars)}</small>
         </div>
     </div>
 </div>

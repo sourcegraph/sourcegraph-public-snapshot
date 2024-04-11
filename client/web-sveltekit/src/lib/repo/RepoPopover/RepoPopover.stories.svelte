@@ -2,7 +2,7 @@
     import { faker } from '@faker-js/faker'
     import { Story } from '@storybook/addon-svelte-csf'
 
-    import { type RepoPopoverFields, type CodeHostFields, ExternalServiceKind } from '$testing/graphql-type-mocks'
+    import { type RepoPopoverFields, ExternalServiceKind } from '$testing/graphql-type-mocks'
 
     import RepoPopover from './RepoPopover.svelte'
 
@@ -26,6 +26,15 @@
             ],
         },
         isPrivate: false,
+        language: 'Go',
+        externalServices: {
+            totalCount: 1,
+            nodes: [
+                {
+                    kind: ExternalServiceKind.GITHUB,
+                },
+            ],
+        },
         commit: {
             id: faker.datatype.number.toString(),
             subject: faker.lorem.sentence(),
@@ -39,21 +48,15 @@
                     name: faker.internet.userName(),
                 },
             },
-            repository: {
-                language: 'Go',
-            },
         },
-    }
-    let codeHost: CodeHostFields = {
-        kind: ExternalServiceKind.GITHUB,
     }
 </script>
 
 <Story name="Default">
     <h2>With header</h2>
-    <RepoPopover {repo} {codeHost} withHeader={true} />
+    <RepoPopover {repo} withHeader={true} />
     <br />
     <br />
     <h2>Without header</h2>
-    <RepoPopover {repo} {codeHost} />
+    <RepoPopover {repo} />
 </Story>
