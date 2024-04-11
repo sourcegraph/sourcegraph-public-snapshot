@@ -68,7 +68,6 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
     } = useLegacyContext_onlyInStormRoutes()
     const { telemetryRecorder } = platformContext
 
-    console.log(telemetryRecorder)
     const selectedSearchContextSpec = hardCodedSearchContextSpec || dynamicSearchContextSpec
 
     const location = useLocation()
