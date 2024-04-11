@@ -1,5 +1,3 @@
-import type { ErrorLike } from '@sourcegraph/common'
-
 export { screenReaderAnnounce, screenReaderClearAnnouncements } from './screenReaderAnnounce'
 export { createLinkClickHandler } from './linkClickHandler'
 export { joinWithAnd } from './joinWithAnd'
@@ -98,4 +96,9 @@ export const logger: Logger = {
     debug: (...args: LoggerArgsType) => {
         console.debug(...args)
     },
+}
+
+interface ErrorLike {
+    message: string
+    name?: string
 }
