@@ -93,12 +93,12 @@ func (f *dotcomRepoFilter) getFilter(repos []types.RepoIDName, logger log.Logger
 	return filterableRepos, func(fcc []FileChunkContext) []FileChunkContext {
 		filtered := make([]FileChunkContext, 0, len(fcc))
 		for _, fc := range fcc {
-			remove, ok := filters[fc.RepoName]
+			ignore, ok := filters[fc.RepoName]
 			if !ok {
 				filtered = append(filtered, fc)
 				continue
 			}
-			if !remove(fc.Path) {
+			if !ignore(fc.Path) {
 				filtered = append(filtered, fc)
 			}
 		}
