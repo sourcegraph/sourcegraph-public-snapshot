@@ -165,9 +165,9 @@ If you've installed PostgreSQL with Homebrew that should be the case.
 If you used another method, make sure psql is available.`,
 				Check: checkAction(check.Combine(
 					check.InPath("psql"),
-					check.CompareSemanticVersion("psql", "psql --version", ">= 15.0"),
+					check.CompareSemanticVersion("psql", "psql --version", ">= 12.0"),
 				)),
-				Fix: brewInstall("postgresql@15"),
+				Fix: brewInstall("postgresql@12"),
 			},
 			{
 				Name: "Start Postgres",
@@ -183,7 +183,7 @@ If you used another method, make sure psql is available.`,
 					}
 					return check.PostgresConnection(ctx)
 				},
-				Description: `Sourcegraph requires the PostgreSQL database (v15+) to be running.
+				Description: `Sourcegraph requires the PostgreSQL database (v12) to be running.
 
 We recommend installing it with Homebrew and starting it as a system service.
 If you know what you're doing, you can also install PostgreSQL another way.
@@ -191,7 +191,7 @@ For example: you can use https://postgresapp.com/
 
 If you're not sure: use the recommended commands to install PostgreSQL.`,
 				Fix: cmdFixes(
-					"brew services start postgresql@15",
+					"brew services start postgresql@12",
 					"sleep 3",
 				),
 			},
