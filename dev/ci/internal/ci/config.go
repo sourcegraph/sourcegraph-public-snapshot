@@ -92,7 +92,21 @@ func NewConfig(now time.Time) Config {
 			// We run builds on every commit in main, so on main, just look at the diff of the current commit.
 			diffCommand = append(diffCommand, "@^")
 		} else {
-			diffCommand = append(diffCommand, "origin/main..."+commit)
+			// We have a different base branch (possibily) and on aspect agents we are in a detached state with only 100 commit depth
+			// so we might not know about this base branch ... so we first fetch the base and then diff
+			//
+			// Determine the base branch
+			baseBranch := os.Getenv("BUILDKITE_PULL_REQUEST_BASE_BRANCH")
+			if baseBranch == "" {
+				baseBranch = "main"
+			}
+			// fetch the branch to make sure it exists
+			refspec := fmt.Sprintf("+refs/heads/%s:refs/remotes/origin/%s", baseBranch, baseBranch)
+			if _, err := exec.Command("git", "fetch", "origin", refspec).Output(); err != nil {
+				panic(fmt.Sprintf("failed to fetch %s: %s", baseBranch, err))
+			}
+			// the base we want to diff against should exist locally now so we can diff!
+			diffCommand = append(diffCommand, fmt.Sprintf("origin/%s...%s", baseBranch, commit))
 		}
 	} else {
 		diffCommand = append(diffCommand, "origin/main...")
