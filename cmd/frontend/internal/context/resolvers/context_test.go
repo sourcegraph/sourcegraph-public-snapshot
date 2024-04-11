@@ -238,14 +238,14 @@ func TestContextResolver(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dotcom.MockSourcegraphDotComMode(t, tt.dotComMode)
-
+			observationCtx := observation.TestContextTB(t)
 			contextClient := codycontext.NewCodyContextClient(
-				observation.NewContext(logger),
+				observationCtx,
 				db,
 				mockEmbeddingsClient,
 				mockSearchClient,
 				nil,
-				codycontext.NewRepoContentFilter(mockGitserver),
+				codycontext.NewRepoContentFilter(observationCtx.Logger, mockGitserver),
 			)
 
 			resolver := NewResolver(
