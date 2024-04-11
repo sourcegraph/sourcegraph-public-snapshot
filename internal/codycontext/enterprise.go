@@ -15,7 +15,7 @@ import (
 const allowByDefault = true
 
 type filterItem struct {
-	RepoNamePattern regexp.Regexp
+	RepoNamePattern *regexp.Regexp
 }
 
 type filtersConfig struct {
@@ -111,7 +111,7 @@ func parseCodyContextFilters(ccf *schema.CodyContextFilters) (filtersConfig, err
 		if err != nil {
 			return filtersConfig{}, err
 		}
-		include = append(include, filterItem{RepoNamePattern: *re})
+		include = append(include, filterItem{RepoNamePattern: re})
 	}
 
 	var exclude []filterItem
@@ -120,7 +120,7 @@ func parseCodyContextFilters(ccf *schema.CodyContextFilters) (filtersConfig, err
 		if err != nil {
 			return filtersConfig{}, err
 		}
-		exclude = append(exclude, filterItem{RepoNamePattern: *re})
+		exclude = append(exclude, filterItem{RepoNamePattern: re})
 	}
 
 	return filtersConfig{

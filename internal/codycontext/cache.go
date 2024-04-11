@@ -4,7 +4,8 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2"
 )
 
-// TODO: why safe cache
+// safeCache is a wrapper around lru.Cache, but falls back to no caching if
+// you forget to initialize it (ie avoids nil pointer derefences)
 type safeCache[K comparable, V any] struct {
 	cache *lru.Cache[K, V]
 }
