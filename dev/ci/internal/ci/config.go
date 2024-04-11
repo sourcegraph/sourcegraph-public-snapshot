@@ -94,10 +94,8 @@ func NewConfig(now time.Time) Config {
 		} else {
 			baseBranch := os.Getenv("BUILDKITE_PULL_REQUEST_BASE_BRANCH")
 			if diffArgs, err := determineDiffArgs(baseBranch, commit); err != nil {
-				fmt.Fprintf(os.Stderr, "1.CONFUSED SCREAMING:\nBase: %q, DiffArgs: %q", baseBranch, diffArgs)
 				panic(err)
 			} else {
-				fmt.Fprintf(os.Stderr, "2.CONFUSED SCREAMING:\nBase: %q, DiffArgs: %q", baseBranch, diffArgs)
 				// the base we want to diff against should exist locally now so we can diff!
 				diffCommand = append(diffCommand, diffArgs)
 			}
@@ -107,6 +105,7 @@ func NewConfig(now time.Time) Config {
 		// for testing
 		commit = "1234567890123456789012345678901234567890"
 	}
+	fmt.Fprintf(os.Stderr, "running diff command: git %v\n", diffCommand)
 	if output, err := exec.Command("git", diffCommand...).Output(); err != nil {
 		panic(err)
 	} else {
@@ -157,10 +156,10 @@ func determineDiffArgs(baseBranch, commit string) (string, error) {
 
 	// fetch the branch to make sure it exists
 	refspec := fmt.Sprintf("+refs/heads/%s:refs/remotes/origin/%s", baseBranch, baseBranch)
-	if output, err := exec.Command("git", "fetch", "origin", refspec).Output(); err != nil {
+	if _, err := exec.Command("git", "fetch", "origin", refspec).Output(); err != nil {
 		return "", errors.Newf("failed to fetch %s: %s", baseBranch, err)
 	} else {
-		fmt.Fprintf(os.Stderr, "Fetched %s: %s\n", baseBranch, output)
+		fmt.Fprintf(os.Stderr, "fetched %s\n", baseBranch)
 		return fmt.Sprintf("origin/%s...%s", baseBranch, commit), nil
 	}
 }
