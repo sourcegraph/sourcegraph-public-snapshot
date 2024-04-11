@@ -17,7 +17,6 @@
     "@types/highlight.js": "^9.12.4"
   },
   "dependencies": {
-    "@sourcegraph/common": "workspace:*",
     "highlight.js": "^10.7.3"
   }
 }
