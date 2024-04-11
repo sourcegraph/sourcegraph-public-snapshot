@@ -156,9 +156,11 @@ http_archive(
     url = "https://github.com/aspect-build/aspect-cli/archive/5.8.20.tar.gz",
 )
 
-load("@aspect_bazel_lib//lib:repositories.bzl", "register_jq_toolchains")
+load("@aspect_bazel_lib//lib:repositories.bzl", "register_expand_template_toolchains", "register_jq_toolchains")
 
 register_jq_toolchains()
+
+register_expand_template_toolchains()
 
 # hermetic_cc_toolchain setup ================================
 HERMETIC_CC_TOOLCHAIN_VERSION = "v2.2.1"
