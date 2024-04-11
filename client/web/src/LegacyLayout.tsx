@@ -284,7 +284,11 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 />
             )}
             {props.authenticatedUser && externalAccountsModalVisible && (
-                <ExternalAccountsModal context={window.context} authenticatedUser={props.authenticatedUser} />
+                <ExternalAccountsModal
+                    context={window.context}
+                    authenticatedUser={props.authenticatedUser}
+                    isLightTheme={theme === Theme.Light}
+                />
             )}
             {showDeveloperDialog && <LazyDeveloperDialog />}
             <SearchQueryStateObserver

@@ -1,21 +1,22 @@
 import { useEffect, useState } from 'react'
 
-import type { AuthenticatedUser } from 'src/auth'
-import { BrandLogo } from 'src/components/branding/BrandLogo'
-import type { UserExternalAccountsWithAccountDataVariables } from 'src/graphql-operations'
-import type { AuthProvider, SourcegraphContext } from 'src/jscontext'
-import { ExternalAccountsSignIn } from 'src/user/settings/auth/ExternalAccountsSignIn'
-import type { UserExternalAccount, UserExternalAccountsResult } from 'src/user/settings/auth/UserSettingsSecurityPage'
-import { USER_EXTERNAL_ACCOUNTS } from 'src/user/settings/backend'
-
 import type { ErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { Button, ErrorAlert, H2, LoadingSpinner, Modal, Text } from '@sourcegraph/wildcard'
+
+import type { AuthenticatedUser } from '../auth'
+import { BrandLogo } from '../components/branding/BrandLogo'
+import type { UserExternalAccountsWithAccountDataVariables } from '../graphql-operations'
+import type { AuthProvider, SourcegraphContext } from '../jscontext'
+import { ExternalAccountsSignIn } from '../user/settings/auth/ExternalAccountsSignIn'
+import type { UserExternalAccount, UserExternalAccountsResult } from '../user/settings/auth/UserSettingsSecurityPage'
+import { USER_EXTERNAL_ACCOUNTS } from '../user/settings/backend'
 
 import styles from './ExternalAccountsModal.module.scss'
 
 export interface ExternalAccountsModalProps {
     authenticatedUser: AuthenticatedUser
+    isLightTheme: boolean
     context: Pick<SourcegraphContext, 'authProviders'>
 }
 
@@ -123,7 +124,7 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
             position="center"
         >
             <div className={styles.title}>
-                <BrandLogo variant="symbol" isLightTheme={true} />
+                <BrandLogo variant="symbol" isLightTheme={props.isLightTheme} disableSymbolSpin={true} />
                 <div>
                     <H2>Sourcegraph setup: permissions & security</H2>
                     <Text>Connect external identity providers to access private repositories.</Text>
