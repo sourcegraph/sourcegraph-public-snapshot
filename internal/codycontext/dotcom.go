@@ -38,20 +38,20 @@ type dotcomRepoFilter struct {
 	enabled bool
 }
 
-func (f *dotcomRepoFilter) SetEnabled(enabled bool) {
+func (f *dotcomRepoFilter) setEnabled(enabled bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.enabled = enabled
 }
 
-func (f *dotcomRepoFilter) GetEnabled() bool {
+func (f *dotcomRepoFilter) getEnabled() bool {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	return f.enabled
 }
 
 func (f *dotcomRepoFilter) GetFilter(repos []types.RepoIDName, logger log.Logger) (_ []types.RepoIDName, _ FileChunkFilterFunc, ok bool) {
-	if !f.GetEnabled() {
+	if !f.getEnabled() {
 		return repos, func(fcc []FileChunkContext) []FileChunkContext {
 			return fcc
 		}, true
@@ -118,7 +118,7 @@ func newDotcomFilter(client gitserver.Client) RepoContentFilter {
 	}
 
 	conf.Watch(func() {
-		ignoreFilter.SetEnabled(isEnabled(conf.Get()))
+		ignoreFilter.setEnabled(isEnabled(conf.Get()))
 	})
 
 	return ignoreFilter
