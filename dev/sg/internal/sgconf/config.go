@@ -150,6 +150,14 @@ type Config struct {
 	Commandsets       map[string]*Commandset        `yaml:"commandsets"`
 	DefaultCommandset string                        `yaml:"defaultCommandset"`
 	Tests             map[string]*run.Command       `yaml:"tests"`
+	Tasks             map[string]TaskConfig         `yaml:"tasks"`
+}
+
+// TODO this is a placeholder/spike - change to use external manifests, as
+// described in https://github.com/sourcegraph/devx-support/issues/801
+type TaskConfig struct {
+	Usage   string `yaml:"usage"`
+	Command string `yaml:"cmd"`
 }
 
 // Merge merges the top-level entries of two Config objects, using the

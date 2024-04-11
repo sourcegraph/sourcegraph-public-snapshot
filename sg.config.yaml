@@ -1943,3 +1943,11 @@ tests:
       See more details: https://sourcegraph.com/docs/dev/how-to/testing#running-integration-tests
 
     cmd: pnpm test-integration:debug
+
+tasks:
+  echo-hello:
+    usage: "say hi"
+    cmd: "echo 'hello tasks!'"
+  error-out:
+    usage: "return an error"
+    cmd: "echo 'will exit 1' && exit 1"

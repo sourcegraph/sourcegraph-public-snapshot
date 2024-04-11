@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/urfave/cli/v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/log"
 
@@ -301,6 +302,7 @@ var sg = &cli.App{
 		helpCommand,
 		installCommand,
 		release.Command,
+		tasksCommand,
 		updateCommand,
 		versionCommand,
 	},
@@ -351,4 +353,32 @@ func getConfig() (*sgconf.Config, error) {
 		return sgconf.GetWithoutOverwrites(configFile)
 	}
 	return sgconf.Get(configFile, configOverwriteFile)
+}
+
+// The "tasks" config block is needed to influence the setup of the CLI command
+// itself - but we can't be sure we have the config path until the CLI command
+// is initialized, and parsing flags! We work around this circular dependency by
+// trying to find the config file path with its env var and default location.
+// Trying to parse an actual flag for this would be recreating too much of the
+// urfave/cli framework. Unfortunately, as a consequence of all this, users who
+// pass `--config` will usually find that the tasks feature doesn't work.
+func preFlagConfig() (*sgconf.Config, error) {
+	configFile := os.Getenv("SG_CONFIG")
+	if configFile == "" {
+		configFile = sgconf.DefaultFile
+	}
+	cfgBytes, err := os.ReadFile(configFile)
+	if err != nil {
+		return nil, err
+	}
+
+	// Don't call the actual sgconf functions - they memoize the config, and we
+	// haven't loaded the --config flag yet. Any bespoke logic in these
+	// functions (apart from that in UnmarshalYAML() overrides) does not run for
+	// pre-flag config.
+	var cfg sgconf.Config
+	if err := yaml.Unmarshal(cfgBytes, &cfg); err != nil {
+		return nil, err
+	}
+	return &cfg, nil
 }
