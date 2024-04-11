@@ -48,12 +48,12 @@ func TestGetAllTokenUsageData(t *testing.T) {
 		t.Error(err)
 	}
 
-	llmUsage, ok := usageSummary["llm_usage"].(map[string]interface{})
+	llmUsage, ok := usageSummary["llm_usage"].([]map[string]interface{})
 	if !ok {
 		t.Fatalf("Expected llm_usage key to be present and be a map")
 	}
 
-	models, ok := llmUsage["models"].([]tokenusage.ModelData)
+	models, ok := llmUsage[0]["models"].([]tokenusage.ModelData)
 	if !ok || len(models) != 2 {
 		t.Fatalf("Expected models to be a slice of map with 2 items, got %d", len(models))
 	}

@@ -21,7 +21,7 @@ type ModelData struct {
 
 func NewManager() *Manager {
 	return &Manager{
-		Cache: rcache.New("LLMUsage"),
+		Cache: rcache.NewWithRedisStore("LLMUsage"),
 	}
 }
 
@@ -86,10 +86,9 @@ func (m *Manager) RetrieveAndResetTokenUsageData() (map[string]interface{}, erro
 		}
 		modelsData = append(modelsData, modelData)
 	}
-
 	result := map[string]interface{}{
-		"llm_usage": map[string]interface{}{
-			"models": modelsData,
+		"llm_usage": []map[string]interface{}{
+			{"models": modelsData},
 		},
 	}
 	return result, nil
