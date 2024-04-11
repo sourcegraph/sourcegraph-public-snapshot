@@ -113,3 +113,7 @@ void keywords() {
     rethrow;
   }
 }
+
+void lambdaparam() {
+    Directory("/").map((file) => file.path)
+}

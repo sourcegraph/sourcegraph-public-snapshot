@@ -455,4 +455,19 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //           ^ PunctuationDelimiter
     }
   }
+  
+  void lambdaparam() {
+//^^^^ Keyword
+//     ^^^^^^^^^^^ IdentifierFunction
+      Directory("/").map((file) => file.path)
+//    ^^^^^^^^^ IdentifierType
+//              ^^^ StringLiteral
+//                  ^ PunctuationDelimiter
+//                   ^^^ IdentifierFunction
+//                        ^^^^ Identifier
+//                              ^^ IdentifierOperator
+//                                 ^^^^ IdentifierFunction
+//                                     ^ PunctuationDelimiter
+//                                      ^^^^ Identifier
+  }
 
