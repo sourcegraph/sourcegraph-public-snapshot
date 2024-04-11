@@ -19,7 +19,7 @@
     import Icon from '$lib/Icon.svelte'
     import Avatar from '$lib/Avatar.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
-    import { Badge, Input, Alert } from '$lib/wildcard'
+    import { Input, Alert } from '$lib/wildcard'
     import { createPromiseStore } from '$lib/utils'
 
     export let getRepositoryBranches: (query: string) => Promise<RepositoryBranches>
@@ -90,7 +90,7 @@
                     <li use:option {...$option(toOption(branch))} class="suggestion-list-item">
                         <span class="title">
                             <Icon svgPath={mdiSourceBranch} inline />
-                            <Badge variant="link">{branch.displayName}</Badge>
+                            <span>{branch.displayName}</span>
                         </span>
                         <span class="author">
                             {#if branch.target.commit}
@@ -172,14 +172,6 @@
         &:hover,
         &[data-highlighted] {
             background: var(--color-bg-3);
-
-            .title {
-                color: var(--icon-muted);
-
-                :global(span) {
-                    --badge-base: var(--color-bg-3);
-                }
-            }
         }
     }
 
@@ -197,7 +189,6 @@
     .title {
         padding-left: 0.75rem;
         padding-right: 0.5rem;
-        color: var(--border-color-2);
 
         // Branch icon
         :global(svg) {
