@@ -30,7 +30,7 @@ func TestKubernetesCommand_CreateJob(t *testing.T) {
 	cmd := &command.KubernetesCommand{
 		Logger:     logtest.Scoped(t),
 		Clientset:  clientset,
-		Operations: command.NewOperations(&observation.TestContext),
+		Operations: command.NewOperations(observation.TestContextTB(t)),
 	}
 
 	job := &batchv1.Job{}
@@ -50,7 +50,7 @@ func TestKubernetesCommand_DeleteJob(t *testing.T) {
 	cmd := &command.KubernetesCommand{
 		Logger:     logtest.Scoped(t),
 		Clientset:  clientset,
-		Operations: command.NewOperations(&observation.TestContext),
+		Operations: command.NewOperations(observation.TestContextTB(t)),
 	}
 
 	job := &batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: "my-job"}}
@@ -73,7 +73,7 @@ func TestKubernetesCommand_CreateSecrets(t *testing.T) {
 	cmd := &command.KubernetesCommand{
 		Logger:     logtest.Scoped(t),
 		Clientset:  clientset,
-		Operations: command.NewOperations(&observation.TestContext),
+		Operations: command.NewOperations(observation.TestContextTB(t)),
 	}
 
 	secrets := map[string]string{
@@ -99,7 +99,7 @@ func TestKubernetesCommand_DeleteSecret(t *testing.T) {
 	cmd := &command.KubernetesCommand{
 		Logger:     logtest.Scoped(t),
 		Clientset:  clientset,
-		Operations: command.NewOperations(&observation.TestContext),
+		Operations: command.NewOperations(observation.TestContextTB(t)),
 	}
 
 	secrets := map[string]string{
@@ -124,7 +124,7 @@ func TestKubernetesCommand_CreateJobPVC(t *testing.T) {
 	cmd := &command.KubernetesCommand{
 		Logger:     logtest.Scoped(t),
 		Clientset:  clientset,
-		Operations: command.NewOperations(&observation.TestContext),
+		Operations: command.NewOperations(observation.TestContextTB(t)),
 	}
 
 	err := cmd.CreateJobPVC(context.Background(), "my-namespace", "my-pvc", resource.MustParse("1Gi"))
@@ -142,7 +142,7 @@ func TestKubernetesCommand_DeleteJobPVC(t *testing.T) {
 	cmd := &command.KubernetesCommand{
 		Logger:     logtest.Scoped(t),
 		Clientset:  clientset,
-		Operations: command.NewOperations(&observation.TestContext),
+		Operations: command.NewOperations(observation.TestContextTB(t)),
 	}
 
 	err := cmd.CreateJobPVC(context.Background(), "my-namespace", "my-pvc", resource.MustParse("1Gi"))
@@ -509,7 +509,7 @@ func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 			cmd := &command.KubernetesCommand{
 				Logger:     logtest.Scoped(t),
 				Clientset:  clientset,
-				Operations: command.NewOperations(&observation.TestContext),
+				Operations: command.NewOperations(observation.TestContextTB(t)),
 			}
 
 			pod, err := cmd.WaitForPodToSucceed(

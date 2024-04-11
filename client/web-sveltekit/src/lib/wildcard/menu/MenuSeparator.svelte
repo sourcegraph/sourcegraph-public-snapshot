@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getContext } from './Menu.svelte'
+    import { getContext } from './DropdownMenu.svelte'
 
     const { separator } = getContext()
 </script>

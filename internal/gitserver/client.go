@@ -84,7 +84,7 @@ func NewTestClient(t testing.TB) TestClient {
 	return &clientImplementor{
 		logger:              logger,
 		scope:               fmt.Sprintf("gitserver.test.%s", t.Name()),
-		operations:          newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
+		operations:          newOperations(observation.ContextWithLogger(logger, observation.TestContextTB(t))),
 		clientSource:        NewTestClientSource(t, nil),
 		subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
 	}

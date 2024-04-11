@@ -22,7 +22,7 @@ func TestInsertDependencyRepo(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	batches := [][]shared.MinimalPackageRepoRef{
 		{
@@ -103,7 +103,7 @@ func TestListPackageRepoRefs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	batches := [][]shared.MinimalPackageRepoRef{
 		{
@@ -193,7 +193,7 @@ func TestListPackageRepoRefsFuzzy(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	pkgs := []shared.MinimalPackageRepoRef{
 		{Scheme: "npm", Name: "bar", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}}},
@@ -317,7 +317,7 @@ func TestDeletePackageRepoRefsByID(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	repos := []shared.MinimalPackageRepoRef{
 		// Test same-set flushes

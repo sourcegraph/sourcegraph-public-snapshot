@@ -41,7 +41,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := bstore.NewWithClock(db, &observation.TestContext, nil, clock)
+	store := bstore.NewWithClock(db, observation.TestContextTB(t), nil, clock)
 	svc := New(store)
 
 	t.Run("BatchSpec without changesetSpecs", func(t *testing.T) {

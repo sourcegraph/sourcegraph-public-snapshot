@@ -129,7 +129,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	})
 	defer mockState.Unmock()
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	if err := bstore.CreateSiteCredential(ctx,
 		&btypes.SiteCredential{

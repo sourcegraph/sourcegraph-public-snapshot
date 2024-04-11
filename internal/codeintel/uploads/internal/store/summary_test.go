@@ -18,7 +18,7 @@ import (
 func TestGetIndexers(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 	ctx := context.Background()
 
 	insertUploads(t, db,
@@ -64,7 +64,7 @@ func TestRecentUploadsSummary(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	t0 := time.Unix(1587396557, 0).UTC()
 	t1 := t0.Add(-time.Minute * 1)
@@ -123,7 +123,7 @@ func TestRecentIndexesSummary(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	t0 := time.Unix(1587396557, 0).UTC()
 	t1 := t0.Add(-time.Minute * 1)
@@ -184,7 +184,7 @@ func TestRepositoryIDsWithErrors(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	now := time.Now()
 	t1 := now.Add(-time.Minute * 1)
@@ -264,7 +264,7 @@ func TestNumRepositoriesWithCodeIntelligence(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertUploads(t, db,
 		shared.Upload{ID: 100, RepositoryID: 50},

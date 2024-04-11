@@ -167,6 +167,9 @@ func (*OpenAIHandlerMethods) parseResponseAndUsage(logger log.Logger, body opena
 		promptUsage.characters += len(m.Content)
 	}
 
+	// Setting a default -1 value so that in case of errors the tokenizer computed tokens don't impact the data
+	promptUsage.tokenizerTokens = -1
+	completionUsage.tokenizerTokens = -1
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
 	if !body.Stream {

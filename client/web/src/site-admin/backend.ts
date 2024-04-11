@@ -112,7 +112,6 @@ const mirrorRepositoryInfoFieldsFragment = gql`
     fragment MirrorRepositoryInfoFields on MirrorRepositoryInfo {
         cloned
         cloneInProgress
-        cloneProgress @include(if: $displayCloneProgress)
         updatedAt
         nextSyncAt
         isCorrupted
@@ -170,7 +169,6 @@ export const REPOSITORIES_QUERY = gql`
         $orderBy: RepositoryOrderBy
         $descending: Boolean
         $externalService: ID
-        $displayCloneProgress: Boolean = false
     ) {
         repositories(
             first: $first
@@ -1005,13 +1003,7 @@ const siteAdminPackageFieldsFragment = gql`
 `
 
 export const PACKAGES_QUERY = gql`
-    query Packages(
-        $kind: PackageRepoReferenceKind
-        $name: String
-        $first: Int!
-        $after: String
-        $displayCloneProgress: Boolean = false
-    ) {
+    query Packages($kind: PackageRepoReferenceKind, $name: String, $first: Int!, $after: String) {
         packageRepoReferences(kind: $kind, name: $name, first: $first, after: $after) {
             nodes {
                 ...SiteAdminPackageFields

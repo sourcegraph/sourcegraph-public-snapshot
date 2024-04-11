@@ -52,7 +52,7 @@ func Test_UserResourceHandler_PatchUsername(t *testing.T) {
 		t.Run(tc.op, func(t *testing.T) {
 			user := types.UserForSCIM{User: types.User{ID: 1, Username: "test-user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"}
 			db := getMockDB([]*types.UserForSCIM{&user}, map[int32][]*database.UserEmail{1: {makeEmail(1, "a@example.com", true, true)}})
-			userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+			userResourceHandler := NewUserResourceHandler(context.Background(), observation.TestContextTB(t), db)
 			operations := []scim.PatchOperation{{Op: tc.op, Path: createPath(AttrUserName, nil), Value: "test-user1-patched"}}
 
 			userRes, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
@@ -69,7 +69,7 @@ func Test_UserResourceHandler_PatchUsername(t *testing.T) {
 
 func Test_UserResourceHandler_PatchReplaceWithFilter(t *testing.T) {
 	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	userResourceHandler := NewUserResourceHandler(context.Background(), observation.TestContextTB(t), db)
 	operations := []scim.PatchOperation{
 		{Op: "replace", Path: parseStringPath("emails[type eq \"work\" and primary eq true].value"), Value: "nicolas@breitenbergbartell.uk"},
 		{Op: "replace", Path: parseStringPath("emails[type eq \"work\" and primary eq false].type"), Value: "home"},
@@ -121,7 +121,7 @@ func Test_UserResourceHandler_PatchReplaceWithFilter(t *testing.T) {
 
 func Test_UserResourceHandler_PatchRemoveWithFilter(t *testing.T) {
 	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	userResourceHandler := NewUserResourceHandler(context.Background(), observation.TestContextTB(t), db)
 	operations := []scim.PatchOperation{
 		{Op: "remove", Path: parseStringPath("emails[type eq \"work\" and primary eq false]")},
 		{Op: "remove", Path: createPath(AttrName, pointers.Ptr(AttrNameMiddle))},
@@ -152,7 +152,7 @@ func Test_UserResourceHandler_PatchRemoveWithFilter(t *testing.T) {
 
 func Test_UserResourceHandler_PatchReplaceWholeArrayField(t *testing.T) {
 	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	userResourceHandler := NewUserResourceHandler(context.Background(), observation.TestContextTB(t), db)
 	operations := []scim.PatchOperation{
 		{Op: "replace", Path: parseStringPath("emails"), Value: toInterfaceSlice(map[string]interface{}{"value": "replaced@work.com", "type": "home", "primary": true})},
 	}
@@ -178,7 +178,7 @@ func Test_UserResourceHandler_PatchReplaceWholeArrayField(t *testing.T) {
 
 func Test_UserResourceHandler_PatchRemoveNonExistingField(t *testing.T) {
 	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	userResourceHandler := NewUserResourceHandler(context.Background(), observation.TestContextTB(t), db)
 	operations := []scim.PatchOperation{
 		{Op: "remove", Path: createPath(AttrNickName, nil)},
 	}
@@ -191,7 +191,7 @@ func Test_UserResourceHandler_PatchRemoveNonExistingField(t *testing.T) {
 
 func Test_UserResourceHandler_PatchAddPrimaryEmail(t *testing.T) {
 	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	userResourceHandler := NewUserResourceHandler(context.Background(), observation.TestContextTB(t), db)
 	operations := []scim.PatchOperation{
 		{Op: "add", Path: createPath(AttrEmails, nil), Value: toInterfaceSlice(map[string]interface{}{"value": "new@work.com", "type": "home", "primary": true})},
 	}
@@ -208,7 +208,7 @@ func Test_UserResourceHandler_PatchAddPrimaryEmail(t *testing.T) {
 
 func Test_UserResourceHandler_PatchReplacePrimaryEmailWithFilter(t *testing.T) {
 	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	userResourceHandler := NewUserResourceHandler(context.Background(), observation.TestContextTB(t), db)
 	operations := []scim.PatchOperation{
 		{Op: "replace", Path: parseStringPath("emails[value eq \"secondary@work.com\"].primary"), Value: true},
 	}
@@ -224,7 +224,7 @@ func Test_UserResourceHandler_PatchReplacePrimaryEmailWithFilter(t *testing.T) {
 
 func Test_UserResourceHandler_PatchAddNonExistingField(t *testing.T) {
 	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	userResourceHandler := NewUserResourceHandler(context.Background(), observation.TestContextTB(t), db)
 	operations := []scim.PatchOperation{
 		{Op: "add", Path: createPath(AttrNickName, nil), Value: "sampleNickName"},
 	}
@@ -237,7 +237,7 @@ func Test_UserResourceHandler_PatchAddNonExistingField(t *testing.T) {
 
 func Test_UserResourceHandler_PatchNoChange(t *testing.T) {
 	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	userResourceHandler := NewUserResourceHandler(context.Background(), observation.TestContextTB(t), db)
 	operations := []scim.PatchOperation{
 		{Op: "replace", Path: createPath(AttrName, pointers.Ptr(AttrNameGiven)), Value: "Nannie"},
 	}
@@ -253,7 +253,7 @@ func Test_UserResourceHandler_PatchMoveUnverifiedEmailToPrimaryWithFilter(t *tes
 	user1 := types.UserForSCIM{User: types.User{ID: 1, Username: "test-user1"}, Emails: []string{"primary@work.com", "secondary@work.com"}, SCIMExternalID: "id1", SCIMAccountData: sampleAccountData}
 	usersEmails := map[int32][]*database.UserEmail{1: {makeEmail(1, "primary@work.com", true, true), makeEmail(1, "secondary@work.com", false, false)}}
 	db := getMockDB([]*types.UserForSCIM{&user1}, usersEmails)
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	userResourceHandler := NewUserResourceHandler(context.Background(), observation.TestContextTB(t), db)
 	operations := []scim.PatchOperation{
 		{Op: "replace", Path: parseStringPath("emails[value eq \"primary@work.com\"].primary"), Value: false},
 		{Op: "replace", Path: parseStringPath("emails[value eq \"secondary@work.com\"].primary"), Value: true},
@@ -281,7 +281,7 @@ func Test_UserResourceHandler_PatchMoveUnverifiedEmailToPrimaryWithFilter(t *tes
 
 func Test_UserResourceHandler_PatchSoftDelete(t *testing.T) {
 	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	userResourceHandler := NewUserResourceHandler(context.Background(), observation.TestContextTB(t), db)
 	operations := []scim.PatchOperation{
 		{Op: "replace", Path: parseStringPath(AttrActive), Value: false},
 	}
@@ -329,7 +329,7 @@ func Test_UserResourceHandler_PatchReactiveUser(t *testing.T) {
 	}}
 	db := getMockDB([]*types.UserForSCIM{user}, emails)
 
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	userResourceHandler := NewUserResourceHandler(context.Background(), observation.TestContextTB(t), db)
 	operations := []scim.PatchOperation{
 		{Op: "replace", Path: parseStringPath(AttrActive), Value: true},
 	}
@@ -347,7 +347,7 @@ func Test_UserResourceHandler_PatchReactiveUser(t *testing.T) {
 
 func Test_UserResourceHandler_Patch_ReplaceStrategies_Azure(t *testing.T) {
 	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	userResourceHandler := NewUserResourceHandler(context.Background(), observation.TestContextTB(t), db)
 	config := &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ScimIdentityProvider: string(IDPAzureAd)}}
 	operations := []scim.PatchOperation{
 		{Op: "replace", Path: parseStringPath("emails[type eq \"work\" and primary eq true].value"), Value: "work@work.com"},
@@ -383,7 +383,7 @@ func Test_UserResourceHandler_Patch_ReplaceStrategies_Azure(t *testing.T) {
 
 func Test_UserResourceHandler_Patch_ReplaceStrategies_Standard(t *testing.T) {
 	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	userResourceHandler := NewUserResourceHandler(context.Background(), observation.TestContextTB(t), db)
 	operations := []scim.PatchOperation{
 		{Op: "replace", Path: parseStringPath("emails[type eq \"work\" and primary eq true].value"), Value: "work@work.com"},
 		{Op: "replace", Path: parseStringPath("emails[type eq \"home\"].value"), Value: "home@work.com"},
