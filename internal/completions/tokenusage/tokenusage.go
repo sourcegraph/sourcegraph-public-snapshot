@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -24,13 +25,13 @@ func NewManager() *Manager {
 	}
 }
 
-func (m *Manager) TokenizeAndCalculateUsage(inputText, outputText, model, feature string) error {
+func (m *Manager) TokenizeAndCalculateUsage(inputMessages []types.Message, outputText, model, feature string) error {
 	tokenizer, err := tokenizer.NewTokenizer(model)
 	if err != nil {
 		return errors.Newf("failed to create tokenizer: %w", err)
 	}
 
-	inputTokens, err := tokenizer.Tokenize(inputText)
+	numInputTokens, err := tokenizer.NumTokenizeFromMessages(inputMessages)
 	if err != nil {
 		return errors.Newf("failed to tokenize input text: %w", err)
 	}
@@ -42,7 +43,7 @@ func (m *Manager) TokenizeAndCalculateUsage(inputText, outputText, model, featur
 
 	baseKey := fmt.Sprintf("%s:%s:", model, feature)
 
-	if err := m.updateTokenCounts(baseKey+"input", int64(len(inputTokens))); err != nil {
+	if err := m.updateTokenCounts(baseKey+"input", int64(numInputTokens)); err != nil {
 		return errors.Newf("failed to update input token counts: %w", err)
 	}
 	if err := m.updateTokenCounts(baseKey+"output", int64(len(outputTokens))); err != nil {
