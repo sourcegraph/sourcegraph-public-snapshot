@@ -108,14 +108,7 @@ For example:
             </div>
             <div class="commit-and-number">
                 <div class="commit">
-                    <!--
-                        Since the popover has a fixed width, we use the lodash
-                        truncate() function to truncate the subject to 30 characters.
-                        We do this instead of using text-overflow: ellipsis because
-                        this adds some unwanted padding to the end of the string,
-                        which requires a hacky, less maintanable workaround in the CSS.
-                        -->
-                    <small>{subject}<small /></small>
+                    <small>{subject}</small>
                 </div>
                 {#if commitNumber}
                     <div class="number">
