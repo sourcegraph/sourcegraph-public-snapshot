@@ -43,7 +43,7 @@ func newEnterpriseFilter(logger log.Logger) RepoContentFilter {
 	return f
 }
 
-func (f *enterpriseRepoFilter) getFiltersConfig() (_ filtersConfig, ok bool) {
+func (f *enterpriseRepoFilter) getFiltersConfig() (fc filtersConfig, ok bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.fc, f.isConfigValid
@@ -51,7 +51,7 @@ func (f *enterpriseRepoFilter) getFiltersConfig() (_ filtersConfig, ok bool) {
 
 // GetFilter returns the list of repos that can be filtered based on the Cody context filter value in the site config.
 func (f *enterpriseRepoFilter) GetFilter(repos []types.RepoIDName, _ log.Logger) ([]types.RepoIDName, FileChunkFilterFunc) {
-	ccf, ok := f.getFiltersConfig()
+	fc, ok := f.getFiltersConfig()
 	if !ok {
 		// our configuration is invalid, so filter everything out
 		return []types.RepoIDName{}, func(fcc []FileChunkContext) []FileChunkContext { return nil }
@@ -59,7 +59,7 @@ func (f *enterpriseRepoFilter) GetFilter(repos []types.RepoIDName, _ log.Logger)
 
 	allowedRepos := make([]types.RepoIDName, 0, len(repos))
 	for _, repo := range repos {
-		if ccf.isRepoAllowed(repo.Name) {
+		if fc.isRepoAllowed(repo.Name) {
 			allowedRepos = append(allowedRepos, repo)
 		}
 	}
