@@ -40,6 +40,7 @@
             subject: faker.lorem.sentence() + faker.lorem.sentence() + faker.lorem.sentence(),
             abbreviatedOID: '38674873812345',
             canonicalURL: faker.internet.url(),
+            oid: '7b4d3ad230d9078a70219f2befa1be1fe00377a0',
             author: {
                 date: new Date().toISOString(),
                 person: {

@@ -32,7 +32,8 @@ For example:
     }
 
     $: subject = repo.commit?.subject
-    $: commitNumber = repo.commit?.abbreviatedOID
+    $: url = repo.commit?.canonicalURL
+    $: commitSHA = repo.commit?.oid
     $: author = repo.commit?.author.person.name
     $: commitDate = repo.commit?.author.date
     $: avatar = repo.commit?.author.person
@@ -87,9 +88,9 @@ For example:
                 <div class="subject">
                     <small>{subject}</small>
                 </div>
-                {#if commitNumber}
+                {#if commitSHA}
                     <div class="commit-number">
-                        <small class="commit-number">#{truncateCommitNumber(commitNumber, 5)}</small>
+                        <small class="commit-number"><a href={url} target="_blank">#{truncateCommitNumber(commitSHA, 6)}</a></small>
                     </div>
                 {/if}
             </div>
@@ -145,6 +146,7 @@ For example:
                 border-radius: 1rem;
             }
         }
+
         .code-host {
             display: flex;
             flex-flow: row nowrap;
@@ -240,61 +242,6 @@ For example:
             }
         }
     }
-    /* .last-commit {
-        display: flex;
-        flex-flow: column nowrap;
-        justify-content: space-between;
-        padding: 0.75rem;
-
-        .title-and-commit {
-            display: flex;
-            flex-flow: row nowrap;
-            justify-content: space-between;
-            align-items: center;
-
-            .heading {
-                color: var(--text-muted);
-            }
-
-            .commit-and-number {
-                display: flex;
-                flex-flow: row nowrap;
-                align-items: center;
-                justify-content: flex-end;
-                width: 275px;
-
-                .commit {
-                    color: var(--text-body);
-                    margin-right: 0.25rem;
-                    text-overflow: ellipsis;
-                    overflow: hidden;
-                    white-space: nowrap;
-                }
-
-                .number {
-                    color: var(--text-muted);
-                }
-            }
-        } */
-
-    /* .author-and-time {
-            color: var(--text-muted);
-            display: flex;
-            flex-flow: row nowrap;
-            justify-content: flex-end;
-            align-items: center;
-
-            .author {
-                color: var(--text-muted);
-                margin-right: 0.5rem;
-                margin-left: 0.5rem;
-            }
-
-            .separator {
-                margin-right: 0.5rem;
-            }
-        }
-    } */
 
     .footer {
         color: var(--text-muted);

@@ -18,6 +18,7 @@ fragment RepoPopoverFields on Repository {
 
     commit(rev: "HEAD") {
         id
+        oid
         subject
         abbreviatedOID
         canonicalURL
