@@ -524,8 +524,8 @@ func TestNewEnterpriseFilter(t *testing.T) {
 				},
 			})
 
-			f, _ := newEnterpriseFilter(logtest.Scoped(t))
-			allowedRepos, filter := f.GetFilter(tt.repos, logger)
+			f := newEnterpriseFilter(logtest.Scoped(t))
+			allowedRepos, filter, _ := f.GetFilter(tt.repos, logger)
 
 			require.Equal(t, tt.wantRepos, allowedRepos)
 			require.Equal(t, tt.wantChunks, filter(tt.chunks))

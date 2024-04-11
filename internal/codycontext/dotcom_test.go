@@ -53,7 +53,7 @@ func TestNewDotcomFilter(t *testing.T) {
 				Path:     "/file2.go",
 			},
 		}
-		_, filter := f.GetFilter(repos, logger)
+		_, filter, _ := f.GetFilter(repos, logger)
 		filtered := filter(chunks)
 		require.Equal(t, 2, len(filtered))
 	})
@@ -93,7 +93,7 @@ func TestNewDotcomFilter(t *testing.T) {
 			},
 		}
 
-		_, filter := f.GetFilter(repos, logger)
+		_, filter, _ := f.GetFilter(repos, logger)
 		filtered := filter(chunks)
 		require.Equal(t, 1, len(filtered))
 		require.Equal(t, api.RepoName("repo1"), filtered[0].RepoName)
@@ -137,7 +137,7 @@ func TestNewDotcomFilter(t *testing.T) {
 			},
 		}
 
-		_, filter := f.GetFilter(repos, logger)
+		_, filter, _ := f.GetFilter(repos, logger)
 		filtered := filter(chunks)
 		require.Equal(t, 2, len(filtered))
 		require.Equal(t, api.RepoName("repo1"), filtered[0].RepoName)
@@ -155,7 +155,7 @@ func TestNewDotcomFilter(t *testing.T) {
 		})
 
 		f := newDotcomFilter(client)
-		filterableRepos, _ := f.GetFilter(repos, logger)
+		filterableRepos, _, _ := f.GetFilter(repos, logger)
 		require.Len(t, filterableRepos, 0)
 	})
 
@@ -168,7 +168,7 @@ func TestNewDotcomFilter(t *testing.T) {
 		})
 
 		f := newDotcomFilter(client)
-		filterableRepos, _ := f.GetFilter(repos, logger)
+		filterableRepos, _, _ := f.GetFilter(repos, logger)
 		require.Len(t, filterableRepos, 0)
 	})
 
@@ -180,7 +180,7 @@ func TestNewDotcomFilter(t *testing.T) {
 		})
 
 		f := newDotcomFilter(client)
-		filterableRepos, _ := f.GetFilter(repos, logger)
+		filterableRepos, _, _ := f.GetFilter(repos, logger)
 		require.Len(t, filterableRepos, 0)
 	})
 
@@ -203,12 +203,12 @@ func TestNewDotcomFilter(t *testing.T) {
 			},
 		}
 		// simulate 1st call
-		_, filter := f.GetFilter(repos, logger)
+		_, filter, _ := f.GetFilter(repos, logger)
 		filtered := filter(chunks)
 		require.Equal(t, 1, len(filtered))
 
 		//simulate 2nd call
-		_, filter2 := f.GetFilter(repos, logger)
+		_, filter2, _ := f.GetFilter(repos, logger)
 		filtered2 := filter2(chunks)
 		require.Equal(t, 1, len(filtered2))
 
@@ -264,7 +264,7 @@ func TestDotcomFilterDisabled(t *testing.T) {
 			},
 		}
 
-		_, filter := f.GetFilter(repos, logger)
+		_, filter, _ := f.GetFilter(repos, logger)
 		filtered := filter(chunks)
 		require.Equal(t, 4, len(filtered))
 	})
