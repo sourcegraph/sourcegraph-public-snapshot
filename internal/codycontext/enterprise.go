@@ -50,7 +50,9 @@ type enterpriseRepoFilter struct {
 func newEnterpriseFilter(logger log.Logger) RepoContentFilter {
 	f := &enterpriseRepoFilter{logger: logger.Scoped("filter")}
 	f.configure()
-	conf.Watch(func() { f.configure() })
+	conf.Watch(func() {
+		f.configure()
+	})
 	return f
 }
 
