@@ -308,6 +308,7 @@ For example:
             display: flex;
             flex-flow: row nowrap;
             justify-content: space-between;
+            align-items: center;
 
             .title {
                 color: var(--text-muted);
@@ -316,6 +317,8 @@ For example:
             .commit-and-number {
                 display: flex;
                 flex-flow: row nowrap;
+                align-items: center;
+                justify-content: flex-end;
                 width: 200px;
 
                 .commit {
