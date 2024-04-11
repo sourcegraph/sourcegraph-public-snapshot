@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -57,8 +58,8 @@ func main() {
 					&cli.IntFlag{
 						Name:    "max-routines",
 						Aliases: []string{"mr"},
-						Usage:   "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
-						Value:   10,
+						Usage:   "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to CPU cores count minus two.",
+						Value:   runtime.NumCPU() - 2,
 					},
 					&cli.StringSliceFlag{
 						Name:    "standard-versions",
