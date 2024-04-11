@@ -115,7 +115,7 @@ For example:
                         this adds some unwanted padding to the end of the string,
                         which requires a hacky, less maintanable workaround in the CSS.
                         -->
-                    <small>{truncate(subject, { length: 30 })}<small /></small>
+                    <small>{subject}<small /></small>
                 </div>
                 {#if commitNumber}
                     <div class="number">
@@ -246,6 +246,7 @@ For example:
             display: flex;
             flex-flow: row nowrap;
             justify-content: space-between;
+            align-items: center;
 
             .title {
                 color: var(--text-muted);
@@ -254,6 +255,8 @@ For example:
             .commit-and-number {
                 display: flex;
                 flex-flow: row nowrap;
+                align-items: center;
+                justify-content: flex-end;
                 width: 200px;
 
                 .commit {
