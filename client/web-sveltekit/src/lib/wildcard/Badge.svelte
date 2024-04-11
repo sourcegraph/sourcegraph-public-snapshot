@@ -11,6 +11,7 @@
         'info',
         'merged',
         'outlineSecondary',
+        'link',
     ] as const
 
     export type BadgeVariantType = typeof BADGE_VARIANTS[number]
