@@ -731,6 +731,12 @@ func handleVersions(cCtx *cli.Context, overrideStd, overrideMVU, overrideAuto []
 		targetVersion = semver.MustParse("0.0.0+dev") // If no stamp version is set, we assume version is in dev
 	}
 
+	// Ensure latest tags
+	err = run.Cmd(ctx, "git", "fetch", "--tags").Run().Wait()
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, err
+	}
+
 	// Sort latest stable release tags
 	tags, err := run.Cmd(ctx, "git",
 		"for-each-ref",

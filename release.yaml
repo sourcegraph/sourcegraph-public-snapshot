@@ -119,9 +119,6 @@ test:
         _VERSION=$VERSION
         unset VERSION
 
-        # TODO should be on the test runner side
-        git fetch --tags
-
         # Hardcoding version, as for now I just want to make sure this works in CI.
         bazel ${bazelrc[*]} run //testing/tools/upgradetest:release_test_run -- all \
           --post-release-version=5.3.9104 \
