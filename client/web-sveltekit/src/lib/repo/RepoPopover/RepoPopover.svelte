@@ -11,12 +11,11 @@ For example:
 </Popover>
 -->
 <script lang="ts">
-    import { mdiStarOutline } from '@mdi/js'
-    import { formatDistanceToNow } from 'date-fns'
     import { capitalize } from 'lodash'
 
     import Avatar from '$lib/Avatar.svelte'
     import Icon from '$lib/Icon.svelte'
+    import Timestamp from '$lib/Timestamp.svelte'
 
     import RepoStars from '../RepoStars.svelte'
     import { getIconPathForCodeHost } from '../shared/codehost'
@@ -27,13 +26,6 @@ For example:
     export let withHeader = false
 
     const CENTER_DOT = '\u00B7' // interpunct
-
-    function formatNumber(num: number): string {
-        if (num >= 1000) {
-            return (num / 1000).toFixed(1) + 'K'
-        }
-        return num.toString()
-    }
 
     $: subject = repo.commit?.subject
     $: commitNumber = repo.commit?.abbreviatedOID
@@ -101,20 +93,18 @@ For example:
 
                 {#if commitDate}
                     <div class="commit-date">
-                        <small>{formatDistanceToNow(commitDate, { addSuffix: false })}</small>
+                        <Timestamp date={commitDate} small={true} />
                     </div>
                 {/if}
             </div>
         </div>
     </div>
+
     <div class="divider" />
+
     <div class="repo-stats">
-        <div class="stats">
-            <div class="stat"><small>{repo.language}</small></div>
-        </div>
-        <div class="stat">
-            <RepoStars repoStars={repo.stars} small={true} />
-        </div>
+        <small>{repo.language}</small>
+        <RepoStars repoStars={repo.stars} small={true} />
     </div>
 </div>
 
@@ -261,18 +251,5 @@ For example:
         justify-content: space-between;
         align-items: center;
         padding: 0.75rem;
-
-        .stats {
-            display: flex;
-            flex-flow: row nowrap;
-            align-content: center;
-            font-size: 1rem;
-            padding: 0rem;
-
-            .stat {
-                align-self: center;
-                margin-right: 1rem;
-            }
-        }
     }
 </style>
