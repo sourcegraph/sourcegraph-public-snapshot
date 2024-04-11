@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/grafana/regexp"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -19,7 +20,7 @@ type filterItem struct {
 }
 
 type filtersConfig struct {
-	cache   safeCache[api.RepoName, bool]
+	cache   *lru.Cache[api.RepoName, bool]
 	include []filterItem
 	exclude []filterItem
 }
@@ -123,8 +124,11 @@ func parseCodyContextFilters(ccf *schema.CodyContextFilters) (filtersConfig, err
 		exclude = append(exclude, filterItem{RepoNamePattern: re})
 	}
 
+	// ignore error since it only happens if cache size is not positive.
+	cache, _ := lru.New[api.RepoName, bool](128)
+
 	return filtersConfig{
-		cache:   newSafeCache[api.RepoName, bool](128),
+		cache:   cache,
 		include: include,
 		exclude: exclude,
 	}, nil
