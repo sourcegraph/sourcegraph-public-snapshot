@@ -660,43 +660,30 @@ func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 	return nil
 }
 
+type CodyContextFiltersArgs struct {
+	Version int32
+}
+
 type codyContextFiltersResolver struct {
 	ccf *schema.CodyContextFilters
 }
 
-type codyContextFilterItemResolver struct {
-	f *schema.CodyContextFilterItem
-}
-
-func (r *codyContextFilterItemResolver) RepoNamePattern() string {
-	return r.f.RepoNamePattern
-}
-
-func (c *codyContextFiltersResolver) Include() []*codyContextFilterItemResolver {
-	return resolveFilterItems(c.ccf.Include)
-}
-
-func (c *codyContextFiltersResolver) Exclude() []*codyContextFilterItemResolver {
-	return resolveFilterItems(c.ccf.Exclude)
-}
-
-func resolveFilterItems(items []*schema.CodyContextFilterItem) []*codyContextFilterItemResolver {
-	var r []*codyContextFilterItemResolver
-	for _, f := range items {
-		r = append(r, &codyContextFilterItemResolver{f})
+func (c *codyContextFiltersResolver) Raw() *JSONValue {
+	if c.ccf == nil {
+		return nil
 	}
-	return r
+	return &JSONValue{c.ccf}
 }
 
-func (r *siteResolver) CodyContextFilters() *codyContextFiltersResolver {
-	ccf := conf.Get().SiteConfig().CodyContextFilters
-	if ccf == nil {
-		ccf = &schema.CodyContextFilters{
-			Include: []*schema.CodyContextFilterItem{},
-			Exclude: []*schema.CodyContextFilterItem{},
-		}
+func (r *siteResolver) CodyContextFilters(_ context.Context, args *CodyContextFiltersArgs) (*codyContextFiltersResolver, error) {
+	v := args.Version
+	if v < 1 {
+		return nil, errors.New("invalid version number")
 	}
-	return &codyContextFiltersResolver{ccf}
+	if v != 1 {
+		return nil, errors.New("version is not supported")
+	}
+	return &codyContextFiltersResolver{ccf: conf.Get().SiteConfig().CodyContextFilters}, nil
 }
 
 func allowEdit(before, after string, allowlist []string) ([]string, bool) {

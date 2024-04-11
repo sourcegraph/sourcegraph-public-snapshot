@@ -115,7 +115,7 @@ func TestExecRequest(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	gr := dbmocks.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
-	fs := gitserverfs.New(&observation.TestContext, t.TempDir())
+	fs := gitserverfs.New(observation.TestContextTB(t), t.TempDir())
 	require.NoError(t, fs.Initialize())
 	s := NewServer(&ServerOpts{
 		Logger: logtest.Scoped(t),
@@ -350,9 +350,6 @@ func TestCloneRepo(t *testing.T) {
 
 	repoName := api.RepoName("example.com/foo/bar")
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	if _, err := db.FeatureFlags().CreateBool(ctx, "clone-progress-logging", true); err != nil {
-		t.Fatal(err)
-	}
 	dbRepo := &types.Repo{
 		Name:        repoName,
 		Description: "Test",
@@ -444,13 +441,6 @@ func TestCloneRepo(t *testing.T) {
 	if wantCommit != gotCommit {
 		t.Fatal("failed to clone:", gotCommit)
 	}
-	gitserverRepo, err := db.GitserverRepos().GetByName(ctx, repoName)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if gitserverRepo.CloningProgress == "" {
-		t.Error("want non-empty CloningProgress")
-	}
 }
 
 func TestCloneRepoRecordsFailures(t *testing.T) {
@@ -535,7 +525,6 @@ var ignoreVolatileGitserverRepoFields = cmpopts.IgnoreFields(
 	"RepoSizeBytes",
 	"UpdatedAt",
 	"CorruptionLogs",
-	"CloningProgress",
 )
 
 func TestHandleRepoUpdate(t *testing.T) {
@@ -1148,7 +1137,7 @@ func TestServer_IsRepoCloneable_InternalActor(t *testing.T) {
 
 	isCloneableCalled := false
 
-	fs := gitserverfs.New(&observation.TestContext, t.TempDir())
+	fs := gitserverfs.New(observation.TestContextTB(t), t.TempDir())
 	require.NoError(t, fs.Initialize())
 
 	s := NewServer(&ServerOpts{

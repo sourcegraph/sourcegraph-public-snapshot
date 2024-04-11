@@ -41,6 +41,7 @@ func Render(content string) (string, error) {
 		policy.AllowAttrs("srcset", "src", "type", "media", "width", "height", "sizes").OnElements("source")
 		policy.AllowAttrs("playsinline", "muted", "autoplay", "loop", "controls", "width", "height", "poster", "src").OnElements("video")
 		policy.AllowAttrs("src", "kind", "srclang", "default", "label").OnElements("track")
+		policy.AllowAttrs("start").OnElements("ol")
 		policy.AddTargetBlankToFullyQualifiedLinks(true)
 
 		html.LinkAttributeFilter.Add([]byte("aria-hidden"))

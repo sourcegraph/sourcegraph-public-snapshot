@@ -127,7 +127,7 @@ func TestLicenseMiddleware(t *testing.T) {
 
 func TestHandler(t *testing.T) {
 	db := getMockDB([]*types.UserForSCIM{}, map[int32][]*database.UserEmail{})
-	testHandler := NewHandler(context.Background(), db, &observation.TestContext)
+	testHandler := NewHandler(context.Background(), db, observation.TestContextTB(t))
 
 	licensingInfo := func(tags ...string) *license.Info {
 		return &license.Info{Tags: tags, ExpiresAt: time.Now().Add(1 * time.Hour)}

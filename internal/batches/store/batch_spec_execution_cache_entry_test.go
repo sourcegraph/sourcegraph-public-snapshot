@@ -151,7 +151,7 @@ func TestStore_CleanBatchSpecExecutionCacheEntries(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	c := &bt.TestClock{Time: timeutil.Now()}
-	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
+	s := NewWithClock(db, observation.TestContextTB(t), nil, c.Now)
 	user := bt.CreateTestUser(t, db, true)
 
 	maxSize := 10 * 1024 // 10kb

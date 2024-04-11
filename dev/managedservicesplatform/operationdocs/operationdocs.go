@@ -3,6 +3,7 @@ package operationdocs
 import (
 	"fmt"
 	"path"
+	"slices"
 	"strings"
 	"time"
 
@@ -83,6 +84,7 @@ This service is operated on the %s.`,
 	serviceKind := pointers.Deref(s.Service.Kind, spec.ServiceKindService)
 	serviceDirURL := fmt.Sprintf("https://github.com/sourcegraph/managed-services/blob/main/services/%s", s.Service.ID)
 	serviceConfigURL := fmt.Sprintf("%s/service.yaml", serviceDirURL)
+
 	md.Table(
 		[]string{"Property", "Details"},
 		[][]string{
@@ -122,6 +124,32 @@ This service is operated on the %s.`,
 		md.Paragraphf(strings.Join(lines, "\n"))
 	}
 
+	if s.Rollout != nil {
+		md.Headingf(2, "Rollouts")
+		region := "us-central1"
+		var rolloutDetails [][]string
+		// Get final stage to generate pipeline url
+		finalStageEnv := s.Rollout.Stages[len(s.Rollout.Stages)-1].EnvironmentID
+		finalStageProject := s.GetEnvironment(finalStageEnv).ProjectID
+		rolloutDetails = append(rolloutDetails, []string{"Delivery pipeline", markdown.Linkf(fmt.Sprintf("`%s-%s-rollout`", s.Service.ID, region),
+			"https://console.cloud.google.com/deploy/delivery-pipelines/%[1]s/%[2]s-%[1]s-rollout?project=%[3]s", region, s.Service.ID, finalStageProject)})
+
+		var stages []string
+		for _, stage := range s.Rollout.Stages {
+			envIndex := slices.IndexFunc(environmentHeaders, func(env environmentHeader) bool {
+				return stage.EnvironmentID == env.environmentID
+			})
+			stages = append(stages, environmentHeaders[envIndex].link)
+		}
+		rolloutDetails = append(rolloutDetails, []string{"Stages", strings.Join(stages, " -> ")})
+
+		md.Table([]string{"Property", "Details"}, rolloutDetails)
+		md.Paragraphf("Changes to %[1]s are continuously delivered to the first stage (%[2]s) of the delivery pipeline.", *s.Service.Name, stages[0])
+		if len(stages) > 1 {
+			md.Paragraphf("Promotion of a release to the next stage in the pipeline must be done manually using the GCP Delivery pipeline UI.")
+		}
+	}
+
 	md.Headingf(2, "Environments")
 	for _, section := range environmentHeaders {
 		md.Headingf(3, section.header)
@@ -147,6 +175,7 @@ This service is operated on the %s.`,
 		overview := [][]string{
 			{"Project ID", markdown.Linkf(markdown.Code(env.ProjectID), cloudRunURL)},
 			{"Category", markdown.Bold(string(env.Category))},
+			{"Deployment type", fmt.Sprintf("`%s`", env.Deploy.Type)},
 			{"Resources", strings.Join(mapTo(env.Resources.List(), func(k string) string {
 				l, h := markdown.HeadingLinkf("%s %s", env.ID, k)
 				resourceHeadings[k] = h

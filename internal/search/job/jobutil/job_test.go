@@ -1101,13 +1101,15 @@ func TestNewPlanJob(t *testing.T) {
         (limit . 10000)
         (PARALLEL
           REPOSCOMPUTEEXCLUDED
-          (STRUCTURALSEARCH
-            (useFullDeadline . true)
+          (REPOPAGER
             (containsRefGlobs . false)
-            (useIndex . yes)
-            (patternInfo.query . "(:[_])")
-            (patternInfo.isStructural . true)
-            (patternInfo.fileMatchLimit . 10000)))))))
+            (PARTIALREPOS
+              (STRUCTURALSEARCH
+                (useFullDeadline . true)
+                (useIndex . yes)
+                (patternInfo.query . "(:[_])")
+                (patternInfo.isStructural . true)
+                (patternInfo.fileMatchLimit . 10000)))))))))
 `),
 		},
 		// The next query shows an unexpected way that a query is

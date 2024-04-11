@@ -26,7 +26,7 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 		os.Unsetenv("KUBERNETES_SERVICE_HOST")
 	})
 
-	operations := command.NewOperations(&observation.TestContext)
+	operations := command.NewOperations(observation.TestContextTB(t))
 
 	tests := []struct {
 		name                   string
@@ -520,7 +520,7 @@ func TestNewKubernetesWorkspace_SingleJob(t *testing.T) {
 	cmd := workspace.NewMockCommand()
 	logger := workspace.NewMockLogger()
 
-	operations := command.NewOperations(&observation.TestContext)
+	operations := command.NewOperations(observation.TestContextTB(t))
 
 	ws, err := workspace.NewKubernetesWorkspace(
 		context.Background(),

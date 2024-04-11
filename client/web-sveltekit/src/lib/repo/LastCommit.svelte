@@ -17,17 +17,14 @@
     <div class="avatar">
         <Avatar avatar={user} />
     </div>
-
     <div class="display-name">
         <small>{user.name}</small>
     </div>
-
     <div class="commit-message">
         <a href={canonicalURL}>
             <small>{commitMessage}</small>
         </a>
     </div>
-
     <div class="commit-date">
         <small>{commitDate}</small>
     </div>

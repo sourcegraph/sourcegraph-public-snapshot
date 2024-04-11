@@ -18,7 +18,7 @@ import (
 func TestReferencesForUpload(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertUploads(t, db,
 		shared.Upload{ID: 1, Commit: makeCommit(2), Root: "sub1/"},
@@ -59,7 +59,7 @@ func TestReferencesForUpload(t *testing.T) {
 func TestUpdatePackages(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// for foreign key relation
 	insertUploads(t, db, shared.Upload{ID: 42})
@@ -91,7 +91,7 @@ func TestUpdatePackages(t *testing.T) {
 func TestUpdatePackagesEmpty(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	if err := store.UpdatePackages(context.Background(), 0, nil); err != nil {
 		t.Fatalf("unexpected error updating packages: %s", err)
@@ -109,7 +109,7 @@ func TestUpdatePackagesEmpty(t *testing.T) {
 func TestUpdatePackageReferences(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// for foreign key relation
 	insertUploads(t, db, shared.Upload{ID: 42})

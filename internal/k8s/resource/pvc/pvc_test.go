@@ -43,7 +43,7 @@ func TestNewPersistentVolumeClaim(t *testing.T) {
 					AccessModes: []corev1.PersistentVolumeAccessMode{
 						corev1.ReadWriteOnce,
 					},
-					Resources: corev1.ResourceRequirements{
+					Resources: corev1.VolumeResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceStorage: resource.MustParse("10Gi"),
 						},
@@ -76,7 +76,7 @@ func TestNewPersistentVolumeClaim(t *testing.T) {
 					AccessModes: []corev1.PersistentVolumeAccessMode{
 						corev1.ReadWriteOnce,
 					},
-					Resources: corev1.ResourceRequirements{
+					Resources: corev1.VolumeResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceStorage: resource.MustParse("10Gi"),
 						},
@@ -110,7 +110,7 @@ func TestNewPersistentVolumeClaim(t *testing.T) {
 					AccessModes: []corev1.PersistentVolumeAccessMode{
 						corev1.ReadWriteOnce,
 					},
-					Resources: corev1.ResourceRequirements{
+					Resources: corev1.VolumeResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceStorage: resource.MustParse("10Gi"),
 						},
@@ -141,7 +141,7 @@ func TestNewPersistentVolumeClaim(t *testing.T) {
 					AccessModes: []corev1.PersistentVolumeAccessMode{
 						corev1.ReadWriteMany,
 					},
-					Resources: corev1.ResourceRequirements{
+					Resources: corev1.VolumeResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceStorage: resource.MustParse("10Gi"),
 						},
@@ -155,7 +155,7 @@ func TestNewPersistentVolumeClaim(t *testing.T) {
 				name:      "foo",
 				namespace: "sourcegraph",
 				options: []Option{
-					WithResources(corev1.ResourceRequirements{
+					WithResources(corev1.VolumeResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceStorage: resource.MustParse("100Gi"),
 						},
@@ -174,7 +174,7 @@ func TestNewPersistentVolumeClaim(t *testing.T) {
 					AccessModes: []corev1.PersistentVolumeAccessMode{
 						corev1.ReadWriteOnce,
 					},
-					Resources: corev1.ResourceRequirements{
+					Resources: corev1.VolumeResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceStorage: resource.MustParse("100Gi"),
 						},
@@ -203,7 +203,7 @@ func TestNewPersistentVolumeClaim(t *testing.T) {
 					AccessModes: []corev1.PersistentVolumeAccessMode{
 						corev1.ReadWriteOnce,
 					},
-					Resources: corev1.ResourceRequirements{
+					Resources: corev1.VolumeResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceStorage: resource.MustParse("10Gi"),
 						},
@@ -233,7 +233,7 @@ func TestNewPersistentVolumeClaim(t *testing.T) {
 					AccessModes: []corev1.PersistentVolumeAccessMode{
 						corev1.ReadWriteOnce,
 					},
-					Resources: corev1.ResourceRequirements{
+					Resources: corev1.VolumeResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceStorage: resource.MustParse("10Gi"),
 						},

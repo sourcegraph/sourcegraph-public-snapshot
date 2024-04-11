@@ -53,7 +53,7 @@ func TestClone(t *testing.T) {
 	lock := NewMockRepositoryLock()
 	locker.TryAcquireFunc.SetDefaultReturn(lock, true)
 
-	fs := gitserverfs.New(&observation.TestContext, reposDir)
+	fs := gitserverfs.New(observation.TestContextTB(t), reposDir)
 	require.NoError(t, fs.Initialize())
 	getRemoteURLFunc := func(_ context.Context, name api.RepoName) (string, error) { //nolint:unparam
 		require.Equal(t, repo, name)
@@ -169,7 +169,7 @@ func TestClone_Fail(t *testing.T) {
 	lock := NewMockRepositoryLock()
 	locker.TryAcquireFunc.SetDefaultReturn(lock, true)
 
-	fs := gitserverfs.New(&observation.TestContext, reposDir)
+	fs := gitserverfs.New(observation.TestContextTB(t), reposDir)
 	require.NoError(t, fs.Initialize())
 	getRemoteURLFunc := func(_ context.Context, name api.RepoName) (string, error) { //nolint:unparam
 		require.Equal(t, repo, name)
