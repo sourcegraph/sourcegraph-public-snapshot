@@ -1,9 +1,7 @@
 package codycontext
 
 import (
-	"bytes"
 	"context"
-	"io"
 	"os"
 	"sync"
 
@@ -154,12 +152,7 @@ func getIgnoreMatcher(ctx context.Context, cache *lru.Cache[repoRevision, ignore
 		return nil, err
 	}
 	defer fr.Close()
-
-	ignoreFileBytes, err := io.ReadAll(fr)
-	if err != nil {
-		return nil, err
-	}
-	ig, err := ignore.ParseIgnoreFile(bytes.NewReader(ignoreFileBytes))
+	ig, err := ignore.ParseIgnoreFile(fr)
 	if err != nil {
 		return nil, err
 	}
