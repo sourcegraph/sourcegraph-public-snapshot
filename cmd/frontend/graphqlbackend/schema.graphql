@@ -7247,13 +7247,14 @@ type DefaultSettings implements SettingsSubject {
 }
 
 """
-Rules defining the repositories that will never be shared by Cody with third-party LLM providers.
+Rules defining whether the matching repositories may be included (allowed) or should be excluded (ignored)
+from Cody context in requests to third-party LLMs.
 """
 type CodyContextFilters {
     """
-    A JSON string representing rules specifying repositories that Cody may include as context in requests to third-party LLMs.
+    Cody context filters value from the site configuration.
     """
-    raw: String
+    raw: JSONValue
 }
 
 """

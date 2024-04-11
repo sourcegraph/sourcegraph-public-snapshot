@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"os"
 	"strconv"
@@ -669,16 +668,11 @@ type codyContextFiltersResolver struct {
 	ccf *schema.CodyContextFilters
 }
 
-func (c *codyContextFiltersResolver) Raw() (*string, error) {
+func (c *codyContextFiltersResolver) Raw() *JSONValue {
 	if c.ccf == nil {
-		return nil, nil
+		return nil
 	}
-	marshaled, err := json.Marshal(c.ccf)
-	if err != nil {
-		return nil, err
-	}
-	str := string(marshaled)
-	return &str, nil
+	return &JSONValue{c.ccf}
 }
 
 func (r *siteResolver) CodyContextFilters(_ context.Context, args *CodyContextFiltersArgs) (*codyContextFiltersResolver, error) {
