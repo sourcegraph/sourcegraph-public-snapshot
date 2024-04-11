@@ -94,8 +94,10 @@ func NewConfig(now time.Time) Config {
 		} else {
 			baseBranch := os.Getenv("BUILDKITE_PULL_REQUEST_BASE_BRANCH")
 			if diffArgs, err := determineDiffArgs(baseBranch, commit); err != nil {
+				fmt.Fprintf(os.Stderr, "1.CONFUSED SCREAMING:\nBase: %q, DiffArgs: %q", baseBranch, diffArgs)
 				panic(err)
 			} else {
+				fmt.Fprintf(os.Stderr, "2.CONFUSED SCREAMING:\nBase: %q, DiffArgs: %q", baseBranch, diffArgs)
 				// the base we want to diff against should exist locally now so we can diff!
 				diffCommand = append(diffCommand, diffArgs)
 			}
