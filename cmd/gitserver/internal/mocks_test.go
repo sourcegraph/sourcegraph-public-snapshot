@@ -20,9 +20,6 @@ import (
 // package github.com/sourcegraph/sourcegraph/cmd/gitserver/internal) used
 // for unit testing.
 type MockService struct {
-	// CloneRepoFunc is an instance of a mock function object controlling
-	// the behavior of the method CloneRepo.
-	CloneRepoFunc *ServiceCloneRepoFunc
 	// CreateCommitFromPatchFunc is an instance of a mock function object
 	// controlling the behavior of the method CreateCommitFromPatch.
 	CreateCommitFromPatchFunc *ServiceCreateCommitFromPatchFunc
@@ -50,11 +47,6 @@ type MockService struct {
 // return zero values for all results, unless overwritten.
 func NewMockService() *MockService {
 	return &MockService{
-		CloneRepoFunc: &ServiceCloneRepoFunc{
-			defaultHook: func(context.Context, api.RepoName, CloneOptions) (r0 string, r1 error) {
-				return
-			},
-		},
 		CreateCommitFromPatchFunc: &ServiceCreateCommitFromPatchFunc{
 			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) (r0 protocol.CreateCommitFromPatchResponse) {
 				return
@@ -97,11 +89,6 @@ func NewMockService() *MockService {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockService() *MockService {
 	return &MockService{
-		CloneRepoFunc: &ServiceCloneRepoFunc{
-			defaultHook: func(context.Context, api.RepoName, CloneOptions) (string, error) {
-				panic("unexpected invocation of MockService.CloneRepo")
-			},
-		},
 		CreateCommitFromPatchFunc: &ServiceCreateCommitFromPatchFunc{
 			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse {
 				panic("unexpected invocation of MockService.CreateCommitFromPatch")
@@ -144,7 +131,6 @@ func NewStrictMockService() *MockService {
 // github.com/sourcegraph/sourcegraph/cmd/gitserver/internal). It is
 // redefined here as it is unexported in the source package.
 type surrogateMockService interface {
-	CloneRepo(context.Context, api.RepoName, CloneOptions) (string, error)
 	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse
 	EnsureRevision(context.Context, api.RepoName, string) bool
 	IsRepoCloneable(context.Context, api.RepoName) (protocol.IsRepoCloneableResponse, error)
@@ -158,9 +144,6 @@ type surrogateMockService interface {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockServiceFrom(i surrogateMockService) *MockService {
 	return &MockService{
-		CloneRepoFunc: &ServiceCloneRepoFunc{
-			defaultHook: i.CloneRepo,
-		},
 		CreateCommitFromPatchFunc: &ServiceCreateCommitFromPatchFunc{
 			defaultHook: i.CreateCommitFromPatch,
 		},
@@ -183,116 +166,6 @@ func NewMockServiceFrom(i surrogateMockService) *MockService {
 			defaultHook: i.SearchWithObservability,
 		},
 	}
-}
-
-// ServiceCloneRepoFunc describes the behavior when the CloneRepo method of
-// the parent MockService instance is invoked.
-type ServiceCloneRepoFunc struct {
-	defaultHook func(context.Context, api.RepoName, CloneOptions) (string, error)
-	hooks       []func(context.Context, api.RepoName, CloneOptions) (string, error)
-	history     []ServiceCloneRepoFuncCall
-	mutex       sync.Mutex
-}
-
-// CloneRepo delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockService) CloneRepo(v0 context.Context, v1 api.RepoName, v2 CloneOptions) (string, error) {
-	r0, r1 := m.CloneRepoFunc.nextHook()(v0, v1, v2)
-	m.CloneRepoFunc.appendCall(ServiceCloneRepoFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the CloneRepo method of
-// the parent MockService instance is invoked and the hook queue is empty.
-func (f *ServiceCloneRepoFunc) SetDefaultHook(hook func(context.Context, api.RepoName, CloneOptions) (string, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// CloneRepo method of the parent MockService instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ServiceCloneRepoFunc) PushHook(hook func(context.Context, api.RepoName, CloneOptions) (string, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ServiceCloneRepoFunc) SetDefaultReturn(r0 string, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, CloneOptions) (string, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ServiceCloneRepoFunc) PushReturn(r0 string, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, CloneOptions) (string, error) {
-		return r0, r1
-	})
-}
-
-func (f *ServiceCloneRepoFunc) nextHook() func(context.Context, api.RepoName, CloneOptions) (string, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ServiceCloneRepoFunc) appendCall(r0 ServiceCloneRepoFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ServiceCloneRepoFuncCall objects describing
-// the invocations of this function.
-func (f *ServiceCloneRepoFunc) History() []ServiceCloneRepoFuncCall {
-	f.mutex.Lock()
-	history := make([]ServiceCloneRepoFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ServiceCloneRepoFuncCall is an object that describes an invocation of
-// method CloneRepo on an instance of MockService.
-type ServiceCloneRepoFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 CloneOptions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ServiceCloneRepoFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ServiceCloneRepoFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // ServiceCreateCommitFromPatchFunc describes the behavior when the
