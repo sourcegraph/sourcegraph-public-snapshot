@@ -121,17 +121,14 @@
 (this) @variable.builtin
 
 ; properties
-(expression_statement
-  (selector
-  	(unconditional_assignable_selector
-    	(identifier) @function))
+((selector
+  (unconditional_assignable_selector (identifier) @function))
   (selector (argument_part (arguments)))
 )
-(expression_statement
-  (cascade_section
-  	(cascade_selector (identifier) @function)
-    (argument_part (arguments))
-  )
+
+(cascade_section
+  (cascade_selector (identifier) @function)
+  (argument_part (arguments))
 )
 
 (unconditional_assignable_selector

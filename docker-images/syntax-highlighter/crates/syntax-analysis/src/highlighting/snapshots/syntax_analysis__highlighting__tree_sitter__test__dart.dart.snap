@@ -312,7 +312,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //             ^ IdentifierOperator
 //               ^^^^^^ IdentifierType
 //                       ^ PunctuationDelimiter
-//                        ^^^^^^^ Identifier
+//                        ^^^^^^^ IdentifierFunction
 //                                ^^^ NumericLiteral
 //                                    ^ PunctuationDelimiter
     print("Random Number: $random");
@@ -371,7 +371,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //  ^^^^^^ Keyword
 //         ^^^^^^ IdentifierType
 //               ^ PunctuationDelimiter
-//                ^^^^^^^ Identifier
+//                ^^^^^^^ IdentifierFunction
 //                        ^^^^^^^^ IdentifierType
 //                                 ^^^^^^^ IdentifierParameter
 //                                        ^ IdentifierOperator
