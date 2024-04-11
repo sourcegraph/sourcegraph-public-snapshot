@@ -1,7 +1,5 @@
 ; Methods
 ; --------------------
-(function_expression_body
-  (identifier) @function)
 
 ; NOTE: This query is a bit of a work around for the fact that the dart grammar doesn't
 ; specifically identify a node as a function call

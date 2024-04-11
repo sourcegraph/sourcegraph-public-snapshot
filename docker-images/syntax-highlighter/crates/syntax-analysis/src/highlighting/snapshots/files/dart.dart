@@ -115,5 +115,5 @@ void keywords() {
 }
 
 void lambdaparam() {
-    Directory("/").map((file) => file.path)
+    Directory("/").map((file) => file.path);
 }
