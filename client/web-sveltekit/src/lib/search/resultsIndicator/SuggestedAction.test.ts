@@ -25,7 +25,6 @@ describe('SuggestedAction.svelte', () => {
                         severity: 'error',
                         suggested: {
                             title: "here's a title",
-                            message: "here's a message",
                         },
                     },
                 ],
@@ -55,16 +54,16 @@ describe('SuggestedAction.svelte', () => {
                         reason: 'error',
                         title: 'this is an error',
                         message: 'vv much an error',
-                        severity: 'error',
+                        severity: 'info',
                     },
                 ],
             },
-            severity: 'error',
-            state: 'error',
+            severity: 'info',
+            state: 'complete',
         })
 
         const infoBadge = document.getElementsByClassName('info-badge error-text')
-        expect(infoBadge).toHaveLength(1)
+        expect(infoBadge).toHaveLength(0)
 
         const interpunct = document.getElementsByClassName('separator')
         expect(interpunct).toHaveLength(0)

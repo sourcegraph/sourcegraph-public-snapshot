@@ -31,7 +31,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
-	store := bstore.New(db, &observation.TestContext, nil)
+	store := bstore.New(db, observation.TestContextTB(t), nil)
 
 	admin := bt.CreateTestUser(t, db, true)
 

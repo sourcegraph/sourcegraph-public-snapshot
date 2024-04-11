@@ -4,7 +4,6 @@
 
     export let state: 'error' | 'loading' | 'complete'
     export let progress: Progress
-    export let elapsedDuration: number
     export let severity: string
 
     $: isError = state === 'error' || severity === 'error'
@@ -12,9 +11,7 @@
 </script>
 
 {#if loading}
-    <div class="progress-message">
-        Fetching results... {(elapsedDuration / 1000).toFixed(1)}s
-    </div>
+    <div class="progress-message">Fetching results...</div>
 {:else}
     <InfoBadge {progress} {isError} />
 {/if}

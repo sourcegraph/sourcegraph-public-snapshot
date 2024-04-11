@@ -72,7 +72,7 @@ func TestClient_ResolveRevision(t *testing.T) {
 	db := newMockDB()
 	ctx := context.Background()
 
-	fs := gitserverfs.New(&observation.TestContext, filepath.Join(root, "repos"))
+	fs := gitserverfs.New(observation.TestContextTB(t), filepath.Join(root, "repos"))
 	require.NoError(t, fs.Initialize())
 	getRemoteURLFunc := func(_ context.Context, name api.RepoName) (string, error) { //nolint:unparam
 		return remote, nil

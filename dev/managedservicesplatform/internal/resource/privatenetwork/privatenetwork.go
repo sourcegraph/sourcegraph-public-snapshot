@@ -53,12 +53,13 @@ func New(scope constructs.Construct, config Config) *Output {
 			Name:    &config.ServiceID,
 			Network: network.Id(),
 
+			// Allow usage of private Google access: https://cloud.google.com/vpc/docs/private-google-access
+			PrivateIpGoogleAccess: true,
+
 			// This is similar to the setup in Cloud v1.1 for connecting to Cloud SQL - we
-			// set up an arbitrary ip_cidr_range that covers enough IPs for most needs. The
-			// private_x_google_access stuff is based on security requirements.
+			// set up an arbitrary ip_cidr_range that covers enough IPs for most needs.
 			// We must use a /28 range because that's the range supported by VPC connectors.
-			IpCidrRange:           pointers.Ptr("10.0.0.0/28"),
-			PrivateIpGoogleAccess: false,
+			IpCidrRange: pointers.Ptr("10.0.0.0/28"),
 			//checkov:skip=CKV_GCP_76: Enable dual-stack support for subnetworks is destrutive and require re-creating the subnet and all dependent resources (e.g. NEG)
 			PrivateIpv6GoogleAccess: pointers.Ptr("DISABLE_GOOGLE_ACCESS"),
 			// Checkov requirement: https://docs.bridgecrew.io/docs/bc_gcp_logging_1

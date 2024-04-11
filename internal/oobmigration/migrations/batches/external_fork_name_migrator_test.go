@@ -26,7 +26,7 @@ func TestExternalForkNameMigrator(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	s := bstore.New(db, &observation.TestContext, nil)
+	s := bstore.New(db, observation.TestContextTB(t), nil)
 
 	migrator := NewExternalForkNameMigrator(s.Store, 100)
 	progress, err := migrator.Progress(ctx, false)

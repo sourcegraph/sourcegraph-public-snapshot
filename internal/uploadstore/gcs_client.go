@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
-	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	sglog "github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/api/iterator"
@@ -166,7 +165,7 @@ func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...s
 		if err == nil {
 			// Delete sources on success
 			if err := s.deleteSources(ctx, bucket, sources); err != nil {
-				log15.Error("Failed to delete source objects", "error", err)
+				s.operations.Compose.Logger.Error("Failed to delete source objects", sglog.Error(err))
 			}
 		}
 	}()

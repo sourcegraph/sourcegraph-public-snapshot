@@ -14,7 +14,7 @@ import { isEqual } from 'lodash'
 import { createRoot } from 'react-dom/client'
 import { createPath, useLocation, useNavigate, type Location, type NavigateFunction } from 'react-router-dom'
 
-import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
+import { NoopEditor } from '@sourcegraph/cody-shared'
 import { SourcegraphURL } from '@sourcegraph/common'
 import { createCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'

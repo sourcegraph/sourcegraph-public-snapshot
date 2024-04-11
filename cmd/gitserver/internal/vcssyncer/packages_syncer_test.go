@@ -39,7 +39,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	depsService := &fakeDepsService{deps: map[reposource.PackageName]dependencies.PackageRepoReference{}}
 
 	root := t.TempDir()
-	fs := gitserverfs.New(&observation.TestContext, root)
+	fs := gitserverfs.New(observation.TestContextTB(t), root)
 	require.NoError(t, fs.Initialize())
 	remoteURL := &vcs.URL{URL: url.URL{Path: "fake/foo"}}
 
