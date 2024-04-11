@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/log"
 	"google.golang.org/grpc"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/cloneurl"
@@ -157,7 +158,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	gitserver.RegisterMetrics(observationCtx, db)
 
-	handler := gitserver.Handler()
+	handler := internal.NewHTTPHandler(logger, fs)
 	handler = actor.HTTPMiddleware(logger, handler)
 	handler = requestclient.InternalHTTPMiddleware(handler)
 	handler = requestinteraction.HTTPMiddleware(handler)
