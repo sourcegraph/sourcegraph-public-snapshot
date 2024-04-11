@@ -1080,6 +1080,7 @@ func TestFindClosestCompletedUploadsIndexerName(t *testing.T) {
 		{commit: makeCommit(5), file: "root2/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{6}},
 		{commit: makeCommit(5), file: "root3/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{7}},
 		{commit: makeCommit(5), file: "root4/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{8}},
+		// Searching for visible uploads with indexer == "" yields all non-syntactic indexes
 		{commit: makeCommit(5), file: "root4/file.ts", indexer: "", graph: graph, allOfIDs: []int{4, 8}},
 		{commit: makeCommit(5), file: "root4/file.ts", indexer: shared.SyntacticIndexer, graph: graph, allOfIDs: []int{9}},
 	})
