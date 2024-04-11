@@ -291,6 +291,12 @@ func main() {
 					}
 					if err := stdTestPool.Wait(); err != nil {
 						fmt.Println("🚨 Error: failed to run tests in pool: ", err)
+						for _, t := range results.StandardUpgradeTests {
+							fmt.Println("LOGS")
+							t.DisplayLog()
+							fmt.Println("ERROR")
+							t.DisplayErrors()
+						}
 						return err
 					}
 
