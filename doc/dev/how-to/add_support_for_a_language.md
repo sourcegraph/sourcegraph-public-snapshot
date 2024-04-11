@@ -128,6 +128,6 @@ To add syntax highlighting on a new language follow the following steps in the [
 **(Optional) If the language is not yet supported in [go-enry](https://github.com/go-enry/go-enry)**
 
 Under [lib/codeintel/languages/extensions.go](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/lib/codeintel/languages/extensions.go?L67):
-1. Add a mapping of the langauge's extension to name in the `unsupportedByEnryExtensionsMap` and update associated unit test
+1. Add a mapping of the language's extension to name in the `unsupportedByEnryExtensionsMap` and update associated unit test
 
  
