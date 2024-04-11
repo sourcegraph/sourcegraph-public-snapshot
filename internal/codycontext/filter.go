@@ -9,12 +9,12 @@ import (
 
 type FileChunkFilterFunc func([]FileChunkContext) []FileChunkContext
 type RepoContentFilter interface {
-	GetFilter(repos []types.RepoIDName, logger log.Logger) ([]types.RepoIDName, FileChunkFilterFunc)
+	GetFilter(repos []types.RepoIDName, logger log.Logger) (_ []types.RepoIDName, _ FileChunkFilterFunc, ok bool)
 }
 
-func NewRepoContentFilter(logger log.Logger, client gitserver.Client) (RepoContentFilter, error) {
+func NewRepoContentFilter(logger log.Logger, client gitserver.Client) RepoContentFilter {
 	if dotcom.SourcegraphDotComMode() {
-		return newDotcomFilter(client), nil
+		return newDotcomFilter(client)
 	}
 	return newEnterpriseFilter(logger)
 }

@@ -122,7 +122,10 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 
 	// Generating the content filter removes any repos where the filter can not
 	// be determined
-	filterableRepos, contextFilter := c.contentFilter.GetFilter(args.Repos, c.obsCtx.Logger)
+	filterableRepos, contextFilter, ok := c.contentFilter.GetFilter(args.Repos, c.obsCtx.Logger)
+	if !ok {
+		return nil, errors.New("failed to create content filter")
+	}
 	args.Repos = filterableRepos
 
 	embeddingRepos, keywordRepos, err := c.partitionRepos(ctx, args.Repos)

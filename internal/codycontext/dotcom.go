@@ -50,11 +50,11 @@ func (f *dotcomRepoFilter) GetEnabled() bool {
 	return f.enabled
 }
 
-func (f *dotcomRepoFilter) GetFilter(repos []types.RepoIDName, logger log.Logger) ([]types.RepoIDName, FileChunkFilterFunc) {
+func (f *dotcomRepoFilter) GetFilter(repos []types.RepoIDName, logger log.Logger) (_ []types.RepoIDName, _ FileChunkFilterFunc, ok bool) {
 	if !f.GetEnabled() {
 		return repos, func(fcc []FileChunkContext) []FileChunkContext {
 			return fcc
-		}
+		}, true
 	}
 	return f.getFilter(repos, logger)
 }
@@ -62,7 +62,7 @@ func (f *dotcomRepoFilter) GetFilter(repos []types.RepoIDName, logger log.Logger
 // getFilter returns the list of repos that can be filtered
 // their .cody/ignore files (or don't have one). If an error
 // occurs that repo will be excluded.
-func (f *dotcomRepoFilter) getFilter(repos []types.RepoIDName, logger log.Logger) ([]types.RepoIDName, FileChunkFilterFunc) {
+func (f *dotcomRepoFilter) getFilter(repos []types.RepoIDName, logger log.Logger) (_ []types.RepoIDName, _ FileChunkFilterFunc, ok bool) {
 	filters := make(map[api.RepoName]filterFunc, len(repos))
 	filterableRepos := make([]types.RepoIDName, 0, len(repos))
 	// use the internal actor to ensure access to repo and ignore files
@@ -103,7 +103,7 @@ func (f *dotcomRepoFilter) getFilter(repos []types.RepoIDName, logger log.Logger
 			}
 		}
 		return filtered
-	}
+	}, true
 }
 
 // newDotcomFilter creates a new RepoContentFilter that filters out
