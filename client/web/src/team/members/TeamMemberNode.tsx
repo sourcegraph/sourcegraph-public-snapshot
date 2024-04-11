@@ -3,6 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import type { ListTeamMemberFields, Scalars } from '../../graphql-operations'
@@ -11,7 +12,7 @@ import { RemoveTeamMemberModal } from './RemoveTeamMemberModal'
 
 import styles from './TeamMemberNode.module.scss'
 
-export interface TeamMemberNodeProps {
+export interface TeamMemberNodeProps extends TelemetryV2Props {
     viewerCanAdminister: boolean
     teamID: Scalars['ID']
     teamName: string
@@ -27,6 +28,7 @@ export const TeamMemberNode: React.FunctionComponent<React.PropsWithChildren<Tea
     teamName,
     node,
     refetchAll,
+    telemetryRecorder,
 }) => {
     const [openModal, setOpenModal] = useState<OpenModal | undefined>()
 
@@ -76,6 +78,7 @@ export const TeamMemberNode: React.FunctionComponent<React.PropsWithChildren<Tea
                     teamID={teamID}
                     teamName={teamName}
                     member={node}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
         </>

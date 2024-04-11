@@ -5,6 +5,7 @@ import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Link, Icon, Tooltip, useDebounce } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
@@ -16,14 +17,18 @@ import { TeamList } from './TeamListPage'
 
 import styles from './TeamNode.module.scss'
 
-export interface TeamNodeProps {
+export interface TeamNodeProps extends TelemetryV2Props {
     node: ListTeamFields
     refetchAll: () => void
 }
 
 type OpenModal = 'delete'
 
-export const TeamNode: React.FunctionComponent<React.PropsWithChildren<TeamNodeProps>> = ({ node, refetchAll }) => {
+export const TeamNode: React.FunctionComponent<React.PropsWithChildren<TeamNodeProps>> = ({
+    node,
+    refetchAll,
+    telemetryRecorder,
+}) => {
     const [openModal, setOpenModal] = useState<OpenModal | undefined>()
 
     const onClickDelete = useCallback<React.MouseEventHandler>(event => {
@@ -54,7 +59,7 @@ export const TeamNode: React.FunctionComponent<React.PropsWithChildren<TeamNodeP
                         wholeTitleClickable={false}
                         defaultExpanded={false}
                     >
-                        <ChildTeamList parentTeam={node.name} />
+                        <ChildTeamList parentTeam={node.name} telemetryRecorder={telemetryRecorder} />
                     </Collapsible>
                 )}
                 {node.childTeams.totalCount === 0 && (
@@ -66,7 +71,14 @@ export const TeamNode: React.FunctionComponent<React.PropsWithChildren<TeamNodeP
                 )}
             </li>
 
-            {openModal === 'delete' && <DeleteTeamModal onCancel={closeModal} afterDelete={afterAction} team={node} />}
+            {openModal === 'delete' && (
+                <DeleteTeamModal
+                    onCancel={closeModal}
+                    afterDelete={afterAction}
+                    team={node}
+                    telemetryRecorder={telemetryRecorder}
+                />
+            )}
         </>
     )
 }
@@ -109,7 +121,11 @@ const NodeContent: React.FunctionComponent<NodeContentProps> = ({ node, onClickD
     </div>
 )
 
-const ChildTeamList: React.FunctionComponent<{ parentTeam: string }> = ({ parentTeam }) => {
+interface ChildTeamListProps extends TelemetryV2Props {
+    parentTeam: string
+}
+
+const ChildTeamList: React.FunctionComponent<ChildTeamListProps> = ({ parentTeam, telemetryRecorder }) => {
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
 
@@ -120,6 +136,7 @@ const ChildTeamList: React.FunctionComponent<{ parentTeam: string }> = ({ parent
             searchValue={searchValue}
             setSearchValue={setSearchValue}
             query={query}
+            telemetryRecorder={telemetryRecorder}
             {...connection}
             className={classNames(styles.childTeams, 'py-2 pl-3 pr-2')}
         />

@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react'
 
 import { logger } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, H3, Modal, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../components/LoaderButton'
@@ -8,7 +9,7 @@ import type { ListTeamFields } from '../../graphql-operations'
 
 import { useDeleteTeam } from './backend'
 
-export interface DeleteTeamModalProps {
+export interface DeleteTeamModalProps extends TelemetryV2Props {
     team: ListTeamFields
 
     onCancel: () => void
@@ -19,6 +20,7 @@ export const DeleteTeamModal: React.FunctionComponent<React.PropsWithChildren<De
     team,
     onCancel,
     afterDelete,
+    telemetryRecorder,
 }) => {
     const labelId = 'deleteTeam'
 
@@ -31,13 +33,15 @@ export const DeleteTeamModal: React.FunctionComponent<React.PropsWithChildren<De
             try {
                 await deleteTeam({ variables: { id: team.id } })
 
+                telemetryRecorder.recordEvent('team', 'delete')
                 afterDelete()
             } catch (error) {
                 // Non-request error. API errors will be available under `error` above.
                 logger.error(error)
+                telemetryRecorder.recordEvent('team', 'deleteFail')
             }
         },
-        [afterDelete, team.id, deleteTeam]
+        [afterDelete, team.id, deleteTeam, telemetryRecorder]
     )
 
     return (

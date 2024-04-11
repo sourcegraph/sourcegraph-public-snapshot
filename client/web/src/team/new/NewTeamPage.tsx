@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Container, PageHeader, Link, Input, ErrorAlert, Form, Label } from '@sourcegraph/wildcard'
 
 import { TEAM_DISPLAY_NAME_MAX_LENGTH, TEAM_NAME_MAX_LENGTH, VALID_TEAM_NAME_REGEXP } from '..'
@@ -14,9 +15,11 @@ import { ParentTeamSelect } from './team-select/ParentTeamSelect'
 
 import styles from './NewTeamPage.module.scss'
 
-export interface NewTeamPageProps {}
+export interface NewTeamPageProps extends TelemetryV2Props {}
 
-export const NewTeamPage: React.FunctionComponent<React.PropsWithChildren<NewTeamPageProps>> = () => {
+export const NewTeamPage: React.FunctionComponent<React.PropsWithChildren<NewTeamPageProps>> = ({
+    telemetryRecorder,
+}) => {
     const navigate = useNavigate()
     const location = useLocation()
 
@@ -29,6 +32,8 @@ export const NewTeamPage: React.FunctionComponent<React.PropsWithChildren<NewTea
         }
         return null
     })
+
+    useEffect(() => telemetryRecorder.recordEvent('teams.new', 'view'), [telemetryRecorder])
 
     const onNameChange: React.ChangeEventHandler<HTMLInputElement> = event => {
         const hyphenatedName = event.currentTarget.value.replaceAll(/\s/g, '-')
@@ -55,12 +60,17 @@ export const NewTeamPage: React.FunctionComponent<React.PropsWithChildren<NewTea
                     displayName: displayName !== '' ? displayName : null,
                     parentTeam: parentTeam !== '' ? parentTeam : null,
                 },
-            }).catch(error => {
-                // eslint-disable-next-line no-console
-                console.error(error)
             })
+                .then(() => {
+                    telemetryRecorder.recordEvent('teams.new', 'create')
+                })
+                .catch(error => {
+                    // eslint-disable-next-line no-console
+                    console.error(error)
+                    telemetryRecorder.recordEvent('teams.new', 'createFail')
+                })
         },
-        [displayName, name, createTeam, parentTeam]
+        [displayName, name, createTeam, parentTeam, telemetryRecorder]
     )
 
     useEffect(() => {
