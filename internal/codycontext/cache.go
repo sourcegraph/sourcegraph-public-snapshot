@@ -4,6 +4,7 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2"
 )
 
+// TODO: why safe cache
 type safeCache[K comparable, V any] struct {
 	cache *lru.Cache[K, V]
 }
