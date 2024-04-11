@@ -35,13 +35,13 @@ type Tokenizer interface {
 }
 
 type tiktokenTokenizer struct {
-	tk        *tiktoken.Tiktoken
-	model     string
-	modelType ModelFamily
+	tk          *tiktoken.Tiktoken
+	model       string
+	modelFamily ModelFamily
 }
 
 func (t *tiktokenTokenizer) Tokenize(text string) ([]int, error) {
-	if t.modelType != Claude2 && t.modelType != GPT {
+	if t.modelFamily != Claude2 && t.modelFamily != GPT {
 		// tiktoken Tokenize is only support for Anthropic Claude 2 and OpenAI GPT family of models
 		// so we return nil for all other models so that zero tokens are  counted and token counting is disabled
 		return nil, nil
@@ -50,7 +50,7 @@ func (t *tiktokenTokenizer) Tokenize(text string) ([]int, error) {
 }
 
 func (t *tiktokenTokenizer) NumTokenizeFromMessages(messages []types.Message) (int, error) {
-	if t.modelType != GPT {
+	if t.modelFamily != GPT {
 		return 0, errors.Newf("tiktoken NumTokenizeFromMessages is only support for OpenAI GPT family of models")
 	}
 	numTokens := 0
@@ -64,8 +64,8 @@ func (t *tiktokenTokenizer) NumTokenizeFromMessages(messages []types.Message) (i
 	return numTokens, nil
 }
 
-// modelTypeFromString converts a model string to a ModelType.
-func modelTypeFromString(model string) ModelFamily {
+// modelFamilyFromString converts a model string to a ModelType.
+func modelFamilyFromString(model string) ModelFamily {
 	switch {
 	case strings.Contains(model, AnthropicModel):
 		switch {
@@ -86,8 +86,8 @@ func modelTypeFromString(model string) ModelFamily {
 
 // NewTokenizer returns a Tokenizer instance based on the provided model.
 func NewTokenizer(model string) (Tokenizer, error) {
-	modelType := modelTypeFromString(model)
-	switch modelType {
+	modelFamily := modelFamilyFromString(model)
+	switch modelFamily {
 	case Claude2:
 		return newAnthropicClaudeTokenizer(model, Claude2)
 	case Claude3:
@@ -100,7 +100,7 @@ func NewTokenizer(model string) (Tokenizer, error) {
 	}
 }
 
-func newOpenAITokenizer(model string, modelType ModelFamily) (*tiktokenTokenizer, error) {
+func newOpenAITokenizer(model string, modelFamily ModelFamily) (*tiktokenTokenizer, error) {
 	// Remove "azure" or "openai" prefix from the model string
 	model = strings.NewReplacer(AzureModel+"/", "", OpenAIModel+"/", "").Replace(model)
 
@@ -110,8 +110,8 @@ func newOpenAITokenizer(model string, modelType ModelFamily) (*tiktokenTokenizer
 	}
 
 	return &tiktokenTokenizer{
-		tk:        tkm,
-		model:     model,
-		modelType: modelType,
+		tk:          tkm,
+		model:       model,
+		modelFamily: modelFamily,
 	}, nil
 }
