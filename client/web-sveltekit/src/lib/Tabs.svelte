@@ -84,7 +84,6 @@
 
     .tabs-header {
         display: flex;
-        gap: 1rem;
         justify-content: var(--align-tabs, center);
     }
 
@@ -96,7 +95,8 @@
         letter-spacing: normal;
         margin: 0;
         min-height: 2rem;
-        padding: 0 0.25rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.125rem;
         color: var(--body-color);
         text-transform: none;
         display: inline-flex;
