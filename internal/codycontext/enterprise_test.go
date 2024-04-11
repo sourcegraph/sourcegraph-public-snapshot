@@ -1,12 +1,13 @@
 package codycontext
 
 import (
+	"testing"
+
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestNewEnterpriseFilter(t *testing.T) {
@@ -523,7 +524,7 @@ func TestNewEnterpriseFilter(t *testing.T) {
 				},
 			})
 
-			f := newEnterpriseFilter()
+			f, _ := newEnterpriseFilter(logtest.Scoped(t))
 			allowedRepos, filter := f.GetFilter(tt.repos, logger)
 
 			require.Equal(t, tt.wantRepos, allowedRepos)
