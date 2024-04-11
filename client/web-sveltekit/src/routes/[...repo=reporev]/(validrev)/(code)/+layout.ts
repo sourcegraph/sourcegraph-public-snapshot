@@ -2,17 +2,18 @@ import { dirname } from 'path'
 
 import { from } from 'rxjs'
 
-import { getGraphQLClient, infinityQuery } from '$lib/graphql'
+import { getGraphQLClient, infinityQuery, mapOrThrow } from '$lib/graphql'
+import { GitRefType } from '$lib/graphql-types'
 import { fetchSidebarFileTree } from '$lib/repo/api/tree'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
-import { GitHistoryQuery, LastCommitQuery } from './layout.gql'
+import { GitHistoryQuery, LastCommitQuery, RepositoryGitCommits, RepositoryGitRefs } from './layout.gql'
 
 const HISTORY_COMMITS_PER_PAGE = 20
 
-export const load: LayoutLoad = ({ parent, params }) => {
+export const load: LayoutLoad = async ({ parent, params }) => {
     const client = getGraphQLClient()
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
     const parentPath = params.path ? dirname(params.path) : ''
@@ -32,10 +33,10 @@ export const load: LayoutLoad = ({ parent, params }) => {
         .catch(() => null)
 
     return {
-        parentPath,
         fileTree,
+        parentPath,
         lastCommit: client.query(LastCommitQuery, {
-            repoName: repoName,
+            repoName,
             revspec: revision,
             filePath: params.path ?? '',
         }),
@@ -83,5 +84,61 @@ export const load: LayoutLoad = ({ parent, params }) => {
                 }
             },
         }),
+
+        // Repository pickers queries (branch, tags and commits)
+        getRepoBranches: (searchTerm: string) =>
+            parent().then(({ resolvedRevision }) =>
+                getGraphQLClient()
+                    .query(RepositoryGitRefs, {
+                        repo: resolvedRevision.repo.id,
+                        query: searchTerm,
+                        type: GitRefType.GIT_BRANCH,
+                    })
+                    .then(
+                        mapOrThrow(({ data, error }) => {
+                            if (data?.node?.__typename !== 'Repository' || !data?.node?.gitRefs) {
+                                throw new Error(error?.message)
+                            }
+
+                            return data.node.gitRefs
+                        })
+                    )
+            ),
+        getRepoTags: (searchTerm: string) =>
+            parent().then(({ resolvedRevision }) =>
+                getGraphQLClient()
+                    .query(RepositoryGitRefs, {
+                        repo: resolvedRevision.repo.id,
+                        query: searchTerm,
+                        type: GitRefType.GIT_TAG,
+                    })
+                    .then(
+                        mapOrThrow(({ data, error }) => {
+                            if (data?.node?.__typename !== 'Repository' || !data?.node?.gitRefs) {
+                                throw new Error(error?.message)
+                            }
+
+                            return data.node.gitRefs
+                        })
+                    )
+            ),
+        getRepoCommits: (searchTerm: string) =>
+            parent().then(({ resolvedRevision }) =>
+                getGraphQLClient()
+                    .query(RepositoryGitCommits, {
+                        repo: resolvedRevision.repo.id,
+                        query: searchTerm,
+                        revision: resolvedRevision.commitID,
+                    })
+                    .then(
+                        mapOrThrow(({ data, error }) => {
+                            if (data?.node?.__typename !== 'Repository' || !data?.node?.commit) {
+                                throw new Error(error?.message)
+                            }
+
+                            return data.node.commit
+                        })
+                    )
+            ),
     }
 }
