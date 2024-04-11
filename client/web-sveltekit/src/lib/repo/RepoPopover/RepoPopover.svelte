@@ -361,18 +361,5 @@ For example:
         justify-content: space-between;
         align-items: center;
         padding: 0.75rem;
-
-        .stats {
-            display: flex;
-            flex-flow: row nowrap;
-            align-content: center;
-            font-size: 1rem;
-            padding: 0rem;
-
-            .stat {
-                align-self: center;
-                margin-right: 1rem;
-            }
-        }
     }
 </style>
