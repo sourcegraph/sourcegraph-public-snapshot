@@ -529,7 +529,7 @@ func (r *Resolver) normalizeRepoRefs(
 		case rev.ExcludeRefGlob != "":
 			globs = append(globs, gitdomain.RefGlob{Exclude: rev.ExcludeRefGlob})
 		case rev.RevAtTime != nil:
-			commitOID, ok, err := r.gitserver.RevAtTime(ctx, repo.Name, rev.RevAtTime.RevSpec, rev.RevAtTime.Timestamp)
+			commitOID, found, err := r.gitserver.RevAtTime(ctx, repo.Name, rev.RevAtTime.RevSpec, rev.RevAtTime.Timestamp)
 			if err != nil {
 				if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
 					return nil, err
@@ -537,7 +537,7 @@ func (r *Resolver) normalizeRepoRefs(
 				reportMissing(RepoRevSpecs{Repo: repo, Revs: []query.RevisionSpecifier{rev}})
 				continue
 			}
-			if ok {
+			if found {
 				revs = append(revs, string(commitOID))
 			}
 		case rev.RevSpec == "" || rev.RevSpec == "HEAD":

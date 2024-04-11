@@ -363,7 +363,11 @@ type Client interface {
 	// commit time before the given time. To simplify the logic, it only
 	// follows the first parent of merge commits to linearize the commit
 	// history. The intent is to return the state of a branch at a given time.
-	RevAtTime(ctx context.Context, repo api.RepoName, spec string, t time.Time) (api.CommitID, bool, error)
+	//
+	// If `spec` does not exist, an error will be returned. In the case
+	// no commit in the ancestry of `spec` before the time `t`, no error
+	// is returned, but the second return value `found` will be false.
+	RevAtTime(ctx context.Context, repo api.RepoName, spec string, t time.Time) (oid api.CommitID, found bool, err error)
 
 	// RequestRepoUpdate is the new protocol endpoint for synchronous requests
 	// with more detailed responses. Do not use this if you are not repo-updater.

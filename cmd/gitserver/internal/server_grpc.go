@@ -1199,7 +1199,7 @@ func (gs *grpcServer) RevAtTime(ctx context.Context, req *proto.RevAtTimeRequest
 	repoName := api.RepoName(req.GetRepoName())
 	repoDir := gs.fs.RepoDir(repoName)
 
-	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return nil, err
 	}
 
