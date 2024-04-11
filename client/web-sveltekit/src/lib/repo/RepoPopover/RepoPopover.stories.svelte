@@ -6,8 +6,6 @@
 
     import RepoPopover from './RepoPopover.svelte'
 
-    let withHeader = true
-
     export const meta = {
         component: RepoPopover,
     }
@@ -39,8 +37,8 @@
         },
         commit: {
             id: faker.datatype.number.toString(),
-            subject: faker.lorem.sentence(),
-            abbreviatedOID: '#87873',
+            subject: faker.lorem.sentence() + faker.lorem.sentence() + faker.lorem.sentence(),
+            abbreviatedOID: '38674873812345',
             canonicalURL: faker.internet.url(),
             author: {
                 date: new Date().toISOString(),

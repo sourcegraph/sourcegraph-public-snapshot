@@ -36,9 +36,6 @@
     /** Show time in UTC */
     export let utc: boolean | undefined = undefined
 
-    /** Small font size */
-    export let small = false
-
     $: dateObj = typeof date === 'string' ? new Date(date) : date
     $: formattedDate = formatDate(dateObj, { utc })
     $: relativeDate = (strict ? formatDistanceStrict : formatDistance)(dateObj, $currentDate, {
@@ -47,11 +44,5 @@
 </script>
 
 <Tooltip tooltip={showAbsolute ? relativeDate : formattedDate}>
-    {#if small}
-        <span class="timestamp" data-testid="timestamp"
-            ><small>{showAbsolute ? formattedDate : relativeDate}</small>
-        </span>
-    {:else}
-        <span class="timestamp" data-testid="timestamp">{showAbsolute ? formattedDate : relativeDate} </span>
-    {/if}
+    <span class="timestamp" data-testid="timestamp">{showAbsolute ? formattedDate : relativeDate} </span>
 </Tooltip>

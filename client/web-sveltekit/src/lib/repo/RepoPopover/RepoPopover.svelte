@@ -27,6 +27,10 @@ For example:
 
     const CENTER_DOT = '\u00B7' // interpunct
 
+    function truncateCommitNumber(numStr: string, length: number) {
+        return numStr.substring(numStr.length - length)
+    }
+
     $: subject = repo.commit?.subject
     $: commitNumber = repo.commit?.abbreviatedOID
     $: author = repo.commit?.author.person.name
@@ -54,6 +58,7 @@ For example:
         </div>
         <div class="divider" />
     {/if}
+
     <div class="description-and-tags">
         <div class="description">{repo.description}</div>
         <div class="tags">
@@ -64,37 +69,36 @@ For example:
             {/if}
         </div>
     </div>
+
     <div class="divider" />
+
     <div class="last-commit">
-        <div class="title-and-commit">
-            <div class="title">
-                <small>Last Commit</small>
-            </div>
-            <div class="commit-and-number">
-                <div class="commit">
+        <div class="heading">
+            <small>Last Commit</small>
+        </div>
+
+        <div class="commit-info">
+            <div class="commit">
+                <!--
+                A <div> element is needed for subject and commit message
+                because the <small> element alone doesn't work with
+                text-overflow: ellipsis.
+                -->
+                <div class="subject">
                     <small>{subject}</small>
                 </div>
                 {#if commitNumber}
-                    <div class="number">
-                        <small>{commitNumber}</small>
+                    <div class="commit-number">
+                        <small class="commit-number">#{truncateCommitNumber(commitNumber, 5)}</small>
                     </div>
                 {/if}
             </div>
-        </div>
-        <div class="commit-info">
-            <div class="author-and-time">
-                {#if avatar}
-                    <Avatar {avatar} --avatar-size="1.0rem" />
-                {/if}
-                <div class="author">
-                    <small>{author}</small>
-                </div>
-                <div class="separator">{CENTER_DOT}</div>
-
+            <div class="author">
+                <Avatar {avatar} --avatar-size="1.0rem" />
+                <small>{author}</small>
+                <small>{CENTER_DOT}</small>
                 {#if commitDate}
-                    <div class="commit-date">
-                        <Timestamp date={commitDate} small={true} />
-                    </div>
+                    <small><Timestamp date={commitDate} /></small>
                 {/if}
             </div>
         </div>
@@ -102,7 +106,7 @@ For example:
 
     <div class="divider" />
 
-    <div class="repo-stats">
+    <div class="footer">
         <small>{repo.language}</small>
         <RepoStars repoStars={repo.stars} small={true} />
     </div>
@@ -131,7 +135,6 @@ For example:
 
             .repo-name {
                 color: var(--text-body);
-                // only needed when icon is present
                 margin: 0rem 0.5rem 0rem 0rem;
             }
 
@@ -162,10 +165,13 @@ For example:
 
     .description-and-tags {
         padding: 0.75rem;
+        width: 100%;
 
         .description {
-            font-size: 1rem;
             padding: 0rem;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
         }
 
         .tags {
@@ -176,19 +182,65 @@ For example:
             gap: 0.5rem 0.5rem;
             justify-content: flex-start;
             margin-top: 0.5rem;
-        }
 
-        .tag {
-            text-align: center;
-            background-color: var(--subtle-bg);
-            border-radius: 1rem;
-            color: var(--primary);
-            font-family: var(--monospace-font-family);
-            padding: 0rem 0.5rem;
+            .tag {
+                background-color: var(--subtle-bg);
+                border-radius: 1rem;
+                color: var(--primary);
+                font-family: var(--monospace-font-family);
+                padding: 0rem 0.5rem;
+            }
         }
     }
 
     .last-commit {
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 0.75rem;
+
+        .heading {
+            color: var(--text-muted);
+        }
+
+        .commit-info {
+            display: flex;
+            flex-flow: column nowrap;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 0.25rem 0rem;
+
+            .commit {
+                display: flex;
+                flex-flow: row nowrap;
+                justify-content: flex-end;
+                align-items: center;
+                gap: 0.25rem 0rem;
+                width: 250px;
+
+                .subject {
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    color: var(--text-body);
+                }
+
+                .commit-number {
+                    color: var(--text-muted);
+                    align-self: center;
+                }
+            }
+
+            .author {
+                display: flex;
+                flex-flow: row nowrap;
+                color: var(--text-muted);
+                gap: 0.5rem 0.25rem;
+            }
+        }
+    }
+    /* .last-commit {
         display: flex;
         flex-flow: column nowrap;
         justify-content: space-between;
@@ -200,7 +252,7 @@ For example:
             justify-content: space-between;
             align-items: center;
 
-            .title {
+            .heading {
                 color: var(--text-muted);
             }
 
@@ -223,9 +275,9 @@ For example:
                     color: var(--text-muted);
                 }
             }
-        }
+        } */
 
-        .author-and-time {
+    /* .author-and-time {
             color: var(--text-muted);
             display: flex;
             flex-flow: row nowrap;
@@ -242,9 +294,9 @@ For example:
                 margin-right: 0.5rem;
             }
         }
-    }
+    } */
 
-    .repo-stats {
+    .footer {
         color: var(--text-muted);
         display: flex;
         flex-flow: row nowrap;
