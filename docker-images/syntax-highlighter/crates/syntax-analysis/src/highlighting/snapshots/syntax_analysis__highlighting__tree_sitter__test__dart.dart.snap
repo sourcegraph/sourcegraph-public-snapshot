@@ -18,6 +18,11 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //       ^^^^^^^^^^^ StringLiteral
 //                  ^ PunctuationDelimiter
   
+  part of 'other.dart';
+//^^^^^^^ Keyword
+//        ^^^^^^^^^^^^ StringLiteral
+//                    ^ PunctuationDelimiter
+  
   // Classes and Objects
 //^^^^^^^^^^^^^^^^^^^^^^ Comment
   sealed class Person {
@@ -395,5 +400,51 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //  ^^^^^ IdentifierFunction
 //        ^^^^ Identifier
 //             ^ PunctuationDelimiter
+  }
+  
+  void keywords() {
+//^^^^ Keyword
+//     ^^^^^^^^ IdentifierFunction
+    const foobar = 'test';
+//  ^^^^^ Keyword
+//        ^^^^^^ Identifier
+//               ^ IdentifierOperator
+//                 ^^^^^^ StringLiteral
+//                       ^ PunctuationDelimiter
+    assert(1 == 1);
+//  ^^^^^^ Keyword
+//         ^ NumericLiteral
+//           ^^ IdentifierOperator
+//              ^ NumericLiteral
+//                ^ PunctuationDelimiter
+    switch (1) {
+//  ^^^^^^ Keyword
+//          ^ NumericLiteral
+      case 1:
+//    ^^^^ Keyword
+//         ^ NumericLiteral
+//          ^ IdentifierOperator
+        print('1');
+//      ^^^^^ IdentifierFunction
+//            ^^^ StringLiteral
+//                ^ PunctuationDelimiter
+        break;
+//      ^^^^^ Keyword
+//           ^ PunctuationDelimiter
+    }
+  
+    try {
+//  ^^^ Keyword
+      throw Exception();
+//    ^^^^^ Keyword
+//          ^^^^^^^^^ IdentifierType
+//                     ^ PunctuationDelimiter
+    } catch(e) {
+//    ^^^^^ Keyword
+//          ^ Identifier
+      rethrow;
+//    ^^^^^^^ Keyword
+//           ^ PunctuationDelimiter
+    }
   }
 

@@ -3,6 +3,8 @@ library some.lib.here;
 
 import 'dart:math';
 
+part of 'other.dart';
+
 // Classes and Objects
 sealed class Person {
   String name;
@@ -92,4 +94,20 @@ Future<String> fetchData() {
 Future<void> printData() async {
   String data = await fetchData();
   print(data);
+}
+
+void keywords() {
+  const foobar = 'test';
+  assert(1 == 1);
+  switch (1) {
+    case 1:
+      print('1');
+      break;
+  }
+
+  try {
+    throw Exception();
+  } catch(e) {
+    rethrow;
+  }
 }
