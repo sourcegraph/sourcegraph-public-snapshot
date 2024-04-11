@@ -64,8 +64,7 @@ type grpcServer struct {
 	locker         RepositoryLocker
 	getBackendFunc Backender
 	fs             gitserverfs.FS
-
-	svc service
+	svc            service
 
 	proto.UnimplementedGitserverServiceServer
 }
