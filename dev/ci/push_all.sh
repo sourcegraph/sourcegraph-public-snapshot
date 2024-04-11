@@ -88,11 +88,6 @@ prod_registries=(
   "$PROD_REGISTRY"
 )
 
-additional_prod_registry=${ADDITIONAL_PROD_REGISTRY:-""}
-if [ -n "$additional_prod_registry" ]; then
-  prod_registries+=("$additional_prod_registry")
-fi
-
 date_fragment="$(date +%Y-%m-%d)"
 
 dev_tags=(
