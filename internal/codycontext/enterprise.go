@@ -17,6 +17,17 @@ import (
 
 const allowByDefault = true
 
+var (
+	metricCacheHit = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_codycontext_filter_cache_hit",
+		Help: "Incremented each time we have a cache hit on cody context filters.",
+	})
+	metricCacheMiss = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_codycontext_filter_cache_miss",
+		Help: "Incremented each time we have a cache miss on cody context filters.",
+	})
+)
+
 type filterItem struct {
 	RepoNamePattern *regexp.Regexp
 }
@@ -159,14 +170,3 @@ func (f filtersConfig) isRepoAllowed(repoName api.RepoName) bool {
 	f.cache.Add(repoName, allowed)
 	return allowed
 }
-
-var (
-	metricCacheHit = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_codycontext_filter_cache_hit",
-		Help: "Incremented each time we have a cache hit on cody context filters.",
-	})
-	metricCacheMiss = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_codycontext_filter_cache_miss",
-		Help: "Incremented each time we have a cache miss on cody context filters.",
-	})
-)
