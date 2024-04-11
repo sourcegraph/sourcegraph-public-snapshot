@@ -58,3 +58,8 @@ test --flaky_test_attempts=2
 # See https://github.com/aspect-build/rules_js/issues/1412
 # Sometimes the build fails due to some flakiness where a npm package fails to be copied
 common --noexperimental_merged_skyframe_analysis_execution
+
+common --build_event_binary_file=build_event_log.bin
+common --build_event_binary_file_path_conversion=false
+common --build_event_binary_file_upload_mode=wait_for_upload_complete
+common --build_event_publish_all_actions=true
