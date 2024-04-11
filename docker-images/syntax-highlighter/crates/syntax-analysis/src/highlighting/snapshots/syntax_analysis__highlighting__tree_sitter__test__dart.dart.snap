@@ -105,6 +105,14 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                   ^^^^ Keyword
 //                       ^ PunctuationDelimiter
   
+    if (age == null) return;
+//  ^^ Keyword
+//      ^^^ Identifier
+//          ^^ IdentifierOperator
+//             ^^^^ IdentifierNull
+//                   ^^^^^^ Keyword
+//                         ^ PunctuationDelimiter
+  
     // Conditional Statements
 //  ^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
     if (age > 18) {

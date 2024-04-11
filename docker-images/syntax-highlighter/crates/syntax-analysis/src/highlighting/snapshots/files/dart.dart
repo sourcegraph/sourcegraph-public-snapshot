@@ -28,6 +28,8 @@ void main() {
   String name = "John Doe";
   bool isStudent = true;
 
+  if (age == null) return;
+
   // Conditional Statements
   if (age > 18) {
     print("You are an adult");
