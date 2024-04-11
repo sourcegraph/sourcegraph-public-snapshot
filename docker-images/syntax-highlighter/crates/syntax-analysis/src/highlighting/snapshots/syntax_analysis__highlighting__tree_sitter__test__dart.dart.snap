@@ -102,7 +102,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //  ^^^^ IdentifierBuiltinType
 //       ^^^^^^^^^ Identifier
 //                 ^ IdentifierOperator
-//                   ^^^^ Keyword
+//                   ^^^^ BooleanLiteral
 //                       ^ PunctuationDelimiter
   
     if (age == null) return;
