@@ -12,7 +12,7 @@ type RepoContentFilter interface {
 	GetFilter(repos []types.RepoIDName, logger log.Logger) (_ []types.RepoIDName, _ FileChunkFilterFunc, ok bool)
 }
 
-func NewRepoContentFilter(logger log.Logger, client gitserver.Client) RepoContentFilter {
+func newRepoContentFilter(logger log.Logger, client gitserver.Client) RepoContentFilter {
 	if dotcom.SourcegraphDotComMode() {
 		return newDotcomFilter(client)
 	}
