@@ -894,7 +894,8 @@ func (r *grpcBlameHunkReader) Close() error {
 // ResolveRevisionOptions configure how we resolve revisions.
 // The zero value should contain appropriate default values.
 type ResolveRevisionOptions struct {
-	NoEnsureRevision bool // do not try to fetch from remote if revision doesn't exist locally
+	// If set, try to fetch from remote if revision doesn't exist locally.
+	EnsureRevision bool
 }
 
 // ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
@@ -911,7 +912,7 @@ func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoNa
 		Attrs: []attribute.KeyValue{
 			repo.Attr(),
 			attribute.String("spec", spec),
-			attribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
+			attribute.Bool("ensureRevision", opt.EnsureRevision),
 		},
 	})
 	defer endObservation(1, observation.Args{})
@@ -925,7 +926,7 @@ func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoNa
 		RepoName: string(repo),
 		RevSpec:  []byte(spec),
 	}
-	if !opt.NoEnsureRevision {
+	if opt.EnsureRevision {
 		req.EnsureRevision = pointers.Ptr(true)
 	}
 	res, err := client.ResolveRevision(ctx, req)
@@ -1637,7 +1638,7 @@ func (c *clientImplementor) HasCommitAfter(ctx context.Context, repo api.RepoNam
 		revspec = "HEAD"
 	}
 
-	commitid, err := c.ResolveRevision(ctx, repo, revspec, ResolveRevisionOptions{NoEnsureRevision: true})
+	commitid, err := c.ResolveRevision(ctx, repo, revspec, ResolveRevisionOptions{EnsureRevision: false})
 	if err != nil {
 		return false, err
 	}

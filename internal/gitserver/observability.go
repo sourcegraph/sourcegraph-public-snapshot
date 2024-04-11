@@ -37,7 +37,6 @@ type operations struct {
 	systemsInfo              *observation.Operation
 	systemInfo               *observation.Operation
 	requestRepoUpdate        *observation.Operation
-	requestRepoClone         *observation.Operation
 	isRepoCloneable          *observation.Operation
 	repoCloneProgress        *observation.Operation
 	remove                   *observation.Operation
@@ -135,7 +134,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		systemsInfo:              op("SystemsInfo"),
 		systemInfo:               op("SystemInfo"),
 		requestRepoUpdate:        op("RequestRepoUpdate"),
-		requestRepoClone:         op("RequestRepoClone"),
 		isRepoCloneable:          op("IsRepoCloneable"),
 		repoCloneProgress:        op("RepoCloneProgress"),
 		remove:                   op("Remove"),

@@ -37,7 +37,7 @@ func TestStore_CreateExhaustiveSearchRepoRevisionJob(t *testing.T) {
 		UID: userID,
 	})
 
-	s := store.New(db, &observation.TestContext)
+	s := store.New(db, observation.TestContextTB(t))
 
 	searchJobID, err := s.CreateExhaustiveSearchJob(
 		ctx,

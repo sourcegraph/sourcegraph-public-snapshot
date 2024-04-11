@@ -19,7 +19,6 @@ import (
 type grpcService struct {
 	searchFunc   types.SearchFunc
 	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error)
-	ctagsBinary  string
 	proto.UnimplementedSymbolsServiceServer
 	logger logger.Logger
 }
@@ -62,7 +61,6 @@ func NewHandler(
 	searchFunc types.SearchFunc,
 	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error),
 	handleStatus func(http.ResponseWriter, *http.Request),
-	ctagsBinary string,
 ) http.Handler {
 	rootLogger := logger.Scoped("symbolsServer")
 
@@ -71,7 +69,6 @@ func NewHandler(
 	proto.RegisterSymbolsServiceServer(grpcServer, &grpcService{
 		searchFunc:   searchFunc,
 		readFileFunc: readFileFunc,
-		ctagsBinary:  ctagsBinary,
 		logger:       rootLogger.Scoped("grpc"),
 	})
 

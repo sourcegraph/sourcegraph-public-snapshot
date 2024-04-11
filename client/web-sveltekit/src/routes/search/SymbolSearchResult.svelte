@@ -9,7 +9,7 @@
 
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
     import PreviewButton from './PreviewButton.svelte'
-    import RepoStars from './RepoStars.svelte'
+    import RepoStars from '$lib/repo/RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
 
     export let result: SymbolMatch

@@ -30,7 +30,7 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 			5: {makeEmail(5, "e@example.com", true, true)},
 			6: {makeEmail(6, "f@example.com", true, true)},
 		})
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	userResourceHandler := NewUserResourceHandler(context.Background(), observation.TestContextTB(t), db)
 
 	testCases := []struct {
 		name     string

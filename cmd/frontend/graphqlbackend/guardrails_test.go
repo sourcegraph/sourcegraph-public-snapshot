@@ -209,7 +209,7 @@ func TestSnippetAttributionReactsToSiteConfigChanges(t *testing.T) {
 	ctx := context.Background()
 	g := gitserver.NewClient("graphql.test")
 	var enterpriseServices enterprise.Services
-	require.NoError(t, guardrails.Init(ctx, &observation.TestContext, db, codeintel.Services{}, confMock, &enterpriseServices))
+	require.NoError(t, guardrails.Init(ctx, observation.TestContextTB(t), db, codeintel.Services{}, confMock, &enterpriseServices))
 	s, err := graphqlbackend.NewSchema(db, g, []graphqlbackend.OptionalResolver{{GuardrailsResolver: enterpriseServices.OptionalResolver.GuardrailsResolver}})
 	require.NoError(t, err)
 	// Same query runs in every test:

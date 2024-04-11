@@ -604,9 +604,9 @@ type MockReposService struct {
 	// ListIndexableFunc is an instance of a mock function object
 	// controlling the behavior of the method ListIndexable.
 	ListIndexableFunc *ReposServiceListIndexableFunc
-	// RequestRepositoryCloneFunc is an instance of a mock function object
-	// controlling the behavior of the method RequestRepositoryClone.
-	RequestRepositoryCloneFunc *ReposServiceRequestRepositoryCloneFunc
+	// RequestRepositoryUpdateFunc is an instance of a mock function object
+	// controlling the behavior of the method RequestRepositoryUpdate.
+	RequestRepositoryUpdateFunc *ReposServiceRequestRepositoryUpdateFunc
 	// ResolveRevFunc is an instance of a mock function object controlling
 	// the behavior of the method ResolveRev.
 	ResolveRevFunc *ReposServiceResolveRevFunc
@@ -646,7 +646,7 @@ func NewMockReposService() *MockReposService {
 				return
 			},
 		},
-		RequestRepositoryCloneFunc: &ReposServiceRequestRepositoryCloneFunc{
+		RequestRepositoryUpdateFunc: &ReposServiceRequestRepositoryUpdateFunc{
 			defaultHook: func(context.Context, api.RepoID) (r0 error) {
 				return
 			},
@@ -693,9 +693,9 @@ func NewStrictMockReposService() *MockReposService {
 				panic("unexpected invocation of MockReposService.ListIndexable")
 			},
 		},
-		RequestRepositoryCloneFunc: &ReposServiceRequestRepositoryCloneFunc{
+		RequestRepositoryUpdateFunc: &ReposServiceRequestRepositoryUpdateFunc{
 			defaultHook: func(context.Context, api.RepoID) error {
-				panic("unexpected invocation of MockReposService.RequestRepositoryClone")
+				panic("unexpected invocation of MockReposService.RequestRepositoryUpdate")
 			},
 		},
 		ResolveRevFunc: &ReposServiceResolveRevFunc{
@@ -729,8 +729,8 @@ func NewMockReposServiceFrom(i ReposService) *MockReposService {
 		ListIndexableFunc: &ReposServiceListIndexableFunc{
 			defaultHook: i.ListIndexable,
 		},
-		RequestRepositoryCloneFunc: &ReposServiceRequestRepositoryCloneFunc{
-			defaultHook: i.RequestRepositoryClone,
+		RequestRepositoryUpdateFunc: &ReposServiceRequestRepositoryUpdateFunc{
+			defaultHook: i.RequestRepositoryUpdate,
 		},
 		ResolveRevFunc: &ReposServiceResolveRevFunc{
 			defaultHook: i.ResolveRev,
@@ -1388,37 +1388,37 @@ func (c ReposServiceListIndexableFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// ReposServiceRequestRepositoryCloneFunc describes the behavior when the
-// RequestRepositoryClone method of the parent MockReposService instance is
+// ReposServiceRequestRepositoryUpdateFunc describes the behavior when the
+// RequestRepositoryUpdate method of the parent MockReposService instance is
 // invoked.
-type ReposServiceRequestRepositoryCloneFunc struct {
+type ReposServiceRequestRepositoryUpdateFunc struct {
 	defaultHook func(context.Context, api.RepoID) error
 	hooks       []func(context.Context, api.RepoID) error
-	history     []ReposServiceRequestRepositoryCloneFuncCall
+	history     []ReposServiceRequestRepositoryUpdateFuncCall
 	mutex       sync.Mutex
 }
 
-// RequestRepositoryClone delegates to the next hook function in the queue
+// RequestRepositoryUpdate delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockReposService) RequestRepositoryClone(v0 context.Context, v1 api.RepoID) error {
-	r0 := m.RequestRepositoryCloneFunc.nextHook()(v0, v1)
-	m.RequestRepositoryCloneFunc.appendCall(ReposServiceRequestRepositoryCloneFuncCall{v0, v1, r0})
+func (m *MockReposService) RequestRepositoryUpdate(v0 context.Context, v1 api.RepoID) error {
+	r0 := m.RequestRepositoryUpdateFunc.nextHook()(v0, v1)
+	m.RequestRepositoryUpdateFunc.appendCall(ReposServiceRequestRepositoryUpdateFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
-// RequestRepositoryClone method of the parent MockReposService instance is
+// RequestRepositoryUpdate method of the parent MockReposService instance is
 // invoked and the hook queue is empty.
-func (f *ReposServiceRequestRepositoryCloneFunc) SetDefaultHook(hook func(context.Context, api.RepoID) error) {
+func (f *ReposServiceRequestRepositoryUpdateFunc) SetDefaultHook(hook func(context.Context, api.RepoID) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// RequestRepositoryClone method of the parent MockReposService instance
+// RequestRepositoryUpdate method of the parent MockReposService instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *ReposServiceRequestRepositoryCloneFunc) PushHook(hook func(context.Context, api.RepoID) error) {
+func (f *ReposServiceRequestRepositoryUpdateFunc) PushHook(hook func(context.Context, api.RepoID) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1426,20 +1426,20 @@ func (f *ReposServiceRequestRepositoryCloneFunc) PushHook(hook func(context.Cont
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ReposServiceRequestRepositoryCloneFunc) SetDefaultReturn(r0 error) {
+func (f *ReposServiceRequestRepositoryUpdateFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, api.RepoID) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ReposServiceRequestRepositoryCloneFunc) PushReturn(r0 error) {
+func (f *ReposServiceRequestRepositoryUpdateFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, api.RepoID) error {
 		return r0
 	})
 }
 
-func (f *ReposServiceRequestRepositoryCloneFunc) nextHook() func(context.Context, api.RepoID) error {
+func (f *ReposServiceRequestRepositoryUpdateFunc) nextHook() func(context.Context, api.RepoID) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1452,27 +1452,27 @@ func (f *ReposServiceRequestRepositoryCloneFunc) nextHook() func(context.Context
 	return hook
 }
 
-func (f *ReposServiceRequestRepositoryCloneFunc) appendCall(r0 ReposServiceRequestRepositoryCloneFuncCall) {
+func (f *ReposServiceRequestRepositoryUpdateFunc) appendCall(r0 ReposServiceRequestRepositoryUpdateFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of ReposServiceRequestRepositoryCloneFuncCall
+// History returns a sequence of ReposServiceRequestRepositoryUpdateFuncCall
 // objects describing the invocations of this function.
-func (f *ReposServiceRequestRepositoryCloneFunc) History() []ReposServiceRequestRepositoryCloneFuncCall {
+func (f *ReposServiceRequestRepositoryUpdateFunc) History() []ReposServiceRequestRepositoryUpdateFuncCall {
 	f.mutex.Lock()
-	history := make([]ReposServiceRequestRepositoryCloneFuncCall, len(f.history))
+	history := make([]ReposServiceRequestRepositoryUpdateFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// ReposServiceRequestRepositoryCloneFuncCall is an object that describes an
-// invocation of method RequestRepositoryClone on an instance of
+// ReposServiceRequestRepositoryUpdateFuncCall is an object that describes
+// an invocation of method RequestRepositoryUpdate on an instance of
 // MockReposService.
-type ReposServiceRequestRepositoryCloneFuncCall struct {
+type ReposServiceRequestRepositoryUpdateFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1486,13 +1486,13 @@ type ReposServiceRequestRepositoryCloneFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c ReposServiceRequestRepositoryCloneFuncCall) Args() []interface{} {
+func (c ReposServiceRequestRepositoryUpdateFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c ReposServiceRequestRepositoryCloneFuncCall) Results() []interface{} {
+func (c ReposServiceRequestRepositoryUpdateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

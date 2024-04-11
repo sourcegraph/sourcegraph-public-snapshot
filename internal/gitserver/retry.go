@@ -75,11 +75,6 @@ func (r *automaticRetryClient) Archive(ctx context.Context, in *proto.ArchiveReq
 	return r.base.Archive(ctx, in, opts...)
 }
 
-func (r *automaticRetryClient) RepoClone(ctx context.Context, in *proto.RepoCloneRequest, opts ...grpc.CallOption) (*proto.RepoCloneResponse, error) {
-	opts = append(defaults.RetryPolicy, opts...)
-	return r.base.RepoClone(ctx, in, opts...)
-}
-
 func (r *automaticRetryClient) RepoCloneProgress(ctx context.Context, in *proto.RepoCloneProgressRequest, opts ...grpc.CallOption) (*proto.RepoCloneProgressResponse, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.RepoCloneProgress(ctx, in, opts...)

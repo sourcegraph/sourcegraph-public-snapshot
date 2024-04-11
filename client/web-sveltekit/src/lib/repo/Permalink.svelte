@@ -1,3 +1,7 @@
+<!--
+    @component
+    Renders a permalink to the current page with the given Git commit ID.
+-->
 <script lang="ts">
     import { mdiLink } from '@mdi/js'
 
@@ -12,7 +16,15 @@
 </script>
 
 {#if href}
-    <Tooltip tooltip="Permalink (with full Git commit SHA)">
-        <a {href}><Icon svgPath={mdiLink} inline /></a>
+    <Tooltip tooltip="Permalink (with full git commit SHA)">
+        <a {href}><Icon svgPath={mdiLink} inline /> <span data-action-label>Permalink</span></a>
     </Tooltip>
 {/if}
+
+<style lang="scss">
+    a {
+        color: var(--body-color);
+        text-decoration: none;
+        white-space: nowrap;
+    }
+</style>

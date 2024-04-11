@@ -17,7 +17,7 @@ import (
 func TestHasRepository(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	testCases := []struct {
 		repositoryID int
@@ -50,7 +50,7 @@ func TestHasCommit(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	testCases := []struct {
 		repositoryID int
@@ -83,7 +83,7 @@ func TestHasCommit(t *testing.T) {
 func TestInsertDependencySyncingJob(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	uploadID := 42
 	insertRepo(t, db, 50, "", false)

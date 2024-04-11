@@ -37,7 +37,7 @@ func TestVulnerabilityByID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	if _, err := store.InsertVulnerabilities(ctx, testVulnerabilities); err != nil {
 		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
@@ -59,7 +59,7 @@ func TestGetVulnerabilitiesByIDs(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	if _, err := store.InsertVulnerabilities(ctx, testVulnerabilities); err != nil {
 		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
@@ -78,7 +78,7 @@ func TestGetVulnerabilities(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	if _, err := store.InsertVulnerabilities(ctx, testVulnerabilities); err != nil {
 		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
