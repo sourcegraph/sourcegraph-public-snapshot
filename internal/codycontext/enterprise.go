@@ -6,6 +6,8 @@ import (
 
 	"github.com/grafana/regexp"
 	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -138,8 +140,10 @@ func parseCodyContextFilters(ccf *schema.CodyContextFilters) (filtersConfig, err
 func (f filtersConfig) isRepoAllowed(repoName api.RepoName) bool {
 	cached, ok := f.cache.Get(repoName)
 	if ok {
+		metricCacheHit.Inc()
 		return cached
 	}
+	metricCacheMiss.Inc()
 
 	allowed := allowByDefault
 
@@ -168,3 +172,14 @@ func (f filtersConfig) isRepoAllowed(repoName api.RepoName) bool {
 	f.cache.Add(repoName, allowed)
 	return allowed
 }
+
+var (
+	metricCacheHit = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_codycontext_filter_cache_hit",
+		Help: "Incremented each time we have a cache hit on cody context filters.",
+	})
+	metricCacheMiss = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_codycontext_filter_cache_miss",
+		Help: "Incremented each time we have a cache miss on cody context filters.",
+	})
+)
