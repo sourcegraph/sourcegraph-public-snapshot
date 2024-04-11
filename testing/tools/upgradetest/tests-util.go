@@ -238,22 +238,6 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 		fmt.Println(out)
 	}
 
-	// Pull images from registry if -target-registry is set
-	if ctx.Value(targetRegistryKey{}).(string) != "sourcegraph/" {
-		test.AddLog(fmt.Sprintf("🐋 pulling -target-registry images from %s", ctx.Value(targetRegistryKey{}).(string)))
-		out, err := run.Cmd(ctx, "docker", "image", "pull", fmt.Sprintf("%sfrontend:%s", ctx.Value(targetRegistryKey{}).(string), initVersion.String())).Run().String()
-		test.AddLog(out)
-		if err != nil {
-			test.AddError(errors.Newf("🚨 failed to pull images from -target-registry: %s", err))
-		}
-		out, err = run.Cmd(ctx, "docker", "image", "pull", fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}).(string), initVersion.String())).Run().String()
-		test.AddLog(out)
-		if err != nil {
-			test.AddError(errors.Newf("🚨 failed to pull images from -target-registry: %s", err))
-		}
-		fmt.Println(out)
-	}
-
 	// Create a docker network for testing
 	//
 	// Docker bridge networks take up a lot of the docker daemons available port allocation. We run only a limited amount of test parallelization to get around this.
