@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -393,4 +394,31 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 	default:
 		return []string{}
 	}
+}
+
+func (r CodyGatewayDotcomUserResolver) CodyGatewayRateLimitStatusByUserName(ctx context.Context, args *graphqlbackend.CodyGatewayRateLimitStatusByUserNameArgs) (*[]graphqlbackend.RateLimitStatus, error) {
+	user, err := r.DB.Users().GetByUsername(ctx, args.Username)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
+	// settings, because they may contain secrets or other sensitive data.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.DB, user.ID); err != nil {
+		return nil, err
+	}
+
+	limits, err := cody.GetGatewayRateLimits(ctx, user.ID, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	rateLimits := make([]graphqlbackend.RateLimitStatus, 0, len(limits))
+	for _, limit := range limits {
+		rateLimits = append(rateLimits, &graphqlbackend.CodyRateLimit{
+			RateLimitStatus: limit,
+		})
+	}
+
+	return &rateLimits, nil
 }
