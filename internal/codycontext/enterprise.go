@@ -29,41 +29,31 @@ type filtersConfig struct {
 
 type enterpriseRepoFilter struct {
 	mu            sync.RWMutex
-	ccf           filtersConfig
+	logger        log.Logger
+	fc            filtersConfig
 	isConfigValid bool
 }
 
 // newEnterpriseFilter creates a new RepoContentFilter that filters out
 // content based on the Cody context filters value in the site config.
-func newEnterpriseFilter(logger log.Logger) (RepoContentFilter, error) {
-	logger = logger.Scoped("filter")
-
-	f := &enterpriseRepoFilter{}
-	err := f.configure()
-	if err != nil {
-		return nil, err
-	}
-
-	conf.Watch(func() {
-		err := f.configure()
-		if err != nil {
-			logger.Error("Failed to configure filter. Defaulting to ignoring all context. Please fix cody.contextFilters in site configuration.", log.Error(err))
-		}
-	})
-	return f, nil
+func newEnterpriseFilter(logger log.Logger) RepoContentFilter {
+	f := &enterpriseRepoFilter{logger: logger.Scoped("filter")}
+	f.configure()
+	conf.Watch(func() { f.configure() })
+	return f
 }
 
 func (f *enterpriseRepoFilter) getFiltersConfig() (_ filtersConfig, ok bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	return f.ccf, f.isConfigValid
+	return f.fc, f.isConfigValid
 }
 
 // GetFilter returns the list of repos that can be filtered based on the Cody context filter value in the site config.
 func (f *enterpriseRepoFilter) GetFilter(repos []types.RepoIDName, _ log.Logger) ([]types.RepoIDName, FileChunkFilterFunc) {
 	ccf, ok := f.getFiltersConfig()
 	if !ok {
-		// our configuration is invalid, so filter everything out.
+		// our configuration is invalid, so filter everything out
 		return []types.RepoIDName{}, func(fcc []FileChunkContext) []FileChunkContext { return nil }
 	}
 
@@ -86,21 +76,20 @@ func (f *enterpriseRepoFilter) GetFilter(repos []types.RepoIDName, _ log.Logger)
 	}
 }
 
-func (f *enterpriseRepoFilter) configure() error {
-	ccf, err := parseCodyContextFilters(conf.Get().SiteConfiguration.CodyContextFilters)
+func (f *enterpriseRepoFilter) configure() {
+	fc, err := parseCodyContextFilters(conf.Get().SiteConfiguration.CodyContextFilters)
 
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
 	if err != nil {
+		f.logger.Error("Failed to configure filter. Defaulting to ignoring all context. Please fix cody.contextFilters in site configuration.", log.Error(err))
 		f.isConfigValid = false
-		return err
+		return
 	}
 
-	f.ccf = ccf
+	f.fc = fc
 	f.isConfigValid = true
-
-	return nil
 }
 
 func parseCodyContextFilters(ccf *schema.CodyContextFilters) (filtersConfig, error) {
@@ -167,8 +156,6 @@ func (f filtersConfig) isRepoAllowed(repoName api.RepoName) bool {
 		}
 	}
 
-	// TODO: what if the cache has been already cleared as the new config arrived (see conf.Watch() above)?
-	// We should probably compare caches (equality?) and do not write if the cache is new.
 	f.cache.Add(repoName, allowed)
 	return allowed
 }
