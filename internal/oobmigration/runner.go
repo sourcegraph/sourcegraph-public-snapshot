@@ -202,6 +202,16 @@ func (r *Runner) Start(currentVersion Version) {
 			return false
 		}
 
+		// If a currentVersion is at or after the deprecated version, the migration is considered
+		// deprecated and has been completed.
+		if migration.Deprecated != nil {
+			if CompareVersions(currentVersion, *migration.Deprecated) == VersionOrderAfter {
+				// current version on or after deprecation version
+				r.store.UpdateProgress(r.ctx, migration.ID, 1)
+				return false
+			}
+		}
+
 		// migration not yet deprecated or current version is before deprecated version
 		return migration.Deprecated == nil || CompareVersions(currentVersion, *migration.Deprecated) == VersionOrderBefore
 	})
@@ -238,6 +248,9 @@ func (r *Runner) startInternal(shouldRunMigration func(m Migration) bool) {
 			if !ok {
 				continue
 			}
+
+			// TODO: Refresh Progress Before Migrating
+
 			if !shouldRunMigration(migration) {
 				continue
 			}
