@@ -6,6 +6,8 @@
 
     import RepoPopover from './RepoPopover.svelte'
 
+    let withHeader = true
+
     export const meta = {
         component: RepoPopover,
     }
@@ -54,7 +56,7 @@
 
 <Story name="Default">
     <h2>With header</h2>
-    <RepoPopover {repo} withHeader={true} />
+    <RepoPopover {repo} withHeader />
     <br />
     <br />
     <h2>Without header</h2>

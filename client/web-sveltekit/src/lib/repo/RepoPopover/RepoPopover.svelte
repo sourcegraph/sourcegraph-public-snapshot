@@ -11,27 +11,20 @@ For example:
 </Popover>
 -->
 <script lang="ts">
-    import {
-        mdiAws,
-        mdiBitbucket,
-        mdiGit,
-        mdiGithub,
-        mdiGitlab,
-        mdiMicrosoftAzureDevops,
-        mdiSourceMerge,
-        mdiStarOutline,
-    } from '@mdi/js'
+    import { mdiStarOutline } from '@mdi/js'
     import { formatDistanceToNow } from 'date-fns'
     import { capitalize } from 'lodash'
 
     import Avatar from '$lib/Avatar.svelte'
-    import { ExternalServiceKind } from '$lib/graphql-types'
     import Icon from '$lib/Icon.svelte'
+
+    import RepoStars from '../RepoStars.svelte'
+    import { getIconPathForCodeHost } from '../shared/codehost'
 
     import { RepoPopoverFields } from './RepoPopover.gql'
 
     export let repo: RepoPopoverFields
-    export let withHeader: Boolean = false
+    export let withHeader = false
 
     const CENTER_DOT = '\u00B7' // interpunct
 
@@ -42,34 +35,13 @@ For example:
         return num.toString()
     }
 
-    function getCodeHostIcon(kind: ExternalServiceKind): string {
-        switch (kind) {
-            case ExternalServiceKind.GITHUB:
-                return mdiGithub
-            case ExternalServiceKind.GITLAB:
-                return mdiGitlab
-            case ExternalServiceKind.BITBUCKETSERVER:
-                return mdiBitbucket
-            case ExternalServiceKind.BITBUCKETCLOUD:
-                return mdiBitbucket
-            case ExternalServiceKind.GITOLITE:
-                return mdiGit
-            case ExternalServiceKind.AZUREDEVOPS:
-                return mdiMicrosoftAzureDevops
-            case ExternalServiceKind.AWSCODECOMMIT:
-                return mdiAws
-            default:
-                return mdiSourceMerge
-        }
-    }
-
     $: subject = repo.commit?.subject
     $: commitNumber = repo.commit?.abbreviatedOID
     $: author = repo.commit?.author.person.name
     $: commitDate = repo.commit?.author.date
     $: avatar = repo.commit?.author.person
     $: codeHostKind = repo.externalServices.nodes[0].kind
-    $: codeHostIcon = getCodeHostIcon(codeHostKind)
+    $: codeHostIcon = getIconPathForCodeHost(codeHostKind)
 </script>
 
 <div class="root">
@@ -141,8 +113,7 @@ For example:
             <div class="stat"><small>{repo.language}</small></div>
         </div>
         <div class="stat">
-            <Icon svgPath={mdiStarOutline} size={16} style="margin-right: 0.15rem;" />
-            <small>{formatNumber(repo.stars)}</small>
+            <RepoStars repoStars={repo.stars} small={true} />
         </div>
     </div>
 </div>
@@ -156,7 +127,7 @@ For example:
 
     .header {
         display: flex;
-        flex-flow: row-nowrap;
+        flex-flow: row nowrap;
         justify-content: space-between;
         align-items: center;
         padding: 0.5rem 0.75rem;
@@ -172,7 +143,6 @@ For example:
                 color: var(--text-body);
                 // only needed when icon is present
                 margin: 0rem 0.5rem 0rem 0rem;
-                // border: 1px dotted black;
             }
 
             .access {
@@ -201,7 +171,6 @@ For example:
     }
 
     .description-and-tags {
-        // border: 1px dotted white;
         padding: 0.75rem;
 
         .description {
@@ -214,7 +183,7 @@ For example:
             align-items: flex-start;
             display: flex;
             flex-flow: row wrap;
-            gap: 0.5rem 0rem;
+            gap: 0.5rem 0.5rem;
             justify-content: flex-start;
             margin-top: 0.5rem;
         }
@@ -225,7 +194,6 @@ For example:
             border-radius: 1rem;
             color: var(--primary);
             font-family: var(--monospace-font-family);
-            margin-right: 0.5rem;
             padding: 0rem 0.5rem;
         }
     }
@@ -251,7 +219,7 @@ For example:
                 flex-flow: row nowrap;
                 align-items: center;
                 justify-content: flex-end;
-                width: 200px;
+                width: 275px;
 
                 .commit {
                     color: var(--text-body);
@@ -292,9 +260,7 @@ For example:
         flex-flow: row nowrap;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.5rem;
-        margin-top: 0.5rem;
-        padding: 0rem 0.75rem;
+        padding: 0.75rem;
 
         .stats {
             display: flex;
