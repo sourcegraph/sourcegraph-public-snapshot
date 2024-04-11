@@ -22,7 +22,7 @@ For example:
         mdiStarOutline,
     } from '@mdi/js'
     import { formatDistanceToNow } from 'date-fns'
-    import { capitalize, truncate } from 'lodash'
+    import { capitalize } from 'lodash'
 
     import Avatar from '$lib/Avatar.svelte'
     import { ExternalServiceKind } from '$lib/graphql-types'
@@ -171,14 +171,15 @@ For example:
 
         .icon-name-access {
             display: flex;
-            flex-flow: row-nowrap;
-            justify-content: space-evenly;
+            flex-flow: row nowrap;
+            justify-content: space-between;
             align-items: center;
-            width: fit-content;
 
             .repo-name {
                 color: var(--text-body);
-                margin: 0rem 0.5rem;
+                // only needed when icon is present
+                margin: 0rem 0.5rem 0rem 0rem;
+                // border: 1px dotted black;
             }
 
             .access {
