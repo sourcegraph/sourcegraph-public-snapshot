@@ -290,7 +290,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 
 	// Create a timeout to validate the databases have initialized, this is to prevent a hung test
 	// When many goroutines are running this test this is a point of failure.
-	dbPingTimeout, cancel := context.WithTimeout(ctx, time.Second*120)
+	dbPingTimeout, cancel := context.WithTimeout(ctx, time.Second*220)
 	wgDbPing := pool.New().WithErrors().WithContext(dbPingTimeout)
 	defer cancel()
 
