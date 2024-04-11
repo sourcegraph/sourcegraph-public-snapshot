@@ -43,7 +43,7 @@ func (t *Test) AddError(err error) {
 // DisplayErrors prints errors to stdout
 func (t *Test) DisplayErrors() {
 	for _, err := range t.Errors {
-		fmt.Println(err)
+		fmt.Println(err.Error())
 	}
 }
 
