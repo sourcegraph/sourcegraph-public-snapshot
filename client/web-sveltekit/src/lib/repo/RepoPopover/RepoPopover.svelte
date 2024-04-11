@@ -176,14 +176,15 @@ For example:
 
         .icon-name-access {
             display: flex;
-            flex-flow: row-nowrap;
-            justify-content: space-evenly;
+            flex-flow: row nowrap;
+            justify-content: space-between;
             align-items: center;
-            width: fit-content;
 
             .repo-name {
                 color: var(--text-body);
-                margin: 0rem 0.5rem;
+                // only needed when icon is present
+                margin: 0rem 0.5rem 0rem 0rem;
+                // border: 1px dotted black;
             }
 
             .access {
