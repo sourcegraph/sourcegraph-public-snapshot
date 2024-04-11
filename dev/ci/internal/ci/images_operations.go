@@ -95,17 +95,14 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 	// Default registries.
 	devRegistry := images.SourcegraphDockerDevRegistry
 	prodRegistry := images.SourcegraphDockerPublishRegistry
-	additionalProdRegistry := images.SourcegraphArtifactRegistryPublicRegistry
 
 	// If we're building an internal release, we push the final images to that specific registry instead.
 	// See also: release_operations.go
 	switch c.RunType {
 	case runtype.InternalRelease:
 		prodRegistry = images.SourcegraphInternalReleaseRegistry
-		additionalProdRegistry = "" // we don't want to push to the public registry on internal releases
 	case runtype.CloudEphemeral:
 		devRegistry = images.CloudEphemeralRegistry
-		additionalProdRegistry = "" // we don't want to push to the public registry on cloud ephemeral
 	}
 
 	_, bazelRC := aspectBazelRC()
@@ -119,7 +116,6 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 				bk.Env("CANDIDATE_ONLY", candidate),
 				bk.Env("DEV_REGISTRY", devRegistry),
 				bk.Env("PROD_REGISTRY", prodRegistry),
-				bk.Env("ADDITIONAL_PROD_REGISTRY", additionalProdRegistry),
 				bk.Cmd(bazelStampedCmd(fmt.Sprintf(`build $$(bazel --bazelrc=%s --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc query 'kind("oci_push rule", //...)')`, bazelRC))),
 				bk.AnnotatedCmd(
 					"./dev/ci/push_all.sh",
