@@ -281,7 +281,17 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 		}
 
 		// get the dynamically allocated port and register it to the test
-		port, err := run.Cmd(ctx, "docker", "port", db.ContainerName, "5432").Run().String()
+		out, err := run.Cmd(ctx, "docker", "port", db.ContainerName, "5432").Run().String()
+
+		// docker port can return multiple ports, ipv4 and ipv6, so we need to keep the former only.
+		ports := strings.Split(out, "\n")
+		var port string
+		if len(ports) < 1 {
+			test.AddError(errors.Newf("incorrect port output for %s", db.ContainerName))
+		} else {
+			port = ports[0]
+		}
+
 		if err != nil {
 			test.AddError(errors.Newf("🚨 failed to get port for %s: %s", db.ContainerName, err))
 		}
