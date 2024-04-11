@@ -38,7 +38,6 @@ type service interface {
 	MaybeStartClone(ctx context.Context, repo api.RepoName) (cloned bool, status CloneStatus, _ error)
 	IsRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error)
 	RepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
-	CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error)
 	SearchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error)
 	EnsureRevision(ctx context.Context, repo api.RepoName, rev string) (didUpdate bool)
 }
@@ -414,20 +413,6 @@ func (gs *grpcServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 			LimitHit: limitHit,
 		},
 	})
-}
-
-func (gs *grpcServer) RepoClone(ctx context.Context, req *proto.RepoCloneRequest) (*proto.RepoCloneResponse, error) {
-	if req.GetRepo() == "" {
-		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
-	}
-
-	repoName := api.RepoName(req.GetRepo())
-
-	if _, err := gs.svc.CloneRepo(ctx, repoName, CloneOptions{Block: false}); err != nil {
-		return &proto.RepoCloneResponse{Error: err.Error()}, nil
-	}
-
-	return &proto.RepoCloneResponse{Error: ""}, nil
 }
 
 func (gs *grpcServer) RepoCloneProgress(_ context.Context, req *proto.RepoCloneProgressRequest) (*proto.RepoCloneProgressResponse, error) {

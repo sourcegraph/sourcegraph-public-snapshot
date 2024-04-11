@@ -41,9 +41,6 @@ service GitserverService {
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  rpc RepoClone(RepoCloneRequest) returns (RepoCloneResponse) {
-    option idempotency_level = IDEMPOTENT;
-  }
   rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
@@ -604,17 +601,6 @@ message IsRepoCloneableResponse {
   bool cloned = 2;
   // reason is why the repository is not cloneable.
   string reason = 3;
-}
-
-// RepoCloneRequest is a request to clone a repository.
-message RepoCloneRequest {
-  // repo is the name of the repo to clone.
-  string repo = 1;
-}
-
-message RepoCloneResponse {
-  // error is the error that occurred during cloning.
-  string error = 1;
 }
 
 // RepoCloneProgressRequest is a request for information about the clone
