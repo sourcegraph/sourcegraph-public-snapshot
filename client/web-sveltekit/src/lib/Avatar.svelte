@@ -42,7 +42,7 @@
 <style lang="scss">
     span {
         z-index: 1;
-        color: var(--gray-06);
+        color: var(--text-muted);
         font-size: calc(var(--size) * 0.5);
         font-weight: 300;
     }
@@ -64,7 +64,7 @@
         align-items: center;
         justify-content: center;
         position: relative;
-        background: var(--gray-03);
+        background: var(--secondary);
     }
 
     div::after {
