@@ -25,6 +25,7 @@ pkg_tar(
     name = "tar_whiteout",
     srcs = [],
     empty_files = [
+        # we can't run rm <file> so we use whiteout files to do it - see the following link for more info
         # https://github.com/opencontainers/image-spec/blob/main/layer.md#whiteouts
         "/usr/local/libexec/docker/cli-plugins/.wh.docker-compose",
         "/usr/local/libexec/docker/cli-plugins/.wh.docker-buildx",
