@@ -231,7 +231,7 @@ func TestContextResolver(t *testing.T) {
 			dotComMode: false,
 			// "repo2" results are excluded according to the site config
 			// .cody/ignore files don't have any effect for enterprise
-			want: []string{"testcode1.go", "ignore_me1.go", "ignore_me1.md"},
+			want: []string{"testcode1.go", "testtext1.md", "ignore_me1.go", "ignore_me1.md"},
 		},
 	}
 
