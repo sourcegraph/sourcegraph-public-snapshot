@@ -92,13 +92,26 @@ func NewConfig(now time.Time) Config {
 			// We run builds on every commit in main, so on main, just look at the diff of the current commit.
 			diffCommand = append(diffCommand, "@^")
 		} else {
-			diffCommand = append(diffCommand, "origin/main..."+commit)
+			// Determine the base branch
+			baseBranch := os.Getenv("BUILDKITE_PULL_REQUEST_BASE_BRANCH")
+			if baseBranch == "" {
+				baseBranch = "main"
+			}
+			// fetch the branch to make sure it exists
+			refspec := fmt.Sprintf("+refs/heads/%s:refs/remotes/origin/%s", baseBranch, baseBranch)
+			if output, err := exec.Command("git", "fetch", "origin", refspec).Output(); err != nil {
+				panic(fmt.Sprintf("failed to fetch %s: %s", baseBranch, err))
+			} else {
+				println("🧨", output)
+			}
+			diffCommand = append(diffCommand, fmt.Sprintf("origin/%s...%s", baseBranch, commit))
 		}
 	} else {
 		diffCommand = append(diffCommand, "origin/main...")
 		// for testing
 		commit = "1234567890123456789012345678901234567890"
 	}
+	fmt.Printf("🚔 git %v", diffCommand)
 	if output, err := exec.Command("git", diffCommand...).Output(); err != nil {
 		panic(err)
 	} else {
