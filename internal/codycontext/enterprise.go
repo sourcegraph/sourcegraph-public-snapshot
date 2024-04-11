@@ -33,7 +33,7 @@ type filterItem struct {
 }
 
 type filtersConfig struct {
-	cache   *lru.Cache[api.RepoName, bool]
+	cache   *lru.Cache[api.RepoID, bool]
 	include []filterItem
 	exclude []filterItem
 }
@@ -72,7 +72,7 @@ func (f *enterpriseRepoFilter) GetFilter(repos []types.RepoIDName, _ log.Logger)
 
 	allowedRepos := make([]types.RepoIDName, 0, len(repos))
 	for _, repo := range repos {
-		if fc.isRepoAllowed(repo.Name) {
+		if fc.isRepoAllowed(repo) {
 			allowedRepos = append(allowedRepos, repo)
 		}
 	}
@@ -80,7 +80,7 @@ func (f *enterpriseRepoFilter) GetFilter(repos []types.RepoIDName, _ log.Logger)
 	return allowedRepos, func(fcc []FileChunkContext) []FileChunkContext {
 		filtered := make([]FileChunkContext, 0, len(fcc))
 		for _, fc := range fcc {
-			isFromAllowedRepo := slices.ContainsFunc(allowedRepos, func(r types.RepoIDName) bool { return r.Name == fc.RepoName })
+			isFromAllowedRepo := slices.ContainsFunc(allowedRepos, func(r types.RepoIDName) bool { return r.ID == fc.RepoID })
 			if isFromAllowedRepo {
 				filtered = append(filtered, fc)
 			}
@@ -129,7 +129,7 @@ func parseCodyContextFilters(ccf *schema.CodyContextFilters) (filtersConfig, err
 	}
 
 	// ignore error since it only happens if cache size is not positive
-	cache, _ := lru.New[api.RepoName, bool](128)
+	cache, _ := lru.New[api.RepoID, bool](128)
 
 	return filtersConfig{
 		cache:   cache,
@@ -139,8 +139,8 @@ func parseCodyContextFilters(ccf *schema.CodyContextFilters) (filtersConfig, err
 }
 
 // isRepoAllowed checks if repo name matches Cody context include and exclude rules from the site config and stores result in cache.
-func (f filtersConfig) isRepoAllowed(repoName api.RepoName) bool {
-	cached, ok := f.cache.Get(repoName)
+func (f filtersConfig) isRepoAllowed(repo types.RepoIDName) bool {
+	cached, ok := f.cache.Get(repo.ID)
 	if ok {
 		metricCacheHit.Inc()
 		return cached
@@ -151,7 +151,7 @@ func (f filtersConfig) isRepoAllowed(repoName api.RepoName) bool {
 
 	if len(f.include) > 0 {
 		for _, p := range f.include {
-			include := p.RepoNamePattern.MatchString(string(repoName))
+			include := p.RepoNamePattern.MatchString(string(repo.Name))
 			allowed = include
 			if include {
 				break
@@ -161,7 +161,7 @@ func (f filtersConfig) isRepoAllowed(repoName api.RepoName) bool {
 
 	if len(f.exclude) > 0 {
 		for _, p := range f.exclude {
-			exclude := p.RepoNamePattern.MatchString(string(repoName))
+			exclude := p.RepoNamePattern.MatchString(string(repo.Name))
 			if exclude {
 				allowed = false
 				break
@@ -169,6 +169,6 @@ func (f filtersConfig) isRepoAllowed(repoName api.RepoName) bool {
 		}
 	}
 
-	f.cache.Add(repoName, allowed)
+	f.cache.Add(repo.ID, allowed)
 	return allowed
 }

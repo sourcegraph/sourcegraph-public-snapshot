@@ -425,7 +425,7 @@ func TestNewEnterpriseFilter(t *testing.T) {
 				},
 				{
 					RepoName: "github.com/facebook/react",
-					RepoID:   5,
+					RepoID:   6,
 					Path:     "/hooks.ts",
 				},
 			},
@@ -453,7 +453,7 @@ func TestNewEnterpriseFilter(t *testing.T) {
 				},
 				{
 					RepoName: "github.com/facebook/react",
-					RepoID:   5,
+					RepoID:   6,
 					Path:     "/hooks.ts",
 				},
 			},
@@ -507,7 +507,7 @@ func TestNewEnterpriseFilter(t *testing.T) {
 				},
 				{
 					RepoName: "github.com/facebook/react",
-					RepoID:   5,
+					RepoID:   6,
 					Path:     "/hooks.ts",
 				},
 			},
