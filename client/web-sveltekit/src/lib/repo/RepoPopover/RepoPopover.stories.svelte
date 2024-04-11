@@ -37,8 +37,7 @@
         },
         commit: {
             id: faker.datatype.number.toString(),
-            subject: faker.lorem.sentence() + faker.lorem.sentence() + faker.lorem.sentence(),
-            abbreviatedOID: '38674873812345',
+            subject: faker.lorem.sentence(),
             canonicalURL: faker.internet.url(),
             oid: '7b4d3ad230d9078a70219f2befa1be1fe00377a0',
             author: {

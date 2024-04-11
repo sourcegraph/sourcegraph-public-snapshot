@@ -90,12 +90,16 @@ For example:
                 </div>
                 {#if commitSHA}
                     <div class="commit-number">
-                        <small class="commit-number"><a href={url} target="_blank">#{truncateCommitNumber(commitSHA, 6)}</a></small>
+                        <small class="commit-number"
+                            ><a href={url} target="_blank">#{truncateCommitNumber(commitSHA, 6)}</a></small
+                        >
                     </div>
                 {/if}
             </div>
             <div class="author">
-                <Avatar {avatar} --avatar-size="1.0rem" />
+                {#if avatar}
+                    <Avatar {avatar} --avatar-size="1.0rem" />
+                {/if}
                 <small>{author}</small>
                 <small>{CENTER_DOT}</small>
                 {#if commitDate}

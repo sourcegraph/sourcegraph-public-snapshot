@@ -20,7 +20,6 @@ fragment RepoPopoverFields on Repository {
         id
         oid
         subject
-        abbreviatedOID
         canonicalURL
         author {
             date
