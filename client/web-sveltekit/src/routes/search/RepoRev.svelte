@@ -1,5 +1,6 @@
 <script lang="ts">
     import { highlightRanges } from '$lib/dom'
+    import Popover from '$lib/Popover.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { displayRepoName } from '$lib/shared'
 
@@ -21,12 +22,22 @@
     <CodeHostIcon repository={repoName} />
     <!-- #key is needed here to recreate the link because use:highlightRanges changes the DOM -->
     {#key highlights}
-        <a class="repo-link" {href} use:highlightRanges={{ ranges: highlights }}>
-            {displayRepoName(repoName)}
-            {#if rev}
-                <small class="rev"> @ {rev}</small>
-            {/if}
-        </a>
+        <Popover let:registerTrigger let:toggle placement="bottom-start">
+            <a
+                class="repo-link"
+                {href}
+                use:highlightRanges={{ ranges: highlights }}
+                use:registerTrigger
+                on:mouseenter={() => toggle(true)}
+                on:mouseleave={() => toggle(false)}
+            >
+                {displayRepoName(repoName)}
+                {#if rev}
+                    <small class="rev"> @ {rev}</small>
+                {/if}
+            </a>
+            <div slot="content">{repoName}</div>
+        </Popover>
     {/key}
 </span>
 
