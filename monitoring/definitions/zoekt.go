@@ -33,7 +33,7 @@ func Zoekt() *monitoring.Dashboard {
 				Label: "Instance",
 				Name:  "instance",
 				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
-					Query:         "index_num_assigned",
+					Query:         "index_num_indexed",
 					LabelName:     "instance",
 					ExampleOption: "zoekt-indexserver-0:6072",
 				},
