@@ -160,6 +160,20 @@ load("@aspect_bazel_lib//lib:repositories.bzl", "register_jq_toolchains")
 
 register_jq_toolchains()
 
+http_archive(
+    name = "rules_apko",
+    patch_args = ["-p1"],
+    patches = [
+        # required due to https://github.com/chainguard-dev/apko/issues/1052
+        "//third_party/rules_apko:repository_label_strip.patch",
+        # required until a release contains https://github.com/chainguard-dev/rules_apko/pull/53
+        "//third_party/rules_apko:apko_run_runfiles_path.patch",
+    ],
+    sha256 = "f176171f95ee2b6eef1572c6da796d627940a1e898a32d476a2d7a9a99332960",
+    strip_prefix = "rules_apko-1.2.2",
+    url = "https://github.com/chainguard-dev/rules_apko/releases/download/v1.2.2/rules_apko-v1.2.2.tar.gz",
+)
+
 # hermetic_cc_toolchain setup ================================
 HERMETIC_CC_TOOLCHAIN_VERSION = "v2.2.1"
 
@@ -485,3 +499,35 @@ load("//dev:schema_migrations.bzl", "schema_migrations")
 schema_migrations(
     name = "schemas_migrations",
 )
+
+# wolfi images setup ================================
+
+load("@rules_apko//apko:repositories.bzl", "apko_register_toolchains", "rules_apko_dependencies")
+
+rules_apko_dependencies()
+
+# We don't register the default toolchains, and regsiter our own from a patched go_repository sourced
+# go_binary target that contains some fixes that are not yet merged upstream.
+# https://github.com/chainguard-dev/go-apk/pull/216
+apko_register_toolchains(
+    name = "apko",
+    register = False,
+)
+
+register_toolchains("//:apko_linux_toolchain")
+
+register_toolchains("//:apko_darwin_arm64_toolchain")
+
+register_toolchains("//:apko_darwin_amd64_toolchain")
+
+load("//wolfi-images:repo.bzl", "wolfi_lockfiles")
+
+wolfi_lockfiles(name = "apko_lockfiles")
+
+load("@apko_lockfiles//:translates.bzl", "apko_translate_locks")
+
+apko_translate_locks()
+
+load("@apko_lockfiles//:repositories.bzl", "apko_repositories")
+
+apko_repositories()
