@@ -3,8 +3,11 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -62,4 +65,37 @@ type searchResolver struct {
 	client       client.SearchClient
 	SearchInputs *search.Inputs
 	db           database.DB
+}
+
+type indexedSearchInstance struct {
+	address string
+}
+
+func (i *indexedSearchInstance) Address() string {
+	return i.address
+}
+
+func (i *indexedSearchInstance) ID() graphql.ID {
+	return marshalGitserverID(i.address)
+}
+
+func (r *schemaResolver) IndexedSearchInstances(ctx context.Context) (graphqlutil.SliceConnectionResolver[*indexedSearchInstance], error) {
+	// 🚨 SECURITY: Site admins only.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	indexers := search.Indexers()
+	eps, err := indexers.Map.Endpoints()
+	if err != nil {
+		return nil, err
+	}
+
+	var resolvers []*indexedSearchInstance
+	for _, ep := range eps {
+		resolvers = append(resolvers, &indexedSearchInstance{address: ep})
+	}
+	n := len(resolvers)
+
+	return graphqlutil.NewSliceConnectionResolver(resolvers, n, n), nil
 }
