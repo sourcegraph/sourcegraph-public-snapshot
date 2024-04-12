@@ -1691,7 +1691,7 @@ importers:
         specifier: ^3.0.6
         version: 3.0.6
       highlight.js:
-        specifier: ^10.7.3
+        specifier: ^10.5.0
         version: 10.7.3
       marked:
         specifier: 4.0.16
