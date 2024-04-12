@@ -1,10 +1,4 @@
-import {
-    type EditorSettings,
-    getEditor,
-    supportedEditors,
-    isProjectPathValid,
-    getProjectPath,
-} from '$lib/web'
+import { type EditorSettings, getEditor, supportedEditors, isProjectPathValid, getProjectPath } from '$lib/web'
 
 /**
  * This function is a copy of client/web/src/open-in-editor/build-util.ts#getEditorSettingsErrorMessage with
