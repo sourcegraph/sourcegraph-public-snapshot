@@ -4,16 +4,27 @@
     import Tabs from '$lib/Tabs.svelte'
     import TabPanel from '$lib/TabPanel.svelte'
 
-    import type { ResolvedRevision } from '../../+layout'
-    import RepositoryBranchesPicker, { type RepositoryBranches } from './RepositoryBranchesPicker.svelte'
-    import type { RepositoryGitCommits_Repository_, RepositoryGitRefs_Repository_ } from './RepositoryRevPicker.gql'
+    import { goto } from '$app/navigation'
+    import { replaceRevisionInURL } from '@sourcegraph/shared/src/util/url'
 
+    import type { ResolvedRevision } from '../../+layout'
+    import RepositoryBranchesPicker, {
+        type RepositoryBranches,
+        type RepositoryBranch,
+    } from './RepositoryBranchesPicker.svelte'
+    import RepositoryCommitsPicker, {
+        type RepositoryCommits,
+        type RepositoryGitCommit,
+    } from './RepositoryCommitsPicker.svelte'
+    import RepositoryTagsPicker, { type RepositoryTags, type RepositoryTag } from './RepositoryTagsPicker.svelte'
+
+    export let repoURL: string
     export let revision: string | undefined
     export let resolvedRevision: ResolvedRevision
 
     // Pickers data sources
-    export let getRepositoryTags: (query: string) => Promise<RepositoryGitRefs_Repository_['gitRefs']>
-    export let getRepositoryCommits: (query: string) => Promise<RepositoryGitCommits_Repository_['commit']>
+    export let getRepositoryTags: (query: string) => Promise<RepositoryTags>
+    export let getRepositoryCommits: (query: string) => Promise<RepositoryCommits>
     export let getRepositoryBranches: (query: string) => Promise<RepositoryBranches>
 
     // Show specific short revision if it's presented in the URL
@@ -23,6 +34,14 @@
             ? resolvedRevision.commitID.slice(0, 7)
             : revision
         : resolvedRevision.defaultBranch ?? ''
+
+    const handleBranchOrTagSelect = (branchOrTag: RepositoryBranch | RepositoryTag): void => {
+        goto(replaceRevisionInURL(location.pathname + location.search + location.hash, branchOrTag.abbrevName))
+    }
+
+    const handleCommitSelect = (commit: RepositoryGitCommit): void => {
+        goto(replaceRevisionInURL(location.pathname + location.search + location.hash, commit.oid))
+    }
 </script>
 
 <Popover let:registerTrigger let:toggle placement="right-start">
@@ -36,21 +55,37 @@
     <div slot="content" class="content" let:toggle>
         <Tabs>
             <TabPanel title="Branches">
-                <div class="tab-content">
-                    <RepositoryBranchesPicker
-                        {getRepositoryBranches}
-                        onSelect={() => {
-                            console.log('CLOOOSE')
-                            toggle(false)
-                        }}
-                    />
-                </div>
+                <RepositoryBranchesPicker
+                    {repoURL}
+                    {getRepositoryBranches}
+                    onClose={() => toggle(false)}
+                    onSelect={branch => {
+                        toggle(false)
+                        handleBranchOrTagSelect(branch)
+                    }}
+                />
             </TabPanel>
             <TabPanel title="Tags">
-                <div class="tab-content">Tags</div>
+                <RepositoryTagsPicker
+                    {repoURL}
+                    {getRepositoryTags}
+                    onClose={() => toggle(false)}
+                    onSelect={tag => {
+                        toggle(false)
+                        handleBranchOrTagSelect(tag)
+                    }}
+                />
             </TabPanel>
             <TabPanel title="Commits">
-                <div class="tab-content">Commits</div>
+                <RepositoryCommitsPicker
+                    {repoURL}
+                    {getRepositoryCommits}
+                    onClose={() => toggle(false)}
+                    onSelect={commit => {
+                        toggle(false)
+                        handleCommitSelect(commit)
+                    }}
+                />
             </TabPanel>
         </Tabs>
     </div>
@@ -64,9 +99,9 @@
 
         --tabs-gap: 0.25rem;
         --align-tabs: flex-start;
-    }
 
-    .tab-content {
-        padding-top: 0.5rem;
+        :global([data-tab-panel]) {
+            padding-top: 0.5rem;
+        }
     }
 </style>
