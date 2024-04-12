@@ -421,3 +421,5 @@
     - path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal
       interfaces:
         - service
+        - RepositoryLocker
+        - RepositoryLock

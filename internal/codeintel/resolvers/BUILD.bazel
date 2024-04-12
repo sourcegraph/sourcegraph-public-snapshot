@@ -9,7 +9,6 @@ go_library(
         "policies.go",
         "ranking.go",
         "root_resolver.go",
-        "sentinel.go",
         "uploads.go",
         "utils.go",
     ],

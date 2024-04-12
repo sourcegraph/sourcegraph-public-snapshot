@@ -661,7 +661,7 @@ func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 }
 
 type CodyContextFiltersArgs struct {
-	Version int32
+	Version string
 }
 
 type codyContextFiltersResolver struct {
@@ -675,14 +675,7 @@ func (c *codyContextFiltersResolver) Raw() *JSONValue {
 	return &JSONValue{c.ccf}
 }
 
-func (r *siteResolver) CodyContextFilters(_ context.Context, args *CodyContextFiltersArgs) (*codyContextFiltersResolver, error) {
-	v := args.Version
-	if v < 1 {
-		return nil, errors.New("invalid version number")
-	}
-	if v != 1 {
-		return nil, errors.New("version is not supported")
-	}
+func (r *siteResolver) CodyContextFilters(_ context.Context, _ *CodyContextFiltersArgs) (*codyContextFiltersResolver, error) {
 	return &codyContextFiltersResolver{ccf: conf.Get().SiteConfig().CodyContextFilters}, nil
 }
 

@@ -219,9 +219,9 @@ def oci_deps():
     )
 
     oci_pull(
-        name = "legacy_dind_base",
-        digest = "sha256:0893c2e6103cde39b609efea0ebd6423c7af8dafdf19d613debbc12b05fefd54",
-        image = "index.docker.io/sourcegraph/dind",
+        name = "upstream_dind_base",
+        digest = "sha256:b52760bc3766143ca050ab3f36f01108c30bbd6bc16094400855adfb9bd66f12",
+        image = "index.docker.io/library/docker",
     )
 
     oci_pull(

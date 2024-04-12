@@ -115,7 +115,7 @@ func TestExecRequest(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	gr := dbmocks.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
-	fs := gitserverfs.New(observation.TestContextTB(t), t.TempDir())
+	fs := gitserverfs.NewMockFSFrom(gitserverfs.New(&observation.TestContext, t.TempDir()))
 	require.NoError(t, fs.Initialize())
 	s := NewServer(&ServerOpts{
 		Logger: logtest.Scoped(t),
@@ -177,15 +177,14 @@ func TestExecRequest(t *testing.T) {
 	})
 
 	gs := NewGRPCServer(s)
-	svc := NewMockServiceFrom(s)
-	svc.MaybeStartCloneFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName) (bool, CloneStatus, error) {
+	fs.RepoClonedFunc.SetDefaultHook(func(repo api.RepoName) (bool, error) {
 		if repo == "github.com/gorilla/mux" || repo == "my-mux" {
-			return true, CloneStatus{}, nil
+			return true, nil
 		}
-		cloneProgress, err := s.CloneRepo(ctx, repo, CloneOptions{})
-		return false, CloneStatus{CloneProgress: cloneProgress, CloneInProgress: err != nil}, nil
+		err := s.cloneRepo(context.Background(), repo)
+		require.NoError(t, err)
+		return false, nil
 	})
-	gs.(*grpcServer).svc = svc
 
 	vcssyncer.TestGitRepoExists = func(ctx context.Context, repoName api.RepoName) error {
 		if strings.Contains(string(repoName), "nicksnyder/go-i18n") {
@@ -294,7 +293,6 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		return remote, nil
 	}
 
-	cloneQueue := NewCloneQueue(obctx, list.New())
 	fs := gitserverfs.New(obctx, repoDir)
 	require.NoError(t, fs.Initialize())
 	s := NewServer(&ServerOpts{
@@ -325,7 +323,6 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 				NewNoOpRecordingCommandFactory(), getRemoteURLSource), nil
 		},
 		DB:                      db,
-		CloneQueue:              cloneQueue,
 		Locker:                  NewRepositoryLocker(),
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		RecordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
@@ -335,9 +332,6 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 	s.ctx = ctx
 	s.cloneLimiter = limiter.NewMutable(1)
 
-	p := s.NewClonePipeline(logtest.Scoped(t), cloneQueue)
-	p.Start()
-	t.Cleanup(p.Stop)
 	return s
 }
 
@@ -394,7 +388,7 @@ func TestCloneRepo(t *testing.T) {
 	cmd("git", "tag", "HEAD")
 
 	// Enqueue repo clone.
-	_, err := s.CloneRepo(ctx, repoName, CloneOptions{})
+	err := s.cloneRepo(ctx, repoName)
 	require.NoError(t, err)
 
 	// Wait until the clone is done. Please do not use this code snippet
@@ -418,24 +412,11 @@ func TestCloneRepo(t *testing.T) {
 	}
 
 	// Test blocking with a failure (already exists since we didn't specify overwrite)
-	_, err = s.CloneRepo(context.Background(), repoName, CloneOptions{Block: true})
+	err = s.cloneRepo(context.Background(), repoName)
 	if !errors.Is(err, os.ErrExist) {
 		t.Fatalf("expected clone repo to fail with already exists: %s", err)
 	}
 	assertRepoState(types.CloneStatusCloned, wantRepoSize, err)
-
-	// Test blocking with overwrite. First add random file to GIT_DIR. If the
-	// file is missing after cloning we know the directory was replaced
-	mkFiles(t, repoDir.Path("."), "HELLO")
-	_, err = s.CloneRepo(context.Background(), repoName, CloneOptions{Block: true, Overwrite: true})
-	if err != nil {
-		t.Fatal(err)
-	}
-	assertRepoState(types.CloneStatusCloned, wantRepoSize, err)
-
-	if _, err := os.Stat(repoDir.Path("HELLO")); !os.IsNotExist(err) {
-		t.Fatalf("expected clone to be overwritten: %s", err)
-	}
 
 	gotCommit = cmd("git", "rev-parse", "HEAD")
 	if wantCommit != gotCommit {
@@ -510,9 +491,7 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			s.getVCSSyncer = tc.getVCSSyncer
-			_, _ = s.CloneRepo(ctx, repoName, CloneOptions{
-				Block: true,
-			})
+			_ = s.cloneRepo(ctx, repoName)
 			assertRepoState(types.CloneStatusNotCloned, 0, tc.wantErr)
 		})
 	}
@@ -710,7 +689,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		cmd("rm", ".git/HEAD")
 
 		s := makeTestServer(ctx, t, reposDir, remote, nil)
-		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{}); err == nil {
+		if err := s.cloneRepo(ctx, "example.com/foo/bar"); err == nil {
 			t.Fatal("expected an error, got none")
 		}
 	})
@@ -728,7 +707,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		cmd("sh", "-c", ": > .git/HEAD")
 
 		s := makeTestServer(ctx, t, reposDir, remote, nil)
-		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{}); err == nil {
+		if err := s.cloneRepo(ctx, "example.com/foo/bar"); err == nil {
 			t.Fatal("expected an error, got none")
 		}
 	})
@@ -758,7 +737,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		t.Cleanup(func() { vcssyncer.TestRepositoryPostFetchCorruptionFunc = nil })
 		// Use block so we get clone errors right here and don't have to rely on the
 		// clone queue. There's no other reason for blocking here, just convenience/simplicity.
-		_, err := s.CloneRepo(ctx, repoName, CloneOptions{Block: true})
+		err := s.cloneRepo(ctx, repoName)
 		require.NoError(t, err)
 
 		dst := s.fs.RepoDir(repoName)
@@ -787,7 +766,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			cmd("sh", "-c", fmt.Sprintf(": > %s/HEAD", tmpDir))
 		}
 		t.Cleanup(func() { vcssyncer.TestRepositoryPostFetchCorruptionFunc = nil })
-		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{Block: true}); err != nil {
+		if err := s.cloneRepo(ctx, "example.com/foo/bar"); err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
@@ -899,7 +878,7 @@ func TestSyncRepoState(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.CloneRepo(ctx, repoName, CloneOptions{Block: true})
+	err = s.cloneRepo(ctx, repoName)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -2579,16 +2579,20 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/CodyContextFilterItem"
-          }
+          },
+          "minItems": 1
         },
         "exclude": {
           "description": "List of rules specifying repositories that Cody should excluded from context in requests to third-party LLMs. These rules are applied only to repositories matching the include rules.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/CodyContextFilterItem"
-          }
+          },
+          "minItems": 1
         }
       },
+      "minProperties": 1,
+      "additionalProperties": false,
       "group": "Cody"
     },
     "cody.permissions": {

@@ -15,6 +15,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased
 
+### Added
+
+- Added rate and latency instrumentation for git / package repository syncing operations. These are visible in the gitserver dashboards (VCS "Clone/Fetch/IsCloneable" Metrics). [#61708](https://github.com/sourcegraph/sourcegraph/pull/61708)
 - Added syntax highlighting for the [PKl](https://pkl-lang.org/) configuration language. [#61478](https://github.com/sourcegraph/sourcegraph/pull/61478)
 
 ### Fixed

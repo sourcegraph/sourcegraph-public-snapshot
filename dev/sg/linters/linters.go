@@ -57,14 +57,6 @@ var Targets = []Target{
 		},
 	},
 	{
-		Name:        "docs",
-		Description: "Documentation checks",
-		Checks: []*linter{
-			onlyLocal(bazelExec("Docsite lint (bazel)", "test //doc:test")),
-			timeCheck(docChangesLint()),
-		},
-	},
-	{
 		Name:        "dockerfiles",
 		Description: "Check Dockerfiles for Sourcegraph best practices",
 		Checks: []*linter{

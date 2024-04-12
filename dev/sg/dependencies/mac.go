@@ -2,15 +2,11 @@ package dependencies
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 const (
@@ -169,9 +165,10 @@ If you've installed PostgreSQL with Homebrew that should be the case.
 If you used another method, make sure psql is available.`,
 				Check: checkAction(check.Combine(
 					check.InPath("psql"),
-					check.CompareSemanticVersion("psql", "psql --version", ">= 15.0"),
+					check.CommandExitCode("brew ls --versions postgresql@12", 0),
+					check.CompareSemanticVersion("psql", "psql --version", ">= 12.0"),
 				)),
-				Fix: brewInstall("postgresql@15"),
+				Fix: check.CombineFix(brewInstall("postgresql@12"), cmdFix("brew link postgresql@12")),
 			},
 			{
 				Name: "Start Postgres",
@@ -187,7 +184,7 @@ If you used another method, make sure psql is available.`,
 					}
 					return check.PostgresConnection(ctx)
 				},
-				Description: `Sourcegraph requires the PostgreSQL database (v15+) to be running.
+				Description: `Sourcegraph requires the PostgreSQL database (v12) to be running.
 
 We recommend installing it with Homebrew and starting it as a system service.
 If you know what you're doing, you can also install PostgreSQL another way.
@@ -195,7 +192,7 @@ For example: you can use https://postgresapp.com/
 
 If you're not sure: use the recommended commands to install PostgreSQL.`,
 				Fix: cmdFixes(
-					"brew services start postgresql@15",
+					"brew services start postgresql@12",
 					"sleep 3",
 				),
 			},
@@ -208,70 +205,6 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 					`PGUSER=$USER PGDATABASE=postgres psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"`,
 					`createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph`,
 				),
-			},
-			{
-				Name:        "Path to pg utilities (createdb, etc ...)",
-				Enabled:     disableInCI(), // will never pass in CI.
-				Check:       checkPGUtilsPath,
-				Description: `Bazel need to know where the createdb, pg_dump binaries are located, we need to ensure they are accessible\nand possibly indicate where they are located if non default.`,
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					_, err := root.RepositoryRoot()
-					if err != nil {
-						return errors.Wrap(err, "This check requires sg setup to be run inside sourcegraph/sourcegraph the repository.")
-					}
-
-					// Check if we need to create a user.bazelrc or not
-					_, err = os.Stat(userBazelRcPath)
-					if err != nil {
-						if os.IsNotExist(err) {
-							// It doesn't exist, so we create a new one.
-							f, err := os.Create(".aspect/bazelrc/user.bazelrc")
-							if err != nil {
-								return errors.Wrap(err, "cannot create user.bazelrc to inject PG_UTILS_PATH")
-							}
-							defer f.Close()
-
-							// Try guessing the path to the createdb postgres utilities.
-							err, pgUtilsPath := guessPgUtilsPath(ctx)
-							if err != nil {
-								return err
-							}
-							_, err = fmt.Fprintf(f, "build --action_env=PG_UTILS_PATH=%s\n", pgUtilsPath)
-
-							// Inform the user of what happened, so it's not dark magic.
-							cio.Write(fmt.Sprintf("Guessed PATH for pg utils (createdb,...) to be %q\nCreated %s.", pgUtilsPath, userBazelRcPath))
-							return err
-						}
-
-						// File exists, but we got a different error. Can't continue, bubble up the error.
-						return errors.Wrapf(err, "unexpected error with %s", userBazelRcPath)
-					}
-
-					// If we didn't create it, open the existing one.
-					f, err := os.Open(userBazelRcPath)
-					if err != nil {
-						return errors.Wrapf(err, "cannot open existing %s", userBazelRcPath)
-					}
-					defer f.Close()
-
-					// Parse the path it contains.
-					err, pgUtilsPath := parsePgUtilsPathInUserBazelrc(f)
-					if err != nil {
-						return err
-					}
-
-					// Ensure that path is correct, if not tell the user about it.
-					err = checkPgUtilsPathIncludesBinaries(pgUtilsPath)
-					if err != nil {
-						cio.WriteLine(output.Styled(output.StyleWarning, "--- Manual action needed ---"))
-						cio.WriteLine(output.Styled(output.StyleYellow, fmt.Sprintf("➡️  PG_UTILS_PATH=%q defined in %s doesn't include createdb. Please correct the file manually.", pgUtilsPath, userBazelRcPath)))
-						cio.WriteLine(output.Styled(output.StyleWarning, "Please make sure that this file contains:"))
-						cio.WriteLine(output.Styled(output.StyleWarning, "`build --action_env=PG_UTILS_PATH=[PATH TO PARENT FOLDER OF WHERE createdb IS LOCATED`"))
-						cio.WriteLine(output.Styled(output.StyleWarning, "--- Manual action needed ---"))
-						return err
-					}
-					return nil
-				},
 			},
 		},
 	},

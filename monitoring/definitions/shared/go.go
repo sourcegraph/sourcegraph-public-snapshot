@@ -54,6 +54,11 @@ type GolangMonitoringOptions struct {
 	JobLabelName string
 
 	InstanceLabelName string
+
+	// ContainerNameInTitle if true will prefix the groups title with the
+	// container that is being monitored. This is useful to set if your
+	// dashboard has monitoring for multiple containers.
+	ContainerNameInTitle bool
 }
 
 // NewGolangMonitoringGroup creates a group containing panels displaying Go monitoring
@@ -70,8 +75,13 @@ func NewGolangMonitoringGroup(containerName string, owner monitoring.ObservableO
 		options.JobLabelName = "job"
 	}
 
+	title := TitleGolangMonitoring
+	if options.ContainerNameInTitle {
+		title = fmt.Sprintf("[%s] %s", containerName, TitleGolangMonitoring)
+	}
+
 	return monitoring.Group{
-		Title:  TitleGolangMonitoring,
+		Title:  title,
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
