@@ -72,11 +72,6 @@ because it also validates imported modules from other packages, and we are not
 explicitly marking type-only imports with `type` in other parts of the code
 base (which is required by this package).
 
-### Regenerate GraphQL TS files
-
-When you edited the `*.gql` files, you will need to compile the changes into the `*.gql.ts` files. You can generate
-them by running `pnpm run build`.
-
 ### Data loading with GraphQL
 
 This project makes use of query composition, i.e. components define their own
