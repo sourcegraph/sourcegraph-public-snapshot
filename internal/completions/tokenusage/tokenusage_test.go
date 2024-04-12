@@ -17,14 +17,14 @@ func TestTokenizeAndCalculateUsage(t *testing.T) {
 		{Speaker: "human", Text: "Hello"},
 		{Speaker: "user", Text: "Hi"},
 	}
-	err := manager.TokenizeAndCalculateUsage(messages, "output text", tokenizer.OpenAIModel+"/gpt-4", "feature1")
+	err := manager.TokenizeAndCalculateUsage(messages, "output text", tokenizer.OpenAIModel+"/gpt-4", "feature1", tokenusage.OpenAI)
 	if err != nil {
 		t.Fatalf("TokenizeAndCalculateUsage returned an error: %v", err)
 	}
 
 	// Verify that token counts are updated in the cache
-	inputKey := "openai/gpt-4:feature1:input"
-	outputKey := "openai/gpt-4:feature1:output"
+	inputKey := "openai:openai/gpt-4:feature1:input"
+	outputKey := "openai:openai/gpt-4:feature1:output"
 
 	if val, exists, _ := mockCache.GetInt64(inputKey); !exists || val <= 0 {
 		t.Errorf("Expected input token count to be updated in cache, but key %s was not found or value is not positive", inputKey)
