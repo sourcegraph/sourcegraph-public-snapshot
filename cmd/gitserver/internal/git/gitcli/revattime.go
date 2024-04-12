@@ -31,17 +31,24 @@ func (g *gitCLIBackend) RevAtTime(ctx context.Context, spec string, t time.Time)
 		return entry, nil
 	}
 
+	// First, try to resolve the revspec so we can return a useful RevisionNotFound error
+	sha, err := g.ResolveRevision(ctx, spec)
+	if err != nil {
+		return "", err
+	}
+
 	r, err := g.NewCommand(ctx, WithArguments(
 		"log",
 		"--format=format:%H", // only hash
 		"--first-parent",     // linearize history
 		fmt.Sprintf("--before=%d", t.Unix()),
 		"--max-count=1", // only one commit
-		spec,
+		string(sha),
 	))
 	if err != nil {
 		return "", err
 	}
+	defer r.Close()
 
 	stdout, err := io.ReadAll(r)
 	if err != nil {

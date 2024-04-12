@@ -1203,13 +1203,11 @@ func (gs *grpcServer) RevAtTime(ctx context.Context, req *proto.RevAtTimeRequest
 		return nil, err
 	}
 
-	revspec := string(req.GetRevSpec())
-
 	backend := gs.getBackendFunc(repoDir, repoName)
 
-	// First, try to resolve the revspec so we can return a useful RevisionNotFound error
-	sha, err := backend.ResolveRevision(ctx, revspec)
+	commitID, err := backend.RevAtTime(ctx, string(req.GetRevSpec()), req.GetTime().AsTime())
 	if err != nil {
+		// TODO: make sure to translate this on the other side
 		var e *gitdomain.RevisionNotFoundError
 		if errors.As(err, &e) {
 			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
@@ -1221,15 +1219,6 @@ func (gs *grpcServer) RevAtTime(ctx context.Context, req *proto.RevAtTimeRequest
 			}
 			return nil, s.Err()
 		}
-
-		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
-		return nil, err
-	}
-
-	// Then, check the log for the first commit before the timestamp
-	commitID, err := backend.RevAtTime(ctx, string(sha), req.GetTime().AsTime())
-	if err != nil {
 		return nil, status.New(codes.Internal, err.Error()).Err()
 	}
 

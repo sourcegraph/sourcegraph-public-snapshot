@@ -8,7 +8,8 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 
 service GitserverService {
-  rpc CreateCommitFromPatchBinary(stream CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
+  rpc CreateCommitFromPatchBinary(stream CreateCommitFromPatchBinaryRequest)
+      returns (CreateCommitFromPatchBinaryResponse) {}
   rpc DiskInfo(DiskInfoRequest) returns (DiskInfoResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
@@ -16,7 +17,8 @@ service GitserverService {
   rpc GetObject(GetObjectRequest) returns (GetObjectResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  rpc IsRepoCloneable(IsRepoCloneableRequest) returns (IsRepoCloneableResponse) {
+  rpc IsRepoCloneable(IsRepoCloneableRequest)
+      returns (IsRepoCloneableResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   rpc ListGitolite(ListGitoliteRequest) returns (ListGitoliteResponse) {
@@ -41,35 +43,43 @@ service GitserverService {
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {
+  rpc RepoCloneProgress(RepoCloneProgressRequest)
+      returns (RepoCloneProgressResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   rpc RepoDelete(RepoDeleteRequest) returns (RepoDeleteResponse) {}
   rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {
     option idempotency_level = IDEMPOTENT;
   }
-  rpc IsPerforcePathCloneable(IsPerforcePathCloneableRequest) returns (IsPerforcePathCloneableResponse) {
+  rpc IsPerforcePathCloneable(IsPerforcePathCloneableRequest)
+      returns (IsPerforcePathCloneableResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  rpc CheckPerforceCredentials(CheckPerforceCredentialsRequest) returns (CheckPerforceCredentialsResponse) {
+  rpc CheckPerforceCredentials(CheckPerforceCredentialsRequest)
+      returns (CheckPerforceCredentialsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   rpc PerforceUsers(PerforceUsersRequest) returns (PerforceUsersResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  rpc PerforceProtectsForUser(PerforceProtectsForUserRequest) returns (PerforceProtectsForUserResponse) {
+  rpc PerforceProtectsForUser(PerforceProtectsForUserRequest)
+      returns (PerforceProtectsForUserResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  rpc PerforceProtectsForDepot(PerforceProtectsForDepotRequest) returns (PerforceProtectsForDepotResponse) {
+  rpc PerforceProtectsForDepot(PerforceProtectsForDepotRequest)
+      returns (PerforceProtectsForDepotResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  rpc PerforceGroupMembers(PerforceGroupMembersRequest) returns (PerforceGroupMembersResponse) {
+  rpc PerforceGroupMembers(PerforceGroupMembersRequest)
+      returns (PerforceGroupMembersResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  rpc IsPerforceSuperUser(IsPerforceSuperUserRequest) returns (IsPerforceSuperUserResponse) {
+  rpc IsPerforceSuperUser(IsPerforceSuperUserRequest)
+      returns (IsPerforceSuperUserResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  rpc PerforceGetChangelist(PerforceGetChangelistRequest) returns (PerforceGetChangelistResponse) {
+  rpc PerforceGetChangelist(PerforceGetChangelistRequest)
+      returns (PerforceGetChangelistResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // MergeBase returns the merge base commit sha for the specified revspecs.
@@ -146,9 +156,21 @@ service GitserverService {
   //
   // If the given repo is not cloned, it will be enqueued for cloning and a
   // NotFound error will be returned, with a RepoNotFoundPayload in the details.
-  rpc ResolveRevision(ResolveRevisionRequest) returns (ResolveRevisionResponse) {
+  rpc ResolveRevision(ResolveRevisionRequest)
+      returns (ResolveRevisionResponse) {
     option idempotency_level = IDEMPOTENT;
   }
+
+  // RevAtTime looks up the OID of the nearest ancestor of `spec` that has a
+  // commit time before the given time. To simplify the logic, it only follows
+  // the first parent of merge commits to linearize the commit history. The
+  // intent is to return the state of a branch at a given time.
+  //
+  // If the revision cannot be resolved an error with RevisionNotFoundPayload is
+  // returned.
+  //
+  // If the revision exists, but there is no commit in its ancestry before
+  // the requested time, an empty string is returned for the commit SHA.
   rpc RevAtTime(RevAtTimeRequest) returns (RevAtTimeResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
@@ -175,10 +197,18 @@ message ResolveRevisionResponse {
 }
 
 message RevAtTimeRequest {
-  // repo_name is the name of the repo to run the blame operation in.
+  // repo_name is the name of the repo to run the operation in.
   // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
   string repo_name = 2;
+
+  // rev_spec is the starting revision for the search. We iterate
+  // through its --first-parent ancestors looking for the first ancestor
+  // that has a committer time before `time`.
+  //
+  // e.g., HEAD, deadbeefdeadbeefdeadbeefdeadbeef, or refs/heads/main.
   bytes rev_spec = 3;
+
+  // time is the timestamp we are looking for commits before
   google.protobuf.Timestamp time = 4;
 }
 
@@ -194,9 +224,7 @@ message GetCommitRequest {
   string commit = 3;
 }
 
-message GetCommitResponse {
-  GitCommit commit = 1;
-}
+message GetCommitResponse { GitCommit commit = 1; }
 
 message GitCommit {
   string oid = 1;
@@ -231,9 +259,7 @@ message BlameRange {
   uint32 end_line = 2;
 }
 
-message BlameResponse {
-  BlameHunk hunk = 1;
-}
+message BlameResponse { BlameHunk hunk = 1; }
 
 message BlameHunk {
   uint32 start_line = 1;
@@ -278,9 +304,7 @@ message ReadFileRequest {
   string path = 4;
 }
 
-message ReadFileResponse {
-  bytes data = 1;
-}
+message ReadFileResponse { bytes data = 1; }
 
 // DiskInfoRequest is a empty request for the DiskInfo RPC.
 message DiskInfoRequest {}
@@ -386,15 +410,13 @@ message CreateCommitFromPatchBinaryResponse {
 
 message ExecRequest {
   string repo = 1;
-  bytes ensure_revision = 2 [deprecated = true];
+  bytes ensure_revision = 2 [ deprecated = true ];
   repeated bytes args = 3;
-  bytes stdin = 4 [deprecated = true];
+  bytes stdin = 4 [ deprecated = true ];
   bool no_timeout = 5;
 }
 
-message ExecResponse {
-  bytes data = 1;
-}
+message ExecResponse { bytes data = 1; }
 
 message RepoNotFoundPayload {
   string repo = 1;
@@ -471,15 +493,11 @@ message CommitterMatchesNode {
 
 // CommitBeforeNode is a predicate that matches if the commit is before the
 // given date
-message CommitBeforeNode {
-  google.protobuf.Timestamp timestamp = 1;
-}
+message CommitBeforeNode { google.protobuf.Timestamp timestamp = 1; }
 
 // CommitAfterNode is a predicate that matches if the commit is after the given
 // date
-message CommitAfterNode {
-  google.protobuf.Timestamp timestamp = 1;
-}
+message CommitAfterNode { google.protobuf.Timestamp timestamp = 1; }
 
 // MessageMatchesNode is a predicate that matches if the commit message matches
 // the provided regex pattern.
@@ -503,9 +521,7 @@ message DiffModifiesFileNode {
 }
 
 // BooleanNode is a predicate that will either always match or never match
-message BooleanNode {
-  bool value = 1;
-}
+message BooleanNode { bool value = 1; }
 
 enum OperatorKind {
   OPERATOR_KIND_UNSPECIFIED = 0;
@@ -605,9 +621,7 @@ message ArchiveRequest {
 
 // ArchiveResponse is the response from the Archive RPC that returns a chunk of
 // the archive.
-message ArchiveResponse {
-  bytes data = 1;
-}
+message ArchiveResponse { bytes data = 1; }
 
 // IsRepoCloneableRequest is a request to check if a repository is cloneable.
 message IsRepoCloneableRequest {
@@ -667,7 +681,7 @@ message RepoUpdateRequest {
   // The caller should make sure to not call this endpoint more often
   // than needed, and gitserver may make it's own internal decisions
   // on when to fast-pass a request.
-  google.protobuf.Duration since = 2 [deprecated = true];
+  google.protobuf.Duration since = 2 [ deprecated = true ];
 }
 
 // RepoUpdateResponse is the response from the RepoUpdate RPC.
@@ -767,9 +781,7 @@ message PerforceGetChangelistRequest {
 
 // PerforceGetChangelistResponse returns information about the requested
 // changelist.
-message PerforceGetChangelistResponse {
-  PerforceChangelist changelist = 1;
-}
+message PerforceGetChangelistResponse { PerforceChangelist changelist = 1; }
 
 // PerforceChangelist represents a changelist in Perforce.
 message PerforceChangelist {
@@ -846,9 +858,7 @@ message PerforceGroupMembersRequest {
 
 // PerforceGroupMembersResponse returns the members of the requested Perforce
 // group.
-message PerforceGroupMembersResponse {
-  repeated string usernames = 1;
-}
+message PerforceGroupMembersResponse { repeated string usernames = 1; }
 
 // PerforceUsersRequest lists all the users known to the Perforce server.
 message PerforceUsersRequest {
@@ -856,9 +866,7 @@ message PerforceUsersRequest {
 }
 
 // PerforceUsersResponse contains the list of users known by the server.
-message PerforceUsersResponse {
-  repeated PerforceUser users = 1;
-}
+message PerforceUsersResponse { repeated PerforceUser users = 1; }
 
 // PerforceUser is a representation of a user account in Perforce.
 message PerforceUser {
@@ -879,6 +887,4 @@ message MergeBaseRequest {
 
 // MergeBaseResponse is the response from finding the merge base of two
 // revspecs.
-message MergeBaseResponse {
-  string merge_base_commit_sha = 1;
-}
+message MergeBaseResponse { string merge_base_commit_sha = 1; }
