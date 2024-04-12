@@ -223,7 +223,7 @@ func main() {
 					&cli.IntFlag{
 						Name:    "max-routines",
 						Aliases: []string{"mr"}, Usage: "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
-						Value: 10,
+						Value: runtime.NumCPU() - 2,
 					},
 					&cli.StringSliceFlag{
 						Name:    "standard-versions",
@@ -338,7 +338,7 @@ func main() {
 						Name:    "max-routines",
 						Aliases: []string{"mr"},
 						Usage:   "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
-						Value:   10,
+						Value:   runtime.NumCPU() - 2,
 					},
 					&cli.StringSliceFlag{
 						Name:    "mvu-versions",
@@ -445,7 +445,7 @@ func main() {
 						Name:    "max-routines",
 						Aliases: []string{"mr"},
 						Usage:   "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
-						Value:   10,
+						Value:   runtime.NumCPU() - 2,
 					},
 					&cli.StringSliceFlag{
 						Name:    "auto-versions",
