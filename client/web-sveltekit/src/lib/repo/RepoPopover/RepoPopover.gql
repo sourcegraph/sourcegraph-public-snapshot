@@ -29,3 +29,9 @@ fragment RepoPopoverFields on Repository {
         }
     }
 }
+
+query RepoPopover_Repo($repoName: String!) {
+    repository(name: $repoName) {
+        ...RepoPopoverFields
+    }
+}

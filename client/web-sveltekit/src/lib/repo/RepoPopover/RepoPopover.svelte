@@ -19,8 +19,7 @@ For example:
 
     import RepoStars from '../RepoStars.svelte'
     import { getIconPathForCodeHost } from '../shared/codehost'
-
-    import { RepoPopoverFields } from './RepoPopover.gql'
+    import type { RepoPopoverFields } from './RepoPopover.gql'
 
     export let repo: RepoPopoverFields
     export let withHeader = false

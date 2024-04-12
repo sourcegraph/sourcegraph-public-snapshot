@@ -1,12 +1,22 @@
 <script lang="ts">
     import { highlightRanges } from '$lib/dom'
+    import { getGraphQLClient } from '$lib/graphql'
     import Popover from '$lib/Popover.svelte'
+    import { RepoPopover_Repo, type RepoPopover_RepoResult } from '$lib/repo/RepoPopover/RepoPopover.gql'
+    import RepoPopover from '$lib/repo/RepoPopover/RepoPopover.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { displayRepoName } from '$lib/shared'
 
     export let repoName: string
     export let rev: string | undefined
     export let highlights: [number, number][] = []
+    let repo: RepoPopover_RepoResult | undefined
+
+    const loadOnHover = async () => {
+        const client = getGraphQLClient()
+        const response = await client.query(RepoPopover_Repo, { repoName: repoName })
+        repo = response.data
+    }
 
     $: href = `/${repoName}${rev ? `@${rev}` : ''}`
     $: displayName = displayRepoName(repoName)
@@ -28,7 +38,10 @@
                 {href}
                 use:highlightRanges={{ ranges: highlights }}
                 use:registerTrigger
-                on:mouseenter={() => toggle(true)}
+                on:mouseenter={() => {
+                    loadOnHover()
+                    toggle(true)
+                }}
                 on:mouseleave={() => toggle(false)}
             >
                 {displayRepoName(repoName)}
@@ -36,7 +49,11 @@
                     <small class="rev"> @ {rev}</small>
                 {/if}
             </a>
-            <div slot="content">{repoName}</div>
+            <div slot="content">
+                {#if repo && repo.repository}
+                    <RepoPopover repo={repo.repository} />
+                {/if}
+            </div>
         </Popover>
     {/key}
 </span>
