@@ -13,9 +13,8 @@
     export let externalServiceType: string = ''
 
     let openInEditor = $settings?.openInEditor
-    let sourcegraphURL: string = SourcegraphURL.from($page.url).toString()
 
-    const editorSettingsErrorMessage = getEditorSettingsErrorMessage(openInEditor, sourcegraphURL)
+    const editorSettingsErrorMessage = getEditorSettingsErrorMessage(openInEditor)
     const editorIds = (openInEditor as EditorSettings | undefined)?.editorIds ?? []
     const editors = !editorSettingsErrorMessage ? editorIds.map(getEditor) : undefined
 
@@ -32,7 +31,6 @@
                         buildRepoBaseNameAndPath(repoName, externalServiceType, filePath),
                         start,
                         openInEditor,
-                        sourcegraphURL,
                         i
                     ).toString()}
                     target="_blank"
@@ -46,7 +44,9 @@
     {/each}
 {:else if editorSettingsErrorMessage}
     <Tooltip tooltip={editorSettingsErrorMessage}>
-        <span data-action-label> Editor </span>
+        <a href="https://sourcegraph.com/docs/integration/open_in_editor" target="_blank">
+            <span data-action-label> Editor </span>
+        </a>
     </Tooltip>
 {/if}
 

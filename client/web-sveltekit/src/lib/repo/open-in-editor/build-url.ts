@@ -31,10 +31,9 @@ export function buildEditorUrl(
     repoBaseNameAndPath: string,
     position: UIPositionSpec['position'] | undefined,
     editorSettings: EditorSettings | undefined,
-    sourcegraphBaseUrl: string,
     editorIndex = 0
 ): URL {
-    const editorSettingsErrorMessage = getEditorSettingsErrorMessage(editorSettings, sourcegraphBaseUrl)
+    const editorSettingsErrorMessage = getEditorSettingsErrorMessage(editorSettings)
     if (editorSettingsErrorMessage) {
         throw new TypeError(editorSettingsErrorMessage)
     }
@@ -59,41 +58,34 @@ export function buildEditorUrl(
 
 export function getEditorSettingsErrorMessage(
     editorSettings: EditorSettings | undefined,
-    sourcegraphBaseUrl: string
 ): string | undefined {
-    const learnMoreURL = 'https://sourcegraph.com/docs/integration/open_in_editor'
-
     if (!editorSettings) {
-        return `Add \`openInEditor\` to your user settings to open files in the editor. [Learn more](${learnMoreURL})`
+        return 'Add `openInEditor` to your user settings to open files in the editor. Click to learn more.'
     }
 
     const projectPath = getProjectPath(editorSettings)
 
     if (typeof projectPath !== 'string') {
-        return `Add \`projectPaths.default\` or some OS-specific path to your user settings to open files in the editor. [Learn more](${learnMoreURL})`
+        return 'Add `projectPaths.default` or some OS-specific path to your user settings to open files in the editor. Click to learn more.'
     }
 
     // Skip this check on Windows because path.isAbsolute only checks Linux and macOS compatible paths reliably
     if (!isProjectPathValid(projectPath)) {
-        return `\`projectPaths.default\` (or your current OS-specific setting) \`${projectPath}\` is not an absolute path. Please correct the error in your [user settings](${
-            new URL('/user/settings', sourcegraphBaseUrl).href
-        }).`
+        return `\`projectPaths.default\` (or your current OS-specific setting) \`${projectPath}\` is not an absolute path. Please correct the error in your user settings.`
     }
 
     if (!editorSettings.editorIds?.length) {
-        return `Add \`editorIds\` to your user settings to open files. [Learn more](${learnMoreURL})`
+        return 'Add `editorIds` to your user settings to open files. Click to learn more.'
     }
     const validEditorCount = editorSettings.editorIds.map(id => getEditor(id)).filter(editor => editor).length
 
     if (validEditorCount !== editorSettings.editorIds.length) {
         return (
-            `Setting \`editorIds\` must be set to a valid array of values in your [user settings](${
-                new URL('/user/settings', sourcegraphBaseUrl).href
-            }) to open files. Supported editors: ` + supportedEditors.map(editor => editor.id).join(', ')
+            'Setting `editorIds` must be set to a valid array of values in your user settings to open files. Supported editors: ' + supportedEditors.map(editor => editor.id).join(', ')
         )
     }
     if (editorSettings.editorIds?.includes('custom') && typeof editorSettings['custom.urlPattern'] !== 'string') {
-        return `Add \`custom.urlPattern\` to your user settings for custom editor to open files. [Learn more](${learnMoreURL})`
+        return 'Add `custom.urlPattern` to your user settings for custom editor to open files. Click to learn more.'
     }
 
     if (editorSettings['vscode.useSSH'] && !editorSettings['vscode.remoteHostForSSH']) {
