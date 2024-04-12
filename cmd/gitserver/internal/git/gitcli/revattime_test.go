@@ -72,12 +72,12 @@ func TestGitCLIBackend_RevAtTime(t *testing.T) {
 		require.Equal(t, api.CommitID("ebadaea713c06e387c83947bbe6662475a366ffe"), commit)
 
 		// Invalid rev returns a rev not found error
-		commit, err = backend.RevAtTime(ctx, "noexist", time.Date(2048, 6, 1, 0, 0, 0, 0, time.UTC))
+		_, err = backend.RevAtTime(ctx, "noexist", time.Date(2048, 6, 1, 0, 0, 0, 0, time.UTC))
 		require.Error(t, err)
 		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
 
 		// Invalid OID returns a rev not found error
-		commit, err = backend.RevAtTime(ctx, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", time.Date(2048, 6, 1, 0, 0, 0, 0, time.UTC))
+		_, err = backend.RevAtTime(ctx, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", time.Date(2048, 6, 1, 0, 0, 0, 0, time.UTC))
 		require.Error(t, err)
 		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
 	})
