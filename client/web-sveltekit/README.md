@@ -25,7 +25,7 @@ https://sourcegraph.com by default (can be overwritten via the
 If you're a Sourcegraph employee you should run this command to use the right auth instance:
 
 ```bash
-SOURCEGRAPH_API_URL=https://sourcegraph.sourcegraph.com pnpm run dev:dotcom
+SOURCEGRAPH_API_URL=https://sourcegraph.sourcegraph.com pnpm run dev
 ```
 
 ### Using code from `@sourcegraph/*`
