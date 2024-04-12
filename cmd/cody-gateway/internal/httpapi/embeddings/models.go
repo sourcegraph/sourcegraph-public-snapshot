@@ -56,7 +56,7 @@ func NewListHandler() http.Handler {
 			{
 				Enabled:    modelEnabled(ModelNameSourcegraphSTMultiQA),
 				Name:       string(ModelNameSourcegraphSTMultiQA),
-				Dimensions: 756,
+				Dimensions: 768,
 				Deprecated: false,
 			},
 		}
