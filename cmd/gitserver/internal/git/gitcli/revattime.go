@@ -21,20 +21,20 @@ var globalRevAtTimeCache, _ = lru.New[revAtTimeCacheKey, api.CommitID](8192)
 
 type revAtTimeCacheKey struct {
 	repoName api.RepoName
-	spec     string
+	sha      api.CommitID
 	t        time.Time
 }
 
 func (g *gitCLIBackend) RevAtTime(ctx context.Context, spec string, t time.Time) (api.CommitID, error) {
-	key := revAtTimeCacheKey{g.repoName, spec, t}
-	if entry, ok := g.revAtTimeCache.Get(key); ok {
-		return entry, nil
-	}
-
 	// First, try to resolve the revspec so we can return a useful RevisionNotFound error
 	sha, err := g.ResolveRevision(ctx, spec)
 	if err != nil {
 		return "", err
+	}
+
+	key := revAtTimeCacheKey{g.repoName, sha, t}
+	if entry, ok := g.revAtTimeCache.Get(key); ok {
+		return entry, nil
 	}
 
 	r, err := g.NewCommand(ctx, WithArguments(
