@@ -103,9 +103,7 @@
     <FileHeader>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
-            {#await data.externalServiceType}
-                <OpenInEditor />
-            {:then externalServiceType}
+            {#await data.externalServiceType then externalServiceType}
                 <OpenInEditor {externalServiceType} />
             {/await}
             {#if blob}
