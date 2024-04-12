@@ -7,7 +7,6 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf",
-        "//internal/conf/conftypes",
         "//internal/encryption",
         "//internal/encryption/awskms",
         "//internal/encryption/cache",

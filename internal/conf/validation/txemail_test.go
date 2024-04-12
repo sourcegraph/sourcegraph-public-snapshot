@@ -1,4 +1,4 @@
-package txemail
+package validation
 
 import (
 	"testing"

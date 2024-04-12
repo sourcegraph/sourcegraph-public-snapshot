@@ -1,18 +1,25 @@
-package conf
+package validation
 
 import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
 func init() {
-	ContributeValidator(completionsConfigValidator)
-	ContributeValidator(embeddingsConfigValidator)
+	contributeWarning(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
+		if c.SiteConfig().CodyRestrictUsersFeatureFlag != nil {
+			problems = append(problems, conf.NewSiteProblem("cody.restrictUsersFeatureFlag has been deprecated. Please remove it from your site config and use cody.permissions instead: https://sourcegraph.com/docs/cody/overview/enable-cody-enterprise#enable-cody-only-for-some-users"))
+		}
+		return
+	})
+	conf.ContributeValidator(completionsConfigValidator)
+	conf.ContributeValidator(embeddingsConfigValidator)
 }
 
-func completionsConfigValidator(q conftypes.SiteConfigQuerier) Problems {
+func completionsConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
 	problems := []string{}
 	completionsConf := q.SiteConfig().Completions
 	if completionsConf == nil {
@@ -24,13 +31,13 @@ func completionsConfigValidator(q conftypes.SiteConfigQuerier) Problems {
 	}
 
 	if len(problems) > 0 {
-		return NewSiteProblems(problems...)
+		return conf.NewSiteProblems(problems...)
 	}
 
 	return nil
 }
 
-func embeddingsConfigValidator(q conftypes.SiteConfigQuerier) Problems {
+func embeddingsConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
 	problems := []string{}
 	embeddingsConf := q.SiteConfig().Embeddings
 	if embeddingsConf == nil {
@@ -49,14 +56,14 @@ func embeddingsConfigValidator(q conftypes.SiteConfigQuerier) Problems {
 		problems = append(problems, fmt.Sprintf("Could not parse \"embeddings.minimumInterval: %s\". %s", minimumIntervalString, err))
 	}
 
-	if evaluatedConfig := GetEmbeddingsConfig(q.SiteConfig()); evaluatedConfig != nil {
+	if evaluatedConfig := conf.GetEmbeddingsConfig(q.SiteConfig()); evaluatedConfig != nil {
 		if evaluatedConfig.Dimensions <= 0 {
 			problems = append(problems, "Could not set a default \"embeddings.dimensions\", please configure one manually")
 		}
 	}
 
 	if len(problems) > 0 {
-		return NewSiteProblems(problems...)
+		return conf.NewSiteProblems(problems...)
 	}
 
 	return nil
