@@ -1,8 +1,7 @@
 import * as path from 'path'
 
-import type { UIPositionSpec } from '@sourcegraph/shared/src/util/url'
-
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import type { UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
 import type { EditorReplacements, EditorSettings } from './editor-settings'
 import { type Editor, getEditor, supportedEditors } from './editors'
