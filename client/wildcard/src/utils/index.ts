@@ -21,9 +21,9 @@ export const createAggregateError = (errors: readonly ErrorLike[] = []): Error =
     errors.length === 1
         ? asError(errors[0])
         : Object.assign(new Error(errors.map(error => error.message).join('\n')), {
-            name: AGGREGATE_ERROR_NAME,
-            errors: errors.map(asError),
-        })
+              name: AGGREGATE_ERROR_NAME,
+              errors: errors.map(asError),
+          })
 
 /**
  * Converts an ErrorLike to a proper Error if needed, copying all properties

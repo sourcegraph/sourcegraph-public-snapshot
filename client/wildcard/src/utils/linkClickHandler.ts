@@ -42,8 +42,8 @@ export const createLinkClickHandler =
  */
 const isInstanceOf =
     <C extends new () => object>(constructor: C) =>
-        (value: unknown): value is InstanceType<C> =>
-            value instanceof constructor
+    (value: unknown): value is InstanceType<C> =>
+        value instanceof constructor
 
 /**
  * Combines multiple type guards into one type guard that checks if the value passes any of the provided type guards.

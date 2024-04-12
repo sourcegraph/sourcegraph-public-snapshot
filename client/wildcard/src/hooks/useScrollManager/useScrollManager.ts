@@ -3,12 +3,13 @@ import { useEffect, type RefObject } from 'react'
 import { debounce } from 'lodash'
 import { useLocation, useNavigationType } from 'react-router-dom'
 
+import { logger } from '../../utils'
+
 import {
     type MutationObserverError,
     type MutationObserverPromise,
     mutationObserverWithTimeout,
 } from './mutationObserverWithTimeout'
-import { logger } from '../../utils'
 
 /**
  * Object containing maps of saved scroll locations for each path name, which are keyed by the scrollable container they belong to.

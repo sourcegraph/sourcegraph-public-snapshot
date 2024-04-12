@@ -5,7 +5,6 @@ import { scaleBand } from '@visx/scale'
 import type { ScaleBand, ScaleLinear } from 'd3-scale'
 
 import { getBrowserName } from '../../../../../utils'
-
 import { MaybeLink } from '../../../core'
 import type { ActiveSegment } from '../types'
 import type { Category } from '../utils/get-grouped-categories'
