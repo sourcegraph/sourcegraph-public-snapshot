@@ -1,5 +1,5 @@
-load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "scim",
@@ -18,11 +18,12 @@ go_library(
         "user_service.go",
         "user_update_action.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/scim",
-    visibility = ["//:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/scim",
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/globals",
+        "//cmd/frontend/internal/auth/scim/filter",
         "//internal/auth/userpasswd",
         "//internal/authz",
         "//internal/conf",
@@ -33,7 +34,6 @@ go_library(
         "//internal/goroutine",
         "//internal/licensing",
         "//internal/observation",
-        "//internal/scim/filter",
         "//internal/txemail",
         "//internal/txemail/txtypes",
         "//internal/types",
@@ -50,7 +50,6 @@ go_library(
 
 go_test(
     name = "scim_test",
-    timeout = "short",
     srcs = [
         "init_test.go",
         "user_create_test.go",

@@ -1,5 +1,5 @@
-load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "filter",
@@ -14,8 +14,8 @@ go_library(
         "operators.go",
         "path.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/scim/filter",
-    visibility = ["//:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/scim/filter",
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//lib/errors",
         "@com_github_di_wu_xsd_datetime//:xsd-datetime",
@@ -26,7 +26,6 @@ go_library(
 
 go_test(
     name = "filter_test",
-    timeout = "short",
     srcs = [
         "filter_test.go",
         "op_boolean_test.go",

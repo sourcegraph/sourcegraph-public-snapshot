@@ -10,7 +10,7 @@ import (
 	"github.com/elimity-com/scim/schema"
 	"github.com/scim2/filter-parser/v2"
 
-	sgfilter "github.com/sourcegraph/sourcegraph/internal/scim/filter"
+	sgfilter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/scim/filter"
 )
 
 // Patch updates one or more attributes of a SCIM resource using a sequence of
