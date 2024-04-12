@@ -1687,9 +1687,6 @@ importers:
 
   client/wildcard:
     dependencies:
-      '@sourcegraph/common':
-        specifier: workspace:*
-        version: link:../common
       highlight.js:
         specifier: ^10.7.3
         version: 10.7.3
