@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestGitCLIBackend_RevAtTime(t *testing.T) {
@@ -68,6 +70,11 @@ func TestGitCLIBackend_RevAtTime(t *testing.T) {
 		commit, err = backend.RevAtTime(ctx, "master", time.Date(2048, 6, 1, 0, 0, 0, 0, time.UTC))
 		require.NoError(t, err)
 		require.Equal(t, api.CommitID("ebadaea713c06e387c83947bbe6662475a366ffe"), commit)
+
+		// Invalid rev returns a rev not found error
+		commit, err = backend.RevAtTime(ctx, "noexist", time.Date(2048, 6, 1, 0, 0, 0, 0, time.UTC))
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
 	})
 
 	t.Run("out of order commit date", func(t *testing.T) {
