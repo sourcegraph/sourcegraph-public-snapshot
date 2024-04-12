@@ -85,6 +85,7 @@
     .tabs-header {
         display: flex;
         justify-content: var(--align-tabs, center);
+        gap: var(--tabs-gap, 0);
     }
 
     button {
