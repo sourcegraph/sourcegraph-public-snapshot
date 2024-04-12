@@ -205,7 +205,6 @@ go_library(
         "codeintel.graphql",
         "codeintel.policies.graphql",
         "codeintel.ranking.graphql",
-        "codeintel.sentinel.graphql",
         "cody_context.graphql",
         "completions.graphql",
         "compute.graphql",
