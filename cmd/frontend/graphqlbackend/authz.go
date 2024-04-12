@@ -27,6 +27,7 @@ type AuthzResolver interface {
 	AuthorizedUsers(ctx context.Context, args *RepoAuthorizedUserArgs) (UserConnectionResolver, error)
 	BitbucketProjectPermissionJobs(ctx context.Context, args *BitbucketProjectPermissionJobsArgs) (BitbucketProjectsPermissionJobsResolver, error)
 	AuthzProviderTypes(ctx context.Context) ([]string, error)
+	AuthzProviders(ctx context.Context) ([]AuthzProviderResolver, error)
 	PermissionsSyncJobs(ctx context.Context, args ListPermissionsSyncJobsArgs) (*graphqlutil.ConnectionResolver[PermissionsSyncJobResolver], error)
 	PermissionsSyncingStats(ctx context.Context) (PermissionsSyncingStatsResolver, error)
 
@@ -171,4 +172,10 @@ type PermissionsSyncingStatsResolver interface {
 	ReposWithNoPermissions(ctx context.Context) (int32, error)
 	UsersWithStalePermissions(ctx context.Context) (int32, error)
 	ReposWithStalePermissions(ctx context.Context) (int32, error)
+}
+
+type AuthzProviderResolver interface {
+	URN() string
+	ServiceType() string
+	ServiceID() string
 }

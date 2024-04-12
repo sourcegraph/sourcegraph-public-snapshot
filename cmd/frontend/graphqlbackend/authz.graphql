@@ -120,6 +120,21 @@ enum CancelPermissionsSyncJobResultMessage {
     ERROR
 }
 
+type AuthzProvider {
+    """
+    The unique identifier of the authz provider.
+    """
+    urn: String!
+    """
+    The service type of the authz provider.
+    """
+    serviceType: String!
+    """
+    The ID of the service the authz provider is associated with, e.g. https://example.gitlab.com
+    """
+    serviceID: String!
+}
+
 extend type Query {
     """
     The repositories a user is authorized to access with the given permission.
@@ -161,6 +176,8 @@ extend type Query {
     determining which repositories the user has access to.
     """
     authzProviderTypes: [String!]!
+
+    authzProviders: [AuthzProvider!]!
 
     """
     Returns a list of recent permissions sync jobs for a given set of parameters.

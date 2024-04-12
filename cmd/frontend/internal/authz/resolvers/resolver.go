@@ -500,6 +500,32 @@ func (r *Resolver) AuthzProviderTypes(ctx context.Context) ([]string, error) {
 	return providerTypes, nil
 }
 
+type authzProviderResolver struct {
+	provider authz.Provider
+}
+
+func (r *authzProviderResolver) URN() string {
+	return r.provider.URN()
+}
+
+func (r *authzProviderResolver) ServiceType() string {
+	return r.provider.ServiceType()
+}
+
+func (r *authzProviderResolver) ServiceID() string {
+	return r.provider.ServiceID()
+}
+
+func (r *Resolver) AuthzProviders(ctx context.Context) ([]graphqlbackend.AuthzProviderResolver, error) {
+	_, providers := authz.GetProviders()
+	resolvers := make([]graphqlbackend.AuthzProviderResolver, 0, len(providers))
+	for _, p := range providers {
+		resolvers = append(resolvers, &authzProviderResolver{provider: p})
+	}
+
+	return resolvers, nil
+}
+
 var jobStatuses = map[string]bool{
 	"queued":     true,
 	"processing": true,
