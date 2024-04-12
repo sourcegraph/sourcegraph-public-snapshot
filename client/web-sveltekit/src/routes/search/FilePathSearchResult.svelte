@@ -1,11 +1,11 @@
 <svelte:options immutable />
 
 <script lang="ts">
+    import RepoStars from '$lib/repo/RepoStars.svelte'
     import type { PathMatch } from '$lib/shared'
 
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
     import PreviewButton from './PreviewButton.svelte'
-    import RepoStars from './RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
 
     export let result: PathMatch

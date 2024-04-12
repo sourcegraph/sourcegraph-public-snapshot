@@ -17,22 +17,31 @@
     }
 </script>
 
-<CodeHostIcon repository={repoName} />
-<!-- #key is needed here to recreate the link because use:highlightRanges changes the DOM -->
-{#key highlights}
-    <a class="repo-link" {href} use:highlightRanges={{ ranges: highlights }}>
-        {displayRepoName(repoName)}
-        {#if rev}
-            <small class="rev"> @ {rev}</small>
-        {/if}
-    </a>
-{/key}
+<div class="root">
+    <CodeHostIcon repository={repoName} />
+    <!-- #key is needed here to recreate the link because use:highlightRanges changes the DOM -->
+    {#key highlights}
+        <a class="repo-link" {href} use:highlightRanges={{ ranges: highlights }}>
+            {displayRepoName(repoName)}
+            {#if rev}
+                <small class="rev"> @ {rev}</small>
+            {/if}
+        </a>
+    {/key}
+</div>
 
 <style lang="scss">
-    .repo-link {
-        color: var(--text-body);
-        .rev {
-            color: var(--text-muted);
+    .root {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+
+        .repo-link {
+            align-self: baseline;
+            color: var(--text-body);
+            .rev {
+                color: var(--text-muted);
+            }
         }
     }
 </style>

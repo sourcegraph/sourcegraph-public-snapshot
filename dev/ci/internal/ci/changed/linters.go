@@ -7,7 +7,6 @@ import (
 var diffsWithLinters = []Diff{
 	Go,
 	Dockerfiles,
-	Docs,
 	Client,
 	Shell,
 	Protobuf,
