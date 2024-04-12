@@ -26,10 +26,9 @@ function preview_tags() {
 # doing it.
 function echo_append_annotation() {
   repository="$1"
-  IFS=' ' read -r -a registries <<<"$2"
+  registry="$2"
   IFS=' ' read -r -a tag_args <<<"$3"
   formatted_tags=""
-  formatted_registries=""
 
   for arg in "${tag_args[@]}"; do
     if [ "$arg" != "--tag" ]; then
@@ -42,15 +41,7 @@ function echo_append_annotation() {
     fi
   done
 
-  for reg in "${registries[@]}"; do
-    if [ "$formatted_registries" == "" ]; then
-      formatted_registries="<code>$reg</code>"
-    else
-      formatted_registries="${formatted_registries}, <code>$reg</code>"
-    fi
-  done
-
-  raw="<tr><td>${repository}</td><td>${formatted_registries}</td><td>${formatted_tags}</td></tr>"
+  raw="<tr><td>${repository}</td><td><code>${registry}</code></td><td>${formatted_tags}</td></tr>"
   echo "echo -e '${raw}' >>./annotations/pushed_images.md"
 }
 
@@ -73,7 +64,7 @@ function create_push_command() {
       --stamp \
       --workspace_status_command=./dev/bazel_stamp_vars.sh"
 
-    echo "$cmd -- $tags_args --repository ${registry}/${repository} && $(echo_append_annotation "$repository" "${registries[@]}" "${tags_args[@]}")"
+    echo "$cmd -- $tags_args --repository ${registry}/${repository} && $(echo_append_annotation "$repository" "$registry" "${tags_args[@]}")"
   done
 }
 
@@ -149,7 +140,7 @@ fi
 # Posting the preamble for image pushes.
 echo -e "### ${BUILDKITE_LABEL}" > ./annotations/pushed_images.md
 echo -e "<details><summary>Click to expand table</summary><table>\n" >>./annotations/pushed_images.md
-echo -e "<tr><th>Name</th><th>Registries</th><th>Tags</th></tr>\n" >> ./annotations/pushed_images.md
+echo -e "<tr><th>Name</th><th>Registry</th><th>Tags</th></tr>\n" >> ./annotations/pushed_images.md
 
 preview_tags "${dev_registries[*]}" "${dev_tags[*]}"
 if $push_prod; then
