@@ -17,6 +17,9 @@
     "@types/highlight.js": "^9.12.4"
   },
   "dependencies": {
-    "highlight.js": "^10.7.3"
+    "dompurify": "^3.0.6",
+    "highlight.js": "^10.7.3",
+    "marked": "4.0.16",
+    "react-router-dom": "^6.8.1"
   }
 }
