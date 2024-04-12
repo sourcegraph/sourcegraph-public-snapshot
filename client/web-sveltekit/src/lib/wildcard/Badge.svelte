@@ -40,7 +40,7 @@
 
 <!--TODO: support non-branded badges -->
 <slot name="custom" class={cls}>
-    <span class={cls}>
+    <span class={cls} data-badge>
         <slot />
     </span>
 </slot>
