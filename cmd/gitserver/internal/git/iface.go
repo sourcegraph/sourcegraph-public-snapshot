@@ -65,6 +65,10 @@ type GitBackend interface {
 	// commit time before the given time. To simplify the logic, it only
 	// follows the first parent of merge commits to linearize the commit
 	// history. The intent is to return the state of a branch at a given time.
+	//
+	// If revspec does not exist, a RevisionNotFoundError is returned.
+	// If no commit exists in the history of revspec before time, an empty
+	// commitID is returned.
 	RevAtTime(ctx context.Context, revspec string, time time.Time) (api.CommitID, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
