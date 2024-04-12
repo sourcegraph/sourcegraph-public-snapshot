@@ -65,19 +65,16 @@ function create_push_command() {
     repository="scip-ctags"
   fi
 
-  repositories_args=""
   for registry in "${registries[@]}"; do
-    repositories_args="$repositories_args --repository ${registry}/${repository}"
+    cmd="bazel \
+      ${bazelrc[*]} \
+      run \
+      $target \
+      --stamp \
+      --workspace_status_command=./dev/bazel_stamp_vars.sh"
+
+    echo "$cmd -- $tags_args --repository ${registry}/${repository} && $(echo_append_annotation "$repository" "${registries[@]}" "${tags_args[@]}")"
   done
-
-  cmd="bazel \
-    ${bazelrc[*]} \
-    run \
-    $target \
-    --stamp \
-    --workspace_status_command=./dev/bazel_stamp_vars.sh"
-
-  echo "$cmd -- $tags_args $repositories_args && $(echo_append_annotation "$repository" "${registries[@]}" "${tags_args[@]}")"
 }
 
 dev_registries=(
