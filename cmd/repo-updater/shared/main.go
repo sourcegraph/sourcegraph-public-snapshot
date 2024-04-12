@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	repogitserver "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/phabricator"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/purge"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater"
@@ -108,7 +109,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		repos.ObservedSource(sourcerLogger, sourceMetrics),
 	)
 	syncer := repos.NewSyncer(observationCtx, store, src)
-	updateScheduler := scheduler.NewUpdateScheduler(logger, db, gitserver.NewClient("repos.updatescheduler"))
+	updateScheduler := scheduler.NewUpdateScheduler(logger, db, repogitserver.NewRepositoryServiceClient())
 	server := &repoupdater.Server{
 		Logger:    logger,
 		Store:     store,

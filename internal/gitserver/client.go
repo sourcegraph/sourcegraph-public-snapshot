@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/conc/pool"
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/connection"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -35,9 +37,6 @@ var ClientMocks, emptyClientMocks struct {
 	LocalGitserver          bool
 	LocalGitCommandReposDir string
 }
-
-// conns is the global variable holding a reference to the gitserver connections.
-var conns = &atomicGitServerConns{}
 
 // ResetClientMocks clears the mock functions set on Mocks (so that subsequent
 // tests don't inadvertently use them).
@@ -61,6 +60,45 @@ type ClientSource interface {
 	GetAddressWithClient(addr string) AddressWithClient
 }
 
+type clientSource struct{}
+
+func (cs *clientSource) ClientForRepo(ctx context.Context, repo api.RepoName) (proto.GitserverServiceClient, error) {
+	conn, err := connection.GlobalConns.ConnForRepo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+	return clientForConn(conn), nil
+}
+
+func (cs *clientSource) AddrForRepo(ctx context.Context, repo api.RepoName) string {
+	return connection.GlobalConns.AddrForRepo(ctx, repo)
+}
+
+func (cs *clientSource) Addresses() []AddressWithClient {
+	conns := connection.GlobalConns.Addresses()
+	addrs := make([]AddressWithClient, len(conns))
+	for i, addr := range conns {
+		conn, err := addr.GRPCConn()
+		addrs[i] = &connAndErr{
+			address: addr.Address(),
+			conn:    conn,
+			err:     err,
+		}
+	}
+	return addrs
+}
+
+func (cs *clientSource) GetAddressWithClient(addr string) AddressWithClient {
+	ac := connection.GlobalConns.GetAddressWithConn(addr)
+
+	conn, err := ac.GRPCConn()
+	return &connAndErr{
+		address: ac.Address(),
+		conn:    conn,
+		err:     err,
+	}
+}
+
 // NewClient returns a new gitserver.Client.
 // See Client.Scoped() for info on scoped clients.
 func NewClient(scope string) Client {
@@ -69,7 +107,7 @@ func NewClient(scope string) Client {
 		logger:              logger,
 		scope:               scope,
 		operations:          getOperations(),
-		clientSource:        conns,
+		clientSource:        &clientSource{},
 		subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
 	}
 }
@@ -353,9 +391,6 @@ type Client interface {
 	// MergeBase returns the merge base commit sha for the specified revspecs.
 	MergeBase(ctx context.Context, repo api.RepoName, base, head string) (api.CommitID, error)
 
-	// Remove removes the repository clone from gitserver.
-	Remove(context.Context, api.RepoName) error
-
 	RepoCloneProgress(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error)
 
 	// ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
@@ -377,13 +412,6 @@ type Client interface {
 	// no commit in the ancestry of `spec` before the time `t`, no error
 	// is returned, but the second return value `found` will be false.
 	RevAtTime(ctx context.Context, repo api.RepoName, spec string, t time.Time) (oid api.CommitID, found bool, err error)
-
-	// RequestRepoUpdate is the new protocol endpoint for synchronous requests
-	// with more detailed responses. Do not use this if you are not repo-updater.
-	//
-	// Repo updates are not guaranteed to occur. If a repo has been updated
-	// recently, the update won't happen.
-	RequestRepoUpdate(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
 
 	// Search executes a search as specified by args, streaming the results as
 	// it goes by calling onMatches with each set of results it receives in
@@ -562,14 +590,16 @@ func (c *clientImplementor) SystemInfo(ctx context.Context, addr string) (_ prot
 }
 
 func (c *clientImplementor) getDiskInfo(ctx context.Context, addr AddressWithClient) (*proto.DiskInfoResponse, error) {
-	client, err := addr.GRPCClient()
+	cli, err := addr.GRPCClient()
 	if err != nil {
 		return nil, err
 	}
-	resp, err := client.DiskInfo(ctx, &proto.DiskInfoRequest{})
+
+	resp, err := cli.DiskInfo(ctx, &proto.DiskInfoRequest{})
 	if err != nil {
 		return nil, err
 	}
+
 	return resp, nil
 }
 
@@ -577,8 +607,12 @@ func (c *clientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) 
 	return c.clientSource.AddrForRepo(ctx, repo)
 }
 
-func (c *clientImplementor) ClientForRepo(ctx context.Context, repo api.RepoName) (proto.GitserverServiceClient, error) {
-	return c.clientSource.ClientForRepo(ctx, repo)
+func clientForConn(conn *grpc.ClientConn) proto.GitserverServiceClient {
+	return &errorTranslatingClient{
+		base: &automaticRetryClient{
+			base: proto.NewGitserverServiceClient(conn),
+		},
+	}
 }
 
 func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err error) {
@@ -653,7 +687,7 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 	})
 	defer endObservation(1, observation.Args{})
 
-	client, err := c.ClientForRepo(ctx, args.Repo)
+	client, err := c.clientSource.ClientForRepo(ctx, args.Repo)
 	if err != nil {
 		return false, err
 	}
@@ -694,40 +728,11 @@ func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 	}
 	return &RemoteGitCommand{
 		repo:   repo,
-		execer: c,
+		execer: c.clientSource,
 		args:   append([]string{git}, arg...),
 		execOp: c.operations.exec,
 		scope:  c.scope,
 	}
-}
-
-func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.RepoName) (_ *protocol.RepoUpdateResponse, err error) {
-	ctx, _, endObservation := c.operations.requestRepoUpdate.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	req := &protocol.RepoUpdateRequest{
-		Repo: repo,
-	}
-
-	client, err := c.ClientForRepo(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := client.RepoUpdate(ctx, req.ToProto())
-	if err != nil {
-		return nil, err
-	}
-
-	var info protocol.RepoUpdateResponse
-	info.FromProto(resp)
-
-	return &info, nil
 }
 
 // MockIsRepoCloneable mocks (*Client).IsRepoCloneable for tests.
@@ -748,7 +753,7 @@ func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoNa
 
 	var resp protocol.IsRepoCloneableResponse
 
-	client, err := c.ClientForRepo(ctx, repo)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
 		return err
 	}
@@ -812,7 +817,7 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repo api.Repo
 	})
 	defer endObservation(1, observation.Args{})
 
-	client, err := c.ClientForRepo(ctx, repo)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -828,25 +833,6 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repo api.Repo
 	return &rcp, nil
 }
 
-func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) (err error) {
-	ctx, _, endObservation := c.operations.remove.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	client, err := c.ClientForRepo(ctx, repo)
-	if err != nil {
-		return err
-	}
-	_, err = client.RepoDelete(ctx, &proto.RepoDeleteRequest{
-		Repo: string(repo),
-	})
-	return err
-}
-
 func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, conn protocol.PerforceConnectionDetails, depotPath string) (err error) {
 	ctx, _, endObservation := c.operations.isPerforcePathCloneable.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
@@ -856,7 +842,7 @@ func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, conn pr
 	// depotPath is not actually a repo name, but it will spread the load of isPerforcePathCloneable
 	// a bit over the different gitserver instances. It's really just used as a consistent hashing
 	// key here.
-	client, err := c.ClientForRepo(ctx, api.RepoName(depotPath))
+	client, err := c.clientSource.ClientForRepo(ctx, api.RepoName(depotPath))
 	if err != nil {
 		return err
 	}
@@ -884,7 +870,7 @@ func (c *clientImplementor) CheckPerforceCredentials(ctx context.Context, conn p
 	// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 	// a bit over the different gitserver instances. It's really just used as a consistent hashing
 	// key here.
-	client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+	client, err := c.clientSource.ClientForRepo(ctx, api.RepoName(conn.P4Port))
 	if err != nil {
 		return err
 	}
@@ -911,7 +897,7 @@ func (c *clientImplementor) PerforceUsers(ctx context.Context, conn protocol.Per
 	// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 	// a bit over the different gitserver instances. It's really just used as a consistent hashing
 	// key here.
-	client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+	client, err := c.clientSource.ClientForRepo(ctx, api.RepoName(conn.P4Port))
 	if err != nil {
 		return nil, err
 	}
@@ -941,7 +927,7 @@ func (c *clientImplementor) PerforceProtectsForUser(ctx context.Context, conn pr
 	// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 	// a bit over the different gitserver instances. It's really just used as a consistent hashing
 	// key here.
-	client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+	client, err := c.clientSource.ClientForRepo(ctx, api.RepoName(conn.P4Port))
 	if err != nil {
 		return nil, err
 	}
@@ -972,7 +958,7 @@ func (c *clientImplementor) PerforceProtectsForDepot(ctx context.Context, conn p
 	// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 	// a bit over the different gitserver instances. It's really just used as a consistent hashing
 	// key here.
-	client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+	client, err := c.clientSource.ClientForRepo(ctx, api.RepoName(conn.P4Port))
 	if err != nil {
 		return nil, err
 	}
@@ -1003,7 +989,7 @@ func (c *clientImplementor) PerforceGroupMembers(ctx context.Context, conn proto
 	// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 	// a bit over the different gitserver instances. It's really just used as a consistent hashing
 	// key here.
-	client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+	client, err := c.clientSource.ClientForRepo(ctx, api.RepoName(conn.P4Port))
 	if err != nil {
 		return nil, err
 	}
@@ -1027,7 +1013,7 @@ func (c *clientImplementor) IsPerforceSuperUser(ctx context.Context, conn protoc
 	// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 	// a bit over the different gitserver instances. It's really just used as a consistent hashing
 	// key here.
-	client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+	client, err := c.clientSource.ClientForRepo(ctx, api.RepoName(conn.P4Port))
 	if err != nil {
 		return err
 	}
@@ -1049,7 +1035,7 @@ func (c *clientImplementor) PerforceGetChangelist(ctx context.Context, conn prot
 	// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 	// a bit over the different gitserver instances. It's really just used as a consistent hashing
 	// key here.
-	client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+	client, err := c.clientSource.ClientForRepo(ctx, api.RepoName(conn.P4Port))
 	if err != nil {
 		return nil, err
 	}
@@ -1073,7 +1059,7 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 	})
 	defer endObservation(1, observation.Args{})
 
-	client, err := c.ClientForRepo(ctx, req.Repo)
+	client, err := c.clientSource.ClientForRepo(ctx, req.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -1157,7 +1143,7 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 		Repo:       repo,
 		ObjectName: objectName,
 	}
-	client, err := c.ClientForRepo(ctx, req.Repo)
+	client, err := c.clientSource.ClientForRepo(ctx, req.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -1182,7 +1168,7 @@ func stringsToByteSlices(in []string) [][]byte {
 }
 
 func (c *clientImplementor) ListGitoliteRepos(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
-	client, err := c.ClientForRepo(ctx, api.RepoName(gitoliteHost))
+	client, err := c.clientSource.ClientForRepo(ctx, api.RepoName(gitoliteHost))
 	if err != nil {
 		return nil, err
 	}

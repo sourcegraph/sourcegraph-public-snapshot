@@ -2,10 +2,44 @@ syntax = "proto3";
 
 package gitserver.v1;
 
-import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
+
+// GitserverRepositoryService exposes operations to be performed by repo-updater.
+// These methods are not meant to be used by other services, and should be considered
+// an implementation detail of gitserver.
+service GitserverRepositoryService {
+  // DeleteRepository deletes a repository on disk if it exists.
+  // If it doesn't, an error is returned.
+  rpc DeleteRepository(DeleteRepositoryRequest) returns (DeleteRepositoryResponse) {}
+  // FetchRepository fetches a repository from a remote. If the repository is not
+  // yet cloned, it will be cloned. Otherwise, it will be updated.
+  rpc FetchRepository(FetchRepositoryRequest) returns (FetchRepositoryResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+}
+
+message DeleteRepositoryRequest {
+  // repo_name is the name of the repo to delete.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+}
+
+message DeleteRepositoryResponse {}
+
+message FetchRepositoryRequest {
+  // repo_name is the name of the repo to fetch.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+}
+
+message FetchRepositoryResponse {
+  // last_fetched is the time the repository was last fetched.
+  google.protobuf.Timestamp last_fetched = 1;
+  // last_changed is the time the repository was last changed.
+  google.protobuf.Timestamp last_changed = 2;
+}
 
 service GitserverService {
   rpc CreateCommitFromPatchBinary(stream CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
@@ -43,10 +77,6 @@ service GitserverService {
   }
   rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  rpc RepoDelete(RepoDeleteRequest) returns (RepoDeleteResponse) {}
-  rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {
-    option idempotency_level = IDEMPOTENT;
   }
   rpc IsPerforcePathCloneable(IsPerforcePathCloneableRequest) returns (IsPerforcePathCloneableResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -802,40 +832,6 @@ message RepoCloneProgressResponse {
   string clone_progress = 2;
   // cloned is whether the repository has been cloned successfully
   bool cloned = 3;
-}
-
-// RepoDeleteRequest is a request to delete a repository.
-message RepoDeleteRequest {
-  // repo is the name of the repo to delete.
-  string repo = 1;
-}
-
-// RepoDeleteResponse is the response from the RepoDelete RPC.
-message RepoDeleteResponse {}
-
-// RepoUpdateRequest is a request to update a repository.
-message RepoUpdateRequest {
-  // RepoUpdateRequest used to have an unused clone_from_shard field.
-  reserved 3;
-  // repo is the name of the repo to update.
-  string repo = 1;
-  // since is the debounce interval for queries, used only with
-  // request-repo-update.
-  // This field has now been deprecated and is no longer respected.
-  // The caller should make sure to not call this endpoint more often
-  // than needed, and gitserver may make it's own internal decisions
-  // on when to fast-pass a request.
-  google.protobuf.Duration since = 2 [deprecated = true];
-}
-
-// RepoUpdateResponse is the response from the RepoUpdate RPC.
-message RepoUpdateResponse {
-  // last_fetched is the time the repository was last fetched.
-  google.protobuf.Timestamp last_fetched = 1;
-  // last_changed is the time the repository was last changed.
-  google.protobuf.Timestamp last_changed = 2;
-  // error is the error that occurred during the update.
-  string error = 3;
 }
 
 // ListGitoliteRequest is a request to list all repositories in gitolite.

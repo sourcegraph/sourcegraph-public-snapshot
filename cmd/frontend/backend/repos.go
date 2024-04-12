@@ -34,8 +34,7 @@ type ReposService interface {
 	List(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error)
 	ListIndexable(ctx context.Context) ([]types.MinimalRepo, error)
 	GetInventory(ctx context.Context, repoName api.RepoName, commitID api.CommitID, forceEnhancedLanguageDetection bool) (*inventory.Inventory, error)
-	DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) error
-	RequestRepositoryUpdate(ctx context.Context, repoID api.RepoID) error
+	RecloneRepository(ctx context.Context, repoID api.RepoID) error
 	ResolveRev(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error)
 }
 
@@ -283,9 +282,9 @@ func (s *repos) GetInventory(ctx context.Context, repo api.RepoName, commitID ap
 	return &inv, nil
 }
 
-func (s *repos) DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) (err error) {
-	if Mocks.Repos.DeleteRepositoryFromDisk != nil {
-		return Mocks.Repos.DeleteRepositoryFromDisk(ctx, repoID)
+func (s *repos) RecloneRepository(ctx context.Context, repoID api.RepoID) (err error) {
+	if Mocks.Repos.RecloneRepository != nil {
+		return Mocks.Repos.RecloneRepository(ctx, repoID)
 	}
 
 	repo, err := s.Get(ctx, repoID)
@@ -293,31 +292,10 @@ func (s *repos) DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID)
 		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
 	}
 
-	ctx, done := startTrace(ctx, "DeleteRepositoryFromDisk", repoID, &err)
+	ctx, done := startTrace(ctx, "RecloneRepository", repoID, &err)
 	defer done()
 
-	err = s.gitserverClient.Remove(ctx, repo.Name)
-	return err
-}
-
-func (s *repos) RequestRepositoryUpdate(ctx context.Context, repoID api.RepoID) (err error) {
-	repo, err := s.Get(ctx, repoID)
-	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
-	}
-
-	ctx, done := startTrace(ctx, "RequestRepositoryUpdate", repoID, &err)
-	defer done()
-
-	resp, err := s.gitserverClient.RequestRepoUpdate(ctx, repo.Name)
-	if err != nil {
-		return err
-	}
-	if resp.Error != "" {
-		return errors.Newf("requesting update for repo ID %d failed: %s", repoID, resp.Error)
-	}
-
-	return nil
+	return repoupdater.DefaultClient.RecloneRepository(ctx, repo.Name)
 }
 
 // ResolveRev will return the absolute commit for a commit-ish spec in a repo.

@@ -3,9 +3,6 @@ package inttests
 import (
 	"container/list"
 	"context"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
@@ -27,10 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -96,22 +89,9 @@ func TestClone(t *testing.T) {
 		Hostname:                "test-shard",
 	})
 
-	grpcServer := defaults.NewServer(logtest.Scoped(t))
-	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
-
-	handler := internalgrpc.MultiplexHandlers(grpcServer, http.NotFoundHandler())
-	srv := httptest.NewServer(handler)
-	t.Cleanup(srv.Close)
-
-	u, _ := url.Parse(srv.URL)
-	addrs := []string{u.Host}
-	source := gitserver.NewTestClientSource(t, addrs)
-
-	cli := gitserver.NewTestClient(t).WithClientSource(source)
-
 	// Requesting a repo update should figure out that the repo is not yet
 	// cloned and call clone. We expect that clone to succeed.
-	_, err := cli.RequestRepoUpdate(ctx, repo)
+	_, _, err := s.RepoUpdate(ctx, repo)
 	require.NoError(t, err)
 
 	// Should have acquired a lock.
@@ -211,27 +191,14 @@ func TestClone_Fail(t *testing.T) {
 		Hostname:                "test-shard",
 	})
 
-	grpcServer := defaults.NewServer(logtest.Scoped(t))
-	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
-
-	handler := internalgrpc.MultiplexHandlers(grpcServer, http.NotFoundHandler())
-	srv := httptest.NewServer(handler)
-	t.Cleanup(srv.Close)
-
-	u, _ := url.Parse(srv.URL)
-	addrs := []string{u.Host}
-	source := gitserver.NewTestClientSource(t, addrs)
-
-	cli := gitserver.NewTestClient(t).WithClientSource(source)
-
 	// Requesting a repo update should figure out that the repo is not yet
 	// cloned and call clone. We expect that clone to fail, because vcssyncer.IsCloneable
 	// fails here.
-	resp, err := cli.RequestRepoUpdate(ctx, repo)
-	require.NoError(t, err)
+	_, _, err := s.RepoUpdate(ctx, repo)
+	require.Error(t, err)
 	// Note that this error is from IsCloneable(), not from Clone().
-	require.Contains(t, resp.Error, "error cloning repo: repo github.com/test/repo not cloneable:")
-	require.Contains(t, resp.Error, "exit status 128")
+	require.Contains(t, err.Error(), "error cloning repo: repo github.com/test/repo not cloneable:")
+	require.Contains(t, err.Error(), "exit status 128")
 
 	// No lock should have been acquired.
 	mockassert.NotCalled(t, locker.TryAcquireFunc)
@@ -265,9 +232,9 @@ func TestClone_Fail(t *testing.T) {
 	// Requesting another repo update should figure out that the repo is not yet
 	// cloned and call clone. We expect that clone to fail, but in the vcssyncer.Clone
 	// stage this time, not vcssyncer.IsCloneable.
-	resp, err = cli.RequestRepoUpdate(ctx, repo)
-	require.NoError(t, err)
-	require.Contains(t, resp.Error, "failed to clone github.com/test/repo: clone failed. Output: Creating bare repo\nCreated bare repo at")
+	_, _, err = s.RepoUpdate(ctx, repo)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to clone github.com/test/repo: clone failed. Output: Creating bare repo\nCreated bare repo at")
 
 	// Should have acquired a lock.
 	mockassert.CalledOnce(t, locker.TryAcquireFunc)
