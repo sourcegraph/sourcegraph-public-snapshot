@@ -1,14 +1,13 @@
 <script lang="ts">
-    import { buildEditorUrl, buildRepoBaseNameAndPath } from './build-url'
-    import { parseBrowserRepoURL } from '$lib/utils/url'
-    import type { EditorSettings } from './editor-settings'
-    import { getEditor } from './editors'
+    import { type EditorSettings, getEditor, parseBrowserRepoURL, buildRepoBaseNameAndPath, buildEditorUrl } from '$lib/web'
     import { getEditorSettingsErrorMessage } from './build-url'
     import Tooltip from '$lib/Tooltip.svelte'
     import EditorIcon from '$lib/repo/open-in-editor/EditorIcon.svelte'
     import { settings } from '$lib/stores'
     import { mdiCodeBraces } from '@mdi/js'
     import Icon from '$lib/Icon.svelte';
+    import {SourcegraphURL} from '$lib/common';
+    import {page} from '$app/stores';
 
     export let externalServiceType: string = ''
 
@@ -17,6 +16,8 @@
     const editorSettingsErrorMessage = getEditorSettingsErrorMessage(openInEditor)
     const editorIds = (openInEditor as EditorSettings | undefined)?.editorIds ?? []
     const editors = !editorSettingsErrorMessage ? editorIds.map(getEditor) : undefined
+
+    const sourcegraphBaseURL = SourcegraphURL.from($page.url).toString();
 
     const { repoName, filePath, position, range } = parseBrowserRepoURL(window.location.href)
     const start = position || range?.start
@@ -31,6 +32,7 @@
                         buildRepoBaseNameAndPath(repoName, externalServiceType, filePath),
                         start,
                         openInEditor,
+                        sourcegraphBaseURL,
                         i
                     ).toString()}
                     target="_blank"

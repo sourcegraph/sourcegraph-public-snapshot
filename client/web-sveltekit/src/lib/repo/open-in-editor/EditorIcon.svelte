@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { Editor } from '$lib/repo/open-in-editor/editors'
+    import type { Editor } from '$lib/web'
 
     export let editor: Editor
 
