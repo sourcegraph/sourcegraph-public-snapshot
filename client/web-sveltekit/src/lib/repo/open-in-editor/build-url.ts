@@ -56,9 +56,7 @@ export function buildEditorUrl(
     return new URL(doReplacements(url, editorSettings?.replacements))
 }
 
-export function getEditorSettingsErrorMessage(
-    editorSettings: EditorSettings | undefined,
-): string | undefined {
+export function getEditorSettingsErrorMessage(editorSettings: EditorSettings | undefined): string | undefined {
     if (!editorSettings) {
         return 'Add `openInEditor` to your user settings to open files in the editor. Click to learn more.'
     }
@@ -81,7 +79,8 @@ export function getEditorSettingsErrorMessage(
 
     if (validEditorCount !== editorSettings.editorIds.length) {
         return (
-            'Setting `editorIds` must be set to a valid array of values in your user settings to open files. Supported editors: ' + supportedEditors.map(editor => editor.id).join(', ')
+            'Setting `editorIds` must be set to a valid array of values in your user settings to open files. Supported editors: ' +
+            supportedEditors.map(editor => editor.id).join(', ')
         )
     }
     if (editorSettings.editorIds?.includes('custom') && typeof editorSettings['custom.urlPattern'] !== 'string') {

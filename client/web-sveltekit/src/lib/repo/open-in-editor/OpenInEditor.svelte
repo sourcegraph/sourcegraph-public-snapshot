@@ -7,8 +7,8 @@
     import Tooltip from '$lib/Tooltip.svelte'
     import EditorIcon from '$lib/repo/open-in-editor/EditorIcon.svelte'
     import { settings } from '$lib/stores'
-    import { page } from '$app/stores'
-    import { SourcegraphURL } from '$lib/common'
+    import { mdiCodeBraces } from '@mdi/js'
+    import Icon from '$lib/Icon.svelte';
 
     export let externalServiceType: string = ''
 
@@ -45,6 +45,7 @@
 {:else if editorSettingsErrorMessage}
     <Tooltip tooltip={editorSettingsErrorMessage}>
         <a href="https://sourcegraph.com/docs/integration/open_in_editor" target="_blank">
+            <Icon aria-label="Editor" svgPath={mdiCodeBraces} inline />
             <span data-action-label> Editor </span>
         </a>
     </Tooltip>
