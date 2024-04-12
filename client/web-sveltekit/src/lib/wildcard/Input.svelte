@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte'
     import type { FormEventHandler } from 'svelte/elements'
+    import type { ActionReturn } from 'svelte/action';
     import LoadingSpinner from '../LoadingSpinner.svelte'
 
     export let value: string
@@ -8,7 +9,7 @@
     export let autofocus: boolean | undefined
     export let onInput: FormEventHandler<HTMLInputElement> | undefined = undefined
     export let input: HTMLInputElement | undefined = undefined
-    export let actions: Array<(node: HTMLInputElement) => unknown>
+    export let actions: Array<(node: HTMLInputElement) => ActionReturn>
     export let loading: boolean = false
 
     $: bindAction = function bindAction(node: HTMLInputElement) {
