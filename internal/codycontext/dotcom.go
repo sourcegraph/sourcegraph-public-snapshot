@@ -23,11 +23,6 @@ var (
 
 type filterFunc func(string) bool
 
-type repoRevision struct {
-	Repo   types.RepoIDName
-	Commit api.CommitID
-}
-
 type dotcomRepoFilter struct {
 	mu      sync.RWMutex
 	client  gitserver.Client
