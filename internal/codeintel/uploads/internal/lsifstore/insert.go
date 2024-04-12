@@ -101,14 +101,12 @@ VALUES (%s, %s, %s, %s, %s, %s)
 `
 
 func (s *store) NewSyntacticSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, error) {
-
 	scipWriter := &scipWriter{
 		uploadID:             uploadID,
 		db:                   s.db,
 		insertedSymbolsCount: 0,
 		isSyntactic:          true,
 	}
-
 	return scipWriter, nil
 }
 
