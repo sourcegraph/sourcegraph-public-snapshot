@@ -24,7 +24,6 @@
     export let repoURL: string
     export let getRepositoryTags: (query: string) => Promise<RepositoryTags>
     export let onSelect: (tag: RepositoryTag) => void
-    export let onClose: () => void
 
     const {
         elements: { menu, input, option },
@@ -33,13 +32,7 @@
         portal: null,
         forceVisible: true,
         scrollAlignment: 'nearest',
-        onOpenChange: ({ next }) => {
-            if (!next) {
-                onClose()
-            }
-
-            return next
-        },
+        closeOnOutsideClick: false,
         onSelectedChange: ({ next }) => {
             const selectedTag = $repositoryTags.value?.nodes.find(tag => tag.id === next?.value)
 

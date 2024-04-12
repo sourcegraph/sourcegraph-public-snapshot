@@ -24,7 +24,6 @@
     export let repoURL: string
     export let getRepositoryCommits: (query: string) => Promise<RepositoryCommits>
     export let onSelect: (commit: RepositoryGitCommit) => void
-    export let onClose: () => void
 
     const {
         elements: { menu, input, option },
@@ -33,13 +32,7 @@
         portal: null,
         forceVisible: true,
         scrollAlignment: 'nearest',
-        onOpenChange: ({ next }) => {
-            if (!next) {
-                onClose()
-            }
-
-            return next
-        },
+        closeOnOutsideClick: false,
         onSelectedChange: ({ next }) => {
             const selectedCommit = $repositoryCommits.value?.ancestors.nodes.find(commit => commit.id === next?.value)
 

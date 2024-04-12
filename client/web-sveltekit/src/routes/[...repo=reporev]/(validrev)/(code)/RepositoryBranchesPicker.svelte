@@ -24,7 +24,6 @@
     export let repoURL: string
     export let getRepositoryBranches: (query: string) => Promise<RepositoryBranches>
     export let onSelect: (branch: RepositoryBranch) => void
-    export let onClose: () => void
 
     const {
         elements: { menu, input, option },
@@ -33,13 +32,7 @@
         portal: null,
         forceVisible: true,
         scrollAlignment: 'nearest',
-        onOpenChange: ({ next }) => {
-            if (!next) {
-                onClose()
-            }
-
-            return next
-        },
+        closeOnOutsideClick: false,
         onSelectedChange: ({ next }) => {
             const selectedBranch = $repositoryBranches.value?.nodes.find(branch => branch.id === next?.value)
 

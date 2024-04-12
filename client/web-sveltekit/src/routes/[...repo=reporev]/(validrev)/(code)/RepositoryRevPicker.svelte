@@ -58,7 +58,6 @@
                 <RepositoryBranchesPicker
                     {repoURL}
                     {getRepositoryBranches}
-                    onClose={() => toggle(false)}
                     onSelect={branch => {
                         toggle(false)
                         handleBranchOrTagSelect(branch)
@@ -69,7 +68,6 @@
                 <RepositoryTagsPicker
                     {repoURL}
                     {getRepositoryTags}
-                    onClose={() => toggle(false)}
                     onSelect={tag => {
                         toggle(false)
                         handleBranchOrTagSelect(tag)
@@ -80,7 +78,6 @@
                 <RepositoryCommitsPicker
                     {repoURL}
                     {getRepositoryCommits}
-                    onClose={() => toggle(false)}
                     onSelect={commit => {
                         toggle(false)
                         handleCommitSelect(commit)
