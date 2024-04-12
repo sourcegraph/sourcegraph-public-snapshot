@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/hash"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/container"
@@ -207,12 +208,12 @@ func buildBlobstoreDeployment(sg *Sourcegraph) (appsv1.Deployment, error) {
 
 		containerResources = corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{
-				corev1.ResourceCPU:    *limCPU,
-				corev1.ResourceMemory: *limMem,
+				corev1.ResourceCPU:    pointers.DerefZero(limCPU),
+				corev1.ResourceMemory: pointers.DerefZero(limMem),
 			},
 			Requests: corev1.ResourceList{
-				corev1.ResourceCPU:    *reqCPU,
-				corev1.ResourceMemory: *reqMem,
+				corev1.ResourceCPU:    pointers.DerefZero(reqCPU),
+				corev1.ResourceMemory: pointers.DerefZero(reqMem),
 			},
 		}
 	}
