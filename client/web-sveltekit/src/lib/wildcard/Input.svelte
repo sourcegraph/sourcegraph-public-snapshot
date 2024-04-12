@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte'
     import type { FormEventHandler } from 'svelte/elements'
+    import LoadingSpinner from '../LoadingSpinner.svelte'
 
     export let value: string
     export let placeholder: string | undefined
@@ -8,6 +9,7 @@
     export let onInput: FormEventHandler<HTMLInputElement> | undefined = undefined
     export let input: HTMLInputElement | undefined = undefined
     export let actions: Array<(node: HTMLInputElement) => unknown>
+    export let loading: boolean = false
 
     $: bindAction = function bindAction(node: HTMLInputElement) {
         if (actions.length === 0) {
@@ -32,18 +34,31 @@
     })
 </script>
 
-<input
-    bind:this={input}
-    type="text"
-    use:bindAction
-    {value}
-    {autofocus}
-    {placeholder}
-    on:input={onInput}
-    {...$$restProps}
-/>
+<div class="root">
+    <input
+        bind:this={input}
+        type="text"
+        use:bindAction
+        {value}
+        {autofocus}
+        {placeholder}
+        class:with-loader={loading}
+        on:input={onInput}
+        {...$$restProps}
+    />
+
+    {#if loading}
+        <span class="loader">
+            <LoadingSpinner inline />
+        </span>
+    {/if}
+</div>
 
 <style lang="scss">
+    .root {
+        position: relative;
+    }
+
     input {
         display: block;
         width: 100%;
@@ -57,5 +72,16 @@
         background-clip: padding-box;
         border: var(--input-border-width) solid var(--input-border-color);
         border-radius: var(--border-radius);
+    }
+
+    .with-loader {
+        padding-right: 1.5rem;
+    }
+
+    .loader {
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
     }
 </style>
