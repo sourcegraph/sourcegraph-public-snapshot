@@ -2,6 +2,8 @@ package search
 
 import (
 	"context"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/sourcegraph/log"
@@ -91,11 +93,27 @@ func ListAllIndexed(ctx context.Context, zs zoekt.Searcher) (*ZoektAllIndexed, e
 
 func Indexers() *backend.Indexers {
 	indexersOnce.Do(func() {
+		toDrainEnv := strings.Split(os.Getenv("INDEXED_SEARCH_DRAIN_SERVERS"), ",")
+		toDrain := make(map[string]struct{}, len(toDrainEnv))
+		for _, d := range toDrainEnv {
+			toDrain[d] = struct{}{}
+		}
+
 		indexers = &backend.Indexers{
 			Map: endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
-				return conns.Zoekts
+				// Remove endpoints we want to drain from the list of endpoints. As a
+				// consequence no repos will be assigned to the removed endpoints.
+				var connsZoekts []string
+				for _, z := range conns.Zoekts {
+					if _, ok := toDrain[z]; ok {
+						continue
+					}
+					connsZoekts = append(connsZoekts, z)
+				}
+				return connsZoekts
 			}),
 			Indexed: reposAtEndpoint(getIndexedDialer()),
+			ToDrain: toDrain,
 		}
 	})
 	return indexers
