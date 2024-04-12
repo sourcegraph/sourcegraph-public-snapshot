@@ -3,8 +3,6 @@ package vcssyncer
 import (
 	"bytes"
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"io"
 	"os"
 	"os/exec"
@@ -13,12 +11,13 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -63,33 +62,31 @@ func (s *gitRepoSyncer) IsCloneable(ctx context.Context, repoName api.RepoName) 
 		return errors.Wrapf(err, "failed to get remote URL source for %s", repoName)
 	}
 
-	{
-		remoteURL, err := source.RemoteURL(ctx)
-		if err != nil {
-			return errors.Wrapf(err, "failed to get remote URL for %s", repoName)
+	remoteURL, err := source.RemoteURL(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get remote URL for %s", repoName)
+	}
+
+	args := []string{"ls-remote", remoteURL.String(), "HEAD"}
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	r := urlredactor.New(remoteURL)
+	cmd := exec.CommandContext(ctx, "git", args...)
+
+	// Configure the command to be able to talk to a remote.
+	executil.ConfigureRemoteGitCommand(cmd, remoteURL)
+
+	out, err := s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.Redact).CombinedOutput()
+	if err != nil {
+		if ctxerr := ctx.Err(); ctxerr != nil {
+			err = ctxerr
 		}
-
-		args := []string{"ls-remote", remoteURL.String(), "HEAD"}
-		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-		defer cancel()
-
-		r := urlredactor.New(remoteURL)
-		cmd := exec.CommandContext(ctx, "git", args...)
-
-		// Configure the command to be able to talk to a remote.
-		executil.ConfigureRemoteGitCommand(cmd, remoteURL)
-
-		out, err := s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.Redact).CombinedOutput()
-		if err != nil {
-			if ctxerr := ctx.Err(); ctxerr != nil {
-				err = ctxerr
-			}
-			if len(out) > 0 {
-				redactedOutput := urlredactor.New(remoteURL).Redact(string(out))
-				err = errors.Wrap(err, "failed to check remote access: "+redactedOutput)
-			}
-			return err
+		if len(out) > 0 {
+			redactedOutput := r.Redact(string(out))
+			err = errors.Wrap(err, "failed to check remote access: "+redactedOutput)
 		}
+		return err
 	}
 
 	return nil

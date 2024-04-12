@@ -64,6 +64,10 @@ type VCSSyncer interface {
 	// to lazily fetch package versions. More details at
 	// https://github.com/sourcegraph/sourcegraph/issues/37921#issuecomment-1184301885
 	// Beware that the revspec parameter can be any random user-provided string.
+	// 🚨 SECURITY:
+	// Output returned from this function should NEVER contain sensitive information.
+	// The VCSSyncer implementation is responsible of redacting potentially
+	// sensitive data like secrets.
 	Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir, revspec string) ([]byte, error)
 }
 

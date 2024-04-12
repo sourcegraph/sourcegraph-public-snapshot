@@ -924,11 +924,6 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 		dir := s.fs.RepoDir(repo)
 
-		remoteURL, err := s.getRemoteURL(ctx, repo)
-		if err != nil {
-			return errors.Wrap(err, "failed to determine Git remote URL")
-		}
-
 		syncer, err := s.getVCSSyncer(ctx, repo)
 		if err != nil {
 			return errors.Wrap(err, "get VCS syncer")
@@ -942,11 +937,8 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 		defer git.CleanTmpPackFiles(s.logger, dir)
 
 		output, err := syncer.Fetch(ctx, repo, dir, revspec)
-		// TODO: Move the redaction also into the VCSSyncer layer here, to be in line
-		// with what clone does.
-		redactedOutput := urlredactor.New(remoteURL).Redact(string(output))
 		// best-effort update the output of the fetch
-		if err := s.db.GitserverRepos().SetLastOutput(serverCtx, repo, redactedOutput); err != nil {
+		if err := s.db.GitserverRepos().SetLastOutput(serverCtx, repo, string(output)); err != nil {
 			s.logger.Warn("Setting last output in DB", log.Error(err))
 		}
 
@@ -955,7 +947,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 				return err
 			}
 			if output != nil {
-				return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, redactedOutput)
+				return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, string(output))
 			} else {
 				return errors.Wrapf(err, "failed to fetch repo %q", repo)
 			}
