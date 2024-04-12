@@ -297,8 +297,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Metadata related to the SvelteKit app. */
     svelteKit?: {
-        enabledRoutes: string[]
-        availableRoutes: string[]
+        enabledRoutes: number[]
+        knownRoutes: string[]
+        showToggle: boolean
     }
 }
 

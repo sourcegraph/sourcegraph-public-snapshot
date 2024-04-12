@@ -10,6 +10,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
+        "//cmd/frontend/internal/app/ui/sveltekit/tags",
         "//internal/env",
         "//internal/featureflag",
         "//lib/errors",
@@ -20,20 +21,27 @@ go_library(
 
 # Generates a list of available routes for go
 genrule(
-    name = "generate-routes-go",
+    name = "generate_route_info",
     srcs = ["//client/web-sveltekit:sveltekit-pages"],
     outs = [
         "_routes.go",
+        "_routes.ts",
     ],
-    cmd = "BAZEL=1 $(location //cmd/frontend/internal/app/ui/sveltekit/gen:gen_routes) $(locations //client/web-sveltekit:sveltekit-pages) > $@",
+    cmd = "$(location //cmd/frontend/internal/app/ui/sveltekit/gen:gen_routes) -d=$(RULEDIR) $(locations //client/web-sveltekit:sveltekit-pages)",
     tools = [
         "//cmd/frontend/internal/app/ui/sveltekit/gen:gen_routes",
+    ],
+    visibility = [
+        "//client/web:__pkg__",
+        "//client/web-sveltekit:__pkg__",
     ],
 )
 
 write_generated_to_source_files(
     name = "write_generated",
-    output_files = {"routes.go": "_routes.go"},
+    output_files = {
+        "routes.go": "_routes.go",
+    },
     tags = ["go_generate"],
-    target = ":generate-routes-go",
+    target = ":generate_route_info",
 )

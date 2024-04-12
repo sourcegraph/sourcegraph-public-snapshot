@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit/tags"
 )
 
-type route struct {
+type svelteKitRoute struct {
 	// The SvelteKit route ID
 	Id      string
 	// The regular expression pattern that matches the corresponding path
@@ -15,7 +15,7 @@ type route struct {
 	Tag     tags.Tag
 }
 
-var routes = []route{
+var svelteKitRoutes = []svelteKitRoute{
 	{
 		Id:      "/",
 		Pattern: regexp.MustCompile("^/$"),

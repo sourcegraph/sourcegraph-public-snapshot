@@ -6,13 +6,13 @@ import { useLocation } from 'react-router-dom'
 
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { enableSvelteAndReload, isSupportedRoute } from './util'
+import { enableSvelteAndReload, canEnableSvelteKit } from './util'
 
 export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
     const location = useLocation()
     const client = useApolloClient()
 
-    if (!userID || !isSupportedRoute(location.pathname)) {
+    if (!userID || !canEnableSvelteKit(location.pathname)) {
         return null
     }
 

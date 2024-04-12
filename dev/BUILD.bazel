@@ -18,6 +18,8 @@ write_source_files(
     name = "write_all_generated",
     additional_update_targets = [
         "//client/web/src/rbac:write_generated",
+        "//client/web:write_generated_sveltekit_routes",
+        "//client/web-sveltekit:write_generated",
         "//cmd/cody-gateway/internal/dotcom:write_genql_yaml",
         "//cmd/frontend/internal/guardrails/dotcom:write_genql_yaml",
         "//cmd/frontend/internal/app/ui/sveltekit:write_generated",

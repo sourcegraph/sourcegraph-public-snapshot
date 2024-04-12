@@ -90,7 +90,6 @@ func Router() *mux.Router {
 // The router can be accessed by calling Router().
 func InitRouter(db database.DB) {
 	logger := log.Scoped("router")
-	sk := sveltekit.NewRouteRegistry()
 
 	brandedIndex := func(titles string) http.Handler {
 		return handler(db, serveBrandedPageString(db, titles, nil, index))
@@ -102,7 +101,6 @@ func InitRouter(db database.DB) {
 
 	r := mux.NewRouter()
 	r.StrictSlash(true)
-	r.Use(sk.MiddlewareFunc())
 
 	// Top-level routes.
 	r.Path("/").Methods(http.MethodGet, http.MethodHead).Name(routeHome).Handler(handler(db, serveHome(db)))
@@ -239,13 +237,14 @@ func InitRouter(db database.DB) {
 	// Help, has to be defined after about subdomain
 	r.PathPrefix("/help").Methods("GET").Name("help").HandlerFunc(serveHelp)
 
-	// repo, has to come last
+	// repo has to come last
+
 	serveRepoHandler := handler(db, serveRepoOrBlob(db, routeRepo, func(c *Common, r *http.Request) string {
 		// e.g. "gorilla/mux - Sourcegraph"
 		return brandNameSubtitle(repoShortName(c.Repo.Name))
 	}))
 	repoRevPath := "/" + routevar.Repo + routevar.RepoRevSuffix
-	r.Path(repoRevPath).Methods("GET").Name(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	repoRoot := r.Path(repoRevPath).Methods("GET").Name(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Debug mode: register the __errorTest handler.
 		if env.InsecureDev && r.URL.Path == "/__errorTest" {
 			handler(db, serveErrorTest(db)).ServeHTTP(w, r)
@@ -258,6 +257,9 @@ func InitRouter(db database.DB) {
 		}
 		serveRepoHandler.ServeHTTP(w, r)
 	}))
+
+	// We don't need to know about repo subroutes
+	sveltekit.RegisterSvelteKit(r, repoRoot)
 
 	repoRev := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 	// tree
@@ -312,10 +314,6 @@ func InitRouter(db database.DB) {
 	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		serveError(w, r, db, errors.New("route not found"), http.StatusNotFound)
 	})
-
-	//r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
-		//// TODO: Register top-level routes to guard against repo-root match
-	//})
 
 	uirouter.Router = r // make accessible to other packages
 }

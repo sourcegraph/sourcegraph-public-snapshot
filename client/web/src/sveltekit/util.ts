@@ -1,17 +1,43 @@
 import { ApolloClient, gql } from '@apollo/client'
 import { memoize } from 'lodash'
 
-import { PageRoutes, CommunityPageRoutes } from '../routes.constants'
+import { svelteKitRoutes } from './routes'
 
-// List of all top level routes (excluding the index route and the repository catch-all route)
-const allRoutes: string[] = (Object.values(PageRoutes) as string[]).concat(Object.values(CommunityPageRoutes)).filter(
-    route =>
-        // Remove the repository catch-all route because it matches everything and might match other routes
-        // that are not actually the repo container route.
-        route !== PageRoutes.RepoContainer &&
-        // Remove index route because it will be a prefix of every pathname
-        route !== PageRoutes.Index
-)
+let knownRoutesRegex: RegExp | undefined
+
+function getKnownRoutesRegex(): RegExp {
+    if (!knownRoutesRegex) {
+        knownRoutesRegex = new RegExp(`(${window.context?.svelteKit?.knownRoutes?.join(')|(')})`)
+    }
+    return knownRoutesRegex
+}
+
+function findSupportedRouteIndex(pathname: string): number {
+    let index = -1
+
+    for (let i = 0; i < svelteKitRoutes.length; i++) {
+        const route = svelteKitRoutes[i]
+        if (route.pattern.test(pathname)) {
+            index = i
+            if (!route.isRepoRoot) {
+                break
+            }
+            // If the found route is the repo root we have to keep going
+            // to find a more specific route.
+        }
+    }
+
+    if (index !== -1) {
+        // Check known routes to see if there is a more specific route
+        // if yes then we should load the React app.
+        // (if the more specific route is enabled)
+        if (svelteKitRoutes[index].isRepoRoot && getKnownRoutesRegex().test(pathname)) {
+            return -1
+        }
+    }
+
+    return index
+}
 
 /**
  * Returns true if SvelteKit is enabled for the given pathname.
@@ -21,29 +47,18 @@ export const isEnabledRoute = memoize((pathname: string): boolean => {
     // Maps server route names to path regex patterns. These are the routes for which
     // the server will render the SvelteKit app.
     const enabledRoutes = window.context?.svelteKit?.enabledRoutes ?? []
-    for (const route of enabledRoutes) {
-        if (new RegExp(route).test(pathname)) {
-            // TODO: handle repo root catch all
-            return true
-        }
-    }
-    return false
+    const index = findSupportedRouteIndex(pathname)
+    return index !== -1 && enabledRoutes.includes(index)
 })
 
 /**
  * Returns true if the SvelteKit app supports the given pathname, irrespective of whether it is enabled or not.
  */
-export const isSupportedRoute = memoize((pathname: string): boolean => {
-    // Maps server route names to path regex patterns. These are the routes for which
-    // the server will render the SvelteKit app.
-    const availableRoutes = new Set(window.context?.svelteKit?.availableRoutes ?? [])
-    for (const route of availableRoutes) {
-        if (new RegExp(route).test(pathname)) {
-            // TODO: handle repo root catch all
-            return true
-        }
+export const canEnableSvelteKit = memoize((pathname: string): boolean => {
+    if (!window.context?.svelteKit?.showToggle) {
+        return false
     }
-    return false
+    return findSupportedRouteIndex(pathname) !== -1
 })
 
 export async function enableSvelteAndReload(client: ApolloClient<{}>, userID: string): Promise<void> {
