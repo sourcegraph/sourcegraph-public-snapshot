@@ -1592,7 +1592,7 @@ importers:
         specifier: 1.40.1
         version: 1.40.1
       '@sourcegraph/extension-api-types':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../extension-api-types
       '@storybook/addon-essentials':
         specifier: ^8.0.5

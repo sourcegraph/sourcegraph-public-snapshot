@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import { describe, expect, test } from 'vitest'
 
 import type { RepoFile } from '@sourcegraph/shared/src/util/url'
