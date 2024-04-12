@@ -12,16 +12,15 @@
     import { pluralize, SourcegraphURL } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
+    import RepoStars from '$lib/repo/RepoStars.svelte'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
     import CodeExcerpt from '$lib/search/CodeExcerpt.svelte'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { rankContentMatch } from '$lib/search/results'
     import { getFileMatchUrl, type ContentMatch, rankByLine, rankPassthrough } from '$lib/shared'
     import { settings } from '$lib/stores'
 
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
     import PreviewButton from './PreviewButton.svelte'
-    import RepoStars from './RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
     import { getSearchResultsContext } from './searchResultsContext'
 
@@ -79,7 +78,6 @@
 </script>
 
 <SearchResult>
-    <CodeHostIcon slot="icon" repository={result.repository} />
     <FileSearchResultHeader slot="title" {result} />
     <svelte:fragment slot="info">
         {#if result.repoStars}

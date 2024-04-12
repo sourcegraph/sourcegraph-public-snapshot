@@ -1,6 +1,9 @@
 package codycontext
 
 // A large set of stopwords, taken from the ATIRE list here: https://github.com/igorbrigadir/stopwords/tree/master.
+// Custom modifications:
+// - Remove "changes" to improve changelog queries
+// - Remove "own" to improve ownership queries
 var stopWords = stringSet{
 	"'ll":             {},
 	"'ve":             {},
@@ -148,7 +151,6 @@ var stopWords = stringSet{
 	"causes":          {},
 	"certain":         {},
 	"certainly":       {},
-	"changes":         {},
 	"clear":           {},
 	"clearly":         {},
 	"co":              {},
@@ -588,7 +590,6 @@ var stopWords = stringSet{
 	"over":            {},
 	"overall":         {},
 	"owing":           {},
-	"own":             {},
 	"p":               {},
 	"page":            {},
 	"pages":           {},

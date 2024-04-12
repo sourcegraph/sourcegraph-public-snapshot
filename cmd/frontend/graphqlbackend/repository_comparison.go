@@ -74,7 +74,7 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, client gitserv
 		}
 
 		opt := gitserver.ResolveRevisionOptions{
-			NoEnsureRevision: !args.FetchMissing,
+			EnsureRevision: args.FetchMissing,
 		}
 
 		// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't

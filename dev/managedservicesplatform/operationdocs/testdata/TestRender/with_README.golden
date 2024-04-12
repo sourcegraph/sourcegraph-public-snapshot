@@ -1,10 +1,10 @@
-# msp-testbed infrastructure operations
+# MSP Testbed infrastructure operations
 
 <!--
 Generated from: unknown revision of https://github.com/sourcegraph/managed-services
 -->
 
-This document describes operational guidance for msp-testbed infrastructure.
+This document describes operational guidance for MSP Testbed infrastructure.
 This service is operated on the [Managed Services Platform (MSP)](https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/).
 
 > [!IMPORTANT]
@@ -41,6 +41,7 @@ Some additional operations!
 |---------------------|---------------------------------------------------------------------------------------------------------------|
 | Project ID          | [`msp-testbed-test-77589aae45d0`](https://console.cloud.google.com/run?project=msp-testbed-test-77589aae45d0) |
 | Category            | **test**                                                                                                      |
+| Deployment type     | `manual`                                                                                                      |
 | Resources           |                                                                                                               |
 | Slack notifications | [#alerts-msp-testbed-test](https://sourcegraph.slack.com/archives/alerts-msp-testbed-test)                    |
 | Alerts              | [GCP monitoring](https://console.cloud.google.com/monitoring/alerting?project=msp-testbed-test-77589aae45d0)  |
@@ -57,7 +58,7 @@ For Terraform Cloud access, see [test Terraform Cloud](#test-terraform-cloud).
 
 #### test Cloud Run
 
-The msp-testbed test service implementation is deployed on [Google Cloud Run](https://cloud.google.com/run).
+The MSP Testbed test service implementation is deployed on [Google Cloud Run](https://cloud.google.com/run).
 
 |    PROPERTY    |                                                                                                                                                                  DETAILS                                                                                                                                                                   |
 |----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|

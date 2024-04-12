@@ -38,7 +38,7 @@ const (
 // To avoid being reported as a regular file mode by (os.FileMode).IsRegular, it sets other bits
 // (os.ModeDevice) beyond the Git "160000" commit mode bits. The choice of os.ModeDevice is
 // arbitrary.
-const ModeSubmodule = 0160000 | os.ModeDevice
+const ModeSubmodule = 0o160000 | os.ModeDevice
 
 // Submodule holds information about a Git submodule and is
 // returned in the FileInfo's Sys field by Stat/ReadDir calls.
@@ -118,7 +118,6 @@ func (o *GitObject) FromProto(p *proto.GitObject) {
 		ID:   oid,
 		Type: t,
 	}
-
 }
 
 // IsAbsoluteRevision checks if the revision is a git OID SHA string.
@@ -228,16 +227,23 @@ func (m Message) Body() string {
 	return strings.TrimSpace(message[i:])
 }
 
+// PreviousCommit represents the previous commit a file was changed in.
+type PreviousCommit struct {
+	CommitID api.CommitID `json:"commitID"`
+	Filename string       `json:"filename"`
+}
+
 // A Hunk is a contiguous portion of a file associated with a commit.
 type Hunk struct {
-	StartLine uint32 // 1-indexed start line number
-	EndLine   uint32 // 1-indexed end line number
-	StartByte uint32 // 0-indexed start byte position (inclusive)
-	EndByte   uint32 // 0-indexed end byte position (exclusive)
-	CommitID  api.CommitID
-	Author    Signature
-	Message   string
-	Filename  string
+	StartLine      uint32 // 1-indexed start line number
+	EndLine        uint32 // 1-indexed end line number
+	StartByte      uint32 // 0-indexed start byte position (inclusive)
+	EndByte        uint32 // 0-indexed end byte position (exclusive)
+	CommitID       api.CommitID
+	PreviousCommit *PreviousCommit
+	Author         Signature
+	Message        string
+	Filename       string
 }
 
 func HunkFromBlameProto(h *proto.BlameHunk) *Hunk {
@@ -245,14 +251,24 @@ func HunkFromBlameProto(h *proto.BlameHunk) *Hunk {
 		return nil
 	}
 
+	var previousCommit *PreviousCommit
+	protoPreviousCommit := h.GetPreviousCommit()
+	if protoPreviousCommit != nil {
+		previousCommit = &PreviousCommit{
+			CommitID: api.CommitID(protoPreviousCommit.GetCommit()),
+			Filename: protoPreviousCommit.GetFilename(),
+		}
+	}
+
 	return &Hunk{
-		StartLine: h.GetStartLine(),
-		EndLine:   h.GetEndLine(),
-		StartByte: h.GetStartByte(),
-		EndByte:   h.GetEndByte(),
-		CommitID:  api.CommitID(h.GetCommit()),
-		Message:   h.GetMessage(),
-		Filename:  h.GetFilename(),
+		StartLine:      h.GetStartLine(),
+		EndLine:        h.GetEndLine(),
+		StartByte:      h.GetStartByte(),
+		EndByte:        h.GetEndByte(),
+		CommitID:       api.CommitID(h.GetCommit()),
+		PreviousCommit: previousCommit,
+		Message:        h.GetMessage(),
+		Filename:       h.GetFilename(),
 		Author: Signature{
 			Name:  h.GetAuthor().GetName(),
 			Email: h.GetAuthor().GetEmail(),
@@ -266,14 +282,22 @@ func (h *Hunk) ToProto() *proto.BlameHunk {
 		return nil
 	}
 
+	var protoPreviousCommit *proto.PreviousCommit
+	if h.PreviousCommit != nil {
+		protoPreviousCommit = &proto.PreviousCommit{
+			Commit:   string(h.PreviousCommit.CommitID),
+			Filename: h.PreviousCommit.Filename,
+		}
+	}
 	return &proto.BlameHunk{
-		StartLine: uint32(h.StartLine),
-		EndLine:   uint32(h.EndLine),
-		StartByte: uint32(h.StartByte),
-		EndByte:   uint32(h.EndByte),
-		Commit:    string(h.CommitID),
-		Message:   h.Message,
-		Filename:  h.Filename,
+		StartLine:      uint32(h.StartLine),
+		EndLine:        uint32(h.EndLine),
+		StartByte:      uint32(h.StartByte),
+		EndByte:        uint32(h.EndByte),
+		Commit:         string(h.CommitID),
+		PreviousCommit: protoPreviousCommit,
+		Message:        h.Message,
+		Filename:       h.Filename,
 		Author: &proto.BlameAuthor{
 			Name:  h.Author.Name,
 			Email: h.Author.Email,

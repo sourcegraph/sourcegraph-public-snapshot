@@ -74,7 +74,7 @@ mkShell.override { stdenv = if hostPlatform.isMacOS then pkgs.clang11Stdenv else
     nil
 
     # Our core DB.
-    postgresql_13
+    postgresql_12
 
     # Cache and some store data.
     redis
@@ -111,6 +111,8 @@ mkShell.override { stdenv = if hostPlatform.isMacOS then pkgs.clang11Stdenv else
     clippy
 
     bazel-buildtools
+
+    buf
   ] ++ lib.optional hostPlatform.isLinux (with pkgs; [
     # bazel via nix is broken on MacOS for us. Lets just rely on bazelisk from brew.
     # special sauce bazel stuff.

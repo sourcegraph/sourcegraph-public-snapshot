@@ -30,7 +30,7 @@ func NewPersistentVolumeClaim(name, namespace string, options ...Option) (corev1
 			AccessModes: []corev1.PersistentVolumeAccessMode{
 				corev1.ReadWriteOnce,
 			},
-			Resources: corev1.ResourceRequirements{
+			Resources: corev1.VolumeResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceStorage: resource.MustParse("10Gi"),
 				},
@@ -76,7 +76,7 @@ func WithAccessMode(accessModes []corev1.PersistentVolumeAccessMode) Option {
 }
 
 // WithResources sets the given Resource Requirements for the PVC.
-func WithResources(resources corev1.ResourceRequirements) Option {
+func WithResources(resources corev1.VolumeResourceRequirements) Option {
 	return func(pvc *corev1.PersistentVolumeClaim) error {
 		pvc.Spec.Resources = resources
 		return nil

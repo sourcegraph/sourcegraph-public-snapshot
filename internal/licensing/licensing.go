@@ -173,7 +173,7 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 				return nil, "", err
 			}
 
-			if err = info.hasUnknownPlan(); err != nil {
+			if err = info.HasUnknownPlan(); err != nil {
 				return nil, "", err
 			}
 

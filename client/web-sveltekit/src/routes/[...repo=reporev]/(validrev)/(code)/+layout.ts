@@ -37,7 +37,7 @@ export const load: LayoutLoad = ({ parent, params }) => {
         lastCommit: client.query(LastCommitQuery, {
             repoName: repoName,
             revspec: revision,
-            filePath: parentPath,
+            filePath: params.path ?? '',
         }),
         // Fetches the most recent commits for current blob, tree or repo root
         commitHistory: infinityQuery({

@@ -176,12 +176,18 @@ func (a *AnthropicHandlerMethods) transformRequest(r *http.Request) {
 
 func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody anthropicRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
 	var err error
+
+	// Setting a default -1 value so that in case of errors the tokenizer computed tokens don't impact the data
+	completionUsage.tokenizerTokens = -1
+	promptUsage.tokenizerTokens = -1
+
 	// First, extract prompt usage details from the request.
 	promptUsage.characters = len(reqBody.Prompt)
 	promptUsage.tokens, err = reqBody.GetPromptTokenCount(a.anthropicTokenizer)
 	if err != nil {
 		logger.Error("failed to count tokens in Anthropic response", log.Error(err))
 	}
+	promptUsage.tokenizerTokens = promptUsage.tokens
 
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
@@ -198,6 +204,7 @@ func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 			logger.Error("failed to count tokens in Anthropic response", log.Error(err))
 		} else {
 			completionUsage.tokens = len(tokens)
+			completionUsage.tokenizerTokens = completionUsage.tokens
 		}
 		return promptUsage, completionUsage
 	}
@@ -234,5 +241,6 @@ func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 	} else {
 		completionUsage.tokens = len(tokens)
 	}
+	completionUsage.tokenizerTokens = completionUsage.tokens
 	return promptUsage, completionUsage
 }

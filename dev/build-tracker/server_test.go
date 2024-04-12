@@ -224,21 +224,21 @@ func TestProcessEvent(t *testing.T) {
 		job := buildkite.Job{Name: &name, ExitStatus: &jobExitCode, State: &jobState}
 		return &build.Event{Name: build.EventJobFinished, Build: buildkite.Build{State: &state, Number: &buildNumber, Pipeline: pipeline}, Job: job}
 	}
-	newBuildEvent := func(name string, buildNumber int, state string, jobExitCode int) *build.Event {
+	newBuildEvent := func(name string, buildNumber int, state string, branch string, jobExitCode int) *build.Event {
 		job := newJobEvent(name, buildNumber, jobExitCode)
 		pipelineID := "pipeline"
 		pipeline := &buildkite.Pipeline{
 			ID:   &pipelineID,
 			Name: &pipelineID,
 		}
-		return &build.Event{Name: build.EventBuildFinished, Build: buildkite.Build{State: &state, Number: &buildNumber, Pipeline: pipeline}, Job: job.Job}
+		return &build.Event{Name: build.EventBuildFinished, Build: buildkite.Build{State: &state, Branch: &branch, Number: &buildNumber, Pipeline: pipeline}, Job: job.Job}
 	}
 	t.Run("no send notification on unfinished builds", func(t *testing.T) {
 		server := NewServer(":8080", logger, config.Config{})
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
-		buildStartedEvent := newBuildEvent("test 2", buildNumber, "failed", 1)
+		buildStartedEvent := newBuildEvent("test 2", buildNumber, "failed", "main", 1)
 		buildStartedEvent.Name = "build.started"
 		server.processEvent(buildStartedEvent)
 		require.Equal(t, 0, mockNotifyClient.sendCalled)
@@ -256,7 +256,7 @@ func TestProcessEvent(t *testing.T) {
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
 		server.processEvent(newJobEvent("test", buildNumber, 0))
-		server.processEvent(newBuildEvent("test 2", buildNumber, "failed", 1))
+		server.processEvent(newBuildEvent("test 2", buildNumber, "failed", "main", 1))
 
 		require.Equal(t, 1, mockNotifyClient.sendCalled)
 
@@ -272,7 +272,7 @@ func TestProcessEvent(t *testing.T) {
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
 		server.processEvent(newJobEvent("test", buildNumber, 0))
-		server.processEvent(newBuildEvent("test 2", buildNumber, "passed", 0))
+		server.processEvent(newBuildEvent("test 2", buildNumber, "passed", "main", 0))
 
 		require.Equal(t, 0, mockNotifyClient.sendCalled)
 
@@ -289,7 +289,7 @@ func TestProcessEvent(t *testing.T) {
 		buildNumber := 1234
 
 		server.processEvent(newJobEvent("test 1", buildNumber, 1))
-		server.processEvent(newBuildEvent("test 2", buildNumber, "failed", 1))
+		server.processEvent(newBuildEvent("test 2", buildNumber, "failed", "main", 1))
 
 		require.Equal(t, 1, mockNotifyClient.sendCalled)
 
@@ -299,7 +299,7 @@ func TestProcessEvent(t *testing.T) {
 		require.Equal(t, "failed", *builds[0].State)
 
 		server.processEvent(newJobEvent("test 1", buildNumber, 0))
-		server.processEvent(newBuildEvent("test 2", buildNumber, "passed", 0))
+		server.processEvent(newBuildEvent("test 2", buildNumber, "passed", "main", 0))
 
 		builds = server.store.FinishedBuilds()
 		require.Equal(t, 1, len(builds))

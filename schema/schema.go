@@ -369,6 +369,8 @@ type BitbucketCloudConnection struct {
 	GitURLType string `json:"gitURLType,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to Bitbucket Cloud.
 	RateLimit *BitbucketCloudRateLimit `json:"rateLimit,omitempty"`
+	// Repos description: An array of repository "projectKey/repositorySlug" strings specifying repositories to mirror on Sourcegraph.
+	Repos []string `json:"repos,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Cloud repository.
 	//
 	//  - "{host}" is replaced with the Bitbucket Cloud URL's host (such as bitbucket.org),  and "{nameWithOwner}" is replaced with the Bitbucket Cloud repository's "owner/path" (such as "myorg/myrepo").
@@ -1653,6 +1655,9 @@ type Notice struct {
 	Location string `json:"location"`
 	// Message description: The message to display. Markdown formatting is supported.
 	Message string `json:"message"`
+	// StyleOverrides description: Overrides for the notice's default style. You probably want to use notice 'variant' setting instead.
+	StyleOverrides *StyleOverrides `json:"styleOverrides,omitempty"`
+	Variant        string          `json:"variant,omitempty"`
 }
 type Notifications struct {
 	// Key description: e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.
@@ -3180,6 +3185,16 @@ type Step struct {
 	Outputs map[string]OutputVariable `json:"outputs,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 	Run string `json:"run"`
+}
+
+// StyleOverrides description: Overrides for the notice's default style. You probably want to use notice 'variant' setting instead.
+type StyleOverrides struct {
+	// BackgroundColor description: The hex code of the background color for this notice.
+	BackgroundColor string `json:"backgroundColor,omitempty"`
+	// TextCentered description: Whether the notice text should be centered.
+	TextCentered bool `json:"textCentered,omitempty"`
+	// TextColor description: The hex code of the text color for this notice.
+	TextColor string `json:"textColor,omitempty"`
 }
 type SubRepoPermissions struct {
 	// Enabled description: Enables sub-repo permission checking
