@@ -1,8 +1,10 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "appliance",
     srcs = [
+        "blobstore.go",
         "reconcile.go",
         "spec.go",
     ],
@@ -10,10 +12,13 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/appliance/hash",
+        "//internal/k8s/resource/pvc",
+        "//internal/maps",
         "//lib/errors",
         "@io_k8s_api//apps/v1:apps",
         "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/api/resource",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
         "@io_k8s_apimachinery//pkg/runtime",
         "@io_k8s_apimachinery//pkg/types",
@@ -25,4 +30,10 @@ go_library(
         "@io_k8s_sigs_controller_runtime//pkg/reconcile",
         "@io_k8s_sigs_yaml//:yaml",
     ],
+)
+
+go_test(
+    name = "appliance_test",
+    srcs = ["blobstore_test.go"],
+    embed = [":appliance"],
 )
