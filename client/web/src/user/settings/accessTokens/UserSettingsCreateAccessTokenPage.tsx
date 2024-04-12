@@ -6,6 +6,7 @@ import { concat, Subject } from 'rxjs'
 import { catchError, concatMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
@@ -31,7 +32,7 @@ import type { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { createAccessToken } from './create'
 
-interface Props extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryProps {
+interface Props extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryProps, TelemetryV2Props {
     /**
      * Called when a new access token is created and should be temporarily displayed to the user.
      */
@@ -43,6 +44,7 @@ interface Props extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryPro
  */
 export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    telemetryRecorder,
     onDidCreateAccessToken,
     user,
 }) => {
@@ -54,7 +56,8 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
 
     useMemo(() => {
         telemetryService.logViewEvent('NewAccessToken')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('settings.token.create', 'view')
+    }, [telemetryService, telemetryRecorder])
 
     /** The contents of the note input field. */
     const defaultNoteValue = new URLSearchParams(location.search).get('description') || undefined
@@ -93,7 +96,13 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                     concatMap(() =>
                         concat(
                             ['loading'],
-                            createAccessToken(user.id, scopes, note, expiry !== undefined ? expiry : null).pipe(
+                            createAccessToken({
+                                user: user.id,
+                                scopes,
+                                note,
+                                durationSeconds: expiry !== undefined ? expiry : null,
+                                telemetryRecorder,
+                            }).pipe(
                                 tap(result => {
                                     // Go back to access tokens list page and display the token secret value.
                                     navigate('..', { relative: 'path' })
@@ -104,7 +113,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         )
                     )
                 ),
-            [navigate, note, onDidCreateAccessToken, scopes, submits, user.id, expiry]
+            [navigate, note, onDidCreateAccessToken, scopes, submits, user.id, expiry, telemetryRecorder]
         )
     )
 

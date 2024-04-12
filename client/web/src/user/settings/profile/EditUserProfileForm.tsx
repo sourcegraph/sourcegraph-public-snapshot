@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { lastValueFrom } from 'rxjs'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Container, Button, Alert, Form } from '@sourcegraph/wildcard'
 
@@ -23,7 +24,7 @@ export const UPDATE_USER = gql`
     }
 `
 
-interface Props {
+interface Props extends TelemetryV2Props {
     user: Pick<EditUserProfilePage, 'id' | 'viewerCanChangeUsername' | 'scimControlled'>
     initialValue: UserProfileFormFieldsValue
     after?: React.ReactNode
@@ -36,11 +37,13 @@ export const EditUserProfileForm: React.FunctionComponent<React.PropsWithChildre
     user,
     initialValue,
     after,
+    telemetryRecorder,
 }) => {
     const navigate = useNavigate()
     const [updateUser, { data, loading, error }] = useMutation<UpdateUserResult, UpdateUserVariables>(UPDATE_USER, {
         onCompleted: ({ updateUser }) => {
             EVENT_LOGGER.log('UserProfileUpdated')
+            telemetryRecorder.recordEvent('settings.profile', 'update')
             navigate(`/users/${updateUser.username}/settings/profile`, { replace: true })
 
             // In case the edited user is the current user, immediately reflect the changes in the
@@ -48,7 +51,10 @@ export const EditUserProfileForm: React.FunctionComponent<React.PropsWithChildre
             // TODO: Migrate this to use the Apollo cache
             lastValueFrom(refreshAuthenticatedUser(), { defaultValue: undefined }).finally(() => {})
         },
-        onError: () => EVENT_LOGGER.log('UpdateUserFailed'),
+        onError: () => {
+            EVENT_LOGGER.log('UpdateUserFailed')
+            telemetryRecorder.recordEvent('settings.profile', 'updateFail')
+        },
     })
 
     const [userFields, setUserFields] = useState<UserProfileFormFieldsValue>(initialValue)

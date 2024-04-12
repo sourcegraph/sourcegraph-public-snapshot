@@ -5,6 +5,7 @@ import { lastValueFrom } from 'rxjs'
 
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Container, PageHeader, LoadingSpinner, Alert, ErrorAlert } from '@sourcegraph/wildcard'
 
@@ -27,7 +28,7 @@ import { UserEmail } from './UserEmail'
 
 import styles from './UserSettingsEmailsPage.module.scss'
 
-interface Props {
+interface Props extends TelemetryV2Props {
     user: UserSettingsAreaUserFields
 }
 
@@ -45,7 +46,10 @@ const FLAGS_QUERY = gql`
     }
 `
 
-export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<Props>> = ({ user }) => {
+export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<Props>> = ({
+    user,
+    telemetryRecorder,
+}) => {
     const [emails, setEmails] = useState<UserEmailType[]>([])
     const [statusOrError, setStatusOrError] = useState<Status>()
     const [emailActionError, setEmailActionError] = useState<EmailActionError>()
@@ -80,7 +84,8 @@ export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<P
 
     useEffect(() => {
         EVENT_LOGGER.logViewEvent('UserSettingsEmails')
-    }, [])
+        telemetryRecorder.recordEvent('settings.emails', 'view')
+    }, [telemetryRecorder])
 
     useEffect(() => {
         fetchEmails().catch(error => {
@@ -120,6 +125,7 @@ export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<P
                                 onDidRemove={onEmailRemove}
                                 onError={setEmailActionError}
                                 disableControls={user.scimControlled}
+                                telemetryRecorder={telemetryRecorder}
                             />
                         </li>
                     ))}
@@ -134,9 +140,15 @@ export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<P
                 user={user}
                 onDidAdd={fetchEmails}
                 emails={new Set(emails.map(userEmail => userEmail.email))}
+                telemetryRecorder={telemetryRecorder}
             />
             <hr className="my-4" aria-hidden="true" />
-            <SetUserPrimaryEmailForm user={user} emails={emails} onDidSet={fetchEmails} />
+            <SetUserPrimaryEmailForm
+                user={user}
+                emails={emails}
+                onDidSet={fetchEmails}
+                telemetryRecorder={telemetryRecorder}
+            />
         </div>
     )
 }

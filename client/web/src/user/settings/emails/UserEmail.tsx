@@ -4,6 +4,7 @@ import { lastValueFrom } from 'rxjs'
 
 import { asError, type ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Badge, Button, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
@@ -20,7 +21,7 @@ import type {
 
 import styles from './UserEmail.module.scss'
 
-interface Props {
+interface Props extends TelemetryV2Props {
     user: string
     email: (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
     disableControls: boolean
@@ -33,6 +34,7 @@ interface Props {
 export const resendVerificationEmail = async (
     userID: string,
     email: string,
+    telemetryRecorder: TelemetryV2Props['telemetryRecorder'],
     options?: { onSuccess: () => void; onError: (error: ErrorLike) => void }
 ): Promise<void> => {
     try {
@@ -52,6 +54,7 @@ export const resendVerificationEmail = async (
         )
 
         EVENT_LOGGER.log('UserEmailAddressVerificationResent')
+        telemetryRecorder.recordEvent('settings.email.verification', 'resend')
 
         options?.onSuccess?.()
     } catch (error) {
@@ -67,6 +70,7 @@ export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
     onDidRemove,
     onEmailVerify,
     onEmailResendVerification,
+    telemetryRecorder,
 }) => {
     const [isLoading, setIsLoading] = useState(false)
 
@@ -99,6 +103,7 @@ export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
 
             setIsLoading(false)
             EVENT_LOGGER.log('UserEmailAddressDeleted')
+            telemetryRecorder.recordEvent('settings.email', 'delete')
             screenReaderAnnounce('Email address removed')
 
             if (onDidRemove) {
@@ -132,8 +137,10 @@ export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
 
             if (verified) {
                 EVENT_LOGGER.log('UserEmailAddressMarkedVerified')
+                telemetryRecorder.recordEvent('settings.email', 'verify')
             } else {
                 EVENT_LOGGER.log('UserEmailAddressMarkedUnverified')
+                telemetryRecorder.recordEvent('settings.email', 'unverify')
             }
 
             if (onEmailVerify) {
@@ -146,14 +153,14 @@ export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
 
     const resendEmail = useCallback(async () => {
         setIsLoading(true)
-        await resendVerificationEmail(user, email, {
+        await resendVerificationEmail(user, email, telemetryRecorder, {
             onSuccess: () => {
                 setIsLoading(false)
                 onEmailResendVerification?.()
             },
             onError: handleError,
         })
-    }, [user, email, onEmailResendVerification, handleError])
+    }, [user, email, onEmailResendVerification, handleError, telemetryRecorder])
 
     return (
         <>
