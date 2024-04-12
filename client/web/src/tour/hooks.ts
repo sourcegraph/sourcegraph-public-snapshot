@@ -27,10 +27,10 @@ export function useShowOnboardingSetup(): boolean {
     const [config, , configStatus] = useTemporarySetting('onboarding.userconfig')
     const { recentSearches, state: searchesStatus } = useRecentSearches()
     return (
-        (configStatus === 'loaded' &&
-            searchesStatus === 'success' &&
-            !!recentSearches &&
-            recentSearches.length < MIN_QUERIES &&
-            !(config?.skipped || config?.userinfo))
+        configStatus === 'loaded' &&
+        searchesStatus === 'success' &&
+        !!recentSearches &&
+        recentSearches.length < MIN_QUERIES &&
+        !(config?.skipped || config?.userinfo)
     )
 }

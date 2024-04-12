@@ -12,7 +12,7 @@ import { useTour } from './useTour'
 import { canRunStep, isNotNullOrUndefined, isQuerySuccessful } from './utils'
 
 // Ensure tour names are known strings
-type tourIds = 'MockTour' | 'GettingStarted'
+type tourIds = 'MockTour' | 'GettingStarted' | 'TourStorybook'
 
 export type TourProps = TelemetryProps &
     TelemetryV2Props & {
