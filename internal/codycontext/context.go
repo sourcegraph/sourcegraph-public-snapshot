@@ -301,6 +301,12 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 			mu.Lock()
 			defer mu.Unlock()
 
+			// Another caller may have already hit the limit, but we haven't yet responded
+			// to the cancellation. Return immediately in this case.
+			if len(collected) >= limit {
+				return
+			}
+
 			for _, res := range e.Results {
 				if fm, ok := res.(*result.FileMatch); ok {
 					collected = append(collected, filter(fileMatchToContextMatches(fm))...)
