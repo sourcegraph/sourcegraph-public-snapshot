@@ -1,5 +1,7 @@
 import { type RepoFile, encodeRepoRevision, parseBrowserRepoURL } from '@sourcegraph/shared/src/util/url'
 
+export { parseBrowserRepoURL }
+
 export function toTreeURL(target: RepoFile): string {
     return `/${encodeRepoRevision(target)}/-/tree/${target.filePath}`
 }
