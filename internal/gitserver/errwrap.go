@@ -181,11 +181,6 @@ func (r *errorTranslatingArchiveClient) Recv() (*proto.ArchiveResponse, error) {
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 
-func (r *errorTranslatingClient) RepoClone(ctx context.Context, in *proto.RepoCloneRequest, opts ...grpc.CallOption) (*proto.RepoCloneResponse, error) {
-	res, err := r.base.RepoClone(ctx, in, opts...)
-	return res, convertGRPCErrorToGitDomainError(err)
-}
-
 func (r *errorTranslatingClient) RepoCloneProgress(ctx context.Context, in *proto.RepoCloneProgressRequest, opts ...grpc.CallOption) (*proto.RepoCloneProgressResponse, error) {
 	res, err := r.base.RepoCloneProgress(ctx, in, opts...)
 	return res, convertGRPCErrorToGitDomainError(err)

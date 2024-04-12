@@ -12,11 +12,10 @@ go_library(
         "syntect_language_map.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/highlight",
-    visibility = ["//cmd/frontend:__subpackages__"],
+    visibility = ["//:__subpackages__"],
     deps = [
         "//internal/binary",
         "//internal/conf",
-        "//internal/conf/conftypes",
         "//internal/gosyntect",
         "//internal/honey",
         "//internal/observation",

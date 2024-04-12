@@ -4461,13 +4461,6 @@ def go_dependencies():
         version = "v0.1.1-0.20220428063043-89078438f170",
     )
     go_repository(
-        name = "com_github_pandatix_go_cvss",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/pandatix/go-cvss",
-        sum = "h1:9441i+Sn/P/TP9kNBl3kI7mwYtNYFr1eN8JdsiybiMM=",
-        version = "v0.5.2",
-    )
-    go_repository(
         name = "com_github_pascaldekloe_goe",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/pascaldekloe/goe",
@@ -5339,6 +5332,10 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
+        patch_args = ["-p1"],
+        patches = [
+            "//third_party/com_github_sourcegraph_zoekt:x_defs_version.patch",
+        ],
         sum = "h1:tMqptvT8zd2xD1Yl11zDd42fBHxlT40zJoPU+Vl8REI=",
         version = "v0.0.0-20240402071238-c39011a14191",
     )
