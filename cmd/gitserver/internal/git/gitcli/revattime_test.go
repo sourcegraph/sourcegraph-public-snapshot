@@ -75,6 +75,11 @@ func TestGitCLIBackend_RevAtTime(t *testing.T) {
 		commit, err = backend.RevAtTime(ctx, "noexist", time.Date(2048, 6, 1, 0, 0, 0, 0, time.UTC))
 		require.Error(t, err)
 		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+
+		// Invalid OID returns a rev not found error
+		commit, err = backend.RevAtTime(ctx, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", time.Date(2048, 6, 1, 0, 0, 0, 0, time.UTC))
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
 	})
 
 	t.Run("out of order commit date", func(t *testing.T) {
