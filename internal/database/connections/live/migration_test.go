@@ -57,7 +57,7 @@ func testMigrations(t *testing.T, name string, schema *schemas.Schema) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := dbtest.NewRawDB(logger, t)
-	storeFactory := newStoreFactory(&observation.TestContext)
+	storeFactory := newStoreFactory(observation.TestContextTB(t))
 	migrationRunner := runnerFromDB(logger, storeFactory, db, schema)
 	all := schema.Definitions.All()
 

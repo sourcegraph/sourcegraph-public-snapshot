@@ -1,7 +1,7 @@
 import type { QueryResult } from '@apollo/client'
 import { parse as parseJSONC } from 'jsonc-parser'
-import type { Observable } from 'rxjs'
-import { map, mapTo, tap } from 'rxjs/operators'
+import { lastValueFrom, type Observable } from 'rxjs'
+import { map, tap } from 'rxjs/operators'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
@@ -112,7 +112,6 @@ const mirrorRepositoryInfoFieldsFragment = gql`
     fragment MirrorRepositoryInfoFields on MirrorRepositoryInfo {
         cloned
         cloneInProgress
-        cloneProgress @include(if: $displayCloneProgress)
         updatedAt
         nextSyncAt
         isCorrupted
@@ -170,7 +169,6 @@ export const REPOSITORIES_QUERY = gql`
         $orderBy: RepositoryOrderBy
         $descending: Boolean
         $externalService: ID
-        $displayCloneProgress: Boolean = false
     ) {
         repositories(
             first: $first
@@ -317,20 +315,22 @@ export const CHECK_MIRROR_REPOSITORY_CONNECTION = gql`
     }
 `
 
-export function scheduleRepositoryPermissionsSync(args: { repository: Scalars['ID'] }): Observable<void> {
-    return requestGraphQL<ScheduleRepositoryPermissionsSyncResult, ScheduleRepositoryPermissionsSyncVariables>(
-        gql`
-            mutation ScheduleRepositoryPermissionsSync($repository: ID!) {
-                scheduleRepositoryPermissionsSync(repository: $repository) {
-                    alwaysNil
+export function scheduleRepositoryPermissionsSync(args: { repository: Scalars['ID'] }): Promise<void> {
+    return lastValueFrom(
+        requestGraphQL<ScheduleRepositoryPermissionsSyncResult, ScheduleRepositoryPermissionsSyncVariables>(
+            gql`
+                mutation ScheduleRepositoryPermissionsSync($repository: ID!) {
+                    scheduleRepositoryPermissionsSync(repository: $repository) {
+                        alwaysNil
+                    }
                 }
-            }
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        tap(() => resetAllMemoizationCaches()),
-        mapTo(undefined)
+            `,
+            args
+        ).pipe(
+            map(dataOrThrowErrors),
+            tap(() => resetAllMemoizationCaches()),
+            map(() => undefined)
+        )
     )
 }
 
@@ -520,19 +520,21 @@ export function reloadSite(): Observable<void> {
     )
 }
 
-export function setUserIsSiteAdmin(userID: Scalars['ID'], siteAdmin: boolean): Observable<void> {
-    return requestGraphQL<SetUserIsSiteAdminResult, SetUserIsSiteAdminVariables>(
-        gql`
-            mutation SetUserIsSiteAdmin($userID: ID!, $siteAdmin: Boolean!) {
-                setUserIsSiteAdmin(userID: $userID, siteAdmin: $siteAdmin) {
-                    alwaysNil
+export function setUserIsSiteAdmin(userID: Scalars['ID'], siteAdmin: boolean): Promise<void> {
+    return lastValueFrom(
+        requestGraphQL<SetUserIsSiteAdminResult, SetUserIsSiteAdminVariables>(
+            gql`
+                mutation SetUserIsSiteAdmin($userID: ID!, $siteAdmin: Boolean!) {
+                    setUserIsSiteAdmin(userID: $userID, siteAdmin: $siteAdmin) {
+                        alwaysNil
+                    }
                 }
-            }
-        `,
-        { userID, siteAdmin }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(() => undefined)
+            `,
+            { userID, siteAdmin }
+        ).pipe(
+            map(dataOrThrowErrors),
+            map(() => undefined)
+        )
     )
 }
 
@@ -572,17 +574,17 @@ export function createUser(username: string, email: string | undefined): Observa
 }
 
 export function deleteOrganization(organization: Scalars['ID']): Promise<void> {
-    return requestGraphQL<DeleteOrganizationResult, DeleteOrganizationVariables>(
-        gql`
-            mutation DeleteOrganization($organization: ID!) {
-                deleteOrganization(organization: $organization) {
-                    alwaysNil
+    return lastValueFrom(
+        requestGraphQL<DeleteOrganizationResult, DeleteOrganizationVariables>(
+            gql`
+                mutation DeleteOrganization($organization: ID!) {
+                    deleteOrganization(organization: $organization) {
+                        alwaysNil
+                    }
                 }
-            }
-        `,
-        { organization }
-    )
-        .pipe(
+            `,
+            { organization }
+        ).pipe(
             map(dataOrThrowErrors),
             map(data => {
                 if (!data.deleteOrganization) {
@@ -590,7 +592,7 @@ export function deleteOrganization(organization: Scalars['ID']): Promise<void> {
                 }
             })
         )
-        .toPromise()
+    )
 }
 
 export const SITE_UPDATE_CHECK = gql`
@@ -1001,13 +1003,7 @@ const siteAdminPackageFieldsFragment = gql`
 `
 
 export const PACKAGES_QUERY = gql`
-    query Packages(
-        $kind: PackageRepoReferenceKind
-        $name: String
-        $first: Int!
-        $after: String
-        $displayCloneProgress: Boolean = false
-    ) {
+    query Packages($kind: PackageRepoReferenceKind, $name: String, $first: Int!, $after: String) {
         packageRepoReferences(kind: $kind, name: $name, first: $first, after: $after) {
             nodes {
                 ...SiteAdminPackageFields

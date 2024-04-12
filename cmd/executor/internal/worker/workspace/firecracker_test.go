@@ -20,7 +20,7 @@ import (
 )
 
 func TestNewFirecrackerWorkspace(t *testing.T) {
-	operations := command.NewOperations(&observation.TestContext)
+	operations := command.NewOperations(observation.TestContextTB(t))
 
 	tests := []struct {
 		name                   string

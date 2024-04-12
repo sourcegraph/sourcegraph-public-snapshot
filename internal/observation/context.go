@@ -50,11 +50,11 @@ var TestContext = Context{
 }
 
 // TestContextTB creates a Context similar to `TestContext` but with a logger scoped
-// to the `testing.TB`.
+// to the `testing.TB` and a pedantic Registerer.
 func TestContextTB(t testing.TB) *Context {
 	return &Context{
 		Logger:     logtest.Scoped(t),
-		Registerer: metrics.NoOpRegisterer,
+		Registerer: prometheus.NewPedanticRegistry(),
 		Tracer:     noop.NewTracerProvider().Tracer("noop"),
 	}
 }

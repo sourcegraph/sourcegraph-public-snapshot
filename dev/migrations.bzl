@@ -5,10 +5,6 @@ CMD_PREAMBLE = """set -e
 export HOME=$(pwd)
 export SG_FORCE_REPO_ROOT=$(pwd)
 
-if [ -n "$PG_UTILS_PATH" ]; then
-    PATH="$PG_UTILS_PATH:$PATH"
-fi
-
 if [ -z "$PGUSER" ]; then
     export PGUSER="sourcegraph"
 fi
@@ -45,6 +41,18 @@ fi
 # Dumping the schema requires running the squash operation first, as it reuses the database, so we do all of those operations
 # in a single step.
 def _generate_schemas_impl(ctx):
+    # for every entry in pgutils filegroup, there's two files:
+    # - one in external e.g. external/createdb-linux-amd64/file/downloaded
+    # - one in output base e.g. bazel-out/k8-opt-exec-ST-13d3ddad9198/bin/dev/tools/createdb
+    # only the one in output base can be picked up by-name in PATH, so we need to filter out the ones in external.
+    pgutils_path = ":".join([
+        f.path.rpartition("/")[0]
+        for f in ctx.attr._pg_utils[DefaultInfo].default_runfiles.files.to_list()
+        if not f.path.startswith("external")
+    ])
+
+    runfiles = depset(direct = ctx.attr._sg[DefaultInfo].default_runfiles.files.to_list() + ctx.attr._pg_utils[DefaultInfo].default_runfiles.files.to_list())
+
     ctx.actions.run_shell(
         inputs = ctx.files.srcs,
         outputs = [
@@ -61,7 +69,16 @@ def _generate_schemas_impl(ctx):
         progress_message = "Running sg migration ...",
         use_default_shell_env = True,
         execution_requirements = {"requires-network": "1"},
+        env = {
+            # needed because of https://github.com/golang/go/issues/53962
+            "GODEBUG": "execerrdot=0",
+            # blank out PATH so that we don't pick up host binaries if we end up using more than what
+            # //dev:pg_utils filegroup provides.
+            "PATH": "",
+        },
         command = """{cmd_preamble}
+
+        export PATH="{pgutils_path}:$PATH"
 
         trap "dropdb --if-exists sg-squasher-frontend && echo 'temp db sg-squasher-frontend dropped'" EXIT
         trap "dropdb --if-exists sg-squasher-codeintel && echo 'temp db sg-squasher-codeintel dropped'" EXIT
@@ -82,6 +99,7 @@ def _generate_schemas_impl(ctx):
         """.format(
             cmd_preamble = CMD_PREAMBLE,
             sg = ctx.executable._sg.path,
+            pgutils_path = pgutils_path,
             out_frontend_squash = ctx.outputs.out_frontend_squash.path,
             out_codeintel_squash = ctx.outputs.out_codeintel_squash.path,
             out_codeinsights_squash = ctx.outputs.out_codeinsights_squash.path,
@@ -92,7 +110,7 @@ def _generate_schemas_impl(ctx):
             out_codeintel_schema_md = ctx.outputs.out_codeintel_schema_md.path,
             out_codeinsights_schema_md = ctx.outputs.out_codeinsights_schema_md.path,
         ),
-        tools = ctx.attr._sg[DefaultInfo].default_runfiles.files,
+        tools = runfiles,
     )
 
     return [
@@ -138,5 +156,6 @@ generate_schemas = rule(
         "out_codeintel_schema_md": attr.output(mandatory = True),
         "out_codeinsights_schema_md": attr.output(mandatory = True),
         "_sg": attr.label(executable = True, default = "//dev/sg:sg", cfg = "exec"),
+        "_pg_utils": attr.label(default = ":pg_utils", cfg = "exec"),
     },
 )

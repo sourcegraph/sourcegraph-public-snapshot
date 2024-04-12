@@ -116,7 +116,7 @@ func TestKubernetesRunner_Run(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			clientset := fake.NewSimpleClientset()
-			cmd := &command.KubernetesCommand{Logger: logtest.Scoped(t), Clientset: clientset, Operations: command.NewOperations(&observation.TestContext)}
+			cmd := &command.KubernetesCommand{Logger: logtest.Scoped(t), Clientset: clientset, Operations: command.NewOperations(observation.TestContextTB(t))}
 			logger := runner.NewMockLogger()
 			logEntry := runner.NewMockLogEntry()
 			teardownLogEntry := runner.NewMockLogEntry()
@@ -181,7 +181,7 @@ func TestKubernetesRunner_Run(t *testing.T) {
 
 func TestKubernetesRunner_Teardown(t *testing.T) {
 	clientset := fake.NewSimpleClientset()
-	cmd := &command.KubernetesCommand{Logger: logtest.Scoped(t), Clientset: clientset, Operations: command.NewOperations(&observation.TestContext)}
+	cmd := &command.KubernetesCommand{Logger: logtest.Scoped(t), Clientset: clientset, Operations: command.NewOperations(observation.TestContextTB(t))}
 	logger := runner.NewMockLogger()
 	logEntry := runner.NewMockLogEntry()
 	logger.LogEntryFunc.PushReturn(logEntry)

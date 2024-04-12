@@ -7,12 +7,12 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { createPortal } from 'react-dom'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import type { Observable } from 'rxjs'
-import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
+import { catchError, map, startWith, switchMap } from 'rxjs/operators'
 import type { Optional } from 'utility-types'
 
 import type { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
-import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
+import { NoopEditor } from '@sourcegraph/cody-shared'
 import { asError, type ErrorLike, isErrorLike, basename, SourcegraphURL } from '@sourcegraph/common'
 import {
     createActiveSpan,
@@ -239,7 +239,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
         useCallback(
             (clicks: Observable<void>) =>
                 clicks.pipe(
-                    mapTo(true),
+                    map(() => true),
                     startWith(false),
                     switchMap(disableTimeout =>
                         fetchBlob({

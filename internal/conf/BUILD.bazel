@@ -8,7 +8,6 @@ go_library(
         "auth.go",
         "batch_changes.go",
         "client.go",
-        "cody_validators.go",
         "computed.go",
         "conf.go",
         "diff.go",

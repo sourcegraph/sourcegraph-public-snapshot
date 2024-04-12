@@ -231,10 +231,10 @@ func (s *Server) triggerMetricsPipeline(b *build.Build) error {
 	}
 
 	triggered, response, err := client.Builds.Create("sourcegraph", "devx-build-metrics", &buildkite.CreateBuild{
-		Commit:  *b.Commit,
-		Branch:  *b.Branch,
-		Message: *b.Message,
-		Author:  *b.Author,
+		Commit:  b.GetCommit(),
+		Branch:  b.GetBranch(),
+		Message: b.GetMessage(),
+		Author:  b.GetCommitAuthor(),
 		// TODO: do we need to clone b.Env?
 		Env: map[string]string{
 			// can't use BUILDKITE_ prefixed keys as they're reserved

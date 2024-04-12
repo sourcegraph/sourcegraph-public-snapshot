@@ -67,7 +67,7 @@ func (c *openAIChatCompletionStreamClient) Complete(
 		// Empty response.
 		return &types.CompletionResponse{}, nil
 	}
-	err = c.tokenManager.TokenizeAndCalculateUsage(inputText(requestParams.Messages), response.Choices[0].Text, tokenizer.OpenAIModel+"/"+requestParams.Model, string(feature))
+	err = c.tokenManager.TokenizeAndCalculateUsage(requestParams.Messages, response.Choices[0].Text, tokenizer.OpenAIModel+"/"+requestParams.Model, string(feature))
 	if err != nil {
 		logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 	}
@@ -139,19 +139,11 @@ func (c *openAIChatCompletionStreamClient) Stream(
 	if dec.Err() != nil {
 		return dec.Err()
 	}
-	err = c.tokenManager.TokenizeAndCalculateUsage(inputText(requestParams.Messages), content, tokenizer.OpenAIModel+"/"+requestParams.Model, string(feature))
+	err = c.tokenManager.TokenizeAndCalculateUsage(requestParams.Messages, content, tokenizer.OpenAIModel+"/"+requestParams.Model, string(feature))
 	if err != nil {
 		logger.Warn("Failed to count tokens with the token manager %w", log.Error(err))
 	}
 	return nil
-}
-
-func inputText(messages []types.Message) string {
-	allText := ""
-	for _, message := range messages {
-		allText += message.Text
-	}
-	return allText
 }
 
 // makeRequest formats the request and calls the chat/completions endpoint for code_completion requests

@@ -270,7 +270,7 @@ class RecencyMarker extends GutterMarker {
             if (this.hunk.startLine === this.line) {
                 dom.classList.add('border-top')
             }
-            dom.style.backgroundColor = getBlameRecencyColor(new Date(this.hunk.author.date), !this.darkTheme)
+            dom.style.backgroundColor = getBlameRecencyColor(new Date(this.hunk.author.date), !!this.darkTheme)
         }
         return dom
     }

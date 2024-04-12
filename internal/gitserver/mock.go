@@ -81,9 +81,6 @@ type MockGitserverServiceClient struct {
 	// ReadFileFunc is an instance of a mock function object controlling the
 	// behavior of the method ReadFile.
 	ReadFileFunc *GitserverServiceClientReadFileFunc
-	// RepoCloneFunc is an instance of a mock function object controlling
-	// the behavior of the method RepoClone.
-	RepoCloneFunc *GitserverServiceClientRepoCloneFunc
 	// RepoCloneProgressFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoCloneProgress.
 	RepoCloneProgressFunc *GitserverServiceClientRepoCloneProgressFunc
@@ -203,11 +200,6 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 		},
 		ReadFileFunc: &GitserverServiceClientReadFileFunc{
 			defaultHook: func(context.Context, *v1.ReadFileRequest, ...grpc.CallOption) (r0 v1.GitserverService_ReadFileClient, r1 error) {
-				return
-			},
-		},
-		RepoCloneFunc: &GitserverServiceClientRepoCloneFunc{
-			defaultHook: func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (r0 *v1.RepoCloneResponse, r1 error) {
 				return
 			},
 		},
@@ -344,11 +336,6 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 				panic("unexpected invocation of MockGitserverServiceClient.ReadFile")
 			},
 		},
-		RepoCloneFunc: &GitserverServiceClientRepoCloneFunc{
-			defaultHook: func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error) {
-				panic("unexpected invocation of MockGitserverServiceClient.RepoClone")
-			},
-		},
 		RepoCloneProgressFunc: &GitserverServiceClientRepoCloneProgressFunc{
 			defaultHook: func(context.Context, *v1.RepoCloneProgressRequest, ...grpc.CallOption) (*v1.RepoCloneProgressResponse, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.RepoCloneProgress")
@@ -441,9 +428,6 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 		},
 		ReadFileFunc: &GitserverServiceClientReadFileFunc{
 			defaultHook: i.ReadFile,
-		},
-		RepoCloneFunc: &GitserverServiceClientRepoCloneFunc{
-			defaultHook: i.RepoClone,
 		},
 		RepoCloneProgressFunc: &GitserverServiceClientRepoCloneProgressFunc{
 			defaultHook: i.RepoCloneProgress,
@@ -2877,127 +2861,6 @@ func (c GitserverServiceClientReadFileFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverServiceClientReadFileFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverServiceClientRepoCloneFunc describes the behavior when the
-// RepoClone method of the parent MockGitserverServiceClient instance is
-// invoked.
-type GitserverServiceClientRepoCloneFunc struct {
-	defaultHook func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error)
-	hooks       []func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error)
-	history     []GitserverServiceClientRepoCloneFuncCall
-	mutex       sync.Mutex
-}
-
-// RepoClone delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverServiceClient) RepoClone(v0 context.Context, v1 *v1.RepoCloneRequest, v2 ...grpc.CallOption) (*v1.RepoCloneResponse, error) {
-	r0, r1 := m.RepoCloneFunc.nextHook()(v0, v1, v2...)
-	m.RepoCloneFunc.appendCall(GitserverServiceClientRepoCloneFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the RepoClone method of
-// the parent MockGitserverServiceClient instance is invoked and the hook
-// queue is empty.
-func (f *GitserverServiceClientRepoCloneFunc) SetDefaultHook(hook func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RepoClone method of the parent MockGitserverServiceClient instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitserverServiceClientRepoCloneFunc) PushHook(hook func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverServiceClientRepoCloneFunc) SetDefaultReturn(r0 *v1.RepoCloneResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverServiceClientRepoCloneFunc) PushReturn(r0 *v1.RepoCloneResponse, r1 error) {
-	f.PushHook(func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverServiceClientRepoCloneFunc) nextHook() func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverServiceClientRepoCloneFunc) appendCall(r0 GitserverServiceClientRepoCloneFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverServiceClientRepoCloneFuncCall
-// objects describing the invocations of this function.
-func (f *GitserverServiceClientRepoCloneFunc) History() []GitserverServiceClientRepoCloneFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverServiceClientRepoCloneFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverServiceClientRepoCloneFuncCall is an object that describes an
-// invocation of method RepoClone on an instance of
-// MockGitserverServiceClient.
-type GitserverServiceClientRepoCloneFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *v1.RepoCloneRequest
-	// Arg2 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg2 []grpc.CallOption
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *v1.RepoCloneResponse
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c GitserverServiceClientRepoCloneFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg2 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverServiceClientRepoCloneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
