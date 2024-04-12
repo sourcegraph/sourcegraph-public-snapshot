@@ -8932,7 +8932,7 @@ func NewMockLSIFStore() *MockLSIFStore {
 			},
 		},
 		NewSyntacticSCIPWriterFunc: &LSIFStoreNewSyntacticSCIPWriterFunc{
-			defaultHook: func(context.Context, int) (r0 lsifstore.SCIPWriter, r1 error) {
+			defaultHook: func(int) (r0 lsifstore.SCIPWriter, r1 error) {
 				return
 			},
 		},
@@ -8989,7 +8989,7 @@ func NewStrictMockLSIFStore() *MockLSIFStore {
 			},
 		},
 		NewSyntacticSCIPWriterFunc: &LSIFStoreNewSyntacticSCIPWriterFunc{
-			defaultHook: func(context.Context, int) (lsifstore.SCIPWriter, error) {
+			defaultHook: func(int) (lsifstore.SCIPWriter, error) {
 				panic("unexpected invocation of MockLSIFStore.NewSyntacticSCIPWriter")
 			},
 		},
@@ -9724,24 +9724,24 @@ func (c LSIFStoreNewPreciseSCIPWriterFuncCall) Results() []interface{} {
 // NewSyntacticSCIPWriter method of the parent MockLSIFStore instance is
 // invoked.
 type LSIFStoreNewSyntacticSCIPWriterFunc struct {
-	defaultHook func(context.Context, int) (lsifstore.SCIPWriter, error)
-	hooks       []func(context.Context, int) (lsifstore.SCIPWriter, error)
+	defaultHook func(int) (lsifstore.SCIPWriter, error)
+	hooks       []func(int) (lsifstore.SCIPWriter, error)
 	history     []LSIFStoreNewSyntacticSCIPWriterFuncCall
 	mutex       sync.Mutex
 }
 
 // NewSyntacticSCIPWriter delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) NewSyntacticSCIPWriter(v0 context.Context, v1 int) (lsifstore.SCIPWriter, error) {
-	r0, r1 := m.NewSyntacticSCIPWriterFunc.nextHook()(v0, v1)
-	m.NewSyntacticSCIPWriterFunc.appendCall(LSIFStoreNewSyntacticSCIPWriterFuncCall{v0, v1, r0, r1})
+func (m *MockLSIFStore) NewSyntacticSCIPWriter(v0 int) (lsifstore.SCIPWriter, error) {
+	r0, r1 := m.NewSyntacticSCIPWriterFunc.nextHook()(v0)
+	m.NewSyntacticSCIPWriterFunc.appendCall(LSIFStoreNewSyntacticSCIPWriterFuncCall{v0, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
 // NewSyntacticSCIPWriter method of the parent MockLSIFStore instance is
 // invoked and the hook queue is empty.
-func (f *LSIFStoreNewSyntacticSCIPWriterFunc) SetDefaultHook(hook func(context.Context, int) (lsifstore.SCIPWriter, error)) {
+func (f *LSIFStoreNewSyntacticSCIPWriterFunc) SetDefaultHook(hook func(int) (lsifstore.SCIPWriter, error)) {
 	f.defaultHook = hook
 }
 
@@ -9750,7 +9750,7 @@ func (f *LSIFStoreNewSyntacticSCIPWriterFunc) SetDefaultHook(hook func(context.C
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *LSIFStoreNewSyntacticSCIPWriterFunc) PushHook(hook func(context.Context, int) (lsifstore.SCIPWriter, error)) {
+func (f *LSIFStoreNewSyntacticSCIPWriterFunc) PushHook(hook func(int) (lsifstore.SCIPWriter, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -9759,19 +9759,19 @@ func (f *LSIFStoreNewSyntacticSCIPWriterFunc) PushHook(hook func(context.Context
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LSIFStoreNewSyntacticSCIPWriterFunc) SetDefaultReturn(r0 lsifstore.SCIPWriter, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (lsifstore.SCIPWriter, error) {
+	f.SetDefaultHook(func(int) (lsifstore.SCIPWriter, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LSIFStoreNewSyntacticSCIPWriterFunc) PushReturn(r0 lsifstore.SCIPWriter, r1 error) {
-	f.PushHook(func(context.Context, int) (lsifstore.SCIPWriter, error) {
+	f.PushHook(func(int) (lsifstore.SCIPWriter, error) {
 		return r0, r1
 	})
 }
 
-func (f *LSIFStoreNewSyntacticSCIPWriterFunc) nextHook() func(context.Context, int) (lsifstore.SCIPWriter, error) {
+func (f *LSIFStoreNewSyntacticSCIPWriterFunc) nextHook() func(int) (lsifstore.SCIPWriter, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -9807,10 +9807,7 @@ func (f *LSIFStoreNewSyntacticSCIPWriterFunc) History() []LSIFStoreNewSyntacticS
 type LSIFStoreNewSyntacticSCIPWriterFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
+	Arg0 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 lsifstore.SCIPWriter
@@ -9822,7 +9819,7 @@ type LSIFStoreNewSyntacticSCIPWriterFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c LSIFStoreNewSyntacticSCIPWriterFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
