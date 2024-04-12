@@ -3,8 +3,12 @@
     import Avatar from '$lib/Avatar.svelte'
     import type { BlameHunk } from '$lib/web'
 
-    // export let line: number
     export let hunk: BlameHunk
+
+    // These are in the React implementation, but not yet used in the Svlete implementation.
+    // Leaving them commented for reference if/when we implement the popover.
+    //
+    // export let line: number
     // export let onSelect: (line: number) => void
     // export let onDeselect: (line: number) => void
     // export let externalURLs: BlameHunkData['externalURLs']
@@ -38,7 +42,6 @@
     </a>
 </div>
 
-<!-- TODO: Popover? -->
 <style lang="scss">
     .root {
         font-family: var(--font-family-base);
