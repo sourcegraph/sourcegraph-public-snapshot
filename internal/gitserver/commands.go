@@ -963,7 +963,6 @@ func (c *clientImplementor) RevAtTime(ctx context.Context, repo api.RepoName, sp
 	}
 
 	return api.CommitID(res.GetCommitSha()), res.GetCommitSha() != "", nil
-
 }
 
 // LsFiles returns the output of `git ls-files`.
