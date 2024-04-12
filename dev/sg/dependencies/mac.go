@@ -167,7 +167,7 @@ If you used another method, make sure psql is available.`,
 					check.InPath("psql"),
 					check.CompareSemanticVersion("psql", "psql --version", ">= 12.0"),
 				)),
-				Fix: brewInstall("postgresql@12"),
+				Fix: check.CombineFix(brewInstall("postgresql@12"), cmdFix("brew link postgresql@12")),
 			},
 			{
 				Name: "Start Postgres",
