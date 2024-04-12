@@ -31,7 +31,6 @@ export function useShowOnboardingSetup(): boolean {
             searchesStatus === 'success' &&
             !!recentSearches &&
             recentSearches.length < MIN_QUERIES &&
-            !(config?.skipped || config?.userinfo)) ||
-        true
+            !(config?.skipped || config?.userinfo))
     )
 }
