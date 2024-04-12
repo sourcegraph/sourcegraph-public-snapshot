@@ -131,6 +131,7 @@
                 <SidebarToggleButton />&nbsp; Files
             </h3>
             <RepositoryRevPicker
+                repoURL={data.repoURL}
                 revision={data.revision}
                 resolvedRevision={data.resolvedRevision}
                 getRepositoryBranches={data.getRepoBranches}

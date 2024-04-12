@@ -3,8 +3,9 @@
     import type { RepositoryGitRefs_Repository_ } from './RepositoryRevPicker.gql'
 
     export type RepositoryBranches = RepositoryGitRefs_Repository_['gitRefs']
+    export type RepositoryBranch = RepositoryBranches['nodes'][number]
 
-    const toOption = (branch: any): ComboboxOptionProps<any> => ({
+    const toOption = (branch: RepositoryBranch): ComboboxOptionProps<string> => ({
         value: branch.id,
         label: branch.displayName,
     })
@@ -12,9 +13,7 @@
 
 <script lang="ts">
     import { mdiSourceBranch } from '@mdi/js'
-    import { goto } from '$app/navigation'
     import { createCombobox } from '@melt-ui/svelte'
-    import { replaceRevisionInURL } from '@sourcegraph/shared/src/util/url'
 
     import Icon from '$lib/Icon.svelte'
     import Avatar from '$lib/Avatar.svelte'
@@ -22,8 +21,10 @@
     import { Input, Alert } from '$lib/wildcard'
     import { createPromiseStore } from '$lib/utils'
 
+    export let repoURL: string
     export let getRepositoryBranches: (query: string) => Promise<RepositoryBranches>
-    export let onSelect: () => void
+    export let onSelect: (branch: RepositoryBranch) => void
+    export let onClose: () => void
 
     const {
         elements: { menu, input, option },
@@ -32,16 +33,20 @@
         portal: null,
         forceVisible: true,
         scrollAlignment: 'nearest',
+        onOpenChange: ({ next }) => {
+            if (!next) {
+                onClose()
+            }
+
+            return next
+        },
         onSelectedChange: ({ next }) => {
             const selectedBranch = $repositoryBranches.value?.nodes.find(branch => branch.id === next?.value)
 
             if (selectedBranch) {
-                goto(
-                    replaceRevisionInURL(location.pathname + location.search + location.hash, selectedBranch.abbrevName)
-                )
+                onSelect(selectedBranch)
             }
 
-            onSelect()
             return next
         },
     })
@@ -67,7 +72,13 @@
 </script>
 
 <div class="root">
-    <Input {...$input} actions={[input]} autofocus={true} placeholder="Search branches..." />
+    <Input
+        {...$input}
+        actions={[input]}
+        loading={$repositoryBranches.pending}
+        autofocus={true}
+        placeholder="Search branches..."
+    />
 
     <div {...$menu} use:menu class="suggestions">
         <ul class="suggestion-list">
@@ -116,7 +127,7 @@
     </div>
 
     <footer class="footer">
-        <a href="">
+        <a href={`${repoURL}/-/branches`}>
             See all commits
             {#if !$repositoryBranches.error && $repositoryBranches.value}({$repositoryBranches.value.totalCount}){/if}
         </a>
@@ -162,7 +173,7 @@
         grid-template-columns: subgrid;
         padding: 0.25rem;
         cursor: pointer;
-        gap: 0.25rem;
+        gap: 0.5rem;
         border-bottom: 1px solid var(--border-color);
 
         &:last-child {
