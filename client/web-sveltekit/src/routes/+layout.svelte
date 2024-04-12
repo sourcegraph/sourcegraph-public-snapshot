@@ -67,7 +67,7 @@
             return
         }
 
-        if (dev || isRouteEnabled(navigation.to?.route.id ?? '')) {
+        if (dev || isRouteEnabled(navigation.to.url.pathname)) {
             // Routes are handled by SvelteKit
             return
         }

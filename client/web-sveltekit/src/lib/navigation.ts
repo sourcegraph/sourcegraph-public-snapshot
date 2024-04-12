@@ -8,17 +8,20 @@ import { routeMeta } from '$lib/routeMeta'
  * Callers should pass an actual route ID retrived from SvelteKit not an
  * arbitrary path.
  */
-export function isRouteEnabled(routeID: string): boolean {
-    if (!routeID) {
+export function isRouteEnabled(pathname: string): boolean {
+    if (!pathname) {
         return false
     }
 
-    const serverRouteName = routeMeta[routeID]?.serverRouteName
-    if (!serverRouteName) {
-        return false
+    const enabledRoutes = window.context?.svelteKit?.enabledRoutes ?? []
+
+    for (const route of enabledRoutes) {
+        if (new RegExp(route).test(pathname)) {
+            return true
+        }
     }
 
-    return !!window.context?.svelteKit?.enabledRoutes.includes(serverRouteName)
+    return false
 }
 
 /**

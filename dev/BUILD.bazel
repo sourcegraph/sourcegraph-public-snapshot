@@ -20,6 +20,7 @@ write_source_files(
         "//client/web/src/rbac:write_generated",
         "//cmd/cody-gateway/internal/dotcom:write_genql_yaml",
         "//cmd/frontend/internal/guardrails/dotcom:write_genql_yaml",
+        "//cmd/frontend/internal/app/ui/sveltekit:write_generated",
         "//dev/linters/staticcheck:write_generated_bazelfile",
         "//doc/admin/observability:write_monitoring_docs",
         "//doc/cli/references:write_doc_files",

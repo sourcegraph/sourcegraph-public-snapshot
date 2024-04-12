@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
+    "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit/tags"
 )
 
 // JSContext is the metadata sent to the client apps
@@ -32,36 +33,12 @@ type contextKey struct{}
 
 type contextValue struct {
 	registry *RouteRegistry
-	routeMap map[string]struct{}
+	enabledRoutes []route
+	enabled bool
 }
-
-type Availablity int
-
-const (
-	// EnableAlways always renders the SvelteKit app for this route
-	EnableAlways Availablity = 1 << iota
-	// EnableRollout renders the SvelteKit app for this route when the "web-next-rollout" feature flag is enabled
-	EnableRollout
-	// EnableOptIn renders the SvelteKit app for this route when the "web-next" feature flag is enabled.
-	EnableOptIn Availablity = 1<<iota | EnableRollout
-)
 
 type RouteRegistry struct {
-	routes map[string]Availablity
-}
-
-// Register registers a route to be supported by SvelteKit
-// availability determines when the server should serve the SvelteKit app for this route
-// Default: When the feature flag "web-next" is enabled
-// Rollout: When the feature flag "web-next-rollout" is enabled
-// Always: Always serve the SvelteKit app for this route
-func (r *RouteRegistry) Register(route *mux.Route, enabled Availablity) *mux.Route {
-	if enabled == 0 {
-		// Default to EnableDefault
-		enabled = EnableOptIn
-	}
-	r.routes[route.GetName()] = enabled
-	return route
+	globalRoutes []string
 }
 
 func (r *RouteRegistry) MiddlewareFunc() mux.MiddlewareFunc {
@@ -70,30 +47,47 @@ func (r *RouteRegistry) MiddlewareFunc() mux.MiddlewareFunc {
 			ctx := req.Context()
 			ff := featureflag.FromContext(ctx)
 
-			routeMap := make(map[string]struct{})
-			availabilityMask := EnableAlways
+			enabledRoutes := make([]route, 0, len(routes))
+			enabled := false
+
+			availabilityMask := tags.EnableAlways
 			if ff.GetBoolOr("web-next", false) {
-				availabilityMask |= EnableOptIn
+				availabilityMask |= tags.EnableOptIn
 			}
 			if ff.GetBoolOr("web-next-rollout", false) {
-				availabilityMask |= EnableRollout
+				availabilityMask |= tags.EnableRollout
 			}
 
-			for route, availability := range r.routes {
-				if availability&availabilityMask != 0 {
-					routeMap[route] = struct{}{}
+			for _, route := range routes {
+				if route.Tag&availabilityMask != 0 {
+					enabledRoutes = append(enabledRoutes, route)
+
+					if (!enabled && r.matches(req, route)) {
+						enabled = true
+					}
 				}
 			}
 
-			value := &contextValue{routeMap: routeMap, registry: r}
+			value := &contextValue{enabledRoutes: enabledRoutes, registry: r, enabled: enabled}
 			next.ServeHTTP(w, req.WithContext(context.WithValue(req.Context(), contextKey{}, value)))
 		})
 	}
 }
 
+func (r *RouteRegistry) AddGlobalRoute(route string) {
+	r.globalRoutes = append(r.globalRoutes, route)
+}
+
+func (r *RouteRegistry) matches(req *http.Request, route route) bool {
+	if route.Pattern.MatchString(req.URL.Path) {
+		// TODO: check RepoRoot tag
+		return true
+	}
+	return false
+}
+
 func NewRouteRegistry() *RouteRegistry {
 	return &RouteRegistry{
-		routes: make(map[string]Availablity),
 	}
 }
 
@@ -105,19 +99,13 @@ func fromContext(ctx context.Context) *contextValue {
 	return v.(*contextValue)
 }
 
-func getRouteMap(ctx context.Context) map[string]struct{} {
-	return fromContext(ctx).routeMap
-}
-
 // Enabled returns true if the route is configured to be supported by useSvelteKit
 func Enabled(r *http.Request) bool {
-	routeMap := getRouteMap(r.Context())
-	route := mux.CurrentRoute(r)
-	if route == nil {
+	ctx := fromContext(r.Context())
+	if ctx == nil {
 		return false
 	}
-	_, enabled := routeMap[route.GetName()]
-	return enabled
+	return ctx.enabled
 }
 
 // SvelteKitJSContext is the context object that is passed to the client apps
@@ -131,18 +119,16 @@ func GetJSContext(r *http.Request) JSContext {
 
 	ff := featureflag.FromContext(r.Context())
 
-	enabledRoutes := make([]string, 0, len(ctx.routeMap))
-	availableRoutes := make([]string, 0, len(ctx.registry.routes))
+	enabledRoutes := make([]string, 0, len(ctx.enabledRoutes))
+	availableRoutes := make([]string, 0, len(routes))
 
-	for route := range ctx.routeMap {
-		enabledRoutes = append(enabledRoutes, route)
+	for _, route := range ctx.enabledRoutes {
+		enabledRoutes = append(enabledRoutes, route.Pattern.String())
 	}
 
 	if ff.GetBoolOr("web-next-toggle", false) {
-		for route, availablity := range ctx.registry.routes {
-			if availablity&EnableOptIn != 0 {
-				availableRoutes = append(availableRoutes, route)
-			}
+		for _, route := range routes {
+			availableRoutes = append(availableRoutes, route.Pattern.String())
 		}
 	}
 

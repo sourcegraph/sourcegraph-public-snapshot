@@ -1,3 +1,4 @@
+// @sg RepoRoot
 import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
 import { findReadme } from '$lib/repo/tree'
 import type { RouteMeta } from '$lib/routeMeta'

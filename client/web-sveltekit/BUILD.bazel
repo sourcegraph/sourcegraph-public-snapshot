@@ -260,3 +260,9 @@ svelte_check.svelte_check_test(
         ":node_modules/vitest",
     ],
 )
+
+filegroup(
+    name = "sveltekit-pages",
+    srcs = glob(["src/routes/**/+page.ts"]),
+    visibility = ["//cmd/frontend/internal/app/ui/sveltekit:__pkg__"],
+)

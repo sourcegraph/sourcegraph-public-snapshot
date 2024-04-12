@@ -192,7 +192,6 @@ func InitRouter(db database.DB) {
 		}, nil, noIndex)))
 
 	// search
-	sk.Register(
 	r.Path("/search").Methods("GET").Name(routeSearch).
 		Handler(handler(db, serveBasicPage(db, func(_ *Common, r *http.Request) string {
 			shortQuery := limitString(r.URL.Query().Get("q"), 25, true)
@@ -201,7 +200,7 @@ func InitRouter(db database.DB) {
 			}
 			// e.g. "myquery - Sourcegraph"
 			return brandNameSubtitle(shortQuery)
-		}, nil, index))), sveltekit.EnableRollout)
+		}, nil, index)))
 	// streaming search
 	r.Path("/search/stream").Methods("GET").Name("search.stream").Handler(search.StreamHandler(db))
 	// search badge
@@ -246,7 +245,7 @@ func InitRouter(db database.DB) {
 		return brandNameSubtitle(repoShortName(c.Repo.Name))
 	}))
 	repoRevPath := "/" + routevar.Repo + routevar.RepoRevSuffix
-	sk.Register(r.Path(repoRevPath).Methods("GET").Name(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.Path(repoRevPath).Methods("GET").Name(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Debug mode: register the __errorTest handler.
 		if env.InsecureDev && r.URL.Path == "/__errorTest" {
 			handler(db, serveErrorTest(db)).ServeHTTP(w, r)
@@ -258,26 +257,26 @@ func InitRouter(db database.DB) {
 			return
 		}
 		serveRepoHandler.ServeHTTP(w, r)
-	})), sveltekit.EnableOptIn)
+	}))
 
 	repoRev := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 	// tree
-	sk.Register(repoRev.Path("/tree{Path:.*}").Methods("GET").
+	repoRev.Path("/tree{Path:.*}").Methods("GET").
 		Name(routeTree).
 		Handler(handler(db, serveTree(db, func(c *Common, r *http.Request) string {
 			// e.g. "src - gorilla/mux - Sourcegraph"
 			dirName := path.Base(mux.Vars(r)["Path"])
 			return brandNameSubtitle(dirName, repoShortName(c.Repo.Name))
-		}))), sveltekit.EnableOptIn)
+		})))
 
 	// blob
-	sk.Register(repoRev.Path("/blob{Path:.*}").Methods("GET").
+	repoRev.Path("/blob{Path:.*}").Methods("GET").
 		Name(routeBlob).
 		Handler(handler(db, serveRepoOrBlob(db, routeBlob, func(c *Common, r *http.Request) string {
 			// e.g. "mux.go - gorilla/mux - Sourcegraph"
 			fileName := path.Base(mux.Vars(r)["Path"])
 			return brandNameSubtitle(fileName, repoShortName(c.Repo.Name))
-		}))), sveltekit.EnableOptIn)
+		})))
 
 	// raw
 	repoRev.Path("/raw{Path:.*}").Methods("GET", "HEAD").Name(routeRaw).Handler(handler(db, serveRaw(logger, db, gitserver.NewClient("http.raw"))))
@@ -287,22 +286,18 @@ func InitRouter(db database.DB) {
 
 	for _, p := range []struct {
 		pathPrefix, name, title string
-		sveltekitEnabled        sveltekit.Availablity
 	}{
 		{pathPrefix: "/settings", name: "repo-settings", title: "Repository settings"},
 		{pathPrefix: "/code-graph", name: "repo-code-intelligence", title: "Code graph"},
-		{pathPrefix: "/commits", name: "repo-commits", title: "Commits", sveltekitEnabled: sveltekit.EnableOptIn},
-		{pathPrefix: "/commit", name: "repo-commit", title: "Commit", sveltekitEnabled: sveltekit.EnableOptIn},
-		{pathPrefix: "/branches", name: "repo-branches", title: "Branches", sveltekitEnabled: sveltekit.EnableOptIn},
-		{pathPrefix: "/tags", name: "repo-tags", title: "Tags", sveltekitEnabled: sveltekit.EnableOptIn},
+		{pathPrefix: "/commits", name: "repo-commits", title: "Commits"},
+		{pathPrefix: "/commit", name: "repo-commit", title: "Commit"},
+		{pathPrefix: "/branches", name: "repo-branches", title: "Branches"},
+		{pathPrefix: "/tags", name: "repo-tags", title: "Tags"},
 		{pathPrefix: "/compare", name: "repo-compare", title: "Compare"},
-		{pathPrefix: "/stats", name: "repo-stats", title: "Stats", sveltekitEnabled: sveltekit.EnableOptIn},
+		{pathPrefix: "/stats", name: "repo-stats", title: "Stats"},
 		{pathPrefix: "/own", name: "repo-own", title: "Ownership"},
 	} {
-		route := repoRev.PathPrefix(p.pathPrefix).Methods("GET").Name(p.name).Handler(brandedNoIndex(p.title))
-		if p.sveltekitEnabled != 0 {
-			sk.Register(route, p.sveltekitEnabled)
-		}
+		repoRev.PathPrefix(p.pathPrefix).Methods("GET").Name(p.name).Handler(brandedNoIndex(p.title))
 	}
 
 	// legacy redirects
@@ -317,6 +312,10 @@ func InitRouter(db database.DB) {
 	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		serveError(w, r, db, errors.New("route not found"), http.StatusNotFound)
 	})
+
+	//r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+		//// TODO: Register top-level routes to guard against repo-root match
+	//})
 
 	uirouter.Router = r // make accessible to other packages
 }
