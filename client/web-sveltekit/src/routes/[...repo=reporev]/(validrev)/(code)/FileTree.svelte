@@ -1,17 +1,18 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import { mdiFileCodeOutline, mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
+    import { mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
     import { onMount } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
-    import { getFileIconInfo, Alert } from '$lib/wildcard'
+    import { Alert } from '$lib/wildcard'
     import Icon from '$lib/Icon.svelte'
     import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue, type TreeEntryFields } from '$lib/repo/api/tree'
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
     import { createForwardStore } from '$lib/utils'
     import { replaceRevisionInURL } from '$lib/web'
+    import FileIcon from '$lib/repo/FileIcon.svelte'
 
     export let repoName: string
     export let treeProvider: FileTreeProvider
@@ -125,12 +126,7 @@
                     {#if entry.isDirectory}
                         <Icon svgPath={getDirectoryIconPath(entry, expanded)} inline />
                     {:else}
-                        {@const icon = (entry.__typename === 'GitBlob' &&
-                            getFileIconInfo(entry.name, entry.languages.at(0) ?? '')?.svg) || {
-                            path: mdiFileCodeOutline,
-                            color: 'var(--gray-05)',
-                        }}
-                        <Icon svgPath={icon.path} inline --color={icon.color} />
+                        <FileIcon inline file={entry.__typename === 'GitBlob' ? entry : null} />
                     {/if}
                     {isRoot ? '..' : entry.name}
                 </a>

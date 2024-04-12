@@ -11,8 +11,7 @@
 {:else if $page.error}
     <div>
         <Alert variant="danger">
-            <p>An error occurred while loading the page:</p>
-            {$page.error.message}
+            An error occurred while loading the page: {$page.error.message}
         </Alert>
     </div>
 {/if}

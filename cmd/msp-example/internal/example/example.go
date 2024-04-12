@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/background"
@@ -141,8 +142,20 @@ func (s Service) Initialize(
 		&httpRoutine{
 			log: logger,
 			Server: &http.Server{
-				Addr:    fmt.Sprintf(":%d", contract.Port),
-				Handler: h,
+				Addr: fmt.Sprintf(":%d", contract.Port),
+				Handler: otelhttp.NewHandler(h, "http",
+					otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
+						// If incoming, just include the path since our own host is not
+						// very interesting. If outgoing, include the host as well.
+						target := r.URL.Path
+						if r.RemoteAddr == "" { // no RemoteAddr indicates this is an outgoing request
+							target = r.Host + target
+						}
+						if operation != "" {
+							return fmt.Sprintf("%s.%s %s", operation, r.Method, target)
+						}
+						return fmt.Sprintf("%s %s", r.Method, target)
+					})),
 			},
 		},
 	}, nil

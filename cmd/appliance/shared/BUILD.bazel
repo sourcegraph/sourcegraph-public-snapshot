@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = [
+        "config.go",
+        "main.go",
+        "service.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/appliance/shared",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/appliance",
+        "//internal/debugserver",
+        "//internal/env",
+        "//internal/observation",
+        "//internal/service",
+        "@com_github_sourcegraph_log//:log",
+        "@io_k8s_sigs_controller_runtime//:controller-runtime",
+    ],
+)

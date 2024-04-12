@@ -18,7 +18,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
-import { replaceRevisionInURL } from '../../util/url'
+import { getURLToFileCommit } from '../../util/url'
 import type { BlameHunk, BlameHunkData } from '../blame/useBlameHunks'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 
@@ -219,12 +219,16 @@ export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
                                 />
                             </div>
                         </div>
-                        {blameHunk.commit.parents.length > 0 && (
+                        {blameHunk.commit.previous && (
                             <>
                                 <hr className={classNames(styles.separator, 'm-0')} />
                                 <div className={classNames('px-3', styles.block)}>
                                     <Link
-                                        to={replaceRevisionInURL(window.location.href, blameHunk.commit.parents[0].oid)}
+                                        to={getURLToFileCommit(
+                                            window.location.href,
+                                            blameHunk.commit.previous.filename,
+                                            blameHunk.commit.previous.rev
+                                        )}
                                         className={styles.footerLink}
                                     >
                                         View blame prior to this change

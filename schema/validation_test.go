@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"sort"
 	"strings"
 	"testing"
 
@@ -67,7 +68,15 @@ func TestSchemaValidationUUID(t *testing.T) {
 	* uuid-escaped: Does not match pattern '^\{[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}\}$'
 	* uuid-unescaped: Does not match pattern '^\{[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}$'`
 
-		if diff := cmp.Diff(err.Error(), wantErr); diff != "" {
+		// order of errors is not deterministic due to internal use of go
+		// maps.
+		sortedLines := func(s string) string {
+			lines := strings.Split(s, "\n")
+			sort.Strings(lines)
+			return strings.Join(lines, "\n")
+		}
+
+		if diff := cmp.Diff(sortedLines(err.Error()), sortedLines(wantErr)); diff != "" {
 			t.Fatalf("wrong error message: %s", diff)
 		}
 	})

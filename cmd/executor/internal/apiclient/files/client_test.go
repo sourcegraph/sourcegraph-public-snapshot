@@ -18,7 +18,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	observationContext := &observation.TestContext
+	observationContext := observation.TestContextTB(t)
 
 	tests := []struct {
 		name    string
@@ -56,7 +56,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestClient_Exists(t *testing.T) {
-	observationContext := &observation.TestContext
+	observationContext := observation.TestContextTB(t)
 
 	tests := []struct {
 		name string
@@ -150,7 +150,7 @@ func TestClient_Exists(t *testing.T) {
 }
 
 func TestClient_Get(t *testing.T) {
-	observationContext := &observation.TestContext
+	observationContext := observation.TestContextTB(t)
 
 	tests := []struct {
 		name string

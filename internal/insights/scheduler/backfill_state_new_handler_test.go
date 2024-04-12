@@ -40,7 +40,7 @@ func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	config := JobMonitorConfig{
 		InsightsDB:        insightsDB,
 		RepoStore:         repos,
-		ObservationCtx:    &observation.TestContext,
+		ObservationCtx:    observation.TestContextTB(t),
 		CostAnalyzer:      priority.NewQueryAnalyzer(),
 		InsightStore:      seriesStore,
 		RepoQueryExecutor: repoQueryExecutor,
@@ -116,7 +116,7 @@ func Test_MovesBackfillFromNewToProcessing_ScopedInsight(t *testing.T) {
 	config := JobMonitorConfig{
 		InsightsDB:        insightsDB,
 		RepoStore:         repos,
-		ObservationCtx:    &observation.TestContext,
+		ObservationCtx:    observation.TestContextTB(t),
 		CostAnalyzer:      priority.NewQueryAnalyzer(),
 		InsightStore:      seriesStore,
 		RepoQueryExecutor: repoQueryExecutor,

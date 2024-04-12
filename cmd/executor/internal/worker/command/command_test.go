@@ -23,7 +23,7 @@ import (
 
 func TestCommand_Run(t *testing.T) {
 	internalLogger := logtest.Scoped(t)
-	operations := command.NewOperations(&observation.TestContext)
+	operations := command.NewOperations(observation.TestContextTB(t))
 
 	tests := []struct {
 		name         string

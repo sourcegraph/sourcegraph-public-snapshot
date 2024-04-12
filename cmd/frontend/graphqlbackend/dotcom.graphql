@@ -142,6 +142,16 @@ type DotcomQuery {
     FOR INTERNAL USE ONLY.
     """
     codyGatewayDotcomUserByToken(token: String!): CodyGatewayDotcomUser
+
+    """
+    The current rate limit status for a dotcom user stored in Cody Gateway.
+    """
+    codyGatewayRateLimitStatusByUserName(
+        """
+        The username of the user to get the rate limit status for.
+        """
+        username: String!
+    ): [CodyGatewayRateLimitStatus!]
 }
 
 extend type Mutation {

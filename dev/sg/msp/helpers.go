@@ -27,14 +27,29 @@ import (
 //
 // 'exact' indicates that no additional arguments are expected.
 func useServiceArgument(c *cli.Context, exact bool) (*spec.Spec, error) {
+	// If we can successfully load the list of services, provide the
+	// list as feedback for the user
+	allServices, _ := msprepo.ListServices()
+
 	serviceID := c.Args().First()
 	if serviceID == "" {
+		if len(allServices) > 0 {
+			return nil, errors.Newf("argument service is required, available services: [%s]",
+				strings.Join(allServices, ", "))
+		}
 		return nil, errors.New("argument service is required")
 	}
 	serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
 
 	s, err := spec.Open(serviceSpecPath)
 	if err != nil {
+		if errors.Is(err, spec.ErrServiceDoesNotExist) {
+			if len(allServices) > 0 {
+				return nil, errors.Newf("service %q does not exist, available services: [%s]",
+					serviceID, strings.Join(allServices, ", "))
+			}
+			return nil, errors.Newf("service %q does not exist", serviceID)
+		}
 		return nil, errors.Wrapf(err, "load service %q", serviceID)
 	}
 
@@ -59,13 +74,14 @@ func useServiceAndEnvironmentArguments(c *cli.Context, exact bool) (*spec.Spec, 
 
 	environmentID := c.Args().Get(1)
 	if environmentID == "" {
-		return svc, nil, errors.New("second argument <environment ID> is required")
+		return svc, nil, errors.Newf("second argument <environment ID> is required, available environments for service %q: [%s]",
+			svc.Service.ID, strings.Join(svc.ListEnvironmentIDs(), ", "))
 	}
 
 	env := svc.GetEnvironment(environmentID)
 	if env == nil {
-		return svc, nil, errors.Newf("environment %q not found in service spec, available environments: %+v",
-			environmentID, svc.ListEnvironmentIDs())
+		return svc, nil, errors.Newf("environment %q not found in the %q service spec, available environments: [%s]",
+			environmentID, svc.Service.ID, strings.Join(svc.ListEnvironmentIDs(), ", "))
 	}
 
 	// Arg 0 is service, arg 1 is environment - any additional arguments are
@@ -142,13 +158,9 @@ type generateTerraformOptions struct {
 	stableGenerate bool
 }
 
-func generateTerraform(serviceID string, opts generateTerraformOptions) error {
+func generateTerraform(service *spec.Spec, opts generateTerraformOptions) error {
+	serviceID := service.Service.ID
 	serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
-
-	service, err := spec.Open(serviceSpecPath)
-	if err != nil {
-		return errors.Wrapf(err, "load service %q", serviceID)
-	}
 
 	var envs []spec.EnvironmentSpec
 	if opts.targetEnv != "" {

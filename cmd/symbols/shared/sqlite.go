@@ -32,7 +32,7 @@ func LoadConfig() {
 
 var config types.SqliteConfig
 
-func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
+func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, error) {
 	logger := observationCtx.Logger.Scoped("sqlite.setup")
 
 	if err := baseConfig.Validate(); err != nil {
@@ -66,7 +66,7 @@ func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverC
 	cacheSizeBytes := int64(config.CacheSizeMB) * 1000 * 1000
 	cacheEvicter := janitor.NewCacheEvicter(evictionInterval, cache, cacheSizeBytes, janitor.NewMetrics(observationCtx))
 
-	return searchFunc, nil, []goroutine.BackgroundRoutine{cacheEvicter}, config.Ctags.UniversalCommand, nil
+	return searchFunc, nil, []goroutine.BackgroundRoutine{cacheEvicter}, nil
 }
 
 func parserTypesForDeployment() []ctags_config.ParserType {

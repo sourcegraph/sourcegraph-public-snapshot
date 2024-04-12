@@ -40,8 +40,22 @@
 {/if}
 
 <style lang="scss">
+    span {
+        z-index: 1;
+        color: var(--text-muted);
+        font-size: calc(var(--size) * 0.5);
+        font-weight: 300;
+    }
+
     img,
     div {
+        --min-size: 1rem;
+        --size: var(--avatar-size, var(--icon-inline-size, var(--min-size)));
+
+        min-width: var(--min-size);
+        min-height: var(--min-size);
+        width: var(--size);
+        height: var(--size);
         isolation: isolate;
         display: inline-flex;
         border-radius: 50%;
@@ -49,12 +63,8 @@
         color: var(--color-bg-1);
         align-items: center;
         justify-content: center;
-        min-width: 1rem;
-        min-height: 1rem;
         position: relative;
-        background: linear-gradient(to bottom, var(--logo-purple), var(--logo-orange));
-        width: var(--avatar-size, var(--icon-inline-size));
-        height: var(--avatar-size, var(--icon-inline-size));
+        background: var(--secondary);
     }
 
     div::after {
@@ -65,13 +75,5 @@
         bottom: 0;
         left: 0;
         border-radius: 50%;
-        background: linear-gradient(to right, var(--logo-purple), var(--logo-blue));
-        mask-image: linear-gradient(to bottom, #000000, transparent);
-    }
-
-    span {
-        z-index: 1;
-        color: var(--white);
-        font-size: 0.5rem;
     }
 </style>

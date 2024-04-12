@@ -14,7 +14,7 @@ query LastCommitQuery($repoName: String!, $revspec: String!, $filePath: String!)
     repository(name: $repoName) {
         lastCommit: commit(rev: $revspec) {
             id
-            ancestors(first:1, path: $filePath) {
+            ancestors(first: 1, path: $filePath) {
                 nodes {
                     ...LastCommitFragment
                 }
