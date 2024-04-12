@@ -26597,6 +26597,102 @@ max by (name) (container_oom_events_total{name=~"^zoekt-webserver.*"})
 
 <br />
 
+### Zoekt: [indexed-search-indexer] Golang runtime monitoring
+
+#### zoekt: go_goroutines
+
+<p class="subtitle">Maximum active goroutines</p>
+
+A high value here indicates a possible goroutine leak.
+
+Refer to the [alerts reference](./alerts.md#zoekt-go-goroutines) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101600` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query:
+
+```
+max by(instance) (go_goroutines{job=~".*indexed-search-indexer"})
+```
+</details>
+
+<br />
+
+#### zoekt: go_gc_duration_seconds
+
+<p class="subtitle">Maximum go garbage collection duration</p>
+
+Refer to the [alerts reference](./alerts.md#zoekt-go-gc-duration-seconds) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101601` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query:
+
+```
+max by(instance) (go_gc_duration_seconds{job=~".*indexed-search-indexer"})
+```
+</details>
+
+<br />
+
+### Zoekt: [indexed-search] Golang runtime monitoring
+
+#### zoekt: go_goroutines
+
+<p class="subtitle">Maximum active goroutines</p>
+
+A high value here indicates a possible goroutine leak.
+
+Refer to the [alerts reference](./alerts.md#zoekt-go-goroutines) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101700` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query:
+
+```
+max by(instance) (go_goroutines{job=~".*indexed-search"})
+```
+</details>
+
+<br />
+
+#### zoekt: go_gc_duration_seconds
+
+<p class="subtitle">Maximum go garbage collection duration</p>
+
+Refer to the [alerts reference](./alerts.md#zoekt-go-gc-duration-seconds) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101701` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query:
+
+```
+max by(instance) (go_gc_duration_seconds{job=~".*indexed-search"})
+```
+</details>
+
+<br />
+
 ### Zoekt: Kubernetes monitoring (only available on Kubernetes)
 
 #### zoekt: pods_available_percentage
@@ -26605,7 +26701,7 @@ max by (name) (container_oom_events_total{name=~"^zoekt-webserver.*"})
 
 Refer to the [alerts reference](./alerts.md#zoekt-pods-available-percentage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101600` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101800` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 

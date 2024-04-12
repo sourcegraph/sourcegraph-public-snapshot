@@ -165,9 +165,10 @@ If you've installed PostgreSQL with Homebrew that should be the case.
 If you used another method, make sure psql is available.`,
 				Check: checkAction(check.Combine(
 					check.InPath("psql"),
+					check.CommandExitCode("brew ls --versions postgresql@12", 0),
 					check.CompareSemanticVersion("psql", "psql --version", ">= 12.0"),
 				)),
-				Fix: brewInstall("postgresql@12"),
+				Fix: check.CombineFix(brewInstall("postgresql@12"), cmdFix("brew link postgresql@12")),
 			},
 			{
 				Name: "Start Postgres",
