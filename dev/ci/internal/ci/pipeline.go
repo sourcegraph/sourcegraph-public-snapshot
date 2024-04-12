@@ -324,7 +324,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		))
 
 		// Wolfi package and base images
-		packageOps, _, apkoOps := addWolfiOps(c)
+		packageOps, apkoOps := addWolfiOps(c)
 		if apkoOps != nil {
 			ops.Merge(apkoOps)
 		}
