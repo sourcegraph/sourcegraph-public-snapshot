@@ -156,7 +156,7 @@ func (g *gitTreeTranslator) readCachedHunks(ctx context.Context, repo *sgtypes.R
 
 // readHunks returns a position-ordered slice of changes (additions or deletions) of
 // the given path between the given source and target commits.
-func (g *gitTreeTranslator) readHunks(ctx context.Context, repo *sgtypes.Repo, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
+func (g *gitTreeTranslator) readHunks(ctx context.Context, repo *sgtypes.Repo, sourceCommit, targetCommit, path string) (_ []*diff.Hunk, err error) {
 	r, err := g.client.Diff(ctx, gitserver.DiffOptions{
 		Repo:      repo.Name,
 		Base:      sourceCommit,
@@ -167,6 +167,13 @@ func (g *gitTreeTranslator) readHunks(ctx context.Context, repo *sgtypes.Repo, s
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		closeErr := r.Close()
+		if err == nil {
+			err = closeErr
+		}
+	}()
+
 	fd, err := r.Next()
 	if err != nil {
 		if errors.Is(err, io.EOF) {
@@ -174,9 +181,7 @@ func (g *gitTreeTranslator) readHunks(ctx context.Context, repo *sgtypes.Repo, s
 		}
 		return nil, err
 	}
-	if err := r.Close(); err != nil {
-		return nil, err
-	}
+
 	return fd.Hunks, nil
 }
 

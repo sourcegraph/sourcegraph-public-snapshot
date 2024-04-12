@@ -356,6 +356,25 @@ index 9bd8209..d2acfa9 100644
 		if count != testDiffFiles {
 			t.Errorf("unexpected diff count: have %d; want %d", count, testDiffFiles)
 		}
+
+		t.Run("early close", func(t *testing.T) {
+			routinesBefore := runtime.NumGoroutine()
+
+			i, err := c.Diff(ctx, DiffOptions{Base: "foo", Head: "bar"})
+			require.NoError(t, err)
+
+			hunk, err := i.Next()
+			require.NoError(t, err)
+			require.Equal(t, "INSTALL.md", hunk.OrigName)
+
+			// We did not receive io.EOF above, but are closing the diff reader,
+			// this should not error.
+			require.NoError(t, i.Close())
+
+			// Expect no leaked routines.
+			routinesAfter := runtime.NumGoroutine()
+			require.Equal(t, routinesBefore, routinesAfter)
+		})
 	})
 }
 
