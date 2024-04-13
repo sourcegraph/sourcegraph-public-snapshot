@@ -1141,7 +1141,7 @@ type mockVCSSyncer struct {
 	mockTypeFunc    func() string
 	mockIsCloneable func(ctx context.Context, repoName api.RepoName) error
 	mockClone       func(ctx context.Context, repo api.RepoName, targetDir common.GitDir, tmpPath string, progressWriter io.Writer) error
-	mockFetch       func(ctx context.Context, repoName api.RepoName, dir common.GitDir) ([]byte, error)
+	mockFetch       func(ctx context.Context, repoName api.RepoName, dir common.GitDir, progressWriter io.Writer) error
 }
 
 func (m *mockVCSSyncer) Type() string {
@@ -1168,12 +1168,12 @@ func (m *mockVCSSyncer) Clone(ctx context.Context, repo api.RepoName, targetDir 
 	return errors.New("no mock for Clone() is set")
 }
 
-func (m *mockVCSSyncer) Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir) ([]byte, error) {
+func (m *mockVCSSyncer) Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir, progressWriter io.Writer) error {
 	if m.mockFetch != nil {
-		return m.mockFetch(ctx, repoName, dir)
+		return m.mockFetch(ctx, repoName, dir, progressWriter)
 	}
 
-	return nil, errors.New("no mock for Fetch() is set")
+	return errors.New("no mock for Fetch() is set")
 }
 
 var _ vcssyncer.VCSSyncer = &mockVCSSyncer{}

@@ -184,7 +184,7 @@ type Server struct {
 	wg       sync.WaitGroup // tracks running background jobs
 
 	// cloneLimiter limits the number of concurrent
-	// clones. Use s.acquireCloneLimiter() and instead of using it directly.
+	// clones.
 	cloneLimiter *limiter.MutableLimiter
 
 	// rpsLimiter limits the remote code host git operations done per second
@@ -247,14 +247,6 @@ func (s *Server) getRemoteURL(ctx context.Context, name api.RepoName) (*vcs.URL,
 	}
 
 	return vcs.ParseURL(remoteURL)
-}
-
-// acquireCloneLimiter() acquires a cancellable context associated with the
-// clone limiter.
-func (s *Server) acquireCloneLimiter(ctx context.Context) (context.Context, context.CancelFunc, error) {
-	pendingClones.Inc()
-	defer pendingClones.Dec()
-	return s.cloneLimiter.Acquire(ctx)
 }
 
 func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error) {
@@ -323,7 +315,9 @@ func (s *Server) repoUpdateOrClone(ctx context.Context, repoName api.RepoName) e
 
 	// Use caller context, if the caller is not interested anymore before we
 	// start cloning, we can skip the clone altogether.
-	_, cancelCloneLimiter, err := s.acquireCloneLimiter(ctx)
+	pendingClones.Inc()
+	_, cancelCloneLimiter, err := s.cloneLimiter.Acquire(ctx)
+	pendingClones.Dec()
 	if err != nil {
 		lock.Release()
 		return err
@@ -371,7 +365,7 @@ func (s *Server) repoUpdateOrClone(ctx context.Context, repoName api.RepoName) e
 				repoClonedCounter.Inc()
 				logger.Info("cloned repo", log.String("repo", string(repoName)))
 			} else {
-				if err := s.doRepoUpdate(ctx, repoName); err != nil {
+				if err := s.doRepoUpdate(ctx, repoName, lock); err != nil {
 					// The repo update might have failed due to the repo being corrupt
 					s.LogIfCorrupt(ctx, repoName, err)
 
@@ -502,7 +496,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, lock Reposito
 	// produced, the ideal solution would be that readCloneProgress stores it in
 	// chunks.
 	output := &linebasedBufferedWriter{}
-	eg := readCloneProgress(logger, lock, io.TeeReader(progressReader, output), repo)
+	eg := readFetchProgress(logger, lock, io.TeeReader(progressReader, output), repo)
 
 	cloneTimeout := conf.GitLongCommandTimeout()
 	cloneCtx, cancel := context.WithTimeout(ctx, cloneTimeout)
@@ -516,7 +510,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, lock Reposito
 	}
 
 	// best-effort update the output of the clone
-	if err := s.db.GitserverRepos().SetLastOutput(context.Background(), repo, output.String()); err != nil {
+	if err := s.db.GitserverRepos().SetLastOutput(ctx, repo, output.String()); err != nil {
 		s.logger.Error("Setting last output in DB", log.Error(err))
 	}
 
@@ -602,19 +596,19 @@ func (w *linebasedBufferedWriter) Bytes() []byte {
 	return w.buf
 }
 
-// readCloneProgress scans the reader and saves the most recent line of output
+// readFetchProgress scans the reader and saves the most recent line of output
 // as the lock status, and optionally writes to a log file if siteConfig.cloneProgressLog
 // is enabled.
-func readCloneProgress(logger log.Logger, lock RepositoryLock, pr io.Reader, repo api.RepoName) *errgroup.Group {
+func readFetchProgress(logger log.Logger, lock RepositoryLock, pr io.Reader, repo api.RepoName) *errgroup.Group {
 	var logFile *os.File
 
 	if conf.Get().CloneProgressLog {
 		var err error
 		logFile, err = os.CreateTemp("", "")
 		if err != nil {
-			logger.Warn("failed to create temporary clone log file", log.Error(err), log.String("repo", string(repo)))
+			logger.Warn("failed to create temporary fetch log file", log.Error(err), log.String("repo", string(repo)))
 		} else {
-			logger.Info("logging clone output", log.String("file", logFile.Name()), log.String("repo", string(repo)))
+			logger.Info("logging fetch output", log.String("file", logFile.Name()), log.String("repo", string(repo)))
 			defer logFile.Close()
 		}
 	}
@@ -691,7 +685,7 @@ var (
 
 var doBackgroundRepoUpdateMock func(api.RepoName) error
 
-func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) (err error) {
+func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, lock RepositoryLock) (err error) {
 	logger := s.logger.Scoped("repoUpdate").With(log.String("repo", string(repo)))
 
 	if doBackgroundRepoUpdateMock != nil {
@@ -722,21 +716,35 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) (err error
 		// ensure the background update doesn't hang forever
 		fetchCtx, cancelTimeout := context.WithTimeout(ctx, fetchTimeout)
 		defer cancelTimeout()
-		output, err := syncer.Fetch(fetchCtx, repo, dir)
-		// best-effort update the output of the fetch
-		if err := s.db.GitserverRepos().SetLastOutput(ctx, repo, string(output)); err != nil {
-			s.logger.Warn("Setting last output in DB", log.Error(err))
+
+		progressReader, progressWriter := io.Pipe()
+		// We also capture the entire output in memory for the call to SetLastOutput
+		// further down.
+		// TODO: This might require a lot of memory depending on the amount of logs
+		// produced, the ideal solution would be that readCloneProgress stores it in
+		// chunks.
+		output := &linebasedBufferedWriter{}
+		eg := readFetchProgress(logger, lock, io.TeeReader(progressReader, output), repo)
+
+		fetchErr := syncer.Fetch(fetchCtx, repo, dir, progressWriter)
+		progressWriter.Close()
+
+		if err := eg.Wait(); err != nil {
+			s.logger.Error("reading fetch progress", log.Error(err))
 		}
 
-		if err != nil {
+		// best-effort store the output of the fetch
+		if err := s.db.GitserverRepos().SetLastOutput(ctx, repo, output.String()); err != nil {
+			s.logger.Error("Setting last output in DB", log.Error(err))
+		}
+
+		if fetchErr != nil {
 			if err := fetchCtx.Err(); err != nil {
 				return err
 			}
-			if output != nil {
-				return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, string(output))
-			} else {
-				return errors.Wrapf(err, "failed to fetch repo %q", repo)
-			}
+			// TODO: Should we really return the entire output here in an error?
+			// It could be a super big error string.
+			return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, output.String())
 		}
 
 		return postRepoFetchActions(ctx, logger, s.fs, s.db, s.getBackendFunc(dir, repo), s.hostname, repo, dir, syncer)
