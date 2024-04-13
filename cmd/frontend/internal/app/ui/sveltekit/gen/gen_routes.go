@@ -167,7 +167,7 @@ func getPagePaths() []string {
 		if err != nil {
 			return err
 		}
-		if filepath.Base(path) == "+page.ts" {
+		if filepath.Base(path) == "+page.svelte" {
 			paths = append(paths, path)
 		}
 		return nil

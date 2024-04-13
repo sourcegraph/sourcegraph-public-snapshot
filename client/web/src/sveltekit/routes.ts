@@ -10,11 +10,6 @@ export type SvelteKitRoute = {
 
 export const svelteKitRoutes: SvelteKitRoute[] = [
 	{
-		id: '/',
-		pattern: new RegExp('^/$'),
-		isRepoRoot: false,
-	},
-	{
 		id: '/[...repo=reporev]/(validrev)/(code)',
 		pattern: new RegExp('^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/?$'),
 		isRepoRoot: true,

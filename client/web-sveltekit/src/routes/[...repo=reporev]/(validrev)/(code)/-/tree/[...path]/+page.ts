@@ -2,15 +2,10 @@ import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
 import { fetchTreeEntries } from '$lib/repo/api/tree'
 import { findReadme } from '$lib/repo/tree'
 import { resolveRevision } from '$lib/repo/utils'
-import type { RouteMeta } from '$lib/routeMeta'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
 import { TreePageCommitInfoQuery, TreePageReadmeQuery } from './page.gql'
-
-export const _meta: RouteMeta = {
-    serverRouteName: 'tree',
-}
 
 export const load: PageLoad = ({ parent, params }) => {
     const client = getGraphQLClient()

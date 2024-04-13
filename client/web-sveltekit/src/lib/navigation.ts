@@ -1,5 +1,3 @@
-import { routeMeta } from '$lib/routeMeta'
-
 import { svelteKitRoutes, type SvelteKitRoute } from './routes'
 
 let knownRoutesRegex: RegExp | undefined
@@ -60,5 +58,5 @@ export function isRepoRoute(routeID: string | null): boolean {
     if (!routeID) {
         return false
     }
-    return routeMeta[routeID]?.isRepoRoute ?? false
+    return routeID.startsWith('/[...repo=reporev]')
 }

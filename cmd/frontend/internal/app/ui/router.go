@@ -237,8 +237,7 @@ func InitRouter(db database.DB) {
 	// Help, has to be defined after about subdomain
 	r.PathPrefix("/help").Methods("GET").Name("help").HandlerFunc(serveHelp)
 
-	// repo has to come last
-
+	// repo, has to come last
 	serveRepoHandler := handler(db, serveRepoOrBlob(db, routeRepo, func(c *Common, r *http.Request) string {
 		// e.g. "gorilla/mux - Sourcegraph"
 		return brandNameSubtitle(repoShortName(c.Repo.Name))

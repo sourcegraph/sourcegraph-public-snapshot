@@ -17,11 +17,6 @@ type svelteKitRoute struct {
 
 var svelteKitRoutes = []svelteKitRoute{
 	{
-		Id:      "/",
-		Pattern: regexp.MustCompile("^/$"),
-		Tag:     tags.EnableOptIn,
-	},
-	{
 		Id:      "/[...repo=reporev]/(validrev)/(code)",
 		Pattern: regexp.MustCompile("^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/?$"),
 		Tag:     tags.EnableOptIn | tags.RepoRoot,

@@ -1,11 +1,9 @@
-// @sg EnableRollout
 import { BehaviorSubject, type Observable, of } from 'rxjs'
 import { get } from 'svelte/store'
 
 import { browser } from '$app/environment'
 import { navigating } from '$app/stores'
 import { SearchPatternType } from '$lib/graphql-operations'
-import type { RouteMeta } from '$lib/routeMeta'
 import { parseExtendedSearchURL, type ExtendedParsedSearchURL } from '$lib/search'
 import { SearchCachePolicy, getCachePolicyFromURL } from '$lib/search/state'
 import {
@@ -23,10 +21,6 @@ import {
 import type { PageLoad } from './$types'
 
 type SearchStreamCacheEntry = Observable<AggregateStreamingSearchResults>
-
-export const _meta: RouteMeta = {
-    serverRouteName: 'search',
-}
 
 /**
  * CachingStreamManager helps caching and canceling search streams in the browser.
