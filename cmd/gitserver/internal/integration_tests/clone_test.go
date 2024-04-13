@@ -91,7 +91,7 @@ func TestClone(t *testing.T) {
 
 	// Requesting a repo update should figure out that the repo is not yet
 	// cloned and call clone. We expect that clone to succeed.
-	_, _, err := s.RepoUpdate(ctx, repo)
+	_, _, err := s.FetchRepository(ctx, repo)
 	require.NoError(t, err)
 
 	// Should have acquired a lock.
@@ -194,7 +194,7 @@ func TestClone_Fail(t *testing.T) {
 	// Requesting a repo update should figure out that the repo is not yet
 	// cloned and call clone. We expect that clone to fail, because vcssyncer.IsCloneable
 	// fails here.
-	_, _, err := s.RepoUpdate(ctx, repo)
+	_, _, err := s.FetchRepository(ctx, repo)
 	require.Error(t, err)
 	// Note that this error is from IsCloneable(), not from Clone().
 	require.Contains(t, err.Error(), "error cloning repo: repo github.com/test/repo not cloneable:")
@@ -232,7 +232,7 @@ func TestClone_Fail(t *testing.T) {
 	// Requesting another repo update should figure out that the repo is not yet
 	// cloned and call clone. We expect that clone to fail, but in the vcssyncer.Clone
 	// stage this time, not vcssyncer.IsCloneable.
-	_, _, err = s.RepoUpdate(ctx, repo)
+	_, _, err = s.FetchRepository(ctx, repo)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "failed to clone github.com/test/repo: clone failed. Output: Creating bare repo\nCreated bare repo at")
 

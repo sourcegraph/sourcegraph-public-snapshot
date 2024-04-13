@@ -39,8 +39,7 @@ type service interface {
 	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchReader io.Reader) protocol.CreateCommitFromPatchResponse
 	LogIfCorrupt(context.Context, api.RepoName, error)
 	IsRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error)
-	RepoUpdate(ctx context.Context, repo api.RepoName) (lastFetched, lastChanged time.Time, err error)
-	SearchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error)
+	FetchRepository(ctx context.Context, repo api.RepoName) (lastFetched, lastChanged time.Time, err error)
 	EnsureRevision(ctx context.Context, repo api.RepoName, rev string) (didUpdate bool)
 }
 
@@ -385,7 +384,7 @@ func (gs *grpcServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 	tr, ctx := trace.New(ss.Context(), "search")
 	defer tr.End()
 
-	limitHit, err := gs.svc.SearchWithObservability(ctx, tr, args, onMatch)
+	limitHit, err := searchWithObservability(ctx, gs.logger, gs.fs.RepoDir(args.Repo), tr, args, onMatch)
 	if err != nil {
 		return err
 	}

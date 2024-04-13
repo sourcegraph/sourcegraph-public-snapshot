@@ -145,7 +145,7 @@ func MakeGitRepository(t testing.TB, cmds ...string) api.RepoName {
 	t.Helper()
 	dir := InitGitRepository(t, cmds...)
 	repo := api.RepoName(filepath.Base(dir))
-	_, _, err := testServer.RepoUpdate(context.Background(), repo)
+	_, _, err := testServer.FetchRepository(context.Background(), repo)
 	require.NoError(t, err)
 	return repo
 }

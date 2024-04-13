@@ -70,7 +70,7 @@ func (s *repositoryServiceServer) FetchRepository(ctx context.Context, req *prot
 
 	repoName := api.RepoName(req.GetRepoName())
 
-	lastFetched, lastChanged, err := s.svc.RepoUpdate(ctx, repoName)
+	lastFetched, lastChanged, err := s.svc.FetchRepository(ctx, repoName)
 	if err != nil {
 		return nil, status.New(codes.Internal, errors.Wrap(err, "failed to fetch repository").Error()).Err()
 	}
