@@ -398,7 +398,7 @@ func setLastFetched(ctx context.Context, db database.DB, shardID string, dir com
 
 // setLastErrorNonFatal will set the last_error column for the repo in the gitserver table.
 func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, err error) {
-	var errString string
+	errString := ""
 	if err != nil {
 		errString = err.Error()
 	}
