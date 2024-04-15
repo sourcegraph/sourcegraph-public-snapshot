@@ -160,6 +160,10 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 			// We can't error forever, as the instance will keep trying to deliver
 			// this event - for now, we just pretend the event succeeded, and log
 			// some diagnostics.
+			//
+			// TODO: Maybe we can merge this with how we handle errors in
+			// summarizePublishEventsResults - for now, we stick with this
+			// special handling for extra visibility.
 			if len(payload) >= googlepubsub.MaxPublishRequestBytes {
 				trace.Logger(ctx, p.logger).Error("discarding oversized event",
 					log.Error(errors.Newf("event %s/%s is oversized",
@@ -170,6 +174,7 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 						redact.Safe(event.GetFeature()),
 						redact.Safe(event.GetAction()))),
 					log.String("eventID", event.GetId()),
+					log.String("eventSource", event.GetSource().String()),
 					log.Int("size", len(payload)),
 					// Record a section of the event content for diagnostics
 					log.String("eventSnippet", strings.ToValidUTF8(string(eventJSON[:256]), "�")))
