@@ -1,6 +1,21 @@
+<script context="module" lang="ts">
+    import type { RepositoryGitRefs_Repository_, RepositoryGitCommits_Repository_ } from './RepositoryRevPicker.gql'
+
+    export type RepositoryBranches = RepositoryGitRefs_Repository_['gitRefs']
+    export type RepositoryBranch = RepositoryBranches['nodes'][number]
+
+    export type RepositoryTags = RepositoryGitRefs_Repository_['gitRefs']
+    export type RepositoryTag = RepositoryTags['nodes'][number]
+
+    export type RepositoryCommits = NonNullable<RepositoryGitCommits_Repository_['commit']>['ancestors']
+    export type RepositoryGitCommit = RepositoryCommits['nodes'][number]
+</script>
+
 <script lang="ts">
-    import { Button } from '$lib/wildcard'
+    import { mdiSourceBranch, mdiTagOutline, mdiSourceCommit } from '@mdi/js'
+    import { Button, Badge } from '$lib/wildcard'
     import Popover from '$lib/Popover.svelte'
+    import Icon from '$lib/Icon.svelte'
     import Tabs from '$lib/Tabs.svelte'
     import TabPanel from '$lib/TabPanel.svelte'
 
@@ -8,15 +23,9 @@
     import { replaceRevisionInURL } from '@sourcegraph/shared/src/util/url'
 
     import type { ResolvedRevision } from '../../+layout'
-    import RepositoryBranchesPicker, {
-        type RepositoryBranches,
-        type RepositoryBranch,
-    } from './RepositoryBranchesPicker.svelte'
-    import RepositoryCommitsPicker, {
-        type RepositoryCommits,
-        type RepositoryGitCommit,
-    } from './RepositoryCommitsPicker.svelte'
-    import RepositoryTagsPicker, { type RepositoryTags, type RepositoryTag } from './RepositoryTagsPicker.svelte'
+
+    import Picker from './Picker.svelte'
+    import RepositoryRevPickerItem from './RepositoryRevPickerItem.svelte'
 
     export let repoURL: string
     export let revision: string | undefined
@@ -55,34 +64,63 @@
     <div slot="content" class="content" let:toggle>
         <Tabs>
             <TabPanel title="Branches">
-                <RepositoryBranchesPicker
-                    {repoURL}
-                    {getRepositoryBranches}
+                <Picker
+                    name="branches"
+                    seeAllItemsURL={`${repoURL}/-/branches`}
+                    getData={getRepositoryBranches}
+                    toOption={branch => ({ value: branch.id, label: branch.displayName })}
                     onSelect={branch => {
                         toggle(false)
                         handleBranchOrTagSelect(branch)
                     }}
-                />
+                    let:value
+                >
+                    <RepositoryRevPickerItem
+                        iconPath={mdiSourceBranch}
+                        label={value.displayName}
+                        author={value.target.commit?.author}
+                    />
+                </Picker>
             </TabPanel>
             <TabPanel title="Tags">
-                <RepositoryTagsPicker
-                    {repoURL}
-                    {getRepositoryTags}
+                <Picker
+                    name="tags"
+                    seeAllItemsURL={`${repoURL}/-/tags`}
+                    getData={getRepositoryTags}
+                    toOption={tag => ({ value: tag.id, label: tag.displayName })}
                     onSelect={tag => {
                         toggle(false)
                         handleBranchOrTagSelect(tag)
                     }}
-                />
+                    let:value
+                >
+                    <RepositoryRevPickerItem
+                        iconPath={mdiTagOutline}
+                        label={value.displayName}
+                        author={value.target.commit?.author}
+                    />
+                </Picker>
             </TabPanel>
             <TabPanel title="Commits">
-                <RepositoryCommitsPicker
-                    {repoURL}
-                    {getRepositoryCommits}
+                <Picker
+                    name="commits"
+                    seeAllItemsURL={`${repoURL}/-/commits`}
+                    getData={getRepositoryCommits}
+                    toOption={commit => ({ value: commit.id, label: commit.oid })}
                     onSelect={commit => {
                         toggle(false)
                         handleCommitSelect(commit)
                     }}
-                />
+                    let:value
+                >
+                    <RepositoryRevPickerItem label="" iconPath="" author={value.author}>
+                        <svelte:fragment slot="title">
+                            <Icon svgPath={mdiSourceCommit} inline />
+                            <Badge variant="link">{value.abbreviatedOID}</Badge>
+                            <span class="commit-subject">{value.subject}</span>
+                        </svelte:fragment>
+                    </RepositoryRevPickerItem>
+                </Picker>
             </TabPanel>
         </Tabs>
     </div>
@@ -109,7 +147,43 @@
         }
 
         :global([data-tab-panel]) {
-            padding-top: 0.75rem;
+            margin: 0 -0.75rem -0.75rem -0.75rem;
+        }
+
+        // Pickers style
+        :global([data-picker-root]) {
+            // Show the first 8 and half element in the initial suggest block
+            // 9th half visible item is needed to indicate that there are more items
+            // to pick
+            max-height: 25.5rem;
+        }
+
+        :global([data-picker-suggestions-list]) {
+            display: grid;
+            grid-template-rows: auto;
+            grid-template-columns: [title] auto [author] 10rem [timestamp] 6rem;
+        }
+
+        :global([data-picker-suggestions-list-item]) {
+            display: grid;
+            grid-column: 1 / 4;
+            grid-template-columns: subgrid;
+            gap: 1rem;
+        }
+
+        .commit-subject {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        // Tags picker layout override
+        :global([data-tab-panel='Tags']) :global([data-picker-suggestions-list]) {
+            grid-template-columns: [title] auto [author] 13rem [timestamp] 7rem;
+        }
+
+        // Local override for commits picker abbreviatedOID badge
+        :global([data-tab-panel='Commits']) :global([data-badge]) {
+            flex-shrink: 0;
         }
     }
 </style>

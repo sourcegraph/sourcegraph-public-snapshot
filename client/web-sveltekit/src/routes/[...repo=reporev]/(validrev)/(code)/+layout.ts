@@ -136,7 +136,7 @@ export const load: LayoutLoad = async ({ parent, params }) => {
                                 throw new Error(error?.message)
                             }
 
-                            return data.node.commit
+                            return data.node.commit.ancestors
                         })
                     )
             ),

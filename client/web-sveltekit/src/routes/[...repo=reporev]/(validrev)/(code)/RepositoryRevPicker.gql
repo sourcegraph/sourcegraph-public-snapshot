@@ -15,20 +15,11 @@ fragment RepositoryGitRefs on Node {
                 displayName
                 target {
                     commit {
-                        author {
-                            date
-                            person {
-                                __typename
-                                ...Avatar_Person
-                            }
-                        }
+                        ...RepositoryGitRevAuthor
                     }
                 }
             }
             totalCount
-            pageInfo {
-                hasNextPage
-            }
         }
     }
 }
@@ -44,22 +35,19 @@ fragment RepositoryGitCommits on Node {
             ancestors(first: 15, query: $query) {
                 __typename
                 nodes {
-                    ...RepositoryGitCommit
-                }
-                pageInfo {
-                    hasNextPage
+                    __typename
+                    id
+                    oid
+                    subject
+                    abbreviatedOID
+                    ...RepositoryGitRevAuthor
                 }
             }
         }
     }
 }
 
-fragment RepositoryGitCommit on GitCommit {
-    __typename
-    id
-    oid
-    subject
-    abbreviatedOID
+fragment RepositoryGitRevAuthor on GitCommit {
     author {
         date
         person {

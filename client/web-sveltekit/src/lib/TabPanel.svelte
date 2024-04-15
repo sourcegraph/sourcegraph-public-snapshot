@@ -25,7 +25,7 @@
         aria-labelledby={tabId}
         role="tabpanel"
         tabindex={selected ? 0 : -1}
-        data-tab-panel
+        data-tab-panel={title}
     >
         <slot />
     </div>

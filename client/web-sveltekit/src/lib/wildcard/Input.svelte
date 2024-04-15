@@ -35,7 +35,7 @@
     })
 </script>
 
-<div class="root">
+<div class="root" data-input-container>
     <input
         bind:this={input}
         type="text"
