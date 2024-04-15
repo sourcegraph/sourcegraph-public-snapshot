@@ -1113,7 +1113,6 @@ func TestNewPlanJob(t *testing.T) {
 `),
 		},
 		{
-
 			query:      `context:global repo:sourcegraph/.* what's going on'? lang:go`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeCodyContext,
