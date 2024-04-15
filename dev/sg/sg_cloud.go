@@ -103,10 +103,13 @@ func ensureBranchIsSyncd(ctx context.Context, currRepo *repo.GitRepo) error {
 		return ErrUserCancelled
 	}
 
-	std.Out.WriteNoticef("Pushing commit %q to origin/\n", currRepo.Ref, currRepo.Branch)
-	if err := currRepo.Sync(ctx); err != nil {
+	std.Out.WriteNoticef("Pushing commit %q to origin/%s\n", currRepo.Ref, currRepo.Branch)
+	out, err := currRepo.Sync(ctx)
+	if err != nil {
+		std.Out.WriteCode("bash", out)
 		return err
 	}
+	std.Out.WriteCode("bash", out)
 
 	// if we pushed we wait a little bit otherwise follow up actions might not trigger properly
 	time.Sleep(3 * time.Second)
