@@ -13,8 +13,6 @@
     export let suggestedItems: Required<Skipped>[]
     export let severity: string
 
-    let forkedOrArchived: boolean
-
     const SEARCH_JOB_THRESHOLD = 10000
     const icons: Record<string, string> = {
         info: mdiInformationOutline,
@@ -34,7 +32,6 @@
      * evaluate a search as being finished. Hence, we check both here with an OR relationship
      */
     $: done = progress.done || state === 'complete'
-    $: console.log('forkedOrArchived changed in ResultsIndicator:', forkedOrArchived)
 </script>
 
 <div class="indicator">
@@ -46,17 +43,15 @@
 
     <div class="messages">
         <ProgressMessage {state} {progress} {severity} />
-        {#if !forkedOrArchived}
-            <div class="action-container">
-                {#if !done && takingTooLong}
-                    <TimeoutMessage />
-                {:else if done}
-                    <SuggestedAction bind:forkedOrArchived {progress} {suggestedItems} {severity} {state} />
-                {:else if elapsedDuration <= SEARCH_JOB_THRESHOLD}
-                    <small> Running Search </small>
-                {/if}
-            </div>
-        {/if}
+        <div class="action-container">
+            {#if !done && takingTooLong}
+                <TimeoutMessage />
+            {:else if done}
+                <SuggestedAction {progress} {suggestedItems} {severity} {state} />
+            {:else if elapsedDuration <= SEARCH_JOB_THRESHOLD}
+                <small> Running Search </small>
+            {/if}
+        </div>
     </div>
     <Icon svgPath={mdiChevronDown} size={18} />
 </div>

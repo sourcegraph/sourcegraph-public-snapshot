@@ -8,8 +8,8 @@
     export let suggestedItems: Required<Skipped>[] = []
     export let severity: string
     export let state: 'error' | 'complete' | 'loading'
-    export let forkedOrArchived: boolean
 
+    const SEE_MORE = 'See more details'
     const CENTER_DOT = '\u00B7' // AKA 'interpunct'
 
     $: sortedItems = sortBySeverity(progress.skipped)
@@ -21,53 +21,45 @@
     $: forkedSuggestion = mostSevere.reason === 'excluded-fork' || mostSevere.reason === 'repository-fork'
     $: archivedSuggestion = mostSevere.reason === 'excluded-archive' || mostSevere.reason === 'repository-archive'
     $: forkedOrArchived = forkedSuggestion || archivedSuggestion
-    $: console.log('forkedOrArchived changed in SuggestedAction:', forkedOrArchived)
 </script>
 
-{#if !forkedOrArchived}
-    <div class="suggested-action">
-        <!-- completed search -->
-        {#if done && !hasSkippedItems}
-            <div class="more-details">
-                <small> See more details </small>
-            </div>
-        {/if}
+<div class="suggested-action">
+    <!-- completed search with no skipped items -->
+    {#if done && !hasSkippedItems}
+        <div class="more-details"><small>{SEE_MORE}</small></div>
+    {/if}
 
-        <!-- completed with skipped items -->
-        {#if done && hasSkippedItems}
-            <div class="info-badge" class:error-text={isError}>
-                <small>
-                    {capitalize(mostSevere?.title ?? mostSevere.title)}
-                </small>
-            </div>
-        {/if}
+    <!-- completed with skipped items -->
+    {#if done && hasSkippedItems && !forkedOrArchived}
+        <div class="info-badge" class:error-text={isError}>
+            <small>{capitalize(mostSevere?.title ?? mostSevere.title)}</small>
+        </div>
+    {:else}
+        <div class="more-details"><small>{SEE_MORE}</small></div>
+    {/if}
 
-        <!-- completed with suggested items -->
-        {#if done && mostSevere && mostSevere.suggested}
-            <small class="separator">{CENTER_DOT}</small>
-            <small class="action-badge">
-                {capitalize(mostSevere?.suggested ? mostSevere.suggested.title : '')}&nbsp;
-                <span class="code-font">
-                    {mostSevere.suggested?.queryExpression}
-                </span>
-            </small>
-        {/if}
-        <!--
-        TODO: @jasonhawkharris - When we implement search jobs,
-        we can change the link so that it points to where a user
-        can actually create a search job. We should also change
-        the text of the link when we do so, "Create a search job"
-        -->
-        {#if severity === 'error' && !mostSevere.suggested}
-            <div class="separator">{CENTER_DOT}</div>
-            <div class="search-job-link">
-                <small>
-                    Use <a href="/help/code-search/types/search-jobs">Search Job</a> for background search.
-                </small>
-            </div>
-        {/if}
-    </div>
-{/if}
+    <!-- completed with suggested items -->
+    {#if done && mostSevere && mostSevere.suggested && !forkedOrArchived}
+        <small class="separator">{CENTER_DOT}</small>
+        <small class="action-badge">
+            {capitalize(mostSevere?.suggested ? mostSevere.suggested.title : '')}&nbsp;
+            <span class="code-font">{mostSevere.suggested?.queryExpression}</span>
+        </small>
+    {/if}
+
+    <!--
+    TODO: @jasonhawkharris - When we implement search jobs,
+    we can change the link so that it points to where a user
+    can actually create a search job. We should also change
+    the text of the link when we do so, "Create a search job"
+    -->
+    {#if severity === 'error' && !mostSevere.suggested}
+        <small>{CENTER_DOT}</small>
+        <small>
+            Use <a href="/help/code-search/types/search-jobs">Search Job</a> for background search.
+        </small>
+    {/if}
+</div>
 
 <style lang="scss">
     .code-font {
@@ -103,11 +95,5 @@
         flex-flow: row nowrap;
         align-items: center;
         justify-content: space-evenly;
-    }
-
-    .search-job-link {
-        // we don't want the text of this message to change color
-        // on hover when in an error state, so we set the text color explicitly
-        color: var(--text-body);
     }
 </style>
