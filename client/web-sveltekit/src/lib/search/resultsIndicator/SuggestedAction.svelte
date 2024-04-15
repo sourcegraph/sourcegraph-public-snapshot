@@ -8,6 +8,7 @@
     export let suggestedItems: Required<Skipped>[] = []
     export let severity: string
     export let state: 'error' | 'complete' | 'loading'
+    export let forkedOrArchived: boolean
 
     const CENTER_DOT = '\u00B7' // AKA 'interpunct'
 
@@ -17,9 +18,13 @@
     $: hasSkippedItems = progress.skipped.length > 0
     $: mostSevere = sortedItems[0]
     $: done = progress.done
+    $: forkedSuggestion = mostSevere.reason === 'excluded-fork' || mostSevere.reason === 'repository-fork'
+    $: archivedSuggestion = mostSevere.reason === 'excluded-archive' || mostSevere.reason === 'repository-archive'
+    $: forkedOrArchived = forkedSuggestion || archivedSuggestion
+    $: console.log('forkedOrArchived changed in SuggestedAction:', forkedOrArchived)
 </script>
 
-<div class="action-container" class:error-text={isError}>
+{#if !forkedOrArchived}
     <div class="suggested-action">
         <!-- completed search -->
         {#if done && !hasSkippedItems}
@@ -39,15 +44,13 @@
 
         <!-- completed with suggested items -->
         {#if done && mostSevere && mostSevere.suggested}
-            <div class="separator">{CENTER_DOT}</div>
-            <div class="action-badge">
-                <small>
-                    {capitalize(mostSevere?.suggested ? mostSevere.suggested.title : '')}&nbsp;
-                    <span class="code-font">
-                        {mostSevere.suggested?.queryExpression}
-                    </span>
-                </small>
-            </div>
+            <small class="separator">{CENTER_DOT}</small>
+            <small class="action-badge">
+                {capitalize(mostSevere?.suggested ? mostSevere.suggested.title : '')}&nbsp;
+                <span class="code-font">
+                    {mostSevere.suggested?.queryExpression}
+                </span>
+            </small>
         {/if}
         <!--
         TODO: @jasonhawkharris - When we implement search jobs,
@@ -64,7 +67,7 @@
             </div>
         {/if}
     </div>
-</div>
+{/if}
 
 <style lang="scss">
     .code-font {
@@ -98,7 +101,10 @@
     .suggested-action {
         display: flex;
         flex-flow: row nowrap;
+        align-items: center;
+        justify-content: space-evenly;
     }
+
     .search-job-link {
         // we don't want the text of this message to change color
         // on hover when in an error state, so we set the text color explicitly

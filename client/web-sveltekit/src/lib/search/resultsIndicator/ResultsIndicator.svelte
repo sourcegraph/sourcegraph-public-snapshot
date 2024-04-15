@@ -13,6 +13,8 @@
     export let suggestedItems: Required<Skipped>[]
     export let severity: string
 
+    let forkedOrArchived: boolean
+
     const SEARCH_JOB_THRESHOLD = 10000
     const icons: Record<string, string> = {
         info: mdiInformationOutline,
@@ -32,75 +34,53 @@
      * evaluate a search as being finished. Hence, we check both here with an OR relationship
      */
     $: done = progress.done || state === 'complete'
+    $: console.log('forkedOrArchived changed in ResultsIndicator:', forkedOrArchived)
 </script>
 
 <div class="indicator">
-    <div class="icon">
-        {#if loading}
-            <LoadingSpinner inline />
-        {:else}
-            <Icon svgPath={icons[severity]} size={18} />
-        {/if}
-    </div>
+    {#if loading}
+        <LoadingSpinner inline />
+    {:else}
+        <Icon svgPath={icons[severity]} size={18} />
+    {/if}
 
     <div class="messages">
         <ProgressMessage {state} {progress} {severity} />
-
-        <div class="action-container">
-            {#if !done && takingTooLong}
-                <TimeoutMessage />
-            {:else if done}
-                <SuggestedAction {progress} {suggestedItems} {severity} {state} />
-            {:else}
-                <div class="suggested-action">
-                    {#if elapsedDuration <= SEARCH_JOB_THRESHOLD}
-                        <div class="running-search">
-                            <small> Running Search </small>
-                        </div>
-                    {/if}
-                </div>
-            {/if}
-        </div>
+        {#if !forkedOrArchived}
+            <div class="action-container">
+                {#if !done && takingTooLong}
+                    <TimeoutMessage />
+                {:else if done}
+                    <SuggestedAction bind:forkedOrArchived {progress} {suggestedItems} {severity} {state} />
+                {:else if elapsedDuration <= SEARCH_JOB_THRESHOLD}
+                    <small> Running Search </small>
+                {/if}
+            </div>
+        {/if}
     </div>
-
-    <div class="dropdown-icon">
-        <Icon svgPath={mdiChevronDown} size={18} />
-    </div>
+    <Icon svgPath={mdiChevronDown} size={18} />
 </div>
 
 <style lang="scss">
-    .action-container {
-        margin-top: 0.3rem;
-    }
-
-    .icon {
-        margin-right: 0.5rem;
-    }
-
-    .dropdown-icon {
-        margin-left: 1.2rem;
-    }
-
     .indicator {
-        align-items: center;
         display: flex;
         flex-flow: row nowrap;
         justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .messages {
-        align-content: center;
-        align-items: flex-start;
         display: flex;
         flex-flow: column nowrap;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 0.25rem;
     }
 
-    .running-search {
-        color: var(--text-muted);
-    }
-
-    .suggested-action {
+    small {
         display: flex;
         flex-flow: row nowrap;
+        color: var(--text-muted);
     }
 </style>
