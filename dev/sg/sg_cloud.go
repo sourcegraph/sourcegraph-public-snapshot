@@ -80,7 +80,7 @@ func determineVersion(build *buildkite.Build, tag string) string {
 }
 
 func ensureValidBuildCommit(ctx context.Context, branch string) (string, error) {
-	commit, err := repo.GetHeadCommit(ctx)
+	commit, err := repo.GetBranchHeadCommit(ctx, branch)
 	if err != nil {
 		return "", err
 	}
@@ -99,7 +99,7 @@ func ensureValidBuildCommit(ctx context.Context, branch string) (string, error) 
 		}
 		return false
 	}
-	ok, err := std.PromptAndScan(std.Out, fmt.Sprintf("Commit %q does not exist remotely. Do you want to push it to origin? (yes/no)", commit), &answer)
+	ok, err := std.PromptAndScan(std.Out, fmt.Sprintf("Commit %q on branch %q does not exist remotely. Do you want to push it to origin? (yes/no)", commit, branch), &answer)
 	if err != nil {
 		return "", err
 	}
@@ -107,6 +107,7 @@ func ensureValidBuildCommit(ctx context.Context, branch string) (string, error) 
 		return "", ErrUserCancelled
 	}
 
+	return "", errors.New("fail")
 	std.Out.WriteNoticef("Pushing commit %q to origin/\n", commit, branch)
 	_, err = repo.Push(ctx, branch)
 	if err != nil {
@@ -122,15 +123,19 @@ func ensureValidBuildCommit(ctx context.Context, branch string) (string, error) 
 
 func deployCloudEphemeral(ctx *cli.Context) error {
 	branch := ctx.String("branch")
+	currentBranch, err := repo.GetBranch(ctx.Context)
+	if err != nil {
+		return errors.Wrap(err, "failed to determine current branch")
+	}
 	// if the tag is set - we should prefer it over the branch
 	tag := ctx.String("tag")
 
 	if branch == "" && tag == "" {
-		value, err := repo.GetBranch(ctx.Context)
-		if err != nil {
-			return errors.Wrap(err, "failed to determine current branch")
-		}
-		branch = value
+		branch = currentBranch
+	} else if branch != currentBranch {
+		// we are not on the intended branch so we create a cloud-ephemeral branch so that we don't interfere with the branch specified
+		branch = fmt.Sprintf("cloud-ephemeral/%s", strings.ReplaceAll(branch, "/", "-"))
+		std.Out.Writef("currently not on %q branch - pushing to %q branch\n", currentBranch, branch)
 	}
 
 	commit, err := ensureValidBuildCommit(ctx.Context, branch)
@@ -157,7 +162,7 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	version := determineVersion(build, tag)
 	std.Out.Writef("Starting cloud ephemeral deployment for version %q\n", version)
 
-	os.Exit(0)
+	panic("stop")
 	cloudClient, err := cloud.NewClient(ctx.Context, cloud.APIEndpoint)
 	if err != nil {
 		return err

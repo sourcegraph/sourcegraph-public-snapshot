@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/run"
@@ -44,6 +45,15 @@ func GetBranch(ctx context.Context) (string, error) {
 
 func GetHeadCommit(ctx context.Context) (string, error) {
 	commit, err := run.Cmd(ctx, "git rev-parse HEAD").Run().String()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(commit), nil
+}
+
+func GetBranchHeadCommit(ctx context.Context, branch string) (string, error) {
+	commit, err := run.Cmd(ctx, fmt.Sprintf("git rev-parse %s", branch)).Run().String()
 	if err != nil {
 		return "", err
 	}
