@@ -99,8 +99,11 @@ func ensureValidBuildCommit(ctx context.Context, branch string) (string, error) 
 		}
 		return false
 	}
-	std.PromptAndScan(std.Out, "Commit %q does not exist remotely. Do you want to push it to origin? (yes/no)", &answer)
-	if !oneOf(answer, "yes", "y") {
+	ok, err := std.PromptAndScan(std.Out, fmt.Sprintf("Commit %q does not exist remotely. Do you want to push it to origin? (yes/no)", commit), &answer)
+	if err != nil {
+		return "", err
+	}
+	if !ok || !oneOf(answer, "yes", "y") {
 		return "", ErrUserCancelled
 	}
 
@@ -109,6 +112,9 @@ func ensureValidBuildCommit(ctx context.Context, branch string) (string, error) 
 	if err != nil {
 		return "", errors.Wrap(err, "failed to push commit to origin")
 	}
+
+	// if we pushed we wait a little bit otherwise follow up actions might not trigger properly
+	time.Sleep(3 * time.Second)
 
 	return commit, nil
 
@@ -120,7 +126,11 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	tag := ctx.String("tag")
 
 	if branch == "" && tag == "" {
-		repo.GetBranch(ctx.Context)
+		value, err := repo.GetBranch(ctx.Context)
+		if err != nil {
+			return errors.Wrap(err, "failed to determine current branch")
+		}
+		branch = value
 	}
 
 	commit, err := ensureValidBuildCommit(ctx.Context, branch)
@@ -136,7 +146,7 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	std.Out.WriteNoticef("Started build %s. Build progress can be viewed at %s\n", build.Number, build.WebURL)
+	std.Out.WriteNoticef("Started build %s. Build progress can be viewed at %s\n", pointers.DerefZero(build.Number), pointers.DerefZero(build.WebURL))
 
 	version := determineVersion(build, tag)
 	std.Out.WriteNoticef("Starting cloud ephemeral deployment for version %q\n", version)
