@@ -16,7 +16,7 @@ func NonSendingEvent() Event {
 // Honeycomb, but instead aggregates it in memory. This is useful for testing and
 // logging purposes.
 type nonSendingEvent struct {
-	fieldsWritingMu sync.Mutex
+	fieldsWritingMu sync.RWMutex
 	fields          map[string]any
 }
 
@@ -57,6 +57,9 @@ func (e *nonSendingEvent) AddAttributes(values []attribute.KeyValue) {
 // Fields returns all the added fields of the event. The returned map is not safe to
 // be modified concurrently with calls to AddField or AddAttributes.
 func (e *nonSendingEvent) Fields() map[string]any {
+	e.fieldsWritingMu.RLock()
+	defer e.fieldsWritingMu.RUnlock()
+
 	return e.fields
 }
 
