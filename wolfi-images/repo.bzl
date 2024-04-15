@@ -41,7 +41,7 @@ def apko_translate_locks():
 # https://github.com/sourcegraph/sourcegraph/pull/60785/commits/041fb7a177c8f9004a973306b2e045a25e64fc68
 def _wolfi_lockfiles(rctx):
     # Used to invalidate this repository when any lockfiles change.
-    rctx.path(rctx.path("wolfi-images"))
+    rctx.watch_tree(str(rctx.workspace_root) + "/wolfi-images")
 
     result = rctx.execute(["ls", str(rctx.workspace_root) + "/wolfi-images"])
     if result.return_code != 0:
