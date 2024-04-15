@@ -63,18 +63,18 @@ func (f *dotcomRepoFilter) getFilter(repos []types.RepoIDName) (_ []types.RepoID
 
 		_, commit, err := f.client.GetDefaultBranch(ctx, repo.Name, true)
 		if err != nil {
-			f.logger.Warn("repoContextFilter: couldn't get default branch, removing repo", log.Int32("repo", int32(repo.ID)), log.Error(err))
+			f.logger.Warn("couldn't get default branch, removing repo", log.Int32("repo", int32(repo.ID)), log.Error(err))
 			continue
 		}
 		// No commit signals an empty repo, should be nothing to filter
 		// Also we can't lookup the ignore file without a commit
 		if commit == "" {
-			f.logger.Info("repoContextFilter: empty repo removing", log.Int32("repo", int32(repo.ID)))
+			f.logger.Info("empty repo removing", log.Int32("repo", int32(repo.ID)))
 			continue
 		}
 		matcher, err := getIgnoreMatcher(ctx, f.client, repo, commit)
 		if err != nil {
-			f.logger.Warn("repoContextFilter: unable to process ignore file", log.Int32("repo", int32(repo.ID)), log.Error(err))
+			f.logger.Warn("unable to process ignore file", log.Int32("repo", int32(repo.ID)), log.Error(err))
 			continue
 		}
 
