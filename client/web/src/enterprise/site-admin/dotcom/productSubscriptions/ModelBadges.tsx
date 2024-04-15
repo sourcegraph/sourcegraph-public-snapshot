@@ -61,7 +61,7 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             case 'fireworks/accounts/fireworks/models/llama-v2-34b-code-instruct':
             case 'fireworks/accounts/fireworks/models/mistral-7b-instruct-4k':
             case 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct':
-            case 'fireworks/accounts/fireworks/models/mixtral-8x22b': {
+            case 'fireworks/accounts/fireworks/models/mixtral-8x22b-instruct-preview': {
                 return 'secondary'
             }
             default: {

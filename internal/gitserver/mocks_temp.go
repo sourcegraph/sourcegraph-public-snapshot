@@ -151,6 +151,9 @@ type MockClient struct {
 	// ResolveRevisionFunc is an instance of a mock function object
 	// controlling the behavior of the method ResolveRevision.
 	ResolveRevisionFunc *ClientResolveRevisionFunc
+	// RevAtTimeFunc is an instance of a mock function object controlling
+	// the behavior of the method RevAtTime.
+	RevAtTimeFunc *ClientRevAtTimeFunc
 	// RevListFunc is an instance of a mock function object controlling the
 	// behavior of the method RevList.
 	RevListFunc *ClientRevListFunc
@@ -385,6 +388,11 @@ func NewMockClient() *MockClient {
 		},
 		ResolveRevisionFunc: &ClientResolveRevisionFunc{
 			defaultHook: func(context.Context, api.RepoName, string, ResolveRevisionOptions) (r0 api.CommitID, r1 error) {
+				return
+			},
+		},
+		RevAtTimeFunc: &ClientRevAtTimeFunc{
+			defaultHook: func(context.Context, api.RepoName, string, time.Time) (r0 api.CommitID, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -640,6 +648,11 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.ResolveRevision")
 			},
 		},
+		RevAtTimeFunc: &ClientRevAtTimeFunc{
+			defaultHook: func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error) {
+				panic("unexpected invocation of MockClient.RevAtTime")
+			},
+		},
 		RevListFunc: &ClientRevListFunc{
 			defaultHook: func(context.Context, string, string, func(commit string) (bool, error)) error {
 				panic("unexpected invocation of MockClient.RevList")
@@ -807,6 +820,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		ResolveRevisionFunc: &ClientResolveRevisionFunc{
 			defaultHook: i.ResolveRevision,
+		},
+		RevAtTimeFunc: &ClientRevAtTimeFunc{
+			defaultHook: i.RevAtTime,
 		},
 		RevListFunc: &ClientRevListFunc{
 			defaultHook: i.RevList,
@@ -5494,6 +5510,122 @@ func (c ClientResolveRevisionFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientResolveRevisionFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientRevAtTimeFunc describes the behavior when the RevAtTime method of
+// the parent MockClient instance is invoked.
+type ClientRevAtTimeFunc struct {
+	defaultHook func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error)
+	hooks       []func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error)
+	history     []ClientRevAtTimeFuncCall
+	mutex       sync.Mutex
+}
+
+// RevAtTime delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockClient) RevAtTime(v0 context.Context, v1 api.RepoName, v2 string, v3 time.Time) (api.CommitID, bool, error) {
+	r0, r1, r2 := m.RevAtTimeFunc.nextHook()(v0, v1, v2, v3)
+	m.RevAtTimeFunc.appendCall(ClientRevAtTimeFuncCall{v0, v1, v2, v3, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the RevAtTime method of
+// the parent MockClient instance is invoked and the hook queue is empty.
+func (f *ClientRevAtTimeFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RevAtTime method of the parent MockClient instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ClientRevAtTimeFunc) PushHook(hook func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientRevAtTimeFunc) SetDefaultReturn(r0 api.CommitID, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientRevAtTimeFunc) PushReturn(r0 api.CommitID, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *ClientRevAtTimeFunc) nextHook() func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientRevAtTimeFunc) appendCall(r0 ClientRevAtTimeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientRevAtTimeFuncCall objects describing
+// the invocations of this function.
+func (f *ClientRevAtTimeFunc) History() []ClientRevAtTimeFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientRevAtTimeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientRevAtTimeFuncCall is an object that describes an invocation of
+// method RevAtTime on an instance of MockClient.
+type ClientRevAtTimeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 api.CommitID
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientRevAtTimeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientRevAtTimeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // ClientRevListFunc describes the behavior when the RevList method of the

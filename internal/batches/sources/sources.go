@@ -653,7 +653,7 @@ func CopyRepoAsFork(repo *types.Repo, metadata any, nameAndOwner, forkNameAndOwn
 	forkSources := map[string]*types.SourceInfo{}
 
 	for urn, src := range repo.Sources {
-		if src != nil || src.CloneURL != "" {
+		if src != nil && src.CloneURL != "" {
 			forkURL := strings.Replace(
 				strings.ToLower(src.CloneURL),
 				strings.ToLower(nameAndOwner),

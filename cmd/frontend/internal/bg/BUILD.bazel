@@ -44,6 +44,7 @@ go_test(
     deps = [
         "//internal/database",
         "//internal/database/dbtest",
+        "//internal/dotcom",
         "//internal/rbac/types",
         "//internal/types",
         "@com_github_sourcegraph_log//logtest",

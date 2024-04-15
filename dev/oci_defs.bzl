@@ -32,9 +32,9 @@ def oci_image(name, **kwargs):
     oci_image_cross(
         name = name,
         image = ":" + name + "_underlying",
-        platforms = select({
-            "@platforms//os:macos": [Label("@zig_sdk//platform:linux_amd64")],
-            "//conditions:default": [],
+        platform = select({
+            "@platforms//os:macos": Label("@zig_sdk//platform:linux_amd64"),
+            "//conditions:default": Label("@platforms//host"),
         }),
         visibility = kwargs.pop("visibility", ["//visibility:public"]),
     )
@@ -45,13 +45,12 @@ oci_image_cross = rule(
     attrs = {
         "image": attr.label(cfg = transition(
             implementation = lambda settings, attr: [
-                {"//command_line_option:platforms": str(platform)}
-                for platform in attr.platforms
+                {"//command_line_option:platforms": str(attr.platform), "//command_line_option:compilation_mode": "opt"},
             ],
             inputs = [],
-            outputs = ["//command_line_option:platforms"],
+            outputs = ["//command_line_option:platforms", "//command_line_option:compilation_mode"],
         )),
-        "platforms": attr.label_list(),
+        "platform": attr.label(),
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),

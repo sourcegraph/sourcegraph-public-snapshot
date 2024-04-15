@@ -17,5 +17,10 @@ namespaces:
     actions:
       - READ
       - WRITE
+
+# 🚨 SECURITY: ALL PERMISSIONS defined above are granted by default to the base
+# USER role, unless specified in the below list. Namespaces that should NOT
+# be granted by default MUST be listed below.
 excludeFromUserRole:
   - OWNERSHIP
+  - PRODUCT_SUBSCRIPTIONS
