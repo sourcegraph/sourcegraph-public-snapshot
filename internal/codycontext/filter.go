@@ -9,7 +9,7 @@ import (
 
 type FileChunkFilterFunc func([]FileChunkContext) []FileChunkContext
 type RepoContentFilter interface {
-	GetFilter(repos []types.RepoIDName) (_ []types.RepoIDName, _ FileChunkFilterFunc, ok bool)
+	GetFilter(repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc, error)
 }
 
 func newRepoContentFilter(logger log.Logger, client gitserver.Client) RepoContentFilter {

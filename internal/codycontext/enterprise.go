@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -63,11 +64,11 @@ func (f *enterpriseRepoFilter) getFiltersConfig() (_ filtersConfig, ok bool) {
 }
 
 // GetFilter returns the list of repos that can be filtered based on the Cody context filter value in the site config.
-func (f *enterpriseRepoFilter) GetFilter(repos []types.RepoIDName) (_ []types.RepoIDName, _ FileChunkFilterFunc, ok bool) {
+func (f *enterpriseRepoFilter) GetFilter(repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc, error) {
 	fc, ok := f.getFiltersConfig()
 	if !ok {
 		// our configuration is invalid, so filter everything out
-		return []types.RepoIDName{}, func(fcc []FileChunkContext) []FileChunkContext { return nil }, false
+		return []types.RepoIDName{}, func(fcc []FileChunkContext) []FileChunkContext { return nil }, errors.New("Cody context filters configuration is invalid. Please contact your admin.")
 	}
 
 	allowedRepos := make([]types.RepoIDName, 0, len(repos))
@@ -86,7 +87,7 @@ func (f *enterpriseRepoFilter) GetFilter(repos []types.RepoIDName) (_ []types.Re
 			}
 		}
 		return filtered
-	}, true
+	}, nil
 }
 
 func (f *enterpriseRepoFilter) configure() {
