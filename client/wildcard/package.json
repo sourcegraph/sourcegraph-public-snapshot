@@ -13,9 +13,13 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@sourcegraph/testing": "workspace:*"
+    "@sourcegraph/testing": "workspace:*",
+    "@types/highlight.js": "^9.12.4"
   },
   "dependencies": {
-    "@sourcegraph/common": "workspace:*"
+    "dompurify": "^3.0.6",
+    "highlight.js": "^10.5.0",
+    "marked": "4.0.16",
+    "react-router-dom": "^6.8.1"
   }
 }

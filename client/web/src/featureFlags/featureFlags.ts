@@ -29,6 +29,7 @@ export const FEATURE_FLAGS = [
     'signup-survey-enabled',
     'sourcegraph-operator-site-admin-hide-maintenance',
     'cody-payments-testing-mode',
+    'ab-hubspot-form-workpersonal-to-handraiser',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]
