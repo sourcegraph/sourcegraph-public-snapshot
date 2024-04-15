@@ -36,6 +36,9 @@ var DeployEphemeralCommand = cli.Command{
 			Name:        "version",
 			DefaultText: "deploys an ephemeral cloud Sourcegraph environment with the specified version. The version MUST exist and implies that no build will be created",
 		},
+		&cli.BoolFlag{
+			Name: "skip-wip-notice",
+		},
 	},
 }
 
@@ -48,8 +51,16 @@ func determineVersion(build *buildkite.Build, tag string) string {
 		tag,
 	)
 }
+func oneOfEquals(value string, i ...string) bool {
+	for _, item := range i {
+		if value == item {
+			return true
+		}
+	}
+	return false
+}
 
-func ensureBranchIsSyncd(ctx context.Context, currRepo *repo.GitRepo) error {
+func ensureBranchIsPushed(ctx context.Context, currRepo *repo.GitRepo) error {
 	if ok, err := currRepo.IsOutOfSync(ctx); err != nil {
 		return err
 	} else if ok {
@@ -57,19 +68,11 @@ func ensureBranchIsSyncd(ctx context.Context, currRepo *repo.GitRepo) error {
 	}
 
 	var answer string
-	oneOf := func(value string, i ...string) bool {
-		for _, item := range i {
-			if value == item {
-				return true
-			}
-		}
-		return false
-	}
 	ok, err := std.PromptAndScan(std.Out, fmt.Sprintf("Commit %q on branch %q does not exist remotely. Do you want to push it to origin? (yes/no)", currRepo.Ref, currRepo.Branch), &answer)
 	if err != nil {
 		return err
 	}
-	if !ok || !oneOf(answer, "yes", "y") {
+	if !ok || !oneOfEquals(answer, "yes", "y") {
 		return ErrUserCancelled
 	}
 
@@ -92,16 +95,15 @@ func getGcloudAccount(ctx context.Context) (string, error) {
 
 func createEphemeralBuild(ctx context.Context, _, branch string) (*buildkite.Build, error) {
 	currRepo, err := repo.NewWithBranch(ctx, branch)
-	err = ensureBranchIsSyncd(ctx, currRepo)
+	if err != nil {
+		return nil, err
+	}
+	// Check that branch has been pushed
+	err = ensureBranchIsPushed(ctx, currRepo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to ensure current commit can be built")
 	}
 
-	// Check that branch has been pushed
-	// offer to push branch
-	//
-	// 1. kick of a build so that we can get the images
-	// 2. Once the build is kicked off we will need the build number so taht we can generate the version locally
 	std.Out.WriteNoticef("Starting build for %q on commit %q\n", currRepo.Branch, currRepo.Ref)
 	client, err := bk.NewClient(ctx, std.Out)
 	if err != nil {
@@ -116,7 +118,30 @@ func createEphemeralBuild(ctx context.Context, _, branch string) (*buildkite.Bui
 	return build, nil
 }
 
+func printWIPNotice(ctx *cli.Context) error {
+	if ctx.Bool("skip-wip-notice") {
+		return nil
+	}
+	notice := "This is command is still a work in progress and it is not recommend for general use! 🚨 Do you want to continue? (yes/no)"
+
+	var answer string
+	if _, err := std.PromptAndScan(std.Out, notice, &answer); err != nil {
+		return err
+	}
+
+	if oneOfEquals(answer, "yes", "y") {
+		return nil
+	}
+
+	return ErrUserCancelled
+
+}
+
 func deployCloudEphemeral(ctx *cli.Context) error {
+	// while we work on this command we print a notice and ask to continue
+	if err := printWIPNotice(ctx); err != nil {
+		return err
+	}
 	branch := ctx.String("branch")
 	currentBranch, err := repo.GetCurrentBranch(ctx.Context)
 	if err != nil {
@@ -149,19 +174,20 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 		version = determineVersion(build, tag)
 	}
 
+	return nil
 	cloudClient, err := NewClient(ctx.Context, APIEndpoint)
 	if err != nil {
 		return err
 	}
 
 	std.Out.Writef("Starting cloud ephemeral deployment for version %q\n", version)
+	// Lets just list as a temporary sanity check that this works
 	inst, err := cloudClient.ListInstances(ctx.Context)
 	if err != nil {
 		return err
 	}
 
 	std.Out.Writef("Found %d instances\n", len(inst))
-	// 3. Once we have the version we can kick off the cloud deploy so that it can start provisioning the environment
 
 	return nil
 }
