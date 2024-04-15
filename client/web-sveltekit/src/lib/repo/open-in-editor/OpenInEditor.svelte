@@ -6,7 +6,6 @@
     import { settings } from '$lib/stores'
     import { mdiCodeBraces } from '@mdi/js'
     import Icon from '$lib/Icon.svelte';
-    import {SourcegraphURL} from '$lib/common';
     import {page} from '$app/stores';
 
     export let externalServiceType: string = ''
@@ -17,7 +16,7 @@
     const editorIds = openInEditor?.editorIds ?? []
     const editors = !editorSettingsErrorMessage ? editorIds.map(getEditor) : undefined
 
-    const sourcegraphBaseURL = SourcegraphURL.from($page.url).toString();
+    const sourcegraphBaseURL = new URL($page.url).origin;
 
     const { repoName, filePath, position, range } = parseBrowserRepoURL(window.location.href)
     const start = position ?? range?.start
