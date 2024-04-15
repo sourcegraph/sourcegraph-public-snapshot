@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/sourcegraph/conc/iter"
 
@@ -57,7 +56,6 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 		CodeResultsCount: args.CodeResultsCount,
 		TextResultsCount: args.TextResultsCount,
 	})
-	fmt.Printf("Resolver GetCodyContext file chunks: %+v\n", fileChunks)
 	if err != nil {
 		return nil, err
 	}

@@ -124,8 +124,6 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 	// Generating the content filter removes any repos where the filter can not
 	// be determined
 	filterableRepos, contextFilter, err := c.contentFilter.GetFilter(ctx, args.Repos)
-	fmt.Printf("contextClient GetCodContext initial repos: %+v\n", args.Repos)
-	fmt.Printf("contextClient GetCodContext filterable repos: %+v\n", filterableRepos)
 	if err != nil {
 		return nil, err
 	}
