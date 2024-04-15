@@ -7,8 +7,8 @@ go_library(
         "context.go",
         "filter.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/codycontext",
-    visibility = ["//:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codycontext",
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/actor",
         "//internal/api",
