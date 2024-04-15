@@ -331,9 +331,11 @@ function PurposeStep({
                     formId="19f34edd-1a98-4fc9-9b2b-c1edca727720"
                     onFormSubmitted={() => {
                         onNext()
+                        telemetryRecorder.recordEvent('cody.onboarding.qualificationSurvey', 'succeeded', {})
                     }}
                     onFormLoadError={() => {
                         onNext()
+                        telemetryRecorder.recordEvent('cody.onboarding.qualificationSurvey', 'failed', {})
                     }}
                     userId={authenticatedUser.id}
                     userEmail={primaryEmail}
