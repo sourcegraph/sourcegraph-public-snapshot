@@ -1690,13 +1690,25 @@ importers:
 
   client/wildcard:
     dependencies:
-      '@sourcegraph/common':
-        specifier: workspace:*
-        version: link:../common
+      dompurify:
+        specifier: ^3.0.6
+        version: 3.0.6
+      highlight.js:
+        specifier: ^10.5.0
+        version: 10.7.3
+      marked:
+        specifier: 4.0.16
+        version: 4.0.16
+      react-router-dom:
+        specifier: ^6.8.1
+        version: 6.8.1(react-dom@18.1.0)(react@18.1.0)
     devDependencies:
       '@sourcegraph/testing':
         specifier: workspace:*
         version: link:../testing
+      '@types/highlight.js':
+        specifier: ^9.12.4
+        version: 9.12.4
 
   schema: {}
 
