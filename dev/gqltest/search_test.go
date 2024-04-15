@@ -214,6 +214,38 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
+	t.Run("repo at time", func(t *testing.T) {
+		// Surprisingly, our repo GraphQL resolver for a search result is just
+		// a repo, which does not expose its rev, so GraphQL does not work for this test.
+		doSkip(t, skipGraphQL)
+
+		t.Run("HEAD", func(t *testing.T) {
+			results, err := client.SearchRepositories("repo:^github.com/sgtest/go-diff$ rev:at.time(2018-01-01)")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(results) != 1 {
+				t.Fatalf("expected exactly one result, got %#v", results)
+			}
+			if !strings.Contains(results[0].URL, "3f415a1") {
+				t.Fatalf("expected repository to be at commit 3f415a1, got %q", results[0].URL)
+			}
+		})
+
+		t.Run("branch", func(t *testing.T) {
+			results, err := client.SearchRepositories("repo:^github.com/sgtest/go-diff$ rev:at.time(2019-11-09, test-already-exist-pr)")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(results) != 1 {
+				t.Fatalf("expected exactly one result, got %#v", results)
+			}
+			if !strings.Contains(results[0].URL, "3637c60") {
+				t.Fatalf("expected repository to be at commit 3637c60 got %q", results[0].URL)
+			}
+		})
+	})
+
 	t.Run("lang: filter", func(t *testing.T) {
 		// On our test repositories, `function` has results for go, ts, python, html
 		results, err := client.SearchFiles("function lang:go")

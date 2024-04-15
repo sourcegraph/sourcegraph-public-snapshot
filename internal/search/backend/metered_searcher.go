@@ -83,7 +83,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		)...)
 	}
 
-	event := honey.NoopEvent()
+	event := honey.NonSendingEvent()
 	if honey.Enabled() && cat == "SearchAll" {
 		event = honey.NewEvent("search-zoekt")
 		event.AddAttributes([]attribute.KeyValue{
@@ -241,7 +241,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 		)
 	}
 
-	event := honey.NoopEvent()
+	event := honey.NonSendingEvent()
 	if honey.Enabled() && cat == "ListAll" {
 		event = honey.NewEvent("search-zoekt")
 		event.AddAttributes([]attribute.KeyValue{

@@ -19,7 +19,6 @@ const escapeHTML = (html: string): string => {
  * Attempts to syntax-highlight the given code.
  * If the language is not given, it is auto-detected.
  * If an error occurs, the code is returned as plain text with escaped HTML entities
- *
  * @param code The code to highlight
  * @param language The language of the code, if known
  * @returns Safe HTML
@@ -45,27 +44,26 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
 /**
  * Renders the given markdown to HTML, highlighting code and sanitizing dangerous HTML.
  * Can throw an exception on parse errors.
- *
  * @param markdown The markdown to render
+ * @param options Options to customize rendering
+ * @param options.breaks Whether to render line breaks as HTML `<br>`s
+ * @param options.disableAutolinks Whether to disable autolinks. Explicit links using `[text](url)` are still allowed.
+ * @param options.renderer A custom renderer to use
+ * @param options.headerPrefix A prefix to add to all header IDs
+ * @param options.plainText Strip off any HTML and return a plain text string, useful for previews
+ * @param options.dompurifyConfig DOMPurify configuration to use
+ * @param options.addTargetBlankToAllLinks Add target="_blank" and rel="noopener" to all <a> links
+ * that have a href value. This affects all markdown-formatted links and all inline HTML links.
  */
 export const renderMarkdown = (
     markdown: string,
     options: {
-        /** Whether to render line breaks as HTML `<br>`s */
         breaks?: boolean
-        /** Whether to disable autolinks. Explicit links using `[text](url)` are still allowed. */
         disableAutolinks?: boolean
         renderer?: marked.Renderer
         headerPrefix?: string
-        /** Strip off any HTML and return a plain text string, useful for previews */
         plainText?: boolean
         dompurifyConfig?: DOMPurifyConfig & { RETURN_DOM_FRAGMENT?: false; RETURN_DOM?: false }
-
-        /**
-         * Add target="_blank" and rel="noopener" to all <a> links that have a
-         * href value. This affects all markdown-formatted links and all inline
-         * HTML links.
-         */
         addTargetBlankToAllLinks?: boolean
     } = {}
 ): string => {

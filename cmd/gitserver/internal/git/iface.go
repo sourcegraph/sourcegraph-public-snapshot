@@ -3,6 +3,7 @@ package git
 import (
 	"context"
 	"io"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -59,6 +60,16 @@ type GitBackend interface {
 	// If passed a commit sha, will also verify that the commit exists.
 	// If the revspec can not be resolved to a commit, a RevisionNotFoundError is returned.
 	ResolveRevision(ctx context.Context, revspec string) (api.CommitID, error)
+
+	// RevAtTime returns the OID of the nearest ancestor of `spec` that has a
+	// commit time before the given time. To simplify the logic, it only
+	// follows the first parent of merge commits to linearize the commit
+	// history. The intent is to return the state of a branch at a given time.
+	//
+	// If revspec does not exist, a RevisionNotFoundError is returned.
+	// If no commit exists in the history of revspec before time, an empty
+	// commitID is returned.
+	RevAtTime(ctx context.Context, revspec string, time time.Time) (api.CommitID, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
