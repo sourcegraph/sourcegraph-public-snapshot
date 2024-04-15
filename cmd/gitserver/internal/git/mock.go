@@ -10,6 +10,7 @@ import (
 	"context"
 	"io"
 	"sync"
+	"time"
 
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -310,6 +311,9 @@ type MockGitBackend struct {
 	// ResolveRevisionFunc is an instance of a mock function object
 	// controlling the behavior of the method ResolveRevision.
 	ResolveRevisionFunc *GitBackendResolveRevisionFunc
+	// RevAtTimeFunc is an instance of a mock function object controlling
+	// the behavior of the method RevAtTime.
+	RevAtTimeFunc *GitBackendRevAtTimeFunc
 	// RevParseHeadFunc is an instance of a mock function object controlling
 	// the behavior of the method RevParseHead.
 	RevParseHeadFunc *GitBackendRevParseHeadFunc
@@ -364,6 +368,11 @@ func NewMockGitBackend() *MockGitBackend {
 		},
 		ResolveRevisionFunc: &GitBackendResolveRevisionFunc{
 			defaultHook: func(context.Context, string) (r0 api.CommitID, r1 error) {
+				return
+			},
+		},
+		RevAtTimeFunc: &GitBackendRevAtTimeFunc{
+			defaultHook: func(context.Context, string, time.Time) (r0 api.CommitID, r1 error) {
 				return
 			},
 		},
@@ -429,6 +438,11 @@ func NewStrictMockGitBackend() *MockGitBackend {
 				panic("unexpected invocation of MockGitBackend.ResolveRevision")
 			},
 		},
+		RevAtTimeFunc: &GitBackendRevAtTimeFunc{
+			defaultHook: func(context.Context, string, time.Time) (api.CommitID, error) {
+				panic("unexpected invocation of MockGitBackend.RevAtTime")
+			},
+		},
 		RevParseHeadFunc: &GitBackendRevParseHeadFunc{
 			defaultHook: func(context.Context) (api.CommitID, error) {
 				panic("unexpected invocation of MockGitBackend.RevParseHead")
@@ -472,6 +486,9 @@ func NewMockGitBackendFrom(i GitBackend) *MockGitBackend {
 		},
 		ResolveRevisionFunc: &GitBackendResolveRevisionFunc{
 			defaultHook: i.ResolveRevision,
+		},
+		RevAtTimeFunc: &GitBackendRevAtTimeFunc{
+			defaultHook: i.RevAtTime,
 		},
 		RevParseHeadFunc: &GitBackendRevParseHeadFunc{
 			defaultHook: i.RevParseHead,
@@ -1467,6 +1484,117 @@ func (c GitBackendResolveRevisionFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitBackendResolveRevisionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitBackendRevAtTimeFunc describes the behavior when the RevAtTime method
+// of the parent MockGitBackend instance is invoked.
+type GitBackendRevAtTimeFunc struct {
+	defaultHook func(context.Context, string, time.Time) (api.CommitID, error)
+	hooks       []func(context.Context, string, time.Time) (api.CommitID, error)
+	history     []GitBackendRevAtTimeFuncCall
+	mutex       sync.Mutex
+}
+
+// RevAtTime delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitBackend) RevAtTime(v0 context.Context, v1 string, v2 time.Time) (api.CommitID, error) {
+	r0, r1 := m.RevAtTimeFunc.nextHook()(v0, v1, v2)
+	m.RevAtTimeFunc.appendCall(GitBackendRevAtTimeFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RevAtTime method of
+// the parent MockGitBackend instance is invoked and the hook queue is
+// empty.
+func (f *GitBackendRevAtTimeFunc) SetDefaultHook(hook func(context.Context, string, time.Time) (api.CommitID, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RevAtTime method of the parent MockGitBackend instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *GitBackendRevAtTimeFunc) PushHook(hook func(context.Context, string, time.Time) (api.CommitID, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitBackendRevAtTimeFunc) SetDefaultReturn(r0 api.CommitID, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, time.Time) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitBackendRevAtTimeFunc) PushReturn(r0 api.CommitID, r1 error) {
+	f.PushHook(func(context.Context, string, time.Time) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitBackendRevAtTimeFunc) nextHook() func(context.Context, string, time.Time) (api.CommitID, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitBackendRevAtTimeFunc) appendCall(r0 GitBackendRevAtTimeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitBackendRevAtTimeFuncCall objects
+// describing the invocations of this function.
+func (f *GitBackendRevAtTimeFunc) History() []GitBackendRevAtTimeFuncCall {
+	f.mutex.Lock()
+	history := make([]GitBackendRevAtTimeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitBackendRevAtTimeFuncCall is an object that describes an invocation of
+// method RevAtTime on an instance of MockGitBackend.
+type GitBackendRevAtTimeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 api.CommitID
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitBackendRevAtTimeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitBackendRevAtTimeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

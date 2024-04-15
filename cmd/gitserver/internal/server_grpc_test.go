@@ -811,6 +811,58 @@ func TestGRPCServer_ResolveRevision(t *testing.T) {
 	})
 }
 
+func TestGRPCServer_RevAtTime(t *testing.T) {
+	ctx := context.Background()
+	t.Run("argument validation", func(t *testing.T) {
+		gs := &grpcServer{}
+		_, err := gs.RevAtTime(ctx, &v1.RevAtTimeRequest{RepoName: "", RevSpec: []byte("HEAD"), Time: timestamppb.Now()})
+		require.ErrorContains(t, err, "repo must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+	})
+	t.Run("checks for uncloned repo", func(t *testing.T) {
+		fs := gitserverfs.NewMockFS()
+		fs.RepoClonedFunc.SetDefaultReturn(false, nil)
+		locker := NewMockRepositoryLocker()
+		locker.StatusFunc.SetDefaultReturn("cloning", true)
+		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
+		_, err := gs.RevAtTime(ctx, &v1.RevAtTimeRequest{RepoName: "therepo", RevSpec: []byte("HEAD"), Time: timestamppb.Now()})
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
+		require.Contains(t, err.Error(), "repo not found")
+		mockassert.Called(t, fs.RepoClonedFunc)
+		mockassert.Called(t, locker.StatusFunc)
+	})
+	t.Run("e2e", func(t *testing.T) {
+		fs := gitserverfs.NewMockFS()
+		// Repo is cloned, proceed!
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
+		b := git.NewMockGitBackend()
+		b.RevAtTimeFunc.SetDefaultReturn("deadbeef", nil)
+		svc := NewMockService()
+		gs := &grpcServer{
+			svc: svc,
+			fs:  fs,
+			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+				return b
+			},
+		}
+
+		cli := spawnServer(t, gs)
+		res, err := cli.RevAtTime(ctx, &v1.RevAtTimeRequest{
+			RepoName: "therepo",
+			RevSpec:  []byte("HEAD"),
+			Time:     timestamppb.Now(),
+		})
+		require.NoError(t, err)
+		if diff := cmp.Diff(&proto.RevAtTimeResponse{
+			CommitSha: "deadbeef",
+		}, res, cmpopts.IgnoreUnexported(proto.RevAtTimeResponse{})); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+	})
+}
+
 func assertGRPCStatusCode(t *testing.T, err error, want codes.Code) {
 	t.Helper()
 	s, ok := status.FromError(err)

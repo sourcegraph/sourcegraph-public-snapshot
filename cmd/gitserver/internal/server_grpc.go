@@ -1185,6 +1185,48 @@ func (gs *grpcServer) ResolveRevision(ctx context.Context, req *proto.ResolveRev
 	}, nil
 }
 
+func (gs *grpcServer) RevAtTime(ctx context.Context, req *proto.RevAtTimeRequest) (*proto.RevAtTimeResponse, error) {
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.String("revspec", string(req.GetRevSpec())),
+	)
+
+	if req.GetRepoName() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gs.fs.RepoDir(repoName)
+
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
+		return nil, err
+	}
+
+	backend := gs.getBackendFunc(repoDir, repoName)
+
+	commitID, err := backend.RevAtTime(ctx, string(req.GetRevSpec()), req.GetTime().AsTime())
+	if err != nil {
+		// TODO: make sure to translate this on the other side
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+		return nil, status.New(codes.Internal, err.Error()).Err()
+	}
+
+	return &proto.RevAtTimeResponse{
+		CommitSha: string(commitID),
+	}, nil
+}
+
 // checkRepoExists checks if a given repository is cloned on disk, and returns an
 // error otherwise.
 // On Sourcegraph.com, not all repos are managed by the scheduler. We thus
