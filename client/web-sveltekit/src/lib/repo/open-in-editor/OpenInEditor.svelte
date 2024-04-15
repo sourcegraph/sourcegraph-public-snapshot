@@ -46,7 +46,7 @@
     {/each}
 {:else if editorSettingsErrorMessage}
     <Tooltip tooltip={editorSettingsErrorMessage}>
-        <a href="https://sourcegraph.com/docs/integration/open_in_editor" target="_blank">
+        <a href="/help/integration/open_in_editor" target="_blank">
             <Icon aria-hidden svgPath={mdiCodeBraces} inline />
             <span data-action-label> Editor </span>
         </a>
