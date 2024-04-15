@@ -230,7 +230,7 @@ func streamAutocomplete(
 		// stream is done
 		if errors.Is(err, io.EOF) {
 			tokenManager := tokenusage.NewManager()
-			err = tokenManager.TokenizeAndCalculateUsage(requestParams.Messages, content, tokenizer.AzureModel+"/"+requestParams.Model, "code_completions")
+			err = tokenManager.TokenizeAndCalculateUsage(requestParams.Messages, content, tokenizer.AzureModel+"/"+requestParams.Model, "code_completions", tokenusage.AzureOpenAI)
 			if err != nil {
 				logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 			}
@@ -282,7 +282,7 @@ func streamChat(
 		// stream is done
 		if errors.Is(err, io.EOF) {
 			tokenManager := tokenusage.NewManager()
-			err = tokenManager.TokenizeAndCalculateUsage(requestParams.Messages, content, tokenizer.AzureModel+"/"+requestParams.Model, "chat_completions")
+			err = tokenManager.TokenizeAndCalculateUsage(requestParams.Messages, content, tokenizer.AzureModel+"/"+requestParams.Model, "chat_completions", tokenusage.AzureOpenAI)
 			if err != nil {
 				logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 			}
