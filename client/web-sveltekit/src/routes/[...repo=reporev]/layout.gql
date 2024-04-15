@@ -28,6 +28,9 @@ fragment ResolvedRepository on Repository {
     defaultBranch {
         abbrevName
     }
+    externalRepository {
+        serviceType
+    }
 
     ...RepoPage_ResolvedRevision
 }

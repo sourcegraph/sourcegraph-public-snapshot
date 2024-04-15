@@ -27,14 +27,6 @@ query BlobPageQuery($repoName: String!, $revspec: String!, $path: String!) {
     }
 }
 
-query RepoInfoQuery($repoName: String!) {
-    repository(name: $repoName) {
-        externalRepository {
-            serviceType
-        }
-    }
-}
-
 fragment BlobPage_Blob on GitBlob {
     canonicalURL
     content

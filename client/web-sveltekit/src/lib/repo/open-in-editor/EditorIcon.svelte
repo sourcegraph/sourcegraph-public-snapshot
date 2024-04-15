@@ -1,11 +1,12 @@
 <script lang="ts">
-    import type { Editor } from '$lib/web'
-    export let editorId: Editor['id']
+    import type {Editor} from '$lib/web'
+    import DefaultEditorIcon from '$lib/repo/open-in-editor/DefaultEditorIcon.svelte';
 
-    let Icon: any;
-    $: import(`./editors/${editorId}.svelte`).then(i => Icon = i.default);
+    export let editorId: Editor['id']
 </script>
 
- {#if Icon}
+{#await import(`./editors/${editorId}.svelte`) then {default: Icon}}
     <Icon />
- {/if}
+{:catch}
+    <DefaultEditorIcon />
+{/await}
