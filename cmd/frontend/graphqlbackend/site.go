@@ -675,8 +675,8 @@ func (c *codyContextFiltersResolver) Raw() *JSONValue {
 	return &JSONValue{c.ccf}
 }
 
-func (r *siteResolver) CodyContextFilters(_ context.Context, _ *CodyContextFiltersArgs) (*codyContextFiltersResolver, error) {
-	return &codyContextFiltersResolver{ccf: conf.Get().SiteConfig().CodyContextFilters}, nil
+func (r *siteResolver) CodyContextFilters(_ context.Context, _ *CodyContextFiltersArgs) *codyContextFiltersResolver {
+	return &codyContextFiltersResolver{ccf: conf.Get().SiteConfig().CodyContextFilters}
 }
 
 func allowEdit(before, after string, allowlist []string) ([]string, bool) {
