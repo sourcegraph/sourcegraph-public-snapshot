@@ -137,6 +137,23 @@ func printWIPNotice(ctx *cli.Context) error {
 
 }
 
+func createDeploymentForVersion(ctx context.Context, version string) error {
+	cloudClient, err := NewClient(ctx, APIEndpoint)
+	if err != nil {
+		return err
+	}
+
+	std.Out.Writef("Starting cloud ephemeral deployment for version %q\n", version)
+	// Lets just list as a temporary sanity check that this works
+	inst, err := cloudClient.ListInstances(ctx)
+	if err != nil {
+		return err
+	}
+
+	std.Out.Writef("Found %d instances\n", len(inst))
+	return nil
+}
+
 func deployCloudEphemeral(ctx *cli.Context) error {
 	// while we work on this command we print a notice and ask to continue
 	if err := printWIPNotice(ctx); err != nil {
@@ -153,6 +170,8 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	if branch == "" && tag == "" {
 		branch = currentBranch
 	} else if branch != currentBranch {
+		// sometimes we want to trigger a build for a different branch than the current one we're on, so have to build a branch for this case
+		//
 		// we are not on the intended branch so we create a cloud-ephemeral branch so that we don't interfere with the branch specified
 		account, err := getGcloudAccount(ctx.Context)
 		if err != nil {
@@ -175,19 +194,5 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	}
 
 	return nil
-	cloudClient, err := NewClient(ctx.Context, APIEndpoint)
-	if err != nil {
-		return err
-	}
-
-	std.Out.Writef("Starting cloud ephemeral deployment for version %q\n", version)
-	// Lets just list as a temporary sanity check that this works
-	inst, err := cloudClient.ListInstances(ctx.Context)
-	if err != nil {
-		return err
-	}
-
-	std.Out.Writef("Found %d instances\n", len(inst))
-
-	return nil
+	// trigger cloud depoyment here
 }
