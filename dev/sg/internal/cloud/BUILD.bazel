@@ -2,11 +2,14 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "cloud",
-    srcs = ["ephemeral.go"],
+    srcs = ["client.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/cloud",
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
+        "//lib/errors",
+        "@com_connectrpc_connect//:connect",
         "@com_github_sourcegraph_cloud_api//go/cloudapi/v1:go_default_library",
         "@com_github_sourcegraph_cloud_api//go/cloudapi/v1/cloudapiv1connect:go_default_library",
+        "@com_github_sourcegraph_run//:run",
     ],
 )

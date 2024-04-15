@@ -11,8 +11,9 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
+
+	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
@@ -89,8 +90,11 @@ func determineVersion(build *buildkite.Build, tag string) string {
 }
 
 func deployCloudEphemeral(ctx *cli.Context) error {
-	tag := ctx.String("tag")
+	// branch will always have a value because we set it as a default value in the branch flag action
 	branch := ctx.String("branch")
+	// if the tag is set - we should prefer it over the branch
+	tag := ctx.String("tag")
+
 	commit, err := repo.GetHeadCommit(ctx.Context)
 	if err != nil {
 		return err
@@ -105,9 +109,12 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	std.Out.WriteNoticef("Started build %s. Build progress can be viewed at %s\n", build.Number)
 
-	_ = determineVersion(build, tag)
+	version := determineVersion(build, tag)
+	std.Out.WriteNoticef("Starting cloud ephemeral deployment for version %q\n", version)
 
+	os.Exit(0)
 	cloudClient, err := cloud.NewClient(ctx.Context, cloud.APIEndpoint)
 	if err != nil {
 		return err
