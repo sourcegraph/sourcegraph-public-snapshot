@@ -70,6 +70,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 	bk.FeatureFlags.ApplyEnv(env)
 
+	if c.RunType.Is(runtype.CloudEphemeral) {
+		fmt.Println("🧨 Running on ephemeral cloud build")
+	}
+
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
 	if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease) {
 		env["PERCY_TARGET_BRANCH"] = c.Branch

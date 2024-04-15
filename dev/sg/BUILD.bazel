@@ -58,6 +58,7 @@ go_library(
         "//dev/sg/internal/bk",
         "//dev/sg/internal/category",
         "//dev/sg/internal/check",
+        "//dev/sg/internal/cloud",
         "//dev/sg/internal/db",
         "//dev/sg/internal/generate",
         "//dev/sg/internal/generate/golang",
