@@ -1,23 +1,22 @@
 <script lang="ts">
     import { highlightRanges } from '$lib/dom'
-    import { getGraphQLClient } from '$lib/graphql'
+    // import { getGraphQLClient } from '$lib/graphql'
     import Popover from '$lib/Popover.svelte'
-    import { RepoPopover_Repo, type RepoPopover_RepoResult } from '$lib/repo/RepoPopover/RepoPopover.gql'
-    import RepoPopover from '$lib/repo/RepoPopover/RepoPopover.svelte'
+    // import { RepoPopover, type RepoPopoverResult } from '$lib/repo/RepoPopover/RepoPopover.gql'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { displayRepoName } from '$lib/shared'
 
     export let repoName: string
     export let rev: string | undefined
     export let highlights: [number, number][] = []
-    let repo: RepoPopover_RepoResult | undefined
+    // let repo: RepoPopoverResult | undefined
 
-    const loadOnHover = async () => {
+    /* const loadOnHover = async () => {
         const client = getGraphQLClient()
-        const response = await client.query(RepoPopover_Repo, { repoName: repoName })
+        const response = await client.query(RepoPopover, { repoName })
         repo = response.data
     }
-
+ */
     $: href = `/${repoName}${rev ? `@${rev}` : ''}`
     $: displayName = displayRepoName(repoName)
     $: if (displayName !== repoName) {
@@ -39,8 +38,8 @@
                 use:highlightRanges={{ ranges: highlights }}
                 use:registerTrigger
                 on:mouseenter={() => {
-                    loadOnHover()
                     toggle(true)
+                    // loadOnHover()
                 }}
                 on:mouseleave={() => toggle(false)}
             >
@@ -49,11 +48,7 @@
                     <small class="rev"> @ {rev}</small>
                 {/if}
             </a>
-            <div slot="content">
-                {#if repo && repo.repository}
-                    <RepoPopover repo={repo.repository} />
-                {/if}
-            </div>
+            <div slot="content">{repoName}</div>
         </Popover>
     {/key}
 </span>
@@ -65,9 +60,8 @@
         gap: 0.375rem;
 
         .repo-link {
-            align-self: baseline;
-            color: var(--body-color);
-            font-weight: 500;
+            align-self: flex-start;
+            color: var(--text-body);
             .rev {
                 color: var(--text-muted);
             }

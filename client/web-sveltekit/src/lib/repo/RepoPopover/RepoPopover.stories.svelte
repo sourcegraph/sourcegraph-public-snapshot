@@ -2,7 +2,7 @@
     import { faker } from '@faker-js/faker'
     import { Story } from '@storybook/addon-svelte-csf'
 
-    import { type RepoPopoverFields, ExternalServiceKind } from '$testing/graphql-type-mocks'
+    import { type RepoPopoverFragment, ExternalServiceKind } from '$testing/graphql-type-mocks'
 
     import RepoPopover from './RepoPopover.svelte'
 
@@ -13,7 +13,7 @@
 
 <script lang="ts">
     faker.seed(1)
-    let repo: RepoPopoverFields = {
+    let repo: RepoPopoverFragment = {
         name: `${faker.lorem.word()} / ${faker.lorem.word()}`,
         description: faker.lorem.sentence(),
         stars: faker.datatype.number(),

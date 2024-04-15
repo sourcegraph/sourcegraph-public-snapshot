@@ -16,14 +16,15 @@ For example:
 
     import Avatar from '$lib/Avatar.svelte'
     import Icon from '$lib/Icon.svelte'
+    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
 
     import RepoStars from '../RepoStars.svelte'
     import { getIconPathForCodeHost } from '../shared/codehost'
 
-    import type { RepoPopoverFields } from './RepoPopover.gql'
+    import type { RepoPopoverFragment } from './RepoPopover.gql'
 
-    export let repo: RepoPopoverFields
+    export let repo: RepoPopoverFragment
     export let withHeader = false
 
     const CENTER_DOT = '\u00B7' // interpunct
@@ -66,13 +67,11 @@ For example:
         <div class="description">
             {repo.description}
         </div>
-        {#if repo.tags.nodes.length > 0}
-            <div class="tags">
-                {#each repo.tags.nodes as tag}
-                    <small>{tag.name}</small>
-                {/each}
-            </div>
-        {/if}
+        <div class="tags">
+            {#each repo.tags.nodes as tag}
+                <small>{tag.name}</small>
+            {/each}
+        </div>
     </div>
 
     <div class="divider" />
@@ -83,9 +82,7 @@ For example:
         <div class="commit-info">
             <div class="commit">
                 <small class="subject">{subject}</small>
-                {#if abbreviatedCommitSHA}
-                    <small class="commit-number">&nbsp;<a href={url} target="_blank">{abbreviatedCommitSHA}</a></small>
-                {/if}
+                <small class="commit-number">&nbsp;<a href={url} target="_blank">{abbreviatedCommitSHA}</a></small>
             </div>
             <div class="author">
                 {#if avatar}
