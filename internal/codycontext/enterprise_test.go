@@ -12,7 +12,6 @@ import (
 )
 
 func TestNewEnterpriseFilter(t *testing.T) {
-	logger := logtest.Scoped(t)
 	t.Cleanup(func() { conf.Mock(nil) })
 
 	tests := []struct {
