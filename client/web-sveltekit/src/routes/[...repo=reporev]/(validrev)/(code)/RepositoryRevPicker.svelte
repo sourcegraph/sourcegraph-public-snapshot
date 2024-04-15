@@ -12,12 +12,13 @@
 </script>
 
 <script lang="ts">
-    import { mdiSourceBranch, mdiTagOutline, mdiSourceCommit } from '@mdi/js'
+    import { mdiClose, mdiSourceBranch, mdiTagOutline, mdiSourceCommit } from '@mdi/js'
     import { Button, Badge } from '$lib/wildcard'
     import Popover from '$lib/Popover.svelte'
     import Icon from '$lib/Icon.svelte'
     import Tabs from '$lib/Tabs.svelte'
     import TabPanel from '$lib/TabPanel.svelte'
+    import Tooltip from '$lib/Tooltip.svelte'
 
     import { goto } from '$app/navigation'
     import { replaceRevisionInURL } from '@sourcegraph/shared/src/util/url'
@@ -44,6 +45,12 @@
             : revision
         : resolvedRevision.defaultBranch ?? ''
 
+    $: isOnSpecificRev = revisionLabel !== resolvedRevision.defaultBranch
+
+    const handleGoToDefaultBranch = (defaultBranch: string): void => {
+        goto(replaceRevisionInURL(location.pathname + location.search + location.hash, defaultBranch))
+    }
+
     const handleBranchOrTagSelect = (branchOrTag: RepositoryBranch | RepositoryTag): void => {
         goto(replaceRevisionInURL(location.pathname + location.search + location.hash, branchOrTag.abbrevName))
     }
@@ -54,13 +61,29 @@
 </script>
 
 <Popover let:registerTrigger let:toggle placement="right-start">
-    <Button variant="secondary" size="sm" data-revision-picker-trigger="true">
-        <svelte:fragment slot="custom" let:buttonClass>
-            <button use:registerTrigger class={buttonClass} on:click={() => toggle()}>
-                @{revisionLabel}
-            </button>
-        </svelte:fragment>
-    </Button>
+    <div class="button-group" class:is-on-specific-rev={isOnSpecificRev}>
+        <Button variant="secondary" size="sm">
+            <svelte:fragment slot="custom" let:buttonClass>
+                <button use:registerTrigger class={`${buttonClass} revision-trigger`} on:click={() => toggle()}>
+                    @{revisionLabel}
+                </button>
+            </svelte:fragment>
+        </Button>
+
+        {#if isOnSpecificRev}
+            <Tooltip tooltip="Go to default branch">
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    data-reset-branch
+                    on:click={() => handleGoToDefaultBranch(resolvedRevision.defaultBranch)}
+                >
+                    <Icon svgPath={mdiClose} size={16} />
+                </Button>
+            </Tooltip>
+        {/if}
+    </div>
+
     <div slot="content" class="content" let:toggle>
         <Tabs>
             <TabPanel title="Branches">
@@ -127,6 +150,28 @@
 </Popover>
 
 <style lang="scss">
+    .button-group {
+        display: flex;
+        min-width: 0;
+
+        :global([data-reset-branch]) {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        .revision-trigger {
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+
+        &.is-on-specific-rev .revision-trigger {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            border-right: none;
+        }
+    }
+
     .content {
         padding: 0.75rem;
         min-width: 35rem;

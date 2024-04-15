@@ -43,7 +43,7 @@
         {value}
         {autofocus}
         {placeholder}
-        class:with-loader={loading}
+        class:loading
         on:input={onInput}
         {...$$restProps}
     />
@@ -75,7 +75,7 @@
         border-radius: var(--border-radius);
     }
 
-    .with-loader {
+    .loading {
         padding-right: 1.5rem;
     }
 

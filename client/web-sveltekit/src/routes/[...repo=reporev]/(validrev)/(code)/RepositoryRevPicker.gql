@@ -24,6 +24,20 @@ fragment RepositoryGitRefs on Node {
     }
 }
 
+fragment RevisionPickerGitRef on GitCommit {
+    __typename
+    id
+    name
+    url
+    abbrevName
+    displayName
+    target {
+        commit {
+            ...RepositoryGitRevAuthor
+        }
+    }
+}
+
 # Used to query data for repository git commits
 # NOTE: the query which is going to use this fragment is supposed
 # to have query and anchor revision variables
