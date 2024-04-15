@@ -25,6 +25,7 @@ type filterFunc func(string) bool
 
 type dotcomRepoFilter struct {
 	mu      sync.RWMutex
+	logger  log.Logger
 	client  gitserver.Client
 	enabled bool
 }
@@ -41,19 +42,19 @@ func (f *dotcomRepoFilter) getEnabled() bool {
 	return f.enabled
 }
 
-func (f *dotcomRepoFilter) GetFilter(repos []types.RepoIDName, logger log.Logger) (_ []types.RepoIDName, _ FileChunkFilterFunc, ok bool) {
+func (f *dotcomRepoFilter) GetFilter(repos []types.RepoIDName) (_ []types.RepoIDName, _ FileChunkFilterFunc, ok bool) {
 	if !f.getEnabled() {
 		return repos, func(fcc []FileChunkContext) []FileChunkContext {
 			return fcc
 		}, true
 	}
-	return f.getFilter(repos, logger)
+	return f.getFilter(repos)
 }
 
 // getFilter returns the list of repos that can be filtered
 // their .cody/ignore files (or don't have one). If an error
 // occurs that repo will be excluded.
-func (f *dotcomRepoFilter) getFilter(repos []types.RepoIDName, logger log.Logger) (_ []types.RepoIDName, _ FileChunkFilterFunc, ok bool) {
+func (f *dotcomRepoFilter) getFilter(repos []types.RepoIDName) (_ []types.RepoIDName, _ FileChunkFilterFunc, ok bool) {
 	filters := make(map[api.RepoID]filterFunc, len(repos))
 	filterableRepos := make([]types.RepoIDName, 0, len(repos))
 	// use the internal actor to ensure access to repo and ignore files
@@ -62,18 +63,18 @@ func (f *dotcomRepoFilter) getFilter(repos []types.RepoIDName, logger log.Logger
 
 		_, commit, err := f.client.GetDefaultBranch(ctx, repo.Name, true)
 		if err != nil {
-			logger.Warn("repoContextFilter: couldn't get default branch, removing repo", log.Int32("repo", int32(repo.ID)), log.Error(err))
+			f.logger.Warn("repoContextFilter: couldn't get default branch, removing repo", log.Int32("repo", int32(repo.ID)), log.Error(err))
 			continue
 		}
 		// No commit signals an empty repo, should be nothing to filter
 		// Also we can't lookup the ignore file without a commit
 		if commit == "" {
-			logger.Info("repoContextFilter: empty repo removing", log.Int32("repo", int32(repo.ID)))
+			f.logger.Info("repoContextFilter: empty repo removing", log.Int32("repo", int32(repo.ID)))
 			continue
 		}
 		matcher, err := getIgnoreMatcher(ctx, f.client, repo, commit)
 		if err != nil {
-			logger.Warn("repoContextFilter: unable to process ignore file", log.Int32("repo", int32(repo.ID)), log.Error(err))
+			f.logger.Warn("repoContextFilter: unable to process ignore file", log.Int32("repo", int32(repo.ID)), log.Error(err))
 			continue
 		}
 
@@ -100,9 +101,10 @@ func (f *dotcomRepoFilter) getFilter(repos []types.RepoIDName, logger log.Logger
 // newDotcomFilter creates a new RepoContentFilter that filters out
 // content based on the .cody/ignore file at the head of the default branch
 // for the given repositories.
-func newDotcomFilter(client gitserver.Client) RepoContentFilter {
+func newDotcomFilter(logger log.Logger, client gitserver.Client) RepoContentFilter {
 	enabled := isEnabled(conf.Get())
 	ignoreFilter := &dotcomRepoFilter{
+		logger:  logger.Scoped("filter"),
 		client:  client,
 		enabled: enabled,
 	}
