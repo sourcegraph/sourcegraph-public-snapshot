@@ -39,7 +39,7 @@ func TestNewDotcomFilter(t *testing.T) {
 		client := gitserver.NewMockClient()
 		client.GetDefaultBranchFunc.SetDefaultReturn("main", api.CommitID("abc123"), nil)
 		client.NewFileReaderFunc.SetDefaultReturn(nil, os.ErrNotExist)
-		f := newDotcomFilter(client)
+		f := newDotcomFilter(logger, client)
 
 		chunks := []FileChunkContext{
 			{
@@ -53,7 +53,7 @@ func TestNewDotcomFilter(t *testing.T) {
 				Path:     "/file2.go",
 			},
 		}
-		_, filter, _ := f.GetFilter(repos, logger)
+		_, filter, _ := f.GetFilter(context.Background(), repos)
 		filtered := filter(chunks)
 		require.Equal(t, 2, len(filtered))
 	})
@@ -68,7 +68,7 @@ func TestNewDotcomFilter(t *testing.T) {
 			return nil, os.ErrNotExist
 		})
 
-		f := newDotcomFilter(client)
+		f := newDotcomFilter(logger, client)
 
 		chunks := []FileChunkContext{
 			{
@@ -93,7 +93,7 @@ func TestNewDotcomFilter(t *testing.T) {
 			},
 		}
 
-		_, filter, _ := f.GetFilter(repos, logger)
+		_, filter, _ := f.GetFilter(context.Background(), repos)
 		filtered := filter(chunks)
 		require.Equal(t, 1, len(filtered))
 		require.Equal(t, api.RepoName("repo1"), filtered[0].RepoName)
@@ -112,7 +112,7 @@ func TestNewDotcomFilter(t *testing.T) {
 				return nil, os.ErrNotExist
 			}
 		})
-		f := newDotcomFilter(client)
+		f := newDotcomFilter(logger, client)
 
 		chunks := []FileChunkContext{
 			{
@@ -137,7 +137,7 @@ func TestNewDotcomFilter(t *testing.T) {
 			},
 		}
 
-		_, filter, _ := f.GetFilter(repos, logger)
+		_, filter, _ := f.GetFilter(context.Background(), repos)
 		filtered := filter(chunks)
 		require.Equal(t, 2, len(filtered))
 		require.Equal(t, api.RepoName("repo1"), filtered[0].RepoName)
@@ -154,8 +154,8 @@ func TestNewDotcomFilter(t *testing.T) {
 			return nil, nil
 		})
 
-		f := newDotcomFilter(client)
-		filterableRepos, _, _ := f.GetFilter(repos, logger)
+		f := newDotcomFilter(logger, client)
+		filterableRepos, _, _ := f.GetFilter(context.Background(), repos)
 		require.Len(t, filterableRepos, 0)
 	})
 
@@ -167,8 +167,8 @@ func TestNewDotcomFilter(t *testing.T) {
 			return nil, nil
 		})
 
-		f := newDotcomFilter(client)
-		filterableRepos, _, _ := f.GetFilter(repos, logger)
+		f := newDotcomFilter(logger, client)
+		filterableRepos, _, _ := f.GetFilter(context.Background(), repos)
 		require.Len(t, filterableRepos, 0)
 	})
 
@@ -179,8 +179,8 @@ func TestNewDotcomFilter(t *testing.T) {
 			return nil, errors.New("fail")
 		})
 
-		f := newDotcomFilter(client)
-		filterableRepos, _, _ := f.GetFilter(repos, logger)
+		f := newDotcomFilter(logger, client)
+		filterableRepos, _, _ := f.GetFilter(context.Background(), repos)
 		require.Len(t, filterableRepos, 0)
 	})
 }
@@ -207,7 +207,7 @@ func TestDotcomFilterDisabled(t *testing.T) {
 			return nil, errors.New("should not be called")
 		})
 
-		f := newDotcomFilter(client)
+		f := newDotcomFilter(logger, client)
 
 		chunks := []FileChunkContext{
 			{
@@ -232,7 +232,7 @@ func TestDotcomFilterDisabled(t *testing.T) {
 			},
 		}
 
-		_, filter, _ := f.GetFilter(repos, logger)
+		_, filter, _ := f.GetFilter(context.Background(), repos)
 		filtered := filter(chunks)
 		require.Equal(t, 4, len(filtered))
 	})

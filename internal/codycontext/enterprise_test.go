@@ -1,6 +1,7 @@
 package codycontext
 
 import (
+	"context"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -525,7 +526,7 @@ func TestNewEnterpriseFilter(t *testing.T) {
 			})
 
 			f := newEnterpriseFilter(logtest.Scoped(t))
-			allowedRepos, filter, _ := f.GetFilter(tt.repos, logger)
+			allowedRepos, filter, _ := f.GetFilter(context.Background(), tt.repos)
 
 			require.Equal(t, tt.wantRepos, allowedRepos)
 			require.Equal(t, tt.wantChunks, filter(tt.chunks))
