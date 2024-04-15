@@ -38,7 +38,7 @@
                     target="_blank"
                     rel="noopener noreferrer"
                 >
-                    <EditorIcon editor={e} />
+                    <EditorIcon editorId={e.id} />
                     <span data-action-label> Editor </span>
                 </a>
             </Tooltip>
@@ -47,7 +47,7 @@
 {:else if editorSettingsErrorMessage}
     <Tooltip tooltip={editorSettingsErrorMessage}>
         <a href="https://sourcegraph.com/docs/integration/open_in_editor" target="_blank">
-            <Icon aria-label="Editor" svgPath={mdiCodeBraces} inline />
+            <Icon aria-hidden svgPath={mdiCodeBraces} inline />
             <span data-action-label> Editor </span>
         </a>
     </Tooltip>

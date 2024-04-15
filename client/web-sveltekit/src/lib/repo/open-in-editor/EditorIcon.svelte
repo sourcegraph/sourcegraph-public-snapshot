@@ -1,11 +1,11 @@
 <script lang="ts">
     import type { Editor } from '$lib/web'
+    export let editorId: Editor['id']
 
-    export let editor: Editor
-
-    $: svg = `/images/editors/${editor.id}.svg`
+    let Icon: any;
+    $: import(`./editors/${editorId}.svelte`).then(i => Icon = i.default);
 </script>
 
-{#if editor}
-    <img class:icon-inline={true} height={24} width={24} src={svg} alt={editor.name} />
-{/if}
+ {#if Icon}
+    <Icon />
+ {/if}
