@@ -103,8 +103,14 @@
     <FileHeader>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
-            {#await data.externalServiceType then externalServiceType}
+            {#await data.externalServiceType}
+                <OpenInEditor />
+            {:then externalServiceType}
                 <OpenInEditor {externalServiceType} />
+            {:catch error}
+                <Alert variant="danger">
+                    Unable to fetch external service type: {error.message}
+                </Alert>
             {/await}
             {#if blob}
                 <OpenInCodeHostAction data={blob} />
