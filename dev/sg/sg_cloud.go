@@ -21,11 +21,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
+
+var ErrUserCancelled = errors.New("user cancelled")
 
 var cloudCommand = &cli.Command{
 	Name:  "cloud",
@@ -59,17 +60,6 @@ var cloudCommand = &cli.Command{
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name: "branch",
-					Action: func(ctx *cli.Context, value string) error {
-						if value == "" {
-							repoRoot, err := root.RepositoryRoot()
-							if err != nil {
-								return err
-							}
-							branch, err := run.Cmd(ctx.Context, "git", "rev-parse", "--abbrev-ref", "HEAD").Dir(repoRoot).Run().String()
-							ctx.Set("branch", branch)
-						}
-						return nil
-					},
 				},
 				&cli.StringFlag{
 					Name: "tag",
@@ -89,27 +79,64 @@ func determineVersion(build *buildkite.Build, tag string) string {
 	)
 }
 
+func ensureValidBuildCommit(ctx context.Context, branch string) (string, error) {
+	commit, err := repo.GetHeadCommit(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	// check if the commit exists remotely
+	if repo.HasCommit(ctx, commit) {
+		// current commit exists remotely which means we can build it!
+		return commit, nil
+	}
+	var answer string
+	oneOf := func(value string, i ...string) bool {
+		for _, item := range i {
+			if value == item {
+				return true
+			}
+		}
+		return false
+	}
+	std.PromptAndScan(std.Out, "Commit %q does not exist remotely. Do you want to push it to origin? (yes/no)", &answer)
+	if !oneOf(answer, "yes", "y") {
+		return "", ErrUserCancelled
+	}
+
+	std.Out.WriteNoticef("Pushing commit %q to origin/\n", commit, branch)
+	_, err = repo.Push(ctx, branch)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to push commit to origin")
+	}
+
+	return commit, nil
+
+}
+
 func deployCloudEphemeral(ctx *cli.Context) error {
-	// branch will always have a value because we set it as a default value in the branch flag action
 	branch := ctx.String("branch")
 	// if the tag is set - we should prefer it over the branch
 	tag := ctx.String("tag")
 
-	commit, err := repo.GetHeadCommit(ctx.Context)
-	if err != nil {
-		return err
+	if branch == "" && tag == "" {
+		repo.GetBranch(ctx.Context)
 	}
+
+	commit, err := ensureValidBuildCommit(ctx.Context, branch)
+
 	// Check that branch has been pushed
 	// offer to push branch
 	//
 	// 1. kick of a build so that we can get the images
 	// 2. Once the build is kicked off we will need the build number so taht we can generate the version locally
+	std.Out.WriteNoticef("Starting build for %q on commit %q\n", branch, commit)
 	client, err := bk.NewClient(ctx.Context, std.Out)
 	build, err := client.TriggerBuild(ctx.Context, "sourcegraph", branch, commit, bk.WithEnvVar("CLOUD_EPHEMERAL", "true"))
 	if err != nil {
 		return err
 	}
-	std.Out.WriteNoticef("Started build %s. Build progress can be viewed at %s\n", build.Number)
+	std.Out.WriteNoticef("Started build %s. Build progress can be viewed at %s\n", build.Number, build.WebURL)
 
 	version := determineVersion(build, tag)
 	std.Out.WriteNoticef("Starting cloud ephemeral deployment for version %q\n", version)
