@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cockroachdb/redact"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -83,10 +84,26 @@ func summarizePublishEventsResults(results []events.PublishEventResult) publishE
 		failed    = make([]events.PublishEventResult, 0)
 	)
 
+	// We aggregate all errors on a single log entry to get accurate
+	// representations of issues in Sentry, while not generating thousands of
+	// log entries at the same time. Because this means we only get higher-level
+	// logger context, we must annotate the errors with some hidden details to
+	// preserve Sentry grouping while adding context for diagnostics.
 	for i, result := range results {
 		if result.PublishError != nil {
 			failed = append(failed, result)
-			errFields = append(errFields, log.NamedError(fmt.Sprintf("error.%d", i), result.PublishError))
+			// Construct details to annotate the error with in Sentry reports
+			// without affecting the error itself (which is important for
+			// grouping within Sentry)
+			errFields = append(errFields, log.NamedError(fmt.Sprintf("error.%d", i),
+				errors.WithSafeDetails(result.PublishError,
+					"feature:%[1]q action:%[2]q id:%[3]q %[4]s", // mimic format of result.EventSource
+					redact.Safe(result.EventFeature),
+					redact.Safe(result.EventAction),
+					redact.Safe(result.EventID),
+					redact.Safe(result.EventSource),
+				),
+			))
 		} else {
 			succeeded = append(succeeded, result.EventID)
 		}
