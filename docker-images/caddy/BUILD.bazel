@@ -28,7 +28,6 @@ container_structure_test(
     driver = "docker",
     image = ":image",
     tags = [
-        # TODO: Check these are required
         "exclusive",
         "requires-network",
     ],
