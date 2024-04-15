@@ -202,21 +202,19 @@
     $: sh = configureSyntaxHighlighting(blobInfo.content, highlights)
     $: staticHighlightExtension = staticHighlights(staticHighlightRanges)
 
-    $: blameDecorations = [
-        showBlame
-            ? showBlameColumn({
-                  createBlameDecoration(target, props) {
-                      const decoration = new BlameDecoration({ target, props })
-                      return {
-                          destroy() {
-                              decoration.$destroy()
-                          },
-                      }
-                  },
-              })
-            : [],
-        blameDataFacet(blameData),
-    ]
+    $: blameColumnExtension = showBlame
+        ? showBlameColumn({
+              createBlameDecoration(target, props) {
+                  const decoration = new BlameDecoration({ target, props })
+                  return {
+                      destroy() {
+                          decoration.$destroy()
+                      },
+                  }
+              },
+          })
+        : []
+    $: blameDataExtension = blameDataFacet(blameData)
 
     $: extensions = [
         sh,
@@ -226,7 +224,8 @@
         codeIntelExtension,
         staticExtensions,
         staticHighlightExtension,
-        blameDecorations,
+        blameColumnExtension,
+        blameDataExtension,
     ]
 
     function update(blobInfo: BlobInfo, extensions: Extension, range: LineOrPositionOrRange | null) {
