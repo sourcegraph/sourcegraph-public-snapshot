@@ -5,6 +5,15 @@ exports_files(srcs = [
     "go-mockgen.tpl",
 ])
 
+filegroup(
+    name = "pg_utils",
+    srcs = [
+        "//dev/tools:createdb",
+        "//dev/tools:dropdb",
+        "//dev/tools:pg_dump",
+    ],
+)
+
 write_source_files(
     name = "write_all_generated",
     additional_update_targets = [

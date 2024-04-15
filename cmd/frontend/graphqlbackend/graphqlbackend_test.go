@@ -105,7 +105,7 @@ func TestRecloneRepository(t *testing.T) {
 	repoID := MarshalRepositoryID(1)
 
 	gc := gitserver.NewMockClient()
-	gc.RequestRepoCloneFunc.SetDefaultReturn(&protocol.RepoCloneResponse{}, nil)
+	gc.RequestRepoUpdateFunc.SetDefaultReturn(&protocol.RepoUpdateResponse{}, nil)
 	r := newSchemaResolver(db, gc)
 
 	_, err := r.RecloneRepository(context.Background(), &struct{ Repo graphql.ID }{Repo: repoID})
@@ -114,7 +114,7 @@ func TestRecloneRepository(t *testing.T) {
 	// To reclone, we first make a request to delete the repository, followed by a request
 	// to clone the repository again.
 	mockassert.CalledN(t, gc.RemoveFunc, 1)
-	mockassert.CalledN(t, gc.RequestRepoCloneFunc, 1)
+	mockassert.CalledN(t, gc.RequestRepoUpdateFunc, 1)
 }
 
 func TestDeleteRepositoryFromDisk(t *testing.T) {

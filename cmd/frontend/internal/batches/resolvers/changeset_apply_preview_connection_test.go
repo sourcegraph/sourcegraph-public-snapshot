@@ -39,7 +39,7 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 
 	userID := bt.CreateTestUser(t, db, false).ID
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	batchSpec := &btypes.BatchSpec{
 		UserID:          userID,

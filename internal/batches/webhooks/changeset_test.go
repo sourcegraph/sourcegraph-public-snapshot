@@ -37,7 +37,7 @@ func TestMarshalChangeset(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, true).ID
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, observation.TestContextTB(t), nil, clock)
 
 	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test", userID, 0)
 

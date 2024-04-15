@@ -18,7 +18,7 @@ func TestMarkRepoRevsAsProcessed(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	expected := []RepoRev{
 		{1, 50, "HEAD"},
@@ -65,7 +65,7 @@ func testStoreWithoutConfigurationPolicies(t *testing.T, db database.DB) Store {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
-	return New(&observation.TestContext, db)
+	return New(observation.TestContextTB(t), db)
 }
 
 func updateGitserverUpdatedAt(t *testing.T, db database.DB, now time.Time) {

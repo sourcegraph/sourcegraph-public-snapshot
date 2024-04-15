@@ -22,10 +22,10 @@ import (
 	oteltracer "go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -849,8 +849,10 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("could not delete repository with ID %d", repoID))
 	}
 
-	if err := backend.NewRepos(r.logger, r.db, r.gitserverClient).RequestRepositoryClone(ctx, repoID); err != nil {
-		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while requesting clone for repository with ID %d", repoID))
+	// We call RequestRepositoryUpdate here which will trigger a clone of the repo doesn't exist
+	// on disk.
+	if err := backend.NewRepos(r.logger, r.db, r.gitserverClient).RequestRepositoryUpdate(ctx, repoID); err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while requesting fetch for repository with ID %d", repoID))
 	}
 
 	return &EmptyResponse{}, nil

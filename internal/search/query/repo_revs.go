@@ -2,7 +2,10 @@ package query
 
 import (
 	"cmp"
+	"encoding/base64"
+	"encoding/json"
 	"strings"
+	"time"
 
 	"github.com/grafana/regexp"
 )
@@ -21,6 +24,10 @@ type RevisionSpecifier struct {
 	// ExcludeRefGlob is a glob for references to exclude. See the
 	// documentation for "--exclude" in git-log.
 	ExcludeRefGlob string
+
+	// RevAtTime targets the most recent ancestor of the given rev
+	// that has a commit timestamp before the given timestamp.
+	RevAtTime *RevAtTime
 }
 
 func (r1 RevisionSpecifier) String() string {
@@ -29,6 +36,9 @@ func (r1 RevisionSpecifier) String() string {
 	}
 	if r1.RefGlob != "" {
 		return "*" + r1.RefGlob
+	}
+	if r1.RevAtTime != nil {
+		return r1.RevAtTime.String()
 	}
 	return r1.RevSpec
 }
@@ -42,6 +52,9 @@ func (r1 RevisionSpecifier) Compare(r2 RevisionSpecifier) int {
 		return v
 	}
 	if v := cmp.Compare(r1.RefGlob, r2.RefGlob); v != 0 {
+		return v
+	}
+	if v := cmp.Compare(r1.RevAtTime.String(), r2.RevAtTime.String()); v != 0 {
 		return v
 	}
 	return cmp.Compare(r1.ExcludeRefGlob, r2.ExcludeRefGlob)
@@ -109,7 +122,11 @@ func ParseRepositoryRevisions(repoAndOptionalRev string) (ParsedRepoFilter, erro
 			if part == "" {
 				continue
 			}
-			revs = append(revs, ParseRevisionSpecifier(part))
+			rs, err := ParseRevisionSpecifier(part)
+			if err != nil {
+				return ParsedRepoFilter{}, err
+			}
+			revs = append(revs, rs)
 		}
 		if len(revs) == 0 {
 			revs = []RevisionSpecifier{{RevSpec: ""}} // default branch
@@ -127,12 +144,44 @@ func ParseRepositoryRevisions(repoAndOptionalRev string) (ParsedRepoFilter, erro
 	return ParsedRepoFilter{Repo: repo, RepoRegex: repoRegex, Revs: revs}, nil
 }
 
+const revAtTimePrefix = "rat="
+
 // ParseRevisionSpecifier is the inverse of RevisionSpecifier.String().
-func ParseRevisionSpecifier(spec string) RevisionSpecifier {
+func ParseRevisionSpecifier(spec string) (RevisionSpecifier, error) {
 	if strings.HasPrefix(spec, "*!") {
-		return RevisionSpecifier{ExcludeRefGlob: spec[2:]}
+		return RevisionSpecifier{ExcludeRefGlob: spec[2:]}, nil
 	} else if strings.HasPrefix(spec, "*") {
-		return RevisionSpecifier{RefGlob: spec[1:]}
+		return RevisionSpecifier{RefGlob: spec[1:]}, nil
+	} else if strings.HasPrefix(spec, revAtTimePrefix) {
+		aat, err := ParseRevAtTime(spec[4:])
+		if err != nil {
+			return RevisionSpecifier{}, err
+		}
+		return RevisionSpecifier{RevAtTime: &aat}, nil
 	}
-	return RevisionSpecifier{RevSpec: spec}
+	return RevisionSpecifier{RevSpec: spec}, nil
+}
+
+type RevAtTime struct {
+	RevSpec   string
+	Timestamp time.Time
+}
+
+func (a *RevAtTime) String() string {
+	// HACK: this is not intended to be user-friendly string encoding. It's
+	// meant to be usable by ConcatRevFilters to add the `rev:ancestor.at()` to
+	// the repo filters in a way that's easily parsed. A user should never see
+	// this string.
+	b, _ := json.Marshal(a)
+	return revAtTimePrefix + base64.URLEncoding.EncodeToString(b)
+}
+
+func ParseRevAtTime(input string) (RevAtTime, error) {
+	b, err := base64.URLEncoding.DecodeString(input)
+	if err != nil {
+		return RevAtTime{}, err
+	}
+	var res RevAtTime
+	err = json.Unmarshal(b, &res)
+	return res, err
 }

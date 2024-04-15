@@ -23,6 +23,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -893,7 +894,8 @@ func (r *grpcBlameHunkReader) Close() error {
 // ResolveRevisionOptions configure how we resolve revisions.
 // The zero value should contain appropriate default values.
 type ResolveRevisionOptions struct {
-	NoEnsureRevision bool // do not try to fetch from remote if revision doesn't exist locally
+	// If set, try to fetch from remote if revision doesn't exist locally.
+	EnsureRevision bool
 }
 
 // ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
@@ -910,7 +912,7 @@ func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoNa
 		Attrs: []attribute.KeyValue{
 			repo.Attr(),
 			attribute.String("spec", spec),
-			attribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
+			attribute.Bool("ensureRevision", opt.EnsureRevision),
 		},
 	})
 	defer endObservation(1, observation.Args{})
@@ -924,7 +926,7 @@ func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoNa
 		RepoName: string(repo),
 		RevSpec:  []byte(spec),
 	}
-	if !opt.NoEnsureRevision {
+	if opt.EnsureRevision {
 		req.EnsureRevision = pointers.Ptr(true)
 	}
 	res, err := client.ResolveRevision(ctx, req)
@@ -933,6 +935,34 @@ func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoNa
 	}
 
 	return api.CommitID(res.GetCommitSha()), nil
+}
+
+func (c *clientImplementor) RevAtTime(ctx context.Context, repo api.RepoName, spec string, date time.Time) (_ api.CommitID, ok bool, err error) {
+	ctx, _, endObservation := c.operations.revAtTime.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("spec", spec),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
+		return "", false, err
+	}
+
+	req := &proto.RevAtTimeRequest{
+		RepoName: string(repo),
+		RevSpec:  []byte(spec),
+		Time:     timestamppb.New(date),
+	}
+	res, err := client.RevAtTime(ctx, req)
+	if err != nil {
+		return "", false, err
+	}
+
+	return api.CommitID(res.GetCommitSha()), res.GetCommitSha() != "", nil
 }
 
 // LsFiles returns the output of `git ls-files`.
@@ -1607,7 +1637,7 @@ func (c *clientImplementor) HasCommitAfter(ctx context.Context, repo api.RepoNam
 		revspec = "HEAD"
 	}
 
-	commitid, err := c.ResolveRevision(ctx, repo, revspec, ResolveRevisionOptions{NoEnsureRevision: true})
+	commitid, err := c.ResolveRevision(ctx, repo, revspec, ResolveRevisionOptions{EnsureRevision: false})
 	if err != nil {
 		return false, err
 	}

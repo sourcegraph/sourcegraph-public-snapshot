@@ -81,9 +81,6 @@ type MockGitserverServiceClient struct {
 	// ReadFileFunc is an instance of a mock function object controlling the
 	// behavior of the method ReadFile.
 	ReadFileFunc *GitserverServiceClientReadFileFunc
-	// RepoCloneFunc is an instance of a mock function object controlling
-	// the behavior of the method RepoClone.
-	RepoCloneFunc *GitserverServiceClientRepoCloneFunc
 	// RepoCloneProgressFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoCloneProgress.
 	RepoCloneProgressFunc *GitserverServiceClientRepoCloneProgressFunc
@@ -96,6 +93,9 @@ type MockGitserverServiceClient struct {
 	// ResolveRevisionFunc is an instance of a mock function object
 	// controlling the behavior of the method ResolveRevision.
 	ResolveRevisionFunc *GitserverServiceClientResolveRevisionFunc
+	// RevAtTimeFunc is an instance of a mock function object controlling
+	// the behavior of the method RevAtTime.
+	RevAtTimeFunc *GitserverServiceClientRevAtTimeFunc
 	// SearchFunc is an instance of a mock function object controlling the
 	// behavior of the method Search.
 	SearchFunc *GitserverServiceClientSearchFunc
@@ -206,11 +206,6 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 				return
 			},
 		},
-		RepoCloneFunc: &GitserverServiceClientRepoCloneFunc{
-			defaultHook: func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (r0 *v1.RepoCloneResponse, r1 error) {
-				return
-			},
-		},
 		RepoCloneProgressFunc: &GitserverServiceClientRepoCloneProgressFunc{
 			defaultHook: func(context.Context, *v1.RepoCloneProgressRequest, ...grpc.CallOption) (r0 *v1.RepoCloneProgressResponse, r1 error) {
 				return
@@ -228,6 +223,11 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 		},
 		ResolveRevisionFunc: &GitserverServiceClientResolveRevisionFunc{
 			defaultHook: func(context.Context, *v1.ResolveRevisionRequest, ...grpc.CallOption) (r0 *v1.ResolveRevisionResponse, r1 error) {
+				return
+			},
+		},
+		RevAtTimeFunc: &GitserverServiceClientRevAtTimeFunc{
+			defaultHook: func(context.Context, *v1.RevAtTimeRequest, ...grpc.CallOption) (r0 *v1.RevAtTimeResponse, r1 error) {
 				return
 			},
 		},
@@ -344,11 +344,6 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 				panic("unexpected invocation of MockGitserverServiceClient.ReadFile")
 			},
 		},
-		RepoCloneFunc: &GitserverServiceClientRepoCloneFunc{
-			defaultHook: func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error) {
-				panic("unexpected invocation of MockGitserverServiceClient.RepoClone")
-			},
-		},
 		RepoCloneProgressFunc: &GitserverServiceClientRepoCloneProgressFunc{
 			defaultHook: func(context.Context, *v1.RepoCloneProgressRequest, ...grpc.CallOption) (*v1.RepoCloneProgressResponse, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.RepoCloneProgress")
@@ -367,6 +362,11 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 		ResolveRevisionFunc: &GitserverServiceClientResolveRevisionFunc{
 			defaultHook: func(context.Context, *v1.ResolveRevisionRequest, ...grpc.CallOption) (*v1.ResolveRevisionResponse, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.ResolveRevision")
+			},
+		},
+		RevAtTimeFunc: &GitserverServiceClientRevAtTimeFunc{
+			defaultHook: func(context.Context, *v1.RevAtTimeRequest, ...grpc.CallOption) (*v1.RevAtTimeResponse, error) {
+				panic("unexpected invocation of MockGitserverServiceClient.RevAtTime")
 			},
 		},
 		SearchFunc: &GitserverServiceClientSearchFunc{
@@ -442,9 +442,6 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 		ReadFileFunc: &GitserverServiceClientReadFileFunc{
 			defaultHook: i.ReadFile,
 		},
-		RepoCloneFunc: &GitserverServiceClientRepoCloneFunc{
-			defaultHook: i.RepoClone,
-		},
 		RepoCloneProgressFunc: &GitserverServiceClientRepoCloneProgressFunc{
 			defaultHook: i.RepoCloneProgress,
 		},
@@ -456,6 +453,9 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 		},
 		ResolveRevisionFunc: &GitserverServiceClientResolveRevisionFunc{
 			defaultHook: i.ResolveRevision,
+		},
+		RevAtTimeFunc: &GitserverServiceClientRevAtTimeFunc{
+			defaultHook: i.RevAtTime,
 		},
 		SearchFunc: &GitserverServiceClientSearchFunc{
 			defaultHook: i.Search,
@@ -2880,127 +2880,6 @@ func (c GitserverServiceClientReadFileFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitserverServiceClientRepoCloneFunc describes the behavior when the
-// RepoClone method of the parent MockGitserverServiceClient instance is
-// invoked.
-type GitserverServiceClientRepoCloneFunc struct {
-	defaultHook func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error)
-	hooks       []func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error)
-	history     []GitserverServiceClientRepoCloneFuncCall
-	mutex       sync.Mutex
-}
-
-// RepoClone delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverServiceClient) RepoClone(v0 context.Context, v1 *v1.RepoCloneRequest, v2 ...grpc.CallOption) (*v1.RepoCloneResponse, error) {
-	r0, r1 := m.RepoCloneFunc.nextHook()(v0, v1, v2...)
-	m.RepoCloneFunc.appendCall(GitserverServiceClientRepoCloneFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the RepoClone method of
-// the parent MockGitserverServiceClient instance is invoked and the hook
-// queue is empty.
-func (f *GitserverServiceClientRepoCloneFunc) SetDefaultHook(hook func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RepoClone method of the parent MockGitserverServiceClient instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitserverServiceClientRepoCloneFunc) PushHook(hook func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverServiceClientRepoCloneFunc) SetDefaultReturn(r0 *v1.RepoCloneResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverServiceClientRepoCloneFunc) PushReturn(r0 *v1.RepoCloneResponse, r1 error) {
-	f.PushHook(func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverServiceClientRepoCloneFunc) nextHook() func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverServiceClientRepoCloneFunc) appendCall(r0 GitserverServiceClientRepoCloneFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverServiceClientRepoCloneFuncCall
-// objects describing the invocations of this function.
-func (f *GitserverServiceClientRepoCloneFunc) History() []GitserverServiceClientRepoCloneFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverServiceClientRepoCloneFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverServiceClientRepoCloneFuncCall is an object that describes an
-// invocation of method RepoClone on an instance of
-// MockGitserverServiceClient.
-type GitserverServiceClientRepoCloneFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *v1.RepoCloneRequest
-	// Arg2 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg2 []grpc.CallOption
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *v1.RepoCloneResponse
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c GitserverServiceClientRepoCloneFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg2 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverServiceClientRepoCloneFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // GitserverServiceClientRepoCloneProgressFunc describes the behavior when
 // the RepoCloneProgress method of the parent MockGitserverServiceClient
 // instance is invoked.
@@ -3484,6 +3363,127 @@ func (c GitserverServiceClientResolveRevisionFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverServiceClientResolveRevisionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverServiceClientRevAtTimeFunc describes the behavior when the
+// RevAtTime method of the parent MockGitserverServiceClient instance is
+// invoked.
+type GitserverServiceClientRevAtTimeFunc struct {
+	defaultHook func(context.Context, *v1.RevAtTimeRequest, ...grpc.CallOption) (*v1.RevAtTimeResponse, error)
+	hooks       []func(context.Context, *v1.RevAtTimeRequest, ...grpc.CallOption) (*v1.RevAtTimeResponse, error)
+	history     []GitserverServiceClientRevAtTimeFuncCall
+	mutex       sync.Mutex
+}
+
+// RevAtTime delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverServiceClient) RevAtTime(v0 context.Context, v1 *v1.RevAtTimeRequest, v2 ...grpc.CallOption) (*v1.RevAtTimeResponse, error) {
+	r0, r1 := m.RevAtTimeFunc.nextHook()(v0, v1, v2...)
+	m.RevAtTimeFunc.appendCall(GitserverServiceClientRevAtTimeFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RevAtTime method of
+// the parent MockGitserverServiceClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverServiceClientRevAtTimeFunc) SetDefaultHook(hook func(context.Context, *v1.RevAtTimeRequest, ...grpc.CallOption) (*v1.RevAtTimeResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RevAtTime method of the parent MockGitserverServiceClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverServiceClientRevAtTimeFunc) PushHook(hook func(context.Context, *v1.RevAtTimeRequest, ...grpc.CallOption) (*v1.RevAtTimeResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverServiceClientRevAtTimeFunc) SetDefaultReturn(r0 *v1.RevAtTimeResponse, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.RevAtTimeRequest, ...grpc.CallOption) (*v1.RevAtTimeResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverServiceClientRevAtTimeFunc) PushReturn(r0 *v1.RevAtTimeResponse, r1 error) {
+	f.PushHook(func(context.Context, *v1.RevAtTimeRequest, ...grpc.CallOption) (*v1.RevAtTimeResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverServiceClientRevAtTimeFunc) nextHook() func(context.Context, *v1.RevAtTimeRequest, ...grpc.CallOption) (*v1.RevAtTimeResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverServiceClientRevAtTimeFunc) appendCall(r0 GitserverServiceClientRevAtTimeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverServiceClientRevAtTimeFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverServiceClientRevAtTimeFunc) History() []GitserverServiceClientRevAtTimeFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverServiceClientRevAtTimeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverServiceClientRevAtTimeFuncCall is an object that describes an
+// invocation of method RevAtTime on an instance of
+// MockGitserverServiceClient.
+type GitserverServiceClientRevAtTimeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.RevAtTimeRequest
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []grpc.CallOption
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v1.RevAtTimeResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitserverServiceClientRevAtTimeFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverServiceClientRevAtTimeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

@@ -15,7 +15,6 @@ import {
 } from '../components/FilteredConnection'
 import { usePageSwitcherPagination } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { getFilterFromURL, getUrlQuery } from '../components/FilteredConnection/utils'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import {
     type ExternalServiceIDsAndNamesResult,
     type ExternalServiceIDsAndNamesVariables,
@@ -154,7 +153,6 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
     } = useQuery<StatusAndRepoStatsResult>(STATUS_AND_REPO_STATS, {})
     const location = useLocation()
     const navigate = useNavigate()
-    const [displayCloneProgress] = useFeatureFlag('clone-progress-logging')
 
     useEffect(() => {
         if (alwaysPoll || data?.repositoryStats?.total === 0 || data?.repositoryStats?.cloning !== 0) {
@@ -261,9 +259,8 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
             corrupted: args.corrupted ?? false,
             cloneStatus: args.cloneStatus ?? null,
             externalService: args.externalService ?? null,
-            displayCloneProgress,
         } as RepositoriesVariables
-    }, [searchQuery, filterValues, displayCloneProgress])
+    }, [searchQuery, filterValues])
 
     const debouncedVariables = useDebounce(variables, 300)
 

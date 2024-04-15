@@ -26,7 +26,7 @@ func TestGetRetentionPolicyOverview(t *testing.T) {
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
 
-	svc := newService(&observation.TestContext, mockStore, mockRepoStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(observation.TestContextTB(t), mockStore, mockRepoStore, mockUploadSvc, mockGitserverClient)
 
 	mockClock := glock.NewMockClock()
 
@@ -226,7 +226,7 @@ func TestRetentionPolicyOverview_ByVisibility(t *testing.T) {
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
 
-	svc := newService(&observation.TestContext, mockStore, mockRepoStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(observation.TestContextTB(t), mockStore, mockRepoStore, mockUploadSvc, mockGitserverClient)
 
 	mockClock := glock.NewMockClock()
 

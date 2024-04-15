@@ -3,6 +3,7 @@ package inttests
 import (
 	"container/list"
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
@@ -53,7 +54,7 @@ func TestClone(t *testing.T) {
 	lock := NewMockRepositoryLock()
 	locker.TryAcquireFunc.SetDefaultReturn(lock, true)
 
-	fs := gitserverfs.New(&observation.TestContext, reposDir)
+	fs := gitserverfs.New(observation.TestContextTB(t), reposDir)
 	require.NoError(t, fs.Initialize())
 	getRemoteURLFunc := func(_ context.Context, name api.RepoName) (string, error) { //nolint:unparam
 		require.Equal(t, repo, name)
@@ -98,7 +99,7 @@ func TestClone(t *testing.T) {
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
 	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
 
-	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
+	handler := internalgrpc.MultiplexHandlers(grpcServer, http.NotFoundHandler())
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
 
@@ -169,7 +170,7 @@ func TestClone_Fail(t *testing.T) {
 	lock := NewMockRepositoryLock()
 	locker.TryAcquireFunc.SetDefaultReturn(lock, true)
 
-	fs := gitserverfs.New(&observation.TestContext, reposDir)
+	fs := gitserverfs.New(observation.TestContextTB(t), reposDir)
 	require.NoError(t, fs.Initialize())
 	getRemoteURLFunc := func(_ context.Context, name api.RepoName) (string, error) { //nolint:unparam
 		require.Equal(t, repo, name)
@@ -213,7 +214,7 @@ func TestClone_Fail(t *testing.T) {
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
 	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
 
-	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
+	handler := internalgrpc.MultiplexHandlers(grpcServer, http.NotFoundHandler())
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
 

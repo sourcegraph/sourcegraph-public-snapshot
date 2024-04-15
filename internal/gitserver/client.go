@@ -84,7 +84,7 @@ func NewTestClient(t testing.TB) TestClient {
 	return &clientImplementor{
 		logger:              logger,
 		scope:               fmt.Sprintf("gitserver.test.%s", t.Name()),
-		operations:          newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
+		operations:          newOperations(observation.ContextWithLogger(logger, observation.TestContextTB(t))),
 		clientSource:        NewTestClientSource(t, nil),
 		subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
 	}
@@ -359,15 +359,22 @@ type Client interface {
 	// * Other unexpected errors.
 	ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error)
 
+	// RevAtTime returns the OID of the nearest ancestor of `spec` that has a
+	// commit time before the given time. To simplify the logic, it only
+	// follows the first parent of merge commits to linearize the commit
+	// history. The intent is to return the state of a branch at a given time.
+	//
+	// If `spec` does not exist, an error will be returned. In the case
+	// no commit in the ancestry of `spec` before the time `t`, no error
+	// is returned, but the second return value `found` will be false.
+	RevAtTime(ctx context.Context, repo api.RepoName, spec string, t time.Time) (oid api.CommitID, found bool, err error)
+
 	// RequestRepoUpdate is the new protocol endpoint for synchronous requests
 	// with more detailed responses. Do not use this if you are not repo-updater.
 	//
 	// Repo updates are not guaranteed to occur. If a repo has been updated
 	// recently, the update won't happen.
 	RequestRepoUpdate(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
-
-	// RequestRepoClone is an asynchronous request to clone a repository.
-	RequestRepoClone(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error)
 
 	// Search executes a search as specified by args, streaming the results as
 	// it goes by calling onMatches with each set of results it receives in
@@ -728,35 +735,6 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 	var info protocol.RepoUpdateResponse
 	info.FromProto(resp)
 
-	return &info, nil
-}
-
-// RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
-func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoName) (_ *protocol.RepoCloneResponse, err error) {
-	ctx, _, endObservation := c.operations.requestRepoClone.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	client, err := c.ClientForRepo(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
-
-	req := proto.RepoCloneRequest{
-		Repo: string(repo),
-	}
-
-	resp, err := client.RepoClone(ctx, &req)
-	if err != nil {
-		return nil, err
-	}
-
-	var info protocol.RepoCloneResponse
-	info.FromProto(resp)
 	return &info, nil
 }
 
