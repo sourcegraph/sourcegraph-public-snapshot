@@ -79,17 +79,13 @@ func determineVersion(build *buildkite.Build, tag string) string {
 	)
 }
 
-func ensureValidBuildCommit(ctx context.Context, branch string) (string, error) {
-	commit, err := repo.GetBranchHeadCommit(ctx, branch)
-	if err != nil {
-		return "", err
+func ensureBranchIsSyncd(ctx context.Context, currRepo *repo.GitRepo) error {
+	if ok, err := currRepo.IsOutOfSync(ctx); err != nil {
+		return err
+	} else if ok {
+		return nil
 	}
 
-	// check if the commit exists remotely
-	if repo.HasCommit(ctx, commit) {
-		// current commit exists remotely which means we can build it!
-		return commit, nil
-	}
 	var answer string
 	oneOf := func(value string, i ...string) bool {
 		for _, item := range i {
@@ -99,31 +95,27 @@ func ensureValidBuildCommit(ctx context.Context, branch string) (string, error) 
 		}
 		return false
 	}
-	ok, err := std.PromptAndScan(std.Out, fmt.Sprintf("Commit %q on branch %q does not exist remotely. Do you want to push it to origin? (yes/no)", commit, branch), &answer)
+	ok, err := std.PromptAndScan(std.Out, fmt.Sprintf("Commit %q on branch %q does not exist remotely. Do you want to push it to origin? (yes/no)", currRepo.Ref, currRepo.Branch), &answer)
 	if err != nil {
-		return "", err
+		return err
 	}
 	if !ok || !oneOf(answer, "yes", "y") {
-		return "", ErrUserCancelled
+		return ErrUserCancelled
 	}
 
-	return "", errors.New("fail")
-	std.Out.WriteNoticef("Pushing commit %q to origin/\n", commit, branch)
-	_, err = repo.Push(ctx, branch)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to push commit to origin")
+	std.Out.WriteNoticef("Pushing commit %q to origin/\n", currRepo.Ref, currRepo.Branch)
+	if err := currRepo.Sync(ctx); err != nil {
+		return err
 	}
 
 	// if we pushed we wait a little bit otherwise follow up actions might not trigger properly
 	time.Sleep(3 * time.Second)
-
-	return commit, nil
-
+	return nil
 }
 
 func deployCloudEphemeral(ctx *cli.Context) error {
 	branch := ctx.String("branch")
-	currentBranch, err := repo.GetBranch(ctx.Context)
+	currentBranch, err := repo.GetCurrentBranch(ctx.Context)
 	if err != nil {
 		return errors.Wrap(err, "failed to determine current branch")
 	}
@@ -135,10 +127,11 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	} else if branch != currentBranch {
 		// we are not on the intended branch so we create a cloud-ephemeral branch so that we don't interfere with the branch specified
 		branch = fmt.Sprintf("cloud-ephemeral/%s", strings.ReplaceAll(branch, "/", "-"))
-		std.Out.Writef("currently not on %q branch - pushing to %q branch\n", currentBranch, branch)
+		std.Out.Writef("currently not on %q branch - using %q as branch\n", currentBranch, branch)
 	}
 
-	commit, err := ensureValidBuildCommit(ctx.Context, branch)
+	currRepo, err := repo.NewWithBranch(ctx.Context, branch)
+	err = ensureBranchIsSyncd(ctx.Context, currRepo)
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure current commit can be built")
 	}
@@ -148,12 +141,12 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	//
 	// 1. kick of a build so that we can get the images
 	// 2. Once the build is kicked off we will need the build number so taht we can generate the version locally
-	std.Out.WriteNoticef("Starting build for %q on commit %q\n", branch, commit)
+	std.Out.WriteNoticef("Starting build for %q on commit %q\n", currRepo.Branch, currRepo.Ref)
 	client, err := bk.NewClient(ctx.Context, std.Out)
 	if err != nil {
 		return err
 	}
-	build, err := client.TriggerBuild(ctx.Context, "sourcegraph", branch, commit, bk.WithEnvVar("CLOUD_EPHEMERAL", "true"))
+	build, err := client.TriggerBuild(ctx.Context, "sourcegraph", currRepo.Branch, currRepo.Ref, bk.WithEnvVar("CLOUD_EPHEMERAL", "true"))
 	if err != nil {
 		return err
 	}
