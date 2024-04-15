@@ -308,10 +308,13 @@ function PurposeStep({
         if (choice) {
             const metadata = { variant: 'treatment' }
 
-            eventLogger.log(EventName.CODY_HANDRAISER_TEST_ENROLLMENT, metadata, metadata)
-            telemetryRecorder.recordEvent('cody.onboarding.purpose', 'select', {
-                metadata: { onboardingCall: choice.checked ? 1 : 0 },
-            })
+            void new Promise(resolve => {
+                eventLogger.log(EventName.CODY_HANDRAISER_TEST_ENROLLMENT, metadata, metadata)
+                telemetryRecorder.recordEvent('cody.onboarding.purpose', 'select', {
+                    metadata: { onboardingCall: choice.checked ? 1 : 0 },
+                })
+                resolve(undefined)
+            }).then(() => {})
         }
     }
 
