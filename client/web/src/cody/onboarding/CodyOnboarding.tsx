@@ -314,7 +314,7 @@ function PurposeStep({
                     metadata: { onboardingCall: choice.checked ? 1 : 0 },
                 })
                 resolve(undefined)
-            }).then(() => {})
+            }).then(() => {}).catch(() => { /* Swallow errors */})
         }
     }
 
