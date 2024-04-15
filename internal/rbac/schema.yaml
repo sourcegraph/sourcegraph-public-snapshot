@@ -19,3 +19,4 @@ namespaces:
       - WRITE
 excludeFromUserRole:
   - OWNERSHIP
+  - PRODUCT_SUBSCRIPTIONS
