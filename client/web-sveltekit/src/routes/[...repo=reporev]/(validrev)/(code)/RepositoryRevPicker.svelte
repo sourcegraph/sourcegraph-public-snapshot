@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Button } from '$lib/wildcard'
+    import { Badge, Button } from '$lib/wildcard'
     import Popover from '$lib/Popover.svelte'
     import Tabs from '$lib/Tabs.svelte'
     import TabPanel from '$lib/TabPanel.svelte'
@@ -17,6 +17,10 @@
         type RepositoryGitCommit,
     } from './RepositoryCommitsPicker.svelte'
     import RepositoryTagsPicker, { type RepositoryTags, type RepositoryTag } from './RepositoryTagsPicker.svelte'
+    import Picker from './Picker.svelte'
+    import PickerEntry from './PickerEntry.svelte'
+    import { mdiSourceBranch, mdiSourceCommit, mdiTagOutline } from '@mdi/js'
+    import Icon from '$lib/Icon.svelte'
 
     export let repoURL: string
     export let revision: string | undefined
@@ -55,34 +59,34 @@
     <div slot="content" class="content" let:toggle>
         <Tabs>
             <TabPanel title="Branches">
-                <RepositoryBranchesPicker
-                    {repoURL}
-                    {getRepositoryBranches}
-                    onSelect={branch => {
-                        toggle(false)
-                        handleBranchOrTagSelect(branch)
-                    }}
-                />
+                <Picker getData={getRepositoryBranches} onSelect={branch => {
+                    toggle(false)
+                    handleBranchOrTagSelect(branch)
+                }} toOption={branch => ({value: branch.id, label: branch.displayName})} let:value>
+                    <PickerEntry iconPath={mdiSourceBranch} label={value.displayName} commit={value.target.commit} />
+                </Picker>
             </TabPanel>
             <TabPanel title="Tags">
-                <RepositoryTagsPicker
-                    {repoURL}
-                    {getRepositoryTags}
-                    onSelect={tag => {
-                        toggle(false)
-                        handleBranchOrTagSelect(tag)
-                    }}
-                />
+                <Picker getData={getRepositoryTags} onSelect={tag => {
+                    toggle(false)
+                    handleBranchOrTagSelect(tag)
+                }} toOption={tag => ({value: tag.id, label: tag.displayName})} let:value>
+                    <PickerEntry iconPath={mdiTagOutline} label={value.displayName} commit={value.target.commit} />
+                </Picker>
             </TabPanel>
             <TabPanel title="Commits">
-                <RepositoryCommitsPicker
-                    {repoURL}
-                    {getRepositoryCommits}
-                    onSelect={commit => {
-                        toggle(false)
-                        handleCommitSelect(commit)
-                    }}
-                />
+                <Picker getData={input => getRepositoryCommits(input).then(result => ({nodes: result?.ancestors.nodes ?? [], totalCount: 0}))} onSelect={commit => {
+                    toggle(false)
+                    handleCommitSelect(commit)
+                }} toOption={commit => ({value: commit.id, label: commit.abbreviatedOID})} let:value>
+                    <PickerEntry iconPath={mdiTagOutline} label="" commit={value}>
+                        <svelte:fragment slot="title">
+                            <Icon svgPath={mdiSourceCommit} inline />
+                            <Badge variant="link">{value.abbreviatedOID}</Badge>
+                            <span>{value.subject}</span>
+                        </svelte:fragment>
+                    </PickerEntry>
+                </Picker>
             </TabPanel>
         </Tabs>
     </div>
@@ -100,5 +104,12 @@
         :global([data-tab-panel]) {
             padding-top: 0.5rem;
         }
+
+
+        // Commit oid badge
+        :global([data-badge]) {
+            font-family: monospace;
+        }
+
     }
 </style>
