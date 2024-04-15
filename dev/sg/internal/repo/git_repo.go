@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/run"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type GitRepo struct {
@@ -14,6 +15,8 @@ type GitRepo struct {
 	// Ref is the current commit of the repository
 	Ref string
 }
+
+var ErrBranchNotFound = errors.New("branch not found")
 
 type pushOpt func(args []string) []string
 
@@ -72,7 +75,7 @@ func (g *GitRepo) IsOutOfSync(ctx context.Context) (bool, error) {
 
 	return !g.HasRemoteCommit(ctx), nil
 }
-func (g *GitRepo) Sync(ctx context.Context) (string, error) {
+func (g *GitRepo) PushToRemote(ctx context.Context) (string, error) {
 	ok, err := g.HasRemoteBranch(ctx)
 	if err != nil {
 		return "", err

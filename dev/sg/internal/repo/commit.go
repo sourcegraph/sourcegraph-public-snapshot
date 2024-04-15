@@ -2,13 +2,10 @@ package repo
 
 import (
 	"context"
-	"errors"
 	"strings"
 
 	"github.com/sourcegraph/run"
 )
-
-var ErrBranchNotFound = errors.New("branch not found")
 
 // HasCommit returns true if and only if the given commit is successfully found in locally
 // tracked remote branches from 'origin'.
