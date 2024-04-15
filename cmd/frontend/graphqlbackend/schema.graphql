@@ -7248,6 +7248,27 @@ type DefaultSettings implements SettingsSubject {
 }
 
 """
+The version of the Cody context filters.
+"""
+enum CodyContextFiltersVersion {
+    """
+    Rules defining which repositories Cody may use as context in requests to third-party LLMs.
+    """
+    V1
+}
+
+"""
+Rules defining whether the matching repositories may be included (allowed) or should be excluded (ignored)
+from Cody context in requests to third-party LLMs.
+"""
+type CodyContextFilters {
+    """
+    Cody context filters value from the site configuration.
+    """
+    raw: JSONValue
+}
+
+"""
 A site is an installation of Sourcegraph that consists of one or more
 servers that share the same configuration and database.
 The site is a singleton; the API only ever returns the single global site.
@@ -7518,6 +7539,11 @@ type Site implements SettingsSubject {
     Site-admin only.
     """
     codyGatewayRateLimitStatus: [CodyGatewayRateLimitStatus!]
+
+    """
+    Rules defining the repositories that will never be shared by Cody with third-party LLM providers.
+    """
+    codyContextFilters(version: CodyContextFiltersVersion!): CodyContextFilters!
 }
 
 """
