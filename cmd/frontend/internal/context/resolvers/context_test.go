@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -48,6 +49,11 @@ func TestContextResolver(t *testing.T) {
 			LicenseKey:  "asdf",
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
 				CodyContextIgnore: pointers.Ptr(true),
+			},
+			CodyContextFilters: &schema.CodyContextFilters{
+				Exclude: []*schema.CodyContextFilterItem{
+					{RepoNamePattern: "^repo2$"},
+				},
 			},
 		},
 	})
@@ -104,18 +110,18 @@ func TestContextResolver(t *testing.T) {
 
 	files := map[api.RepoName]map[string][]byte{
 		"repo1": {
-			"testcode1.go": []byte("testcode1"),
-			"ignore_me.go": []byte("secret"),
-			"ignore_me.md": []byte("secret"),
-			"testtext1.md": []byte("testtext1"),
-			".cody/ignore": []byte("ignore_me.go\nignore_me.md"),
+			"testcode1.go":  []byte("testcode1"),
+			"ignore_me1.go": []byte("secret"),
+			"ignore_me1.md": []byte("secret"),
+			"testtext1.md":  []byte("testtext1"),
+			".cody/ignore":  []byte("ignore_me1.go\nignore_me1.md"),
 		},
 		"repo2": {
-			"testcode2.go": []byte("testcode2"),
-			"ignore_me.go": []byte("secret"),
-			"ignore_me.md": []byte("secret"),
-			"testtext2.md": []byte("testtext2"),
-			".cody/ignore": []byte("ignore_me.go\nignore_me.md"),
+			"testcode2.go":  []byte("testcode2"),
+			"ignore_me2.go": []byte("secret"),
+			"ignore_me2.md": []byte("secret"),
+			"testtext2.md":  []byte("testtext2"),
+			".cody/ignore":  []byte("ignore_me2.go\nignore_me2.md"),
 		},
 	}
 
@@ -152,13 +158,13 @@ func TestContextResolver(t *testing.T) {
 			stream.Send(streaming.SearchEvent{
 				Results: result.Matches{&result.FileMatch{
 					File: result.File{
-						Path: "ignore_me.go",
+						Path: "ignore_me1.go",
 						Repo: types.MinimalRepo{ID: repo1.ID, Name: repo1.Name},
 					},
 					ChunkMatches: lineRange(0, 4),
 				}, &result.FileMatch{
 					File: result.File{
-						Path: "ignore_me.go",
+						Path: "ignore_me2.go",
 						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
 					},
 					ChunkMatches: lineRange(0, 4),
@@ -180,13 +186,13 @@ func TestContextResolver(t *testing.T) {
 			stream.Send(streaming.SearchEvent{
 				Results: result.Matches{&result.FileMatch{
 					File: result.File{
-						Path: "ignore_me.md",
+						Path: "ignore_me1.md",
 						Repo: types.MinimalRepo{ID: repo1.ID, Name: repo1.Name},
 					},
 					ChunkMatches: lineRange(0, 4),
 				}, &result.FileMatch{
 					File: result.File{
-						Path: "ignore_me.md",
+						Path: "ignore_me2.md",
 						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
 					},
 					ChunkMatches: lineRange(0, 4),
@@ -208,38 +214,65 @@ func TestContextResolver(t *testing.T) {
 		return nil, nil
 	})
 
-	contextClient := codycontext.NewCodyContextClient(
-		observation.NewContext(logger),
-		db,
-		mockEmbeddingsClient,
-		mockSearchClient,
-		nil,
-		codycontext.NewCodyIgnoreFilter(mockGitserver),
-	)
-
-	resolver := NewResolver(
-		db,
-		mockGitserver,
-		contextClient,
-	)
-
-	results, err := resolver.GetCodyContext(ctx, graphqlbackend.GetContextArgs{
-		Repos:            graphqlbackend.MarshalRepositoryIDs([]api.RepoID{1, 2}),
-		Query:            "my test query",
-		TextResultsCount: 2,
-		CodeResultsCount: 2,
-	})
-	require.NoError(t, err)
-
-	paths := make([]string, len(results))
-	for i, result := range results {
-		paths[i] = result.(*graphqlbackend.FileChunkContextResolver).Blob().Path()
+	tests := []struct {
+		name       string
+		dotComMode bool
+		want       []string
+	}{
+		{
+			name:       "dotcom mode",
+			dotComMode: true,
+			// .cody/ignore files are respected in dotcom mode
+			// Cody context filters in site config are not applied
+			want: []string{"testcode1.go", "testcode2.go", "testtext1.md", "testtext2.md"},
+		},
+		{
+			name:       "enterprise mode",
+			dotComMode: false,
+			// "repo2" results are excluded according to the site config
+			// .cody/ignore files don't have any effect for enterprise
+			want: []string{"testcode1.go", "testtext1.md", "ignore_me1.go", "ignore_me1.md"},
+		},
 	}
-	// One code result and text result from each repo
-	expected := []string{"testcode1.go", "testcode2.go", "testtext1.md", "testtext2.md"}
-	sort.Strings(expected)
-	sort.Strings(paths)
-	require.Equal(t, expected, paths)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dotcom.MockSourcegraphDotComMode(t, tt.dotComMode)
+			observationCtx := observation.TestContextTB(t)
+			contextClient := codycontext.NewCodyContextClient(
+				observationCtx,
+				db,
+				mockEmbeddingsClient,
+				mockSearchClient,
+				mockGitserver,
+				nil,
+			)
+
+			resolver := NewResolver(
+				db,
+				mockGitserver,
+				contextClient,
+			)
+
+			results, err := resolver.GetCodyContext(ctx, graphqlbackend.GetContextArgs{
+				Repos:            graphqlbackend.MarshalRepositoryIDs([]api.RepoID{1, 2}),
+				Query:            "my test query",
+				TextResultsCount: 2,
+				CodeResultsCount: 2,
+			})
+			require.NoError(t, err)
+
+			paths := make([]string, len(results))
+			for i, r := range results {
+				paths[i] = r.(*graphqlbackend.FileChunkContextResolver).Blob().Path()
+			}
+			expected := tt.want
+			sort.Strings(expected)
+			sort.Strings(paths)
+			require.Equal(t, expected, paths)
+		})
+	}
+
 }
 
 type fakeFileInfo struct {
