@@ -180,12 +180,9 @@ func (j *searchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 }
 
 func (j *searchJob) Children() []job.Describer {
-	return []job.Describer{j.codeJob, j.textJob}
+	return nil
 }
 
-func (j *searchJob) MapChildren(fn job.MapFunc) job.Job {
-	cp := *j
-	cp.codeJob = job.Map(j.codeJob, fn)
-	cp.textJob = job.Map(j.textJob, fn)
-	return &cp
+func (j *searchJob) MapChildren(job.MapFunc) job.Job {
+	return j
 }
