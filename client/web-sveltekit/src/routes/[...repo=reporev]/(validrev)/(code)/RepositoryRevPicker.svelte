@@ -90,15 +90,26 @@
 
 <style lang="scss">
     .content {
-        padding: 0.5rem;
+        padding: 0.75rem;
         min-width: 35rem;
         max-width: 40rem;
 
         --tabs-gap: 0.25rem;
         --align-tabs: flex-start;
 
+        :global([data-tab-header]) {
+            border-bottom: 1px solid var(--border-color-2);
+            margin: -0.75rem -0.75rem 0 -0.75rem;
+            padding: 0.75rem 0.75rem 0 0.75rem;
+        }
+
+        :global([data-tab]) {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
         :global([data-tab-panel]) {
-            padding-top: 0.5rem;
+            padding-top: 0.75rem;
         }
     }
 </style>

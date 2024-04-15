@@ -61,7 +61,7 @@
 </script>
 
 <div class="tabs">
-    <div class="tabs-header" role="tablist">
+    <div class="tabs-header" role="tablist" data-tab-header>
         {#each $tabs as tab, index (tab.id)}
             <button
                 id="{id}--tab--{index}"
@@ -69,7 +69,8 @@
                 aria-selected={$selectedTab === index}
                 tabindex={$selectedTab === index ? 0 : -1}
                 role="tab"
-                on:click={selectTab}>{tab.title}</button
+                on:click={selectTab}
+                data-tab>{tab.title}</button
             >
         {/each}
     </div>

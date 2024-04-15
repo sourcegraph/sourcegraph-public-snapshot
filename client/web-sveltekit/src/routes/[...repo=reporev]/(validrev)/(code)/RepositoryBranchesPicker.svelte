@@ -18,7 +18,7 @@
     import Icon from '$lib/Icon.svelte'
     import Avatar from '$lib/Avatar.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
-    import { Input, Alert } from '$lib/wildcard'
+    import { Input, Alert, Badge } from '$lib/wildcard'
     import { createPromiseStore } from '$lib/utils'
 
     export let repoURL: string
@@ -94,12 +94,12 @@
                     <li use:option {...$option(toOption(branch))} class="suggestion-list-item">
                         <span class="title">
                             <Icon svgPath={mdiSourceBranch} inline />
-                            <span>{branch.displayName}</span>
+                            <Badge variant="link">{branch.displayName}</Badge>
                         </span>
                         <span class="author">
                             {#if branch.target.commit}
                                 <Avatar avatar={branch.target.commit?.author.person} />
-                                {branch.target.commit.author.person.displayName}
+                                <span class="author-name">{branch.target.commit.author.person.displayName}</span>
                             {/if}
                         </span>
                         <span class="timestamp">
@@ -121,16 +121,21 @@
 
     <footer class="footer">
         <a href={`${repoURL}/-/branches`}>
-            See all commits
-            {#if !$repositoryBranches.error && $repositoryBranches.value}({$repositoryBranches.value.totalCount}){/if}
+            See all branches
+            {#if !$repositoryBranches.error && $repositoryBranches.value && $repositoryBranches.value?.totalCount !== 0}({$repositoryBranches
+                    .value.totalCount}){/if}
+            →
         </a>
     </footer>
 </div>
 
 <style lang="scss">
     .root {
-        max-height: 25rem;
         display: flex;
+        // Show the first 8 and half element in the initial suggest block
+        // 9th half visible item is needed to indicate that there are more items
+        // to pick
+        max-height: 24rem;
         flex-direction: column;
     }
 
@@ -138,19 +143,19 @@
         flex-grow: 1;
         min-height: 0;
         overflow: auto;
-        margin: 0.5rem -0.5rem 0rem -0.5rem;
+        margin: 0.75rem -0.75rem 0rem -0.75rem;
 
         // There is no way to turn off styles that come from
         // melt UI popover element, since we render suggestion
         // no in the melt UI popover we turn it off via CSS here.
         position: static !important;
-        width: calc(100% + 1rem) !important;
+        width: calc(100% + 1.5rem) !important;
     }
 
     .suggestion-list {
         display: grid;
         grid-template-rows: auto;
-        grid-template-columns: [title] auto [author] min-content [timestamp] min-content;
+        grid-template-columns: [title] auto [author] 10rem [timestamp] 6rem;
         padding: 0 0 0.5rem 0;
         margin: 0;
         list-style: none;
@@ -164,9 +169,9 @@
         display: grid;
         grid-column: 1 / 4;
         grid-template-columns: subgrid;
-        padding: 0.25rem;
+        padding: 0.325rem;
         cursor: pointer;
-        gap: 0.5rem;
+        gap: 1rem;
         border-bottom: 1px solid var(--border-color);
 
         &:last-child {
@@ -176,6 +181,11 @@
         &:hover,
         &[data-highlighted] {
             background: var(--color-bg-3);
+
+            // Branch icon
+            :global(svg) {
+                color: var(--icon-color);
+            }
         }
     }
 
@@ -183,20 +193,36 @@
     .author,
     .timestamp {
         display: flex;
-        gap: 0.25rem;
+        gap: 0.5rem;
         align-items: center;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+
+        // Prevent avatar image from shrinking
+        :global([data-avatar]) {
+            flex-shrink: 0;
+        }
+
+        // Timestamp uses tooltip wrapper element with display:contents
+        // override this behavior since we have to overflow text within
+        // trigger text
+        .author-name,
+        :global([data-tooltip-root]) {
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     }
 
     .title {
-        padding-left: 0.75rem;
-        padding-right: 0.5rem;
+        padding-left: 1rem;
 
         // Branch icon
         :global(svg) {
             flex-shrink: 0;
+            color: var(--icon-muted);
         }
 
         // Branch name badge
@@ -208,6 +234,7 @@
 
     .timestamp {
         padding-right: 0.75rem;
+        color: var(--text-muted);
     }
 
     .no-data-state {
@@ -220,16 +247,17 @@
     }
 
     .footer {
-        margin: 0 -0.5rem -0.5rem -0.5rem;
+        margin: 0 -0.75rem -0.75rem -0.75rem;
         border-top: 1px solid var(--border-color);
 
         a {
-            padding: 0.5rem;
+            padding: 0.75rem;
             width: 100%;
             height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
+            font-weight: 500;
 
             &:hover {
                 background: var(--color-bg-2);

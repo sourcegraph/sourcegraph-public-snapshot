@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte'
     import type { FormEventHandler } from 'svelte/elements'
-    import type { ActionReturn } from 'svelte/action';
+    import type { ActionReturn } from 'svelte/action'
     import LoadingSpinner from '../LoadingSpinner.svelte'
 
     export let value: string

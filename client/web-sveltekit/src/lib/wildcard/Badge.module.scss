@@ -3,7 +3,7 @@
     --badge-font-weight: 500;
     --badge-padding-y: 0.125rem;
     --badge-padding-x: 0.375rem;
-    --badge-border-radius: 3px;
+    --badge-border-radius: 4px;
     --badge-transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
         box-shadow 0.15s ease-in-out;
 }
@@ -107,6 +107,9 @@
     --badge-dark: var(--color-bg-2);
     --badge-text: var(--link-color);
     --badge-border: none;
+
+    font-weight: normal;
+    font-family: monospace;
 }
 
 a.primary,

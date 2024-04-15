@@ -30,9 +30,9 @@
 </script>
 
 {#if avatarURL}
-    <img src={avatarURL} role="presentation" aria-hidden="true" alt="Avatar of {name}" />
+    <img src={avatarURL} role="presentation" aria-hidden="true" alt="Avatar of {name}" data-avatar />
 {:else}
-    <div>
+    <div data-avatar>
         <span>{getInitials(name)}</span>
     </div>
 {/if}
