@@ -170,6 +170,8 @@ http_archive(
         "//third_party/rules_apko:repository_label_strip.patch",
         # required until a release contains https://github.com/chainguard-dev/rules_apko/pull/53
         "//third_party/rules_apko:apko_run_runfiles_path.patch",
+        # symlinking the lockfile appears to be problematic in CI https://github.com/sourcegraph/sourcegraph/pull/61877
+        "//third_party/rules_apko:copy_dont_symlink_lockfile.patch",
     ],
     sha256 = "f176171f95ee2b6eef1572c6da796d627940a1e898a32d476a2d7a9a99332960",
     strip_prefix = "rules_apko-1.2.2",

@@ -1687,13 +1687,25 @@ importers:
 
   client/wildcard:
     dependencies:
-      '@sourcegraph/common':
-        specifier: workspace:*
-        version: link:../common
+      dompurify:
+        specifier: ^3.0.6
+        version: 3.0.6
+      highlight.js:
+        specifier: ^10.5.0
+        version: 10.7.3
+      marked:
+        specifier: 4.0.16
+        version: 4.0.16
+      react-router-dom:
+        specifier: ^6.8.1
+        version: 6.8.1(react-dom@18.1.0)(react@18.1.0)
     devDependencies:
       '@sourcegraph/testing':
         specifier: workspace:*
         version: link:../testing
+      '@types/highlight.js':
+        specifier: ^9.12.4
+        version: 9.12.4
 
   schema: {}
 
@@ -6200,8 +6212,8 @@ packages:
     dev: false
 
   /@opentelemetry/api@1.8.0:
-    resolution: { integrity: sha512-I/s6F7yKUDdtMsoBWXJe8Qz40Tui5vsuKCWJEWVL+5q9sSWRzzx6v2KeNsOBEwd94j0eWkpWCH4yB6rZg9Mf0w== }
-    engines: { node: '>=8.0.0' }
+    resolution: {integrity: sha512-I/s6F7yKUDdtMsoBWXJe8Qz40Tui5vsuKCWJEWVL+5q9sSWRzzx6v2KeNsOBEwd94j0eWkpWCH4yB6rZg9Mf0w==}
+    engines: {node: '>=8.0.0'}
     dev: false
 
   /@opentelemetry/context-zone-peer-dep@1.9.1(@opentelemetry/api@1.4.0)(zone.js@0.11.6):
@@ -10854,7 +10866,7 @@ packages:
     dev: true
 
   /@types/dompurify@3.0.5:
-    resolution: { integrity: sha512-1Wg0g3BtQF7sSb27fJQAKck1HECM6zV1EB66j8JH9i3LCjYabJa0FSdiSgsD5K/RbrsR0SiraKacLB+T8ZVYAg== }
+    resolution: {integrity: sha512-1Wg0g3BtQF7sSb27fJQAKck1HECM6zV1EB66j8JH9i3LCjYabJa0FSdiSgsD5K/RbrsR0SiraKacLB+T8ZVYAg==}
     dependencies:
       '@types/trusted-types': 2.0.3
     dev: true
@@ -10993,7 +11005,7 @@ packages:
     dev: true
 
   /@types/isomorphic-fetch@0.0.39:
-    resolution: { integrity: sha512-I0gou/ZdA1vMG7t7gMzL7VYu2xAKU78rW9U1l10MI0nn77pEHq3tQqHQ8hMmXdMpBlkxZOorjI4sO594Z3kKJw== }
+    resolution: {integrity: sha512-I0gou/ZdA1vMG7t7gMzL7VYu2xAKU78rW9U1l10MI0nn77pEHq3tQqHQ8hMmXdMpBlkxZOorjI4sO594Z3kKJw==}
     dev: true
 
   /@types/istanbul-lib-coverage@2.0.6:
@@ -11056,7 +11068,7 @@ packages:
     dev: true
 
   /@types/lodash@4.17.0:
-    resolution: { integrity: sha512-t7dhREVv6dbNj0q17X12j7yDG4bD/DHYX7o5/DbDxobP0HnGPgpRz2Ej77aL7TZT3DSw13fqUTj8J4mMnqa7WA== }
+    resolution: {integrity: sha512-t7dhREVv6dbNj0q17X12j7yDG4bD/DHYX7o5/DbDxobP0HnGPgpRz2Ej77aL7TZT3DSw13fqUTj8J4mMnqa7WA==}
 
   /@types/lru-cache@5.1.1:
     resolution: {integrity: sha512-ssE3Vlrys7sdIzs5LOxCzTVMsU7i9oa/IaW92wF32JFb3CVczqOkru2xspuKczHEbG3nvmPY7IFqVmGGHdNbYw==}
@@ -11071,7 +11083,7 @@ packages:
     dev: true
 
   /@types/marked@5.0.2:
-    resolution: { integrity: sha512-OucS4KMHhFzhz27KxmWg7J+kIYqyqoW5kdIEI319hqARQQUTqhao3M/F+uFnDXD0Rg72iDDZxZNxq5gvctmLlg== }
+    resolution: {integrity: sha512-OucS4KMHhFzhz27KxmWg7J+kIYqyqoW5kdIEI319hqARQQUTqhao3M/F+uFnDXD0Rg72iDDZxZNxq5gvctmLlg==}
     dev: true
 
   /@types/mdx@2.0.5:
@@ -14417,7 +14429,7 @@ packages:
     dev: true
 
   /date-fns@2.30.0:
-    resolution: { integrity: sha512-fnULvOpxnC5/Vg3NCiWelDsLiUc9bRwAPs/+LfTLNvetFCtCTN+yQz15C/fs4AwX1R9K5GLtLfn8QW+dWisaAw== }
+    resolution: {integrity: sha512-fnULvOpxnC5/Vg3NCiWelDsLiUc9bRwAPs/+LfTLNvetFCtCTN+yQz15C/fs4AwX1R9K5GLtLfn8QW+dWisaAw==}
     engines: {node: '>=0.11'}
     dependencies:
       '@babel/runtime': 7.24.0
