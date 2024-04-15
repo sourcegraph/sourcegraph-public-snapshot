@@ -27,12 +27,14 @@ query BlobPageQuery($repoName: String!, $revspec: String!, $path: String!) {
     }
 }
 
-query BlobPageExternalURLs($repoName: String!) {
-    repository(name: $repoName) {
-        externalURLs {
-            url
-            serviceKind
-        }
+
+fragment BlobPage_ResolvedRevision on Repository {
+    externalRepository {
+        serviceType
+    }
+    externalURLs {
+        url
+        serviceKind
     }
 }
 
