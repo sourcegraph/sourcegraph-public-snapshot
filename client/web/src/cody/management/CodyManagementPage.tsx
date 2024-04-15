@@ -300,17 +300,17 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                 Download the Cody extension in your editor to start using Cody.
                             </Text>
                         </div>
-                        <div>
+                        {userIsOnProTier ?? <div>
                             <Link
-                                to="https://sourcegraph.com/community"
+                                to="https://help.sourcegraph.com/"
                                 target="_blank"
                                 rel="noreferrer"
                                 className="text-muted text-sm"
                             >
                                 <Icon svgPath={mdiHelpCircleOutline} className="mr-1" aria-hidden={true} />
-                                Have feedback? Join our community Discord to let us know!
+                                Join our community, read our docs, or get product/billing support
                             </Link>
-                        </div>
+                        </div>}
                     </div>
                     {editorGroups.map((group, index) => (
                         <div
