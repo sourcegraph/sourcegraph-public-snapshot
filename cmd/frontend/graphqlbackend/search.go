@@ -2,8 +2,10 @@ package graphqlbackend
 
 import (
 	"context"
+	"slices"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -67,6 +69,12 @@ type searchResolver struct {
 	db           database.DB
 }
 
+const indexedSearchInstanceIDKind = "IndexedSearchInstance"
+
+func marshalIndexedSearchInstanceID(id string) graphql.ID {
+	return relay.MarshalID(indexedSearchInstanceIDKind, id)
+}
+
 type indexedSearchInstance struct {
 	address string
 }
@@ -76,7 +84,26 @@ func (i *indexedSearchInstance) Address() string {
 }
 
 func (i *indexedSearchInstance) ID() graphql.ID {
-	return marshalGitserverID(i.address)
+	return marshalIndexedSearchInstanceID(i.address)
+}
+
+func unmarshalIndexedSearchInstanceID(id graphql.ID) (indexedSearchInstanceID string, err error) {
+	err = relay.UnmarshalSpec(id, &indexedSearchInstanceID)
+	return
+}
+
+func (r *schemaResolver) indexedSearchInstanceByID(ctx context.Context, id graphql.ID) (*indexedSearchInstance, error) {
+	// 🚨 SECURITY: Site admins only.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	address, err := unmarshalIndexedSearchInstanceID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &indexedSearchInstance{address: address}, nil
 }
 
 func (r *schemaResolver) IndexedSearchInstances(ctx context.Context) (graphqlutil.SliceConnectionResolver[*indexedSearchInstance], error) {
@@ -90,6 +117,8 @@ func (r *schemaResolver) IndexedSearchInstances(ctx context.Context) (graphqluti
 	if err != nil {
 		return nil, err
 	}
+
+	slices.Sort(eps)
 
 	var resolvers []*indexedSearchInstance
 	for _, ep := range eps {
