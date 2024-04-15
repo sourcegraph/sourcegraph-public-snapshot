@@ -20,7 +20,7 @@
     const sourcegraphBaseURL = SourcegraphURL.from($page.url).toString();
 
     const { repoName, filePath, position, range } = parseBrowserRepoURL(window.location.href)
-    const start = position || range?.start
+    const start = position ?? range?.start
 </script>
 
 {#if editors}
