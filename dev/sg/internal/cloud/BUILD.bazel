@@ -8,8 +8,8 @@ go_library(
     deps = [
         "//lib/errors",
         "@com_connectrpc_connect//:connect",
-        "@com_github_sourcegraph_cloud_api//go/cloudapi/v1:go_default_library",
-        "@com_github_sourcegraph_cloud_api//go/cloudapi/v1/cloudapiv1connect:go_default_library",
+        "@com_github_sourcegraph_cloud_api//go/cloudapi/v1:cloudapi",
+        "@com_github_sourcegraph_cloud_api//go/cloudapi/v1/cloudapiv1connect",
         "@com_github_sourcegraph_run//:run",
     ],
 )

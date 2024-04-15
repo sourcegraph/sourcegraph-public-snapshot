@@ -134,6 +134,9 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	}
 
 	commit, err := ensureValidBuildCommit(ctx.Context, branch)
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure current commit can be built")
+	}
 
 	// Check that branch has been pushed
 	// offer to push branch
@@ -142,14 +145,17 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	// 2. Once the build is kicked off we will need the build number so taht we can generate the version locally
 	std.Out.WriteNoticef("Starting build for %q on commit %q\n", branch, commit)
 	client, err := bk.NewClient(ctx.Context, std.Out)
+	if err != nil {
+		return err
+	}
 	build, err := client.TriggerBuild(ctx.Context, "sourcegraph", branch, commit, bk.WithEnvVar("CLOUD_EPHEMERAL", "true"))
 	if err != nil {
 		return err
 	}
-	std.Out.WriteNoticef("Started build %s. Build progress can be viewed at %s\n", pointers.DerefZero(build.Number), pointers.DerefZero(build.WebURL))
+	std.Out.WriteSuccessf("Started build %d. Build progress can be viewed at %s\n", pointers.DerefZero(build.Number), pointers.DerefZero(build.WebURL))
 
 	version := determineVersion(build, tag)
-	std.Out.WriteNoticef("Starting cloud ephemeral deployment for version %q\n", version)
+	std.Out.Writef("Starting cloud ephemeral deployment for version %q\n", version)
 
 	os.Exit(0)
 	cloudClient, err := cloud.NewClient(ctx.Context, cloud.APIEndpoint)
