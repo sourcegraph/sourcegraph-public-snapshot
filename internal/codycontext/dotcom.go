@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt/ignore"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -42,25 +41,23 @@ func (f *dotcomRepoFilter) getEnabled() bool {
 	return f.enabled
 }
 
-func (f *dotcomRepoFilter) GetFilter(repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc, error) {
+func (f *dotcomRepoFilter) GetFilter(ctx context.Context, repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc, error) {
 	if !f.getEnabled() {
 		return repos, func(fcc []FileChunkContext) []FileChunkContext {
 			return fcc
 		}, nil
 	}
-	return f.getFilter(repos)
+	return f.getFilter(ctx, repos)
 }
 
 // getFilter returns the list of repos that can be filtered
 // their .cody/ignore files (or don't have one). If an error
 // occurs that repo will be excluded.
-func (f *dotcomRepoFilter) getFilter(repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc, error) {
+func (f *dotcomRepoFilter) getFilter(ctx context.Context, repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc, error) {
 	filters := make(map[api.RepoID]filterFunc, len(repos))
 	filterableRepos := make([]types.RepoIDName, 0, len(repos))
-	// use the internal actor to ensure access to repo and ignore files
-	ctx := actor.WithInternalActor(context.Background())
-	for _, repo := range repos {
 
+	for _, repo := range repos {
 		_, commit, err := f.client.GetDefaultBranch(ctx, repo.Name, true)
 		if err != nil {
 			f.logger.Warn("couldn't get default branch, removing repo", log.Int32("repo", int32(repo.ID)), log.Error(err))

@@ -1,6 +1,7 @@
 package codycontext
 
 import (
+	"context"
 	"slices"
 	"sync"
 
@@ -64,7 +65,7 @@ func (f *enterpriseRepoFilter) getFiltersConfig() (_ filtersConfig, ok bool) {
 }
 
 // GetFilter returns the list of repos that can be filtered based on the Cody context filter value in the site config.
-func (f *enterpriseRepoFilter) GetFilter(repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc, error) {
+func (f *enterpriseRepoFilter) GetFilter(_ context.Context, repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc, error) {
 	fc, ok := f.getFiltersConfig()
 	if !ok {
 		// our configuration is invalid, so filter everything out

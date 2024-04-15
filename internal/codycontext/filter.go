@@ -1,6 +1,7 @@
 package codycontext
 
 import (
+	"context"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -9,7 +10,7 @@ import (
 
 type FileChunkFilterFunc func([]FileChunkContext) []FileChunkContext
 type RepoContentFilter interface {
-	GetFilter(repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc, error)
+	GetFilter(ctx context.Context, repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc, error)
 }
 
 func newRepoContentFilter(logger log.Logger, client gitserver.Client) RepoContentFilter {
