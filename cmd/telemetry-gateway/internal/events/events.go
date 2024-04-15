@@ -176,8 +176,11 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 					log.String("eventID", event.GetId()),
 					log.String("eventSource", event.GetSource().String()),
 					log.Int("size", len(payload)),
-					// Record a section of the event content for diagnostics
-					log.String("eventSnippet", strings.ToValidUTF8(string(eventJSON[:256]), "�")))
+					// Record a section of the event content for diagnostics.
+					// Keep in mind the size of Context objects in Sentry:
+					// https://develop.sentry.dev/sdk/data-handling/#variable-size
+					// And GCP logging limits: https://cloud.google.com/logging/quotas
+					log.String("eventSnippet", strings.ToValidUTF8(string(eventJSON[:512]), "�")))
 				// We must return nil, pretending the publish succeeded, so that
 				// the client stops attempting to publish an event that will
 				// never succeed.
