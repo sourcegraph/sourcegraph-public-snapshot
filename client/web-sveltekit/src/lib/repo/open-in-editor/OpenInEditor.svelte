@@ -14,7 +14,7 @@
     let openInEditor = $settings?.openInEditor
 
     const editorSettingsErrorMessage = getEditorSettingsErrorMessage(openInEditor)
-    const editorIds = (openInEditor as EditorSettings | undefined)?.editorIds ?? []
+    const editorIds = openInEditor?.editorIds ?? []
     const editors = !editorSettingsErrorMessage ? editorIds.map(getEditor) : undefined
 
     const sourcegraphBaseURL = SourcegraphURL.from($page.url).toString();
