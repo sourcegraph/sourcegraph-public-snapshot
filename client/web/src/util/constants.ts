@@ -52,6 +52,8 @@ export const enum EventName {
     CODY_MANAGE_SUBSCRIPTION_CLICKED = 'CodyManageSubscriptionClicked',
     CODY_ONBOARDING_WELCOME_VIEWED = 'CodyWelcomeViewed',
     CODY_ONBOARDING_PURPOSE_VIEWED = 'CodyUseCaseViewed',
+    CODY_ONBOARDING_FORM_SUBMITTED = 'CodyOnboardingFormSubmitted',
+    CODY_ONBOARDING_FORM_LOAD_ERRORED = 'CodyOnboardingFormLoadErrored',
     CODY_ONBOARDING_PURPOSE_SELECTED = 'CodyUseCaseSelected',
     CODY_ONBOARDING_CHOOSE_EDITOR_VIEWED = 'CodyEditorViewed',
     CODY_ONBOARDING_CHOOSE_EDITOR_SKIPPED = 'CodyEditorSkipped',

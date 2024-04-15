@@ -314,7 +314,11 @@ function PurposeStep({
                     metadata: { onboardingCall: choice.checked ? 1 : 0 },
                 })
                 resolve(undefined)
-            }).then(() => {}).catch(() => { /* Swallow errors */})
+            })
+                .then(() => {})
+                .catch(() => {
+                    /* Swallow errors */
+                })
         }
     }
 
@@ -331,11 +335,25 @@ function PurposeStep({
                     formId="19f34edd-1a98-4fc9-9b2b-c1edca727720"
                     onFormSubmitted={() => {
                         onNext()
-                        telemetryRecorder.recordEvent('cody.onboarding.qualificationSurvey', 'succeeded', {})
+                        void new Promise(resolve => {
+                            eventLogger.log(EventName.CODY_ONBOARDING_FORM_SUBMITTED)
+                            telemetryRecorder.recordEvent('cody.onboarding.qualificationSurvey', 'succeeded', {})
+                        })
+                            .then(() => {})
+                            .catch(() => {
+                                /* Swallow errors */
+                            })
                     }}
                     onFormLoadError={() => {
                         onNext()
-                        telemetryRecorder.recordEvent('cody.onboarding.qualificationSurvey', 'failed', {})
+                        void new Promise(resolve => {
+                            eventLogger.log(EventName.CODY_ONBOARDING_FORM_LOAD_ERRORED)
+                            telemetryRecorder.recordEvent('cody.onboarding.qualificationSurvey', 'failed', {})
+                        })
+                            .then(() => {})
+                            .catch(() => {
+                                /* Swallow errors */
+                            })
                     }}
                     userId={authenticatedUser.id}
                     userEmail={primaryEmail}
