@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"os"
 	"sort"
-	"strings"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -148,63 +147,61 @@ func TestContextResolver(t *testing.T) {
 		return &search.Inputs{OriginalQuery: query}, nil
 	})
 	mockSearchClient.ExecuteFunc.SetDefaultHook(func(_ context.Context, stream streaming.Sender, inputs *search.Inputs) (*search.Alert, error) {
-		if strings.Contains(inputs.OriginalQuery, "-file") {
-			stream.Send(streaming.SearchEvent{
-				Results: result.Matches{&result.FileMatch{
-					File: result.File{
-						Path: "ignore_me.go",
-						Repo: types.MinimalRepo{ID: repo1.ID, Name: repo1.Name},
-					},
-					ChunkMatches: lineRange(0, 4),
-				}, &result.FileMatch{
-					File: result.File{
-						Path: "ignore_me.go",
-						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
-					},
-					ChunkMatches: lineRange(0, 4),
-				}, &result.FileMatch{
-					File: result.File{
-						Path: "testcode1.go",
-						Repo: types.MinimalRepo{ID: repo1.ID, Name: repo1.Name},
-					},
-					ChunkMatches: lineRange(0, 4),
-				}, &result.FileMatch{
-					File: result.File{
-						Path: "testcode2.go",
-						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
-					},
-					ChunkMatches: lineRange(0, 4),
-				}},
-			})
-		} else {
-			stream.Send(streaming.SearchEvent{
-				Results: result.Matches{&result.FileMatch{
-					File: result.File{
-						Path: "ignore_me.md",
-						Repo: types.MinimalRepo{ID: repo1.ID, Name: repo1.Name},
-					},
-					ChunkMatches: lineRange(0, 4),
-				}, &result.FileMatch{
-					File: result.File{
-						Path: "ignore_me.md",
-						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
-					},
-					ChunkMatches: lineRange(0, 4),
-				}, &result.FileMatch{
-					File: result.File{
-						Path: "testtext1.md",
-						Repo: types.MinimalRepo{ID: repo1.ID, Name: repo2.Name},
-					},
-					ChunkMatches: lineRange(0, 4),
-				}, &result.FileMatch{
-					File: result.File{
-						Path: "testtext2.md",
-						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
-					},
-					ChunkMatches: lineRange(0, 4),
-				}},
-			})
-		}
+		stream.Send(streaming.SearchEvent{
+			Results: result.Matches{&result.FileMatch{
+				File: result.File{
+					Path: "ignore_me.go",
+					Repo: types.MinimalRepo{ID: repo1.ID, Name: repo1.Name},
+				},
+				ChunkMatches: lineRange(0, 4),
+			}, &result.FileMatch{
+				File: result.File{
+					Path: "ignore_me.go",
+					Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
+				},
+				ChunkMatches: lineRange(0, 4),
+			}, &result.FileMatch{
+				File: result.File{
+					Path: "testcode1.go",
+					Repo: types.MinimalRepo{ID: repo1.ID, Name: repo1.Name},
+				},
+				ChunkMatches: lineRange(0, 4),
+			}, &result.FileMatch{
+				File: result.File{
+					Path: "testcode2.go",
+					Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
+				},
+				ChunkMatches: lineRange(0, 4),
+			}},
+		})
+
+		stream.Send(streaming.SearchEvent{
+			Results: result.Matches{&result.FileMatch{
+				File: result.File{
+					Path: "ignore_me.md",
+					Repo: types.MinimalRepo{ID: repo1.ID, Name: repo1.Name},
+				},
+				ChunkMatches: lineRange(0, 4),
+			}, &result.FileMatch{
+				File: result.File{
+					Path: "ignore_me.md",
+					Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
+				},
+				ChunkMatches: lineRange(0, 4),
+			}, &result.FileMatch{
+				File: result.File{
+					Path: "testtext1.md",
+					Repo: types.MinimalRepo{ID: repo1.ID, Name: repo2.Name},
+				},
+				ChunkMatches: lineRange(0, 4),
+			}, &result.FileMatch{
+				File: result.File{
+					Path: "testtext2.md",
+					Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
+				},
+				ChunkMatches: lineRange(0, 4),
+			}},
+		})
 		return nil, nil
 	})
 

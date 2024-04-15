@@ -3,7 +3,6 @@ package codycontext
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/grafana/regexp"
@@ -17,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	vdb "github.com/sourcegraph/sourcegraph/internal/embeddings/db"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -239,14 +237,6 @@ func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetCo
 	return filter(res), nil
 }
 
-var textFileFilter = func() string {
-	var extensions []string
-	for extension := range embed.TextFileExtensions {
-		extensions = append(extensions, extension)
-	}
-	return `file:(` + strings.Join(extensions, "|") + `)$`
-}()
-
 // getKeywordContext uses keyword search to find relevant bits of context for Cody
 func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs, filter FileChunkFilterFunc) (_ []FileChunkContext, err error) {
 	ctx, _, endObservation := c.getKeywordContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
@@ -267,84 +257,59 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		regexEscapedRepoNames[i] = regexp.QuoteMeta(string(repo.Name))
 	}
 
-	textQuery := fmt.Sprintf(`repo:^%s$ type:file type:path %s %s`, query.UnionRegExps(regexEscapedRepoNames), textFileFilter, args.Query)
-	codeQuery := fmt.Sprintf(`repo:^%s$ type:file type:path -%s %s`, query.UnionRegExps(regexEscapedRepoNames), textFileFilter, args.Query)
+	keywordQuery := fmt.Sprintf(`repo:^%s$ type:file type:path codycodecount:%d codytextcount:%d %s`,
+		query.UnionRegExps(regexEscapedRepoNames),
+		args.CodeResultsCount,
+		args.TextResultsCount,
+		args.Query)
 
-	doSearch := func(ctx context.Context, query string, limit int) ([]FileChunkContext, error) {
-		if limit == 0 {
-			// Skip a search entirely if the limit is zero.
-			return nil, nil
-		}
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
-		ctx, cancel := context.WithCancel(ctx)
-		defer cancel()
+	patternType := "codycontext"
+	plan, err := c.searchClient.Plan(
+		ctx,
+		"V3",
+		&patternType,
+		keywordQuery,
+		search.Precise,
+		search.Streaming,
+		pointers.Ptr(int32(0)),
+	)
 
-		patternType := "codycontext"
-		plan, err := c.searchClient.Plan(
-			ctx,
-			"V3",
-			&patternType,
-			query,
-			search.Precise,
-			search.Streaming,
-			pointers.Ptr(int32(0)),
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		var (
-			mu        sync.Mutex
-			collected []FileChunkContext
-		)
-		stream := streaming.StreamFunc(func(e streaming.SearchEvent) {
-			mu.Lock()
-			defer mu.Unlock()
-
-			// Another caller may have already hit the limit, but we haven't yet responded
-			// to the cancellation. Return immediately in this case.
-			if len(collected) >= limit {
-				return
-			}
-
-			for _, res := range e.Results {
-				if fm, ok := res.(*result.FileMatch); ok {
-					collected = append(collected, filter(fileMatchToContextMatches(fm))...)
-					if len(collected) >= limit {
-						cancel()
-						return
-					}
-				}
-			}
-		})
-
-		alert, err := c.searchClient.Execute(ctx, stream, plan)
-		if err != nil {
-			return nil, err
-		}
-		if alert != nil {
-			c.obsCtx.Logger.Warn("received alert from keyword search execution",
-				log.String("title", alert.Title),
-				log.String("description", alert.Description),
-			)
-		}
-
-		return collected, nil
-	}
-
-	p := pool.NewWithResults[[]FileChunkContext]().WithContext(ctx)
-	p.Go(func(ctx context.Context) ([]FileChunkContext, error) {
-		return doSearch(ctx, codeQuery, int(args.CodeResultsCount))
-	})
-	p.Go(func(ctx context.Context) ([]FileChunkContext, error) {
-		return doSearch(ctx, textQuery, int(args.TextResultsCount))
-	})
-	results, err := p.Wait()
 	if err != nil {
 		return nil, err
 	}
 
-	return append(results[0], results[1]...), nil
+	var (
+		mu        sync.Mutex
+		collected []FileChunkContext
+	)
+
+	stream := streaming.StreamFunc(func(e streaming.SearchEvent) {
+		mu.Lock()
+		defer mu.Unlock()
+
+		for _, res := range e.Results {
+			if fm, ok := res.(*result.FileMatch); ok {
+				collected = append(collected, filter(fileMatchToContextMatches(fm))...)
+			}
+		}
+	})
+
+	alert, err := c.searchClient.Execute(ctx, stream, plan)
+	if err != nil {
+		return nil, err
+	}
+
+	if alert != nil {
+		c.obsCtx.Logger.Warn("received alert from keyword search execution",
+			log.String("title", alert.Title),
+			log.String("description", alert.Description),
+		)
+	}
+
+	return collected, nil
 }
 
 func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {

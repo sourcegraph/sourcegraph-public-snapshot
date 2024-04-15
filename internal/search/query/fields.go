@@ -33,6 +33,10 @@ const (
 	FieldTimeout   = "timeout"
 	FieldCombyRule = "rule"
 	FieldSelect    = "select"
+
+	// Experimental fields for Cody, internal use only and not exposed to users
+	FieldCodyCodeCount = "codycodecount"
+	FieldCodyTextCount = "codytextcount"
 )
 
 var allFields = map[string]struct{}{
@@ -71,6 +75,8 @@ var allFields = map[string]struct{}{
 	FieldRev:                empty,
 	"revision":              empty,
 	FieldSelect:             empty,
+	FieldCodyCodeCount:      empty,
+	FieldCodyTextCount:      empty,
 }
 
 var aliases = map[string]string{

@@ -1113,6 +1113,7 @@ func TestNewPlanJob(t *testing.T) {
 `),
 		},
 		{
+
 			query:      `context:global repo:sourcegraph/.* what's going on'? lang:go`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeCodyContext,
@@ -1126,6 +1127,93 @@ func TestNewPlanJob(t *testing.T) {
     (originalQuery . )
     (patternType . codycontext)
     ))
+`),
+		},
+		{
+			query:      `context:global repo:sourcegraph/.* what is symf? lang:go`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeCodyContext,
+			want: autogold.Expect(`
+(LOG
+  (ALERT
+    (features . error decoding features)
+    (protocol . Streaming)
+    (onSourcegraphDotCom . true)
+    (query . )
+    (originalQuery . )
+    (patternType . codycontext)
+    (CODYCONTEXTSEARCH
+      (patterns . [symf])
+      (codeCount . 12)
+      (textCount . 3)
+      (TIMEOUT
+        (timeout . 20s)
+        (LIMIT
+          (limit . 10000)
+          (PARALLEL
+            (SEQUENTIAL
+              (ensureUnique . false)
+              (REPOPAGER
+                (containsRefGlobs . false)
+                (repoOpts.repoFilters . [sourcegraph/.*])
+                (repoOpts.searchContextSpec . global)
+                (PARTIALREPOS
+                  (ZOEKTREPOSUBSETTEXTSEARCH
+                    (fileMatchLimit . 10000)
+                    (select . )
+                    (zoektQueryRegexps . [(?i)symf (?i)(?im:\.GO$) (?i)(?m:(?:md|rdoc|textile|wikitext|asciidoc|creole|org|pod|txt|wiki|m(?:arkdown|ediawiki|use)|adoc|pod6|r(?:est|st|md))$)])
+                    (query . (and substr:"symf" file_regex:"(?i:\\.GO)(?m:$)" (not file_regex:"(?:md|rdoc|textile|wikitext|asciidoc|creole|org|pod|txt|wiki|m(?:arkdown|ediawiki|use)|adoc|pod6|r(?:est|st|md))(?m:$)")))
+                    (type . text))))
+              (REPOPAGER
+                (containsRefGlobs . false)
+                (repoOpts.repoFilters . [sourcegraph/.*])
+                (repoOpts.searchContextSpec . global)
+                (PARTIALREPOS
+                  (SEARCHERTEXTSEARCH
+                    (useFullDeadline . true)
+                    (patternInfo . TextPatternInfo{"symf",filematchlimit:10000,lang:go,-f:"(md|rdoc|textile|wikitext|asciidoc|creole|org|pod|txt|wiki|markdown|mediawiki|muse|adoc|pod6|rest|rst|rmd)$",f:"(?i)\\.go$"})
+                    (numRepos . 0)
+                    (pathRegexps . [(?i)\.go$ (?i)symf])
+                    (indexed . false)))))
+            NOOP
+            (REPOSCOMPUTEEXCLUDED
+              (repoOpts.repoFilters . [sourcegraph/.*])
+              (repoOpts.searchContextSpec . global))
+            NOOP)))
+      (TIMEOUT
+        (timeout . 20s)
+        (LIMIT
+          (limit . 10000)
+          (PARALLEL
+            (SEQUENTIAL
+              (ensureUnique . false)
+              (REPOPAGER
+                (containsRefGlobs . false)
+                (repoOpts.repoFilters . [sourcegraph/.*])
+                (repoOpts.searchContextSpec . global)
+                (PARTIALREPOS
+                  (ZOEKTREPOSUBSETTEXTSEARCH
+                    (fileMatchLimit . 10000)
+                    (select . )
+                    (zoektQueryRegexps . [(?i)symf (?i)(?m:(?:md|rdoc|textile|wikitext|asciidoc|creole|org|pod|txt|wiki|m(?:arkdown|ediawiki|use)|adoc|pod6|r(?:est|st|md))$) (?i)(?im:\.GO$)])
+                    (query . (and substr:"symf" file_regex:"(?:md|rdoc|textile|wikitext|asciidoc|creole|org|pod|txt|wiki|m(?:arkdown|ediawiki|use)|adoc|pod6|r(?:est|st|md))(?m:$)" file_regex:"(?i:\\.GO)(?m:$)"))
+                    (type . text))))
+              (REPOPAGER
+                (containsRefGlobs . false)
+                (repoOpts.repoFilters . [sourcegraph/.*])
+                (repoOpts.searchContextSpec . global)
+                (PARTIALREPOS
+                  (SEARCHERTEXTSEARCH
+                    (useFullDeadline . true)
+                    (patternInfo . TextPatternInfo{"symf",filematchlimit:10000,lang:go,f:"(md|rdoc|textile|wikitext|asciidoc|creole|org|pod|txt|wiki|markdown|mediawiki|muse|adoc|pod6|rest|rst|rmd)$",f:"(?i)\\.go$"})
+                    (numRepos . 0)
+                    (pathRegexps . [(?i)(md|rdoc|textile|wikitext|asciidoc|creole|org|pod|txt|wiki|markdown|mediawiki|muse|adoc|pod6|rest|rst|rmd)$ (?i)\.go$ (?i)symf])
+                    (indexed . false)))))
+            NOOP
+            (REPOSCOMPUTEEXCLUDED
+              (repoOpts.repoFilters . [sourcegraph/.*])
+              (repoOpts.searchContextSpec . global))
+            NOOP))))))
 `),
 		},
 		// The next query shows an unexpected way that a query is
