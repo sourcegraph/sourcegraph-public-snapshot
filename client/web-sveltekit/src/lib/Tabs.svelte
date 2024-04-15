@@ -70,6 +70,7 @@
                 tabindex={$selectedTab === index ? 0 : -1}
                 role="tab"
                 on:click={selectTab}
+                data-tab-title={tab.title}
                 data-tab>{tab.title}</button
             >
         {/each}
@@ -104,6 +105,7 @@
         display: inline-flex;
         flex-direction: column;
         justify-content: center;
+        white-space: nowrap;
         border-bottom: 2px solid transparent;
 
         &[aria-selected='true'],
@@ -114,6 +116,14 @@
 
         &[aria-selected='true'] {
             font-weight: 700;
+        }
+
+        &::before {
+            content: attr(data-tab-title);
+            display: block;
+            font-weight: 700;
+            height: 0;
+            visibility: hidden;
         }
     }
 </style>
