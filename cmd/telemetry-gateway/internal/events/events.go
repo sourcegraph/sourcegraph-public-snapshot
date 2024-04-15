@@ -87,8 +87,29 @@ func (p *Publisher) GetSourceName() string {
 type PublishEventResult struct {
 	// EventID is the ID of the event that was published.
 	EventID string
+	// EventFeature is the feature of the event that was published.
+	EventFeature string
+	// EventAction is the action of the event that was published.
+	EventAction string
+	// EventSource is a string representation of source of the event, as reported
+	// at recording time, in the default proto string format, e.g:
+	//
+	//   server:{version:"..."}  client:{name:"..."}
+	EventSource string
 	// PublishError, if non-nil, indicates an error occurred publishing the event.
 	PublishError error
+}
+
+// NewPublishEventResult returns a PublishEventResult for the given event and error.
+// Should only be used internally or in testing.
+func NewPublishEventResult(event *telemetrygatewayv1.Event, err error) PublishEventResult {
+	return PublishEventResult{
+		EventID:      event.GetId(),
+		EventFeature: event.GetFeature(),
+		EventAction:  event.GetAction(),
+		EventSource:  event.GetSource().String(),
+		PublishError: err,
+	}
 }
 
 // Publish emits all events concurrently, up to 100 at a time for each call.
@@ -174,10 +195,7 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 		}
 
 		wg.Go(func() PublishEventResult {
-			return PublishEventResult{
-				EventID:      event.GetId(),
-				PublishError: doPublish(event),
-			}
+			return NewPublishEventResult(event, doPublish(event))
 		})
 	}
 	return wg.Wait()
