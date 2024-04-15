@@ -4,7 +4,7 @@ import { highlight, highlightAuto } from 'highlight.js/lib/core'
 // eslint-disable-next-line no-restricted-imports
 import { marked } from 'marked'
 
-import { logger } from '../logger'
+import { logger } from '.'
 
 /**
  * Escapes HTML by replacing characters like `<` with their HTML escape sequences like `&lt;`
