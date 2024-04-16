@@ -955,7 +955,7 @@ func TestGRPCServer_RawDiff(t *testing.T) {
 		locker := NewMockRepositoryLocker()
 		locker.StatusFunc.SetDefaultReturn("cloning", true)
 		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
-		err := gs.RawDiff(&v1.RawDiffRequest{RepoName: "therepo", BaseRevSpec: []byte("base"), HeadRevSpec: []byte("head"), ComparisonType: proto.RawDiffRequest_COMPARISION_TYPE_INTERSECTION}, mockSS)
+		err := gs.RawDiff(&v1.RawDiffRequest{RepoName: "therepo", BaseRevSpec: []byte("base"), HeadRevSpec: []byte("head"), ComparisonType: proto.RawDiffRequest_COMPARISON_TYPE_INTERSECTION}, mockSS)
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
@@ -986,7 +986,7 @@ func TestGRPCServer_RawDiff(t *testing.T) {
 			RepoName:       "therepo",
 			BaseRevSpec:    []byte("base"),
 			HeadRevSpec:    []byte("head"),
-			ComparisonType: proto.RawDiffRequest_COMPARISION_TYPE_INTERSECTION,
+			ComparisonType: proto.RawDiffRequest_COMPARISON_TYPE_INTERSECTION,
 		})
 		require.NoError(t, err)
 		for {
@@ -1009,7 +1009,7 @@ func TestGRPCServer_RawDiff(t *testing.T) {
 			RepoName:       "therepo",
 			BaseRevSpec:    []byte("base"),
 			HeadRevSpec:    []byte("head"),
-			ComparisonType: proto.RawDiffRequest_COMPARISION_TYPE_INTERSECTION,
+			ComparisonType: proto.RawDiffRequest_COMPARISON_TYPE_INTERSECTION,
 		})
 		require.NoError(t, err)
 		_, err = r.Recv()

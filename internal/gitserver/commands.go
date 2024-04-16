@@ -61,9 +61,9 @@ func (c *clientImplementor) Diff(ctx context.Context, repo api.RepoName, opts Di
 	// Rare case: the base is the empty tree, in which case we must use ..
 	// instead of ... as the latter only works for commits.
 	if opts.Base == DevNullSHA {
-		req.ComparisonType = proto.RawDiffRequest_COMPARISION_TYPE_ONLY_IN_HEAD
+		req.ComparisonType = proto.RawDiffRequest_COMPARISON_TYPE_ONLY_IN_HEAD
 	} else if opts.RangeType != ".." {
-		req.ComparisonType = proto.RawDiffRequest_COMPARISION_TYPE_INTERSECTION
+		req.ComparisonType = proto.RawDiffRequest_COMPARISON_TYPE_INTERSECTION
 	}
 
 	client, err := c.clientSource.ClientForRepo(ctx, repo)

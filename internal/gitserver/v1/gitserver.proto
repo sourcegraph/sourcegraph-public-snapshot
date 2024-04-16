@@ -207,13 +207,13 @@ message RawDiffRequest {
     COMPARISON_TYPE_UNSPECIFIED = 0;
     // Corresponds to the BASE..HEAD syntax that only returns any commits that are
     // in HEAD but not in BASE.
-    COMPARISION_TYPE_ONLY_IN_HEAD = 1;
+    COMPARISON_TYPE_ONLY_IN_HEAD = 1;
     // Corresponds to the BASE...HEAD syntax that returns any commits that are not
     // in both BASE and HEAD.
-    COMPARISION_TYPE_INTERSECTION = 2;
+    COMPARISON_TYPE_INTERSECTION = 2;
   }
   // comparison_type is the type of comparison to perform. If unspecified, will
-  // fall back to COMPARISION_TYPE_INTERSECTION.
+  // fall back to COMPARISON_TYPE_INTERSECTION.
   ComparisonType comparison_type = 5;
   // paths is a list of paths to filter the diff to. If empty, all paths are diffed.
   repeated bytes paths = 6;

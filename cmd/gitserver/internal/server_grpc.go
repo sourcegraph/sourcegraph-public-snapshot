@@ -1352,9 +1352,9 @@ func (gs *grpcServer) RawDiff(req *proto.RawDiffRequest, ss proto.GitserverServi
 
 	var typ git.GitDiffComparisonType
 	switch req.GetComparisonType() {
-	case proto.RawDiffRequest_COMPARISION_TYPE_INTERSECTION:
+	case proto.RawDiffRequest_COMPARISON_TYPE_INTERSECTION:
 		typ = git.GitDiffComparisonTypeIntersection
-	case proto.RawDiffRequest_COMPARISION_TYPE_ONLY_IN_HEAD:
+	case proto.RawDiffRequest_COMPARISON_TYPE_ONLY_IN_HEAD:
 		typ = git.GitDiffComparisonTypeOnlyInHead
 	}
 
