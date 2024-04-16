@@ -272,6 +272,7 @@ func buildBlobstoreDeployment(sg *Sourcegraph) (appsv1.Deployment, error) {
 	defaultDeployment, err := deployment.NewDeployment(
 		name,
 		sg.Namespace,
+		sg.Spec.RequestedVersion,
 		deployment.WithPodTemplateSpec(podTemplate.Template),
 	)
 
