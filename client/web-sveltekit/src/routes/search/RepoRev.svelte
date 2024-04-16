@@ -1,22 +1,27 @@
 <script lang="ts">
     import { highlightRanges } from '$lib/dom'
-    // import { getGraphQLClient } from '$lib/graphql'
+    import { getGraphQLClient } from '$lib/graphql'
+    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Popover from '$lib/Popover.svelte'
-    // import { RepoPopover, type RepoPopoverResult } from '$lib/repo/RepoPopover/RepoPopover.gql'
+    import { RepoPopover as RepoPopoverQuery, type RepoPopoverResult } from '$lib/repo/RepoPopover/RepoPopover.gql.ts'
+    import RepoPopover from '$lib/repo/RepoPopover/RepoPopover.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { displayRepoName } from '$lib/shared'
 
     export let repoName: string
     export let rev: string | undefined
     export let highlights: [number, number][] = []
-    // let repo: RepoPopoverResult | undefined
+    let repo: RepoPopoverResult
 
-    /* const loadOnHover = async () => {
+    const loadOnHover = async () => {
         const client = getGraphQLClient()
-        const response = await client.query(RepoPopover, { repoName })
-        repo = response.data
+        const response = await client.query(RepoPopoverQuery, { repoName })
+        // must be site admin
+        if (response.data) {
+            repo = response.data
+        }
     }
- */
+
     $: href = `/${repoName}${rev ? `@${rev}` : ''}`
     $: displayName = displayRepoName(repoName)
     $: if (displayName !== repoName) {
@@ -39,7 +44,7 @@
                 use:registerTrigger
                 on:mouseenter={() => {
                     toggle(true)
-                    // loadOnHover()
+                    loadOnHover()
                 }}
                 on:mouseleave={() => toggle(false)}
             >
@@ -48,7 +53,15 @@
                     <small class="rev"> @ {rev}</small>
                 {/if}
             </a>
-            <div slot="content">{repoName}</div>
+            <div slot="content">
+                {#if repo}
+                    <RepoPopover repo={repo.repository} withHeader={true} />
+                {:else}
+                    <div class="spinner">
+                        <LoadingSpinner inline />
+                    </div>
+                {/if}
+            </div>
         </Popover>
     {/key}
 </span>
@@ -66,5 +79,10 @@
                 color: var(--text-muted);
             }
         }
+    }
+
+    .spinner {
+        width: 480px;
+        height: 350px;
     }
 </style>
