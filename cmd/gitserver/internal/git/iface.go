@@ -129,9 +129,9 @@ const (
 
 // ListRefsOpts are additional options passed to ListRefs.
 type ListRefsOpts struct {
-	// If true, only heads are returned. Can be combined with tags_only.
+	// If true, only heads are returned. Can be combined with HeadsOnly.
 	HeadsOnly bool
-	// If true, only tags are returned. Can be combined with heads_only.
+	// If true, only tags are returned. Can be combined with TagsOnly.
 	TagsOnly bool
 	// If set, only return refs that point at the given commit shas. Multiple
 	// values will be ORed together.
