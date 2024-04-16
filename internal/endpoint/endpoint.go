@@ -3,6 +3,7 @@ package endpoint
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 
@@ -30,19 +31,24 @@ func (e *EmptyError) Error() string {
 type Map struct {
 	urlspec string
 
-	mu  sync.RWMutex
-	hm  *rendezvous.Rendezvous
-	err error
+	mu sync.RWMutex
+	hm *rendezvous.Rendezvous
+	// endpoints is a super-set of the nodes in hm. It is used to return the full
+	// list of endpoints. Lookups are done on hm. If discofunc only sends Endpoints
+	// with ToRemove nil, endpoints will be equal to hm.Nodes().
+	endpoints []string
+	err       error
 
 	init      sync.Once
-	discofunk func(chan endpoints) // I like to know who is in my party!
+	discofunk func(chan Endpoints) // I like to know who is in my party!
 }
 
-// endpoints represents a list of a service's endpoints as discovered through
+// Endpoints represents a list of a service's endpoints as discovered through
 // the chosen service discovery mechanism.
-type endpoints struct {
+type Endpoints struct {
 	Service   string
 	Endpoints []string
+	ToRemove  []string
 	Error     error
 }
 
@@ -82,8 +88,9 @@ func New(urlspec string) *Map {
 // Static Maps are guaranteed to never return an error.
 func Static(endpoints ...string) *Map {
 	return &Map{
-		urlspec: fmt.Sprintf("%v", endpoints),
-		hm:      newConsistentHash(endpoints),
+		urlspec:   fmt.Sprintf("%v", endpoints),
+		hm:        newConsistentHash(endpoints),
+		endpoints: endpoints,
 	}
 }
 
@@ -184,7 +191,7 @@ func (m *Map) Endpoints() ([]string, error) {
 		return nil, m.err
 	}
 
-	return m.hm.Nodes(), nil
+	return m.endpoints, nil
 }
 
 // discover updates the Map with discovered endpoints
@@ -193,7 +200,7 @@ func (m *Map) discover() {
 		return
 	}
 
-	ch := make(chan endpoints)
+	ch := make(chan Endpoints)
 	ready := make(chan struct{})
 
 	go m.sync(ch, ready)
@@ -202,7 +209,7 @@ func (m *Map) discover() {
 	<-ready
 }
 
-func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
+func (m *Map) sync(ch chan Endpoints, ready chan struct{}) {
 	logger := log.Scoped("endpoint")
 	for eps := range ch {
 
@@ -211,18 +218,23 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 			log.String("urlspec", m.urlspec),
 			log.String("service", eps.Service),
 			log.Int("count", len(eps.Endpoints)),
+			log.Int("count_to_remove", len(eps.ToRemove)),
 			log.Error(eps.Error),
 		)
 
 		metricEndpointSize.WithLabelValues(eps.Service).Set(float64(len(eps.Endpoints)))
 
 		var hm *rendezvous.Rendezvous
+		var endpoints []string
 		if eps.Error == nil {
-			hm = newConsistentHash(eps.Endpoints)
+			endpoints = slices.Clone(eps.Endpoints)
+			filtered := difference(eps.Endpoints, eps.ToRemove)
+			hm = newConsistentHash(filtered)
 		}
 
 		m.mu.Lock()
 		m.hm = hm
+		m.endpoints = endpoints
 		m.err = eps.Error
 		m.mu.Unlock()
 
@@ -234,19 +246,37 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 	}
 }
 
-type connsGetter func(conns conftypes.ServiceConnections) []string
+// difference returns a slice of strings that are in "a" but not in "b". It
+// reuses "a" to save allocations.
+func difference(a []string, b []string) []string {
+	if len(b) == 0 {
+		return a
+	}
+	bm := make(map[string]struct{}, len(b))
+	for _, v := range b {
+		bm[v] = struct{}{}
+	}
+	c := a[:0]
+	for _, v := range a {
+		if _, ok := bm[v]; !ok {
+			c = append(c, v)
+		}
+	}
+	return c
+}
+
+type connsGetter func(conns conftypes.ServiceConnections) Endpoints
 
 // ConfBased returns a Map that watches the global conf and calls the provided
 // getter to extract endpoints.
 func ConfBased(getter connsGetter) *Map {
 	return &Map{
 		urlspec: "conf-based",
-		discofunk: func(disco chan endpoints) {
+		discofunk: func(disco chan Endpoints) {
 			conf.Watch(func() {
 				serviceConnections := conf.Get().ServiceConnections()
 
-				eps := getter(serviceConnections)
-				disco <- endpoints{Endpoints: eps}
+				disco <- getter(serviceConnections)
 			})
 		},
 	}

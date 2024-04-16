@@ -601,6 +601,7 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		Qdrant:               qdrantAddr,
 		Zoekts:               zoektAddrs,
 		ZoektListTTL:         indexedListTTL,
+		ZoektsToRemove:       zoektsToRemove,
 	}
 }
 
@@ -618,6 +619,8 @@ var (
 	embeddingsURLs     *endpoint.Map
 
 	qdrantAddr = os.Getenv("QDRANT_ENDPOINT")
+
+	zoektsToRemove = strings.Split(os.Getenv("INDEXED_SEARCH_DRAIN_SERVERS"), ",")
 
 	indexedListTTL = func() time.Duration {
 		ttl, _ := time.ParseDuration(env.Get("SRC_INDEXED_SEARCH_LIST_CACHE_TTL", "", "Indexed search list cache TTL"))

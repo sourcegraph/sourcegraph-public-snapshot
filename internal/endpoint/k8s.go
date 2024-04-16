@@ -34,17 +34,17 @@ func K8S(logger log.Logger, urlspec string) *Map {
 // k8sDiscovery does service discovery of the given k8s urlspec (e.g. k8s+http://searcher),
 // publishing endpoint changes to the given disco channel. It's started by endpoint.K8S as a
 // go-routine.
-func k8sDiscovery(logger log.Logger, urlspec, ns string, clientFactory func() (*kubernetes.Clientset, error)) func(chan endpoints) {
-	return func(disco chan endpoints) {
+func k8sDiscovery(logger log.Logger, urlspec, ns string, clientFactory func() (*kubernetes.Clientset, error)) func(chan Endpoints) {
+	return func(disco chan Endpoints) {
 		u, err := parseURL(urlspec)
 		if err != nil {
-			disco <- endpoints{Service: urlspec, Error: err}
+			disco <- Endpoints{Service: urlspec, Error: err}
 			return
 		}
 
 		var cli *kubernetes.Clientset
 		if cli, err = clientFactory(); err != nil {
-			disco <- endpoints{Service: urlspec, Error: err}
+			disco <- Endpoints{Service: urlspec, Error: err}
 			return
 		}
 
@@ -79,11 +79,11 @@ func k8sDiscovery(logger log.Logger, urlspec, ns string, clientFactory func() (*
 					u.Service,
 					u.Service,
 				)
-				disco <- endpoints{Service: u.Service, Error: err}
+				disco <- Endpoints{Service: u.Service, Error: err}
 				return
 			}
 
-			disco <- endpoints{Service: u.Service, Endpoints: eps}
+			disco <- Endpoints{Service: u.Service, Endpoints: eps}
 		}
 
 		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{

@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -133,13 +134,13 @@ func TestEndpoints(t *testing.T) {
 }
 
 func TestSync(t *testing.T) {
-	eps := make(chan endpoints, 1)
+	eps := make(chan Endpoints, 1)
 	defer close(eps)
 
 	urlspec := "http://test"
 	m := &Map{
 		urlspec: urlspec,
-		discofunk: func(disco chan endpoints) {
+		discofunk: func(disco chan Endpoints) {
 			for {
 				v, ok := <-eps
 				if !ok {
@@ -151,16 +152,18 @@ func TestSync(t *testing.T) {
 	}
 
 	// Test that we block m.Get() until eps sends its first value
+	have := []string{"a", "b", "c"}
 	want := []string{"a", "b"}
-	eps <- endpoints{
+	eps <- Endpoints{
 		Service:   urlspec,
-		Endpoints: want,
+		Endpoints: have,
+		ToRemove:  []string{"c"},
 	}
 	expectEndpoints(t, m, want...)
 
 	// We now rely on sync, so we retry until we see what we want. Set an
 	// error.
-	eps <- endpoints{
+	eps <- Endpoints{
 		Service: urlspec,
 		Error:   errors.New("boom"),
 	}
@@ -171,7 +174,7 @@ func TestSync(t *testing.T) {
 		t.Fatal("expected map to return error")
 	}
 
-	eps <- endpoints{
+	eps <- Endpoints{
 		Service:   urlspec,
 		Endpoints: want,
 	}

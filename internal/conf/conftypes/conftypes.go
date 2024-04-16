@@ -4,8 +4,9 @@ import (
 	"reflect"
 	"time"
 
-	proto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
 	"google.golang.org/protobuf/types/known/durationpb"
+
+	proto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
 )
 
 // ServiceConnections represents configuration about how the deployment
@@ -41,6 +42,8 @@ type ServiceConnections struct {
 	Qdrant string `json:"qdrant"`
 	// Zoekts is the addresses of Zoekt instances to talk to.
 	Zoekts []string `json:"zoekts"`
+	// ZoektsToRemove is the addresses of Zoekt instances to drain.
+	ZoektsToRemove []string `json:"zoektsToRemove"`
 	// ZoektListTTL is the TTL of the internal cache that Zoekt clients use to
 	// cache the list of indexed repository. After TTL is over, new list will
 	// get requested from Zoekt shards.

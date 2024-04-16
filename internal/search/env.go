@@ -34,8 +34,10 @@ var (
 
 func SearcherURLs() *endpoint.Map {
 	searcherURLsOnce.Do(func() {
-		searcherURLs = endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
-			return conns.Searchers
+		searcherURLs = endpoint.ConfBased(func(conns conftypes.ServiceConnections) endpoint.Endpoints {
+			return endpoint.Endpoints{
+				Endpoints: conns.Searchers,
+			}
 		})
 	})
 	return searcherURLs
@@ -55,8 +57,10 @@ func Indexed() zoekt.Streamer {
 		indexedSearch = backend.NewCachedSearcher(conf.Get().ServiceConnections().ZoektListTTL, backend.NewMeteredSearcher(
 			"", // no hostname means its the aggregator
 			&backend.HorizontalSearcher{
-				Map: endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
-					return conns.Zoekts
+				Map: endpoint.ConfBased(func(conns conftypes.ServiceConnections) endpoint.Endpoints {
+					return endpoint.Endpoints{
+						Endpoints: conns.Zoekts,
+					}
 				}),
 				Dial: getIndexedDialer(),
 			}))
@@ -92,8 +96,11 @@ func ListAllIndexed(ctx context.Context, zs zoekt.Searcher) (*ZoektAllIndexed, e
 func Indexers() *backend.Indexers {
 	indexersOnce.Do(func() {
 		indexers = &backend.Indexers{
-			Map: endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
-				return conns.Zoekts
+			Map: endpoint.ConfBased(func(conns conftypes.ServiceConnections) endpoint.Endpoints {
+				return endpoint.Endpoints{
+					Endpoints: conns.Zoekts,
+					ToRemove:  conns.ZoektsToRemove,
+				}
 			}),
 			Indexed: reposAtEndpoint(getIndexedDialer()),
 		}

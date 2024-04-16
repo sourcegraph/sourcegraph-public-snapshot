@@ -25,8 +25,8 @@ import (
 )
 
 func defaultEndpoints() *endpoint.Map {
-	return endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
-		return conns.Symbols
+	return endpoint.ConfBased(func(conns conftypes.ServiceConnections) endpoint.Endpoints {
+		return endpoint.Endpoints{Endpoints: conns.Symbols}
 	})
 }
 
