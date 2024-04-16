@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo } from 'react'
 
 import type { TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import type { UserOnboardingConfig } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { TourContext } from './context'
@@ -10,16 +11,23 @@ import { TourContent } from './TourContent'
 import { useTour } from './useTour'
 import { canRunStep, isNotNullOrUndefined, isQuerySuccessful } from './utils'
 
-export type TourProps = TelemetryProps & {
-    id: string
-    tasks: TourTaskType[]
-    extraTask?: TourTaskType
-    userInfo?: UserOnboardingConfig['userinfo']
-    defaultSnippets: Record<string, string[]>
-} & Pick<React.ComponentProps<typeof TourContent>, 'variant' | 'className' | 'height' | 'title' | 'keepCompletedTasks'>
+// Ensure tour names are known strings
+type tourIds = 'MockTour' | 'GettingStarted' | 'TourStorybook'
+
+export type TourProps = TelemetryProps &
+    TelemetryV2Props & {
+        id: tourIds
+        tasks: TourTaskType[]
+        extraTask?: TourTaskType
+        userInfo?: UserOnboardingConfig['userinfo']
+        defaultSnippets: Record<string, string[]>
+    } & Pick<
+        React.ComponentProps<typeof TourContent>,
+        'variant' | 'className' | 'height' | 'title' | 'keepCompletedTasks'
+    >
 
 export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> = React.memo(
-    ({ id: tourId, tasks, extraTask, defaultSnippets, telemetryService, userInfo, ...props }) => {
+    ({ id: tourId, tasks, extraTask, defaultSnippets, telemetryService, telemetryRecorder, userInfo, ...props }) => {
         const { completedStepIds = [], status, setStepCompleted, setStatus, restart } = useTour(tourId)
         const onLogEvent = useCallback(
             (eventName: string, eventProperties?: any, publicArgument?: any) => {
@@ -30,12 +38,14 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
 
         useEffect(() => {
             onLogEvent('Shown')
-        }, [onLogEvent, tourId])
+            telemetryRecorder.recordEvent(`tour.${tourId}`, 'view')
+        }, [onLogEvent, telemetryRecorder, tourId])
 
         const onClose = useCallback(() => {
             onLogEvent('Closed')
+            telemetryRecorder.recordEvent(`tour.${tourId}`, 'close')
             setStatus('closed')
-        }, [onLogEvent, setStatus])
+        }, [onLogEvent, telemetryRecorder, tourId, setStatus])
 
         const onStepComplete = useCallback(
             (step: TourTaskStepType) => {
@@ -47,20 +57,22 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
         const onStepClick = useCallback(
             (step: TourTaskStepType) => {
                 onLogEvent('StepClicked', { stepId: step.id })
+                telemetryRecorder.recordEvent(`tour.${tourId}.step`, 'click')
                 if (step.completeAfterEvents) {
                     return
                 }
                 onStepComplete(step)
             },
-            [onLogEvent, onStepComplete]
+            [onLogEvent, telemetryRecorder, tourId, onStepComplete]
         )
 
         const onRestart = useCallback(
             (step: TourTaskStepType) => {
                 onLogEvent('RestartClicked')
+                telemetryRecorder.recordEvent(`tour.${tourId}`, 'restart')
                 restart()
             },
-            [onLogEvent, restart]
+            [onLogEvent, telemetryRecorder, tourId, restart]
         )
 
         const extendedTasks: TourTaskType[] = useMemo(
@@ -114,9 +126,10 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
                 extendedTasks.filter(task => task.completed === 100).length === extendedTasks.length
             ) {
                 onLogEvent('Completed')
+                telemetryRecorder.recordEvent(`tour.${tourId}`, 'complete')
                 setStatus('completed')
             }
-        }, [status, extendedTasks, onLogEvent, setStatus, tourId])
+        }, [status, extendedTasks, onLogEvent, telemetryRecorder, setStatus, tourId])
 
         if (status === 'closed') {
             return null
