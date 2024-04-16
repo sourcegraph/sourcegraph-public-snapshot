@@ -33,9 +33,13 @@ type Map struct {
 
 	mu sync.RWMutex
 	hm *rendezvous.Rendezvous
-	// endpoints is a super-set of the nodes in hm. It is used to return the full
-	// list of endpoints. Lookups are done on hm. If discofunc only sends Endpoints
-	// with ToRemove nil, endpoints will be equal to hm.Nodes().
+	// endpoints is a super-set of hm.Nodes(). If discofunk sets Endpoints.ToRemove,
+	// endpoints will contain all the endpoints, but lookup in hm is based on
+	// difference(Endpoints.Endpoint, Endpoints.ToRemove). If Endpoints.ToRemove is
+	// empty, endpoints is equal to hm.Nodes(). We use the difference between
+	// endpoints and hm.Nodes() to model draining instances: Endpoints represents
+	// all the endpoints (active + draining), but hm is consistent hash over the
+	// active instances only.
 	endpoints []string
 	err       error
 
@@ -249,7 +253,7 @@ func (m *Map) sync(ch chan Endpoints, ready chan struct{}) {
 // difference returns a slice of strings that are in "a" but not in "b". It
 // reuses "a" to save allocations.
 func difference(a []string, b []string) []string {
-	if len(b) == 0 {
+	if len(b) == 0 || len(a) == 0 {
 		return a
 	}
 	bm := make(map[string]struct{}, len(b))

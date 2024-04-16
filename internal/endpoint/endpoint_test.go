@@ -153,11 +153,12 @@ func TestSync(t *testing.T) {
 
 	// Test that we block m.Get() until eps sends its first value
 	have := []string{"a", "b", "c"}
+	remove := []string{"c"}
 	want := []string{"a", "b"}
 	eps <- Endpoints{
 		Service:   urlspec,
 		Endpoints: have,
-		ToRemove:  []string{"c"},
+		ToRemove:  remove,
 	}
 	expectEndpoints(t, m, want...)
 
@@ -197,4 +198,26 @@ func waitUntil(d time.Duration, pred func() bool) bool {
 		time.Sleep(10 * time.Millisecond)
 	}
 	return pred()
+}
+
+func TestDifference(t *testing.T) {
+	cases := []struct {
+		a, b, want []string
+	}{
+		{[]string{"a", "b", "c"}, []string{"a"}, []string{"b", "c"}},
+		{[]string{"a", "b", "c"}, []string{"b"}, []string{"a", "c"}},
+		{[]string{"a", "b", "c"}, []string{"c"}, []string{"a", "b"}},
+		{[]string{"a", "b", "c"}, []string{"a", "b", "c"}, []string{}},
+		{[]string{"a", "b", "c"}, []string{"d"}, []string{"a", "b", "c"}},
+		{[]string{"a", "b", "c"}, nil, []string{"a", "b", "c"}},
+		{nil, []string{"a", "b", "c"}, nil},
+	}
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			got := difference(tc.a, tc.b)
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Fatalf("difference(%v, %v) = %v, want %v", tc.a, tc.b, got, tc.want)
+			}
+		})
+	}
 }
