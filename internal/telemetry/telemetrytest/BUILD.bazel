@@ -14,6 +14,7 @@ go_library(
         "//internal/database",
         "//internal/telemetry",
         "//internal/telemetrygateway/v1:telemetrygateway",
+        "@com_github_sourcegraph_log//logtest",
     ],
 )
 
