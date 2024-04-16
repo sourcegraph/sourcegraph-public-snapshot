@@ -121,7 +121,7 @@ test:
 
         # Hardcoding version, as for now I just want to make sure this works in CI.
         bazel ${bazelrc[*]} run //testing/tools/upgradetest:release_test_run -- all \
-          --post-release-version=5.3.9104 \
+          --post-release-version={{tag}} \
           --target-registry us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal/ \
           --max-routines 6
 
