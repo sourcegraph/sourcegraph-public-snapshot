@@ -8,6 +8,9 @@ import "strings"
 // This is a private type, requiring the values to be declared in-package or
 // be const strings. This roughly prevents arbitrary string values (potentially
 // unsafe) from being cast to this type.
+//
+// 🚨 DO NOT EXPORT - this is intentionally unexported to avoid casting that
+// may expose unsafe strings.
 type eventFeature string
 
 const (
@@ -28,6 +31,9 @@ const (
 // be const strings. This roughly prevents arbitrary string values (potentially
 // unsafe) from being cast to this type. The telemetry.Action() constructor is
 // available as a fallback - see the relevant docstring for more details.
+//
+// 🚨 DO NOT EXPORT - this is intentionally unexported to avoid casting that
+// may expose unsafe strings.
 type eventAction string
 
 const (
