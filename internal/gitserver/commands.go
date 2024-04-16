@@ -148,7 +148,9 @@ func getFilterFunc(ctx context.Context, checker authz.SubRepoPermissionChecker, 
 }
 
 func (i *DiffFileIterator) Close() error {
-	i.onClose()
+	if i.onClose != nil {
+		i.onClose()
+	}
 	return nil
 }
 
