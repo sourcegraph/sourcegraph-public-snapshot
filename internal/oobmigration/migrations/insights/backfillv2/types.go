@@ -19,11 +19,6 @@ type timeInterval struct {
 	Value int
 }
 
-var defaultInterval = timeInterval{
-	Unit:  month,
-	Value: 1,
-}
-
 func (t timeInterval) StepBackwards(start time.Time) time.Time {
 	return t.step(start, backward)
 }

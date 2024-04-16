@@ -63,7 +63,7 @@ func TestIsFlaggedRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	// callIsFlaggedRequest just wraps the call to isFlaggedResult.
-	callIsFlaggedRequest := func(t *testing.T, prompt string, cfg flaggingConfig) (*flaggingResult, error) {
+	callIsFlaggedRequest := func(prompt string, cfg flaggingConfig) (*flaggingResult, error) {
 		return isFlaggedRequest(
 			tokenizer,
 			flaggingRequest{
@@ -75,7 +75,7 @@ func TestIsFlaggedRequest(t *testing.T) {
 
 	// Request is missing the preamble.
 	t.Run("MissingPreamble", func(t *testing.T) {
-		result, err := callIsFlaggedRequest(t, "prompt without known preamble", cfgWithPreamble)
+		result, err := callIsFlaggedRequest("prompt without known preamble", cfgWithPreamble)
 		require.NoError(t, err)
 
 		require.True(t, result.IsFlagged())
@@ -85,13 +85,13 @@ func TestIsFlaggedRequest(t *testing.T) {
 
 	// If the configuration doesn't include a preamble, the same request won't get flagged.
 	t.Run("PremableNotConfigured", func(t *testing.T) {
-		result, err := callIsFlaggedRequest(t, "some prompt without known premable", basicCfg)
+		result, err := callIsFlaggedRequest("some prompt without known premable", basicCfg)
 		require.NoError(t, err)
 		require.False(t, result.IsFlagged())
 	})
 
 	t.Run("WithPreamble", func(t *testing.T) {
-		result, err := callIsFlaggedRequest(t, "yadda yadda"+validPreamble+"yadda yadda", cfgWithPreamble)
+		result, err := callIsFlaggedRequest("yadda yadda"+validPreamble+"yadda yadda", cfgWithPreamble)
 		require.NoError(t, err)
 		require.False(t, result.IsFlagged())
 	})
@@ -118,7 +118,6 @@ func TestIsFlaggedRequest(t *testing.T) {
 		cfgWithBadPhrase := cfgWithPreamble
 		cfgWithBadPhrase.BlockedPromptPatterns = []string{"bad phrase"}
 		result, err := callIsFlaggedRequest(
-			t,
 			"never going to give you up... bad phrase never going to... ",
 			cfgWithBadPhrase)
 		require.NoError(t, err)
@@ -133,7 +132,6 @@ func TestIsFlaggedRequest(t *testing.T) {
 		cfgWithBadPhrase := cfgWithPreamble
 		cfgWithBadPhrase.BlockedPromptPatterns = []string{"bad phrase"}
 		result, err := callIsFlaggedRequest(
-			t,
 			validPreamble+" ... bad phrase ...",
 			cfgWithBadPhrase)
 		require.NoError(t, err)
@@ -174,7 +172,7 @@ func TestIsFlaggedRequest(t *testing.T) {
 
 		t.Run("BelowFlaggingLimit", func(t *testing.T) {
 			shoterPrompt := string(prompt[:len(prompt)-8])
-			result, err := callIsFlaggedRequest(t, shoterPrompt, tokenCountConfig)
+			result, err := callIsFlaggedRequest(shoterPrompt, tokenCountConfig)
 			require.NoError(t, err)
 			assert.False(t, result.IsFlagged())
 			assert.Nil(t, result)
@@ -182,7 +180,7 @@ func TestIsFlaggedRequest(t *testing.T) {
 
 		t.Run("AboveFlaggingLimitBelowBlockLimit", func(t *testing.T) {
 			longerPrompt := prompt + " qed" // NB. Must be fewer than XX tokens, as to not be blocked.
-			result, err := callIsFlaggedRequest(t, longerPrompt, tokenCountConfig)
+			result, err := callIsFlaggedRequest(longerPrompt, tokenCountConfig)
 			require.NoError(t, err)
 			require.NotNil(t, result)
 			assert.True(t, result.IsFlagged())
@@ -195,7 +193,7 @@ func TestIsFlaggedRequest(t *testing.T) {
 			// Create an even longer prompt, more than XX tokens in length to
 			// exceed the blocking limit.
 			longerPrompt := prompt + " qed. Along with additional information, which I intend to use in order to..."
-			result, err := callIsFlaggedRequest(t, longerPrompt, tokenCountConfig)
+			result, err := callIsFlaggedRequest(longerPrompt, tokenCountConfig)
 			require.NoError(t, err)
 			require.NotNil(t, result)
 			assert.True(t, result.IsFlagged())

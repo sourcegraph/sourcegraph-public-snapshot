@@ -5,10 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestSearchFiltersUpdate(t *testing.T) {
@@ -220,19 +221,19 @@ func TestSymbolCounts(t *testing.T) {
 				},
 			},
 			wantFilters: map[string]*Filter{
-				"select:symbol.class": &Filter{
+				"select:symbol.class": {
 					Value: "select:symbol.class",
 					Label: "Class",
 					Count: 1,
 					Kind:  "symbol type",
 				},
-				"select:symbol.variable": &Filter{
+				"select:symbol.variable": {
 					Value: "select:symbol.variable",
 					Label: "Variable",
 					Count: 2,
 					Kind:  "symbol type",
 				},
-				"select:symbol.constant": &Filter{
+				"select:symbol.constant": {
 					Value: "select:symbol.constant",
 					Label: "Constant",
 					Count: 4,
@@ -253,30 +254,6 @@ func TestSymbolCounts(t *testing.T) {
 				require.Equal(t, filter, s.filters[key])
 			}
 		})
-	}
-}
-
-// This should be used to generate a large enough set to test IsLimitHit property.
-func generateLargeResultSet(symbolKind string) []SearchEvent {
-	symbolMatches := []*result.SymbolMatch{}
-	for i := 0; i <= 500; i++ {
-		symbolMatches = append(symbolMatches,
-			&result.SymbolMatch{
-				Symbol: result.Symbol{
-					Kind: symbolKind,
-				},
-			},
-		)
-	}
-
-	return []SearchEvent{
-		{
-			Results: result.Matches{
-				&result.FileMatch{
-					Symbols: symbolMatches,
-				},
-			},
-		},
 	}
 }
 
