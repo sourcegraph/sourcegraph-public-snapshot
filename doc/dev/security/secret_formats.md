@@ -12,8 +12,8 @@ Sourcegraph uses a number of secret formats to store authentication tokens and k
 | Sourcegraph Enterprise subscription (aka "product subscription") Token       | Token used for Enterprise subscriptions, derived from a Sourcegraph license key | Backend (not user-visible) | `sgs_[a-fA-F0-9]{64}`     |                         |
 
 For further information about Sourcegraph Access Tokens, see:
-- [Creating an access token](/cli/how-tos/creating_an_access_token)
-- [Revoking an access token](/cli/how-tos/revoking_an_access_token)
+- [Creating an access token](https://sourcegraph.com/docs/cli/how-tos/creating_an_access_token)
+- [Revoking an access token](https://sourcegraph.com/docs/cli/how-tos/revoking_an_access_token)
 
 Sourcegraph is in the process of rolling out a new Sourcegraph Access Token format. When generating an access token you may receive a token in v2 or v3 format depending on your Sourcegraph instance's version. Newer instances are fully backwards-compatible with all older formats.
 

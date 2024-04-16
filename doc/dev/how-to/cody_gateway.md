@@ -1,6 +1,6 @@
 # How to set up Cody Gateway locally
 
-> WARNING: This is a development guide - to use Cody Gateway for Sourcegraph, refer to [Sourcegraph Cody Gateway](/cody/core-concepts/cody-gateway).
+> WARNING: This is a development guide - to use Cody Gateway for Sourcegraph, refer to [Sourcegraph Cody Gateway](https://sourcegraph.com/docs/cody/core-concepts/cody-gateway).
 
 This guide documents how to set up [Cody Gateway](https://handbook.sourcegraph.com/departments/engineering/teams/cody/cody-gateway/) locally for development.
 
@@ -16,7 +16,7 @@ To use the locally running Cody Gateway, follow the steps in [use a locally runn
 
 ## Use a locally running Cody Gateway
 
-To use this locally running Cody Gateway from your local Sourcegraph instance, configure Cody features to talk to your local Cody Gateway in site configuration, similar to what [customers do to enable Cody Enterprise](/cody/overview/enable-cody-enterprise):
+To use this locally running Cody Gateway from your local Sourcegraph instance, configure Cody features to talk to your local Cody Gateway in site configuration, similar to what [customers do to enable Cody Enterprise](https://sourcegraph.com/docs/cody/overview/enable-cody-enterprise):
 
 ```json
 {
@@ -36,7 +36,7 @@ To use this locally running Cody Gateway from your local Sourcegraph instance, c
 }
 ```
 
-Similar values can be [configured for embeddings](/cody/core-concepts/embeddings) to use embeddings through your local Cody Gateway isntead.
+Similar values can be [configured for embeddings](https://sourcegraph.com/docs/cody/core-concepts/embeddings) to use embeddings through your local Cody Gateway isntead.
 
 Now, we need to make sure your local Cody Gateway instance can access upstream LLM services.
 Add the following to your `sg.config.overwrite.yaml`:

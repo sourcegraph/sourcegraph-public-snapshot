@@ -46,7 +46,7 @@ The first two layers are handled by Wolfi and the rest if handled by Bazel.
 
 ### Wolfi
 
-See [the dedicated page for Wolfi](/dev/background-information/wolfi/).
+See [the dedicated page for Wolfi](../wolfi/index.md).
 
 ### Bazel
 

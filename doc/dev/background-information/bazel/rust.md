@@ -1,6 +1,6 @@
 # Bazel for Rust
 
-Also checkout the [FAQ](/dev/background-information/bazel/faq) for common issues and solutions.
+Also checkout the [FAQ](faq.md) for common issues and solutions.
 
 ## TL;DR
 
