@@ -542,7 +542,6 @@ go_test(
         "@com_github_derision_test_go_mockgen_v2//testutil/assert",
         "@com_github_derision_test_go_mockgen_v2//testutil/require",
         "@com_github_go_enry_go_enry_v2//:go-enry",
-        "@com_github_gofrs_uuid//:uuid",
         "@com_github_golang_jwt_jwt_v4//:jwt",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
