@@ -21,16 +21,16 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 	validPreamble := "You are cody-gateway."
 
 	cfg := config.FlaggingConfig{
-		PromptTokenFlaggingLimit:       18000,
-		PromptTokenBlockingLimit:       20000,
+		PromptTokenFlaggingLimit:       48000,
+		PromptTokenBlockingLimit:       50000,
 		MaxTokensToSample:              0, // Not used within isFlaggedRequest.
 		MaxTokensToSampleFlaggingLimit: 4000,
 		ResponseTokenBlockingLimit:     4000,
 		RequestBlockingEnabled:         true,
 	}
 	cfgWithPreamble := config.FlaggingConfig{
-		PromptTokenFlaggingLimit:       18000,
-		PromptTokenBlockingLimit:       20000,
+		PromptTokenFlaggingLimit:       48000,
+		PromptTokenBlockingLimit:       50000,
 		MaxTokensToSample:              0, // Not used within isFlaggedRequest.
 		MaxTokensToSampleFlaggingLimit: 4000,
 		ResponseTokenBlockingLimit:     4000,

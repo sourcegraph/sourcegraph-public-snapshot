@@ -42,15 +42,15 @@ func TestIsFlaggedRequest(t *testing.T) {
 	validPreamble := "You are cody-gateway."
 
 	basicCfg := flaggingConfig{
-		PromptTokenFlaggingLimit:       18000,
-		PromptTokenBlockingLimit:       20000,
+		PromptTokenFlaggingLimit:       48000,
+		PromptTokenBlockingLimit:       50000,
 		MaxTokensToSampleFlaggingLimit: 4000,
 		ResponseTokenBlockingLimit:     4000,
 		RequestBlockingEnabled:         true,
 	}
 	cfgWithPreamble := flaggingConfig{
-		PromptTokenFlaggingLimit:       18000,
-		PromptTokenBlockingLimit:       20000,
+		PromptTokenFlaggingLimit:       48000,
+		PromptTokenBlockingLimit:       50000,
 		MaxTokensToSampleFlaggingLimit: 4000,
 		ResponseTokenBlockingLimit:     4000,
 		RequestBlockingEnabled:         true,
