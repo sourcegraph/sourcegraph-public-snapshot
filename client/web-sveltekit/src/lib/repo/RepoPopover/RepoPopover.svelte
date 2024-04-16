@@ -16,7 +16,6 @@ For example:
 
     import Avatar from '$lib/Avatar.svelte'
     import Icon from '$lib/Icon.svelte'
-    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
 
     import RepoStars from '../RepoStars.svelte'
@@ -36,6 +35,14 @@ For example:
         return numStr.substring(numStr.length - length)
     }
 
+    function formatRepoName(repoName: string): string {
+        const slashes = repoName.split('/')
+        let repo = slashes.pop()
+        let org = slashes.pop()
+        return `${org} / ${repo}`
+    }
+
+    $: firstFiveTags = repo.tags.nodes.slice(0, 5)
     $: subject = repo.commit?.subject
     $: url = repo.commit?.canonicalURL
     $: author = repo.commit?.author.person.name
@@ -52,7 +59,9 @@ For example:
             <div class="icon-name-access">
                 <!-- @TODO: We need to use our customer's logo here. mdiAlienOutline is a place holder-->
                 <Icon svgPath={mdiAlienOutline} --color="var(--primary)" />
-                <h4 class="repo-name">{repo.name}</h4>
+                <div>
+                    <h4 class="repo-name">{formatRepoName(repo.name)}</h4>
+                </div>
                 <small>{repo.isPrivate ? 'Private' : 'Public'}</small>
             </div>
             <div class="code-host">
@@ -63,16 +72,18 @@ For example:
         <div class="divider" />
     {/if}
 
-    <div class="description-and-tags">
-        <div class="description">
-            {repo.description}
+    {#if repo.description || firstFiveTags.length > 0}
+        <div class="description-and-tags">
+            <div class="description">
+                {repo.description}
+            </div>
+            <div class="tags">
+                {#each firstFiveTags as tag}
+                    <small>{tag.name}</small>
+                {/each}
+            </div>
         </div>
-        <div class="tags">
-            {#each repo.tags.nodes as tag}
-                <small>{tag.name}</small>
-            {/each}
-        </div>
-    </div>
+    {/if}
 
     <div class="divider" />
 
@@ -107,8 +118,6 @@ For example:
 
 <style lang="scss">
     .root {
-        border: 1px solid var(--border-color);
-        border-radius: var(--popover-border-radius);
         width: 480px;
     }
 
@@ -164,9 +173,6 @@ For example:
 
         .description {
             padding: 0rem;
-            text-overflow: ellipsis;
-            overflow: hidden;
-            white-space: nowrap;
         }
 
         .tags {
@@ -176,14 +182,15 @@ For example:
             flex-flow: row wrap;
             gap: 0.5rem 0.5rem;
             justify-content: flex-start;
-            margin-top: 0.5rem;
+            margin-top: 1rem;
 
             small {
                 background-color: var(--subtle-bg);
                 border-radius: 1rem;
                 color: var(--primary);
                 font-family: var(--monospace-font-family);
-                padding: 0.25rem 0.5rem;
+                padding: 0.15rem 0.35rem;
+                font-size: 10px;
             }
         }
     }
@@ -225,6 +232,7 @@ For example:
                 .commit-number {
                     color: var(--text-muted);
                     align-self: center;
+                    font-family: var(--monospace-font-family);
                 }
             }
 

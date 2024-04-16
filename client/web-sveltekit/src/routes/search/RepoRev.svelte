@@ -58,7 +58,7 @@
                     <RepoPopover repo={repo.repository} withHeader={true} />
                 {:else}
                     <div class="spinner">
-                        <LoadingSpinner inline />
+                        <LoadingSpinner />
                     </div>
                 {/if}
             </div>
@@ -84,5 +84,7 @@
     .spinner {
         width: 480px;
         height: 350px;
+
+
     }
 </style>
