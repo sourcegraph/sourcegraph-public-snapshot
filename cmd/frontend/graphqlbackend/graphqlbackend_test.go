@@ -214,7 +214,3 @@ func TestResolverTo(t *testing.T) {
 		}
 	})
 }
-
-func boolPointer(b bool) *bool {
-	return &b
-}

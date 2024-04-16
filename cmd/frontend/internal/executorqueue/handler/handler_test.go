@@ -1,7 +1,6 @@
 package handler_test
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -13,8 +12,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	dto "github.com/prometheus/client_model/go"
-	"github.com/prometheus/common/expfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -955,18 +952,6 @@ func TestHandler_HandleHeartbeat(t *testing.T) {
 			}
 		})
 	}
-}
-
-// TODO: add test for prometheus metrics. At the moment, encode will create a string with newlines that causes the
-// json decoder to fail. So... come back to this later...
-func encodeMetrics(t *testing.T, data ...*dto.MetricFamily) string {
-	var buf bytes.Buffer
-	enc := expfmt.NewEncoder(&buf, expfmt.FmtText)
-	for _, d := range data {
-		err := enc.Encode(d)
-		require.NoError(t, err)
-	}
-	return buf.String()
 }
 
 type testRecord struct {
