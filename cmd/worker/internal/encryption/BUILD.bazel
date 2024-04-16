@@ -36,6 +36,7 @@ go_test(
     name = "encryption_test",
     srcs = ["encryption_test.go"],
     embed = [":encryption"],
+    tags = ["requires-network"],
     deps = [
         "//internal/database",
         "//internal/database/basestore",
