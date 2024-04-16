@@ -19,6 +19,8 @@ import (
 )
 
 var ErrUserCancelled = errors.New("user cancelled")
+var ErrWrongBranch = errors.New("wrong current branch")
+var ErrBranchOutOfSync = errors.New("branch is out of sync with remote")
 
 var DeployEphemeralCommand = cli.Command{
 	Name:        "deploy",
@@ -60,44 +62,15 @@ func oneOfEquals(value string, i ...string) bool {
 	return false
 }
 
-func ensureBranchIsPushed(ctx context.Context, currRepo *repo.GitRepo) error {
-	if inSync, err := currRepo.IsOutOfSync(ctx); err != nil {
-		return err
-	} else if !inSync {
-		return nil
-	}
-
-	var answer string
-	ok, err := std.PromptAndScan(std.Out, fmt.Sprintf("Commit %q on branch %q does not exist remotely. Do you want to push it to origin? (yes/no)", currRepo.Ref, currRepo.Branch), &answer)
-	if err != nil {
-		return err
-	}
-	if !ok || !oneOfEquals(answer, "yes", "y") {
-		return ErrUserCancelled
-	}
-
-	std.Out.WriteNoticef("Pushing commit %q to origin/%s\n", currRepo.Ref, currRepo.Branch)
-	out, err := currRepo.PushToRemote(ctx)
-	if err != nil {
-		std.Out.WriteCode("bash", out)
-		return err
-	}
-	std.Out.WriteCode("bash", out)
-
-	// if we pushed we wait a little bit otherwise follow up actions might not trigger properly
-	time.Sleep(3 * time.Second)
-	return nil
-}
-
 func getGcloudAccount(ctx context.Context) (string, error) {
 	return run.Cmd(ctx, "gcloud", "config", "get", "account").Run().String()
 }
 
 func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildkite.Build, error) {
-	// Check that branch has been pushed
-	err := ensureBranchIsPushed(ctx, currRepo)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to ensure current commit can be built")
+	if isOutOfSync, err := currRepo.IsOutOfSync(ctx); err != nil {
+		return nil, err
+	} else if isOutOfSync {
+		return nil, ErrBranchOutOfSync
 	}
 
 	std.Out.WriteNoticef("Starting build for %q on commit %q\n", currRepo.Branch, currRepo.Ref)
@@ -173,25 +146,20 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	// if the tag is set - we should prefer it over the branch
 	tag := ctx.String("tag")
 
+	// if neither the branch nor the tag is set - then we assume the current branch
 	if branch == "" && tag == "" {
 		branch = currentBranch
 	}
-	var currRepo *repo.GitRepo
-	// if the given branch and current branch we are on do not match or the branch is main, we then create a derivative branch
-	// so that we do not interfere with the original branch
-	if branch != currentBranch || currentBranch == "main" {
-		ref, err := repo.GetBranchHeadCommit(ctx.Context, branch)
-		if err != nil {
-			return errors.Wrapf(err, "failed to determine branch %q head commit - does the branch exist?", branch)
-		}
 
-		// this will create a branch name of the format cloud-ephemeral/<user>_<branch>
-		cloudEphBranch, err := createEphemeralBranchName(ctx.Context, branch)
-		if err != nil {
-			return errors.Wrap(err, "failed to create ephemeral branch name")
-		}
-		currRepo = repo.NewGitRepo(cloudEphBranch, ref)
-		std.Out.Writef("currently not on %q branch - will use branch %q at %s\n", branch, currRepo.Branch, currRepo.Ref)
+	var currRepo *repo.GitRepo
+	if branch != currentBranch {
+		wrongBranch := `You are currently on branch %q, but want to deploy %q.
+
+We currently do not support deploying a branch that is different to the one you're currently on.
+
+Please switch to branch %q and make sure it is up to date before trying again.`
+		std.Out.WriteWarningf(wrongBranch, currentBranch, branch, branch)
+		return ErrWrongBranch
 	} else {
 		// We are on the branch we want to deploy, so we use the current commit
 		head, err := repo.GetHeadCommit(ctx.Context)
@@ -206,6 +174,11 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	if version == "" {
 		build, err := triggerEphemeralBuild(ctx.Context, currRepo)
 		if err != nil {
+			if err == ErrBranchOutOfSync {
+				std.Out.WriteWarningf(`Your branch %q is out of sync with remote.
+
+Please make sure you have either pushed or pulled the latest changes before trying again`, currRepo.Branch)
+			}
 			return err
 		}
 		_ = determineVersion(build, tag)
