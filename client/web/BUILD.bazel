@@ -1622,6 +1622,7 @@ ts_project(
         "src/storm/routes.tsx",
         "src/sveltekit/SvelteKitNavItem.tsx",
         "src/sveltekit/WebNextAwareLink.tsx",
+        "src/sveltekit/routes.ts",
         "src/sveltekit/util.ts",
         "src/team/TeamsArea.tsx",
         "src/team/area/EditParentTeamModal.tsx",
