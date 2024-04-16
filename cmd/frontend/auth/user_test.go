@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -464,8 +463,7 @@ func TestGetAndSaveUser(t *testing.T) {
 						op := c.op
 						op.CreateIfNotExist = createIfNotExist
 
-						eventsStore := telemetrytest.NewMockEventsStore()
-						recorder := telemetry.NewEventRecorder(eventsStore)
+						recorder, eventsStore := telemetrytest.NewRecorder()
 
 						logger := logtest.ScopedWith(t, logtest.LoggerOptions{Level: log.LevelDebug})
 						newUserCreated, userID, safeErr, err := GetAndSaveUser(
@@ -510,7 +508,7 @@ func TestGetAndSaveUser(t *testing.T) {
 						// All telemetry should have the expected user (or lack
 						// of user) attached, and all code paths should generate
 						// at least 1 user event.
-						gotEvents := telemetrytest.CollectStoredEvents(eventsStore)
+						gotEvents := eventsStore.CollectStoredEvents()
 						assert.NotEmpty(t, gotEvents)
 						for _, ev := range gotEvents {
 							switch {
@@ -579,8 +577,7 @@ func TestGetAndSaveUser(t *testing.T) {
 		db.TelemetryEventsExportQueueFunc.SetDefaultReturn(dbmocks.NewMockTelemetryEventsExportQueueStore())
 		db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncJobsStore)
 
-		eventsStore := telemetrytest.NewMockEventsStore()
-		recorder := telemetry.NewEventRecorder(eventsStore)
+		recorder, eventsStore := telemetrytest.NewRecorder()
 
 		_, _, _, err := GetAndSaveUser(
 			ctx,
@@ -602,7 +599,8 @@ func TestGetAndSaveUser(t *testing.T) {
 		mockrequire.Called(t, usersStore.CreateWithExternalAccountFunc)
 
 		// All telemetry should have the expected user attached
-		gotEvents := telemetrytest.CollectStoredEvents(eventsStore)
+		gotEvents := eventsStore.CollectStoredEvents()
+		assert.NotEmpty(t, gotEvents)
 		for _, ev := range gotEvents {
 			assert.Equalf(t, int64(1), ev.GetUser().GetUserId(),
 				"Event '%s#%s' does not have expected user ID", ev.GetFeature(), ev.GetAction())
@@ -716,7 +714,7 @@ func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 				ExternalAccount: ext("github", "fake-service", "fake-client", "account-u1"),
 				UserProps:       database.NewUser{DisplayName: test.displayName, AvatarURL: test.avatarURL},
 			}
-			recorder := telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore())
+			recorder := telemetrytest.NewDebugRecorder(t)
 			if _, _, _, err := GetAndSaveUser(ctx, logtest.Scoped(t), db, recorder, op); err != nil {
 				t.Fatal(err)
 			}
