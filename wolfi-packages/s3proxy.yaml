@@ -48,5 +48,4 @@ update:
   github:
     identifier: sourcegraph/s3proxy
     strip-prefix: "s3proxy-"
-    # strip-suffix: "-*" # TOOD: Unsure
     use-tag: true
