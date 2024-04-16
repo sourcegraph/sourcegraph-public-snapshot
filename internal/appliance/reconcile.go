@@ -23,6 +23,7 @@ import (
 
 const (
 	annotationKeyCurrentVersion = "appliance.sourcegraph.com/currentVersion"
+	annotationKeyConfigHash     = "appliance.sourcegraph.com/configHash"
 )
 
 var _ reconcile.Reconciler = &Reconciler{}
@@ -72,11 +73,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	sourcegraph.Status.CurrentVersion = applianceSpec.GetAnnotations()[annotationKeyCurrentVersion]
 
 	// Reconcile services here
+	if err := r.reconcileBlobstore(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile blobstore: %w", err)
+	}
 
 	// Set the current version annotation in case migration logic depends on it.
 	applianceSpec.Annotations[annotationKeyCurrentVersion] = sourcegraph.Spec.RequestedVersion
 	if err := r.Client.Update(ctx, &applianceSpec); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to update current version annotation: %w", err)
+		return ctrl.Result{}, errors.Newf("failed to update current version annotation: %w", err)
 	}
 
 	return ctrl.Result{}, nil
