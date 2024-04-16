@@ -26,3 +26,11 @@ jobs:
       - name: List2
         run: |
           wolfictl version
+
+      - name: "wolfictl update"
+        run: |
+          wolfictl update \
+            --dry-run \
+            --path wolfi-packages/ \
+            --github-labels SSDLC,wolfi-auto-update
+            /sourcegraph
