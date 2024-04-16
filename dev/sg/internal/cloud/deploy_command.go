@@ -61,9 +61,9 @@ func oneOfEquals(value string, i ...string) bool {
 }
 
 func ensureBranchIsPushed(ctx context.Context, currRepo *repo.GitRepo) error {
-	if ok, err := currRepo.IsOutOfSync(ctx); err != nil {
+	if inSync, err := currRepo.IsOutOfSync(ctx); err != nil {
 		return err
-	} else if ok {
+	} else if !inSync {
 		return nil
 	}
 

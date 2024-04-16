@@ -20,14 +20,17 @@ var ErrBranchNotFound = errors.New("branch not found")
 
 type pushOpt func(args []string) []string
 
-func withForceLease(args []string) []string {
+// WithForceLease adds --force-with-lease to the args
+func WithForceLease(args []string) []string {
 	return append(args, "--force-with-lease")
 }
 
+// WithForce adds --force to the args
 func WithForce(args []string) []string {
 	return append(args, "--force")
 }
 
+// WithPushRefSpec adds a refspec to the args. If the it replaces the branch argument if it is already specified
 func WithPushRefSpec(ref, branch string) pushOpt {
 	return func(args []string) []string {
 		idx := -1
@@ -49,6 +52,10 @@ func NewGitRepo(branch, ref string) *GitRepo {
 	return &GitRepo{Branch: branch, Ref: ref}
 }
 
+// IsOutOfSync checks whether the remote state of this branch is in sync with the local state of this branch
+// The state is determined by checking:
+// * Does the branch exist remotely?
+// * Does the commit exist remotely?
 func (g *GitRepo) IsOutOfSync(ctx context.Context) (bool, error) {
 	if ok, err := g.HasRemoteBranch(ctx); err != nil {
 		return false, nil
@@ -58,11 +65,15 @@ func (g *GitRepo) IsOutOfSync(ctx context.Context) (bool, error) {
 
 	return !g.HasRemoteCommit(ctx), nil
 }
+
+// PushToRemote pushes the current branch to origin using the refspec of the current ref and branch.
+// The respec is pushed using `--force-with-lease` to make it safer to push with force
 func (g *GitRepo) PushToRemote(ctx context.Context) (string, error) {
 	// we do not have the branch locally so push with a refspec
-	return g.Push(ctx, WithPushRefSpec(g.Ref, g.Branch), withForceLease)
+	return g.Push(ctx, WithPushRefSpec(g.Ref, g.Branch), WithForceLease)
 }
 
+// ListChangedFiles lists the files that have changed since the last commit
 func (g *GitRepo) ListChangedFiles(ctx context.Context) ([]string, error) {
 	files, err := run.Cmd(ctx, "git diff --name-only").Run().Lines()
 	if err != nil {
@@ -72,6 +83,7 @@ func (g *GitRepo) ListChangedFiles(ctx context.Context) ([]string, error) {
 	return files, nil
 }
 
+// IsDirty checks whether the current repository state has any uncommited changes
 func (g *GitRepo) IsDirty(ctx context.Context) (bool, error) {
 	files, err := g.ListChangedFiles(ctx)
 	if err != nil {
@@ -80,6 +92,7 @@ func (g *GitRepo) IsDirty(ctx context.Context) (bool, error) {
 	return len(files) > 0, nil
 }
 
+// Push pushes the current branch to origin using the specific push options
 func (g *GitRepo) Push(ctx context.Context, opts ...pushOpt) (string, error) {
 	cmd := []string{"git", "push", "origin", g.Branch}
 	for _, opt := range opts {
@@ -88,14 +101,12 @@ func (g *GitRepo) Push(ctx context.Context, opts ...pushOpt) (string, error) {
 	return run.Cmd(ctx, cmd...).Run().String()
 }
 
-func (g *GitRepo) PushWithLease(ctx context.Context) (string, error) {
-	return run.Cmd(ctx, "git", "push", "origin", g.Branch, "--force-with-lease").Run().String()
-}
-
+// GetHeadCommit returns the current ref that is considered to be the HEAD
 func (g *GitRepo) GetHeadCommit() string {
 	return g.Ref
 }
 
+// HasLocalBranch checks whether the current branch exists locally
 func (g *GitRepo) HasLocalBranch(ctx context.Context) (bool, error) {
 	result, err := run.Cmd(ctx, "git", "branch", "--list", g.Branch).Run().String()
 	if err != nil {
@@ -107,14 +118,17 @@ func (g *GitRepo) HasLocalBranch(ctx context.Context) (bool, error) {
 
 }
 
+// HasRemoteBranch checks whether the current branch exists remotely
 func (g *GitRepo) HasRemoteBranch(ctx context.Context) (bool, error) {
 	return HasRemoteBranch(ctx, g.Branch)
 }
 
+// HasRemoteCommit checks whether the current commit exists remotely
 func (g *GitRepo) HasRemoteCommit(ctx context.Context) bool {
 	return HasCommit(ctx, g.Ref)
 }
 
+// FetchOrigin fetches the current branch from origin
 func (g *GitRepo) FetchOrigin(ctx context.Context) (string, error) {
 	output, err := run.Cmd(ctx, "git", "fetch", "origin", g.Branch).Run().String()
 	if err != nil {
