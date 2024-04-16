@@ -53,7 +53,7 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 				return errors.Wrap(err, "creating new permissions")
 			}
 
-			permissionsToIncludeForUserRole := collections.NewSet[rtypes.PermissionNamespace](rbacSchema.IncludeInUserRole...)
+			permissionsToIncludeForUserRole := collections.NewSet[rtypes.PermissionNamespace](rbacSchema.UserDefaultNamespaces...)
 			for _, permission := range permissions {
 				rolesToAssign := []types.SystemRole{types.SiteAdministratorSystemRole}
 				if permissionsToIncludeForUserRole.Has(permission.Namespace) {
