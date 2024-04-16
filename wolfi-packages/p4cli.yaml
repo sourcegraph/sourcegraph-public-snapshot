@@ -1,7 +1,7 @@
 package:
   name: p4cli
   version: 23.1
-  epoch: 2
+  epoch: 3
   description: "Command line interface for Perforce"
   target-architecture:
     - x86_64
