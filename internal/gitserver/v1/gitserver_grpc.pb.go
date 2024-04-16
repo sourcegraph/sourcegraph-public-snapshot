@@ -44,6 +44,7 @@ const (
 	GitserverService_ReadFile_FullMethodName                    = "/gitserver.v1.GitserverService/ReadFile"
 	GitserverService_GetCommit_FullMethodName                   = "/gitserver.v1.GitserverService/GetCommit"
 	GitserverService_ResolveRevision_FullMethodName             = "/gitserver.v1.GitserverService/ResolveRevision"
+	GitserverService_ListRefs_FullMethodName                    = "/gitserver.v1.GitserverService/ListRefs"
 	GitserverService_RevAtTime_FullMethodName                   = "/gitserver.v1.GitserverService/RevAtTime"
 )
 
@@ -148,6 +149,29 @@ type GitserverServiceClient interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ResolveRevision(ctx context.Context, in *ResolveRevisionRequest, opts ...grpc.CallOption) (*ResolveRevisionResponse, error)
+	// ListRefs returns a list of all the refs known to the repository, this includes
+	// heads, tags, and other potential refs, but filters can be applied.
+	//
+	// The refs are ordered in the following order:
+	// HEAD first, if part of the result set.
+	// The rest will be ordered by creation date, in descending order, i.e., newest
+	// first.
+	// If two resources are created at the same timestamp, the records are ordered
+	// alphabetically.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	ListRefs(ctx context.Context, in *ListRefsRequest, opts ...grpc.CallOption) (GitserverService_ListRefsClient, error)
+	// RevAtTime looks up the OID of the nearest ancestor of `spec` that has a
+	// commit time before the given time. To simplify the logic, it only follows
+	// the first parent of merge commits to linearize the commit history. The
+	// intent is to return the state of a branch at a given time.
+	//
+	// If the revision cannot be resolved an error with RevisionNotFoundPayload is
+	// returned.
+	//
+	// If the revision exists, but there is no commit in its ancestry before
+	// the requested time, an empty string is returned for the commit SHA.
 	RevAtTime(ctx context.Context, in *RevAtTimeRequest, opts ...grpc.CallOption) (*RevAtTimeResponse, error)
 }
 
@@ -524,6 +548,38 @@ func (c *gitserverServiceClient) ResolveRevision(ctx context.Context, in *Resolv
 	return out, nil
 }
 
+func (c *gitserverServiceClient) ListRefs(ctx context.Context, in *ListRefsRequest, opts ...grpc.CallOption) (GitserverService_ListRefsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[6], GitserverService_ListRefs_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &gitserverServiceListRefsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type GitserverService_ListRefsClient interface {
+	Recv() (*ListRefsResponse, error)
+	grpc.ClientStream
+}
+
+type gitserverServiceListRefsClient struct {
+	grpc.ClientStream
+}
+
+func (x *gitserverServiceListRefsClient) Recv() (*ListRefsResponse, error) {
+	m := new(ListRefsResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *gitserverServiceClient) RevAtTime(ctx context.Context, in *RevAtTimeRequest, opts ...grpc.CallOption) (*RevAtTimeResponse, error) {
 	out := new(RevAtTimeResponse)
 	err := c.cc.Invoke(ctx, GitserverService_RevAtTime_FullMethodName, in, out, opts...)
@@ -634,6 +690,29 @@ type GitserverServiceServer interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ResolveRevision(context.Context, *ResolveRevisionRequest) (*ResolveRevisionResponse, error)
+	// ListRefs returns a list of all the refs known to the repository, this includes
+	// heads, tags, and other potential refs, but filters can be applied.
+	//
+	// The refs are ordered in the following order:
+	// HEAD first, if part of the result set.
+	// The rest will be ordered by creation date, in descending order, i.e., newest
+	// first.
+	// If two resources are created at the same timestamp, the records are ordered
+	// alphabetically.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	ListRefs(*ListRefsRequest, GitserverService_ListRefsServer) error
+	// RevAtTime looks up the OID of the nearest ancestor of `spec` that has a
+	// commit time before the given time. To simplify the logic, it only follows
+	// the first parent of merge commits to linearize the commit history. The
+	// intent is to return the state of a branch at a given time.
+	//
+	// If the revision cannot be resolved an error with RevisionNotFoundPayload is
+	// returned.
+	//
+	// If the revision exists, but there is no commit in its ancestry before
+	// the requested time, an empty string is returned for the commit SHA.
 	RevAtTime(context.Context, *RevAtTimeRequest) (*RevAtTimeResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
@@ -716,6 +795,9 @@ func (UnimplementedGitserverServiceServer) GetCommit(context.Context, *GetCommit
 }
 func (UnimplementedGitserverServiceServer) ResolveRevision(context.Context, *ResolveRevisionRequest) (*ResolveRevisionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResolveRevision not implemented")
+}
+func (UnimplementedGitserverServiceServer) ListRefs(*ListRefsRequest, GitserverService_ListRefsServer) error {
+	return status.Errorf(codes.Unimplemented, "method ListRefs not implemented")
 }
 func (UnimplementedGitserverServiceServer) RevAtTime(context.Context, *RevAtTimeRequest) (*RevAtTimeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RevAtTime not implemented")
@@ -1206,6 +1288,27 @@ func _GitserverService_ResolveRevision_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GitserverService_ListRefs_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ListRefsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GitserverServiceServer).ListRefs(m, &gitserverServiceListRefsServer{stream})
+}
+
+type GitserverService_ListRefsServer interface {
+	Send(*ListRefsResponse) error
+	grpc.ServerStream
+}
+
+type gitserverServiceListRefsServer struct {
+	grpc.ServerStream
+}
+
+func (x *gitserverServiceListRefsServer) Send(m *ListRefsResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 func _GitserverService_RevAtTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RevAtTimeRequest)
 	if err := dec(in); err != nil {
@@ -1341,6 +1444,11 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "ReadFile",
 			Handler:       _GitserverService_ReadFile_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ListRefs",
+			Handler:       _GitserverService_ListRefs_Handler,
 			ServerStreams: true,
 		},
 	},
