@@ -2,9 +2,9 @@
 
 ## General
 
-### `bazel configure` prints out a warning about TSConfig 
+### `bazel configure` prints out a warning about TSConfig
 
-Everytime you run `bazel configure`, you'll see a warning: 
+Everytime you run `bazel configure`, you'll see a warning:
 
 ```
 $ bazel configure
@@ -68,6 +68,18 @@ You can also use the same configuration flag to run the container tests on MacOS
 bazel test //cmd/worker:image_test --config darwin-docker
 ```
 
+### I am not able to run image tests locally as Docker is not detected
+
+If you get an error like:
+
+```
+time="2024-02-28T06:31:07Z" level=fatal msg="error loading oci layout into daemon: error loading image: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?, %!s(MISSING)"
+```
+
+It might be because Docker Desktop was configured to use a different Docker socket during installation.
+
+To fix this error, enable the checkbox under **Docker Desktop > Settings > Advanced > Allow the default Docker socket to be used (requires password)** and then restart Docker.
+
 ### Can I run integration tests (`bazel test //testing/...`) locally?
 
 At the time of writing this documentation, it's not possible to do so, because we need to cross compile to produce `linux/amd64` container images, but the test runners need to run against your host architecture. If your host isn't `linux/amd64` you won't be able to run those tests.
@@ -125,10 +137,10 @@ Bazel uses `xcrun` to locate the SDK and toolchain for iOS/Mac compilation and x
 
 Nonetheless, there is a workaround! Pass the following CLI flag when you try to build a target `--macos_sdk_version=13.3`. With the flag bazel should be able to find the MacOS SDK and you should not get the error anymore. It's recommended to add `build --macos_sdk_version=13.3` to your `.bazelrc` file so that you don't have to add the CLI flag every time you invoke a build.
 
-### I see `error: unable to open mailmap at .mailmap: Too many levels of symbolic links` when running my `bazel run` target (both locally and in CI) 
+### I see `error: unable to open mailmap at .mailmap: Too many levels of symbolic links` when running my `bazel run` target (both locally and in CI)
 
-If you see this, it most probably means that you have a `bazel run //something` that calls `git log`. Git will look for a `.mailmap` at the root of the repository, which we do have in the monorepo. Because 
-`bazel run` runs commands with a working directory which is in the runfiles, symbolic links are getting in the way. 
+If you see this, it most probably means that you have a `bazel run //something` that calls `git log`. Git will look for a `.mailmap` at the root of the repository, which we do have in the monorepo. Because
+`bazel run` runs commands with a working directory which is in the runfiles, symbolic links are getting in the way.
 
 While it says "error", it's to be noted that it doesn't prevent the Git command to continue.
 
