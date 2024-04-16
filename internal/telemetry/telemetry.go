@@ -5,10 +5,10 @@ package telemetry
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // constString effectively requires strings to be statically defined constants.
