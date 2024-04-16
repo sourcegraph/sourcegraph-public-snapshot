@@ -129,7 +129,14 @@ env:
   GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: '1KB'
   GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: '100MB'
 
-  TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: 'http://127.0.0.1:6080'
+  # Telemetry V2 export configuration. By default, this points to a test
+  # instance (go/msp-ops/telemetry-gateway#dev). Set the following:
+  #
+  #   TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: 'http://127.0.0.1:6080'
+  #
+  # in 'sg.config.overwrite.yaml' to point to a locally running Telemetry
+  # Gateway instead (via 'sg run telemetry-gateway')
+  TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: "https://telemetry-gateway.sgdev.org:443"
   SRC_TELEMETRY_EVENTS_EXPORT_ALL: 'true'
 
   # By default, allow temporary edits to external services.
@@ -1318,7 +1325,6 @@ commandsets:
       - zoekt-web-1
       - blobstore
       - embeddings
-      - telemetry-gateway
     env:
       DISABLE_CODE_INSIGHTS_HISTORICAL: false
       DISABLE_CODE_INSIGHTS: false
@@ -1356,7 +1362,6 @@ commandsets:
       - zoekt-web-1
       - blobstore
       - embeddings
-      - telemetry-gateway
       - cody-gateway
     env:
       SOURCEGRAPHDOTCOM_MODE: true
@@ -1794,7 +1799,6 @@ commandsets:
       - zoekt-web-1
       - blobstore
       - embeddings
-      - telemetry-gateway
     env:
       SVELTEKIT: true
 
