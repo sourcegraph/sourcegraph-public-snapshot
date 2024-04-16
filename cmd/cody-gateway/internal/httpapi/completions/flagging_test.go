@@ -44,15 +44,15 @@ func TestIsFlaggedRequest(t *testing.T) {
 	basicCfg := flaggingConfig{
 		PromptTokenFlaggingLimit:       18000,
 		PromptTokenBlockingLimit:       20000,
-		MaxTokensToSampleFlaggingLimit: 1000,
-		ResponseTokenBlockingLimit:     1000,
+		MaxTokensToSampleFlaggingLimit: 4000,
+		ResponseTokenBlockingLimit:     4000,
 		RequestBlockingEnabled:         true,
 	}
 	cfgWithPreamble := flaggingConfig{
 		PromptTokenFlaggingLimit:       18000,
 		PromptTokenBlockingLimit:       20000,
-		MaxTokensToSampleFlaggingLimit: 1000,
-		ResponseTokenBlockingLimit:     1000,
+		MaxTokensToSampleFlaggingLimit: 4000,
+		ResponseTokenBlockingLimit:     4000,
 		RequestBlockingEnabled:         true,
 		AllowedPromptPatterns:          []string{strings.ToLower(validPreamble)},
 	}
