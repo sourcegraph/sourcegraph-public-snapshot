@@ -3,7 +3,7 @@
 package:
   name: syntect-server
   version: 4.3
-  epoch: 1
+  epoch: 0
   description: "HTTP server stabilizer for unruly servers"
   target-architecture:
     - x86_64
@@ -43,9 +43,3 @@ pipeline:
       cd /sourcegraph/docker-images/syntax-highlighter
       mkdir -p ${{targets.destdir}}/usr/local/bin/
       cp target/release/syntect_server ${{targets.destdir}}/usr/local/bin/syntax_highlighter
-
-update:
-  enabled: true
-  github:
-    identifier: sourcegraph/sourcegraph
-    strip-prefix: "Sourcegraph "
