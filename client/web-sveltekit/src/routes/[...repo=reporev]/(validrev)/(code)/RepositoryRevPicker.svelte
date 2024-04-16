@@ -71,16 +71,17 @@
         </Button>
 
         {#if isOnSpecificRev}
-            <Tooltip tooltip="Go to default branch">
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    data-reset-branch
-                    on:click={() => handleGoToDefaultBranch(resolvedRevision.defaultBranch)}
-                >
-                    <Icon svgPath={mdiClose} size={16} />
-                </Button>
-            </Tooltip>
+            <span class="reset-button-container">
+                <Tooltip tooltip="Go to default branch">
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        on:click={() => handleGoToDefaultBranch(resolvedRevision.defaultBranch)}
+                    >
+                        <Icon svgPath={mdiClose} size={16} />
+                    </Button>
+                </Tooltip>
+            </span>
         {/if}
     </div>
 
@@ -154,9 +155,14 @@
         display: flex;
         min-width: 0;
 
-        :global([data-reset-branch]) {
-            border-top-left-radius: 0;
-            border-bottom-left-radius: 0;
+        .reset-button-container {
+            display: contents;
+
+            // Get access to the reset branch button through container class
+            :global(button) {
+                border-top-left-radius: 0;
+                border-bottom-left-radius: 0;
+            }
         }
 
         .revision-trigger {
