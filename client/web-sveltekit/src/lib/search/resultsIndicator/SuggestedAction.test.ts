@@ -101,4 +101,34 @@ describe('SuggestedAction.svelte', () => {
         expect(infoBadge).toHaveLength(1)
         expect(infoBadge[0].textContent).toBe('Error badge')
     })
+
+    test('render error when error is true', async () => {
+        renderSuggestedAction({
+            progress: {
+                matchCount: 750,
+                durationMs: 25000,
+                skipped: [
+                    {
+                        reason: 'error is the reason',
+                        title: '500 error',
+                        message: 'error is the message',
+                        severity: 'error',
+                    },
+                    {
+                        reason: 'display',
+                        title: 'Display limit hit',
+                        message: 'you hit the display limit',
+                        severity: 'info',
+                    },
+                ],
+                done: true,
+            },
+            severity: 'error',
+            state: 'error',
+        })
+
+        const errorText = document.getElementsByClassName('error-text')
+        expect(errorText).toHaveLength(1)
+        expect(errorText[0].textContent).toBe('500 error')
+    })
 })

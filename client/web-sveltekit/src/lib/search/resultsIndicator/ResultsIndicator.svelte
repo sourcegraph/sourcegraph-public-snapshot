@@ -14,6 +14,7 @@
     export let severity: string
 
     const SEARCH_JOB_THRESHOLD = 10000
+
     const icons: Record<string, string> = {
         info: mdiInformationOutline,
         warning: mdiAlert,
@@ -43,7 +44,7 @@
 
     <div class="messages">
         <ProgressMessage {state} {progress} {severity} />
-        <div class="action-container">
+        <div>
             {#if !done && takingTooLong}
                 <TimeoutMessage />
             {:else if done}
@@ -63,19 +64,17 @@
         justify-content: space-between;
         align-items: center;
         gap: 0.5rem;
-    }
 
-    .messages {
-        display: flex;
-        flex-flow: column nowrap;
-        justify-content: center;
-        align-items: flex-start;
-        gap: 0.25rem;
-    }
+        .messages {
+            display: flex;
+            flex-flow: column nowrap;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 0.25rem;
+        }
 
-    small {
-        display: flex;
-        flex-flow: row nowrap;
-        color: var(--text-muted);
+        small {
+            color: var(--text-muted);
+        }
     }
 </style>

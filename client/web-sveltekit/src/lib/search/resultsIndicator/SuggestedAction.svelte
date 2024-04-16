@@ -54,26 +54,19 @@
     the text of the link when we do so, "Create a search job"
     -->
     {#if severity === 'error' && !mostSevere.suggested}
-        <small>{CENTER_DOT}</small>
-        <small>
-            Use <a href="/help/code-search/types/search-jobs">Search Job</a> for background search.
-        </small>
+        <div class="error">
+            <small>{CENTER_DOT}</small>
+            <small>
+                Use <a href="/help/code-search/types/search-jobs">Search Job</a> for background search.
+            </small>
+        </div>
     {/if}
 </div>
 
 <style lang="scss">
-    .code-font {
-        background-color: var(--secondary);
-        border-radius: 3px;
-        color: var(--text-body);
-        font-family: var(--code-font-family);
-        padding: 0rem 0.2rem;
-    }
-
     .info-badge {
         background-color: var(--primary-2);
         border-radius: 3px;
-        color: var(--text-body);
         padding: 0rem 0.2rem 0rem 0.2rem;
 
         &.error-text {
@@ -82,7 +75,15 @@
     }
 
     .more-details {
-        color: var(--gray-06);
+        color: var(--text-body);
+    }
+
+    .error {
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.5rem 0.25rem;
     }
 
     .separator {
@@ -95,5 +96,12 @@
         flex-flow: row nowrap;
         align-items: center;
         justify-content: space-evenly;
+    }
+
+    .code-font {
+        background-color: var(--secondary);
+        border-radius: 3px;
+        font-family: var(--code-font-family);
+        padding: 0rem 0.2rem;
     }
 </style>

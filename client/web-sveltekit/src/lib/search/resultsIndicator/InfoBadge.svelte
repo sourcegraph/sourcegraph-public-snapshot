@@ -13,6 +13,7 @@
 <style lang="scss">
     .progress-message {
         font-size: var(--font-size-base);
+
         &.error-text {
             color: var(--danger);
         }
