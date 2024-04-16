@@ -16,12 +16,6 @@ To use the locally running Cody Gateway, follow the steps in [use a locally runn
 
 ## Use a locally running Cody Gateway
 
-First, set up some feature flags on your local Sourcegraph instance:
-
-- `product-subscriptions-service-account`: set to `true` globally for convenience.
-  In production, this flag is used to denote service accounts, but in development it doesn't matter.
-  - You can also create an additional user and set this flag to `true` only for that user for more robust testing.
-
 To use this locally running Cody Gateway from your local Sourcegraph instance, configure Cody features to talk to your local Cody Gateway in site configuration, similar to what [customers do to enable Cody Enterprise](../../cody/overview/enable-cody-enterprise.md):
 
 ```json
@@ -42,7 +36,7 @@ To use this locally running Cody Gateway from your local Sourcegraph instance, c
 }
 ```
 
-Similar values can be [configured for embeddings](https://docs.sourcegraph.com/cody/core-concepts/embeddings) to use embeddings through your local Cody Gateway isntead.
+Similar values can be [configured for embeddings](https://sourcegraph.com/docs/cody/core-concepts/embeddings) to use embeddings through your local Cody Gateway isntead.
 
 Now, we need to make sure your local Cody Gateway instance can access upstream LLM services.
 Add the following to your `sg.config.overwrite.yaml`:
@@ -55,8 +49,8 @@ commands:
       # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&h=my.1password.com&i=athw572l6xqqvtnbbgadevgbqi&v=dnrhbauihkhjs5ag6vszsme45a
       CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN: "..."
       # Create a personal access token on https://sourcegraph.test:3443/user/settings/tokens
-      # or on your `product-subscriptions-service-account` user. This allows your
-      # local Cody Gateway to access user information in the Sourcegraph instance.
+      # for your local site admin user. This allows your local Cody Gateway to
+      # access user information in the Sourcegraph instance.
       CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: "..."
       # Other values, such as CODY_GATEWAY_OPENAI_ACCESS_TOKEN and
       # CODY_GATEWAY_OPENAI_ORG_ID, can be set to access OpenAI services as well.
