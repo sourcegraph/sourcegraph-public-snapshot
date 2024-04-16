@@ -30,6 +30,14 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased (April Patch Release - 22nd April, 2024)
 
+### Added
+
+### Changed
+
+- Notices configured in the site config now allow for specifying a style or color. [#61338](https://github.com/sourcegraph/sourcegraph/pull/61338)
+
+### Fixed
+
 ## 5.3.9104
 
 ### Added
