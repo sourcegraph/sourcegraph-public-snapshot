@@ -160,16 +160,12 @@ func GetBranchHeadCommit(ctx context.Context, branch string) (string, error) {
 }
 
 func HasRemoteBranch(ctx context.Context, branch string) (bool, error) {
-	branches, err := run.Cmd(ctx, "git", "branch", "--remotes").Run().Lines()
+	remoteBranchName := "origin/" + branch
+	result, err := run.Cmd(ctx, "git", "branch", "--remotes", "--list", remoteBranchName).Run().String()
 	if err != nil {
 		return false, err
 	}
 
-	remoteBranchname := "origin/" + branch
-	for _, b := range branches {
-		if strings.TrimSpace(b) == remoteBranchname {
-			return true, err
-		}
-	}
-	return false, err
+	result = strings.TrimSpace(result)
+	return len(result) > 0, nil
 }

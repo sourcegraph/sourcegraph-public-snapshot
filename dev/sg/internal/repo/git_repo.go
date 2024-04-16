@@ -59,16 +59,8 @@ func (g *GitRepo) IsOutOfSync(ctx context.Context) (bool, error) {
 	return !g.HasRemoteCommit(ctx), nil
 }
 func (g *GitRepo) PushToRemote(ctx context.Context) (string, error) {
-	ok, err := g.HasRemoteBranch(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	if ok {
-		// push with lease only works if the branch exists remotely
-		return g.Push(ctx, withForceLease)
-	}
-	return g.Push(ctx, WithPushRefSpec(g.Ref, g.Branch))
+	// we do not have the branch locally so push with a refspec
+	return g.Push(ctx, WithPushRefSpec(g.Ref, g.Branch), withForceLease)
 }
 
 func (g *GitRepo) ListChangedFiles(ctx context.Context) ([]string, error) {
@@ -102,6 +94,17 @@ func (g *GitRepo) PushWithLease(ctx context.Context) (string, error) {
 
 func (g *GitRepo) GetHeadCommit() string {
 	return g.Ref
+}
+
+func (g *GitRepo) HasLocalBranch(ctx context.Context) (bool, error) {
+	result, err := run.Cmd(ctx, "git", "branch", "--list", g.Branch).Run().String()
+	if err != nil {
+		return false, err
+	}
+
+	result = strings.TrimSpace(result)
+	return len(result) > 0, nil
+
 }
 
 func (g *GitRepo) HasRemoteBranch(ctx context.Context) (bool, error) {
