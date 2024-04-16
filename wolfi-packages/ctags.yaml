@@ -47,3 +47,9 @@ pipeline:
   - uses: autoconf/make
   - uses: autoconf/make-install
   - uses: strip
+
+update:
+  enabled: true
+  github:
+    identifier: universal-ctags/ctags
+    strip-prefix: "Universal Ctags "
