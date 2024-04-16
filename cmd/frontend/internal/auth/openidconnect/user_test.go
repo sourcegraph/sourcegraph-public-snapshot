@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -64,6 +65,8 @@ func TestAllowSignup(t *testing.T) {
 				)
 				return false, 0, "", nil
 			}
+			db := dbmocks.NewStrictMockDB()
+			_ = telemetrytest.AddDBMocks(db)
 			p := &Provider{
 				config: schema.OpenIDConnectAuthProvider{
 					ClientID:           testClientID,
@@ -77,7 +80,7 @@ func TestAllowSignup(t *testing.T) {
 			_, _, _, err := getOrCreateUser(
 				context.Background(),
 				logtest.Scoped(t),
-				dbmocks.NewStrictMockDB(),
+				db,
 				p,
 				&oauth2.Token{},
 				&oidc.IDToken{},
