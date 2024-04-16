@@ -15,10 +15,10 @@
     import { onDestroy } from 'svelte'
 
     import { beforeNavigate } from '$app/navigation'
-    import { createFeatureFlagStore, featureFlag } from '$lib/featureflags'
+    import { createFeatureFlagStore } from '$lib/featureflags'
     import GlobalNotification from '$lib/global-notifications/GlobalNotifications.svelte'
     import { getGraphQLClient } from '$lib/graphql/apollo'
-    import { isRouteRolledOut } from '$lib/navigation'
+    import { isRouteEnabled } from '$lib/navigation'
 
     import type { LayoutData } from './$types'
 
@@ -57,9 +57,6 @@
         document.documentElement.classList.toggle('theme-dark', !lightTheme)
     }
 
-    $: allRoutesEnabled = featureFlag('web-next')
-    $: rolledoutRoutesEnabled = featureFlag('web-next-rollout')
-
     // Redirect the user to the react app when they navigate to a page that is
     // supported but not enabled.
     // (Routes that are not supported, i.e. don't exist in `routes/` are already
@@ -70,7 +67,7 @@
             return
         }
 
-        if (dev || $allRoutesEnabled || ($rolledoutRoutesEnabled && isRouteRolledOut(navigation.to?.route.id ?? ''))) {
+        if (dev || isRouteEnabled(navigation.to.url.pathname)) {
             // Routes are handled by SvelteKit
             return
         }
@@ -83,8 +80,10 @@
     $: currentUserID = data.user?.id
     $: handleOptOut = currentUserID
         ? async (): Promise<void> => {
-              await data.disableSvelteFeatureFlags(currentUserID)
-              window.location.reload()
+            if (currentUserID) {
+                  await data.disableSvelteFeatureFlags(currentUserID)
+                  window.location.reload()
+            }
           }
         : undefined
 </script>

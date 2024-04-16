@@ -1,4 +1,5 @@
 <script lang="ts">
+    // @sg EnableRollout
     import { queryStateStore } from '$lib/search/state'
     import { settings } from '$lib/stores'
 

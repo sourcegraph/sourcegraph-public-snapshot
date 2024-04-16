@@ -12,7 +12,6 @@ go_library(
         "preview.go",
         "raw.go",
         "router.go",
-        "sveltekit.go",
         "tmpl.go",
     ],
     embedsrcs = [
@@ -31,6 +30,7 @@ go_library(
         "//cmd/frontend/internal/app/assetsutil",
         "//cmd/frontend/internal/app/jscontext",
         "//cmd/frontend/internal/app/ui/router",
+        "//cmd/frontend/internal/app/ui/sveltekit",
         "//cmd/frontend/internal/githubapp",
         "//cmd/frontend/internal/handlerutil",
         "//cmd/frontend/internal/routevar",
