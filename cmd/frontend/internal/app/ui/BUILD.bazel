@@ -26,7 +26,6 @@ go_library(
         "//cmd/frontend/auth",
         "//cmd/frontend/backend",
         "//cmd/frontend/envvar",
-        "//cmd/frontend/globals",
         "//cmd/frontend/hubspot",
         "//cmd/frontend/hubspot/hubspotutil",
         "//cmd/frontend/internal/app/assetsutil",
