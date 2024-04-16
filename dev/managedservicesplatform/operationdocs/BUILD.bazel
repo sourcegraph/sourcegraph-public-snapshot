@@ -12,7 +12,9 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//dev/managedservicesplatform/operationdocs/internal/markdown",
+        "//dev/managedservicesplatform/operationdocs/internal/terraform",
         "//dev/managedservicesplatform/spec",
+        "//dev/sg/msp/repo",
         "//lib/errors",
         "//lib/pointers",
         "@com_github_vvakame_gcplogurl//:gcplogurl",

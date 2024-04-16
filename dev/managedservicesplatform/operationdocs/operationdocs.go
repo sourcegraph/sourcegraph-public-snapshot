@@ -1,14 +1,19 @@
 package operationdocs
 
 import (
+	"bytes"
 	"fmt"
 	"path"
 	"slices"
 	"strings"
 	"time"
 
+	"golang.org/x/exp/maps"
+
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/internal/markdown"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/internal/terraform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	msprepo "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -329,6 +334,35 @@ If you make your Entitle request, then log in, you will be removed from any team
 			markdown.Linkf(fmt.Sprintf("grouped under the %s tag", markdown.Codef("msp-%s-%s", s.Service.ID, env.ID)),
 				"https://app.terraform.io/app/sourcegraph/workspaces?tag=msp-%s-%s", s.Service.ID, env.ID))
 		md.CodeBlockf("bash", `sg msp tfc view %s %s`, s.Service.ID, env.ID)
+	}
+
+	md.Headingf(4, "Alert Policies")
+
+	md.Paragraphf("The following alert policies are defined for this environment")
+
+	// Deduplicate alerts across environments into a single map
+	collectedAlerts := make(map[string]terraform.AlertPolicies)
+	for _, env := range s.ListEnvironmentIDs() {
+		// Parse the generated alert policies to create alerting docs
+		monitoringPath := msprepo.ServiceStackCDKTF(s.Service.ID, env, "monitoring")
+		monitoring, err := terraform.ParseMonitoringCDKTF(monitoringPath)
+		if err != nil {
+			return "", nil
+		}
+		maps.Copy(collectedAlerts, monitoring.ResourceType.GoogleMonitoringAlertPolicy)
+	}
+	// Render alerts
+	for _, policy := range collectedAlerts {
+		md.Headingf(5, policy.DisplayName)
+		// We need to remove the footer text we add to each alert policy description
+		b := []byte(policy.Documentation.Content)
+		lastParagraphIndex := bytes.LastIndex(b, []byte("\n\n"))
+		if lastParagraphIndex != -1 {
+			b = b[:lastParagraphIndex]
+		}
+
+		md.CodeBlock("md", string(b))
+		md.Paragraphf("Severity: %s", policy.Severity)
 	}
 
 	return md.String(), nil
