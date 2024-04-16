@@ -8,6 +8,7 @@ import (
 	"time"
 
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // constString effectively requires strings to be statically defined constants.
@@ -102,8 +103,17 @@ func NewEventRecorder(store EventsStore) *EventRecorder {
 }
 
 // Record records a single telemetry event with the context's Sourcegraph
-// actor. Parameters are optional.
+// actor. Parameters are optional - everything else is required.
 func (r *EventRecorder) Record(ctx context.Context, feature eventFeature, action eventAction, parameters *EventParameters) error {
+	if ctx == nil {
+		return errors.New("context is required")
+	}
+	if feature == "" {
+		return errors.New("feature is required")
+	}
+	if action == "" {
+		return errors.New("action is required")
+	}
 	return r.store.StoreEvents(ctx, []*telemetrygatewayv1.Event{
 		newTelemetryGatewayEvent(ctx, time.Now(), telemetrygatewayv1.DefaultEventIDFunc, feature, action, parameters),
 	})
