@@ -33,3 +33,6 @@ pipeline:
       chmod +x p4
       mkdir -p ${{targets.destdir}}/usr/local/bin/
       cp p4 ${{targets.destdir}}/usr/local/bin/p4
+
+update:
+  enabled: false # No monitoring available
