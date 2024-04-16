@@ -1234,8 +1234,8 @@ func openaiDefaultMaxPromptTokens(model string) int {
 	case "gpt-3.5-turbo-16k",
 		"gpt-3.5-turbo":
 		return 16_000
-	case "gpt-4-1106-preview",
-		"gpt-4-turbo-preview":
+	case "gpt-4-turbo-preview",
+		"gpt-4-turbo":
 		// TODO: Technically, GPT 4 Turbo uses a 128k window, but we should validate
 		// that returning 128k here is the right thing to do.
 		return 16_000
@@ -1292,4 +1292,18 @@ func PermissionsUserMapping() *schema.PermissionsUserMapping {
 		return &schema.PermissionsUserMapping{Enabled: false, BindID: "email"}
 	}
 	return c
+}
+
+func Branding() *schema.Branding {
+	br := Get().Branding
+	if br == nil {
+		br = &schema.Branding{
+			BrandName: "Sourcegraph",
+		}
+	} else if br.BrandName == "" {
+		bcopy := *br
+		bcopy.BrandName = "Sourcegraph"
+		br = &bcopy
+	}
+	return br
 }

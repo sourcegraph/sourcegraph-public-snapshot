@@ -47,7 +47,9 @@ func pathspecLiteral(s string) string { return ":(literal)" + s }
 
 func (g *gitCLIBackend) verifyPaths(ctx context.Context, treeish string, paths []string) error {
 	args := []string{"ls-tree", "-z", "--name-only", treeish, "--"}
-	args = append(args, paths...)
+	for _, p := range paths {
+		args = append(args, pathspecLiteral(p))
+	}
 	r, err := g.NewCommand(ctx, WithArguments(args...))
 	if err != nil {
 		return err

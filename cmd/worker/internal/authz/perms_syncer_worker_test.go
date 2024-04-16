@@ -33,7 +33,7 @@ func TestPermsSyncerWorker_Handle(t *testing.T) {
 	syncJobsStore := db.PermissionSyncJobs()
 
 	t.Run("user sync request", func(t *testing.T) {
-		worker := makePermsSyncerWorker(&observation.TestContext, dummySyncer, syncTypeUser, syncJobsStore)
+		worker := makePermsSyncerWorker(observation.TestContextTB(t), dummySyncer, syncTypeUser, syncJobsStore)
 		_ = worker.Handle(ctx, logtest.Scoped(t), &database.PermissionSyncJob{
 			ID:               99,
 			UserID:           1234,
@@ -55,7 +55,7 @@ func TestPermsSyncerWorker_Handle(t *testing.T) {
 	})
 
 	t.Run("repo sync request", func(t *testing.T) {
-		worker := makePermsSyncerWorker(&observation.TestContext, dummySyncer, syncTypeRepo, syncJobsStore)
+		worker := makePermsSyncerWorker(observation.TestContextTB(t), dummySyncer, syncTypeRepo, syncJobsStore)
 		_ = worker.Handle(ctx, logtest.Scoped(t), &database.PermissionSyncJob{
 			ID:               777,
 			RepositoryID:     4567,
@@ -96,7 +96,7 @@ func TestPermsSyncerWorker_RepoSyncJobs(t *testing.T) {
 	require.NoError(t, err)
 
 	// Creating a worker.
-	observationCtx := &observation.TestContext
+	observationCtx := observation.TestContextTB(t)
 	dummySyncer := &dummySyncerWithErrors{
 		repoIDErrors: map[api.RepoID]errorType{2: allProvidersFailed, 3: realError},
 	}
@@ -238,7 +238,7 @@ func TestPermsSyncerWorker_UserSyncJobs(t *testing.T) {
 	require.NoError(t, err)
 
 	// Creating a worker.
-	observationCtx := &observation.TestContext
+	observationCtx := observation.TestContextTB(t)
 	dummySyncer := &dummySyncerWithErrors{
 		userIDErrors:      map[int32]errorType{2: allProvidersFailed, 3: realError},
 		userIDNoProviders: map[int32]struct{}{4: {}},
@@ -423,7 +423,7 @@ func TestPermsSyncerWorker_Store_Dequeue_Order(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	store := makeStore(&observation.TestContext, db.Handle(), syncTypeRepo)
+	store := makeStore(observation.TestContextTB(t), db.Handle(), syncTypeRepo)
 	jobIDs := make([]int, 0)
 	wantJobIDs := []int{5, 6, 8, 7, 3, 4, 10, 9, 1, 2, 12, 11, 0, 0, 0, 0}
 	var dequeueErr error

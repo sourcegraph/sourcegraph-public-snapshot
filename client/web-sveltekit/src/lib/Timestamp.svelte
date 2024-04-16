@@ -17,6 +17,7 @@
 
 <script lang="ts">
     import { addMinutes, format, formatDistance, formatDistanceStrict } from 'date-fns'
+
     import { currentDate } from './stores'
     import Tooltip from './Tooltip.svelte'
 
@@ -43,5 +44,5 @@
 </script>
 
 <Tooltip tooltip={showAbsolute ? relativeDate : formattedDate}>
-    <span class="timestamp" data-testid="timestamp">{showAbsolute ? formattedDate : relativeDate} </span></Tooltip
->
+    <span class="timestamp" data-testid="timestamp">{showAbsolute ? formattedDate : relativeDate} </span>
+</Tooltip>

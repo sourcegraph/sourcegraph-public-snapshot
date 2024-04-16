@@ -19,7 +19,10 @@ func NewSearchJob(plan query.Plan, newJob func(query.Basic) (job.Job, error)) (j
 
 	basicQuery := plan[0].ToParseTree()
 	q, err := queryStringToKeywordQuery(query.StringHuman(basicQuery))
-	if err != nil || q == nil {
+
+	// If there are no patterns left, this query was entirely composed of
+	// stopwords, so we return no results.
+	if err != nil || len(q.patterns) == 0 {
 		return nil, err
 	}
 

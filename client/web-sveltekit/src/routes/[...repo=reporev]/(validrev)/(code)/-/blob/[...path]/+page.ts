@@ -1,3 +1,7 @@
+import { BehaviorSubject, concatMap, from, map } from 'rxjs'
+
+import { fetchBlameHunksMemoized, type BlameHunkData } from '@sourcegraph/web/src/repo/blame/shared'
+
 import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
@@ -10,6 +14,30 @@ export const load: PageLoad = ({ parent, params, url }) => {
     const client = getGraphQLClient()
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
     const resolvedRevision = resolveRevision(parent, revision)
+    const isBlame = url.searchParams.get('view') === 'blame'
+
+    // Create a BehaviorSubject so preloading does not create a subscriberless observable
+    const blameData = new BehaviorSubject<BlameHunkData>({ current: undefined, externalURLs: undefined })
+    if (isBlame) {
+        const blameHunks = from(resolvedRevision).pipe(
+            concatMap(resolvedRevision =>
+                fetchBlameHunksMemoized({ repoName, revision: resolvedRevision, filePath: params.path })
+            )
+        )
+
+        from(parent())
+            .pipe(
+                concatMap(({ resolvedRevision }) =>
+                    blameHunks.pipe(
+                        map(blameHunks => ({
+                            externalURLs: resolvedRevision.repo.externalURLs,
+                            current: blameHunks,
+                        }))
+                    )
+                )
+            )
+            .subscribe(v => blameData.next(v))
+    }
 
     return {
         graphQLClient: client,
@@ -45,5 +73,6 @@ export const load: PageLoad = ({ parent, params, url }) => {
                       .then(mapOrThrow(result => result.data?.repository?.commit?.diff.fileDiffs.nodes[0] ?? null)),
               }
             : null,
+        blameData,
     }
 }

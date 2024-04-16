@@ -41,7 +41,7 @@ func TestWorkerHandlerSuccess(t *testing.T) {
 		WorkerHostname: "test",
 		NumHandlers:    1,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, ""),
+		Metrics:        NewMetrics(observation.TestContextTB(t), ""),
 	}
 
 	store.DequeueFunc.PushReturn(&TestRecord{ID: 42}, true, nil)
@@ -77,7 +77,7 @@ func TestWorkerHandlerFailure(t *testing.T) {
 		WorkerHostname: "test",
 		NumHandlers:    1,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, ""),
+		Metrics:        NewMetrics(observation.TestContextTB(t), ""),
 	}
 
 	store.DequeueFunc.PushReturn(&TestRecord{ID: 42}, true, nil)
@@ -121,7 +121,7 @@ func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
 		WorkerHostname: "test",
 		NumHandlers:    1,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, ""),
+		Metrics:        NewMetrics(observation.TestContextTB(t), ""),
 	}
 
 	store.DequeueFunc.PushReturn(&TestRecord{ID: 42}, true, nil)
@@ -168,7 +168,7 @@ func TestWorkerConcurrent(t *testing.T) {
 				WorkerHostname: "test",
 				NumHandlers:    numHandlers,
 				Interval:       time.Second,
-				Metrics:        NewMetrics(&observation.TestContext, ""),
+				Metrics:        NewMetrics(observation.TestContextTB(t), ""),
 			}
 
 			for i := range NumTestRecords {
@@ -235,7 +235,7 @@ func TestWorkerBlockingPreDequeueHook(t *testing.T) {
 		WorkerHostname: "test",
 		NumHandlers:    1,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, ""),
+		Metrics:        NewMetrics(observation.TestContextTB(t), ""),
 	}
 
 	store.DequeueFunc.PushReturn(&TestRecord{ID: 42}, true, nil)
@@ -265,7 +265,7 @@ func TestWorkerConditionalPreDequeueHook(t *testing.T) {
 		WorkerHostname: "test",
 		NumHandlers:    1,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, ""),
+		Metrics:        NewMetrics(observation.TestContextTB(t), ""),
 	}
 
 	store.DequeueFunc.PushReturn(&TestRecord{ID: 42}, true, nil)
@@ -341,7 +341,7 @@ func TestWorkerDequeueHeartbeat(t *testing.T) {
 		NumHandlers:       1,
 		HeartbeatInterval: heartbeatInterval,
 		Interval:          time.Second,
-		Metrics:           NewMetrics(&observation.TestContext, ""),
+		Metrics:           NewMetrics(observation.TestContextTB(t), ""),
 	}
 
 	dequeued := make(chan struct{})
@@ -388,7 +388,7 @@ func TestWorkerNumTotalJobs(t *testing.T) {
 		NumHandlers:    1,
 		NumTotalJobs:   5,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, ""),
+		Metrics:        NewMetrics(observation.TestContextTB(t), ""),
 	}
 
 	store.DequeueFunc.SetDefaultReturn(&TestRecord{ID: 42}, true, nil)
@@ -416,7 +416,7 @@ func TestWorkerMaxActiveTime(t *testing.T) {
 		NumTotalJobs:   50,
 		MaxActiveTime:  time.Second * 5,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, ""),
+		Metrics:        NewMetrics(observation.TestContextTB(t), ""),
 	}
 
 	called := make(chan struct{})
@@ -489,7 +489,7 @@ func TestWorkerCancelJobs(t *testing.T) {
 		NumHandlers:       1,
 		HeartbeatInterval: time.Second,
 		Interval:          time.Second,
-		Metrics:           NewMetrics(&observation.TestContext, ""),
+		Metrics:           NewMetrics(observation.TestContextTB(t), ""),
 	}
 
 	dequeued := make(chan struct{})
@@ -567,7 +567,7 @@ func TestWorkerDeadline(t *testing.T) {
 		NumHandlers:       1,
 		HeartbeatInterval: time.Second,
 		Interval:          time.Second,
-		Metrics:           NewMetrics(&observation.TestContext, ""),
+		Metrics:           NewMetrics(observation.TestContextTB(t), ""),
 		// The handler runs forever but should be canceled after 10ms.
 		MaximumRuntimePerJob: 10 * time.Millisecond,
 	}
@@ -623,7 +623,7 @@ func TestWorkerStopDrainsDequeueLoopOnly(t *testing.T) {
 		NumHandlers:       1,
 		HeartbeatInterval: time.Second,
 		Interval:          time.Second,
-		Metrics:           NewMetrics(&observation.TestContext, ""),
+		Metrics:           NewMetrics(observation.TestContextTB(t), ""),
 	}
 
 	dequeued := make(chan struct{})

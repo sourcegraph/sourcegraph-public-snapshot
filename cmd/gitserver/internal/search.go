@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -20,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func (s *Server) SearchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
+func searchWithObservability(ctx context.Context, logger log.Logger, repoDir common.GitDir, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
 	searchStart := time.Now()
 
 	searchRunning.Inc()
@@ -63,7 +64,7 @@ func (s *Server) SearchWithObservability(ctx context.Context, tr trace.Trace, ar
 				_ = ev.Send()
 			}
 			if traceLogs {
-				s.logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+				logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 			}
 		}
 	}()
@@ -77,12 +78,12 @@ func (s *Server) SearchWithObservability(ctx context.Context, tr trace.Trace, ar
 		return onMatch(cm)
 	}
 
-	return s.search(ctx, args, onMatchWithLatency)
+	return doSearch(ctx, logger, repoDir, args, onMatchWithLatency)
 }
 
-// search handles the core logic of the search. It is passed a matchesBuf so it doesn't need to
+// doSearch handles the core logic of the search. It is passed a matchesBuf so it doesn't need to
 // concern itself with event types, and all instrumentation is handled in the calling function.
-func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
+func doSearch(ctx context.Context, logger log.Logger, repoDir common.GitDir, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
 	if args.Limit == 0 {
 		args.Limit = math.MaxInt32
 	}
@@ -118,9 +119,9 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 	}
 
 	searcher := &search.CommitSearcher{
-		Logger:               s.logger,
+		Logger:               logger,
 		RepoName:             args.Repo,
-		RepoDir:              string(s.fs.RepoDir(args.Repo)),
+		RepoDir:              string(repoDir),
 		Revisions:            args.Revisions,
 		Query:                mt,
 		IncludeDiff:          args.IncludeDiff,

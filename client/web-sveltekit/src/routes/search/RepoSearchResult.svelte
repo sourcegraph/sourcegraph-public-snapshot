@@ -6,12 +6,12 @@
     import { highlightRanges } from '$lib/dom'
     import { featureFlag } from '$lib/featureflags'
     import Icon from '$lib/Icon.svelte'
+    import RepoStars from '$lib/repo/RepoStars.svelte'
     import { limitDescription, getRepositoryBadges, simplifyLineRange } from '$lib/search/results'
     import type { RepositoryMatch } from '$lib/shared'
     import { Badge } from '$lib/wildcard'
 
     import RepoRev from './RepoRev.svelte'
-    import RepoStars from './RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
     import { getSearchResultsContext } from './searchResultsContext'
 

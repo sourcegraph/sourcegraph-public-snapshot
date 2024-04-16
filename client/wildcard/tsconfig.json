@@ -7,7 +7,7 @@
     "rootDir": ".",
     "outDir": "./out",
   },
-  "references": [{ "path": "../common" }, { "path": "../testing" }],
+  "references": [{ "path": "../testing" }],
   "include": ["src"],
   "exclude": ["../../node_modules", "./node_modules", "./out"],
 }
