@@ -60,15 +60,15 @@ export const load: PageLoad = ({ parent, params, url }) => {
             .then(mapOrThrow(result => result.data?.repository?.commit?.blob?.highlight.lsif ?? '')),
         compare: revisionToCompare
             ? {
-                revisionToCompare,
-                diff: client
-                    .query(BlobDiffQuery, {
-                        repoName,
-                        revspec: revisionToCompare,
-                        paths: [params.path],
-                    })
-                    .then(mapOrThrow(result => result.data?.repository?.commit?.diff.fileDiffs.nodes[0] ?? null)),
-            }
+                  revisionToCompare,
+                  diff: client
+                      .query(BlobDiffQuery, {
+                          repoName,
+                          revspec: revisionToCompare,
+                          paths: [params.path],
+                      })
+                      .then(mapOrThrow(result => result.data?.repository?.commit?.diff.fileDiffs.nodes[0] ?? null)),
+              }
             : null,
         blameData,
     }
