@@ -21,7 +21,7 @@ import { isEqual } from 'lodash'
 
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
-import type { BlameHunk, BlameHunkData } from '../../blame/useBlameHunks'
+import type { BlameHunk, BlameHunkData } from '../../blame/shared'
 import { getBlameRecencyColor } from '../blameRecency'
 
 /**
