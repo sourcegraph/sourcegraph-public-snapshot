@@ -257,6 +257,9 @@ func GetAndSaveUser(
 	if userID != 0 && !sgactor.FromContext(telemetryCtx).IsAuthenticated() {
 		telemetryCtx = sgactor.WithActor(telemetryCtx, actor.FromUser(userID))
 	}
+	// We handle all V2 telemetry related to GetAndSaveUser within this defer
+	// closure, to ensure we cover all exit paths correctly after the other mega
+	// closure above.
 	defer func() {
 		action := telemetry.ActionSucceeded
 		if err != nil { // check final error
@@ -264,7 +267,8 @@ func GetAndSaveUser(
 		}
 
 		// Most auth providers services have an exstvc.Variant, so try and
-		// extract that from
+		// extract that from the account spec. For ease of use in we also
+		// preserve the raw value in the private metadata.
 		serviceVariant, _ := extsvc.VariantValueOf(acct.AccountSpec.ServiceType)
 		privateMetadata := map[string]any{"serviceType": acct.AccountSpec.ServiceType}
 
@@ -273,6 +277,7 @@ func GetAndSaveUser(
 			privateMetadata["safeErrMsg"] = safeErrMsg
 		}
 
+		// Record our V2 event.
 		recorder.Record(telemetryCtx, telemetryV2UserSignUpFeatureName, action, &telemetry.EventParameters{
 			Version: 2, // We've significantly refactored telemetryV2UserSignUpFeatureName occurrences
 			Metadata: telemetry.MergeMetadata(
