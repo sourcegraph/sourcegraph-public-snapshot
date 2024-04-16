@@ -386,43 +386,6 @@ func parseTimestamp(timestamp string) (time.Time, error) {
 // the root commit.
 const DevNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
-func (c *clientImplementor) DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string) (_ []*diff.Hunk, err error) {
-	ctx, _, endObservation := c.operations.diffPath.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	a := actor.FromContext(ctx)
-	if hasAccess, err := authz.FilterActorPath(ctx, c.subRepoPermsChecker, a, repo, path); err != nil {
-		return nil, err
-	} else if !hasAccess {
-		return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
-	}
-	args := []string{"diff", sourceCommit, targetCommit, "--", path}
-	reader, err := c.gitCommand(repo, args...).StdoutReader(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer reader.Close()
-
-	output, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
-	}
-	if len(output) == 0 {
-		return nil, nil
-	}
-
-	d, err := diff.NewFileDiffReader(bytes.NewReader(output)).Read()
-	if err != nil {
-		return nil, err
-	}
-	return d.Hunks, nil
-}
-
 // DiffSymbols performs a diff command which is expected to be parsed by our symbols package
 func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (_ []byte, err error) {
 	ctx, _, endObservation := c.operations.diffSymbols.With(ctx, &err, observation.Args{

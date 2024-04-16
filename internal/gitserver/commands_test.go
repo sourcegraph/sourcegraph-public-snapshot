@@ -356,62 +356,25 @@ index 9bd8209..d2acfa9 100644
 		if count != testDiffFiles {
 			t.Errorf("unexpected diff count: have %d; want %d", count, testDiffFiles)
 		}
-	})
-}
 
-func TestDiffPath(t *testing.T) {
-	testDiff := `
-diff --git a/foo.md b/foo.md
-index 51a59ef1c..493090958 100644
---- a/foo.md
-+++ b/foo.md
-@@ -1 +1 @@
--this is my file content
-+this is my file contnent
-`
-	t.Run("basic", func(t *testing.T) {
-		checker := authz.NewMockSubRepoPermissionChecker()
-		c := NewMockClientWithExecReader(checker, func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
-			return io.NopCloser(strings.NewReader(testDiff)), nil
+		t.Run("early close", func(t *testing.T) {
+			routinesBefore := runtime.NumGoroutine()
+
+			i, err := c.Diff(ctx, DiffOptions{Base: "foo", Head: "bar"})
+			require.NoError(t, err)
+
+			hunk, err := i.Next()
+			require.NoError(t, err)
+			require.Equal(t, "INSTALL.md", hunk.OrigName)
+
+			// We did not receive io.EOF above, but are closing the diff reader,
+			// this should not error.
+			require.NoError(t, i.Close())
+
+			// Expect no leaked routines.
+			routinesAfter := runtime.NumGoroutine()
+			require.Equal(t, routinesBefore, routinesAfter)
 		})
-		ctx := actor.WithActor(context.Background(), &actor.Actor{
-			UID: 1,
-		})
-		hunks, err := c.DiffPath(ctx, "", "sourceCommit", "", "file")
-		if err != nil {
-			t.Errorf("unexpected error: %s", err)
-		}
-		if len(hunks) != 1 {
-			t.Errorf("unexpected hunks returned: %d", len(hunks))
-		}
-	})
-	t.Run("with sub-repo permissions enabled", func(t *testing.T) {
-		checker := authz.NewMockSubRepoPermissionChecker()
-		ctx := actor.WithActor(context.Background(), &actor.Actor{
-			UID: 1,
-		})
-		fileName := "foo"
-		checker.EnabledFunc.SetDefaultHook(func() bool {
-			return true
-		})
-		// User doesn't have access to this file
-		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-			if content.Path == fileName {
-				return authz.None, nil
-			}
-			return authz.Read, nil
-		})
-		usePermissionsForFilePermissionsFunc(checker)
-		c := NewMockClientWithExecReader(checker, func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
-			return io.NopCloser(strings.NewReader(testDiff)), nil
-		})
-		hunks, err := c.DiffPath(ctx, "", "sourceCommit", "", fileName)
-		if !os.IsNotExist(err) {
-			t.Errorf("unexpected error: %s", err)
-		}
-		if hunks != nil {
-			t.Errorf("expected DiffPath to return no results, got %v", hunks)
-		}
 	})
 }
 

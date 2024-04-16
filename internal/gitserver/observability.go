@@ -59,7 +59,6 @@ type operations struct {
 	lsFiles                  *observation.Operation
 	logReverseEach           *observation.Operation
 	diffSymbols              *observation.Operation
-	diffPath                 *observation.Operation
 	commitLog                *observation.Operation
 	diff                     *observation.Operation
 }
@@ -156,7 +155,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		lsFiles:                  op("LsFiles"),
 		logReverseEach:           op("LogReverseEach"),
 		diffSymbols:              op("DiffSymbols"),
-		diffPath:                 op("DiffPath"),
 		commitLog:                op("CommitLog"),
 		diff:                     op("Diff"),
 	}

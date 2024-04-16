@@ -13,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	diff "github.com/sourcegraph/go-diff/diff"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	gitolite "github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -58,9 +57,6 @@ type MockClient struct {
 	// DiffFunc is an instance of a mock function object controlling the
 	// behavior of the method Diff.
 	DiffFunc *ClientDiffFunc
-	// DiffPathFunc is an instance of a mock function object controlling the
-	// behavior of the method DiffPath.
-	DiffPathFunc *ClientDiffPathFunc
 	// DiffSymbolsFunc is an instance of a mock function object controlling
 	// the behavior of the method DiffSymbols.
 	DiffSymbolsFunc *ClientDiffSymbolsFunc
@@ -233,11 +229,6 @@ func NewMockClient() *MockClient {
 		},
 		DiffFunc: &ClientDiffFunc{
 			defaultHook: func(context.Context, DiffOptions) (r0 *DiffFileIterator, r1 error) {
-				return
-			},
-		},
-		DiffPathFunc: &ClientDiffPathFunc{
-			defaultHook: func(context.Context, api.RepoName, string, string, string) (r0 []*diff.Hunk, r1 error) {
 				return
 			},
 		},
@@ -493,11 +484,6 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.Diff")
 			},
 		},
-		DiffPathFunc: &ClientDiffPathFunc{
-			defaultHook: func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error) {
-				panic("unexpected invocation of MockClient.DiffPath")
-			},
-		},
 		DiffSymbolsFunc: &ClientDiffSymbolsFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error) {
 				panic("unexpected invocation of MockClient.DiffSymbols")
@@ -727,9 +713,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		DiffFunc: &ClientDiffFunc{
 			defaultHook: i.Diff,
-		},
-		DiffPathFunc: &ClientDiffPathFunc{
-			defaultHook: i.DiffPath,
 		},
 		DiffSymbolsFunc: &ClientDiffSymbolsFunc{
 			defaultHook: i.DiffSymbols,
@@ -2052,122 +2035,6 @@ func (c ClientDiffFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientDiffFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ClientDiffPathFunc describes the behavior when the DiffPath method of the
-// parent MockClient instance is invoked.
-type ClientDiffPathFunc struct {
-	defaultHook func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error)
-	hooks       []func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error)
-	history     []ClientDiffPathFuncCall
-	mutex       sync.Mutex
-}
-
-// DiffPath delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockClient) DiffPath(v0 context.Context, v1 api.RepoName, v2 string, v3 string, v4 string) ([]*diff.Hunk, error) {
-	r0, r1 := m.DiffPathFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.DiffPathFunc.appendCall(ClientDiffPathFuncCall{v0, v1, v2, v3, v4, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the DiffPath method of
-// the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientDiffPathFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DiffPath method of the parent MockClient instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *ClientDiffPathFunc) PushHook(hook func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientDiffPathFunc) SetDefaultReturn(r0 []*diff.Hunk, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientDiffPathFunc) PushReturn(r0 []*diff.Hunk, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientDiffPathFunc) nextHook() func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientDiffPathFunc) appendCall(r0 ClientDiffPathFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientDiffPathFuncCall objects describing
-// the invocations of this function.
-func (f *ClientDiffPathFunc) History() []ClientDiffPathFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientDiffPathFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientDiffPathFuncCall is an object that describes an invocation of
-// method DiffPath on an instance of MockClient.
-type ClientDiffPathFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*diff.Hunk
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientDiffPathFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientDiffPathFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

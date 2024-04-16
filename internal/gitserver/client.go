@@ -1,12 +1,10 @@
 package gitserver
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"io/fs"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -19,7 +17,6 @@ import (
 	sglog "github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
@@ -142,36 +139,6 @@ func NewMockClientWithExecReader(checker authz.SubRepoPermissionChecker, execRea
 			mfdr:           diff.NewMultiFileDiffReader(rdr),
 			fileFilterFunc: getFilterFunc(ctx, checker, opts.Repo),
 		}, nil
-	})
-
-	// NOTE: This hook is the same as DiffPath, but with `execReader` used above
-	client.DiffPathFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
-		a := actor.FromContext(ctx)
-		if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil {
-			return nil, err
-		} else if !hasAccess {
-			return nil, os.ErrNotExist
-		}
-		// Here is where all the mocking happens!
-		reader, err := execReader(ctx, repo, []string{"diff", sourceCommit, targetCommit, "--", path})
-		if err != nil {
-			return nil, err
-		}
-		defer reader.Close()
-
-		output, err := io.ReadAll(reader)
-		if err != nil {
-			return nil, err
-		}
-		if len(output) == 0 {
-			return nil, nil
-		}
-
-		d, err := diff.NewFileDiffReader(bytes.NewReader(output)).Read()
-		if err != nil {
-			return nil, err
-		}
-		return d.Hunks, nil
 	})
 
 	return client
@@ -383,10 +350,6 @@ type Client interface {
 
 	// Stat returns a FileInfo describing the named file at commit.
 	Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error)
-
-	// DiffPath returns a position-ordered slice of changes (additions or deletions)
-	// of the given path between the given source and target commits.
-	DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error)
 
 	// ReadDir reads the contents of the named directory at commit.
 	ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)

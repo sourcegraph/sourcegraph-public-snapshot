@@ -14,7 +14,6 @@ import (
 	"sync"
 	"time"
 
-	diff "github.com/sourcegraph/go-diff/diff"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	store "github.com/sourcegraph/sourcegraph/internal/batches/store"
 	types1 "github.com/sourcegraph/sourcegraph/internal/batches/types"
@@ -11014,9 +11013,6 @@ type MockGitserverClient struct {
 	// DiffFunc is an instance of a mock function object controlling the
 	// behavior of the method Diff.
 	DiffFunc *GitserverClientDiffFunc
-	// DiffPathFunc is an instance of a mock function object controlling the
-	// behavior of the method DiffPath.
-	DiffPathFunc *GitserverClientDiffPathFunc
 	// DiffSymbolsFunc is an instance of a mock function object controlling
 	// the behavior of the method DiffSymbols.
 	DiffSymbolsFunc *GitserverClientDiffSymbolsFunc
@@ -11189,11 +11185,6 @@ func NewMockGitserverClient() *MockGitserverClient {
 		},
 		DiffFunc: &GitserverClientDiffFunc{
 			defaultHook: func(context.Context, gitserver.DiffOptions) (r0 *gitserver.DiffFileIterator, r1 error) {
-				return
-			},
-		},
-		DiffPathFunc: &GitserverClientDiffPathFunc{
-			defaultHook: func(context.Context, api.RepoName, string, string, string) (r0 []*diff.Hunk, r1 error) {
 				return
 			},
 		},
@@ -11449,11 +11440,6 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.Diff")
 			},
 		},
-		DiffPathFunc: &GitserverClientDiffPathFunc{
-			defaultHook: func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error) {
-				panic("unexpected invocation of MockGitserverClient.DiffPath")
-			},
-		},
 		DiffSymbolsFunc: &GitserverClientDiffSymbolsFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error) {
 				panic("unexpected invocation of MockGitserverClient.DiffSymbols")
@@ -11684,9 +11670,6 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		},
 		DiffFunc: &GitserverClientDiffFunc{
 			defaultHook: i.Diff,
-		},
-		DiffPathFunc: &GitserverClientDiffPathFunc{
-			defaultHook: i.DiffPath,
 		},
 		DiffSymbolsFunc: &GitserverClientDiffSymbolsFunc{
 			defaultHook: i.DiffSymbols,
@@ -13030,123 +13013,6 @@ func (c GitserverClientDiffFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientDiffFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverClientDiffPathFunc describes the behavior when the DiffPath
-// method of the parent MockGitserverClient instance is invoked.
-type GitserverClientDiffPathFunc struct {
-	defaultHook func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error)
-	hooks       []func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error)
-	history     []GitserverClientDiffPathFuncCall
-	mutex       sync.Mutex
-}
-
-// DiffPath delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverClient) DiffPath(v0 context.Context, v1 api.RepoName, v2 string, v3 string, v4 string) ([]*diff.Hunk, error) {
-	r0, r1 := m.DiffPathFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.DiffPathFunc.appendCall(GitserverClientDiffPathFuncCall{v0, v1, v2, v3, v4, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the DiffPath method of
-// the parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientDiffPathFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DiffPath method of the parent MockGitserverClient instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitserverClientDiffPathFunc) PushHook(hook func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientDiffPathFunc) SetDefaultReturn(r0 []*diff.Hunk, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientDiffPathFunc) PushReturn(r0 []*diff.Hunk, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientDiffPathFunc) nextHook() func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientDiffPathFunc) appendCall(r0 GitserverClientDiffPathFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientDiffPathFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientDiffPathFunc) History() []GitserverClientDiffPathFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientDiffPathFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientDiffPathFuncCall is an object that describes an invocation
-// of method DiffPath on an instance of MockGitserverClient.
-type GitserverClientDiffPathFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*diff.Hunk
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientDiffPathFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientDiffPathFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
