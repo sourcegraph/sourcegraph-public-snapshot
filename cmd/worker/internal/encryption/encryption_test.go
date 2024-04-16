@@ -1,4 +1,4 @@
-package database
+package encryption
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -23,9 +24,9 @@ func TestRecordEncrypter(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	key := &base64Key{}
-	encrypter := NewRecordEncrypter(db)
+	encrypter := newRecordEncrypter(basestore.NewWithHandle(db.Handle()))
 
 	if err := encrypter.Exec(ctx, sqlf.Sprintf("CREATE TABLE test_encryptable (id int, encryption_key_id text, data text)")); err != nil {
 		t.Fatalf("failed to create test table: %s", err)
@@ -52,7 +53,7 @@ func TestRecordEncrypter(t *testing.T) {
 	sort.Strings(writtenValues)
 	sort.Strings(encodedValues)
 
-	config := EncryptionConfig{
+	config := encryptionConfig{
 		TableName:           "test_encryptable",
 		IDFieldName:         "id",
 		KeyIDFieldName:      "encryption_key_id",
@@ -174,4 +175,13 @@ func unwrap(v *string) string {
 	}
 
 	return *v
+}
+
+func testEncryptionKeyID(key encryption.Key) string {
+	v, err := key.Version(context.Background())
+	if err != nil {
+		panic("why are you sending me a key with an exploding version??")
+	}
+
+	return v.JSON()
 }

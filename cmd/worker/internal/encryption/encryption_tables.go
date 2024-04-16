@@ -1,4 +1,4 @@
-package database
+package encryption
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 )
 
-type EncryptionConfig struct {
+type encryptionConfig struct {
 	TableName           string
 	IDFieldName         string
 	KeyIDFieldName      string
@@ -19,7 +19,7 @@ type EncryptionConfig struct {
 	Limit               int
 }
 
-var EncryptionConfigs = []EncryptionConfig{
+var encryptionConfigs = []encryptionConfig{
 	externalServicesEncryptionConfig,
 	userExternalAccountsEncryptionConfig,
 	userCredentialsEncryptionConfig,
@@ -29,7 +29,7 @@ var EncryptionConfigs = []EncryptionConfig{
 	outboundWebhooksEncryptionConfig,
 }
 
-var externalServicesEncryptionConfig = EncryptionConfig{
+var externalServicesEncryptionConfig = encryptionConfig{
 	TableName:           "external_services",
 	IDFieldName:         "id",
 	KeyIDFieldName:      "encryption_key_id",
@@ -39,7 +39,7 @@ var externalServicesEncryptionConfig = EncryptionConfig{
 	Limit:               100,
 }
 
-var userExternalAccountsEncryptionConfig = EncryptionConfig{
+var userExternalAccountsEncryptionConfig = encryptionConfig{
 	TableName:           "user_external_accounts",
 	IDFieldName:         "id",
 	KeyIDFieldName:      "encryption_key_id",
@@ -50,7 +50,7 @@ var userExternalAccountsEncryptionConfig = EncryptionConfig{
 	Limit:               100,
 }
 
-var userCredentialsEncryptionConfig = EncryptionConfig{
+var userCredentialsEncryptionConfig = encryptionConfig{
 	TableName:           "user_credentials",
 	IDFieldName:         "id",
 	KeyIDFieldName:      "encryption_key_id",
@@ -61,7 +61,7 @@ var userCredentialsEncryptionConfig = EncryptionConfig{
 	Limit:               5,
 }
 
-var batchChangesSiteCredentialsEncryptionConfig = EncryptionConfig{
+var batchChangesSiteCredentialsEncryptionConfig = encryptionConfig{
 	TableName:           "batch_changes_site_credentials",
 	IDFieldName:         "id",
 	KeyIDFieldName:      "encryption_key_id",
@@ -72,7 +72,7 @@ var batchChangesSiteCredentialsEncryptionConfig = EncryptionConfig{
 	Limit:               5,
 }
 
-var webhooklogsEncryptionConfig = EncryptionConfig{
+var webhooklogsEncryptionConfig = encryptionConfig{
 	TableName:           "webhook_logs",
 	IDFieldName:         "id",
 	KeyIDFieldName:      "encryption_key_id",
@@ -82,7 +82,7 @@ var webhooklogsEncryptionConfig = EncryptionConfig{
 	Limit:               5,
 }
 
-var executorSecretsEncryptionConfig = EncryptionConfig{
+var executorSecretsEncryptionConfig = encryptionConfig{
 	TableName:           "executor_secrets",
 	IDFieldName:         "id",
 	KeyIDFieldName:      "encryption_key_id",
@@ -93,7 +93,7 @@ var executorSecretsEncryptionConfig = EncryptionConfig{
 	Limit:               5,
 }
 
-var outboundWebhooksEncryptionConfig = EncryptionConfig{
+var outboundWebhooksEncryptionConfig = encryptionConfig{
 	TableName:           "outbound_webhooks",
 	IDFieldName:         "id",
 	KeyIDFieldName:      "encryption_key_id",
