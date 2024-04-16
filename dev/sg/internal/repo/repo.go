@@ -135,3 +135,41 @@ func GetCurrentBranch(ctx context.Context) (string, error) {
 
 	return strings.TrimSpace(branch), nil
 }
+
+func GetHeadCommit(ctx context.Context) (string, error) {
+	commit, err := run.Cmd(ctx, "git rev-parse HEAD").Run().String()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(commit), nil
+}
+
+func GetBranchHeadCommit(ctx context.Context, branch string) (string, error) {
+	if exists, err := HasRemoteBranch(ctx, branch); err == nil && !exists {
+		return "", ErrBranchNotFound
+	} else if err != nil {
+		return "", err
+	}
+	commit, err := run.Cmd(ctx, "git rev-parse "+branch).Run().String()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(commit), nil
+}
+
+func HasRemoteBranch(ctx context.Context, branch string) (bool, error) {
+	branches, err := run.Cmd(ctx, "git", "branch", "--remotes").Run().Lines()
+	if err != nil {
+		return false, err
+	}
+
+	remoteBranchname := "origin/" + branch
+	for _, b := range branches {
+		if strings.TrimSpace(b) == remoteBranchname {
+			return true, err
+		}
+	}
+	return false, err
+}

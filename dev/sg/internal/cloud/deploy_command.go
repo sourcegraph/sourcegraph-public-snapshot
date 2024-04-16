@@ -93,13 +93,9 @@ func getGcloudAccount(ctx context.Context) (string, error) {
 	return run.Cmd(ctx, "gcloud", "config", "get", "account").Run().String()
 }
 
-func createEphemeralBuild(ctx context.Context, _, branch string) (*buildkite.Build, error) {
-	currRepo, err := repo.NewWithBranch(ctx, branch)
-	if err != nil {
-		return nil, err
-	}
+func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildkite.Build, error) {
 	// Check that branch has been pushed
-	err = ensureBranchIsPushed(ctx, currRepo)
+	err := ensureBranchIsPushed(ctx, currRepo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to ensure current commit can be built")
 	}
@@ -154,6 +150,16 @@ func createDeploymentForVersion(ctx context.Context, version string) error {
 	return nil
 }
 
+func createEphemeralBranchName(ctx context.Context, branch string) (string, error) {
+	account, err := getGcloudAccount(ctx)
+	if err != nil {
+		return "", err
+	}
+	user := strings.ReplaceAll(account[:strings.Index(account, "@")], ".", "-")
+	// create a branch of the format cloud-ephemeral/<user>_<branch>
+	return fmt.Sprintf("cloud-ephemeral/%s_%s", user, strings.ReplaceAll(branch, "/", "-")), nil
+}
+
 func deployCloudEphemeral(ctx *cli.Context) error {
 	// while we work on this command we print a notice and ask to continue
 	if err := printWIPNotice(ctx); err != nil {
@@ -169,29 +175,42 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 
 	if branch == "" && tag == "" {
 		branch = currentBranch
-	} else if branch != currentBranch {
-		// sometimes we want to trigger a build for a different branch than the current one we're on, so have to build a branch for this case
-		//
-		// we are not on the intended branch so we create a cloud-ephemeral branch so that we don't interfere with the branch specified
-		account, err := getGcloudAccount(ctx.Context)
+	}
+	var currRepo *repo.GitRepo
+	// if the given branch and current branch we are on do not match or the branch is main, we then create a derivative branch
+	// so that we do not interfere with the original branch
+	if branch != currentBranch || currentBranch == "main" {
+		ref, err := repo.GetBranchHeadCommit(ctx.Context, branch)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to determine branch %q head commit - does the branch exist?", branch)
 		}
-		user := strings.ReplaceAll(account[:strings.Index(account, "@")], ".", "-")
-		// create a branch of the format cloud-ephemeral/<user>_<branch>
-		branch = fmt.Sprintf("cloud-ephemeral/%s_%s", user, strings.ReplaceAll(branch, "/", "-"))
-		std.Out.Writef("currently not on %q branch - using %q as branch\n", currentBranch, branch)
+
+		// this will create a branch name of the format cloud-ephemeral/<user>_<branch>
+		cloudEphBranch, err := createEphemeralBranchName(ctx.Context, branch)
+		if err != nil {
+			return errors.Wrap(err, "failed to create ephemeral branch name")
+		}
+		currRepo = repo.NewGitRepo(cloudEphBranch, ref)
+		std.Out.Writef("currently not on %q branch - will use branch %q at %s\n", branch, currRepo.Branch, currRepo.Ref)
+	} else {
+		// We are on the branch we want to deploy, so we use the current commit
+		head, err := repo.GetHeadCommit(ctx.Context)
+		if err != nil {
+			return errors.Wrap(err, "failed to determine current commit")
+		}
+		currRepo = repo.NewGitRepo(currentBranch, head)
 	}
 
 	version := ctx.String("version")
 	// if a version is specified we do not build anything and just trigger the cloud deployment
 	if version == "" {
-		build, err := createEphemeralBuild(ctx.Context, tag, branch)
+		build, err := triggerEphemeralBuild(ctx.Context, currRepo)
 		if err != nil {
 			return err
 		}
 		version = determineVersion(build, tag)
 	}
+	// we could check if the version exists?
 
 	return nil
 	// trigger cloud depoyment here

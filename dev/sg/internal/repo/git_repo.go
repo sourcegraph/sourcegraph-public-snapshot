@@ -45,25 +45,8 @@ func WithPushRefSpec(ref, branch string) pushOpt {
 	}
 }
 
-func New(ctx context.Context) (*GitRepo, error) {
-	currentBranch, err := GetCurrentBranch(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return NewWithBranch(ctx, currentBranch)
-}
-
-func NewWithBranch(ctx context.Context, branch string) (*GitRepo, error) {
-	ref, err := run.Cmd(ctx, "git", "rev-parse", "HEAD").Run().String()
-	if err != nil {
-		return nil, err
-	}
-
-	return &GitRepo{
-		Branch: branch,
-		Ref:    ref,
-	}, nil
-
+func NewGitRepo(branch, ref string) *GitRepo {
+	return &GitRepo{Branch: branch, Ref: ref}
 }
 
 func (g *GitRepo) IsOutOfSync(ctx context.Context) (bool, error) {
@@ -121,27 +104,8 @@ func (g *GitRepo) GetHeadCommit() string {
 	return g.Ref
 }
 
-func GetBranchHeadCommit(ctx context.Context, branch string) (string, error) {
-	commit, err := run.Cmd(ctx, fmt.Sprintf("git rev-parse %s", branch)).Run().String()
-	if err != nil {
-		return "", err
-	}
-
-	return strings.TrimSpace(commit), nil
-}
-
 func (g *GitRepo) HasRemoteBranch(ctx context.Context) (bool, error) {
-	branches, err := run.Cmd(ctx, "git", "branch", "--remotes").Run().Lines()
-	if err != nil {
-		return false, err
-	}
-
-	for _, b := range branches {
-		if b == g.Branch {
-			return true, err
-		}
-	}
-	return false, err
+	return HasRemoteBranch(ctx, g.Branch)
 }
 
 func (g *GitRepo) HasRemoteCommit(ctx context.Context) bool {
