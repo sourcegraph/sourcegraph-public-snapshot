@@ -913,3 +913,117 @@ func TestPointDiffQuery(t *testing.T) {
 		})
 	}
 }
+
+func TestPointTimeQuery(t *testing.T) {
+	before := time.Date(2022, time.February, 1, 1, 1, 0, 0, time.UTC)
+	after := time.Date(2022, time.January, 1, 1, 1, 0, 0, time.UTC)
+	repoSearch := "repo:.*"
+
+	tests := []struct {
+		name string
+		opts PointDiffQueryOpts
+		want autogold.Value
+	}{
+		{
+			"multiple includes or together",
+			PointDiffQueryOpts{
+				Before:             before,
+				After:              &after,
+				FilterRepoIncludes: []string{"repo1", "repo2"},
+				SearchQuery:        BasicQuery("insights"),
+			},
+			autogold.Expect(BasicQuery("repo:repo1|repo2 rev:at.time(2022-02-01T01:01:00Z) insights")),
+		},
+		{
+			"multiple excludes or together",
+			PointDiffQueryOpts{
+				Before:             before,
+				After:              &after,
+				FilterRepoExcludes: []string{"repo1", "repo2"},
+				SearchQuery:        BasicQuery("insights"),
+			},
+			autogold.Expect(BasicQuery("-repo:repo1|repo2 rev:at.time(2022-02-01T01:01:00Z) insights")),
+		},
+		{
+			"repo list escaped and or together",
+			PointDiffQueryOpts{
+				Before:      before,
+				After:       &after,
+				RepoList:    []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/about"},
+				SearchQuery: BasicQuery("insights"),
+			},
+			autogold.Expect(BasicQuery("repo:^(github\\.com/sourcegraph/sourcegraph|github\\.com/sourcegraph/about)$ rev:at.time(2022-02-01T01:01:00Z) insights")),
+		},
+		{
+			"repo search added",
+			PointDiffQueryOpts{
+				Before:      before,
+				After:       &after,
+				RepoSearch:  &repoSearch,
+				SearchQuery: BasicQuery("insights"),
+			},
+			autogold.Expect(BasicQuery("repo:.* rev:at.time(2022-02-01T01:01:00Z) insights")),
+		},
+		{
+			"include and excluded can be used together",
+			PointDiffQueryOpts{
+				Before:             before,
+				After:              &after,
+				FilterRepoIncludes: []string{"repoa", "repob"},
+				FilterRepoExcludes: []string{"repo1", "repo2"},
+				SearchQuery:        BasicQuery("insights"),
+			},
+			autogold.Expect(BasicQuery("repo:repoa|repob -repo:repo1|repo2 rev:at.time(2022-02-01T01:01:00Z) insights")),
+		},
+		{
+			"after isn't needed",
+			PointDiffQueryOpts{
+				Before:      before,
+				SearchQuery: BasicQuery("insights"),
+			},
+			autogold.Expect(BasicQuery("rev:at.time(2022-02-01T01:01:00Z) insights")),
+		},
+		{
+			"regex in include",
+			PointDiffQueryOpts{
+				Before:             before,
+				After:              &after,
+				FilterRepoIncludes: []string{"repo1|repo2"},
+				SearchQuery:        BasicQuery("insights"),
+			},
+			autogold.Expect(BasicQuery("repo:repo1|repo2 rev:at.time(2022-02-01T01:01:00Z) insights")),
+		},
+		{
+			// Test for #57323. Previously, the content field would get mangled to `content:/"TEST"/`
+			"no mangle content",
+			PointDiffQueryOpts{
+				Before:      before,
+				After:       &after,
+				RepoList:    []string{},
+				SearchQuery: BasicQuery(`content:"TEST" patternType:regexp`),
+			},
+			autogold.Expect(BasicQuery(`rev:at.time(2022-02-01T01:01:00Z) patterntype:regexp content:"TEST"`)),
+		},
+		{
+			// Test for #57877. Previously, a slash in a regex pattern would not be escaped when we wrapped it with slashes.
+			"no mangle slashes",
+			PointDiffQueryOpts{
+				Before:      before,
+				After:       &after,
+				RepoList:    []string{},
+				SearchQuery: BasicQuery(`patterntype:regexp <tag>value</tag>`),
+			},
+			autogold.Expect(BasicQuery("rev:at.time(2022-02-01T01:01:00Z) patterntype:regexp /<tag>value<\\/tag>/")),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := PointInTimeQuery(test.opts)
+			if err != nil {
+				test.want.Equal(t, err.Error())
+			} else {
+				test.want.Equal(t, got)
+			}
+		})
+	}
+}
