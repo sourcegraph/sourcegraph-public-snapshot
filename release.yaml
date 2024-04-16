@@ -119,11 +119,15 @@ test:
         _VERSION=$VERSION
         unset VERSION
 
+        # We purposely limit the concurrency to 6, because if we use the default, there are
+        # scenarios where we can exhaust available ports to the docker daemon and end up
+        # with an infrastructure flake.
+        max_routines=6
         # Hardcoding version, as for now I just want to make sure this works in CI.
         bazel ${bazelrc[*]} run //testing/tools/upgradetest:release_test_run -- all \
           --post-release-version={{tag}} \
           --target-registry us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal/ \
-          --max-routines 6
+          --max-routines $max_routines
 
         # Restoring it to avoid creating a footgun if we add more test steps later on.
         VERSION=$_VERSION
