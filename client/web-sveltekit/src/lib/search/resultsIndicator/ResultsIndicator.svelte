@@ -37,23 +37,23 @@
 </script>
 
 <div class="indicator">
-    {#if loading}
-        <LoadingSpinner inline />
-    {:else}
-        <Icon svgPath={icons[severity]} size={18} --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
-    {/if}
+    <div>
+        {#if loading}
+            <LoadingSpinner inline />
+        {:else}
+            <Icon svgPath={icons[severity]} size={18} --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
+        {/if}
+    </div>
 
     <div class="messages">
         <ProgressMessage {state} {progress} {severity} />
-        <div>
-            {#if !done && takingTooLong}
-                <TimeoutMessage />
-            {:else if done}
-                <SuggestedAction {progress} {suggestedItems} {severity} {state} />
-            {:else if elapsedDuration <= SEARCH_JOB_THRESHOLD}
-                <small> Running Search </small>
-            {/if}
-        </div>
+        {#if !done && takingTooLong}
+            <TimeoutMessage />
+        {:else if done}
+            <SuggestedAction {progress} {suggestedItems} {severity} {state} />
+        {:else}
+            <small>Running Search</small>
+        {/if}
     </div>
     <Icon svgPath={mdiChevronDown} size={18} --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
 </div>
@@ -62,10 +62,11 @@
     .indicator {
         display: flex;
         flex-flow: row nowrap;
-        justify-content: space-between;
+        justify-content: space-evenly;
         align-items: center;
         gap: 0.5rem;
-        width: fit-content;
+        min-width: 250px;
+        max-width: fit-content;
 
         .messages {
             display: flex;
@@ -75,6 +76,7 @@
             margin-right: 0.75rem;
             margin-left: 0.5rem;
             row-gap: 0.25rem;
+            margin-right: auto;
         }
 
         small {

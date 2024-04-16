@@ -23,8 +23,7 @@
         .info-badge {
             background-color: var(--warning-2);
             border-radius: 3px;
-            padding-left: 0.25rem;
-            padding-right: 0.25rem;
+            padding: 0.15rem 0.25rem 0.15rem 0.25rem;
         }
     }
 </style>
