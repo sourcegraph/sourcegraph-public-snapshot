@@ -936,22 +936,6 @@ commands:
     cmd: echo "monitoring-generator is deprecated, please run 'sg generate go' or 'bazel run //dev:write_all_generated' instead"
     env:
 
-  loki:
-    cmd: |
-      echo "Loki: serving on http://localhost:3100"
-      echo "Loki: note that logs are piped to ${LOKI_LOG_FILE}"
-      docker run --rm --name=loki \
-        -p 3100:3100 -v $LOKI_DISK:/loki \
-        index.docker.io/grafana/loki:$LOKI_VERSION >"${LOKI_LOG_FILE}" 2>&1
-    install: |
-      mkdir -p "${LOKI_DISK}"
-      mkdir -p "$(dirname ${LOKI_LOG_FILE})"
-      docker pull index.docker.io/grafana/loki:$LOKI_VERSION
-    env:
-      LOKI_DISK: $HOME/.sourcegraph-dev/data/loki
-      LOKI_VERSION: '2.3.0'
-      LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
-
   otel-collector:
     install: |
       bazel build //docker-images/opentelemetry-collector:image_tarball
@@ -1157,17 +1141,6 @@ dockerCommands:
     env:
       # docker containers must access things via docker host on non-linux platforms
       CACHE: false
-
-  loki:
-    logfile: $HOME/.sourcegraph-dev/logs/loki/loki.log
-    docker:
-      image: index.docker.io/grafana/loki:2.3.0
-      pull: true
-      ports:
-        - 3100
-      volumes:
-        - from: $HOME/.sourcegraph-dev/data/loki
-          to: /loki
 
   otel-collector:
     target: //docker-images/opentelemetry-collector:image_tarball
