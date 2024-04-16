@@ -114,23 +114,6 @@ var starlarkExportQuery = `
 )
 `
 
-var loadQueryKeywordArgument = `
-(
-	(module
-		(expression_statement
-			(call
-				function: (identifier) @_funcname
-				arguments: (argument_list
-                  (string) @path
-                  (keyword_argument name: (identifier) @named) @symbol
-                )
-			)
-		)
-	)
-	(#eq? @_funcname "load")
-)
-`
-
 var loadQuery = `
 (
 	(module

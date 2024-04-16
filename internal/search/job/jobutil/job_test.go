@@ -1101,13 +1101,31 @@ func TestNewPlanJob(t *testing.T) {
         (limit . 10000)
         (PARALLEL
           REPOSCOMPUTEEXCLUDED
-          (STRUCTURALSEARCH
-            (useFullDeadline . true)
+          (REPOPAGER
             (containsRefGlobs . false)
-            (useIndex . yes)
-            (patternInfo.query . "(:[_])")
-            (patternInfo.isStructural . true)
-            (patternInfo.fileMatchLimit . 10000)))))))
+            (PARTIALREPOS
+              (STRUCTURALSEARCH
+                (useFullDeadline . true)
+                (useIndex . yes)
+                (patternInfo.query . "(:[_])")
+                (patternInfo.isStructural . true)
+                (patternInfo.fileMatchLimit . 10000)))))))))
+`),
+		},
+		{
+			query:      `context:global repo:sourcegraph/.* what's going on'? lang:go`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeCodyContext,
+			want: autogold.Expect(`
+(LOG
+  (ALERT
+    (features . error decoding features)
+    (protocol . Streaming)
+    (onSourcegraphDotCom . true)
+    (query . )
+    (originalQuery . )
+    (patternType . codycontext)
+    ))
 `),
 		},
 		// The next query shows an unexpected way that a query is

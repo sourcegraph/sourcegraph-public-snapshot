@@ -477,8 +477,9 @@ func (c *writeCounter) Write(p []byte) (n int, err error) {
 }
 
 func isEnabled() bool {
-	if experimentalFeatures := conf.SiteConfig().ExperimentalFeatures; experimentalFeatures != nil {
-		return experimentalFeatures.SearchJobs != nil && *experimentalFeatures.SearchJobs
+	experimentalFeatures := conf.SiteConfig().ExperimentalFeatures
+	if experimentalFeatures != nil && experimentalFeatures.SearchJobs != nil {
+		return *experimentalFeatures.SearchJobs
 	}
 	return true
 }

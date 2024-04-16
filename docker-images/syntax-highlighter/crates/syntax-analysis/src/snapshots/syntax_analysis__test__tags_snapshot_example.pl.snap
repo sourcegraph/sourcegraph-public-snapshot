@@ -1,0 +1,6 @@
+---
+source: crates/syntax-analysis/src/lib.rs
+expression: "String::from_utf8_lossy(buf_writer.buffer())"
+---
+{"_type":"error","message":"No tag configuration for language: Perl","fatal":false}
+

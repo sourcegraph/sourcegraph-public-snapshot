@@ -7,11 +7,11 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	logger "github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 type RepoRev struct {
@@ -272,13 +272,6 @@ WHERE
 	gr.clone_status = 'cloned'
 `, layout.policyEnablementFieldName)
 }
-
-func scanRepoRev(s dbutil.Scanner) (rr RepoRev, err error) {
-	err = s.Scan(&rr.ID, &rr.RepositoryID, &rr.Rev)
-	return rr, err
-}
-
-var scanRepoRevs = basestore.NewSliceScanner(scanRepoRev)
 
 func optionalLimit(limit *int) *sqlf.Query {
 	if limit != nil {

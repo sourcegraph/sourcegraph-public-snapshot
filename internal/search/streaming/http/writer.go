@@ -106,7 +106,10 @@ func (e *Writer) EventBytes(event string, dataLine []byte) (err error) {
 	write(dataLine)
 	write([]byte("\n\n"))
 
-	e.flush()
+	// only need to call flush if writes succeeded.
+	if err == nil {
+		e.flush()
+	}
 
 	return err
 }

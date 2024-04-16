@@ -52,6 +52,10 @@ func InitLocalPackageRepo() (PackageRepoConfig, error) {
 	}
 
 	// Generate keys for local repository
+	// Skip if we are running on buildkite
+	if os.Getenv("BUILDKITE") == "true" {
+		return c, nil
+	}
 	if _, err = os.Stat(c.KeyFilepath); os.IsNotExist(err) {
 		if err := c.GenerateKeypair(); err != nil {
 			return c, err
@@ -157,7 +161,7 @@ func (c PackageRepoConfig) DoPackageBuild(name string, buildDir string) error {
 	std.Out.Write("")
 
 	std.Out.WriteSuccessf("Successfully built package %s\n", name)
-	std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Use this package in local image builds by adding the package '%s@local' to the base image config\n", name))
+	std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Use this package in local image builds by adding the package '%s@local' to your image's 'wolfi-images/<image>.yaml' config, and running 'sg wolfi image <image>'\n", name))
 
 	return nil
 }

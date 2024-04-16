@@ -32,6 +32,11 @@ fragment BlobPage_Blob on GitBlob {
     content
     richHTML
     languages
+    binary
+    totalLines
+    byteSize
+    ...OpenInCodeHostAction
+    ...FileIcon_GitBlob
 }
 
 query BlobSyntaxHighlightQuery(

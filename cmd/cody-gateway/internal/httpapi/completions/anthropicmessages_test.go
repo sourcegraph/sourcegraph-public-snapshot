@@ -13,7 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
 )
 
 func TestIsFlaggedAnthropicMessagesRequest(t *testing.T) {
@@ -23,20 +23,20 @@ func TestIsFlaggedAnthropicMessagesRequest(t *testing.T) {
 		PromptTokenFlaggingLimit:       18000,
 		PromptTokenBlockingLimit:       20000,
 		MaxTokensToSample:              0, // Not used within isFlaggedRequest.
-		MaxTokensToSampleFlaggingLimit: 1000,
-		ResponseTokenBlockingLimit:     1000,
+		MaxTokensToSampleFlaggingLimit: 4000,
+		ResponseTokenBlockingLimit:     4000,
 		RequestBlockingEnabled:         true,
 	}
 	cfgWithPreamble := config.FlaggingConfig{
 		PromptTokenFlaggingLimit:       18000,
 		PromptTokenBlockingLimit:       20000,
 		MaxTokensToSample:              0, // Not used within isFlaggedRequest.
-		MaxTokensToSampleFlaggingLimit: 1000,
-		ResponseTokenBlockingLimit:     1000,
+		MaxTokensToSampleFlaggingLimit: 4000,
+		ResponseTokenBlockingLimit:     4000,
 		RequestBlockingEnabled:         true,
 		AllowedPromptPatterns:          []string{strings.ToLower(validPreamble)},
 	}
-	tk, err := tokenizer.NewAnthropicClaudeTokenizer()
+	tk, err := tokenizer.NewTokenizer(tokenizer.AnthropicModel)
 	require.NoError(t, err)
 
 	// Helper function for calling the AnthropicMessageHandlerMethod's shouldFlagRequest, using the supplied
@@ -161,7 +161,7 @@ func TestIsFlaggedAnthropicMessagesRequest(t *testing.T) {
 }
 
 func TestAnthropicMessagesRequestJSON(t *testing.T) {
-	_, err := tokenizer.NewAnthropicClaudeTokenizer()
+	_, err := tokenizer.NewTokenizer(tokenizer.AnthropicModel)
 	require.NoError(t, err)
 
 	r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{

@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -260,6 +261,20 @@ func (b *observableBackend) ResolveRevision(ctx context.Context, revspec string)
 	return b.backend.ResolveRevision(ctx, revspec)
 }
 
+func (b *observableBackend) RevAtTime(ctx context.Context, revspec string, t time.Time) (_ api.CommitID, err error) {
+	ctx, _, endObservation := b.operations.revAtTime.With(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{
+			attribute.String("revspec", revspec),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("RevAtTime").Inc()
+	defer concurrentOps.WithLabelValues("RevAtTime").Dec()
+
+	return b.backend.RevAtTime(ctx, revspec, t)
+}
+
 type observableReadCloser struct {
 	inner          io.ReadCloser
 	endObservation func(err error)
@@ -329,6 +344,7 @@ type operations struct {
 	archiveReader   *observation.Operation
 	resolveRevision *observation.Operation
 	listRefs        *observation.Operation
+	revAtTime       *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -371,6 +387,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		archiveReader:   op("archive-reader"),
 		resolveRevision: op("resolve-revision"),
 		listRefs:        op("list-refs"),
+		revAtTime:       op("rev-at-time"),
 	}
 }
 

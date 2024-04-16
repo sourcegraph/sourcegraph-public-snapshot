@@ -7,8 +7,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -31,44 +29,44 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func ForEncryptableConfig(ctx context.Context, logger log.Logger, db database.DB, kind string, config *extsvc.EncryptableConfig, repo *types.Repo) (string, error) {
+func ForEncryptableConfig(ctx context.Context, db database.DB, kind string, config *extsvc.EncryptableConfig, repo *types.Repo) (string, error) {
 	parsed, err := extsvc.ParseEncryptableConfig(ctx, kind, config)
 	if err != nil {
 		return "", errors.Wrap(err, "loading service configuration")
 	}
 
-	return cloneURL(ctx, logger, db, kind, parsed, repo)
+	return cloneURL(ctx, db, kind, parsed, repo)
 }
 
-func cloneURL(ctx context.Context, logger log.Logger, db database.DB, kind string, parsed any, repo *types.Repo) (string, error) {
+func cloneURL(ctx context.Context, db database.DB, kind string, parsed any, repo *types.Repo) (string, error) {
 	switch t := parsed.(type) {
 	case *schema.AWSCodeCommitConnection:
 		if r, ok := repo.Metadata.(*awscodecommit.Repository); ok {
-			return awsCodeCloneURL(logger, r, t), nil
+			return awsCodeCloneURL(r, t)
 		}
 	case *schema.AzureDevOpsConnection:
 		if r, ok := repo.Metadata.(*azuredevops.Repository); ok {
-			return azureDevOpsCloneURL(logger, r, t), nil
+			return azureDevOpsCloneURL(r, t)
 		}
 	case *schema.BitbucketServerConnection:
 		if r, ok := repo.Metadata.(*bitbucketserver.Repo); ok {
-			return bitbucketServerCloneURL(r, t), nil
+			return bitbucketServerCloneURL(r, t)
 		}
 	case *schema.BitbucketCloudConnection:
 		if r, ok := repo.Metadata.(*bitbucketcloud.Repo); ok {
-			return bitbucketCloudCloneURL(logger, r, t), nil
+			return bitbucketCloudCloneURL(r, t)
 		}
 	case *schema.GerritConnection:
 		if r, ok := repo.Metadata.(*gerrit.Project); ok {
-			return gerritCloneURL(logger, r, t), nil
+			return gerritCloneURL(r, t)
 		}
 	case *schema.GitHubConnection:
 		if r, ok := repo.Metadata.(*github.Repository); ok {
-			return githubCloneURL(ctx, logger, db, r, t)
+			return githubCloneURL(ctx, db, r, t)
 		}
 	case *schema.GitLabConnection:
 		if r, ok := repo.Metadata.(*gitlab.Project); ok {
-			return gitlabCloneURL(logger, r, t), nil
+			return gitlabCloneURL(r, t)
 		}
 	case *schema.GitoliteConnection:
 		if r, ok := repo.Metadata.(*gitolite.Repo); ok {
@@ -80,7 +78,7 @@ func cloneURL(ctx context.Context, logger log.Logger, db database.DB, kind strin
 		}
 	case *schema.PhabricatorConnection:
 		if r, ok := repo.Metadata.(*phabricator.Repo); ok {
-			return phabricatorCloneURL(logger, r, t), nil
+			return phabricatorCloneURL(r, t)
 		}
 	case *schema.PagureConnection:
 		if r, ok := repo.Metadata.(*pagure.Project); ok {
@@ -112,36 +110,34 @@ func cloneURL(ctx context.Context, logger log.Logger, db database.DB, kind strin
 	return "", errors.Errorf("unknown repo.Metadata type %T for repo %d", repo.Metadata, repo.ID)
 }
 
-func awsCodeCloneURL(logger log.Logger, repo *awscodecommit.Repository, cfg *schema.AWSCodeCommitConnection) string {
+func awsCodeCloneURL(repo *awscodecommit.Repository, cfg *schema.AWSCodeCommitConnection) (string, error) {
 	u, err := url.Parse(repo.HTTPCloneURL)
 	if err != nil {
-		logger.Warn("Error adding authentication to AWS CodeCommit repository Git remote URL.", log.String("url", repo.HTTPCloneURL), log.Error(err))
-		return repo.HTTPCloneURL
+		return "", errors.Wrap(err, "failed to parse HTTP clone URL")
 	}
 
 	username := cfg.GitCredentials.Username
 	password := cfg.GitCredentials.Password
 
 	u.User = url.UserPassword(username, password)
-	return u.String()
+	return u.String(), nil
 }
 
-func azureDevOpsCloneURL(logger log.Logger, repo *azuredevops.Repository, cfg *schema.AzureDevOpsConnection) string {
+func azureDevOpsCloneURL(repo *azuredevops.Repository, cfg *schema.AzureDevOpsConnection) (string, error) {
 	if cfg.GitURLType == "ssh" {
-		return repo.SSHURL
+		return repo.SSHURL, nil
 	}
 
 	u, err := url.Parse(repo.RemoteURL)
 	if err != nil {
-		logger.Warn("Error adding authentication to Azure DevOps repo remote URL.", log.String("url", cfg.Url), log.Error(err))
-		return cfg.Url
+		return "", errors.Wrap(err, "failed to parse remote URL")
 	}
 	u.User = url.UserPassword(cfg.Username, cfg.Token)
 
-	return u.String()
+	return u.String(), nil
 }
 
-func bitbucketServerCloneURL(repo *bitbucketserver.Repo, cfg *schema.BitbucketServerConnection) string {
+func bitbucketServerCloneURL(repo *bitbucketserver.Repo, cfg *schema.BitbucketServerConnection) (string, error) {
 	var cloneURL string
 	for _, l := range repo.Links.Clone {
 		if l.Name == "ssh" && cfg.GitURLType == "ssh" {
@@ -172,31 +168,27 @@ func bitbucketServerCloneURL(repo *bitbucketserver.Repo, cfg *schema.BitbucketSe
 		}
 	}
 
-	return cloneURL
+	if cloneURL == "" {
+		return "", errors.New("no clone URL found in repo links")
+	}
+
+	return cloneURL, nil
 }
 
 // bitbucketCloudCloneURL returns the repository's Git remote URL with the configured
 // Bitbucket Cloud app password or workspace access token inserted in the URL userinfo.
-func bitbucketCloudCloneURL(logger log.Logger, repo *bitbucketcloud.Repo, cfg *schema.BitbucketCloudConnection) string {
+func bitbucketCloudCloneURL(repo *bitbucketcloud.Repo, cfg *schema.BitbucketCloudConnection) (string, error) {
 	if cfg.GitURLType == "ssh" {
-		return fmt.Sprintf("git@%s:%s.git", cfg.Url, repo.FullName)
+		return fmt.Sprintf("git@%s:%s.git", cfg.Url, repo.FullName), nil
 	}
-
-	fallbackURL := (&url.URL{
-		Scheme: "https",
-		Host:   cfg.Url,
-		Path:   "/" + repo.FullName,
-	}).String()
 
 	httpsURL, err := repo.Links.Clone.HTTPS()
 	if err != nil {
-		logger.Warn("Error adding authentication to Bitbucket Cloud repository Git remote URL.", log.String("url", fmt.Sprintf("%v", repo.Links.Clone)), log.Error(err))
-		return fallbackURL
+		return "", err
 	}
 	u, err := url.Parse(httpsURL)
 	if err != nil {
-		logger.Warn("Error adding authentication to Bitbucket Cloud repository Git remote URL.", log.String("url", httpsURL), log.Error(err))
-		return fallbackURL
+		return "", errors.Wrap(err, "failed to parse HTTPS clone URL")
 	}
 
 	if cfg.AccessToken != "" {
@@ -204,10 +196,10 @@ func bitbucketCloudCloneURL(logger log.Logger, repo *bitbucketcloud.Repo, cfg *s
 	} else {
 		u.User = url.UserPassword(cfg.Username, cfg.AppPassword)
 	}
-	return u.String()
+	return u.String(), nil
 }
 
-func githubCloneURL(ctx context.Context, logger log.Logger, db database.DB, repo *github.Repository, cfg *schema.GitHubConnection) (string, error) {
+func githubCloneURL(ctx context.Context, db database.DB, repo *github.Repository, cfg *schema.GitHubConnection) (string, error) {
 	if cfg.GitURLType == "ssh" {
 		baseURL, err := url.Parse(cfg.Url)
 		if err != nil {
@@ -227,8 +219,7 @@ func githubCloneURL(ctx context.Context, logger log.Logger, db database.DB, repo
 	}
 	u, err := url.Parse(repo.URL)
 	if err != nil {
-		logger.Warn("Error adding authentication to GitHub repository Git remote URL.", log.String("url", repo.URL), log.Error(err))
-		return repo.URL, nil
+		return "", errors.Wrap(err, "failed to parse repo.URL")
 	}
 
 	auther, err := ghauth.FromConnection(context.Background(), cfg, db.GitHubApps(), keyring.Default().GitHubAppKey)
@@ -247,38 +238,51 @@ func githubCloneURL(ctx context.Context, logger log.Logger, db database.DB, repo
 
 // authenticatedRemoteURL returns the GitLab project's Git remote URL with the
 // configured GitLab personal access token inserted in the URL userinfo.
-func gitlabCloneURL(logger log.Logger, repo *gitlab.Project, cfg *schema.GitLabConnection) string {
+func gitlabCloneURL(repo *gitlab.Project, cfg *schema.GitLabConnection) (string, error) {
 	if cfg.GitURLType == "ssh" {
-		return repo.SSHURLToRepo // SSH authentication must be provided out-of-band
+		return repo.SSHURLToRepo, nil // SSH authentication must be provided out-of-band
 	}
 	if cfg.Token == "" {
-		return repo.HTTPURLToRepo
+		return repo.HTTPURLToRepo, nil
 	}
 	u, err := url.Parse(repo.HTTPURLToRepo)
 	if err != nil {
-		logger.Warn("Error adding authentication to GitLab repository Git remote URL.", log.String("url", repo.HTTPURLToRepo), log.Error(err))
-		return repo.HTTPURLToRepo
+		return "", errors.Wrap(err, "failed to parse repo.HTTPURLToRepo")
 	}
 	username := "git"
 	if cfg.TokenType == "oauth" {
 		username = "oauth2"
 	}
 	u.User = url.UserPassword(username, cfg.Token)
-	return u.String()
+	return u.String(), nil
 }
 
-func gerritCloneURL(logger log.Logger, project *gerrit.Project, cfg *schema.GerritConnection) string {
-	u, err := url.Parse(cfg.Url)
+func gerritCloneURL(project *gerrit.Project, cfg *schema.GerritConnection) (string, error) {
+	if cfg.GitURLType == "ssh" {
+		return project.SSHURLToRepo, nil // SSH authentication must be provided out-of-band
+	}
+
+	// TODO: Backcompat. Remove this branch in Sourcegraph 5.5.
+	if project.HTTPURLToRepo == "" {
+		u, err := url.Parse(cfg.Url)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to parse Gerrit URL")
+		}
+		u.User = url.UserPassword(cfg.Username, cfg.Password)
+
+		// Gerrit encodes slashes in IDs, so need to decode them. The 'a' is for cloning with auth.
+		u.Path = path.Join("a", strings.ReplaceAll(project.ID, "%2F", "/"))
+
+		return u.String(), nil
+	}
+
+	u, err := url.Parse(project.HTTPURLToRepo)
 	if err != nil {
-		logger.Warn("Error adding authentication to Gerrit project remote URL.", log.String("url", cfg.Url), log.Error(err))
-		return cfg.Url
+		return "", errors.Wrap(err, "failed to parse Gerrit project remote URL")
 	}
 	u.User = url.UserPassword(cfg.Username, cfg.Password)
 
-	// Gerrit encodes slashes in IDs, so need to decode them. The 'a' is for cloning with auth.
-	u.Path = path.Join("a", strings.ReplaceAll(project.ID, "%2F", "/"))
-
-	return u.String()
+	return u.String(), nil
 }
 
 // perforceCloneURL composes a clone URL for a Perforce depot based on
@@ -294,7 +298,7 @@ func perforceCloneURL(depot *perforce.Depot, cfg *schema.PerforceConnection) str
 	return cloneURL.String()
 }
 
-func phabricatorCloneURL(logger log.Logger, repo *phabricator.Repo, _ *schema.PhabricatorConnection) string {
+func phabricatorCloneURL(repo *phabricator.Repo, _ *schema.PhabricatorConnection) (string, error) {
 	var external []*phabricator.URI
 	builtin := make(map[string]*phabricator.URI)
 
@@ -338,10 +342,10 @@ func phabricatorCloneURL(logger log.Logger, repo *phabricator.Repo, _ *schema.Ph
 	}
 
 	if cloneURL == "" {
-		logger.Warn("unable to construct clone URL for repo", log.String("name", name), log.String("phabricator_id", repo.PHID))
+		return "", errors.New("no clone URL found")
 	}
 
-	return cloneURL
+	return cloneURL, nil
 }
 
 func otherCloneURL(repo *types.Repo, m *extsvc.OtherRepoMetadata) string {

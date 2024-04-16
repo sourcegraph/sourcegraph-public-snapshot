@@ -27,6 +27,7 @@ type operations struct {
 	newFileReader            *observation.Operation
 	readDir                  *observation.Operation
 	resolveRevision          *observation.Operation
+	revAtTime                *observation.Operation
 	revList                  *observation.Operation
 	search                   *observation.Operation
 	stat                     *observation.Operation
@@ -34,7 +35,6 @@ type operations struct {
 	systemsInfo              *observation.Operation
 	systemInfo               *observation.Operation
 	requestRepoUpdate        *observation.Operation
-	requestRepoClone         *observation.Operation
 	isRepoCloneable          *observation.Operation
 	repoCloneProgress        *observation.Operation
 	remove                   *observation.Operation
@@ -120,6 +120,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		newFileReader:            op("NewFileReader"),
 		readDir:                  op("ReadDir"),
 		resolveRevision:          resolveRevisionOperation,
+		revAtTime:                op("RevAtTime"),
 		revList:                  op("RevList"),
 		search:                   op("Search"),
 		stat:                     op("Stat"),
@@ -127,7 +128,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		systemsInfo:              op("SystemsInfo"),
 		systemInfo:               op("SystemInfo"),
 		requestRepoUpdate:        op("RequestRepoUpdate"),
-		requestRepoClone:         op("RequestRepoClone"),
 		isRepoCloneable:          op("IsRepoCloneable"),
 		repoCloneProgress:        op("RepoCloneProgress"),
 		remove:                   op("Remove"),

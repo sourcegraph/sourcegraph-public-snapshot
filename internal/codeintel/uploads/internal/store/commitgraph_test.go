@@ -31,7 +31,7 @@ import (
 func TestSetRepositoryAsDirty(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	for _, id := range []int{50, 51, 52} {
 		insertRepo(t, db, id, "", false)
@@ -62,7 +62,7 @@ func TestSetRepositoryAsDirty(t *testing.T) {
 func TestSkipsDeletedRepositories(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertRepo(t, db, 50, "should not be dirty", false)
 	deleteRepo(t, db, 50, time.Now())
@@ -95,7 +95,7 @@ func TestSkipsDeletedRepositories(t *testing.T) {
 func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(1)},
@@ -130,7 +130,7 @@ func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T
 func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -223,7 +223,7 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfiguration(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -333,7 +333,7 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 func TestUpdateUploadsVisibleToCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -392,7 +392,7 @@ func TestUpdateUploadsVisibleToCommits(t *testing.T) {
 func TestUpdateUploadsVisibleToCommitsAlternateCommitGraph(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -445,7 +445,7 @@ func TestUpdateUploadsVisibleToCommitsAlternateCommitGraph(t *testing.T) {
 func TestUpdateUploadsVisibleToCommitsDistinctRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -488,7 +488,7 @@ func TestUpdateUploadsVisibleToCommitsDistinctRoots(t *testing.T) {
 func TestUpdateUploadsVisibleToCommitsOverlappingRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -563,7 +563,7 @@ func TestUpdateUploadsVisibleToCommitsOverlappingRoots(t *testing.T) {
 func TestUpdateUploadsVisibleToCommitsIndexerName(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -619,7 +619,7 @@ func TestUpdateUploadsVisibleToCommitsIndexerName(t *testing.T) {
 func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(1)},
@@ -686,7 +686,7 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 func TestFindClosestCompletedUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -752,7 +752,7 @@ func TestFindClosestCompletedUploads(t *testing.T) {
 func TestFindClosestCompletedUploadsAlternateCommitGraph(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -812,7 +812,7 @@ func TestFindClosestCompletedUploadsAlternateCommitGraph(t *testing.T) {
 func TestFindClosestCompletedUploadsAlternateCommitGraphWithOverwrittenVisibleUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -865,7 +865,7 @@ func TestFindClosestCompletedUploadsAlternateCommitGraphWithOverwrittenVisibleUp
 func TestFindClosestCompletedUploadsDistinctRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -915,7 +915,7 @@ func TestFindClosestCompletedUploadsDistinctRoots(t *testing.T) {
 func TestFindClosestCompletedUploadsOverlappingRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -995,7 +995,7 @@ func TestFindClosestCompletedUploadsOverlappingRoots(t *testing.T) {
 func TestFindClosestCompletedUploadsIndexerName(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -1010,6 +1010,7 @@ func TestFindClosestCompletedUploadsIndexerName(t *testing.T) {
 		{ID: 6, Commit: makeCommit(2), Root: "root2/", Indexer: "idx2"},
 		{ID: 7, Commit: makeCommit(3), Root: "root3/", Indexer: "idx2"},
 		{ID: 8, Commit: makeCommit(4), Root: "root4/", Indexer: "idx2"},
+		{ID: 9, Commit: makeCommit(4), Root: "root4/", Indexer: shared.SyntacticIndexer},
 	}
 	insertUploads(t, db, uploads...)
 
@@ -1051,6 +1052,7 @@ func TestFindClosestCompletedUploadsIndexerName(t *testing.T) {
 			{UploadID: 6, Distance: 2},
 			{UploadID: 7, Distance: 1},
 			{UploadID: 8, Distance: 0},
+			{UploadID: 9, Distance: 0},
 		},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
@@ -1078,13 +1080,16 @@ func TestFindClosestCompletedUploadsIndexerName(t *testing.T) {
 		{commit: makeCommit(5), file: "root2/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{6}},
 		{commit: makeCommit(5), file: "root3/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{7}},
 		{commit: makeCommit(5), file: "root4/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{8}},
+		// Searching for visible uploads with indexer == "" yields all non-syntactic indexes
+		{commit: makeCommit(5), file: "root4/file.ts", indexer: "", graph: graph, allOfIDs: []int{4, 8}},
+		{commit: makeCommit(5), file: "root4/file.ts", indexer: shared.SyntacticIndexer, graph: graph, allOfIDs: []int{9}},
 	})
 }
 
 func TestFindClosestCompletedUploadsIntersectingPath(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -1128,7 +1133,7 @@ func TestFindClosestCompletedUploadsIntersectingPath(t *testing.T) {
 func TestFindClosestCompletedUploadsFromGraphFragment(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -1194,7 +1199,7 @@ func TestFindClosestCompletedUploadsFromGraphFragment(t *testing.T) {
 func TestGetRepositoriesMaxStaleAge(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	for _, id := range []int{50, 51, 52} {
 		insertRepo(t, db, id, "", false)
@@ -1228,7 +1233,7 @@ func TestGetRepositoriesMaxStaleAge(t *testing.T) {
 func TestCommitGraphMetadata(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	if err := store.SetRepositoryAsDirty(context.Background(), 50); err != nil {
 		t.Errorf("unexpected error marking repository as dirty: %s", err)
@@ -1535,7 +1540,7 @@ func keysOf(m map[string][]int) (keys []string) {
 func BenchmarkCalculateVisibleUploads(b *testing.B) {
 	logger := logtest.Scoped(b)
 	db := database.NewDB(logger, dbtest.NewDB(b))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(b), db)
 
 	graph, err := readBenchmarkCommitGraph()
 	if err != nil {

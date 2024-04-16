@@ -18,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -28,6 +29,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/siteid"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -389,6 +392,44 @@ func getAndMarshalRepoMetadataUsageJSON(ctx context.Context, db database.DB) (_ 
 	return json.Marshal(repoMetadataUsage)
 }
 
+func getLLMUsageData(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	Manager := tokenusage.NewManager()
+	err = storeTokenUsageinDbBeforeRedisSync(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	usageData, err := Manager.RetrieveAndResetTokenUsageData()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(usageData)
+}
+
+// Stores in postgres right before the reset of the tokens to zero
+func storeTokenUsageinDbBeforeRedisSync(ctx context.Context, db database.DB) error {
+	recorder := telemetryrecorder.New(db)
+	tokenManager := tokenusage.NewManager()
+	tokenUsageData, err := tokenManager.FetchTokenUsageDataForAnalysis()
+	if err != nil {
+		return err
+	}
+	convertedTokenUsageData := make(telemetry.EventMetadata)
+	for key, value := range tokenUsageData {
+		castedKey := telemetry.ConstString(key) // Cast the key to telemetry.ConstString
+		convertedTokenUsageData[castedKey] = value
+	}
+
+	// This extra variable helps demarcate that this was the final fetch and sync before the redis was reset
+	convertedTokenUsageData["FinalFetchAndSync"] = 1.0
+
+	if err := recorder.Record(ctx, "cody.llmTokenCounter", "record", &telemetry.EventParameters{
+		Metadata: convertedTokenUsageData,
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
 func getDependencyVersions(ctx context.Context, db database.DB, logger log.Logger) (json.RawMessage, error) {
 	logFunc := logFuncFrom(logger.Scoped("getDependencyVersions"))
 	var (
@@ -500,6 +541,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		CodyUsage2:                    []byte("{}"),
 		CodyProviders:                 []byte("{}"),
 		RepoMetadataUsage:             []byte("{}"),
+		LlmUsage:                      []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx, db)
@@ -668,7 +710,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	if err != nil {
 		logFunc("repoMetadataUsage failed", log.Error(err))
 	}
-
+	r.LlmUsage, err = getLLMUsageData(ctx, db)
 	r.HasExtURL = conf.UsingExternalURL()
 	r.BuiltinSignupAllowed = conf.IsBuiltinSignupAllowed()
 	r.AccessRequestEnabled = conf.IsAccessRequestEnabled()

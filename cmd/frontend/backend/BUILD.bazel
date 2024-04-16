@@ -23,6 +23,7 @@ go_library(
     deps = [
         "//cmd/frontend/globals",
         "//cmd/frontend/internal/app/router",
+        "//cmd/frontend/internal/inventory",
         "//internal/actor",
         "//internal/api",
         "//internal/api/internalapi",
@@ -50,7 +51,6 @@ go_library(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/httpcli",
-        "//internal/inventory",
         "//internal/observation",
         "//internal/randstring",
         "//internal/rcache",
@@ -88,6 +88,7 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//cmd/frontend/internal/inventory",
         "//internal/actor",
         "//internal/api",
         "//internal/conf",
@@ -114,7 +115,6 @@ go_test(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/httpcli",
-        "//internal/inventory",
         "//internal/rcache",
         "//internal/repos",
         "//internal/repoupdater",

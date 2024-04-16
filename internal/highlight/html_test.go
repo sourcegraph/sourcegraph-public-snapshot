@@ -1,7 +1,7 @@
 package highlight
 
 import (
-	"embed"
+	_ "embed"
 	"fmt"
 	"strings"
 	"testing"
@@ -91,9 +91,6 @@ func TestMultilineOccurrence2(t *testing.T) {
 		t.Error("Should not have seen identifier for module, because line was skipped")
 	}
 }
-
-//go:embed testdata/*
-var testDir embed.FS
 
 //go:embed testdata/telemetry.scip
 var telemetryDocument string

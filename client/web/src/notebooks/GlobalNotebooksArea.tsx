@@ -7,6 +7,7 @@ import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -23,6 +24,7 @@ const NotebooksListPage = lazyComponent(() => import('./listPage/NotebooksListPa
 
 export interface GlobalNotebooksAreaProps
     extends TelemetryProps,
+        TelemetryV2Props,
         PlatformContextProps,
         SettingsCascadeProps,
         NotebookProps,

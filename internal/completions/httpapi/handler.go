@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/guardrails"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
@@ -37,7 +38,7 @@ import (
 
 // maxRequestDuration is the maximum amount of time a request can take before
 // being cancelled as DeadlineExceeded.
-const maxRequestDuration = 2 * time.Minute
+const maxRequestDuration = 8 * time.Minute
 
 var timeToFirstEventMetrics = metrics.NewREDMetrics(
 	prometheus.DefaultRegisterer,
@@ -239,7 +240,19 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 
 		// Isolate writing events.
 		var mu sync.Mutex
-		writeEvent := func(name string, data any) error {
+		writeEvent := func(name string, data any) (err error) {
+			// Attribution search is currently panicing. The main hypothesis
+			// is calling writeEvent on a finished request in the case of an
+			// error. Rather than panicing the whole process we convert it
+			// into an error which will get logged.
+			//
+			// https://github.com/sourcegraph/sourcegraph/issues/60439
+			defer func() {
+				if rec := recover(); rec != nil {
+					err = errors.WithStack(errors.Errorf("recovered panic in completions writeEvent: %v", rec))
+				}
+			}()
+
 			mu.Lock()
 			defer mu.Unlock()
 			if ev := eventWriter(); ev != nil {
@@ -289,7 +302,7 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 					timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, nil, requestParams.Model)
 				}
 				return f.Send(ctx, event)
-			})
+			}, logger)
 		if err != nil {
 			l := trace.Logger(ctx, logger)
 
@@ -360,7 +373,7 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 // to the client.
 func newNonStreamingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
 	return func(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
-		completion, err := cc.Complete(ctx, feature, version, requestParams)
+		completion, err := cc.Complete(ctx, feature, version, requestParams, logger)
 		if err != nil {
 			logFields := []log.Field{log.Error(err)}
 

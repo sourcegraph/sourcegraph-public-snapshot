@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/githubapp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
@@ -194,7 +193,7 @@ func InitRouter(db database.DB) {
 		Handler(handler(db, serveBasicPage(db, func(_ *Common, r *http.Request) string {
 			shortQuery := limitString(r.URL.Query().Get("q"), 25, true)
 			if shortQuery == "" {
-				return globals.Branding().BrandName
+				return conf.Branding().BrandName
 			}
 			// e.g. "myquery - Sourcegraph"
 			return brandNameSubtitle(shortQuery)
@@ -322,7 +321,7 @@ var mockServeRepo func(w http.ResponseWriter, r *http.Request)
 // last title component. This function indirectly calls conf.Get(), so should not be invoked from
 // any function that is invoked by an init function.
 func brandNameSubtitle(titles ...string) string {
-	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
+	return strings.Join(append(titles, conf.Branding().BrandName), " - ")
 }
 
 // staticRedirectHandler returns an HTTP handler that redirects all requests to

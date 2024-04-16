@@ -3,11 +3,12 @@
 <script lang="ts">
     import { mdiDotsHorizontal } from '@mdi/js'
 
-    import type { Commit } from './Commit.gql'
-    import Icon from '$lib/Icon.svelte'
     import Avatar from '$lib/Avatar.svelte'
+    import Icon from '$lib/Icon.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
+
+    import type { Commit } from './Commit.gql'
 
     export let commit: Commit
     export let alwaysExpanded: boolean = false
@@ -33,7 +34,7 @@
 <div class="root">
     <div class="avatar">
         <Tooltip tooltip={authorAvatarTooltip}>
-            <Avatar avatar={author} />
+            <Avatar avatar={author} --avatar-size="1.5rem" />
         </Tooltip>
     </div>
     {#if committer && committer.name !== author.name}
