@@ -208,7 +208,7 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		version = determineVersion(build, tag)
+		_ = determineVersion(build, tag)
 	}
 	// we could check if the version exists?
 
