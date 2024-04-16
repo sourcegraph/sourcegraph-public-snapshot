@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "repozip",
+    srcs = [
+        "fetcher.go",
+        "noop.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/batches/repozip",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/batches/util",
+        "@com_github_sourcegraph_sourcegraph_lib//errors",
+    ],
+)
+
+go_test(
+    name = "repozip_test",
+    srcs = ["fetcher_test.go"],
+    embed = [":repozip"],
+    deps = [
+        "//internal/api",
+        "//internal/batches/mock",
+        "//internal/batches/util",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
+    ],
+)

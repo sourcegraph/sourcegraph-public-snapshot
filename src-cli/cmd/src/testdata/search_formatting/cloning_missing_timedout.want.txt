@@ -1,0 +1,4 @@
+[38;5;57m✱[0m [38;5;124m0 results[0m for [38;5;68m"repo:AlwaysCloning error"[0m in [38;5;2m19ms[0m[38;5;124m
+(2) still cloning:[0m github.com/sourcegraphtest/AlwaysCloningTest, github.com/sourcegraphtest/AlwaysCloningTest2[38;5;124m
+(2) missing:[0m github.com/sourcegraphtest/AlwaysMissingTest, github.com/sourcegraphtest/AlwaysMissingTest2[38;5;124m
+(2) timed out:[0m github.com/sourcegraphtest/AlwaysTimedoutTest, github.com/sourcegraphtest/AlwaysTimedoutTest2

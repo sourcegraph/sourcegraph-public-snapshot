@@ -1,0 +1,15 @@
+{
+  "Query": "repo:AlwaysCloning error",
+  "Results": [],
+  "LimitHit": false,
+  "Cloning": [
+    {
+      "name": "github.com/sourcegraphtest/AlwaysCloningTest"
+    }
+  ],
+  "Missing": [],
+  "Timedout": [],
+  "ResultCount": 0,
+  "ApproximateResultCount": "",
+  "ElapsedMilliseconds": 19
+}

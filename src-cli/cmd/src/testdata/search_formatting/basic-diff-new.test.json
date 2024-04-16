@@ -1,0 +1,257 @@
+{
+  "SourcegraphEndpoint": "https://sourcegraph.com",
+  "Query": "repogroup:sample type:diff error max:3 repo:^github\\.com/golang/oauth2$",
+  "Site": { "BuildVersion": "aaaaa_2018-12-12_aaaaa" },
+  "Results": [
+    {
+      "__typename": "CommitSearchResult",
+      "messagePreview": null,
+      "diffPreview": {
+        "value": "diff --git google/default.go google/default.go\nindex 96f9a36..5087d84 100644\n--- google/default.go\n+++ google/default.go\n@@ -42,2 +61,1 @@ func DefaultTokenSource(ctx context.Context, scope ...string) (oauth2.TokenSourc\n-// Common implementation for FindDefaultCredentials.\n-func findDefaultCredentials(ctx context.Context, scopes []string) (*DefaultCredentials, error) {\n+// FindDefaultCredentials searches for \"Application Default Credentials\".\n@@ -44,0 +76,2 @@ func DefaultTokenSource(ctx context.Context, scope ...string) (oauth2.TokenSourc\n+//      (In this final case any provided scopes are ignored.)\n+func FindDefaultCredentials(ctx context.Context, scopes ...string) (*Credentials, error) {\n@@ -87,2 +121,1 @@ func findDefaultCredentials(ctx context.Context, scopes []string) (*DefaultCrede\n-// Common implementation for CredentialsFromJSON.\n-func credentialsFromJSON(ctx context.Context, jsonData []byte, scopes []string) (*DefaultCredentials, error) {\n+// CredentialsFromJSON obtains Google credentials from a JSON value. The JSON can\ndiff --git google/go19.go google/go19.go\ndeleted file mode 100644\nindex 23fe4d8..0000000\n--- google/go19.go\n+++ /dev/null\n@@ -49,3 +0,0 @@\n-//      (In this final case any provided scopes are ignored.)\n-func FindDefaultCredentials(ctx context.Context, scopes ...string) (*Credentials, error) {\n-\treturn findDefaultCredentials(ctx, scopes)\n@@ -57,3 +0,0 @@\n-// JWTConfigFromJSON).\n-func CredentialsFromJSON(ctx context.Context, jsonData []byte, scopes ...string) (*Credentials, error) {\n-\treturn credentialsFromJSON(ctx, jsonData, scopes)\ndiff --git google/not_go19.go google/not_go19.go\ndeleted file mode 100644\nindex f942b32..0000000\n--- google/not_go19.go\n+++ /dev/null\n@@ -44,3 +0,0 @@\n-//      (In this final case any provided scopes are ignored.)\n-func FindDefaultCredentials(ctx context.Context, scopes ...string) (*DefaultCredentials, error) {\n-\treturn findDefaultCredentials(ctx, scopes)\n@@ -54,3 +0,0 @@\n-// Note: despite the name, the returned credentials may not be Application Default Credentials.\n-func CredentialsFromJSON(ctx context.Context, jsonData []byte, scopes ...string) (*DefaultCredentials, error) {\n-\treturn credentialsFromJSON(ctx, jsonData, scopes)\n",
+        "highlights": [
+          {
+            "line": 7,
+            "character": 89,
+            "length": 5
+          },
+          {
+            "line": 11,
+            "character": 83,
+            "length": 5
+          },
+          {
+            "line": 14,
+            "character": 103,
+            "length": 5
+          },
+          {
+            "line": 23,
+            "character": 83,
+            "length": 5
+          },
+          {
+            "line": 27,
+            "character": 97,
+            "length": 5
+          },
+          {
+            "line": 36,
+            "character": 90,
+            "length": 5
+          },
+          {
+            "line": 40,
+            "character": 104,
+            "length": 5
+          }
+        ]
+      },
+      "label": {
+        "html": "<p><a href=\"/github.com/golang/oauth2\" rel=\"nofollow\">golang/oauth2</a> &amp;nbsp; <a href=\"/github.com/golang/oauth2/-/commit/232e45548389bd9357411a6922a07c5fd4068bda\" rel=\"nofollow\">Brad Fitzpatrick</a> &amp;nbsp; <a href=\"/github.com/golang/oauth2/-/commit/232e45548389bd9357411a6922a07c5fd4068bda\" rel=\"nofollow\">google: remove Go 1.8 support</a></p>\n"
+      },
+      "url": "/github.com/golang/oauth2/-/commit/232e45548389bd9357411a6922a07c5fd4068bda",
+      "matches": [
+        {
+          "url": "/github.com/golang/oauth2/-/commit/232e45548389bd9357411a6922a07c5fd4068bda",
+          "body": {
+            "html": "<pre><code class=\"language-diff\">google/default.go google/default.go\n@@ -42,2 +61,1 @@ func DefaultTokenSource(ctx context.Context, scope ...string) (oauth2.TokenSourc\n-// Common implementation for FindDefaultCredentials.\n-func findDefaultCredentials(ctx context.Context, scopes []string) (*DefaultCredentials, error) {\n+// FindDefaultCredentials searches for &#34;Application Default Credentials&#34;.\n@@ -44,0 +76,2 @@ func DefaultTokenSource(ctx context.Context, scope ...string) (oauth2.TokenSourc\n+//      (In this final case any provided scopes are ignored.)\n+func FindDefaultCredentials(ctx context.Context, scopes ...string) (*Credentials, error) {\n@@ -87,2 +121,1 @@ func findDefaultCredentials(ctx context.Context, scopes []string) (*DefaultCrede\n-// Common implementation for CredentialsFromJSON.\n-func credentialsFromJSON(ctx context.Context, jsonData []byte, scopes []string) (*DefaultCredentials, error) {\n+// CredentialsFromJSON obtains Google credentials from a JSON value. The JSON can\ngoogle/go19.go google/go19.go\n@@ -49,3 +0,0 @@\n-//      (In this final case any provided scopes are ignored.)\n-func FindDefaultCredentials(ctx context.Context, scopes ...string) (*Credentials, error) {\n-\treturn findDefaultCredentials(ctx, scopes)\n@@ -57,3 +0,0 @@\n-// JWTConfigFromJSON).\n-func CredentialsFromJSON(ctx context.Context, jsonData []byte, scopes ...string) (*Credentials, error) {\n-\treturn credentialsFromJSON(ctx, jsonData, scopes)\ngoogle/not_go19.go google/not_go19.go\n@@ -44,3 +0,0 @@\n-//      (In this final case any provided scopes are ignored.)\n-func FindDefaultCredentials(ctx context.Context, scopes ...string) (*DefaultCredentials, error) {\n-\treturn findDefaultCredentials(ctx, scopes)\n@@ -54,3 +0,0 @@\n-// Note: despite the name, the returned credentials may not be Application Default Credentials.\n-func CredentialsFromJSON(ctx context.Context, jsonData []byte, scopes ...string) (*DefaultCredentials, error) {\n-\treturn credentialsFromJSON(ctx, jsonData, scopes)\n</code></pre>\n",
+            "text": "```diff\ngoogle/default.go google/default.go\n@@ -42,2 +61,1 @@ func DefaultTokenSource(ctx context.Context, scope ...string) (oauth2.TokenSourc\n-// Common implementation for FindDefaultCredentials.\n-func findDefaultCredentials(ctx context.Context, scopes []string) (*DefaultCredentials, error) {\n+// FindDefaultCredentials searches for \"Application Default Credentials\".\n@@ -44,0 +76,2 @@ func DefaultTokenSource(ctx context.Context, scope ...string) (oauth2.TokenSourc\n+//      (In this final case any provided scopes are ignored.)\n+func FindDefaultCredentials(ctx context.Context, scopes ...string) (*Credentials, error) {\n@@ -87,2 +121,1 @@ func findDefaultCredentials(ctx context.Context, scopes []string) (*DefaultCrede\n-// Common implementation for CredentialsFromJSON.\n-func credentialsFromJSON(ctx context.Context, jsonData []byte, scopes []string) (*DefaultCredentials, error) {\n+// CredentialsFromJSON obtains Google credentials from a JSON value. The JSON can\ngoogle/go19.go google/go19.go\n@@ -49,3 +0,0 @@\n-//      (In this final case any provided scopes are ignored.)\n-func FindDefaultCredentials(ctx context.Context, scopes ...string) (*Credentials, error) {\n-\treturn findDefaultCredentials(ctx, scopes)\n@@ -57,3 +0,0 @@\n-// JWTConfigFromJSON).\n-func CredentialsFromJSON(ctx context.Context, jsonData []byte, scopes ...string) (*Credentials, error) {\n-\treturn credentialsFromJSON(ctx, jsonData, scopes)\ngoogle/not_go19.go google/not_go19.go\n@@ -44,3 +0,0 @@\n-//      (In this final case any provided scopes are ignored.)\n-func FindDefaultCredentials(ctx context.Context, scopes ...string) (*DefaultCredentials, error) {\n-\treturn findDefaultCredentials(ctx, scopes)\n@@ -54,3 +0,0 @@\n-// Note: despite the name, the returned credentials may not be Application Default Credentials.\n-func CredentialsFromJSON(ctx context.Context, jsonData []byte, scopes ...string) (*DefaultCredentials, error) {\n-\treturn credentialsFromJSON(ctx, jsonData, scopes)\n```"
+          },
+          "highlights": [
+            {
+              "character": 89,
+              "line": 4,
+              "length": 5
+            },
+            {
+              "character": 83,
+              "line": 8,
+              "length": 5
+            },
+            {
+              "character": 103,
+              "line": 11,
+              "length": 5
+            },
+            {
+              "character": 83,
+              "line": 16,
+              "length": 5
+            },
+            {
+              "character": 97,
+              "line": 20,
+              "length": 5
+            },
+            {
+              "character": 90,
+              "line": 25,
+              "length": 5
+            },
+            {
+              "character": 104,
+              "line": 29,
+              "length": 5
+            }
+          ]
+        }
+      ],
+      "commit": {
+        "repository": {
+          "name": "github.com/golang/oauth2"
+        },
+        "oid": "232e45548389bd9357411a6922a07c5fd4068bda",
+        "url": "/github.com/golang/oauth2/-/commit/232e45548389bd9357411a6922a07c5fd4068bda",
+        "subject": "google: remove Go 1.8 support",
+        "author": {
+          "date": "2018-11-01T16:53:39Z",
+          "person": {
+            "displayName": "Brad Fitzpatrick"
+          }
+        }
+      }
+    },
+    {
+      "__typename": "CommitSearchResult",
+      "messagePreview": null,
+      "diffPreview": {
+        "value": "diff --git google/appengine.go google/appengine.go\nindex 50d918b..fb46b5c 100644\n--- google/appengine.go\n+++ google/appengine.go\n@@ -61,3 +37,0 @@ func AppEngineTokenSource(ctx context.Context, scope ...string) oauth2.TokenSour\n-\n-func (ts *appEngineTokenSource) Token() (*oauth2.Token, error) {\n-\tif appengineTokenFunc == nil {\ndiff --git google/appengine_gen1.go google/appengine_gen1.go\nnew file mode 100644\nindex 0000000..1ca0517\n--- /dev/null\n+++ google/appengine_gen1.go\n@@ -0,0 +53,3 @@\n+\n+func (ts *gaeTokenSource) Token() (*oauth2.Token, error) {\n+\taeTokensMu.Lock()\n",
+        "highlights": [
+          {
+            "line": 7,
+            "character": 57,
+            "length": 5
+          },
+          {
+            "line": 16,
+            "character": 51,
+            "length": 5
+          }
+        ]
+      },
+      "label": {
+        "html": "<p><a href=\"/github.com/golang/oauth2\" rel=\"nofollow\">golang/oauth2</a> &amp;nbsp; <a href=\"/github.com/golang/oauth2/-/commit/5a69e67f3fa6ce11b512c271912d08ac74da7c7f\" rel=\"nofollow\">Michael Traver</a> &amp;nbsp; <a href=\"/github.com/golang/oauth2/-/commit/5a69e67f3fa6ce11b512c271912d08ac74da7c7f\" rel=\"nofollow\">appengine: implement AppEngineTokenSource for 2nd gen runtimes</a></p>\n"
+      },
+      "url": "/github.com/golang/oauth2/-/commit/5a69e67f3fa6ce11b512c271912d08ac74da7c7f",
+      "matches": [
+        {
+          "url": "/github.com/golang/oauth2/-/commit/5a69e67f3fa6ce11b512c271912d08ac74da7c7f",
+          "body": {
+            "html": "<pre><code class=\"language-diff\">google/appengine.go google/appengine.go\n@@ -61,3 +37,0 @@ func AppEngineTokenSource(ctx context.Context, scope ...string) oauth2.TokenSour\n-\n-func (ts *appEngineTokenSource) Token() (*oauth2.Token, error) {\n-\tif appengineTokenFunc == nil {\ngoogle/appengine_gen1.go google/appengine_gen1.go\n@@ -0,0 +53,3 @@\n+\n+func (ts *gaeTokenSource) Token() (*oauth2.Token, error) {\n+\taeTokensMu.Lock()\n</code></pre>\n",
+            "text": "```diff\ngoogle/appengine.go google/appengine.go\n@@ -61,3 +37,0 @@ func AppEngineTokenSource(ctx context.Context, scope ...string) oauth2.TokenSour\n-\n-func (ts *appEngineTokenSource) Token() (*oauth2.Token, error) {\n-\tif appengineTokenFunc == nil {\ngoogle/appengine_gen1.go google/appengine_gen1.go\n@@ -0,0 +53,3 @@\n+\n+func (ts *gaeTokenSource) Token() (*oauth2.Token, error) {\n+\taeTokensMu.Lock()\n```"
+          },
+          "highlights": [
+            {
+              "character": 57,
+              "line": 4,
+              "length": 5
+            },
+            {
+              "character": 51,
+              "line": 9,
+              "length": 5
+            }
+          ]
+        }
+      ],
+      "commit": {
+        "repository": {
+          "name": "github.com/golang/oauth2"
+        },
+        "oid": "5a69e67f3fa6ce11b512c271912d08ac74da7c7f",
+        "url": "/github.com/golang/oauth2/-/commit/5a69e67f3fa6ce11b512c271912d08ac74da7c7f",
+        "subject": "appengine: implement AppEngineTokenSource for 2nd gen runtimes",
+        "author": {
+          "date": "2018-10-31T18:52:15Z",
+          "person": {
+            "displayName": "Michael Traver"
+          }
+        }
+      }
+    },
+    {
+      "__typename": "CommitSearchResult",
+      "messagePreview": null,
+      "diffPreview": {
+        "value": "diff --git internal/oauth2.go internal/oauth2.go\nindex fc63fca..c0ab196 100644\n--- internal/oauth2.go\n+++ internal/oauth2.go\n@@ -29,1 +29,1 @@ func ParseKey(key []byte) (*rsa.PrivateKey, error) {\n-\t\t\treturn nil, fmt.Errorf(\"private key should be a PEM or plain PKSC1 or PKCS8; parse error: %v\", err)\n+\t\t\treturn nil, fmt.Errorf(\"private key should be a PEM or plain PKCS1 or PKCS8; parse error: %v\", err)\n",
+        "highlights": [
+          {
+            "line": 6,
+            "character": 20,
+            "length": 5
+          },
+          {
+            "line": 6,
+            "character": 87,
+            "length": 5
+          },
+          {
+            "line": 7,
+            "character": 20,
+            "length": 5
+          },
+          {
+            "line": 7,
+            "character": 87,
+            "length": 5
+          }
+        ]
+      },
+      "label": {
+        "html": "<p><a href=\"/github.com/golang/oauth2\" rel=\"nofollow\">golang/oauth2</a> &amp;nbsp; <a href=\"/github.com/golang/oauth2/-/commit/8527f56f71077909d6ead7facfe18fbf05ebdf83\" rel=\"nofollow\">Travis Bischel</a> &amp;nbsp; <a href=\"/github.com/golang/oauth2/-/commit/8527f56f71077909d6ead7facfe18fbf05ebdf83\" rel=\"nofollow\">oauth2: fix error message typo</a></p>\n"
+      },
+      "url": "/github.com/golang/oauth2/-/commit/8527f56f71077909d6ead7facfe18fbf05ebdf83",
+      "matches": [
+        {
+          "url": "/github.com/golang/oauth2/-/commit/8527f56f71077909d6ead7facfe18fbf05ebdf83",
+          "body": {
+            "html": "<pre><code class=\"language-diff\">internal/oauth2.go internal/oauth2.go\n@@ -29,1 +29,1 @@ func ParseKey(key []byte) (*rsa.PrivateKey, error) {\n-\t\t\treturn nil, fmt.Errorf(&#34;private key should be a PEM or plain PKSC1 or PKCS8; parse error: %v&#34;, err)\n+\t\t\treturn nil, fmt.Errorf(&#34;private key should be a PEM or plain PKCS1 or PKCS8; parse error: %v&#34;, err)\n</code></pre>\n",
+            "text": "```diff\ninternal/oauth2.go internal/oauth2.go\n@@ -29,1 +29,1 @@ func ParseKey(key []byte) (*rsa.PrivateKey, error) {\n-\t\t\treturn nil, fmt.Errorf(\"private key should be a PEM or plain PKSC1 or PKCS8; parse error: %v\", err)\n+\t\t\treturn nil, fmt.Errorf(\"private key should be a PEM or plain PKCS1 or PKCS8; parse error: %v\", err)\n```"
+          },
+          "highlights": [
+            {
+              "character": 20,
+              "line": 3,
+              "length": 5
+            },
+            {
+              "character": 87,
+              "line": 3,
+              "length": 5
+            },
+            {
+              "character": 20,
+              "line": 4,
+              "length": 5
+            },
+            {
+              "character": 87,
+              "line": 4,
+              "length": 5
+            }
+          ]
+        }
+      ],
+      "commit": {
+        "repository": {
+          "name": "github.com/golang/oauth2"
+        },
+        "oid": "8527f56f71077909d6ead7facfe18fbf05ebdf83",
+        "url": "/github.com/golang/oauth2/-/commit/8527f56f71077909d6ead7facfe18fbf05ebdf83",
+        "subject": "oauth2: fix error message typo",
+        "author": {
+          "date": "2018-10-31T01:45:12Z",
+          "person": {
+            "displayName": "Travis Bischel"
+          }
+        }
+      }
+    }
+  ],
+  "LimitHit": true,
+  "Cloning": [],
+  "Missing": [],
+  "Timedout": [],
+  "ResultCount": 3,
+  "ElapsedMilliseconds": 39
+}

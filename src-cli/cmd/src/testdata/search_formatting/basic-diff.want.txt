@@ -1,0 +1,107 @@
+[38;5;57m✱[0m [38;5;2m3+ results[0m for [38;5;68m"repogroup:sample type:diff error max:3 repo:^github\.com/golang/oauth2$"[0m in [38;5;2m39ms[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/golang/oauth2/-/commit/30b72dfc067246f4fa261c8890160b889fdd4b29[0m[38;5;239m)
+[0m[0m[38;5;23mgithub.com/golang/oauth2[0m › [38;5;2mTim Cooper[0m [38;5;68m"oauth2: close request body if errors occur before base RoundTripper is invoked"[0m [38;5;23m(N months ago)[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m  diff --git transport_test.go transport_test.go
+  index d6e8087..faa87d5 100644
+  --- transport_test.go
+  +++ transport_test.go
+  @@ -3,0 +4,2 @@ import (
+  +	"[38;5;0m[48;5;11merror[0ms"
+  +	"io"
+  @@ -29,0 +33,6 @@ func TestTransportNilTokenSource(t *testing.T) {
+  +	CloseCount int
+  +	ReadErr    [38;5;0m[48;5;11merror[0m
+  +}
+  +
+  +func (r *readCloseCounter) Read(b []byte) (int, [38;5;0m[48;5;11merror[0m) {
+  +	return 0, r.ReadErr
+  @@ -29,0 +40,3 @@ func TestTransportNilTokenSource(t *testing.T) {
+  +
+  +func (r *readCloseCounter) Close() [38;5;0m[48;5;11merror[0m {
+  +	r.CloseCount++
+
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/golang/oauth2/-/commit/088f8e1d436e8d636f13cd83a345b3d6ff2f04ae[0m[38;5;239m)
+[0m[0m[38;5;23mgithub.com/golang/oauth2[0m › [38;5;2mGuillaume J. Charmes[0m [38;5;68m"oauth2: Add support for custom params in Exchange"[0m [38;5;23m(1 year ago)[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m  diff --git oauth2.go oauth2.go
+  index 10299d2..16775d0 100644
+  --- oauth2.go
+  +++ oauth2.go
+  @@ -189,1 +191,1 @@ func (c *Config) PasswordCredentialsToken(ctx context.Context, username, passwor
+  -func (c *Config) Exchange(ctx context.Context, code string) (*Token, [38;5;0m[48;5;11merror[0m) {
+  +//
+  @@ -190,0 +193,2 @@ func (c *Config) PasswordCredentialsToken(ctx context.Context, username, passwor
+  +// See https://www.oauth.com/oauth2-servers/pkce/ for more info.
+  +func (c *Config) Exchange(ctx context.Context, code string, opts ...AuthCodeOption) (*Token, [38;5;0m[48;5;11merror[0m) {
+  diff --git oauth2_test.go oauth2_test.go
+  index 847160f..ef12ebc 100644
+  --- oauth2_test.go
+  +++ oauth2_test.go
+  @@ -137,0 +140,3 @@ func TestExchangeRequest(t *testing.T) {
+  +		if r.URL.String() != "/token" {
+  +			t.[38;5;0m[48;5;11mError[0mf("Unexpected exchange request URL, %v is found.", r.URL)
+  +		}
+  @@ -137,0 +144,3 @@ func TestExchangeRequest(t *testing.T) {
+  +		if headerAuth != "Basic Q0xJRU5UX0lEOkNMSUVOVF9TRUNSRVQ=" {
+  +			t.[38;5;0m[48;5;11mError[0mf("Unexpected authorization header, %v is found.", headerAuth)
+  +		}
+  @@ -137,0 +148,3 @@ func TestExchangeRequest(t *testing.T) {
+  +		if headerContentType != "application/x-www-form-urlencoded" {
+  +			t.[38;5;0m[48;5;11mError[0mf("Unexpected Content-Type header, %v is found.", headerContentType)
+  +		}
+
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/golang/oauth2/-/commit/921ae394b9430ed4fb549668d7b087601bd60a81[0m[38;5;239m)
+[0m[0m[38;5;23mgithub.com/golang/oauth2[0m › [38;5;2mBob Briski[0m [38;5;68m"jira: add JIRA provider"[0m [38;5;23m(1 year ago)[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m  diff --git jira/jira.go jira/jira.go
+  new file mode 100644
+  index 0000000..e8021e9
+  --- /dev/null
+  +++ jira/jira.go
+  @@ -0,0 +79,3 @@
+  +
+  +func (js jwtSource) Token() (*oauth2.Token, [38;5;0m[48;5;11merror[0m) {
+  +	exp := time.Duration(59) * time.Second
+  @@ -0,0 +113,3 @@
+  +	if err != nil {
+  +		return nil, fmt.[38;5;0m[48;5;11mError[0mf("oauth2: cannot fetch token: %v", err)
+  +	}
+  @@ -0,0 +118,6 @@
+  +	if err != nil {
+  +		return nil, fmt.[38;5;0m[48;5;11mError[0mf("oauth2: cannot fetch token: %v", err)
+  +	}
+  +	if c := resp.StatusCode; c < 200 || c > 299 {
+  +		return nil, fmt.[38;5;0m[48;5;11mError[0mf("oauth2: cannot fetch token: %v\nResponse: %s", resp.Status, body)
+  +	}
+  diff --git jira/jira_test.go jira/jira_test.go
+  new file mode 100644
+  index 0000000..c49940d
+  --- /dev/null
+  +++ jira/jira_test.go
+  @@ -0,0 +49,7 @@ ... +2
+  +	if !tok.Valid() {
+  +		t.[38;5;0m[48;5;11mError[0mf("got invalid token: %v", tok)
+  +	}
+  +	if got, want := tok.AccessToken, "90d64460d14870c08c81352a05dedd3465940a7c"; got != want {
+  +		t.[38;5;0m[48;5;11mError[0mf("access token = %q; want %q", got, want)
+  +	}
+  +	if got, want := tok.TokenType, "Bearer"; got != want {
+  @@ -0,0 +86,7 @@ ... +1
+  +	if tok.Valid() {
+  +		t.[38;5;0m[48;5;11mError[0mf("got invalid token: %v", tok)
+  +	}
+  +	if got, want := tok.AccessToken, ""; got != want {
+  +		t.[38;5;0m[48;5;11mError[0mf("access token = %q; want %q", got, want)
+  +	}
+  +	if got, want := tok.TokenType, "Bearer"; got != want {
+  @@ -0,0 +116,5 @@
+  +	if err == nil {
+  +		t.[38;5;0m[48;5;11mError[0m("got a token; expected [38;5;0m[48;5;11merror[0m")
+  +		if got, want := tok.AccessToken, ""; got != want {
+  +			t.[38;5;0m[48;5;11mError[0mf("access token = %q; want %q", got, want)
+  +		}
+

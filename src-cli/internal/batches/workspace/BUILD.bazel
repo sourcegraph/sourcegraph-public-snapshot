@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "workspace",
+    srcs = [
+        "bind_workspace.go",
+        "executor_workspace.go",
+        "git.go",
+        "volume_workspace.go",
+        "workspace.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/batches/workspace",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/batches/docker",
+        "//internal/batches/graphql",
+        "//internal/batches/repozip",
+        "//internal/batches/util",
+        "//internal/exec",
+        "//internal/version",
+        "@com_github_sourcegraph_sourcegraph_lib//batches",
+        "@com_github_sourcegraph_sourcegraph_lib//errors",
+    ],
+)
+
+go_test(
+    name = "workspace_test",
+    srcs = [
+        "bind_workspace_nonwin_test.go",
+        "bind_workspace_test.go",
+        "bind_workspace_windows_test.go",
+        "main_test.go",
+        "volume_workspace_test.go",
+        "workspace_test.go",
+    ],
+    embed = [":workspace"],
+    deps = [
+        "//internal/batches/docker",
+        "//internal/batches/graphql",
+        "//internal/batches/mock",
+        "//internal/batches/repozip",
+        "//internal/exec/expect",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_sourcegraph_lib//batches",
+        "@com_github_sourcegraph_sourcegraph_lib//errors",
+    ],
+)

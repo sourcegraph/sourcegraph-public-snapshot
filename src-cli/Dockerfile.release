@@ -1,0 +1,11 @@
+# This Dockerfile is used by goreleaser when publishing a release, and is not
+# suitable for testing, since it depends on a src binary being at the project
+# root _and_ that src binary being runnable on Alpine. To test this, refer to
+# the main Dockerfile, which should have an identical second stage.
+FROM sourcegraph/alpine:3.12@sha256:ce099fbcd3cf70b338fc4cb2a4e1fa9ae847de21afdb0a849a393b87d94fb174
+
+# needed for `src code-intel upload` and `src actions exec`
+RUN apk add --no-cache git
+
+COPY src /usr/bin/
+ENTRYPOINT ["/usr/bin/src"]

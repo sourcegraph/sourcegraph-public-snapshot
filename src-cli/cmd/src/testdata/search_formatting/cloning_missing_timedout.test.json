@@ -1,0 +1,32 @@
+{
+  "Query": "repo:AlwaysCloning error",
+  "Results": [],
+  "LimitHit": false,
+  "Cloning": [
+    {
+      "name": "github.com/sourcegraphtest/AlwaysCloningTest"
+    },
+    {
+      "name": "github.com/sourcegraphtest/AlwaysCloningTest2"
+    }
+  ],
+  "Missing": [
+    {
+      "name": "github.com/sourcegraphtest/AlwaysMissingTest"
+    },
+    {
+      "name": "github.com/sourcegraphtest/AlwaysMissingTest2"
+    }
+  ],
+  "Timedout": [
+    {
+      "name": "github.com/sourcegraphtest/AlwaysTimedoutTest"
+    },
+    {
+      "name": "github.com/sourcegraphtest/AlwaysTimedoutTest2"
+    }
+  ],
+  "ResultCount": 0,
+  "ApproximateResultCount": "",
+  "ElapsedMilliseconds": 19
+}

@@ -1,0 +1,34 @@
+# For more information, refer to the "Dependent Docker images" section of
+# DEVELOPMENT.md.
+name: Publish Docker image dependencies
+
+# We only want to build on releases; this condition is 100% stolen from the
+# goreleaser action.
+on:
+  push:
+    tags:
+      - "*"
+      - "!latest"
+
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # We need buildx to be able to build a multi-architecture image.
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      # We also need QEMU, since this is running on an AMD64 host and we want to
+      # build ARM64 images.
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - run: ./docker/batch-change-volume-workspace/push.py -d ./docker/batch-change-volume-workspace/Dockerfile -i sourcegraph/src-batch-change-volume-workspace -p linux/amd64,linux/arm64,linux/386 --readme ./docker/batch-change-volume-workspace/README.md
+        env:
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}

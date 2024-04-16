@@ -1,0 +1,56 @@
+{
+  "SourcegraphEndpoint": "https://sourcegraph.com",
+  "Query": "repogroup:goteam type:repo golang max:4",
+  "Results": [
+    {
+      "__typename": "Repository",
+      "externalURLs": [
+        {
+          "serviceType": "github",
+          "url": "https://github.com/golang/build"
+        }
+      ],
+      "name": "github.com/golang/build",
+      "url": "/github.com/golang/build"
+    },
+    {
+      "__typename": "Repository",
+      "externalURLs": [
+        {
+          "serviceType": "github",
+          "url": "https://github.com/golang/crypto"
+        }
+      ],
+      "name": "github.com/golang/crypto",
+      "url": "/github.com/golang/crypto"
+    },
+    {
+      "__typename": "Repository",
+      "externalURLs": [
+        {
+          "serviceType": "github",
+          "url": "https://github.com/golang/net"
+        }
+      ],
+      "name": "github.com/golang/net",
+      "url": "/github.com/golang/net"
+    },
+    {
+      "__typename": "Repository",
+      "externalURLs": [
+        {
+          "serviceType": "github",
+          "url": "https://github.com/golang/protobuf"
+        }
+      ],
+      "name": "github.com/golang/protobuf",
+      "url": "/github.com/golang/protobuf"
+    }
+  ],
+  "LimitHit": true,
+  "Cloning": [],
+  "Missing": [],
+  "Timedout": [],
+  "ResultCount": 4,
+  "ElapsedMilliseconds": 37
+}

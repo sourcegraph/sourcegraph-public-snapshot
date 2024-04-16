@@ -1,0 +1,25 @@
+[38;5;23morg/repo[0m › [38;5;69mpath/to/file[0m[38;5;2m (5 matches)[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m  [38;5;69m     5[0m[38;5;239m |  [0m[38;5;0m[48;5;11m[38;5;0m[48;5;11mf[38;5;0m[48;5;11m[38;5;0m[48;5;11moo[0m bar [38;5;0m[48;5;11mfoo[0m[38;5;239m
+  ------------------------------------------------------------------------------
+[0m[38;5;2msourcegraph/sourcegraph[0m[38;5;239m ([0m[38;5;23mhttp://127.0.0.1:55128/sourcegraph/sourcegraph[0m[38;5;239m)[0m[38;5;2m (1 match)[0m
+[38;5;23morg/repo[0m › [38;5;69mpath/to/file[0m[38;5;2m (2 matches)[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;2mdoResults[0m(FUNCTION)[38;5;239m ([0m[38;5;23mhttp://127.0.0.1:55128/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/search_results.go#L1591:26-1591:35[0m[38;5;239m)
+[0m[38;5;2mResults[0m(FIELD, SearchResultsResolver)[38;5;239m ([0m[38;5;23mhttp://127.0.0.1:55128/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/search_results.go#L1591:26-1591:35[0m[38;5;239m)
+[0m
+[38;5;239m([0m[38;5;237mhttp://127.0.0.1:55128[0m[38;5;239m)
+[0m[0m[38;5;68msourcegraph/sourcegraph-atom > Stephen Gutekanst : all: release v1.0.5[0m[38;5;2m (1 match)[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m[0m  foo[38;5;0m[48;5;11m ba[0mr
+
+[38;5;239m([0m[38;5;237mhttp://127.0.0.1:55128[0m[38;5;239m)
+[0m[0m[38;5;68msourcegraph/sourcegraph-atom > Stephen Gutekanst : all: release v1.0.5[0m[38;5;2m (1 match)[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m[0m  src/data.ts src/data.ts
+  @@ -0,0 +11,4 @@
+  +    return of<Data>({
+  +        title: 'Acme Corp open-source code [38;5;0m[48;5;11msearch[0m',
+  +        summary: 'Instant code search across all Acme Corp open-source code.',
+  +        githubOrgs: ['sourcegraph'],
+

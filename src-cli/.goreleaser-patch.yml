@@ -1,0 +1,63 @@
+# This is the patch release configuration for goreleaser, which builds and publishes a new
+# patch release for an older version of src-cli. It publishes a new versioned formula in
+# the Homebrew tap and does not publish a "latest" image to Docker Hub. It should match
+# .goreleaser.yml in every way except for the brews.name template and the
+# dockers.image_templates list.
+dist: release
+env:
+  - GO111MODULE=on
+  - CGO_ENABLED=0
+before:
+  hooks:
+    - go mod download
+    - go mod tidy
+    - go generate ./schema
+builds:
+-
+  main: ./cmd/src/
+  binary: src
+  ldflags:
+    - -X github.com/sourcegraph/src-cli/internal/version.BuildTag={{.Version}}
+  goos:
+    - linux
+    - windows
+    - darwin
+  goarch:
+    - amd64
+    - arm64
+archives:
+- id: tarball
+  format: tar.gz
+- id: bin
+  format: binary
+  wrap_in_directory: false
+  name_template: "src_{{ .Os }}_{{ .Arch }}"
+brews:
+  -
+    name: src-cli@{{ .Major }}.{{ .Minor }}.{{ .Patch }}
+    homepage: "https://sourcegraph.com/"
+    description: "Sourcegraph CLI"
+    tap:
+      owner: sourcegraph
+      name: homebrew-src-cli
+    # Folder inside the repository to put the formula.
+    # Default is the root folder.
+    folder: Formula
+    # We need to set this so that goreleaser doesn't think the binary is called
+    # `src-cli`
+    install: |
+      bin.install "src"
+    ids:
+      - tarball
+dockers:
+  - dockerfile: Dockerfile.release
+    image_templates:
+    - "sourcegraph/src-cli:{{ .Tag }}"
+    - "sourcegraph/src-cli:{{ .Major }}"
+    - "sourcegraph/src-cli:{{ .Major }}.{{ .Minor }}"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
