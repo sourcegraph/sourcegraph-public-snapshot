@@ -34,12 +34,10 @@ type Map struct {
 	mu sync.RWMutex
 	hm *rendezvous.Rendezvous
 	// endpoints is a super-set of hm.Nodes(). If discofunk sets Endpoints.ToRemove,
-	// endpoints will contain all the endpoints, but lookup in hm is based on
+	// endpoints will contain all the endpoints, but hm is based on
 	// difference(Endpoints.Endpoint, Endpoints.ToRemove). If Endpoints.ToRemove is
 	// empty, endpoints is equal to hm.Nodes(). We use the difference between
-	// endpoints and hm.Nodes() to model draining instances: Endpoints represents
-	// all the endpoints (active + draining), but hm is consistent hash over the
-	// active instances only.
+	// endpoints and hm.Nodes() to model draining instances.
 	endpoints []string
 	err       error
 
