@@ -1,4 +1,4 @@
-package database
+package encryption
 
 import (
 	"context"
