@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
 
 	sglog "github.com/sourcegraph/log"
 
@@ -248,30 +247,48 @@ func GetAndSaveUser(
 		return user.ID, true, true, "", nil
 	}()
 
-	// Annotate the telemetry ctx with the user ID we found, irrespective of
-	// successful auth, and avoid clobbering any existing authenticated actor in
-	// the context - this is only used for telemetry.
+	// Annotate the telemetry ctx early with the user ID we found if an actor
+	// isn't already present in context, irrespective of successful auth - this
+	// is only used for telemetry. We need this now because userID may later be
+	// overwritten.
 	//
-	// 🚨 SECURITY: Only use telemetryCtx for telemetry operations.
+	// 🚨 SECURITY: Only use telemetryCtx for telemetry operations!
 	telemetryCtx := ctx
 	if userID != 0 && !sgactor.FromContext(telemetryCtx).IsAuthenticated() {
 		telemetryCtx = sgactor.WithActor(telemetryCtx, actor.FromUser(userID))
 	}
+	defer func() {
+		action := telemetry.ActionSucceeded
+		if err != nil { // check final error
+			action = telemetry.ActionFailed
+		}
 
-	if err != nil {
-		// Retain legacy event logging format since there are references to it
-		telemetryCtx = teestore.WithoutV1(telemetryCtx)
-
-		// New event - most external services have an exstvc.Variant, so add that as safe metadata
+		// Most auth providers services have an exstvc.Variant, so try and
+		// extract that from
 		serviceVariant, _ := extsvc.VariantValueOf(acct.AccountSpec.ServiceType)
-		recorder.Record(telemetryCtx, telemetryV2UserSignUpFeatureName, telemetry.ActionFailed, &telemetry.EventParameters{
+		privateMetadata := map[string]any{"serviceType": acct.AccountSpec.ServiceType}
+
+		// Include safe err if there is one for maybe-useful diagnostics
+		if len(safeErrMsg) > 0 {
+			privateMetadata["safeErrMsg"] = safeErrMsg
+		}
+
+		recorder.Record(telemetryCtx, telemetryV2UserSignUpFeatureName, action, &telemetry.EventParameters{
+			Version: 2, // We've significantly refactored telemetryV2UserSignUpFeatureName occurrences
 			Metadata: telemetry.MergeMetadata(
-				telemetry.EventMetadata{"serviceVariant": telemetry.Number(serviceVariant)},
+				telemetry.EventMetadata{
+					"serviceVariant": telemetry.Number(serviceVariant),
+					// Track the various outcomes of the massive signup closure above.
+					"newUserSaved": telemetry.Bool(newUserSaved),
+					"extAcctSaved": telemetry.Bool(extAcctSaved),
+				},
 				op.UserCreateEventProperties,
 			),
-			PrivateMetadata: map[string]any{"serviceType": acct.AccountSpec.ServiceType},
+			PrivateMetadata: privateMetadata,
 		})
+	}()
 
+	if err != nil {
 		// Legacy event - retain because it is still exported by the legacy
 		// Cloud exporter, remove in future release.
 		const legacyEventName = "ExternalAuthSignupFailed"
@@ -323,33 +340,6 @@ func GetAndSaveUser(
 			return newUserSaved, 0, "Another identity for this user from this provider already exists. Remove the link to the other identity from your account.", errors.New("duplicate identity for single identity provider")
 		}
 	}
-
-	// There is a legacy event instrumented earlier in this function that covers
-	// the new-user case only, that we are retaining because it might still be
-	// in use. Since this event is quite rare, we DON'T use teestore.WithoutV1
-	// here on the new event even though the legacy event still exists so that
-	// we can consistently capture all the cases.
-	defer func() {
-		action := telemetry.ActionSucceeded
-		if err != nil { // check final error
-			action = telemetry.ActionFailed
-		}
-		serviceVariant, _ := extsvc.VariantValueOf(acct.AccountSpec.ServiceType)
-		recorder.Record(telemetryCtx, telemetryV2UserSignUpFeatureName, action, &telemetry.EventParameters{
-			Metadata: telemetry.MergeMetadata(
-				telemetry.EventMetadata{
-					// Most auth providers services have an exstvc.Variant, so add that
-					// as safe metadata.
-					"serviceVariant": telemetry.Number(serviceVariant),
-					// Track the various outcomes of the massive signup closer above.
-					"newUserSaved": telemetry.Bool(newUserSaved),
-					"extAcctSaved": telemetry.Bool(extAcctSaved),
-				},
-				op.UserCreateEventProperties,
-			),
-			PrivateMetadata: map[string]any{"serviceType": acct.AccountSpec.ServiceType},
-		})
-	}()
 
 	// Update user properties, if they've changed
 	if !newUserSaved {
