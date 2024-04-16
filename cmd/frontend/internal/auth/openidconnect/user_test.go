@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -74,6 +76,7 @@ func TestAllowSignup(t *testing.T) {
 			}
 			_, _, _, err := getOrCreateUser(
 				context.Background(),
+				logtest.Scoped(t),
 				dbmocks.NewStrictMockDB(),
 				p,
 				&oauth2.Token{},

@@ -26,6 +26,7 @@ go_library(
         "//internal/extsvc",
         "//internal/httpcli",
         "//internal/licensing",
+        "//internal/telemetry/telemetryrecorder",
         "//lib/errors",
         "//schema",
         "@com_github_beevik_etree//:etree",

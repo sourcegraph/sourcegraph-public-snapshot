@@ -40,3 +40,12 @@ func (q QueuedEvents) Summary() []string {
 func (f *MockTelemetryEventsExportQueueStore) GetMockQueuedEvents() QueuedEvents {
 	return f.events
 }
+
+// CollectStoredEvents aggregates the events stored by the mock.
+func CollectStoredEvents(s *MockEventsStore) []*telemetrygatewayv1.Event {
+	var got []*telemetrygatewayv1.Event
+	for _, s := range s.StoreEventsFunc.History() {
+		got = append(got, s.Arg1...)
+	}
+	return got
+}

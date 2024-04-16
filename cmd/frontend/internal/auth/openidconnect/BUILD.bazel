@@ -30,6 +30,7 @@ go_library(
         "//internal/httpcli",
         "//internal/licensing",
         "//internal/telemetry",
+        "//internal/telemetry/telemetryrecorder",
         "//internal/types",
         "//lib/errors",
         "//schema",
