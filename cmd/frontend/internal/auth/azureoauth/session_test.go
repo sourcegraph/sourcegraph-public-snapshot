@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -99,7 +101,10 @@ func Test_verifyAllowOrgs(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			mockServerInvokedCount = 0
-			s := &sessionIssuerHelper{allowOrgs: tc.allowOrgs}
+			s := &sessionIssuerHelper{
+				logger:    logtest.Scoped(t),
+				allowOrgs: tc.allowOrgs,
+			}
 
 			ctx := context.Background()
 			allow, err := s.verifyAllowOrgs(ctx, &profile, &oauth2.Token{AccessToken: "foo"}, httpcli.TestExternalDoer)
